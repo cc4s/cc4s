@@ -2,14 +2,23 @@
 #ifndef CHI_DEFINED
 #define CHI_DEFINED
 
+#include "Options.hpp"
 #include <ctf.hpp>
+
+enum ChiPart {
+  GAB, GAI, GIJ
+};
 
 class Chi {
   public:
-    CTF::Tensor<> *ab, *ai, *ij;
-
-    Chi();
+    Chi(CTF::World *world, Options const &options);
     ~Chi();
+    CTF::Tensor<> &get(ChiPart part);
+
+  private:
+    CTF::Tensor<> *ab, *ai, *ij;
+    void readRandom(CTF::Tensor<> *tensor);
+
     // read from disk
     void read();
 };

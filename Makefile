@@ -9,9 +9,9 @@ LIBS=-lblas
 # primary target
 cc4s: bin/cc4s
 
-OBJECTS=obj/CoulombIntegrals.o obj/Chi.o obj/cc4s.o
+OBJECTS=obj/Options.o obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o obj/cc4s.o
 # dependencies
-obj/cc4s.o: obj/CoulombIntegrals.o obj/Chi.o
+obj/cc4s.o: obj/Options.o obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o
 
 # create directories of not present
 
@@ -20,7 +20,7 @@ clean:
 	rm -rf obj/*
 
 # compile object files
-obj/%.o: src/%.cxx
+obj/%.o: src/%.cxx src/%.hpp
 	${CXX} ${COPTIONS} ${OPTIMIZE} -c src/$*.cxx -o $@ -I${CTF}/include
 
 # compile and link executable
