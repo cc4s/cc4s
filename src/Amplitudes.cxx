@@ -11,7 +11,9 @@ using namespace CTF;
 Amplitudes::Amplitudes(CoulombIntegrals *V) {
   std::cout << "Initializing amplitudes...";
   ai = new Tensor<>(V->get(AI));
+  ai->set_name("Tai");
   abij = new Tensor<>(V->get(ABIJ));
+  abij->set_name("Tabij");
   std::cout << " OK." << std::endl;
 }
 

@@ -11,7 +11,8 @@ Chi::Chi(World *world, Options const &options) {
   // keep the chi tensors in the memory for now
   {
     int lens[] = {options.nG, options.nv, options.nv};
-    int syms[] = {NS, SY, NS};
+//    int syms[] = {NS, SY, NS};
+    int syms[] = {NS, NS, NS};
     ab = new Tensor<>(3, lens, syms, *world, "Xab", options.profile);
   }
   {
@@ -21,7 +22,8 @@ Chi::Chi(World *world, Options const &options) {
   }
   {
     int lens[] = {options.nG, options.no, options.no};
-    int smys[] = {NS, SY, NS};
+//    int smys[] = {NS, SY, NS};
+    int smys[] = {NS, NS, NS};
     ij = new Tensor<>(3, lens, smys, *world, "Xij", options.profile);
   }
   readRandom(ab, 0);

@@ -23,13 +23,15 @@ CoulombIntegrals::CoulombIntegrals(Chi *chi_): chi(chi_) {
   }
   {
     int lens[] = {nv, nv, no, no};
-    int syms[] = {SY, NS, SY, NS};
+//    int syms[] = {SY, NS, SY, NS};
+    int syms[] = {NS, NS, NS, NS};
     abij = new Tensor<>(4, lens, syms, *world, "Vabij",profile);
   }
 // NOTE: only for testing
   {
     int lens[] = {nv, nv, nv, nv};
-    int syms[] = {SY, NS, SY, NS};
+//    int syms[] = {SY, NS, SY, NS};
+    int syms[] = {NS, NS, NS, NS};
     abcd = new Tensor<>(4, lens, syms, *world, "Vabcd",profile);
   }
   fetch();
@@ -58,9 +60,10 @@ Tensor<> CoulombIntegrals::getSlice(Part part, int a, int b) {
       Tensor<> Xgxc(chi->getSlice(GAB, a));
       Tensor<> Xgyd(chi->getSlice(GAB, b));
       int lens[] = {Xgxc.lens[1], Xgyd.lens[1], Xgxc.lens[2], Xgyd.lens[2]};
-      int syms[] = {NS, NS, NS, NS};
+//      int syms[] = {a == b ? SY : NS, NS, SY, NS};
+      int syms[] = {a == b ? NS : NS, NS, NS, NS};
       Tensor<> Vxycd(4, lens, syms, *Xgxc.wrld, "Vxycd", Xgxc.profile);
-      Vxycd["xycd"] = Xgxc["gcx"] * Xgyd["gyd"];
+      Vxycd["xycd"] = Xgxc["gxc"] * Xgyd["gyd"];
       return Vxycd;
     }
     default: {

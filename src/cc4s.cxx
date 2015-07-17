@@ -55,14 +55,36 @@ double divide(double a, double b) {
 
 void Cc4s::iterateAmplitudes() {
   Tensor<> T21 = Tensor<>(T->get(ABIJ));
+  T21.set_name("T21");
   T21["abij"] += .5*T->get(AI)["ai"]*T->get(AI)["bj"];
-/*
-  V->get(ABCD,a,b);
-  T->addTo(ABIJ,a,b, V->get(ABCD,a,b)["xycd"]*T21["cdij"], 0.5);
-*/
 
   Tensor<> tZabij(V->get(ABIJ));
-  add_Vxyef_T21efij(tZabij, T21);
+  tZabij.set_name("tZabij");
+
+  for (int b(0); b < nv; b += no) {
+//    for (int a(b); a < nv; a += no) {
+    for (int a(0); a < nv; a += no) {
+      Tensor<> Vxycd(V->getSlice(ABCD, a, b));
+      Vxycd.set_name("Vxycd");
+      int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
+
+      int Tbegin[] = {0, 0, 0, 0};
+      int lens[] = {na, nb, no, no};
+//      int syms[] = {Vxycd.sym[0], NS, SY, NS};
+      int syms[] = {Vxycd.sym[0], NS, NS, NS};
+      Tensor<> Txyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
+      Txyij["xyij"] = Vxycd["xycd"] * T21["cdij"];
+
+      int tzBegin[] = {a, b, 0, 0};
+      int tzEnd[] = {a+na, b+nb, no, no};
+      tZabij.slice(
+        tzBegin,tzEnd,1.0, Txyij,Tbegin,lens,0.5
+      );
+    }
+  }
+
+//  tZabij["abij"] += 0.5*V->get(ABCD)["abef"]*T21["efij"];
+//  add_Vxyef_T21efij(tZabij, T21);
   Tensor<> Dabij(4, V->get(ABIJ).lens, V->get(ABIJ).sym, *world);
   Dabij["abij"] += V->get(I)["i"];
   Dabij["abij"] += V->get(I)["j"];
@@ -73,6 +95,9 @@ void Cc4s::iterateAmplitudes() {
   T->get(ABIJ).contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
 } 
 
+/**
+ * \deprecated
+ */
 void Cc4s::add_Vxyef_T21efij(Tensor<> &Zabij, Tensor<> &T21) {
 // for comparison:
   Zabij["abij"] += .5*V->get(ABCD)["abef"]*T21["efij"];

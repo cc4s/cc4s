@@ -3,7 +3,7 @@ CTF=../ctf
 #TODO: use configuration files
 CXX=mpicxx
 OPTIMIZE=-O3
-COPTIONS=-std=c++0x -fopenmp -Wall -fmax-errors=3 -D_POSIX_C_SOURCE=200112L -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1
+COPTIONS=-std=c++0x -fopenmp -Wall -g -fmax-errors=3 -D_POSIX_C_SOURCE=200112L -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1
 LIBS=-lblas
 
 # primary target
