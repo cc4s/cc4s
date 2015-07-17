@@ -5,14 +5,13 @@
 #include <sstream>
 
 Options::Options(int argumentCount, char **arguments) {
+  nG = DEFAULT_NG;
+  nv = DEFAULT_NV;
+  no = DEFAULT_NO;
+  niter = DEFAULT_NITER;
+  profile = DEFAULT_PROFILE;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
-    nG = DEFAULT_NG;
-    nv = DEFAULT_NV;
-    no = DEFAULT_NO;
-    niter = DEFAULT_NITER;
-    profile = DEFAULT_PROFILE;
-
     if (argument == "-nG") {
       std::stringstream stream(arguments[++i]);
       stream >> nG;

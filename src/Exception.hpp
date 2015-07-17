@@ -6,7 +6,7 @@
 
 class Exception {
   public:
-    Exception(char const *message_): message(message_) {
+    Exception(std::string const &message_): message(message_) {
     }
     std::string getMessage() {
       return message;

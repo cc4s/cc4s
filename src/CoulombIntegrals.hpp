@@ -18,6 +18,10 @@ class CoulombIntegrals {
   public:
     CoulombIntegrals(Chi *chi);
     CTF::Tensor<> &get(Part part);
+    CTF::Tensor<> getSlice(Part part, int a, int b);
+    /**
+     * \deprecated  
+     */
     void calculate_xycd(CTF::Tensor<> &xycd, int a, int b);
 
   protected:
@@ -49,6 +53,7 @@ class CoulombIntegrals {
       return index;
     }
 
+    Chi *chi;
     CTF::Tensor<> *a, *i, *ai, *abij;
 // NOTE: only for testing
     CTF::Tensor<> *abcd;

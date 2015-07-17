@@ -14,10 +14,11 @@ class Chi {
     Chi(CTF::World *world, Options const &options);
     ~Chi();
     CTF::Tensor<> &get(ChiPart part);
+    CTF::Tensor<> getSlice(ChiPart, int a);
 
+    void readRandom(CTF::Tensor<> *tensor, int seed);
   private:
     CTF::Tensor<> *ab, *ai, *ij;
-    void readRandom(CTF::Tensor<> *tensor);
 
     // read from disk
     void read();

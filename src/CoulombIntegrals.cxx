@@ -9,7 +9,7 @@ using namespace CTF;
 /**
  * \brief Allocate all tensors
  */
-CoulombIntegrals::CoulombIntegrals(Chi *chi) {
+CoulombIntegrals::CoulombIntegrals(Chi *chi_): chi(chi_) {
   int nv = chi->get(GAI).lens[1];
   int no = chi->get(GAI).lens[2];
   World *world = chi->get(GAI).wrld;
@@ -44,35 +44,49 @@ Tensor<> &CoulombIntegrals::get(Part part) {
     case ABCD:
       return *abcd;
       throw new Exception("Cannot fetch entire ABCD tensor in memory");
-    default:
-      throw new Exception("Cannot fetch tensor part #" + part);
+    default: {
+      std::stringstream stream("Cannot fetch tensor V part #");
+      stream << part;
+      throw new Exception(stream.str());
+    }
   }
 }
 
+Tensor<> CoulombIntegrals::getSlice(Part part, int a, int b) {
+  switch (part) {
+    case ABCD: {
+      Tensor<> Xgxc(chi->getSlice(GAB, a));
+      Tensor<> Xgyd(chi->getSlice(GAB, b));
+      int lens[] = {Xgxc.lens[1], Xgyd.lens[1], Xgxc.lens[2], Xgyd.lens[2]};
+      int syms[] = {NS, NS, NS, NS};
+      Tensor<> Vxycd(4, lens, syms, *Xgxc.wrld, "Vxycd", Xgxc.profile);
+      Vxycd["xycd"] = Xgxc["gcx"] * Xgyd["gyd"];
+      return Vxycd;
+    }
+    default: {
+      std::stringstream stream("Cannot fetch slice of tensor V part #");
+      stream << part;
+      throw new Exception(stream.str());
+    }
+  }
+}
 
 /**
  * \brief Fetches all tensors elements
  */
 void CoulombIntegrals::fetch() {
-  int64_t indicesCount, *indices;
-  double *values;
-  Tensor<> *tensors[] = {
-    a, i, ai, abij
-// NOTE: only for testing
-    , abcd
-  };
+  // TODO: read epsilons
+  chi->readRandom(a, 3);
+  chi->readRandom(i, 4);
 
-  for (int i(0); i < (int)sizeof(tensors)/(int)sizeof(*tensors); ++i) {
-    std::cout << "Fetching " << tensors[i]->get_name() << " ..." << std::endl;
-    tensors[i]->read_local(&indicesCount, &indices, &values);
-    for (int64_t j(0); j < indicesCount; ++j) {
-      values[j] = ((indices[j]*16+i)%13077)/13077. -.5;
-    }
-    tensors[i]->write(indicesCount, indices, values);
-    free(indices); free(values);
-  }
+  // FIXME: how to calculate Via
+  chi->readRandom(ai, 5);
+
+  // calculate the other Coulomb integrals from the chis
+  get(ABIJ)["abij"] = chi->get(GAI)["gai"] * chi->get(GAI)["gbj"];
+  // NOTE: only calculate for testing
+  get(ABCD)["abcd"] = chi->get(GAB)["gac"] * chi->get(GAB)["gbd"];
 }
-
 
 /**
  * \brief Calculates a slice xycd of the full tensor abcd

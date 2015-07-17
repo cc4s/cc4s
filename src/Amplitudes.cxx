@@ -19,8 +19,11 @@ Tensor<> &Amplitudes::get(Part part) {
   switch (part) {
     case AI: return *ai;
     case ABIJ: return *abij;
-    default:
-      throw new Exception("Cannot fetch amplitudes tensor part #" + part);
+    default: {
+      std::stringstream stream("Cannot fetch tensor T part #");
+      stream << part;
+      throw new Exception(stream.str());
+    }
   }
 }
 
