@@ -109,14 +109,20 @@ void Cc4s::testSymmetries() {
     -1.0,  0.0, 5.0,
     -2.0, -1.0, 0.0
   };
+  int64_t givenIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
   int64_t indicesCount, *indices;
   double *values;
+/*
   n.read_local(&indicesCount, &indices, &values);
   for (int i(0); i < indicesCount; ++i) {
     values[i] = givenValues[indices[i]];
   }
   n.write(indicesCount, indices, values);
   free(indices); free(values);
+*/
+// test reading in different indices at different ranks:
+// works as expected here only for 3 or more processors
+  n.write(3, &givenIndices[world->rank*3], &givenValues[world->rank*3]);
   // BUG: the tensor is internally (anti-)symmetrized by
   // a["ij"] = n["ij"] +(-) n["ji"]
   a["ij"] = 0.5*n["ij"];
@@ -138,7 +144,7 @@ void Cc4s::testSymmetries() {
   }
   free(values);  
 
-  // test slicing in asymmetrical tensor
+  // test slicing in (anti-)symmetrical tensor
   int sliceLens[] = {2, 2};
   Tensor<> s(2, sliceLens, symsNS, *world, "s");
   double sliceValues[] = {
@@ -162,7 +168,7 @@ void Cc4s::testSymmetries() {
     }
   }
   free(values);  
-  // slicing on (a)symmetrical tensors works as expected
+  // slicing on (anti-)symmetrical tensors works as expected
 }
 
 /**
@@ -212,8 +218,8 @@ int main(int argumentCount, char **arguments) {
   try {
     World *world = new World(argumentCount, arguments);
     Cc4s cc4s(world, Options(argumentCount, arguments));
-    cc4s.testSymmetries();
- //   cc4s.run();
+//    cc4s.testSymmetries();
+    cc4s.run();
   } catch (Exception *cause) {
     std::cout << cause->getMessage() << std::endl;
   }
