@@ -12,8 +12,11 @@ Amplitudes::Amplitudes(CoulombIntegrals *V) {
   std::cout << "Initializing amplitudes...";
   ai = new Tensor<>(V->get(AI));
   ai->set_name("Tai");
-  abij = new Tensor<>(V->get(ABIJ));
-  abij->set_name("Tabij");
+  {
+    int syms[] = {NS, NS, NS, NS};
+    abij = new Tensor<>(4,V->get(ABIJ).lens,syms, *V->get(ABIJ).wrld, "Tabij");
+    get(ABIJ)["abij"] = V->get(ABIJ)["abij"];
+  }
   std::cout << " OK." << std::endl;
 }
 

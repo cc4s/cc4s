@@ -7,11 +7,11 @@ COPTIONS=-std=c++0x -fopenmp -Wall -g -fmax-errors=3 -D_POSIX_C_SOURCE=200112L -
 LIBS=-lblas
 
 # primary target
-cc4s: bin/cc4s
+cc4s: bin/Cc4s
 
-OBJECTS=obj/Options.o obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o obj/cc4s.o
+OBJECTS=obj/Options.o obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o obj/Cc4s.o
 # dependencies
-obj/cc4s.o: obj/Options.o obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o
+obj/Cc4s.o: obj/Options.o obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o
 
 # create directories of not present
 

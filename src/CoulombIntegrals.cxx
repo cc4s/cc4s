@@ -23,7 +23,6 @@ CoulombIntegrals::CoulombIntegrals(Chi *chi_): chi(chi_) {
   }
   {
     int lens[] = {nv, nv, no, no};
-//    int syms[] = {SY, NS, SY, NS};
     int syms[] = {NS, NS, NS, NS};
     abij = new Tensor<>(4, lens, syms, *world, "Vabij",profile);
   }
@@ -86,12 +85,16 @@ void CoulombIntegrals::fetch() {
   chi->readRandom(ai, 5);
 
   // calculate the other Coulomb integrals from the chis
-  get(ABIJ)["abij"] = chi->get(GAI)["gai"] * chi->get(GAI)["gbj"];
+  // TODO: use complex numbers and conjugate
+  get(ABIJ)["abij"] =
+    chi->get(GAI)["gai"] * chi->get(GAI)["gbj"] -
+    chi->get(GAI)["gaj"] * chi->get(GAI)["gbi"];
   // NOTE: only calculate for testing
   get(ABCD)["abcd"] = chi->get(GAB)["gac"] * chi->get(GAB)["gbd"];
 }
 
 /**
+ * \deprecated
  * \brief Calculates a slice xycd of the full tensor abcd
  */
 void CoulombIntegrals::calculate_xycd(Tensor<> &xycd, int a, int b) {

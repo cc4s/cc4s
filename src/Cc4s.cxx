@@ -1,6 +1,6 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "cc4s.hpp"
+#include "Cc4s.hpp"
 #include <ctf.hpp>
 #include <iostream>
 
@@ -30,7 +30,9 @@ void Cc4s::run() {
   // NOTE: should be V->get(IJAB)
   Scalar<> energy(*world);
   double norm;
-  energy[""] = T->get(ABIJ)["abij"]*V->get(ABIJ)["abij"];
+  energy[""] =
+    2.0*T->get(ABIJ)["abij"]*V->get(ABIJ)["abij"] -
+    T->get(ABIJ)["abij"]*V->get(ABIJ)["abji"];
   if (world->rank == 0) {
     printf("e=%lf\n", energy.get_val());
   }
@@ -54,12 +56,12 @@ double divide(double a, double b) {
 }
 
 void Cc4s::iterateAmplitudes() {
-  Tensor<> T21 = Tensor<>(T->get(ABIJ));
-  T21.set_name("T21");
-  T21["abij"] += .5*T->get(AI)["ai"]*T->get(AI)["bj"];
+  int syms[] = {NS, NS, NS, NS};
+  Tensor<> T21 = Tensor<>(4, T->get(ABIJ).lens, syms, *world, "T21");
+  T21["abij"] = T->get(ABIJ)["abij"] + .5*T->get(AI)["ai"]*T->get(AI)["bj"];
 
-  Tensor<> tZabij(V->get(ABIJ));
-  tZabij.set_name("tZabij");
+  Tensor<> tZabij = Tensor<>(4, T->get(ABIJ).lens, syms, *world, "tZabij");
+  tZabij["abij"] = V->get(ABIJ)["abij"];
 
   for (int b(0); b < nv; b += no) {
 //    for (int a(b); a < nv; a += no) {
@@ -71,7 +73,7 @@ void Cc4s::iterateAmplitudes() {
       int Tbegin[] = {0, 0, 0, 0};
       int lens[] = {na, nb, no, no};
 //      int syms[] = {Vxycd.sym[0], NS, SY, NS};
-      int syms[] = {Vxycd.sym[0], NS, NS, NS};
+      int syms[] = {NS, NS, NS, NS};
       Tensor<> Txyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
       Txyij["xyij"] = Vxycd["xycd"] * T21["cdij"];
 
@@ -85,7 +87,8 @@ void Cc4s::iterateAmplitudes() {
 
 //  tZabij["abij"] += 0.5*V->get(ABCD)["abef"]*T21["efij"];
 //  add_Vxyef_T21efij(tZabij, T21);
-  Tensor<> Dabij(4, V->get(ABIJ).lens, V->get(ABIJ).sym, *world);
+//  int syms[] = {SY, NS, SY, NS};
+  Tensor<> Dabij(4, V->get(ABIJ).lens, syms, *world, "Dabij");
   Dabij["abij"] += V->get(I)["i"];
   Dabij["abij"] += V->get(I)["j"];
   Dabij["abij"] -= V->get(A)["a"];
