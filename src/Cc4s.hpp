@@ -13,6 +13,7 @@ class Cc4s {
     Cc4s(CTF::World *world, Options const &options);
     ~Cc4s();
     void run();
+    void testSymmetries();
 
   protected:
     void iterateAmplitudes();

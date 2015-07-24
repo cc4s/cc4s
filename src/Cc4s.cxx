@@ -98,6 +98,73 @@ void Cc4s::iterateAmplitudes() {
   T->get(ABIJ).contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
 } 
 
+void Cc4s::testSymmetries() {
+  int symsAS[] = {AS, NS};
+  int symsNS[] = {NS, NS};
+  int lens[] = {3, 3};
+  Tensor<> a(2, lens, symsAS, *world, "a");
+  Tensor<> n(2, lens, symsNS, *world, "n");
+  double givenValues[] = {
+     0.0,  1.0, 2.0,
+    -1.0,  0.0, 5.0,
+    -2.0, -1.0, 0.0
+  };
+  int64_t indicesCount, *indices;
+  double *values;
+  n.read_local(&indicesCount, &indices, &values);
+  for (int i(0); i < indicesCount; ++i) {
+    values[i] = givenValues[indices[i]];
+  }
+  n.write(indicesCount, indices, values);
+  free(indices); free(values);
+  // BUG: the tensor is internally (anti-)symmetrized by
+  // a["ij"] = n["ij"] +(-) n["ji"]
+  a["ij"] = 0.5*n["ij"];
+  a.read_all(&indicesCount, &values, true);
+  for (int i(0); i < indicesCount; ++i) {
+    if (world->rank == 0) {
+      std::cout << " " << values[i];
+      if (i % 3 == 2) std::cout << std::endl;
+    }
+  }
+  free(values);
+  n["ij"] = a["ij"];
+  n.read_all(&indicesCount, &values, true);
+  for (int i(0); i < indicesCount; ++i) {
+    if (world->rank == 0) {
+      std::cout << " " << values[i];
+      if (i % 3 == 2) std::cout << std::endl;
+    }
+  }
+  free(values);  
+
+  // test slicing in asymmetrical tensor
+  int sliceLens[] = {2, 2};
+  Tensor<> s(2, sliceLens, symsNS, *world, "s");
+  double sliceValues[] = {
+    7.0, 11.0,
+    0.0, 13.0
+  };
+  s.read_local(&indicesCount, &indices, &values);
+  for (int i(0); i < indicesCount; ++i) {
+    values[i] = sliceValues[indices[i]];
+  }
+  s.write(indicesCount, indices, values);
+  free(indices); free(values);
+  int aMin[] = {0, 1}, aMax[] = {2, 3};
+  int sMin[] = {0, 0}, sMax[] = {2, 2};
+  a.slice(aMin, aMax, 1.0, s, sMin, sMax, 1.0);
+  a.read_all(&indicesCount, &values, true);
+  for (int i(0); i < indicesCount; ++i) {
+    if (world->rank == 0) {
+      std::cout << " " << values[i];
+      if (i % 3 == 2) std::cout << std::endl;
+    }
+  }
+  free(values);  
+  // slicing on (a)symmetrical tensors works as expected
+}
+
 /**
  * \deprecated
  */
@@ -145,7 +212,8 @@ int main(int argumentCount, char **arguments) {
   try {
     World *world = new World(argumentCount, arguments);
     Cc4s cc4s(world, Options(argumentCount, arguments));
-    cc4s.run();
+    cc4s.testSymmetries();
+ //   cc4s.run();
   } catch (Exception *cause) {
     std::cout << cause->getMessage() << std::endl;
   }
