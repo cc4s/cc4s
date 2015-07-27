@@ -1,6 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include "Amplitudes.hpp"
+#include "Exception.hpp"
 #include <iostream>
 
 using namespace CTF;
@@ -10,25 +11,28 @@ using namespace CTF;
  */
 Amplitudes::Amplitudes(CoulombIntegrals *V) {
   std::cout << "Initializing amplitudes...";
-  ai = new Tensor<>(V->get(AI));
+  ai = new Tensor<>(V->ai);
   ai->set_name("Tai");
   {
     int syms[] = {NS, NS, NS, NS};
-    abij = new Tensor<>(4,V->get(ABIJ).lens,syms, *V->get(ABIJ).wrld, "Tabij");
-    get(ABIJ)["abij"] = V->get(ABIJ)["abij"];
+    abij = new Tensor<>(4,V->abij->lens,syms, *V->abij->wrld, "Tabij");
+    (*abij)["abij"] = (*V)["abij"];
   }
   std::cout << " OK." << std::endl;
 }
 
-Tensor<> &Amplitudes::get(Part part) {
-  switch (part) {
-    case AI: return *ai;
-    case ABIJ: return *abij;
-    default: {
-      std::stringstream stream("Cannot fetch tensor T part #");
-      stream << part;
-      throw new Exception(stream.str());
-    }
+Amplitudes::~Amplitudes() {
+  delete ai;
+  delete abij;
+}
+
+Idx_Tensor Amplitudes::get(char const *stdIndexMap, char const *indexMap) {
+  if (0 == strcmp(stdIndexMap, "ai")) return (*ai)[indexMap];
+  if (0 == strcmp(stdIndexMap, "abij")) return (*abij)[indexMap];
+  {
+    std::stringstream stream("");
+    stream << "Cannot fetch Amplitudes tensor part " << indexMap;
+    throw new Exception(stream.str());
   }
 }
 

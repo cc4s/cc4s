@@ -2,29 +2,19 @@
 #ifndef COULOMB_INTEGRALS_DEFINED
 #define COULOMB_INTEGRALS_DEFINED
 
+#include "PerturbationTensor.hpp"
 #include "Chi.hpp"
 #include <ctf.hpp>
 
-/**
- * \brief Parts of the full tensors V_p, V_pq, V_pqrs
- */
-enum Part {
-  A, I,
-  AB, AI, IJ,
-  ABCD, ABIJ
-};
-
-class CoulombIntegrals {
+class CoulombIntegrals: public PerturbationTensor {
   public:
-    CoulombIntegrals(Chi *chi);
-    CTF::Tensor<> &get(Part part);
-    CTF::Tensor<> getSlice(Part part, int a, int b);
-    /**
-     * \deprecated  
-     */
-    void calculate_xycd(CTF::Tensor<> &xycd, int a, int b);
+    CoulombIntegrals(Chi *chiReal, Chi *chiImag);
+    virtual ~CoulombIntegrals();
 
-  protected:
+    virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
+
+    CTF::Tensor<> getSlice(int a, int b);
+
     void fetch();
 
     // TODO: check if the cft framework offers such a function natively
@@ -53,7 +43,7 @@ class CoulombIntegrals {
       return index;
     }
 
-    Chi *chi;
+    Chi *chiReal, *chiImag;
     CTF::Tensor<> *a, *i, *ai, *abij;
 // NOTE: only for testing
     CTF::Tensor<> *abcd;

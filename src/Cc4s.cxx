@@ -1,6 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include "Cc4s.hpp"
+#include "Exception.hpp"
 #include <ctf.hpp>
 #include <iostream>
 
@@ -15,33 +16,38 @@ Cc4s::Cc4s(
   nG(options.nG),
   niter(options.niter)
 {
-  chi = new Chi(world, options);
-  V = new CoulombIntegrals(chi);
+  chiReal = new Chi(world, options, 0);
+  chiImag = new Chi(world, options, 1);
+  V = new CoulombIntegrals(chiReal, chiImag);
   T = new Amplitudes(V);
 }
 
 Cc4s::~Cc4s() {
   delete T;
   delete V;
-  delete chi;
+  delete chiReal;
+  delete chiImag;
 }
 
 void Cc4s::run() {
-  // NOTE: should be V->get(IJAB)
+  // NOTE: should be (*V)["ijab"]
   Scalar<> energy(*world);
   double norm;
+  std::cout << "doing ..." << std::endl;
   energy[""] =
-    2.0*T->get(ABIJ)["abij"]*V->get(ABIJ)["abij"] -
-    T->get(ABIJ)["abij"]*V->get(ABIJ)["abji"];
+    2.0*(*T)["abij"]*(*V)["abij"] -
+    (*T)["abij"]*(*V)["abji"];
   if (world->rank == 0) {
     printf("e=%lf\n", energy.get_val());
   }
   for (int i(0); i < niter; ++i) {
     double d = MPI_Wtime();
     iterateAmplitudes();
-    // NOTE: should be V->get(IJAB)
-    energy[""] = T->get(ABIJ)["abij"]*V->get(ABIJ)["abij"];
-    norm = T->get(ABIJ).norm2();
+    // NOTE: should be (*V)["ijab"]
+    energy[""] =
+      2.0*(*T)["abij"]*(*V)["abij"] -
+      (*T)["abij"]*(*V)["abji"];
+    norm = T->abij->norm2();
     if (world->rank == 0) {
       printf("%d: (%d nodes) in time = %lf, |T| = %lf\n",
           i+1, world->np, MPI_Wtime()-d, norm);
@@ -57,16 +63,17 @@ double divide(double a, double b) {
 
 void Cc4s::iterateAmplitudes() {
   int syms[] = {NS, NS, NS, NS};
-  Tensor<> T21 = Tensor<>(4, T->get(ABIJ).lens, syms, *world, "T21");
-  T21["abij"] = T->get(ABIJ)["abij"] + .5*T->get(AI)["ai"]*T->get(AI)["bj"];
+  Tensor<> T21 = Tensor<>(4, T->abij->lens, syms, *world, "T21");
+  T21["abij"] = (*T)["abij"] + .5*(*T)["ai"]*(*T)["bj"];
 
-  Tensor<> tZabij = Tensor<>(4, T->get(ABIJ).lens, syms, *world, "tZabij");
-  tZabij["abij"] = V->get(ABIJ)["abij"];
+  Tensor<> tZabij = Tensor<>(4, T->abij->lens, syms, *world, "tZabij");
+  tZabij["abij"] = (*V)["abij"];
 
+/*
   for (int b(0); b < nv; b += no) {
 //    for (int a(b); a < nv; a += no) {
     for (int a(0); a < nv; a += no) {
-      Tensor<> Vxycd(V->getSlice(ABCD, a, b));
+      Tensor<> Vxycd(V->getSlice(a, b));
       Vxycd.set_name("Vxycd");
       int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
 
@@ -75,7 +82,7 @@ void Cc4s::iterateAmplitudes() {
 //      int syms[] = {Vxycd.sym[0], NS, SY, NS};
       int syms[] = {NS, NS, NS, NS};
       Tensor<> Txyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
-      Txyij["xyij"] = Vxycd["xycd"] * T21["cdij"];
+      Txyij["xyij"] = Vxycd["xyef"] * T21["efij"];
 
       int tzBegin[] = {a, b, 0, 0};
       int tzEnd[] = {a+na, b+nb, no, no};
@@ -84,18 +91,18 @@ void Cc4s::iterateAmplitudes() {
       );
     }
   }
+*/
+  tZabij["abij"] += 0.5 * (*V)["abef"] * T21["efij"];
 
-//  tZabij["abij"] += 0.5*V->get(ABCD)["abef"]*T21["efij"];
-//  add_Vxyef_T21efij(tZabij, T21);
 //  int syms[] = {SY, NS, SY, NS};
-  Tensor<> Dabij(4, V->get(ABIJ).lens, syms, *world, "Dabij");
-  Dabij["abij"] += V->get(I)["i"];
-  Dabij["abij"] += V->get(I)["j"];
-  Dabij["abij"] -= V->get(A)["a"];
-  Dabij["abij"] -= V->get(A)["b"];
+  Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
+  Dabij["abij"] += (*V)["i"];
+  Dabij["abij"] += (*V)["j"];
+  Dabij["abij"] -= (*V)["a"];
+  Dabij["abij"] -= (*V)["b"];
 
   Bivar_Function<> fctr(&divide);
-  T->get(ABIJ).contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+  T->abij->contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
 } 
 
 void Cc4s::testSymmetries() {
@@ -169,46 +176,6 @@ void Cc4s::testSymmetries() {
   }
   free(values);  
   // slicing on (anti-)symmetrical tensors works as expected
-}
-
-/**
- * \deprecated
- */
-void Cc4s::add_Vxyef_T21efij(Tensor<> &Zabij, Tensor<> &T21) {
-// for comparison:
-  Zabij["abij"] += .5*V->get(ABCD)["abef"]*T21["efij"];
-  return;
-  for (int a = 0; a < nv; a += no) {
-    // in case nv is not a multiple of no
-    int na(std::min(nv-a, no));
-    for (int b = 0; b < nv; b += no) {
-      // in case nv is not a multiple of no
-      int nb(std::min(nv-b, no));
-      int abvv[] = {na,nb,nv,nv};
-      int aboo[] = {na,nb,no,no};
-      // NOTE: the sliced tensors are not symmetrical in the first two indices
-      // except for a=b
-      // TODO: respect symmetry in a,b
-      int sym[] = {NS,NS,NS,NS};
-      // slice begin and end of the 
-      int Z_begin[] = {a, b, 0, 0};
-      int Z_end[] = {a+na, b+nb, no, no};
-      int slicedZ_begin[] = {0, 0, 0, 0};
-      int slicedZ_end[] = {na, nb, no, no};
-      // allocate tensor holding a slice of Vabcd
-      Tensor<> slicedV(4, abvv, sym, *world, "slicedVabcd", 1);
-      // fetch or recalculate the entires of this slice
-      V->calculate_xycd(slicedV, a, b);
-      // allocate temporary tensor holding the slice of Zabij for each a and b
-      Tensor<> slicedZabij(4, aboo, sym, *world, "slicedZabij", 1);
-      slicedZabij["abij"] = slicedV["abef"]*T21["efij"];
-      // add half of the sliced Zabij to Zabij at the respective position
-      Zabij.slice(
-        Z_begin, Z_end, 1.0,
-        slicedZabij, slicedZ_begin, slicedZ_end, 0.5
-      );
-    }
-  }
 }
 
 

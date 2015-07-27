@@ -2,16 +2,16 @@
 #ifndef AMPLITUDES_DEFINED
 #define AMPLITUDES_DEFINED
 
-#include <ctf.hpp>
-#include "Exception.hpp"
+#include "PerturbationTensor.hpp"
 #include "CoulombIntegrals.hpp"
+#include <ctf.hpp>
 
-class Amplitudes {
+class Amplitudes: public PerturbationTensor {
   public:
     Amplitudes(CoulombIntegrals *V);
-    CTF::Tensor<> &get(Part part);
+    virtual ~Amplitudes();
+    virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
 
-  protected:
     CTF::Tensor<> *ai, *abij;
 };
 

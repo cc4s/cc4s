@@ -9,9 +9,11 @@ LIBS=-lblas
 # primary target
 cc4s: bin/Cc4s
 
-OBJECTS=obj/Options.o obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o obj/Cc4s.o
+OBJECTS=obj/Options.o obj/PerturbationTensor.o \
+obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o obj/Cc4s.o
 # dependencies
-obj/Cc4s.o: obj/Options.o obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o
+obj/Cc4s.o: obj/Options.o obj/PerturbationTensor.o \
+obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o
 
 # create directories of not present
 

@@ -7,55 +7,52 @@
 
 using namespace CTF;
 
-Chi::Chi(World *world, Options const &options) {
+Chi::Chi(World *world, Options const &options, int seed) {
   // keep the chi tensors in the memory for now
   {
     int lens[] = {options.nG, options.nv, options.nv};
-    int syms[] = {NS, SY, NS};
-    ab = new Tensor<>(3, lens, syms, *world, "Xab", options.profile);
+    int syms[] = {NS, NS, NS};
+    ab = new Tensor<>(
+      3, lens, syms, *world, "Xab", options.profile
+    );
   }
   {
     int lens[] = {options.nG, options.nv, options.no};
     int syms[] = {NS, NS, NS};
-    ai = new Tensor<>(3, lens, syms, *world, "Xai", options.profile);
+    ai = new Tensor<>(
+      3, lens, syms, *world, "Xai", options.profile
+    );
   }
   {
     int lens[] = {options.nG, options.no, options.no};
     int smys[] = {NS, SY, NS};
-    ij = new Tensor<>(3, lens, smys, *world, "Xij", options.profile);
+    ij = new Tensor<>(
+      3, lens, smys, *world, "Xij", options.profile
+    );
   }
-  readRandom(ab, 0);
-  readRandom(ai, 1);
-  readRandom(ij, 2);
+  readRandom(ab, 0+seed);
+  readRandom(ai, 2+seed);
+  readRandom(ij, 4+seed);
 }
 
-Tensor<> &Chi::get(ChiPart part) {
-  switch (part) {
-    case GAB: return *ab;
-    case GAI: return *ai;
-    case GIJ: return *ij;
-    default: {
-      std::stringstream stream("Cannot fetch chi tensor part #");
-      stream << part;
-      throw new Exception(stream.str());
-    }
+Idx_Tensor Chi::get(char const *stdIndexMap, char const *indexMap) {
+  std::cout << stdIndexMap << ":" << indexMap << std::endl;
+  if (0 == strcmp(stdIndexMap, "gij")) return (*ij)[indexMap];
+  if (0 == strcmp(stdIndexMap, "gai")) return (*ai)[indexMap];
+  if (0 == strcmp(stdIndexMap, "gab")) return (*ab)[indexMap];	
+  {
+    std::stringstream stream("");
+    stream << "Cannot fetch Chi tensor part " << stdIndexMap <<
+      " with index names " << indexMap;
+    throw new Exception(stream.str());
   }
 }
 
-Tensor<> Chi::getSlice(ChiPart part, int a) {
-  switch (part) {
-    case GAB: {
-      int na = std::min(ab->lens[1]-a, ai->lens[2]);
-      int start[] = {0, a, 0};
-      int end[] = {ab->lens[0], a+na, ab->lens[2]};
-      return ab->slice(start, end);
-    }
-    default: {
-      std::stringstream stream("Cannot fetch slice of tensor ");
-      stream << ab->get_name();
-      throw new Exception(stream.str());
-    }
-  }
+Tensor<> Chi::getSlice(int a) {
+  int na = std::min(ab->lens[1]-a, ai->lens[2]);
+  int start[] = {0, a, 0};
+  int end[] = {ab->lens[0], a+na, ab->lens[2]};
+  return ab->slice(start, end);
 }
 
 Chi::~Chi() {
@@ -70,6 +67,7 @@ void Chi::readRandom(Tensor<> *tensor, int seed) {
   tensor->read_local(&indicesCount, &indices, &values);
   for (int64_t j(0); j < indicesCount; ++j) {
     values[j] = ((indices[j]*13 + seed)%13077)/13077. -.5;
+    values[j] = ((indices[j]*13 + seed+1)%13077)/13077. -.5;
   }
   tensor->write(indicesCount, indices, values);
   free(indices); free(values);

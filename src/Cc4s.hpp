@@ -23,7 +23,7 @@ class Cc4s {
     int no, nv, nG, niter;
     bool profile;
 
-    Chi *chi;
+    Chi *chiReal, *chiImag;
     CoulombIntegrals *V;
     Amplitudes *T;
 };
