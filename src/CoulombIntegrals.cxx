@@ -10,42 +10,39 @@ using namespace CTF;
  * \brief Allocate all tensors
  */
 CoulombIntegrals::CoulombIntegrals(
-  Chi *chiReal_, Chi *chiImag_
-): chiReal(chiReal_), chiImag(chiImag_) {
-  int nv = chiReal->gai->lens[1];
-  int no = chiReal->gai->lens[2];
-  World *world = chiReal->gai->wrld;
-  bool profile = chiReal->gai->profile;
-  a = new Vector<>(nv, *world, "Va", profile);
-  i = new Vector<>(no, *world, "Vi", profile);
+  Chi *chiReal_, Chi *chiImag_, World *world, Options const *options
+): PerturbationTensor(world, options), chiReal(chiReal_), chiImag(chiImag_) {
+  int nv = options->nv;
+  int no = options->no;
+  a = new Vector<>(nv, *world, "Va", options->profile);
+  i = new Vector<>(no, *world, "Vi", options->profile);
   {
     int lens[] = {nv, no};
     int syms[] = {NS, NS};
-    ai = new Tensor<>(2, lens, syms, *world, "Vai", profile);
+    ai = new Tensor<>(2, lens, syms, *world, "Vai", options->profile);
   }
   {
     int lens[] = {nv, nv, no, no};
     int syms[] = {NS, NS, AS, NS};
-    abij = new Tensor<>(4, lens, syms, *world, "Vabij",profile);
+    abij = new Tensor<>(4, lens, syms, *world, "Vabij", options->profile);
   }
-// NOTE: only for testing
-  {
+  if (options->storeV) {
     int lens[] = {nv, nv, nv, nv};
-//    int syms[] = {SY, NS, SY, NS};
     int syms[] = {NS, NS, AS, NS};
-    abcd = new Tensor<>(4, lens, syms, *world, "Vabcd",profile);
+    abcd = new Tensor<>(4, lens, syms, *world, "Vabcd", options->profile);
+  } else {
+    abcd = NULL;
   }
   fetch();
 }
 
 CoulombIntegrals::~CoulombIntegrals() {
-  delete abcd;
+  if (abcd) delete abcd;
   delete abij;
   delete ai;
 }
 
 Idx_Tensor CoulombIntegrals::get(char const *stdIndexMap, char const *indexMap){
-//    printf("indices %s are %s\n",idx_map_,new_idx_map);
   if (0 == strcmp("a", stdIndexMap)) return (*a)[indexMap];
   if (0 == strcmp("i", stdIndexMap)) return (*i)[indexMap];
 //  if (0 == strcmp("ab", stdIndexMap)) return (*ab)[indexMap];
@@ -74,9 +71,8 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
   Tensor<> Igxc(chiImag->getSlice(a)); Igxc.set_name("Igxc");
   Tensor<> Igyc(chiImag->getSlice(b)); Igyc.set_name("Igyc");
   int lens[] = {Rgxc.lens[1], Rgyc.lens[1], Rgxc.lens[2], Rgyc.lens[2]};
-//  int syms[] = {a == b ? SY : NS, NS, SY, NS};
   int syms[] = {a == b ? NS : NS, NS, AS, NS};
-  Tensor<> Vxycd(4, lens, syms, *Rgxc.wrld, "Vxycd", Rgxc.profile);
+  Tensor<> Vxycd(4, lens, syms, *world, "Vxycd", options->profile);
   Vxycd["xycd"] =  Rgxc["gxc"]*Rgyc["gyd"];
   Vxycd["xycd"] -= Rgxc["gxd"]*Rgyc["gyc"];
   Vxycd["xycd"] += Igxc["gxc"]*Igyc["gyd"];
@@ -107,12 +103,13 @@ void CoulombIntegrals::fetch() {
   (*abij)["abij"] -= (*chiImag)["gaj"]*(*chiImag)["gbi"];
   // NOTE: ctf double counts if lhs tensor is AS
   (*abij)["abij"] = 0.5 * (*abij)["abij"];
-  // TODO: only calculate for testing
-  (*abcd)["abcd"] =  (*chiReal)["gac"]*(*chiReal)["gbd"];
-  (*abcd)["abcd"] -= (*chiReal)["gad"]*(*chiReal)["gbc"];
-  (*abcd)["abcd"] += (*chiImag)["gac"]*(*chiImag)["gbd"];
-  (*abcd)["abcd"] -= (*chiImag)["gad"]*(*chiImag)["gbc"];
-  (*abcd)["abcd"] = 0.5 * (*abcd)["abcd"];
-  // NOTE: ctf double counts if lhs tensor is AS
+  if (abcd) {
+    (*abcd)["abcd"] =  (*chiReal)["gac"]*(*chiReal)["gbd"];
+    (*abcd)["abcd"] -= (*chiReal)["gad"]*(*chiReal)["gbc"];
+    (*abcd)["abcd"] += (*chiImag)["gac"]*(*chiImag)["gbd"];
+    (*abcd)["abcd"] -= (*chiImag)["gad"]*(*chiImag)["gbc"];
+    (*abcd)["abcd"] = 0.5 * (*abcd)["abcd"];
+    // NOTE: ctf double counts if lhs tensor is AS
+  }
 }
 

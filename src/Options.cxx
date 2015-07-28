@@ -10,6 +10,7 @@ Options::Options(int argumentCount, char **arguments) {
   no = DEFAULT_NO;
   niter = DEFAULT_NITER;
   profile = DEFAULT_PROFILE;
+  storeV = DEFAULT_STORE_V;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
     if (argument == "-nG") {
@@ -19,19 +20,21 @@ Options::Options(int argumentCount, char **arguments) {
     } else if (argument == "-no") {
       std::stringstream stream(arguments[++i]);
       stream >> no;
-      if (nG < 0) no = DEFAULT_NO;
+      if (no < 0) no = DEFAULT_NO;
     } else if (argument == "-nv") {
       std::stringstream stream(arguments[++i]);
       stream >> nv;
-      if (nG < 0) nv = DEFAULT_NV;
+      if (nv < 0) nv = DEFAULT_NV;
     } else if (argument == "-niter") {
       std::stringstream stream(arguments[++i]);
       stream >> niter;
-      if (nG < 0) niter = DEFAULT_NITER;
+      if (niter < 0) niter = DEFAULT_NITER;
     } else if (argument == "-profile") {
       std::stringstream stream(arguments[++i]);
       stream >> profile;
-      if (nG < 0) profile = DEFAULT_PROFILE;
+    } else if (argument == "-storeV") {
+      std::stringstream stream(arguments[++i]);
+      stream >> storeV;
     }
   }
 }

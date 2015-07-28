@@ -7,27 +7,29 @@
 
 using namespace CTF;
 
-Chi::Chi(World *world, Options const &options, int seed) {
+Chi::Chi(
+  World *world, Options const *options, int seed
+): PerturbationTensor(world, options) {
   // keep the chi tensors in the memory for now
   {
-    int lens[] = {options.nG, options.nv, options.nv};
+    int lens[] = {options->nG, options->nv, options->nv};
     int syms[] = {NS, NS, NS};
     gab = new Tensor<>(
-      3, lens, syms, *world, "Xgab", options.profile
+      3, lens, syms, *world, "Xgab", options->profile
     );
   }
   {
-    int lens[] = {options.nG, options.nv, options.no};
+    int lens[] = {options->nG, options->nv, options->no};
     int syms[] = {NS, NS, NS};
     gai = new Tensor<>(
-      3, lens, syms, *world, "Xgai", options.profile
+      3, lens, syms, *world, "Xgai", options->profile
     );
   }
   {
-    int lens[] = {options.nG, options.no, options.no};
+    int lens[] = {options->nG, options->no, options->no};
     int smys[] = {NS, NS, NS};
     gij = new Tensor<>(
-      3, lens, smys, *world, "Xgij", options.profile
+      3, lens, smys, *world, "Xgij", options->profile
     );
   }
   readRandom(gab, 0+seed);
@@ -39,7 +41,6 @@ Chi::Chi(World *world, Options const &options, int seed) {
 }
 
 Idx_Tensor Chi::get(char const *stdIndexMap, char const *indexMap) {
-  std::cout << stdIndexMap << ":" << indexMap << std::endl;
   if (0 == strcmp(stdIndexMap, "gij")) return (*gij)[indexMap];
   if (0 == strcmp(stdIndexMap, "gai")) return (*gai)[indexMap];
   if (0 == strcmp(stdIndexMap, "gab")) return (*gab)[indexMap];	
@@ -66,7 +67,10 @@ void Chi::readRandom(Tensor<> *tensor, int seed) {
   int64_t indicesCount;
   int64_t *indices;
   double *values;
-  std::cout << "Fetching " << tensor->get_name() << " ..." << std::endl;
+  if (world->rank == 0) {
+    std::cout << "Fetching randomly " << tensor->get_name() << " ..." <<
+      std::endl;
+  }
   tensor->read_local(&indicesCount, &indices, &values);
   for (int64_t j(0); j < indicesCount; ++j) {
     values[j] = ((indices[j]*13 + seed)%13077)/13077. -.5;

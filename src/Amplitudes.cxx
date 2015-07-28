@@ -9,16 +9,18 @@ using namespace CTF;
 /**
  * \brief Allocate all tensors
  */
-Amplitudes::Amplitudes(CoulombIntegrals *V) {
-  std::cout << "Initializing amplitudes...";
+Amplitudes::Amplitudes(
+  CoulombIntegrals *V, World *world, Options const * options
+): PerturbationTensor(world, options) {
+  if (world->rank == 0) std::cout << "Initializing amplitudes...";
   ai = new Tensor<>(V->ai);
   ai->set_name("Tai");
   {
     int syms[] = {NS, NS, NS, NS};
-    abij = new Tensor<>(4,V->abij->lens,syms, *V->abij->wrld, "Tabij");
+    abij = new Tensor<>(4,V->abij->lens,syms, *world, "Tabij");
     (*abij)["abij"] = (*V)["abij"];
   }
-  std::cout << " OK." << std::endl;
+  if (world->rank == 0) std::cout << " OK." << std::endl;
 }
 
 Amplitudes::~Amplitudes() {

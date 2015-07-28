@@ -4,11 +4,14 @@
 
 #include "PerturbationTensor.hpp"
 #include "Chi.hpp"
+#include "Options.hpp"
 #include <ctf.hpp>
 
 class CoulombIntegrals: public PerturbationTensor {
   public:
-    CoulombIntegrals(Chi *chiReal, Chi *chiImag);
+    CoulombIntegrals(
+      Chi *chiReal, Chi *chiImag, CTF::World *world, Options const *options
+    );
     virtual ~CoulombIntegrals();
 
     virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
@@ -45,7 +48,7 @@ class CoulombIntegrals: public PerturbationTensor {
 
     Chi *chiReal, *chiImag;
     CTF::Tensor<> *a, *i, *ai, *abij;
-// NOTE: only for testing
+    // NOTE: only allocated if storeV is enabled
     CTF::Tensor<> *abcd;
 };
 

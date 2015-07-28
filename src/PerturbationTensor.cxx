@@ -6,6 +6,11 @@
 
 using namespace CTF;
 
+PerturbationTensor::PerturbationTensor(
+  World *world_, Options const *options_
+): world(world_), options(options_) {
+}
+
 /**
  * a,b,c,d,e,f: particle indices
  * g,h: plane wave indicies
@@ -23,8 +28,8 @@ Idx_Tensor PerturbationTensor::operator [](char const *indexMap) {
   ng = 0;
   for (int i(0); i < mapLength; ++i) {
     if (indexMap[i] > 'z') {
-      std::stringstream stream("Invalid index: ");
-      stream << indexMap;
+      std::stringstream stream("");
+      stream << "Invalid index: " << indexMap;
       throw new Exception(stream.str());
     } else if (indexMap[i] >= 'x') {
       stdIndexMap[i] = 'x' + nx;
@@ -39,8 +44,8 @@ Idx_Tensor PerturbationTensor::operator [](char const *indexMap) {
       stdIndexMap[i] = 'a' + nv;
       nv++;
     } else {
-      std::stringstream stream("Invalid index: ");
-      stream << indexMap;
+      std::stringstream stream("");
+      stream << "Invalid index: " << indexMap;
       throw new Exception(stream.str());
     }
   }

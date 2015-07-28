@@ -5,10 +5,11 @@
 class Options {
   public:
     int no, nv, nG, niter;
-    bool profile;
+    bool profile, storeV;
 
     const int DEFAULT_NO = 4, DEFAULT_NV = 6, DEFAULT_NG = 10, DEFAULT_NITER = 1;
     const bool DEFAULT_PROFILE = false;
+    const bool DEFAULT_STORE_V = false;
 
     Options(int argumentCount, char **arguments);
 };

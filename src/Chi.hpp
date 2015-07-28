@@ -8,7 +8,7 @@
 
 class Chi: public PerturbationTensor {
   public:
-    Chi(CTF::World *world, Options const &options, int seed=0);
+    Chi(CTF::World *world, Options const *options, int seed=0);
     virtual ~Chi();
 
     virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);

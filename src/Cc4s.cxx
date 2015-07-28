@@ -8,18 +8,18 @@
 using namespace CTF;
 
 Cc4s::Cc4s(
-  CTF::World *world_, Options const &options
+  CTF::World *world_, Options const *options
 ):
   world(world_),
-  no(options.no),
-  nv(options.nv),
-  nG(options.nG),
-  niter(options.niter)
+  no(options->no),
+  nv(options->nv),
+  nG(options->nG),
+  niter(options->niter)
 {
   chiReal = new Chi(world, options, 0);
   chiImag = new Chi(world, options, 1);
-  V = new CoulombIntegrals(chiReal, chiImag);
-  T = new Amplitudes(V);
+  V = new CoulombIntegrals(chiReal, chiImag, world, options);
+  T = new Amplitudes(V, world, options);
 }
 
 Cc4s::~Cc4s() {
@@ -32,7 +32,6 @@ Cc4s::~Cc4s() {
 void Cc4s::run() {
   Scalar<> energy(*world);
   double norm;
-  std::cout << "doing ..." << std::endl;
   // NOTE: should be (*V)["ijab"]
   energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
   if (world->rank == 0) {
@@ -66,39 +65,43 @@ void Cc4s::iterateAmplitudes() {
   Tensor<> tZabij = Tensor<>(4, T->abij->lens, syms, *world, "tZabij");
   tZabij["abij"] = (*V)["abij"];
 
-  for (int b(0); b < nv; b += no) {
-//    for (int a(b); a < nv; a += no) {
-    for (int a(0); a < nv; a += no) {
-      Tensor<> Vxycd(V->getSlice(a, b));
-      Vxycd.set_name("Vxycd");
-      int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
-      std::cout <<
-        Vxycd.sym[0] << Vxycd.sym[1] << Vxycd.sym[2] << Vxycd.sym[3] <<
-        std::endl;
-      int Tbegin[] = {0, 0, 0, 0};
-      int lens[] = {na, nb, no, no};
-//      int syms[] = {Vxycd.sym[0], NS, SY, NS};
-      int syms[] = {NS, NS, AS, NS};
-      Tensor<> Txyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
-      Txyij["xyij"] = Vxycd["xyef"] * T21["efij"];
+  if (!V->abcd) {
+    for (int b(0); b < nv; b += no) {
+  //    for (int a(b); a < nv; a += no) {
+      for (int a(0); a < nv; a += no) {
+        if (world->rank == 0) {
+          std::cout << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+        }
+        Tensor<> Vxycd(V->getSlice(a, b));
+        Vxycd.set_name("Vxycd");
+        int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
+        int Tbegin[] = {0, 0, 0, 0};
+        int lens[] = {na, nb, no, no};
+//        int syms[] = {Vxycd.sym[0], NS, AS, NS};
+        int syms[] = {NS, NS, AS, NS};
+        Tensor<> Txyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
+        Txyij["xyij"] = Vxycd["xyef"] * T21["efij"];
 
-      int tzBegin[] = {a, b, 0, 0};
-      int tzEnd[] = {a+na, b+nb, no, no};
-      tZabij.slice(
-        tzBegin,tzEnd,1.0, Txyij,Tbegin,lens,0.5
-      );
+        int tzBegin[] = {a, b, 0, 0};
+        int tzEnd[] = {a+na, b+nb, no, no};
+        tZabij.slice(
+          tzBegin,tzEnd,1.0, Txyij,Tbegin,lens,0.5
+        );
+      }
     }
+  } else {
+    tZabij["abij"] += 0.5 * (*V)["abef"] * T21["efij"];
   }
 
-//  tZabij["abij"] += 0.5 * (*V)["abef"] * T21["efij"];
-
-{
+  {
     int syms[] = {SY, NS, SY, NS};
     Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
     Dabij["abij"] += (*V)["i"];
     Dabij["abij"] += (*V)["j"];
     Dabij["abij"] -= (*V)["a"];
     Dabij["abij"] -= (*V)["b"];
+    // NOTE: ctf double counts if lhs tensor is SY,SY
+    Dabij["abij"] = 0.5 * Dabij["abij"];
 
     Bivar_Function<> fctr(&divide);
     T->abij->contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
@@ -201,7 +204,8 @@ int main(int argumentCount, char **arguments) {
 
   try {
     World *world = new World(argumentCount, arguments);
-    Cc4s cc4s(world, Options(argumentCount, arguments));
+    Options const *options = new Options(argumentCount, arguments); 
+    Cc4s cc4s(world, options);
 //    cc4s.testSymmetries();
     cc4s.run();
   } catch (Exception *cause) {
