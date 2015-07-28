@@ -30,28 +30,24 @@ Cc4s::~Cc4s() {
 }
 
 void Cc4s::run() {
-  // NOTE: should be (*V)["ijab"]
   Scalar<> energy(*world);
   double norm;
   std::cout << "doing ..." << std::endl;
-  energy[""] =
-    2.0*(*T)["abij"]*(*V)["abij"] -
-    (*T)["abij"]*(*V)["abji"];
+  // NOTE: should be (*V)["ijab"]
+  energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
   if (world->rank == 0) {
-    printf("e=%lf\n", energy.get_val());
+    std::cout << "e=" << energy.get_val() << std::endl;
   }
   for (int i(0); i < niter; ++i) {
     double d = MPI_Wtime();
     iterateAmplitudes();
     // NOTE: should be (*V)["ijab"]
-    energy[""] =
-      2.0*(*T)["abij"]*(*V)["abij"] -
-      (*T)["abij"]*(*V)["abji"];
+    energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
     norm = T->abij->norm2();
     if (world->rank == 0) {
-      printf("%d: (%d nodes) in time = %lf, |T| = %lf\n",
-          i+1, world->np, MPI_Wtime()-d, norm);
-      printf("e=%lf\n", energy.get_val());
+      std::cout << i+1 << ": on " << world->np << " node(s) in time " <<
+        (MPI_Wtime()-d) << ", |T| = " << norm << std::endl;
+      std::cout << "e=" << energy.get_val() << std::endl;
     }
   }
 }
@@ -62,25 +58,27 @@ double divide(double a, double b) {
 }
 
 void Cc4s::iterateAmplitudes() {
-  int syms[] = {NS, NS, NS, NS};
+  int syms[] = {NS, NS, AS, NS};
   Tensor<> T21 = Tensor<>(4, T->abij->lens, syms, *world, "T21");
-  T21["abij"] = (*T)["abij"] + .5*(*T)["ai"]*(*T)["bj"];
+  // NOTE: ctf double counts if lhs tensor is AS
+  T21["abij"] = 0.5 * ((*T)["abij"] + (*T)["ai"]*(*T)["bj"]);
 
   Tensor<> tZabij = Tensor<>(4, T->abij->lens, syms, *world, "tZabij");
   tZabij["abij"] = (*V)["abij"];
 
-/*
   for (int b(0); b < nv; b += no) {
 //    for (int a(b); a < nv; a += no) {
     for (int a(0); a < nv; a += no) {
       Tensor<> Vxycd(V->getSlice(a, b));
       Vxycd.set_name("Vxycd");
       int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
-
+      std::cout <<
+        Vxycd.sym[0] << Vxycd.sym[1] << Vxycd.sym[2] << Vxycd.sym[3] <<
+        std::endl;
       int Tbegin[] = {0, 0, 0, 0};
       int lens[] = {na, nb, no, no};
 //      int syms[] = {Vxycd.sym[0], NS, SY, NS};
-      int syms[] = {NS, NS, NS, NS};
+      int syms[] = {NS, NS, AS, NS};
       Tensor<> Txyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
       Txyij["xyij"] = Vxycd["xyef"] * T21["efij"];
 
@@ -91,18 +89,20 @@ void Cc4s::iterateAmplitudes() {
       );
     }
   }
-*/
-  tZabij["abij"] += 0.5 * (*V)["abef"] * T21["efij"];
 
-//  int syms[] = {SY, NS, SY, NS};
-  Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
-  Dabij["abij"] += (*V)["i"];
-  Dabij["abij"] += (*V)["j"];
-  Dabij["abij"] -= (*V)["a"];
-  Dabij["abij"] -= (*V)["b"];
+//  tZabij["abij"] += 0.5 * (*V)["abef"] * T21["efij"];
 
-  Bivar_Function<> fctr(&divide);
-  T->abij->contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+{
+    int syms[] = {SY, NS, SY, NS};
+    Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
+    Dabij["abij"] += (*V)["i"];
+    Dabij["abij"] += (*V)["j"];
+    Dabij["abij"] -= (*V)["a"];
+    Dabij["abij"] -= (*V)["b"];
+
+    Bivar_Function<> fctr(&divide);
+    T->abij->contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+  }
 } 
 
 void Cc4s::testSymmetries() {
@@ -111,27 +111,39 @@ void Cc4s::testSymmetries() {
   int lens[] = {3, 3};
   Tensor<> a(2, lens, symsAS, *world, "a");
   Tensor<> n(2, lens, symsNS, *world, "n");
+  Tensor<> ns(2, lens, symsNS, *world, "ns");
   double givenValues[] = {
      0.0,  1.0, 2.0,
     -1.0,  0.0, 5.0,
     -2.0, -1.0, 0.0
   };
-  int64_t givenIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+  double nonsymmetricValues[] = {
+     1.0,  2.0, 3.0,
+     4.0,  5.0, 6.0,
+     7.0,  8.0, 9.0
+  };
+//  int64_t givenIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
   int64_t indicesCount, *indices;
   double *values;
-/*
+  ns.read_local(&indicesCount, &indices, &values);
+  for (int i(0); i < indicesCount; ++i) {
+    values[i] = nonsymmetricValues[indices[i]];
+  }
+  ns.write(indicesCount, indices, values);
+  free(indices); free(values);
   n.read_local(&indicesCount, &indices, &values);
   for (int i(0); i < indicesCount; ++i) {
     values[i] = givenValues[indices[i]];
   }
   n.write(indicesCount, indices, values);
   free(indices); free(values);
-*/
+
 // test reading in different indices at different ranks:
 // works as expected here only for 3 or more processors
-  n.write(3, &givenIndices[world->rank*3], &givenValues[world->rank*3]);
+//  n.write(3, &givenIndices[world->rank*3], &givenValues[world->rank*3]);
   // BUG: the tensor is internally (anti-)symmetrized by
   // a["ij"] = n["ij"] +(-) n["ji"]
+/*
   a["ij"] = 0.5*n["ij"];
   a.read_all(&indicesCount, &values, true);
   for (int i(0); i < indicesCount; ++i) {
@@ -141,7 +153,12 @@ void Cc4s::testSymmetries() {
     }
   }
   free(values);
-  n["ij"] = a["ij"];
+*/
+  ns["ij"] -= ns["ji"];
+  a["ij"] = 0.5 * ns["ij"];
+  // test AS matrix * NS matrix
+  n["ij"] = a["ik"] * n["kj"];
+  // works as expected
   n.read_all(&indicesCount, &values, true);
   for (int i(0); i < indicesCount; ++i) {
     if (world->rank == 0) {

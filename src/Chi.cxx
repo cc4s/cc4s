@@ -12,34 +12,37 @@ Chi::Chi(World *world, Options const &options, int seed) {
   {
     int lens[] = {options.nG, options.nv, options.nv};
     int syms[] = {NS, NS, NS};
-    ab = new Tensor<>(
-      3, lens, syms, *world, "Xab", options.profile
+    gab = new Tensor<>(
+      3, lens, syms, *world, "Xgab", options.profile
     );
   }
   {
     int lens[] = {options.nG, options.nv, options.no};
     int syms[] = {NS, NS, NS};
-    ai = new Tensor<>(
-      3, lens, syms, *world, "Xai", options.profile
+    gai = new Tensor<>(
+      3, lens, syms, *world, "Xgai", options.profile
     );
   }
   {
     int lens[] = {options.nG, options.no, options.no};
-    int smys[] = {NS, SY, NS};
-    ij = new Tensor<>(
-      3, lens, smys, *world, "Xij", options.profile
+    int smys[] = {NS, NS, NS};
+    gij = new Tensor<>(
+      3, lens, smys, *world, "Xgij", options.profile
     );
   }
-  readRandom(ab, 0+seed);
-  readRandom(ai, 2+seed);
-  readRandom(ij, 4+seed);
+  readRandom(gab, 0+seed);
+  readRandom(gai, 2+seed);
+  readRandom(gij, 4+seed);
+  // FIXME: symmetrize: symmetries should be treated at reading
+  (*gab)["gab"] += (*gab)["gba"];
+  (*gij)["gij"] += (*gij)["gji"];
 }
 
 Idx_Tensor Chi::get(char const *stdIndexMap, char const *indexMap) {
   std::cout << stdIndexMap << ":" << indexMap << std::endl;
-  if (0 == strcmp(stdIndexMap, "gij")) return (*ij)[indexMap];
-  if (0 == strcmp(stdIndexMap, "gai")) return (*ai)[indexMap];
-  if (0 == strcmp(stdIndexMap, "gab")) return (*ab)[indexMap];	
+  if (0 == strcmp(stdIndexMap, "gij")) return (*gij)[indexMap];
+  if (0 == strcmp(stdIndexMap, "gai")) return (*gai)[indexMap];
+  if (0 == strcmp(stdIndexMap, "gab")) return (*gab)[indexMap];	
   {
     std::stringstream stream("");
     stream << "Cannot fetch Chi tensor part " << stdIndexMap <<
@@ -49,14 +52,14 @@ Idx_Tensor Chi::get(char const *stdIndexMap, char const *indexMap) {
 }
 
 Tensor<> Chi::getSlice(int a) {
-  int na = std::min(ab->lens[1]-a, ai->lens[2]);
+  int na = std::min(gab->lens[1]-a, gai->lens[2]);
   int start[] = {0, a, 0};
-  int end[] = {ab->lens[0], a+na, ab->lens[2]};
-  return ab->slice(start, end);
+  int end[] = {gab->lens[0], a+na, gab->lens[2]};
+  return gab->slice(start, end);
 }
 
 Chi::~Chi() {
-  delete ab; delete ai; delete ij;
+  delete gab; delete gai; delete gij;
 }
 
 void Chi::readRandom(Tensor<> *tensor, int seed) {

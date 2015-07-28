@@ -12,10 +12,10 @@ using namespace CTF;
 CoulombIntegrals::CoulombIntegrals(
   Chi *chiReal_, Chi *chiImag_
 ): chiReal(chiReal_), chiImag(chiImag_) {
-  int nv = chiReal->ai->lens[1];
-  int no = chiReal->ai->lens[2];
-  World *world = chiReal->ai->wrld;
-  bool profile = chiReal->ai->profile;
+  int nv = chiReal->gai->lens[1];
+  int no = chiReal->gai->lens[2];
+  World *world = chiReal->gai->wrld;
+  bool profile = chiReal->gai->profile;
   a = new Vector<>(nv, *world, "Va", profile);
   i = new Vector<>(no, *world, "Vi", profile);
   {
@@ -25,14 +25,14 @@ CoulombIntegrals::CoulombIntegrals(
   }
   {
     int lens[] = {nv, nv, no, no};
-    int syms[] = {NS, NS, NS, NS};
+    int syms[] = {NS, NS, AS, NS};
     abij = new Tensor<>(4, lens, syms, *world, "Vabij",profile);
   }
 // NOTE: only for testing
   {
     int lens[] = {nv, nv, nv, nv};
 //    int syms[] = {SY, NS, SY, NS};
-    int syms[] = {NS, NS, NS, NS};
+    int syms[] = {NS, NS, AS, NS};
     abcd = new Tensor<>(4, lens, syms, *world, "Vabcd",profile);
   }
   fetch();
@@ -75,12 +75,14 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
   Tensor<> Igyc(chiImag->getSlice(b)); Igyc.set_name("Igyc");
   int lens[] = {Rgxc.lens[1], Rgyc.lens[1], Rgxc.lens[2], Rgyc.lens[2]};
 //  int syms[] = {a == b ? SY : NS, NS, SY, NS};
-  int syms[] = {a == b ? NS : NS, NS, NS, NS};
+  int syms[] = {a == b ? NS : NS, NS, AS, NS};
   Tensor<> Vxycd(4, lens, syms, *Rgxc.wrld, "Vxycd", Rgxc.profile);
   Vxycd["xycd"] =  Rgxc["gxc"]*Rgyc["gyd"];
   Vxycd["xycd"] -= Rgxc["gxd"]*Rgyc["gyc"];
   Vxycd["xycd"] += Igxc["gxc"]*Igyc["gyd"];
   Vxycd["xycd"] -= Igxc["gxd"]*Igyc["gyc"];
+  // NOTE: ctf double counts if lhs tensor is AS
+  Vxycd["xycd"] = 0.5 * Vxycd["xycd"];
   return Vxycd;
 }
 
@@ -95,15 +97,22 @@ void CoulombIntegrals::fetch() {
   // FIXME: how to calculate Via
   chiReal->readRandom(ai, 7);
 
+  // TODO: only set fully anti-symmetrized tensor, otherwise
+  // we get wrong results
   // calculate the other Coulomb integrals from the chis
+  // TODO: only enter fully anti-symmetrized tensors if AS
   (*abij)["abij"] =  (*chiReal)["gai"]*(*chiReal)["gbj"];
   (*abij)["abij"] -= (*chiReal)["gaj"]*(*chiReal)["gbi"];
   (*abij)["abij"] += (*chiImag)["gai"]*(*chiImag)["gbj"];
   (*abij)["abij"] -= (*chiImag)["gaj"]*(*chiImag)["gbi"];
-  // NOTE: only calculate for testing
+  // NOTE: ctf double counts if lhs tensor is AS
+  (*abij)["abij"] = 0.5 * (*abij)["abij"];
+  // TODO: only calculate for testing
   (*abcd)["abcd"] =  (*chiReal)["gac"]*(*chiReal)["gbd"];
   (*abcd)["abcd"] -= (*chiReal)["gad"]*(*chiReal)["gbc"];
   (*abcd)["abcd"] += (*chiImag)["gac"]*(*chiImag)["gbd"];
   (*abcd)["abcd"] -= (*chiImag)["gad"]*(*chiImag)["gbc"];
+  (*abcd)["abcd"] = 0.5 * (*abcd)["abcd"];
+  // NOTE: ctf double counts if lhs tensor is AS
 }
 

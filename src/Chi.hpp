@@ -16,7 +16,7 @@ class Chi: public PerturbationTensor {
     CTF::Tensor<> getSlice(int a);
     void readRandom(CTF::Tensor<> *tensor, int seed);
 
-    CTF::Tensor<> *ab, *ai, *ij;
+    CTF::Tensor<> *gab, *gai, *gij;
 
     // read from disk
     void read();
