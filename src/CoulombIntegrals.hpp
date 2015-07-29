@@ -18,8 +18,6 @@ class CoulombIntegrals: public PerturbationTensor {
 
     CTF::Tensor<> getSlice(int a, int b);
 
-    void fetch();
-
     // TODO: check if the cft framework offers such a function natively
     /**
      * \brief Converts a global index of a tensor entry into the positions
@@ -46,10 +44,45 @@ class CoulombIntegrals: public PerturbationTensor {
       return index;
     }
 
-    Chi *chiReal, *chiImag;
-    CTF::Tensor<> *a, *i, *ai, *abij;
+    Chi *chiR;
+    Chi *chiI;
+    CTF::Tensor<> *i;
+    CTF::Tensor<> *a;
+    CTF::Tensor<> *ij;
+    CTF::Tensor<> *ia;
+    CTF::Tensor<> *ai;
+    CTF::Tensor<> *ab;
+    CTF::Tensor<> *ijkl;
+    CTF::Tensor<> *ijak;
+    CTF::Tensor<> *aijk;
+    CTF::Tensor<> *ijab;
+    CTF::Tensor<> *abij;
+    CTF::Tensor<> *aibj;
     // NOTE: only allocated if storeV is enabled
+    CTF::Tensor<> *aibc;
+    CTF::Tensor<> *abci;
     CTF::Tensor<> *abcd;
+
+  private:
+    /**
+     * \brief Fetch all integrals in memory from chi.
+     */
+    void fetch();
+
+    /**
+     * \brief Fetch the given tensor from the chi tensors. The index map
+     * contained in the tensor's name determine the indices taken from chi.
+     */
+    void fetch(CTF::Tensor<> *t, char const *indexMap);
+
+    /**
+     * \brief Add the given tensor to the tensor map v. The standard index
+     * map is taken from the tensor's name.
+     */
+    void add(CTF::Tensor<> *t);
+
+    // map of tensors: standard index map -> tensor
+    std::map<std::string, CTF::Tensor<> *> v;
 };
 
 #endif

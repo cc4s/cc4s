@@ -60,7 +60,8 @@ void Cc4s::iterateAmplitudes() {
   int syms[] = {NS, NS, AS, NS};
   Tensor<> T21 = Tensor<>(4, T->abij->lens, syms, *world, "T21");
   // NOTE: ctf double counts if lhs tensor is AS
-  T21["abij"] = 0.5 * ((*T)["abij"] + (*T)["ai"]*(*T)["bj"]);
+  T21["abij"] = 0.5 * (*T)["abij"];
+  T21["abij"] += 0.5 * (*T)["ai"] * (*T)["bj"];
 
   Tensor<> tZabij = Tensor<>(4, T->abij->lens, syms, *world, "tZabij");
   tZabij["abij"] = (*V)["abij"];

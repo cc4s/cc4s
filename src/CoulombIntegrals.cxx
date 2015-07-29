@@ -7,58 +7,76 @@
 using namespace CTF;
 
 /**
- * \brief Allocate all tensors
+ * \brief Allocate all Coulomb integral tensors calculate and them
+ * from the given chi tensors.
  */
 CoulombIntegrals::CoulombIntegrals(
-  Chi *chiReal_, Chi *chiImag_, World *world, Options const *options
-): PerturbationTensor(world, options), chiReal(chiReal_), chiImag(chiImag_) {
+  Chi *chiReal, Chi *chiImag, World *world, Options const *options
+): PerturbationTensor(world, options), chiR(chiReal), chiI(chiImag), v() {
   int nv = options->nv;
   int no = options->no;
-  a = new Vector<>(nv, *world, "Va", options->profile);
-  i = new Vector<>(no, *world, "Vi", options->profile);
-  {
-    int lens[] = {nv, no};
-    int syms[] = {NS, NS};
-    ai = new Tensor<>(2, lens, syms, *world, "Vai", options->profile);
-  }
-  {
-    int lens[] = {nv, nv, no, no};
-    int syms[] = {NS, NS, AS, NS};
-    abij = new Tensor<>(4, lens, syms, *world, "Vabij", options->profile);
-  }
+  int symsASAS[] = { NS, NS, AS, NS };
+  int symsASNS[] = { NS, NS, NS, NS };
+  int symsNSNS[] = { NS, NS, NS, NS };
+  int symsNSAS[] = { NS, NS, AS, NS };
+  int vvvv[] = { nv, nv, nv, nv };
+  int vvvo[] = { nv, nv, nv, no };
+  int vovv[] = { nv, no, nv, nv };
+  int vovo[] = { nv, no, nv, no };
+  int vvoo[] = { nv, nv, no, no };
+  int oovv[] = { no, no, nv, nv };
+  int vooo[] = { nv, no, no, no };
+  int oovo[] = { no, no, nv, no };
+  int oooo[] = { no, no, no, no };
+
+  // allocate the tensors, assign them to the respective variable
+  // and add them to the tensor map for further manipulation
+  add(i = new Vector<>(no, *world, "Ei", options->profile));
+  add(a = new Vector<>(nv, *world, "Ea", options->profile));
+  add(ij = new Matrix<>(no, no, AS, *world, "Vij", options->profile));
+  add(ia = new Matrix<>(no, nv, NS, *world, "Via", options->profile));
+  add(ai = new Matrix<>(nv, no, NS, *world, "Vai", options->profile));
+  add(ab = new Matrix<>(nv, nv, AS, *world, "Vab", options->profile));
+  add(ijkl = new Tensor<>(4, oooo, symsASAS, *world, "Vijkl",options->profile));
+  add(ijak = new Tensor<>(4, oovo, symsASNS, *world, "Vijak",options->profile));
+  add(aijk = new Tensor<>(4, vooo, symsNSAS, *world, "Vaijk",options->profile));
+  add(ijab = new Tensor<>(4, oovv, symsASAS, *world, "Vijab",options->profile));
+  add(abij = new Tensor<>(4, vvoo, symsASAS, *world, "Vabij",options->profile));
+  add(aibj = new Tensor<>(4, vovo, symsNSNS, *world, "Vaibj",options->profile));
   if (options->storeV) {
-    int lens[] = {nv, nv, nv, nv};
-    int syms[] = {NS, NS, AS, NS};
-    abcd = new Tensor<>(4, lens, syms, *world, "Vabcd", options->profile);
+    add(aibc = new Tensor<>(4, vovv, symsNSAS,*world,"Vaibc",options->profile));
+    add(abci = new Tensor<>(4, vvvo, symsASNS,*world,"Vabci",options->profile));
+    add(abcd = new Tensor<>(4, vvvv, symsASAS,*world,"Vabcd",options->profile));
   } else {
+    aibc = NULL;
+    abci = NULL;
     abcd = NULL;
   }
+
+  // fetch all allocated tensors
   fetch();
 }
 
 CoulombIntegrals::~CoulombIntegrals() {
-  if (abcd) delete abcd;
-  delete abij;
-  delete ai;
+  // iterate through all pairs of the map
+  for (auto p(v.begin()); p != v.end(); ++p) {
+    // the tensor is the "second" member of the pair
+    delete p->second;
+  }
+}
+
+void CoulombIntegrals::add(Tensor<> *t) {
+  // the last characters of the name must be the standard index map
+  char const *stdIndexMap = &t->name[1];
+  // enter the given tensor into the map for later use
+  v[stdIndexMap] = t;
 }
 
 Idx_Tensor CoulombIntegrals::get(char const *stdIndexMap, char const *indexMap){
-  if (0 == strcmp("a", stdIndexMap)) return (*a)[indexMap];
-  if (0 == strcmp("i", stdIndexMap)) return (*i)[indexMap];
-//  if (0 == strcmp("ab", stdIndexMap)) return (*ab)[indexMap];
-  if (0 == strcmp("ai", stdIndexMap)) return (*ai)[indexMap];
-//  if (0 == strcmp("ia", stdIndexMap)) return (*ia)[indexMap];
-//  if (0 == strcmp("ij", stdIndexMap)) return (*ij)[indexMap];
-  if (0 == strcmp("abcd", stdIndexMap)) return (*abcd)[indexMap];
-//  if (0 == strcmp("abci", stdIndexMap)) return (*abci)[indexMap];
-//  if (0 == strcmp("aibc", stdIndexMap)) return (*aibc)[indexMap];
-//  if (0 == strcmp("aibj", stdIndexMap)) return (*aibj)[indexMap];
-  if (0 == strcmp("abij", stdIndexMap)) return (*abij)[indexMap];
-//  if (0 == strcmp("ijab", stdIndexMap)) return (*ijab)[indexMap];
-//  if (0 == strcmp("aijk", stdIndexMap)) return (*aijk)[indexMap];
-//  if (0 == strcmp("ijak", stdIndexMap)) return (*ijak)[indexMap];
-//  if (0 == strcmp("ijkl", stdIndexMap)) return (*ijkl)[indexMap];
-  {
+  Tensor<> * t(v[stdIndexMap]);
+  if (t != NULL) {
+    return (*t)[indexMap];
+  } else {
     std::stringstream stream("");
     stream << "Cannot fetch CoulombIntegrals tensor part " << indexMap;
     throw new Exception(stream.str());
@@ -66,10 +84,10 @@ Idx_Tensor CoulombIntegrals::get(char const *stdIndexMap, char const *indexMap){
 }
 
 Tensor<> CoulombIntegrals::getSlice(int a, int b) {
-  Tensor<> Rgxc(chiReal->getSlice(a)); Rgxc.set_name("Rgxc");
-  Tensor<> Rgyc(chiReal->getSlice(b)); Rgyc.set_name("Rgyc");
-  Tensor<> Igxc(chiImag->getSlice(a)); Igxc.set_name("Igxc");
-  Tensor<> Igyc(chiImag->getSlice(b)); Igyc.set_name("Igyc");
+  Tensor<> Rgxc(chiR->getSlice(a)); Rgxc.set_name("Rgxc");
+  Tensor<> Rgyc(chiR->getSlice(b)); Rgyc.set_name("Rgyc");
+  Tensor<> Igxc(chiI->getSlice(a)); Igxc.set_name("Igxc");
+  Tensor<> Igyc(chiI->getSlice(b)); Igyc.set_name("Igyc");
   int lens[] = {Rgxc.lens[1], Rgyc.lens[1], Rgxc.lens[2], Rgyc.lens[2]};
   int syms[] = {a == b ? NS : NS, NS, AS, NS};
   Tensor<> Vxycd(4, lens, syms, *world, "Vxycd", options->profile);
@@ -82,34 +100,48 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
   return Vxycd;
 }
 
+void CoulombIntegrals::fetch(Tensor<> *t, char const *indexMap) {
+  if (strlen(indexMap) == 4) {
+    if (world->rank == 0) std::cout << "Calculating V" << indexMap << "...";
+    // 4 point tensors:
+    char dirL[4] = {'g', indexMap[0], indexMap[2], 0 };
+    char dirR[4] = {'g', indexMap[1], indexMap[3], 0 };
+    char excL[4] = {'g', indexMap[0], indexMap[3], 0 };
+    char excR[4] = {'g', indexMap[1], indexMap[2], 0 };
+    (*this)[indexMap]  = (*chiR)[dirL] * (*chiR)[dirR];
+    (*this)[indexMap] -= (*chiR)[excL] * (*chiR)[excR];
+    (*this)[indexMap] += (*chiI)[dirL] * (*chiI)[dirR];
+    (*this)[indexMap] -= (*chiI)[excL] * (*chiI)[excR];
+
+    int *syms = (*this)[indexMap].parent->sym;
+    if (syms[0] == AS || syms[2] == AS) {
+      // NOTE: ctf double counts if lhs tensor is AS
+      (*this)[indexMap] = 0.5 * (*this)[indexMap];
+    }
+    if (world->rank == 0) std::cout << " OK" << std::endl;
+  }
+}
+
 /**
  * \brief Fetches all tensors elements
  */
 void CoulombIntegrals::fetch() {
   // TODO: read epsilons
-  chiReal->readRandom(a, 5);
-  chiReal->readRandom(i, 6);
+  chiR->readRandom(a, 5);
+  chiR->readRandom(i, 6);
 
-  // FIXME: how to calculate Via
-  chiReal->readRandom(ai, 7);
+  // FIXME: how to calculate Vij, Via, Vai, Vab
+  chiR->readRandom(ij, 7);
+  chiR->readRandom(ia, 8);
+  chiR->readRandom(ai, 9);
+  chiR->readRandom(ab, 10);
 
   // TODO: only set fully anti-symmetrized tensor, otherwise
   // we get wrong results
+
   // calculate the other Coulomb integrals from the chis
-  // TODO: only enter fully anti-symmetrized tensors if AS
-  (*abij)["abij"] =  (*chiReal)["gai"]*(*chiReal)["gbj"];
-  (*abij)["abij"] -= (*chiReal)["gaj"]*(*chiReal)["gbi"];
-  (*abij)["abij"] += (*chiImag)["gai"]*(*chiImag)["gbj"];
-  (*abij)["abij"] -= (*chiImag)["gaj"]*(*chiImag)["gbi"];
-  // NOTE: ctf double counts if lhs tensor is AS
-  (*abij)["abij"] = 0.5 * (*abij)["abij"];
-  if (abcd) {
-    (*abcd)["abcd"] =  (*chiReal)["gac"]*(*chiReal)["gbd"];
-    (*abcd)["abcd"] -= (*chiReal)["gad"]*(*chiReal)["gbc"];
-    (*abcd)["abcd"] += (*chiImag)["gac"]*(*chiImag)["gbd"];
-    (*abcd)["abcd"] -= (*chiImag)["gad"]*(*chiImag)["gbc"];
-    (*abcd)["abcd"] = 0.5 * (*abcd)["abcd"];
-    // NOTE: ctf double counts if lhs tensor is AS
+  for (auto p(v.begin()); p != v.end(); ++p) {
+    fetch(p->second, p->first.c_str());
   }
 }
 

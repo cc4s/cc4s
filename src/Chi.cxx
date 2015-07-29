@@ -43,6 +43,10 @@ Chi::Chi(
 Idx_Tensor Chi::get(char const *stdIndexMap, char const *indexMap) {
   if (0 == strcmp(stdIndexMap, "gij")) return (*gij)[indexMap];
   if (0 == strcmp(stdIndexMap, "gai")) return (*gai)[indexMap];
+  if (0 == strcmp(stdIndexMap, "gia")) {
+    char swappedIndexMap[4] = { indexMap[0], indexMap[2], indexMap[1], 0 };
+    return (*gai)[swappedIndexMap];
+  }
   if (0 == strcmp(stdIndexMap, "gab")) return (*gab)[indexMap];	
   {
     std::stringstream stream("");
@@ -68,8 +72,7 @@ void Chi::readRandom(Tensor<> *tensor, int seed) {
   int64_t *indices;
   double *values;
   if (world->rank == 0) {
-    std::cout << "Fetching randomly " << tensor->get_name() << " ..." <<
-      std::endl;
+    std::cout << "Fetching randomly " << tensor->get_name() << "...";
   }
   tensor->read_local(&indicesCount, &indices, &values);
   for (int64_t j(0); j < indicesCount; ++j) {
@@ -78,6 +81,7 @@ void Chi::readRandom(Tensor<> *tensor, int seed) {
   }
   tensor->write(indicesCount, indices, values);
   free(indices); free(values);
+  if (world->rank == 0) std::cout << " OK" << std::endl;
 }
 
 /**
