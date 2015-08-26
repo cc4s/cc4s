@@ -31,22 +31,24 @@ Cc4s::~Cc4s() {
 
 void Cc4s::run() {
   Scalar<> energy(*world);
-  double norm;
+  double e, norm;
   // NOTE: should be (*V)["ijab"]
   energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
+  e = energy.get_val();
   if (world->rank == 0) {
-    std::cout << "e=" << energy.get_val() << std::endl;
+    std::cout << "e=" << e << std::endl;
   }
   for (int i(0); i < niter; ++i) {
     double d = MPI_Wtime();
     iterateAmplitudes();
     // NOTE: should be (*V)["ijab"]
     energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
+    e = energy.get_val();
     norm = T->abij->norm2();
     if (world->rank == 0) {
       std::cout << i+1 << ": on " << world->np << " node(s) in time " <<
         (MPI_Wtime()-d) << ", |T| = " << norm << std::endl;
-      std::cout << "e=" << energy.get_val() << std::endl;
+      std::cout << "e=" << e << std::endl;
     }
   }
 }
@@ -57,14 +59,10 @@ double divide(double a, double b) {
 }
 
 void Cc4s::iterateAmplitudes() {
-  int syms[] = {NS, NS, AS, NS};
-  Tensor<> T21 = Tensor<>(4, T->abij->lens, syms, *world, "T21");
+  Tensor<> T21 = Tensor<>(T->abij);
   // NOTE: ctf double counts if lhs tensor is AS
-  T21["abij"] = 0.5 * (*T)["abij"];
   T21["abij"] += 0.5 * (*T)["ai"] * (*T)["bj"];
-
-  Tensor<> tZabij = Tensor<>(4, T->abij->lens, syms, *world, "tZabij");
-  tZabij["abij"] = (*V)["abij"];
+  Tensor<> tZabij = Tensor<>(V->abij);
 
   if (!V->abcd) {
     for (int b(0); b < nv; b += no) {
@@ -79,7 +77,7 @@ void Cc4s::iterateAmplitudes() {
         int Tbegin[] = {0, 0, 0, 0};
         int lens[] = {na, nb, no, no};
 //        int syms[] = {Vxycd.sym[0], NS, AS, NS};
-        int syms[] = {NS, NS, AS, NS};
+        int syms[] = {NS, NS, NS, NS};
         Tensor<> Txyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
         Txyij["xyij"] = Vxycd["xyef"] * T21["efij"];
 
@@ -88,6 +86,7 @@ void Cc4s::iterateAmplitudes() {
         tZabij.slice(
           tzBegin,tzEnd,1.0, Txyij,Tbegin,lens,0.5
         );
+	//TODO: if a!=b remove double counting of ctf, use b>=a loop
       }
     }
   } else {
@@ -95,13 +94,13 @@ void Cc4s::iterateAmplitudes() {
   }
 
   {
-    int syms[] = {SY, NS, SY, NS};
+    int syms[] = {SH, NS, SH, NS};
     Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
     Dabij["abij"] += (*V)["i"];
     Dabij["abij"] += (*V)["j"];
     Dabij["abij"] -= (*V)["a"];
     Dabij["abij"] -= (*V)["b"];
-    // NOTE: ctf double counts if lhs tensor is SY,SY
+    // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
     Bivar_Function<> fctr(&divide);

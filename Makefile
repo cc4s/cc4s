@@ -4,7 +4,7 @@ CTF=../ctf
 CXX=mpicxx
 OPTIMIZE=-O3
 COPTIONS=-std=c++0x -fopenmp -Wall -g -fmax-errors=3 -D_POSIX_C_SOURCE=200112L -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1
-LIBS=-lblas
+LIBS=-lblas -lgfortran
 
 # primary target
 cc4s: bin/Cc4s

@@ -7,7 +7,7 @@
 using namespace CTF;
 
 /**
- * \brief Allocate all Coulomb integral tensors calculate and them
+ * \brief Allocate all Coulomb integral tensors and calculate them
  * from the given chi tensors.
  */
 CoulombIntegrals::CoulombIntegrals(
@@ -15,8 +15,8 @@ CoulombIntegrals::CoulombIntegrals(
 ): PerturbationTensor(world, options), chiR(chiReal), chiI(chiImag), v() {
   int nv = options->nv;
   int no = options->no;
-  int symsASAS[] = { NS, NS, AS, NS };
-  int symsASNS[] = { NS, NS, NS, NS };
+  int symsASAS[] = { AS, NS, AS, NS };
+  int symsASNS[] = { AS, NS, NS, NS };
   int symsNSNS[] = { NS, NS, NS, NS };
   int symsNSAS[] = { NS, NS, AS, NS };
   int vvvv[] = { nv, nv, nv, nv };
@@ -33,10 +33,10 @@ CoulombIntegrals::CoulombIntegrals(
   // and add them to the tensor map for further manipulation
   add(i = new Vector<>(no, *world, "Ei", options->profile));
   add(a = new Vector<>(nv, *world, "Ea", options->profile));
-  add(ij = new Matrix<>(no, no, AS, *world, "Vij", options->profile));
-  add(ia = new Matrix<>(no, nv, NS, *world, "Via", options->profile));
-  add(ai = new Matrix<>(nv, no, NS, *world, "Vai", options->profile));
-  add(ab = new Matrix<>(nv, nv, AS, *world, "Vab", options->profile));
+  add(ij = new Matrix<>(no, no, AS, *world, "Fij", options->profile));
+  add(ia = new Matrix<>(no, nv, NS, *world, "Fia", options->profile));
+  add(ai = new Matrix<>(nv, no, NS, *world, "Fai", options->profile));
+  add(ab = new Matrix<>(nv, nv, AS, *world, "Fab", options->profile));
   add(ijkl = new Tensor<>(4, oooo, symsASAS, *world, "Vijkl",options->profile));
   add(ijak = new Tensor<>(4, oovo, symsASNS, *world, "Vijak",options->profile));
   add(aijk = new Tensor<>(4, vooo, symsNSAS, *world, "Vaijk",options->profile));
@@ -89,7 +89,7 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
   Tensor<> Igxc(chiI->getSlice(a)); Igxc.set_name("Igxc");
   Tensor<> Igyc(chiI->getSlice(b)); Igyc.set_name("Igyc");
   int lens[] = {Rgxc.lens[1], Rgyc.lens[1], Rgxc.lens[2], Rgyc.lens[2]};
-  int syms[] = {a == b ? NS : NS, NS, AS, NS};
+  int syms[] = {a == b ? AS : NS, NS, AS, NS};
   Tensor<> Vxycd(4, lens, syms, *world, "Vxycd", options->profile);
   Vxycd["xycd"] =  Rgxc["gxc"]*Rgyc["gyd"];
   Vxycd["xycd"] -= Rgxc["gxd"]*Rgyc["gyc"];

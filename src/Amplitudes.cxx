@@ -16,9 +16,10 @@ Amplitudes::Amplitudes(
   ai = new Tensor<>(V->ai);
   ai->set_name("Tai");
   {
-    int syms[] = {NS, NS, NS, NS};
-    abij = new Tensor<>(4, V->abij->lens, syms, *world, "Tabij");
-    (*abij)["abij"] = (*V)["abij"];
+    abij = new Tensor<>(V->abij);
+//    int syms[] = {NS, NS, NS, NS};
+//    abij = new Tensor<>(4, V->abij->lens, syms, *world, "Tabij");
+//    (*abij)["abij"] = (*V)["abij"];
   }
   if (world->rank == 0) std::cout << " OK." << std::endl;
 }
