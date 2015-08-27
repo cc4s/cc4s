@@ -1,0 +1,3 @@
+   Hartree contr. to MP2:          -7.47296404
+  Exchange contr. to MP2:           2.72880477
+  MP2 correlation energy:          -4.74415927
