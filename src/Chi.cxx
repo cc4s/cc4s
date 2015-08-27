@@ -4,51 +4,34 @@
 #include "Exception.hpp"
 #include <iostream>
 #include <string>
+#include <iostream>
+#include <fstream>
 
 using namespace CTF;
 
 Chi::Chi(
-  World *world, Options const *options, int seed
+  World *world, Options const *options
 ): PerturbationTensor(world, options) {
-  // keep the chi tensors in the memory for now
-  {
-    int lens[] = {options->nG, options->nv, options->nv};
-    int syms[] = {NS, NS, NS};
-    gab = new Tensor<>(
-      3, lens, syms, *world, "Xgab", options->profile
-    );
-  }
-  {
-    int lens[] = {options->nG, options->nv, options->no};
-    int syms[] = {NS, NS, NS};
-    gai = new Tensor<>(
-      3, lens, syms, *world, "Xgai", options->profile
-    );
-  }
-  {
-    int lens[] = {options->nG, options->no, options->no};
-    int smys[] = {NS, NS, NS};
-    gij = new Tensor<>(
-      3, lens, smys, *world, "Xgij", options->profile
-    );
-  }
-  readRandom(gab, 0+seed);
-  readRandom(gai, 2+seed);
-  readRandom(gij, 4+seed);
-  // FIXME: symmetrize: symmetries should be treated at reading
-  (*gab)["gab"] += (*gab)["gba"];
-  (*gij)["gij"] += (*gij)["gji"];
+  int lens[] = {options->nG, options->no+options->nv, options->no+options->nv};
+  int syms[] = {NS, NS, NS};
+  gpq = new Tensor<>(3, lens, syms, *world, "Xgpq", options->profile);
 }
 
 Idx_Tensor Chi::get(char const *stdIndexMap, char const *indexMap) {
-  if (0 == strcmp(stdIndexMap, "gij")) return (*gij)[indexMap];
-  if (0 == strcmp(stdIndexMap, "gai")) return (*gai)[indexMap];
-  if (0 == strcmp(stdIndexMap, "gia")) {
-    char swappedIndexMap[4] = { indexMap[0], indexMap[2], indexMap[1], 0 };
-    return (*gai)[swappedIndexMap];
-  }
-  if (0 == strcmp(stdIndexMap, "gab")) return (*gab)[indexMap];	
-  {
+  // NOTE: PerturbationTensor does not know about p,q,.. indices in stdIndexMap
+  if (0 == strcmp(indexMap, "gpq")) return (*gpq)[indexMap];
+  if (indexMap[0] == 'g') {
+    int start[] = {0, 0, 0};
+    int end[] = {gpq->lens[0], 0, 0};
+    for (int index = 1; index < 3; ++index) {
+      if (stdIndexMap[index] <= 'b') {
+        start[index] = options->no, end[index] = options->no+options->nv;
+      } else if (stdIndexMap[index] <= 'j') {
+        start[index] = 0; end[index] = options->no;
+      }
+    }
+    return gpq->slice(start, end)[indexMap];
+  } else {
     std::stringstream stream("");
     stream << "Cannot fetch Chi tensor part " << stdIndexMap <<
       " with index names " << indexMap;
@@ -56,15 +39,16 @@ Idx_Tensor Chi::get(char const *stdIndexMap, char const *indexMap) {
   }
 }
 
-Tensor<> Chi::getSlice(int a) {
-  int na = std::min(gab->lens[1]-a, gai->lens[2]);
-  int start[] = {0, a, 0};
-  int end[] = {gab->lens[0], a+na, gab->lens[2]};
-  return gab->slice(start, end);
+Tensor<> Chi::getSlice(int pStart, int pEnd, int qStart, int qEnd) {
+  int start[] = {0, pStart, qStart};
+  int end[] = {
+    gpq->lens[0], std::min(pEnd, gpq->lens[1]), std::min(qEnd, gpq->lens[2])
+  };
+  return gpq->slice(start, end);
 }
 
 Chi::~Chi() {
-  delete gab; delete gai; delete gij;
+  delete gpq;
 }
 
 void Chi::readRandom(Tensor<> *tensor, int seed) {
@@ -83,11 +67,3 @@ void Chi::readRandom(Tensor<> *tensor, int seed) {
   free(indices); free(values);
   if (world->rank == 0) std::cout << " OK" << std::endl;
 }
-
-/**
- * \brief Reads the chi amplitudes from disk
- */
-void Chi::read() {
-  // TODO: implement
-}
-

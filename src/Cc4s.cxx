@@ -4,22 +4,16 @@
 #include "Exception.hpp"
 #include <ctf.hpp>
 #include <iostream>
+#include <fstream>
 
 using namespace CTF;
 
 Cc4s::Cc4s(
-  CTF::World *world_, Options const *options
+  CTF::World *world_, Options *options_
 ):
   world(world_),
-  no(options->no),
-  nv(options->nv),
-  nG(options->nG),
-  niter(options->niter)
+  options(options_)
 {
-  chiReal = new Chi(world, options, 0);
-  chiImag = new Chi(world, options, 1);
-  V = new CoulombIntegrals(chiReal, chiImag, world, options);
-  T = new Amplitudes(V, world, options);
 }
 
 Cc4s::~Cc4s() {
@@ -29,7 +23,11 @@ Cc4s::~Cc4s() {
   delete chiImag;
 }
 
+
 void Cc4s::run() {
+  // Read from disk
+  readFTOD();
+
   Scalar<> energy(*world);
   double e, norm;
   // NOTE: should be (*V)["ijab"]
@@ -38,9 +36,9 @@ void Cc4s::run() {
   if (world->rank == 0) {
     std::cout << "e=" << e << std::endl;
   }
-  for (int i(0); i < niter; ++i) {
+  for (int i(0); i < options->niter; ++i) {
     double d = MPI_Wtime();
-    iterateAmplitudes();
+    iterateMp2();
     // NOTE: should be (*V)["ijab"]
     energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
     e = energy.get_val();
@@ -58,14 +56,32 @@ double divide(double a, double b) {
   return a / b;
 }
 
-void Cc4s::iterateAmplitudes() {
+void Cc4s::iterateMp2() {
+  {
+    int syms[] = {SH, NS, SH, NS};
+    Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
+    Dabij["abij"] += (*V)["i"];
+    Dabij["abij"] += (*V)["j"];
+    Dabij["abij"] -= (*V)["a"];
+    Dabij["abij"] -= (*V)["b"];
+    // NOTE: ctf double counts if lhs tensor is SH,SH
+    Dabij["abij"] = 0.5 * Dabij["abij"];
+
+    Bivar_Function<> fctr(&divide);
+    T->abij->contract(1.0, *V->abij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+  }
+}
+
+void Cc4s::iterateCcsd() {
+  int no = options->no;
+  int nv = options->nv;
   Tensor<> T21 = Tensor<>(T->abij);
   // NOTE: ctf double counts if lhs tensor is AS
   T21["abij"] += 0.5 * (*T)["ai"] * (*T)["bj"];
   Tensor<> tZabij = Tensor<>(V->abij);
 
   if (!V->abcd) {
-    for (int b(0); b < nv; b += no) {
+    for (int b(0); b < options->nv; b += options->no) {
   //    for (int a(b); a < nv; a += no) {
       for (int a(0); a < nv; a += no) {
         if (world->rank == 0) {
@@ -82,7 +98,7 @@ void Cc4s::iterateAmplitudes() {
         Txyij["xyij"] = Vxycd["xyef"] * T21["efij"];
 
         int tzBegin[] = {a, b, 0, 0};
-        int tzEnd[] = {a+na, b+nb, no, no};
+        int tzEnd[] = {a+na, b+nb, options->no, options->no};
         tZabij.slice(
           tzBegin,tzEnd,1.0, Txyij,Tbegin,lens,0.5
         );
@@ -107,6 +123,85 @@ void Cc4s::iterateAmplitudes() {
     T->abij->contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
   }
 } 
+
+
+/**
+ * \brief Reads the Fourier transformed overlap densities from disk.
+ */
+void Cc4s::readFTOD() {
+  if (world->rank == 0) {
+    std::cout <<
+      "Reading Fourier transformed overlap densities from FTODDUMP...";
+  }
+  std::ifstream file("FTODDUMP");
+  std::string line;
+  // read a comment line
+  std::getline(file, line);
+  // NOTE: currently unused
+  int nSpins, nk;
+  file >> options->no >> options->nv >> options->nG >> nSpins >> nk;
+
+  // allocate chi and Coulomb integral tensors
+  chiReal = new Chi(world, options);
+  chiImag = new Chi(world, options);
+  V = new CoulombIntegrals(chiReal, chiImag, world, options);
+
+  // allocate local indices and values of the chi tensors
+  double *reals, *imags;
+  int64_t *indices;
+  int64_t valuesCount, maxValuesCount;
+  int64_t nG = options->nG; int np = options->no+options->nv;
+  maxValuesCount = (nG*np*np + world->np-1) / world->np;
+  // each process can have at most maxValuesCount entires
+  reals = new double[maxValuesCount]; imags = new double[maxValuesCount];
+  indices = new int64_t[maxValuesCount];
+
+  // read another comment line
+  std::getline(file, line);
+  // start reading the file line by line
+  valuesCount = 0;
+  while (std::getline(file, line)) {
+    std::stringstream lineStream(line);
+    double real, imag;
+    int g, p, q, spin;
+    // parse the line
+    lineStream >> real >> imag >> g >> p >> q >> spin;
+    if (g > 0) {
+      // chi_q^p(g), spin is ignored
+      // g, p and q are zero based
+      --g; --p; --q;
+      // distribed along g: current rank is responsible only:
+      if (g % world->np == world->rank) {
+        reals[valuesCount] = real;
+        imags[valuesCount] = imag;
+        indices[valuesCount] = g + np*(p + np*q);
+        ++valuesCount;
+      }
+    } else {
+      // eigenenergy with eps_p, all other indices are to be ignored
+    }
+  }
+  std::cerr << "NFTOD " << valuesCount << std::endl;
+  chiReal->gpq->write(valuesCount, indices, reals);
+  std::cerr << "NFTOD " << valuesCount << std::endl;
+  chiImag->gpq->write(valuesCount, indices, imags);
+  std::cerr << "NFTOD " << valuesCount << std::endl;
+  file.close();
+  if (world->rank == 0) {
+    std::cout << " Ok" << std::endl;
+  }
+
+  double realNorm = chiReal->gpq->norm2();
+  double imagNorm = chiImag->gpq->norm2();
+  if (world->rank == 0) {
+    std::cout << "Norm of FTOD = " << realNorm << "," << imagNorm << std::endl;
+  }
+  // calculate Coulomb integrals from Fourier transformed overlap densities
+  V->fetch();
+  // allocate and calculate the intial amplitudes
+  T = new Amplitudes(V, world, options);
+}
+
 
 void Cc4s::testSymmetries() {
   int symsAS[] = {AS, NS};
@@ -204,7 +299,7 @@ int main(int argumentCount, char **arguments) {
 
   try {
     World *world = new World(argumentCount, arguments);
-    Options const *options = new Options(argumentCount, arguments); 
+    Options *options = new Options(argumentCount, arguments); 
     Cc4s cc4s(world, options);
 //    cc4s.testSymmetries();
     cc4s.run();

@@ -8,18 +8,15 @@
 
 class Chi: public PerturbationTensor {
   public:
-    Chi(CTF::World *world, Options const *options, int seed=0);
+    Chi(CTF::World *world, Options const *options);
     virtual ~Chi();
 
     virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
 
-    CTF::Tensor<> getSlice(int a);
+    CTF::Tensor<> getSlice(int pStart, int pEnd, int qStart, int qEnd);
     void readRandom(CTF::Tensor<> *tensor, int seed);
 
-    CTF::Tensor<> *gab, *gai, *gij;
-
-    // read from disk
-    void read();
+    CTF::Tensor<> *gpq;
 };
 
 #endif

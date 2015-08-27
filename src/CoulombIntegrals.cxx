@@ -52,9 +52,6 @@ CoulombIntegrals::CoulombIntegrals(
     abci = NULL;
     abcd = NULL;
   }
-
-  // fetch all allocated tensors
-  fetch();
 }
 
 CoulombIntegrals::~CoulombIntegrals() {
@@ -84,10 +81,14 @@ Idx_Tensor CoulombIntegrals::get(char const *stdIndexMap, char const *indexMap){
 }
 
 Tensor<> CoulombIntegrals::getSlice(int a, int b) {
-  Tensor<> Rgxc(chiR->getSlice(a)); Rgxc.set_name("Rgxc");
-  Tensor<> Rgyc(chiR->getSlice(b)); Rgyc.set_name("Rgyc");
-  Tensor<> Igxc(chiI->getSlice(a)); Igxc.set_name("Igxc");
-  Tensor<> Igyc(chiI->getSlice(b)); Igyc.set_name("Igyc");
+  int nv = options->nv;
+  int no = options->no;
+  // NOTE: width of sliced hardcoded
+  int w = options->no;
+  Tensor<> Rgxc(chiR->getSlice(no+a,no+a+w, no,no+nv)); Rgxc.set_name("Rgxc");
+  Tensor<> Rgyc(chiR->getSlice(no,no+nv, no+b,no+b+w)); Rgyc.set_name("Rgyc");
+  Tensor<> Igxc(chiI->getSlice(no+a,no+a+w, no,no+nv)); Igxc.set_name("Igxc");
+  Tensor<> Igyc(chiI->getSlice(no,no+nv, no+b,no+b+w)); Igyc.set_name("Igyc");
   int lens[] = {Rgxc.lens[1], Rgyc.lens[1], Rgxc.lens[2], Rgyc.lens[2]};
   int syms[] = {a == b ? AS : NS, NS, AS, NS};
   Tensor<> Vxycd(4, lens, syms, *world, "Vxycd", options->profile);
@@ -100,7 +101,7 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
   return Vxycd;
 }
 
-void CoulombIntegrals::fetch(Tensor<> *t, char const *indexMap) {
+void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
   if (strlen(indexMap) == 4) {
     if (world->rank == 0) std::cout << "Calculating V" << indexMap << "...";
     // 4 point tensors:
@@ -108,15 +109,15 @@ void CoulombIntegrals::fetch(Tensor<> *t, char const *indexMap) {
     char dirR[4] = {'g', indexMap[1], indexMap[3], 0 };
     char excL[4] = {'g', indexMap[0], indexMap[3], 0 };
     char excR[4] = {'g', indexMap[1], indexMap[2], 0 };
-    (*this)[indexMap]  = (*chiR)[dirL] * (*chiR)[dirR];
-    (*this)[indexMap] -= (*chiR)[excL] * (*chiR)[excR];
-    (*this)[indexMap] += (*chiI)[dirL] * (*chiI)[dirR];
-    (*this)[indexMap] -= (*chiI)[excL] * (*chiI)[excR];
+    t[indexMap]  = (*chiR)[dirL] * (*chiR)[dirR];
+    t[indexMap] -= (*chiR)[excL] * (*chiR)[excR];
+    t[indexMap] += (*chiI)[dirL] * (*chiI)[dirR];
+    t[indexMap] -= (*chiI)[excL] * (*chiI)[excR];
 
-    int *syms = (*this)[indexMap].parent->sym;
+    int *syms = t[indexMap].parent->sym;
     if (syms[0] == AS || syms[2] == AS) {
       // NOTE: ctf double counts if lhs tensor is AS
-      (*this)[indexMap] = 0.5 * (*this)[indexMap];
+      t[indexMap] = 0.5 * t[indexMap];
     }
     if (world->rank == 0) std::cout << " OK" << std::endl;
   }
@@ -126,22 +127,20 @@ void CoulombIntegrals::fetch(Tensor<> *t, char const *indexMap) {
  * \brief Fetches all tensors elements
  */
 void CoulombIntegrals::fetch() {
-  // TODO: read epsilons
-  chiR->readRandom(a, 5);
-  chiR->readRandom(i, 6);
-
   // FIXME: how to calculate Vij, Via, Vai, Vab
+/*
   chiR->readRandom(ij, 7);
   chiR->readRandom(ia, 8);
   chiR->readRandom(ai, 9);
   chiR->readRandom(ab, 10);
+*/
 
   // TODO: only set fully anti-symmetrized tensor, otherwise
   // we get wrong results
 
   // calculate the other Coulomb integrals from the chis
   for (auto p(v.begin()); p != v.end(); ++p) {
-    fetch(p->second, p->first.c_str());
+    fetch(*p->second, p->first.c_str());
   }
 }
 

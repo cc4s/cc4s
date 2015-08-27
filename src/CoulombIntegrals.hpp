@@ -16,6 +16,14 @@ class CoulombIntegrals: public PerturbationTensor {
 
     virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
 
+    /**
+     * \brief Fetch all integrals in memory from chi.
+     */
+    void fetch();
+
+    /**
+     * \brief Fetch and return a slice of the Vxycd starting at x=a, y=b
+     */
     CTF::Tensor<> getSlice(int a, int b);
 
     // TODO: check if the cft framework offers such a function natively
@@ -64,16 +72,12 @@ class CoulombIntegrals: public PerturbationTensor {
     CTF::Tensor<> *abcd;
 
   private:
-    /**
-     * \brief Fetch all integrals in memory from chi.
-     */
-    void fetch();
 
     /**
      * \brief Fetch the given tensor from the chi tensors. The index map
      * contained in the tensor's name determine the indices taken from chi.
      */
-    void fetch(CTF::Tensor<> *t, char const *indexMap);
+    void fetch(CTF::Tensor<> &t, char const *indexMap);
 
     /**
      * \brief Add the given tensor to the tensor map v. The standard index

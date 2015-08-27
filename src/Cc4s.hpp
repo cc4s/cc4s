@@ -10,19 +10,29 @@
 
 class Cc4s {
   public:
-    Cc4s(CTF::World *world, Options const *options);
+    Cc4s(CTF::World *world, Options *options);
     ~Cc4s();
     void run();
     void testSymmetries();
 
   protected:
-    void iterateAmplitudes();
+    void iterateMp2();
+    void iterateCcsd();
+
+    /**
+     * \brief Read Fourier transformed overlap densities and eigenergies from
+     * disk and calculate all necessary quantities.
+     */
+    void readFTOD();
+    /**
+     * \deprecated
+     */
     void add_Vxyef_T21efij(CTF::Tensor<> &Zabij, CTF::Tensor<> &T21);
 
     CTF::World *world;
-    int no, nv, nG, niter;
     bool profile;
 
+    Options *options;
     Chi *chiReal, *chiImag;
     CoulombIntegrals *V;
     Amplitudes *T;
