@@ -223,6 +223,11 @@ void Cc4s::readFTOD() {
   }
   // calculate Coulomb integrals from Fourier transformed overlap densities
   V->fetch();
+  // write V(1,1,1,1) for testing
+  int64_t readIndices[] = { 0 };
+  double readValues[] = { 0.0 };
+  V->ijkl->read(1l, readIndices, readValues);
+  std::cout << "V(1,1,1,1) = " << readValues[0] << std::endl;
   // allocate and calculate the intial amplitudes
   T = new Amplitudes(V, world, options);
 }
