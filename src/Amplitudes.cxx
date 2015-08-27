@@ -21,7 +21,7 @@ Amplitudes::Amplitudes(
 //    abij = new Tensor<>(4, V->abij->lens, syms, *world, "Tabij");
 //    (*abij)["abij"] = (*V)["abij"];
   }
-  if (world->rank == 0) std::cout << " OK." << std::endl;
+  if (world->rank == 0) std::cout << " OK" << std::endl;
 }
 
 Amplitudes::~Amplitudes() {

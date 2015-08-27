@@ -139,7 +139,10 @@ void Cc4s::readFTOD() {
   std::getline(file, line);
   // NOTE: currently unused
   int nSpins, nk;
-  file >> options->no >> options->nv >> options->nG >> nSpins >> nk;
+  // read the size data
+  std::getline(file, line);
+  std::stringstream lineStream(line);
+  lineStream >> options->no >> options->nv >> options->nG >> nSpins >> nk;
 
   // allocate chi and Coulomb integral tensors
   chiReal = new Chi(world, options);
@@ -147,19 +150,23 @@ void Cc4s::readFTOD() {
   V = new CoulombIntegrals(chiReal, chiImag, world, options);
 
   // allocate local indices and values of the chi tensors
-  double *reals, *imags;
-  int64_t *indices;
-  int64_t valuesCount, maxValuesCount;
-  int64_t nG = options->nG; int np = options->no+options->nv;
-  maxValuesCount = (nG*np*np + world->np-1) / world->np;
+  int64_t nG(options->nG); int np(options->no+options->nv);
+  // distributed along g: round up g/nprocs 
+  int64_t maxValuesCount((nG+world->np-1)/world->np * np*np);
   // each process can have at most maxValuesCount entires
-  reals = new double[maxValuesCount]; imags = new double[maxValuesCount];
-  indices = new int64_t[maxValuesCount];
+  double *reals(new double[maxValuesCount]);
+  double *imags(new double[maxValuesCount]);
+  int64_t *indices(new int64_t[maxValuesCount]);
+  int64_t valuesCount(0);
+  // allocate local indices and values of eigenenergies
+  double *iValues(new double[options->no]);
+  double *aValues(new double[options->nv]);
+  int64_t *iIndices(new int64_t[options->no]);
+  int64_t *aIndices(new int64_t[options->nv]);
 
   // read another comment line
   std::getline(file, line);
   // start reading the file line by line
-  valuesCount = 0;
   while (std::getline(file, line)) {
     std::stringstream lineStream(line);
     double real, imag;
@@ -170,31 +177,49 @@ void Cc4s::readFTOD() {
       // chi_q^p(g), spin is ignored
       // g, p and q are zero based
       --g; --p; --q;
-      // distribed along g: current rank is responsible only:
+      // distribed along g: current rank is responsible, only
       if (g % world->np == world->rank) {
         reals[valuesCount] = real;
         imags[valuesCount] = imag;
-        indices[valuesCount] = g + np*(p + np*q);
+        indices[valuesCount] = g + nG*(p + np*q);
         ++valuesCount;
       }
     } else {
       // eigenenergy with eps_p, all other indices are to be ignored
+      // they are written only on the root
+      if (world->rank == 0) {
+        --p;
+        if (p < options->no) {
+          iValues[p] = real;
+          iIndices[p] = p;
+        } else {
+          aValues[p-options->no] = real;
+          aIndices[p-options->no] = p-options->no;
+        }
+      }
     }
   }
-  std::cerr << "NFTOD " << valuesCount << std::endl;
   chiReal->gpq->write(valuesCount, indices, reals);
-  std::cerr << "NFTOD " << valuesCount << std::endl;
   chiImag->gpq->write(valuesCount, indices, imags);
-  std::cerr << "NFTOD " << valuesCount << std::endl;
+  int64_t iValuesCount(world->rank == 0 ? options->no : 0);
+  int64_t aValuesCount(world->rank == 0 ? options->nv : 0);
+  V->i->write(iValuesCount, iIndices, iValues);
+  V->a->write(aValuesCount, aIndices, aValues);
+  delete[] indices; delete[] reals; delete[] imags;
   file.close();
   if (world->rank == 0) {
-    std::cout << " Ok" << std::endl;
+    std::cout << " OK" << std::endl;
   }
 
   double realNorm = chiReal->gpq->norm2();
   double imagNorm = chiImag->gpq->norm2();
+  double iNorm = V->i->norm2();
+  double aNorm = V->a->norm2();
   if (world->rank == 0) {
-    std::cout << "Norm of FTOD = " << realNorm << "," << imagNorm << std::endl;
+    std::cout <<
+      "2-Norm of FTOD = (" << realNorm << "," << imagNorm << ")" << std::endl;
+    std::cout <<
+      "2-Norm of (eps_i,eps_a) = (" << iNorm << "," << aNorm << ")" << std::endl;
   }
   // calculate Coulomb integrals from Fourier transformed overlap densities
   V->fetch();

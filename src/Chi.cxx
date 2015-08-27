@@ -30,7 +30,9 @@ Idx_Tensor Chi::get(char const *stdIndexMap, char const *indexMap) {
         start[index] = 0; end[index] = options->no;
       }
     }
-    return gpq->slice(start, end)[indexMap];
+    //FIXME: memory leak from dynamic allocation of Tensor object
+    // find a better solution...
+    return (*new Tensor<>(gpq->slice(start, end)))[indexMap];
   } else {
     std::stringstream stream("");
     stream << "Cannot fetch Chi tensor part " << stdIndexMap <<
