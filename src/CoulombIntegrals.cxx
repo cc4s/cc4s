@@ -41,7 +41,7 @@ CoulombIntegrals::CoulombIntegrals(
   add(ijak = new Tensor<>(4, oovo, symsASNS, *world, "Vijak",options->profile));
   add(aijk = new Tensor<>(4, vooo, symsNSAS, *world, "Vaijk",options->profile));
   add(ijab = new Tensor<>(4, oovv, symsASAS, *world, "Vijab",options->profile));
-  add(abij = new Tensor<>(4, vvoo, symsASAS, *world, "Vabij",options->profile));
+  add(abij = new Tensor<>(4, vvoo, symsNSNS, *world, "Vabij",options->profile));
   add(aibj = new Tensor<>(4, vovo, symsNSNS, *world, "Vaibj",options->profile));
   if (options->storeV) {
     add(aibc = new Tensor<>(4, vovv, symsNSAS,*world,"Vaibc",options->profile));
@@ -101,18 +101,19 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
   return Vxycd;
 }
 
+/* Fetch direct integrals only */
 void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
   if (strlen(indexMap) == 4) {
     if (world->rank == 0) std::cout << "Calculating V" << indexMap << "...";
     // 4 point tensors:
     char dirL[4] = {'g', indexMap[0], indexMap[2], 0 };
     char dirR[4] = {'g', indexMap[1], indexMap[3], 0 };
-    char excL[4] = {'g', indexMap[0], indexMap[3], 0 };
-    char excR[4] = {'g', indexMap[1], indexMap[2], 0 };
+//    char excL[4] = {'g', indexMap[0], indexMap[3], 0 };
+//    char excR[4] = {'g', indexMap[1], indexMap[2], 0 };
     t[indexMap]  = (*chiR)[dirL] * (*chiR)[dirR];
-    t[indexMap] -= (*chiR)[excL] * (*chiR)[excR];
+//    t[indexMap] -= (*chiR)[excL] * (*chiR)[excR];
     t[indexMap] += (*chiI)[dirL] * (*chiI)[dirR];
-    t[indexMap] -= (*chiI)[excL] * (*chiI)[excR];
+//    t[indexMap] -= (*chiI)[excL] * (*chiI)[excR];
 
     int *syms = t[indexMap].parent->sym;
     if (syms[0] == AS || syms[2] == AS) {

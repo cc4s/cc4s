@@ -29,7 +29,7 @@ void Cc4s::run() {
   readFTOD();
 
   Scalar<> energy(*world);
-  double e, norm;
+  double e, dire, exce, norm;
   // NOTE: should be (*V)["ijab"]
   energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
   e = energy.get_val();
@@ -40,8 +40,11 @@ void Cc4s::run() {
     double d = MPI_Wtime();
     iterateMp2();
     // NOTE: should be (*V)["ijab"]
-    energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
-    e = energy.get_val();
+    energy[""] = (*T)["abij"]*(*V)["abij"];
+    dire = energy.get_val();
+    energy[""] = (*T)["abji"]*(*V)["abij"];
+    exce = -0.5 * energy.get_val();
+    e = dire + exce;
     norm = T->abij->norm2();
     if (world->rank == 0) {
       std::cout << i+1 << ": on " << world->np << " node(s) in time " <<
@@ -58,7 +61,7 @@ double divide(double a, double b) {
 
 void Cc4s::iterateMp2() {
   {
-    int syms[] = {SH, NS, SH, NS};
+    int syms[] = {NS, NS, NS, NS};
     Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
     Dabij["abij"] += (*V)["i"];
     Dabij["abij"] += (*V)["j"];
