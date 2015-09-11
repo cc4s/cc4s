@@ -33,20 +33,20 @@ CoulombIntegrals::CoulombIntegrals(
   // and add them to the tensor map for further manipulation
   add(i = new Vector<>(no, *world, "Ei", options->profile));
   add(a = new Vector<>(nv, *world, "Ea", options->profile));
-  add(ij = new Matrix<>(no, no, AS, *world, "Fij", options->profile));
+  add(ij = new Matrix<>(no, no, NS, *world, "Fij", options->profile));
   add(ia = new Matrix<>(no, nv, NS, *world, "Fia", options->profile));
   add(ai = new Matrix<>(nv, no, NS, *world, "Fai", options->profile));
-  add(ab = new Matrix<>(nv, nv, AS, *world, "Fab", options->profile));
-  add(ijkl = new Tensor<>(4, oooo, symsASAS, *world, "Vijkl",options->profile));
-  add(ijak = new Tensor<>(4, oovo, symsASNS, *world, "Vijak",options->profile));
-  add(aijk = new Tensor<>(4, vooo, symsNSAS, *world, "Vaijk",options->profile));
-  add(ijab = new Tensor<>(4, oovv, symsASAS, *world, "Vijab",options->profile));
+  add(ab = new Matrix<>(nv, nv, NS, *world, "Fab", options->profile));
+  add(ijkl = new Tensor<>(4, oooo, symsNSNS, *world, "Vijkl",options->profile));
+  add(ijak = new Tensor<>(4, oovo, symsNSNS, *world, "Vijak",options->profile));
+  add(aijk = new Tensor<>(4, vooo, symsNSNS, *world, "Vaijk",options->profile));
+  add(ijab = new Tensor<>(4, oovv, symsNSNS, *world, "Vijab",options->profile));
   add(abij = new Tensor<>(4, vvoo, symsNSNS, *world, "Vabij",options->profile));
   add(aibj = new Tensor<>(4, vovo, symsNSNS, *world, "Vaibj",options->profile));
   if (options->storeV) {
-    add(aibc = new Tensor<>(4, vovv, symsNSAS,*world,"Vaibc",options->profile));
-    add(abci = new Tensor<>(4, vvvo, symsASNS,*world,"Vabci",options->profile));
-    add(abcd = new Tensor<>(4, vvvv, symsASAS,*world,"Vabcd",options->profile));
+    add(aibc = new Tensor<>(4, vovv, symsNSNS,*world,"Vaibc",options->profile));
+    add(abci = new Tensor<>(4, vvvo, symsNSNS,*world,"Vabci",options->profile));
+    add(abcd = new Tensor<>(4, vvvv, symsNSNS,*world,"Vabcd",options->profile));
   } else {
     aibc = NULL;
     abci = NULL;

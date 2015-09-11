@@ -28,22 +28,25 @@ void Cc4s::run() {
   // Read from disk
   readFTOD();
 
+
   Scalar<> energy(*world);
   double e, dire, exce, norm;
   // NOTE: should be (*V)["ijab"]
-  energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
+  (*T)["abij"] = 0.0;
+  //energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
   e = energy.get_val();
   if (world->rank == 0) {
     std::cout << "e=" << e << std::endl;
   }
   for (int i(0); i < options->niter; ++i) {
     double d = MPI_Wtime();
-    iterateMp2();
+//    iterateMp2();
+    iterateRPA();
     // NOTE: should be (*V)["ijab"]
-    energy[""] = (*T)["abij"]*(*V)["abij"];
+    energy[""] = 2.0 * (*T)["abij"] * (*V)["abij"];
     dire = energy.get_val();
-    energy[""] = (*T)["abji"]*(*V)["abij"];
-    exce = -0.5 * energy.get_val();
+    energy[""] = (*T)["abji"] * (*V)["abij"];
+    exce = -1.0 * energy.get_val();
     e = dire + exce;
     norm = T->abij->norm2();
     if (world->rank == 0) {
@@ -58,6 +61,43 @@ void Cc4s::run() {
 double divide(double a, double b) {
   return a / b;
 }
+
+void Cc4s::iterateRPA() {
+  {
+    int syms[] = {NS, NS, NS, NS};
+    // Define Tensors
+    Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
+    //Allocate Tensors for RPA
+    Tensor<> Rabij = Tensor<>(T->abij);
+    Tensor<> Cabij = Tensor<>(T->abij);
+    //Tensor<> Chi(4, V->abij->lens, syms, *world, "Cabij");
+    //Chi = new Amplitudes(V, world, options);
+
+    if (world->rank == 0) {
+      std::cout << "Solving RPA Amplitude Equations:" << std::endl;
+    }
+
+
+    Rabij["abij"] = (*V)["abij"];
+    Rabij["abij"] += 2.0 * (*V)["acik"] * (*T)["cbkj"];
+    Cabij["abij"] =  2.0 * (*V)["cbkj"] * (*T)["acik"];
+    Rabij["abij"] += Cabij["abij"];
+    //(*V)["cbkj"]*(*T)["acjk"];
+    Rabij["abij"] += 2.0 * Cabij["acik"] * (*T)["cbkj"];
+
+
+    Dabij["abij"] += (*V)["i"];
+    Dabij["abij"] += (*V)["j"];
+    Dabij["abij"] -= (*V)["a"];
+    Dabij["abij"] -= (*V)["b"];
+    // NOTE: ctf double counts if lhs tensor is SH,SH
+    Dabij["abij"] = Dabij["abij"];
+
+    Bivar_Function<> fctr(&divide);
+    T->abij->contract(1.0, Rabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+  }
+}
+
 
 void Cc4s::iterateMp2() {
   {
