@@ -15,10 +15,16 @@ CoulombIntegrals::CoulombIntegrals(
 ): PerturbationTensor(world, options), chiR(chiReal), chiI(chiImag), v() {
   int nv = options->nv;
   int no = options->no;
+/*
   int symsASAS[] = { AS, NS, AS, NS };
   int symsASNS[] = { AS, NS, NS, NS };
   int symsNSNS[] = { NS, NS, NS, NS };
   int symsNSAS[] = { NS, NS, AS, NS };
+*/
+  int symsASAS[] = { NS, NS, NS, NS };
+  int symsASNS[] = { NS, NS, NS, NS };
+  int symsNSNS[] = { NS, NS, NS, NS };
+  int symsNSAS[] = { NS, NS, NS, NS };
   int vvvv[] = { nv, nv, nv, nv };
   int vvvo[] = { nv, nv, nv, no };
   int vovv[] = { nv, no, nv, nv };
@@ -107,9 +113,7 @@ void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
     if (world->rank == 0) std::cout << "Calculating V" << indexMap << "...";
     // 4 point tensors:
     char dirL[4] = {'g', indexMap[0], indexMap[2], 0 };
-    char dirR[4] = {'g', indexMap[1], indexMap[3], 0 };
-//    char excL[4] = {'g', indexMap[0], indexMap[3], 0 };
-//    char excR[4] = {'g', indexMap[1], indexMap[2], 0 };
+    char dirR[4] = {'g', indexMap[3], indexMap[1], 0 };
     t[indexMap]  = (*chiR)[dirL] * (*chiR)[dirR];
 //    t[indexMap] -= (*chiR)[excL] * (*chiR)[excR];
     t[indexMap] += (*chiI)[dirL] * (*chiI)[dirR];

@@ -249,6 +249,7 @@ void Cc4s::readFTOD() {
   V->i->write(iValuesCount, iIndices, iValues);
   V->a->write(aValuesCount, aIndices, aValues);
   delete[] indices; delete[] reals; delete[] imags;
+  delete[] iIndices; delete[] aIndices; delete[] iValues; delete[] aValues;
   file.close();
   if (world->rank == 0) {
     std::cout << " OK" << std::endl;
@@ -270,7 +271,10 @@ void Cc4s::readFTOD() {
   int64_t readIndices[] = { 0 };
   double readValues[] = { 0.0 };
   V->ijkl->read(1l, readIndices, readValues);
-  std::cout << "V(1,1,1,1) = " << readValues[0] << std::endl;
+  if (world->rank == 0) {
+    std::cout << "V(1,1,1,1) = " << readValues[0] << std::endl;
+  }
+
   // allocate and calculate the intial amplitudes
   T = new Amplitudes(V, world, options);
 }
