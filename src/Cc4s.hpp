@@ -18,7 +18,9 @@ class Cc4s {
   protected:
     void iterateMp2();
     void iterateCcsd();
-    void iterateRPA();
+    void iterateRpa();
+    void iterateRccd();
+    void iterateRccsd();
 
     /**
      * \brief Read Fourier transformed overlap densities and eigenergies from

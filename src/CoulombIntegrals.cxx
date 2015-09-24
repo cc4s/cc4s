@@ -32,6 +32,7 @@ CoulombIntegrals::CoulombIntegrals(
   int vvoo[] = { nv, nv, no, no };
   int oovv[] = { no, no, nv, nv };
   int vooo[] = { nv, no, no, no };
+  int voov[] = { nv, no, no, nv };
   int oovo[] = { no, no, nv, no };
   int oooo[] = { no, no, no, no };
 
@@ -46,6 +47,7 @@ CoulombIntegrals::CoulombIntegrals(
   add(ijkl = new Tensor<>(4, oooo, symsNSNS, *world, "Vijkl",options->profile));
   add(ijak = new Tensor<>(4, oovo, symsNSNS, *world, "Vijak",options->profile));
   add(aijk = new Tensor<>(4, vooo, symsNSNS, *world, "Vaijk",options->profile));
+  add(aijb = new Tensor<>(4, voov, symsNSNS, *world, "Vaijb",options->profile));
   add(ijab = new Tensor<>(4, oovv, symsNSNS, *world, "Vijab",options->profile));
   add(abij = new Tensor<>(4, vvoo, symsNSNS, *world, "Vabij",options->profile));
   add(aibj = new Tensor<>(4, vovo, symsNSNS, *world, "Vaibj",options->profile));

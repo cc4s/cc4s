@@ -66,6 +66,7 @@ class CoulombIntegrals: public PerturbationTensor {
     CTF::Tensor<> *ijab;
     CTF::Tensor<> *abij;
     CTF::Tensor<> *aibj;
+    CTF::Tensor<> *aijb;
     // NOTE: only allocated if storeV is enabled
     CTF::Tensor<> *aibc;
     CTF::Tensor<> *abci;
