@@ -103,6 +103,7 @@ void Cc4s::iterateRccd() {
     int syms[] = {NS, NS, NS, NS};
     // Define Tensors
     //Allocate Tensors for T1 amplitude equations
+    Tensor<> Dai = Tensor<>(V->ai);
     Tensor<> Rai = Tensor<>(T->ai);
     //Allocate Tensors for T2 amplitudes
     Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
@@ -243,6 +244,10 @@ void Cc4s::iterateRccsd() {
     //Chi = new Amplitudes(V, world, options);
 
 
+//********************************************************************************
+//  T2 amplitude equations
+//********************************************************************************
+
     if (world->rank == 0) {
       std::cout << "Solving restricted T2 CCSD Amplitude Equations:" << std::endl;
     }
@@ -361,20 +366,6 @@ void Cc4s::iterateRccsd() {
 //@Felix stop slicing here
 //*****************************
 
-
-
-    if (world->rank == 0) {
-      std::cout << "Solving restricted T1 CCSD Amplitude Equations:" << std::endl;
-    }
-
-
-//    Rabij["abij"] += 2.0 * (*V)["acik"] * (*T)["cbkj"];
-//    Cabij["abij"] =  2.0 * (*V)["cbkj"] * (*T)["acik"];
-//    Rabij["abij"] += Cabij["abij"];
-    //(*V)["cbkj"]*(*T)["acjk"];
-//    Rabij["abij"] += 2.0 * Cabij["acik"] * (*T)["cbkj"];
-
-
     Dabij["abij"] += (*V)["i"];
     Dabij["abij"] += (*V)["j"];
     Dabij["abij"] -= (*V)["a"];
@@ -384,6 +375,38 @@ void Cc4s::iterateRccsd() {
 
     Bivar_Function<> fctr(&divide);
     T->abij->contract(1.0, Rabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+
+
+//********************************************************************************
+//  T1 amplitude equations
+//********************************************************************************
+
+    if (world->rank == 0) {
+      std::cout << "Solving restricted T1 CCSD Amplitude Equations:" << std::endl;
+    }
+
+    Rai["ai"] = Fai["ai"];
+    
+    Rai["ai"] -= 2.0 * Fai["ck"] * (*T)["ak"] * (*T)["ci"];
+    
+    Rai["ai"] += Kac["ac"] * (*T)["ci"];
+
+    Rai["ai"] -= Kki["ac"] * (*T)["ak"];
+  
+//  Calculate Kki
+  
+//    Rai["ai"] += Kki["ac"] * (*T)["ak"];
+    
+//   (*V)["acik"] * (*T)["cbkj"];
+
+
+//    Rabij["abij"] += 2.0 * (*V)["acik"] * (*T)["cbkj"];
+//    Cabij["abij"] =  2.0 * (*V)["cbkj"] * (*T)["acik"];
+//    Rabij["abij"] += Cabij["abij"];
+    //(*V)["cbkj"]*(*T)["acjk"];
+//    Rabij["abij"] += 2.0 * Cabij["acik"] * (*T)["cbkj"];
+
+
   }
 }
 
