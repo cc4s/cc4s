@@ -94,18 +94,18 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
   // NOTE: width of sliced hardcoded
   int w = options->no;
   Tensor<> Rgxc(chiR->getSlice(no+a,no+a+w, no,no+nv)); Rgxc.set_name("Rgxc");
-  Tensor<> Rgyc(chiR->getSlice(no,no+nv, no+b,no+b+w)); Rgyc.set_name("Rgyc");
+  Tensor<> Rgcy(chiR->getSlice(no,no+nv, no+b,no+b+w)); Rgcy.set_name("Rgcy");
   Tensor<> Igxc(chiI->getSlice(no+a,no+a+w, no,no+nv)); Igxc.set_name("Igxc");
-  Tensor<> Igyc(chiI->getSlice(no,no+nv, no+b,no+b+w)); Igyc.set_name("Igyc");
-  int lens[] = {Rgxc.lens[1], Rgyc.lens[1], Rgxc.lens[2], Rgyc.lens[2]};
-  int syms[] = {a == b ? AS : NS, NS, AS, NS};
+  Tensor<> Igcy(chiI->getSlice(no,no+nv, no+b,no+b+w)); Igcy.set_name("Igcy");
+  int lens[] = {Rgxc.lens[1], Rgcy.lens[2], Rgxc.lens[2], Rgcy.lens[1]};
+  int syms[] = {NS, NS, NS, NS};
   Tensor<> Vxycd(4, lens, syms, *world, "Vxycd", options->profile);
-  Vxycd["xycd"] =  Rgxc["gxc"]*Rgyc["gyd"];
-  Vxycd["xycd"] -= Rgxc["gxd"]*Rgyc["gyc"];
-  Vxycd["xycd"] += Igxc["gxc"]*Igyc["gyd"];
-  Vxycd["xycd"] -= Igxc["gxd"]*Igyc["gyc"];
+  Vxycd["xycd"] =  Rgxc["gxc"]*Rgcy["gdy"];
+//  Vxycd["xycd"] -= Rgxc["gxd"]*Rgcy["gcy"];
+  Vxycd["xycd"] += Igxc["gxc"]*Igcy["gdy"];
+//  Vxycd["xycd"] -= Igxc["gxd"]*Igcy["gcy"];
   // NOTE: ctf double counts if lhs tensor is AS
-  Vxycd["xycd"] = 0.5 * Vxycd["xycd"];
+//  Vxycd["xycd"] = 0.5 * Vxycd["xycd"];
   return Vxycd;
 }
 

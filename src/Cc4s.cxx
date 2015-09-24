@@ -118,7 +118,6 @@ void Cc4s::iterateRccd() {
     Tensor<> Lki = Tensor<>(V->ij);
     Tensor<> Kki = Tensor<>(V->ij);
     Tensor<> Cklij = Tensor<>(V->ijkl);
-    Tensor<> Cabcd = Tensor<>(V->abcd);
     Tensor<> Cakic = Tensor<>(V->aijb);
     Tensor<> Cakci = Tensor<>(V->aibj);
     //Tensor<> Chi(4, V->abij->lens, syms, *world, "Cabij");
@@ -191,19 +190,44 @@ void Cc4s::iterateRccd() {
 //  Contract Chi_klij with T2 Amplitudes
     Rabij["abij"] += Cklij["klij"] * (*T)["abkl"];
 
-//*****************************
-//@Felix start slicing here
-//*****************************
+    if (V->abcd) {
+      Tensor<> Cabcd(V->abcd);
+  //  Build Chi_abcd intermediate
+      Cabcd["abcd"] = (*V)["abcd"];
+  //  Contract Chi_abcd with T2 Amplitudes
+      Rabij["abij"] += Cabcd["abcd"] * (*T)["cdij"];
+    } else {
+  // Slicing:
+      for (int b(0); b < options->nv; b += options->no) {
+        for (int a(b); a < options->nv; a += options->no) {
+          if (world->rank == 0) {
+            std::cout << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          }
+          Tensor<> Vxycd(V->getSlice(a, b));
+          int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
+          int origin[] = {0, 0, 0, 0};
+          int lens[] = {na, nb, options->no, options->no};
+          int syms[] = {NS, NS, NS, NS};
+          Tensor<> Rxyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
+          Rxyij["xyij"] = Vxycd["xycd"] * (*T)["cdij"];
 
-//  Build Chi_abcd intermediate
-    Cabcd["abcd"] = (*V)["abcd"];
-
-//  Contract Chi_abcd with T2 Amplitudes
-    Rabij["abij"] += Cabcd["abcd"] * (*T)["cdij"];
-
-//*****************************
-//@Felix stop slicing here
-//*****************************
+          int rBegin[] = {a, b, 0, 0};
+          int rEnd[] = {a+na, b+nb, options->no, options->no};
+          // R["abij"] += R["xyij"] at current x,y
+          Rabij.slice(rBegin,rEnd,1.0, Rxyij,origin,lens,1.0);
+          if (a>b) {
+            // add the same slice at (b,a,j,i):
+            rBegin[0] = b; rBegin[1] = a;
+            rEnd[0] = b+nb; rEnd[1] = a+na;
+            // note that na may be != nb
+            lens[0] = nb; lens[1] = na;
+            Tensor<> Ryxji(4,lens,syms,*world, "Ryxij", Vxycd.profile);
+            Ryxji["yxji"] = Rxyij["xyij"];
+            Rabij.slice(rBegin,rEnd,1.0, Ryxji,origin,lens,1.0);
+          }
+        }
+      }
+    }
 
     Dabij["abij"] += (*V)["i"];
     Dabij["abij"] += (*V)["j"];
@@ -352,16 +376,18 @@ void Cc4s::iterateRccsd() {
 //*****************************
 //@Felix start slicing here
 //*****************************
+    if (V->abcd && V->aibc) {
+  // copy from Vabcd including data
+      Tensor<> Cabcd(V->abcd);
+  //  Build Chi_abcd intermediate
+      Cabcd["abcd"] -= (*V)["akcd"] * (*T)["bk"];
+      Cabcd["abcd"] -= (*V)["kbcd"] * (*T)["ak"];
 
-//  Build Chi_abcd intermediate
-    Cabcd["abcd"] = (*V)["abcd"];
-    Cabcd["abcd"] -= (*V)["akcd"] * (*T)["bk"];
-    Cabcd["abcd"] -= (*V)["kbcd"] * (*T)["ak"];
-
-//  Contract Chi_abcd with T2 Amplitudes
-    Rabij["abij"] += Cabcd["abcd"] * (*T)["cdij"];
-    Rabij["abij"] += Cabcd["abcd"] * (*T)["ci"] * (*T)["dj"];
-
+  //  Contract Chi_abcd with T2 Amplitudes
+      Rabij["abij"] += Cabcd["abcd"] * (*T)["cdij"];
+      Rabij["abij"] += Cabcd["abcd"] * (*T)["ci"] * (*T)["dj"];
+    } else {
+    }
 //*****************************
 //@Felix stop slicing here
 //*****************************
