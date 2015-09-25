@@ -8,6 +8,7 @@ Options::Options(int argumentCount, char **arguments) {
   nG = DEFAULT_NG;
   nv = DEFAULT_NV;
   no = DEFAULT_NO;
+  nw = DEFAULT_NW;
   niter = DEFAULT_NITER;
   profile = DEFAULT_PROFILE;
   storeV = DEFAULT_STORE_V;
@@ -25,6 +26,10 @@ Options::Options(int argumentCount, char **arguments) {
       std::stringstream stream(arguments[++i]);
       stream >> nv;
       if (nv < 0) nv = DEFAULT_NV;
+    } else if (argument == "-nw") {
+      std::stringstream stream(arguments[++i]);
+      stream >> nw;
+      if (nw < 0) nw = DEFAULT_NW;
     } else if (argument == "-niter") {
       std::stringstream stream(arguments[++i]);
       stream >> niter;

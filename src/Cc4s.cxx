@@ -198,8 +198,11 @@ void Cc4s::iterateRccd() {
       Rabij["abij"] += Cabcd["abcd"] * (*T)["cdij"];
     } else {
   // Slicing:
-      for (int b(0); b < options->nv; b += options->no) {
-        for (int a(b); a < options->nv; a += options->no) {
+      //int ntmp;
+      //ntmp = options->no;
+      //options->no = 10;
+      for (int b(0); b < options->nv; b += options->nw) {
+        for (int a(b); a < options->nv; a += options->nw) {
           if (world->rank == 0) {
             std::cout << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           }
@@ -227,6 +230,7 @@ void Cc4s::iterateRccd() {
           }
         }
       }
+      //options->no = ntmp;
     }
 
     Dabij["abij"] += (*V)["i"];

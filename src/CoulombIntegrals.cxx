@@ -92,7 +92,7 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
   int nv = options->nv;
   int no = options->no;
   // NOTE: width of sliced hardcoded
-  int w = options->no;
+  int w = options->nw;
   Tensor<> Rgxc(chiR->getSlice(no+a,no+a+w, no,no+nv)); Rgxc.set_name("Rgxc");
   Tensor<> Rgcy(chiR->getSlice(no,no+nv, no+b,no+b+w)); Rgcy.set_name("Rgcy");
   Tensor<> Igxc(chiI->getSlice(no+a,no+a+w, no,no+nv)); Igxc.set_name("Igxc");
