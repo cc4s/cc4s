@@ -198,9 +198,6 @@ void Cc4s::iterateRccd() {
       Rabij["abij"] += Cabcd["abcd"] * (*T)["cdij"];
     } else {
   // Slicing:
-      //int ntmp;
-      //ntmp = options->no;
-      //options->no = 10;
       for (int b(0); b < options->nv; b += options->nw) {
         for (int a(b); a < options->nv; a += options->nw) {
           if (world->rank == 0) {
@@ -230,7 +227,6 @@ void Cc4s::iterateRccd() {
           }
         }
       }
-      //options->no = ntmp;
     }
 
     Dabij["abij"] += (*V)["i"];
