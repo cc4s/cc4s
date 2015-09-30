@@ -4,6 +4,7 @@
 #include "Exception.hpp"
 #include <ctf.hpp>
 #include <iostream>
+// #include <ios>
 #include <fstream>
 
 using namespace CTF;
@@ -12,7 +13,8 @@ Cc4s::Cc4s(
   CTF::World *world_, Options *options_
 ):
   world(world_),
-  options(options_)
+  options(options_),
+  flopCounter()
 {
 }
 
@@ -55,6 +57,46 @@ void Cc4s::run() {
       std::cout << "e=" << e << std::endl;
     }
   }
+  printStatistics();
+}
+
+void Cc4s::printStatistics() {
+  int64_t flops = flopCounter.count();
+  std::string pid, comm, state, ppid, pgrp, session, ttyNr,
+    tpgid, flags, minflt, cminflt, majflt, cmajflt,
+    utime, stime, cutime, cstime, priority, nice,
+    O, itrealvalue, starttime;
+  int64_t vsize, rss;
+  // assuming LINUX 
+  std::ifstream statStream("/proc/self/stat", std::ios_base::in);
+  statStream >> pid >> comm >> state >> ppid >> pgrp >> session >> ttyNr
+    >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+    >> utime >> stime >> cutime >> cstime >> priority >> nice
+    >> O >> itrealvalue >> starttime >> vsize >> rss;
+  statStream.close();
+  // in case x86-64 is configured to use 2MB pages
+  int64_t pageSize = sysconf(_SC_PAGE_SIZE);
+  if (world->rank == 0) {
+    std::cout << "performance statistics:" << std::endl;
+    std::cout << "  on root: " << flops / 1.e9 << " GFLOPS" << std::endl;
+    std::cout << "    physical memory: " <<
+      rss * pageSize / 1e9 << " GB" << std::endl;
+    std::cout << "    virtual  memory: " <<
+      vsize / 1e9 << " GB" << std::endl;
+  }
+
+  flops = flopCounter.count(world->comm);
+  int64_t globalVSize, globalRss;
+  MPI_Reduce(&vsize, &globalVSize, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
+  MPI_Reduce(&rss, &globalRss, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
+  if (world->rank == 0) {
+    std::cout << "  total:   " << flops / 1.e9 << " GFLOPS" << std::endl;
+    std::cout << "    physical memory: " <<
+      globalRss * pageSize / 1e9 << " GB" << std::endl;
+    std::cout << "    virtual  memory: " <<
+      globalVSize / 1e9 << " GB" << std::endl;
+  }
+  // TODO: timing
 }
 
 
@@ -558,7 +600,7 @@ void Cc4s::readFTOD() {
       // chi_q^p(g), spin is ignored
       // g, p and q are zero based
       --g; --p; --q;
-      // distribed along g: current rank is responsible, only
+      // distributed along g: current rank is responsible, only
       if (g % world->np == world->rank) {
         reals[valuesCount] = real;
         imags[valuesCount] = imag;

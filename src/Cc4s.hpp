@@ -32,6 +32,8 @@ class Cc4s {
      */
     void add_Vxyef_T21efij(CTF::Tensor<> &Zabij, CTF::Tensor<> &T21);
 
+    void printStatistics();
+
     CTF::World *world;
     bool profile;
 
@@ -39,6 +41,8 @@ class Cc4s {
     Chi *chiReal, *chiImag;
     CoulombIntegrals *V;
     Amplitudes *T;
+
+    CTF::Flop_counter flopCounter;
 };
 
 #endif
