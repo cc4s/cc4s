@@ -3,7 +3,9 @@
 #define BINARY_FTOD_READER_DEFINED
 
 #include "FtodReader.hpp"
+#include "Chi.hpp"
 #include <cstdint>
+#include <fstream>
 
 class BinaryFtodReader: public FtodReader {
   public:
@@ -11,13 +13,24 @@ class BinaryFtodReader: public FtodReader {
     virtual void write();
 
   protected:
+    int no, nv, nG;
+    int64_t np;
+    void readChiChunk(std::ifstream &file, Chi *chi);
+    void readEpsChunk(std::ifstream &file);
+
     class Header {
-       char magic[8];
-       int32_t no, nv, nG, nSpins, kPoints, reserved_;
+      public:
+        char magic[8];
+        int32_t no, nv, nG, nSpins, kPoints, reserved_;
+        static char const *MAGIC;
     };
     class Chunk {
-      char magic[8];
-      int64_t size;
+      public:
+        char magic[8];
+        int64_t size;
+        static char const *REALS_MAGIC;
+        static char const *IMAGS_MAGIC;
+        static char const *EPSILONS_MAGIC;
     };
 };
 

@@ -2,6 +2,7 @@
 
 #include "Cc4s.hpp"
 #include "TextFtodReader.hpp"
+#include "BinaryFtodReader.hpp"
 #include "Exception.hpp"
 #include <ctf.hpp>
 #include <iostream>
@@ -19,8 +20,11 @@ void Cc4s::run() {
   printBanner();
 
   // Read from disk
-  FtodReader *ftodReader = new TextFtodReader();
-  ftodReader->read();
+//  TextFtodReader textFtodReader;
+  BinaryFtodReader binaryFtodReader;
+//  textFtodReader.read();
+  binaryFtodReader.read();
+//  binaryFtodReader.write();
 
   Scalar<> energy(*world);
   double e, dire, exce, norm;
@@ -556,8 +560,8 @@ int main(int argumentCount, char **arguments) {
     Cc4s::options = new Options(argumentCount, arguments);
     Cc4s cc4s;
     cc4s.run();
-  } catch (Exception *cause) {
-    std::cout << cause->getMessage() << std::endl;
+  } catch (DetailedException *cause) {
+    std::cout << std::endl << cause->getMessage() << std::endl;
   }
 
   MPI_Finalize();

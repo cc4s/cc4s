@@ -28,11 +28,6 @@ protected:
     void iterateRccd();
     void iterateRccsd();
 
-    /**
-     * \brief Read Fourier transformed overlap densities and eigenergies from
-     * disk and calculate all necessary quantities.
-     */
-    void readFTOD();
     void printBanner();
     void printStatistics();
 
