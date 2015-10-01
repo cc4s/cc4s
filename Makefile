@@ -15,21 +15,16 @@ LIBS=-lblas -lgfortran
 cc4s: bin/${TARGET}
 
 OBJECTS=obj/Options.o obj/PerturbationTensor.o \
-obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o obj/${TARGET}.o
+obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
+obj/BinaryFtodReader.o obj/TextFtodReader.o obj/${TARGET}.o
 # dependencies
 obj/${TARGET}.o: obj/Options.o obj/PerturbationTensor.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
-VERSION
-
-# create directories of not present
+obj/BinaryFtodReader.o obj/TextFtodReader.o
 
 clean:
 	rm -rf bin/*
 	rm -rf obj/*
-
-# write version number
-VERSION: .git
-	git describe --all --dirty --long >VERSION
 
 # compile object files
 obj/%.o: src/%.cxx src/%.hpp
@@ -38,5 +33,4 @@ obj/%.o: src/%.cxx src/%.hpp
 # compile and link executable
 bin/%: obj/%.o
 	${CXX} ${COPTIONS} ${OPTIMIZE} ${OBJECTS} -o $@ -I${CTF}/include/ -L${CTF}/lib -lctf ${LIBS}
-
 

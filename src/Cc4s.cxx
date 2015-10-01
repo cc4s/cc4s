@@ -1,6 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include "Cc4s.hpp"
+#include "TextFtodReader.hpp"
 #include "Exception.hpp"
 #include <ctf.hpp>
 #include <iostream>
@@ -18,7 +19,8 @@ void Cc4s::run() {
   printBanner();
 
   // Read from disk
-  readFTOD();
+  FtodReader *ftodReader = new TextFtodReader();
+  ftodReader->read();
 
   Scalar<> energy(*world);
   double e, dire, exce, norm;
@@ -537,119 +539,6 @@ void Cc4s::iterateCcsd() {
     T->abij->contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
   }
 } 
-
-
-/**
- * \brief Reads the Fourier transformed overlap densities from disk.
- */
-void Cc4s::readFTOD() {
-  if (world->rank == 0) {
-    std::cout <<
-      "Reading Fourier transformed overlap densities from FTODDUMP...";
-  }
-  std::ifstream file("FTODDUMP");
-  std::string line;
-  // read a comment line
-  std::getline(file, line);
-  // NOTE: currently unused
-  int nG, no, nv, nSpins, nk;
-  // read the size data
-  std::getline(file, line);
-  std::stringstream lineStream(line);
-  lineStream >> no >> nv >> nG >> nSpins >> nk;
-
-  // allocate chi and Coulomb integral tensors
-  chiReal = new Chi(nG, no, nv);
-  chiImag = new Chi(nG, no, nv);
-  V = new CoulombIntegrals(chiReal, chiImag);
-
-  // allocate local indices and values of the chi tensors
-  int64_t np(no+nv);
-  // distributed along g: round up g/nprocs 
-  int64_t maxValuesCount((nG+Cc4s::world->np-1)/Cc4s::world->np * np*np);
-  // each process can have at most maxValuesCount entires
-  double *reals(new double[maxValuesCount]);
-  double *imags(new double[maxValuesCount]);
-  int64_t *indices(new int64_t[maxValuesCount]);
-  int64_t valuesCount(0);
-  // allocate local indices and values of eigenenergies
-  double *iValues(new double[no]);
-  double *aValues(new double[nv]);
-  int64_t *iIndices(new int64_t[no]);
-  int64_t *aIndices(new int64_t[nv]);
-
-  // read another comment line
-  std::getline(file, line);
-  // start reading the file line by line
-  while (std::getline(file, line)) {
-    std::stringstream lineStream(line);
-    double real, imag;
-    int g, p, q, spin;
-    // parse the line
-    lineStream >> real >> imag >> g >> p >> q >> spin;
-    if (g > 0) {
-      // chi_q^p(g), spin is ignored
-      // g, p and q are zero based
-      --g; --p; --q;
-      // distributed along g: current rank is responsible, only
-      if (g % world->np == world->rank) {
-        reals[valuesCount] = real;
-        imags[valuesCount] = imag;
-        indices[valuesCount] = g + nG*(p + np*q);
-        ++valuesCount;
-      }
-    } else {
-      // eigenenergy with eps_p, all other indices are to be ignored
-      // they are written only on the root
-      if (world->rank == 0) {
-        --p;
-        if (p < chiReal->no) {
-          iValues[p] = real;
-          iIndices[p] = p;
-        } else {
-          aValues[p-no] = real;
-          aIndices[p-no] = p-no;
-        }
-      }
-    }
-  }
-  chiReal->gpq->write(valuesCount, indices, reals);
-  chiImag->gpq->write(valuesCount, indices, imags);
-  int64_t iValuesCount(Cc4s::world->rank == 0 ? no : 0);
-  int64_t aValuesCount(Cc4s::world->rank == 0 ? nv : 0);
-  V->i->write(iValuesCount, iIndices, iValues);
-  V->a->write(aValuesCount, aIndices, aValues);
-  delete[] indices; delete[] reals; delete[] imags;
-  delete[] iIndices; delete[] aIndices; delete[] iValues; delete[] aValues;
-  file.close();
-  if (Cc4s::world->rank == 0) {
-    std::cout << " OK" << std::endl;
-  }
-
-  double realNorm = chiReal->gpq->norm2();
-  double imagNorm = chiImag->gpq->norm2();
-  double iNorm = V->i->norm2();
-  double aNorm = V->a->norm2();
-  if (Cc4s::world->rank == 0) {
-    std::cout <<
-      "2-Norm of FTOD = (" << realNorm << "," << imagNorm << ")" << std::endl;
-    std::cout <<
-      "2-Norm of (eps_i,eps_a) = (" << iNorm << "," << aNorm << ")" << std::endl;
-  }
-  // calculate Coulomb integrals from Fourier transformed overlap densities
-  V->fetch();
-  // write V(1,1,1,1) for testing
-  int64_t readIndices[] = { 0 };
-  double readValues[] = { 0.0 };
-  V->ijkl->read(1l, readIndices, readValues);
-  if (world->rank == 0) {
-    std::cout << "V(1,1,1,1) = " << readValues[0] << std::endl;
-  }
-
-  // allocate and calculate the intial amplitudes
-  T = new Amplitudes(V);
-}
-
 
 
 World *Cc4s::world;
