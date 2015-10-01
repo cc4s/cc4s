@@ -44,8 +44,10 @@ void Cc4s::run() {
 
 void Cc4s::printBanner() {
   if (Cc4s::world->rank == 0) {
-    std::cout << "Coupled Cluster for Solids, Version " << CC4S_VERSION << std::endl;
-    std::cout << "built " << __DATE__ << " " << __TIME__ << " with c++ " << __cplusplus << std::endl;
+    std::cout << "====== Coupled Cluster for Solids ======" << std::endl;
+    std::cout << "version " << CC4S_VERSION << " " << CC4S_DATE << std::endl;
+    std::cout << "built " << __DATE__ << " " << __TIME__ <<
+      " with c++ " << __cplusplus << std::endl;
   }
 }
 
