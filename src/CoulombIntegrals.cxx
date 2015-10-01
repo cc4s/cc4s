@@ -1,6 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include "CoulombIntegrals.hpp"
+#include "Cc4s.hpp"
 #include "Exception.hpp"
 #include <iostream>
 
@@ -11,20 +12,18 @@ using namespace CTF;
  * from the given chi tensors.
  */
 CoulombIntegrals::CoulombIntegrals(
-  Chi *chiReal, Chi *chiImag, World *world, Options const *options
-): PerturbationTensor(world, options), chiR(chiReal), chiI(chiImag), v() {
-  int nv = options->nv;
-  int no = options->no;
+  Chi *chiReal, Chi *chiImag
+): PerturbationTensor(), chiR(chiReal), chiI(chiImag), v() {
+  int nv = chiR->nv;
+  int no = chiR->no;
+  bool profile = Cc4s::options->profile;
 /*
   int symsASAS[] = { AS, NS, AS, NS };
   int symsASNS[] = { AS, NS, NS, NS };
   int symsNSNS[] = { NS, NS, NS, NS };
   int symsNSAS[] = { NS, NS, AS, NS };
 */
-  int symsASAS[] = { NS, NS, NS, NS };
-  int symsASNS[] = { NS, NS, NS, NS };
   int symsNSNS[] = { NS, NS, NS, NS };
-  int symsNSAS[] = { NS, NS, NS, NS };
   int vvvv[] = { nv, nv, nv, nv };
   int vvvo[] = { nv, nv, nv, no };
   int vovv[] = { nv, no, nv, nv };
@@ -38,23 +37,23 @@ CoulombIntegrals::CoulombIntegrals(
 
   // allocate the tensors, assign them to the respective variable
   // and add them to the tensor map for further manipulation
-  add(i = new Vector<>(no, *world, "Ei", options->profile));
-  add(a = new Vector<>(nv, *world, "Ea", options->profile));
-  add(ij = new Matrix<>(no, no, NS, *world, "Fij", options->profile));
-  add(ia = new Matrix<>(no, nv, NS, *world, "Fia", options->profile));
-  add(ai = new Matrix<>(nv, no, NS, *world, "Fai", options->profile));
-  add(ab = new Matrix<>(nv, nv, NS, *world, "Fab", options->profile));
-  add(ijkl = new Tensor<>(4, oooo, symsNSNS, *world, "Vijkl",options->profile));
-  add(ijak = new Tensor<>(4, oovo, symsNSNS, *world, "Vijak",options->profile));
-  add(aijk = new Tensor<>(4, vooo, symsNSNS, *world, "Vaijk",options->profile));
-  add(aijb = new Tensor<>(4, voov, symsNSNS, *world, "Vaijb",options->profile));
-  add(ijab = new Tensor<>(4, oovv, symsNSNS, *world, "Vijab",options->profile));
-  add(abij = new Tensor<>(4, vvoo, symsNSNS, *world, "Vabij",options->profile));
-  add(aibj = new Tensor<>(4, vovo, symsNSNS, *world, "Vaibj",options->profile));
-  if (options->storeV) {
-    add(aibc = new Tensor<>(4, vovv, symsNSNS,*world,"Vaibc",options->profile));
-    add(abci = new Tensor<>(4, vvvo, symsNSNS,*world,"Vabci",options->profile));
-    add(abcd = new Tensor<>(4, vvvv, symsNSNS,*world,"Vabcd",options->profile));
+  add(i = new Vector<>(no, *Cc4s::world, "Ei", profile));
+  add(a = new Vector<>(nv, *Cc4s::world, "Ea", profile));
+  add(ij = new Matrix<>(no, no, NS, *Cc4s::world, "Fij", profile));
+  add(ia = new Matrix<>(no, nv, NS, *Cc4s::world, "Fia", profile));
+  add(ai = new Matrix<>(nv, no, NS, *Cc4s::world, "Fai", profile));
+  add(ab = new Matrix<>(nv, nv, NS, *Cc4s::world, "Fab", profile));
+  add(ijkl = new Tensor<>(4, oooo, symsNSNS, *Cc4s::world, "Vijkl", profile));
+  add(ijak = new Tensor<>(4, oovo, symsNSNS, *Cc4s::world, "Vijak", profile));
+  add(aijk = new Tensor<>(4, vooo, symsNSNS, *Cc4s::world, "Vaijk", profile));
+  add(aijb = new Tensor<>(4, voov, symsNSNS, *Cc4s::world, "Vaijb", profile));
+  add(ijab = new Tensor<>(4, oovv, symsNSNS, *Cc4s::world, "Vijab", profile));
+  add(abij = new Tensor<>(4, vvoo, symsNSNS, *Cc4s::world, "Vabij", profile));
+  add(aibj = new Tensor<>(4, vovo, symsNSNS, *Cc4s::world, "Vaibj", profile));
+  if (Cc4s::options->storeV) {
+    add(aibc = new Tensor<>(4, vovv, symsNSNS, *Cc4s::world, "Vaibc", profile));
+    add(abci = new Tensor<>(4, vvvo, symsNSNS, *Cc4s::world, "Vabci", profile));
+    add(abcd = new Tensor<>(4, vvvv, symsNSNS, *Cc4s::world, "Vabcd", profile));
   } else {
     aibc = NULL;
     abci = NULL;
@@ -89,17 +88,17 @@ Idx_Tensor CoulombIntegrals::get(char const *stdIndexMap, char const *indexMap){
 }
 
 Tensor<> CoulombIntegrals::getSlice(int a, int b) {
-  int nv = options->nv;
-  int no = options->no;
+  int nv = chiR->nv;
+  int no = chiR->no;
   // NOTE: width of sliced hardcoded
-  int w = options->nw;
+  int w = Cc4s::options->nw;
   Tensor<> Rgxc(chiR->getSlice(no+a,no+a+w, no,no+nv)); Rgxc.set_name("Rgxc");
   Tensor<> Rgcy(chiR->getSlice(no,no+nv, no+b,no+b+w)); Rgcy.set_name("Rgcy");
   Tensor<> Igxc(chiI->getSlice(no+a,no+a+w, no,no+nv)); Igxc.set_name("Igxc");
   Tensor<> Igcy(chiI->getSlice(no,no+nv, no+b,no+b+w)); Igcy.set_name("Igcy");
   int lens[] = {Rgxc.lens[1], Rgcy.lens[2], Rgxc.lens[2], Rgcy.lens[1]};
   int syms[] = {NS, NS, NS, NS};
-  Tensor<> Vxycd(4, lens, syms, *world, "Vxycd", options->profile);
+  Tensor<> Vxycd(4, lens, syms, *Cc4s::world, "Vxycd", Cc4s::options->profile);
   Vxycd["xycd"] =  Rgxc["gxc"]*Rgcy["gdy"];
 //  Vxycd["xycd"] -= Rgxc["gxd"]*Rgcy["gcy"];
   Vxycd["xycd"] += Igxc["gxc"]*Igcy["gdy"];
@@ -112,10 +111,11 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
 /* Fetch direct integrals only */
 void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
   if (strlen(indexMap) == 4) {
-    if (world->rank == 0) std::cout << "Calculating V" << indexMap << "...";
+    if (Cc4s::world->rank == 0)
+      std::cout << "Calculating V" << indexMap << "...";
     // 4 point tensors:
-    char dirL[4] = {'g', indexMap[0], indexMap[2], 0 };
-    char dirR[4] = {'g', indexMap[3], indexMap[1], 0 };
+    char dirL[4] = {'g', indexMap[0], indexMap[2], 0};
+    char dirR[4] = {'g', indexMap[3], indexMap[1], 0};
     t[indexMap]  = (*chiR)[dirL] * (*chiR)[dirR];
 //    t[indexMap] -= (*chiR)[excL] * (*chiR)[excR];
     t[indexMap] += (*chiI)[dirL] * (*chiI)[dirR];
@@ -126,7 +126,7 @@ void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
       // NOTE: ctf double counts if lhs tensor is AS
       t[indexMap] = 0.5 * t[indexMap];
     }
-    if (world->rank == 0) std::cout << " OK" << std::endl;
+    if (Cc4s::world->rank == 0) std::cout << " OK" << std::endl;
   }
 }
 

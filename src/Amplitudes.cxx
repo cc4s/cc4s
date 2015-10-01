@@ -1,6 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include "Amplitudes.hpp"
+#include "Cc4s.hpp"
 #include "Exception.hpp"
 #include <iostream>
 
@@ -9,10 +10,8 @@ using namespace CTF;
 /**
  * \brief Allocate all tensors
  */
-Amplitudes::Amplitudes(
-  CoulombIntegrals *V, World *world, Options const * options
-): PerturbationTensor(world, options) {
-  if (world->rank == 0) std::cout << "Initializing amplitudes...";
+Amplitudes::Amplitudes(CoulombIntegrals *V): PerturbationTensor() {
+  if (Cc4s::world->rank == 0) std::cout << "Initializing amplitudes...";
   ai = new Tensor<>(V->ai);
   ai->set_name("Tai");
   {
@@ -21,7 +20,7 @@ Amplitudes::Amplitudes(
 //    abij = new Tensor<>(4, V->abij->lens, syms, *world, "Tabij");
 //    (*abij)["abij"] = (*V)["abij"];
   }
-  if (world->rank == 0) std::cout << " OK" << std::endl;
+  if (Cc4s::world->rank == 0) std::cout << " OK" << std::endl;
 }
 
 Amplitudes::~Amplitudes() {

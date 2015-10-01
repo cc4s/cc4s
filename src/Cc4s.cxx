@@ -4,47 +4,29 @@
 #include "Exception.hpp"
 #include <ctf.hpp>
 #include <iostream>
-// #include <ios>
 #include <fstream>
 
 using namespace CTF;
 
-Cc4s::Cc4s(
-  CTF::World *world_, Options *options_
-):
-  world(world_),
-  options(options_),
-  flopCounter()
-{
+Cc4s::Cc4s(): flopCounter() {
 }
 
 Cc4s::~Cc4s() {
-  delete T;
-  delete V;
-  delete chiReal;
-  delete chiImag;
 }
 
-
 void Cc4s::run() {
+  printBanner();
+
   // Read from disk
   readFTOD();
 
-
   Scalar<> energy(*world);
   double e, dire, exce, norm;
-  // NOTE: should be (*V)["ijab"]
   (*T)["abij"] = 0.0;
-  //energy[""] = 0.25 * (*T)["abij"]*(*V)["abij"];
-  e = energy.get_val();
-  if (world->rank == 0) {
-    std::cout << "e=" << e << std::endl;
-  }
   for (int i(0); i < options->niter; ++i) {
     double d = MPI_Wtime();
 //    iterateMp2();
     iterateRccd();
-    // NOTE: should be (*V)["ijab"]
     energy[""] = 2.0 * (*T)["abij"] * (*V)["abij"];
     dire = energy.get_val();
     energy[""] = (*T)["abji"] * (*V)["abij"];
@@ -58,6 +40,13 @@ void Cc4s::run() {
     }
   }
   printStatistics();
+}
+
+void Cc4s::printBanner() {
+  if (Cc4s::world->rank == 0) {
+    std::cout << "Coupled Cluster for Solids, Version " << CC4S_VERSION << std::endl;
+    std::cout << "built " << __DATE__ << " " << __TIME__ << " with c++ " << __cplusplus << std::endl;
+  }
 }
 
 void Cc4s::printStatistics() {
@@ -240,21 +229,21 @@ void Cc4s::iterateRccd() {
       Rabij["abij"] += Cabcd["abcd"] * (*T)["cdij"];
     } else {
   // Slicing:
-      for (int b(0); b < options->nv; b += options->nw) {
-        for (int a(b); a < options->nv; a += options->nw) {
+      for (int b(0); b < chiReal->nv; b += options->nw) {
+        for (int a(b); a < chiReal->nv; a += options->nw) {
           if (world->rank == 0) {
             std::cout << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           }
           Tensor<> Vxycd(V->getSlice(a, b));
           int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
           int origin[] = {0, 0, 0, 0};
-          int lens[] = {na, nb, options->no, options->no};
+          int lens[] = {na, nb, chiReal->no, chiReal->no};
           int syms[] = {NS, NS, NS, NS};
           Tensor<> Rxyij(4, lens, syms, *world, "Txyij", Vxycd.profile);
           Rxyij["xyij"] = Vxycd["xycd"] * (*T)["cdij"];
 
           int rBegin[] = {a, b, 0, 0};
-          int rEnd[] = {a+na, b+nb, options->no, options->no};
+          int rEnd[] = {a+na, b+nb, chiReal->no, chiReal->no};
           // R["abij"] += R["xyij"] at current x,y
           Rabij.slice(rBegin,rEnd,1.0, Rxyij,origin,lens,1.0);
           if (a>b) {
@@ -496,15 +485,15 @@ void Cc4s::iterateMp2() {
 }
 
 void Cc4s::iterateCcsd() {
-  int no = options->no;
-  int nv = options->nv;
+  int no = chiReal->no;
+  int nv = chiReal->nv;
   Tensor<> T21 = Tensor<>(T->abij);
   // NOTE: ctf double counts if lhs tensor is AS
   T21["abij"] += 0.5 * (*T)["ai"] * (*T)["bj"];
   Tensor<> tZabij = Tensor<>(V->abij);
 
   if (!V->abcd) {
-    for (int b(0); b < options->nv; b += options->no) {
+    for (int b(0); b < chiReal->nv; b += chiReal->no) {
   //    for (int a(b); a < nv; a += no) {
       for (int a(0); a < nv; a += no) {
         if (world->rank == 0) {
@@ -521,7 +510,7 @@ void Cc4s::iterateCcsd() {
         Txyij["xyij"] = Vxycd["xyef"] * T21["efij"];
 
         int tzBegin[] = {a, b, 0, 0};
-        int tzEnd[] = {a+na, b+nb, options->no, options->no};
+        int tzEnd[] = {a+na, b+nb, chiReal->no, chiReal->no};
         tZabij.slice(
           tzBegin,tzEnd,1.0, Txyij,Tbegin,lens,0.5
         );
@@ -561,31 +550,31 @@ void Cc4s::readFTOD() {
   // read a comment line
   std::getline(file, line);
   // NOTE: currently unused
-  int nSpins, nk;
+  int nG, no, nv, nSpins, nk;
   // read the size data
   std::getline(file, line);
   std::stringstream lineStream(line);
-  lineStream >> options->no >> options->nv >> options->nG >> nSpins >> nk;
+  lineStream >> no >> nv >> nG >> nSpins >> nk;
 
   // allocate chi and Coulomb integral tensors
-  chiReal = new Chi(world, options);
-  chiImag = new Chi(world, options);
-  V = new CoulombIntegrals(chiReal, chiImag, world, options);
+  chiReal = new Chi(nG, no, nv);
+  chiImag = new Chi(nG, no, nv);
+  V = new CoulombIntegrals(chiReal, chiImag);
 
   // allocate local indices and values of the chi tensors
-  int64_t nG(options->nG); int np(options->no+options->nv);
+  int64_t np(no+nv);
   // distributed along g: round up g/nprocs 
-  int64_t maxValuesCount((nG+world->np-1)/world->np * np*np);
+  int64_t maxValuesCount((nG+Cc4s::world->np-1)/Cc4s::world->np * np*np);
   // each process can have at most maxValuesCount entires
   double *reals(new double[maxValuesCount]);
   double *imags(new double[maxValuesCount]);
   int64_t *indices(new int64_t[maxValuesCount]);
   int64_t valuesCount(0);
   // allocate local indices and values of eigenenergies
-  double *iValues(new double[options->no]);
-  double *aValues(new double[options->nv]);
-  int64_t *iIndices(new int64_t[options->no]);
-  int64_t *aIndices(new int64_t[options->nv]);
+  double *iValues(new double[no]);
+  double *aValues(new double[nv]);
+  int64_t *iIndices(new int64_t[no]);
+  int64_t *aIndices(new int64_t[nv]);
 
   // read another comment line
   std::getline(file, line);
@@ -612,26 +601,26 @@ void Cc4s::readFTOD() {
       // they are written only on the root
       if (world->rank == 0) {
         --p;
-        if (p < options->no) {
+        if (p < chiReal->no) {
           iValues[p] = real;
           iIndices[p] = p;
         } else {
-          aValues[p-options->no] = real;
-          aIndices[p-options->no] = p-options->no;
+          aValues[p-no] = real;
+          aIndices[p-no] = p-no;
         }
       }
     }
   }
   chiReal->gpq->write(valuesCount, indices, reals);
   chiImag->gpq->write(valuesCount, indices, imags);
-  int64_t iValuesCount(world->rank == 0 ? options->no : 0);
-  int64_t aValuesCount(world->rank == 0 ? options->nv : 0);
+  int64_t iValuesCount(Cc4s::world->rank == 0 ? no : 0);
+  int64_t aValuesCount(Cc4s::world->rank == 0 ? nv : 0);
   V->i->write(iValuesCount, iIndices, iValues);
   V->a->write(aValuesCount, aIndices, aValues);
   delete[] indices; delete[] reals; delete[] imags;
   delete[] iIndices; delete[] aIndices; delete[] iValues; delete[] aValues;
   file.close();
-  if (world->rank == 0) {
+  if (Cc4s::world->rank == 0) {
     std::cout << " OK" << std::endl;
   }
 
@@ -639,7 +628,7 @@ void Cc4s::readFTOD() {
   double imagNorm = chiImag->gpq->norm2();
   double iNorm = V->i->norm2();
   double aNorm = V->a->norm2();
-  if (world->rank == 0) {
+  if (Cc4s::world->rank == 0) {
     std::cout <<
       "2-Norm of FTOD = (" << realNorm << "," << imagNorm << ")" << std::endl;
     std::cout <<
@@ -656,109 +645,25 @@ void Cc4s::readFTOD() {
   }
 
   // allocate and calculate the intial amplitudes
-  T = new Amplitudes(V, world, options);
+  T = new Amplitudes(V);
 }
 
 
-void Cc4s::testSymmetries() {
-  int symsAS[] = {AS, NS};
-  int symsNS[] = {NS, NS};
-  int lens[] = {3, 3};
-  Tensor<> a(2, lens, symsAS, *world, "a");
-  Tensor<> n(2, lens, symsNS, *world, "n");
-  Tensor<> ns(2, lens, symsNS, *world, "ns");
-  double givenValues[] = {
-     0.0,  1.0, 2.0,
-    -1.0,  0.0, 5.0,
-    -2.0, -1.0, 0.0
-  };
-  double nonsymmetricValues[] = {
-     1.0,  2.0, 3.0,
-     4.0,  5.0, 6.0,
-     7.0,  8.0, 9.0
-  };
-//  int64_t givenIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-  int64_t indicesCount, *indices;
-  double *values;
-  ns.read_local(&indicesCount, &indices, &values);
-  for (int i(0); i < indicesCount; ++i) {
-    values[i] = nonsymmetricValues[indices[i]];
-  }
-  ns.write(indicesCount, indices, values);
-  free(indices); free(values);
-  n.read_local(&indicesCount, &indices, &values);
-  for (int i(0); i < indicesCount; ++i) {
-    values[i] = givenValues[indices[i]];
-  }
-  n.write(indicesCount, indices, values);
-  free(indices); free(values);
 
-// test reading in different indices at different ranks:
-// works as expected here only for 3 or more processors
-//  n.write(3, &givenIndices[world->rank*3], &givenValues[world->rank*3]);
-  // BUG: the tensor is internally (anti-)symmetrized by
-  // a["ij"] = n["ij"] +(-) n["ji"]
-/*
-  a["ij"] = 0.5*n["ij"];
-  a.read_all(&indicesCount, &values, true);
-  for (int i(0); i < indicesCount; ++i) {
-    if (world->rank == 0) {
-      std::cout << " " << values[i];
-      if (i % 3 == 2) std::cout << std::endl;
-    }
-  }
-  free(values);
-*/
-  ns["ij"] -= ns["ji"];
-  a["ij"] = 0.5 * ns["ij"];
-  // test AS matrix * NS matrix
-  n["ij"] = a["ik"] * n["kj"];
-  // works as expected
-  n.read_all(&indicesCount, &values, true);
-  for (int i(0); i < indicesCount; ++i) {
-    if (world->rank == 0) {
-      std::cout << " " << values[i];
-      if (i % 3 == 2) std::cout << std::endl;
-    }
-  }
-  free(values);  
-
-  // test slicing in (anti-)symmetrical tensor
-  int sliceLens[] = {2, 2};
-  Tensor<> s(2, sliceLens, symsNS, *world, "s");
-  double sliceValues[] = {
-    7.0, 11.0,
-    0.0, 13.0
-  };
-  s.read_local(&indicesCount, &indices, &values);
-  for (int i(0); i < indicesCount; ++i) {
-    values[i] = sliceValues[indices[i]];
-  }
-  s.write(indicesCount, indices, values);
-  free(indices); free(values);
-  int aMin[] = {0, 1}, aMax[] = {2, 3};
-  int sMin[] = {0, 0}, sMax[] = {2, 2};
-  a.slice(aMin, aMax, 1.0, s, sMin, sMax, 1.0);
-  a.read_all(&indicesCount, &values, true);
-  for (int i(0); i < indicesCount; ++i) {
-    if (world->rank == 0) {
-      std::cout << " " << values[i];
-      if (i % 3 == 2) std::cout << std::endl;
-    }
-  }
-  free(values);  
-  // slicing on (anti-)symmetrical tensors works as expected
-}
+World *Cc4s::world;
+Options *Cc4s::options;
+Chi *Cc4s::chiReal, *Cc4s::chiImag;
+CoulombIntegrals *Cc4s::V;
+Amplitudes *Cc4s::T;
 
 
 int main(int argumentCount, char **arguments) {
   MPI_Init(&argumentCount, &arguments);
 
   try {
-    World *world = new World(argumentCount, arguments);
-    Options *options = new Options(argumentCount, arguments); 
-    Cc4s cc4s(world, options);
-//    cc4s.testSymmetries();
+    Cc4s::world = new World(argumentCount, arguments);
+    Cc4s::options = new Options(argumentCount, arguments);
+    Cc4s cc4s;
     cc4s.run();
   } catch (Exception *cause) {
     std::cout << cause->getMessage() << std::endl;
@@ -767,4 +672,3 @@ int main(int argumentCount, char **arguments) {
   MPI_Finalize();
   return 0;
 }
-

@@ -8,11 +8,11 @@ class Options {
      * \brief They are only needed when doing memory tests with random dummy
      * data
      */
-    int no, nv, nw, nG;
+    int nw;
     int niter;
     bool profile, storeV;
 
-    const int DEFAULT_NO = 4, DEFAULT_NV = 6, DEFAULT_NG = 10, DEFAULT_NITER = 1, DEFAULT_NW = 100;
+    const int DEFAULT_NITER = 8, DEFAULT_NW = 100;
     const bool DEFAULT_PROFILE = false;
     const bool DEFAULT_STORE_V = false;
 

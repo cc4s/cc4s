@@ -6,11 +6,6 @@
 
 using namespace CTF;
 
-PerturbationTensor::PerturbationTensor(
-  World *world_, Options const *options_
-): world(world_), options(options_) {
-}
-
 /**
  * a,b,c,d,e,f: particle indices
  * g,h: plane wave indicies
