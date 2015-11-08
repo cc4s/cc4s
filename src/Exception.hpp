@@ -3,16 +3,29 @@
 #define EXCEPTION_DEFINED
 
 #include <string>
+#include <iostream>
+
+#define Exception(message) DetailedException(message, __FILE__, __LINE__)
 
 class Exception {
   public:
-    Exception(std::string const &message_): message(message_) {
+    virtual std::string getMessage() = 0;
+};
+
+class DetailedException {
+  public:
+    DetailedException(
+       std::string const &message_, std::string const &file_, int line_
+    ): message(message_), file(file_), line(line_) {
     }
-    std::string getMessage() {
-      return message;
+    virtual std::string getMessage() {
+      std::stringstream sstream;
+      sstream << message << std::endl << "\tat " << file << " (" << line << ")";
+      return sstream.str();
     }
   private:
-    std::string message;
+    std::string message, file;
+    int line;
 };
 
 #endif

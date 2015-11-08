@@ -3,11 +3,9 @@
 #define PERTURBATION_TENSOR_DEFINED
 
 #include <ctf.hpp>
-#include "Options.hpp"
 
 class PerturbationTensor {
   public:
-    PerturbationTensor(CTF::World *world, Options const *options);
     /**
      * \brief Returns the indexed tensor where stdIndexMap refers to
      * the standard names of the indices, irrespective of their use,
@@ -20,9 +18,6 @@ class PerturbationTensor {
     ) = 0;
 
     CTF::Idx_Tensor operator[](char const *indexMap);
-
-    CTF::World *world;
-    Options const *options;
 };
 
 #endif
