@@ -56,9 +56,9 @@ CoulombIntegrals::CoulombIntegrals(
     add(abci = new Tensor<>(4, vvvo, symsNSNS,*world,"Vabci",options->profile));
     add(abcd = new Tensor<>(4, vvvv, symsNSNS,*world,"Vabcd",options->profile));
   } else {
-    aibc = NULL;
-    abci = NULL;
-    abcd = NULL;
+    aibc = nullptr;
+    abci = nullptr;
+    abcd = nullptr;
   }
 }
 
@@ -79,7 +79,7 @@ void CoulombIntegrals::add(Tensor<> *t) {
 
 Idx_Tensor CoulombIntegrals::get(char const *stdIndexMap, char const *indexMap){
   Tensor<> * t(v[stdIndexMap]);
-  if (t != NULL) {
+  if (t != nullptr) {
     return (*t)[indexMap];
   } else {
     std::stringstream stream("");

@@ -9,10 +9,14 @@ LIBS=-lblas -lgfortran
 # primary target
 cc4s: bin/Cc4s
 
-OBJECTS=obj/Options.o obj/PerturbationTensor.o \
+OBJECTS=obj/Algorithm.o \
+obj/FtodRankDecomposition.o \
+obj/Options.o obj/PerturbationTensor.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o obj/Cc4s.o
 # dependencies
-obj/Cc4s.o: obj/Options.o obj/PerturbationTensor.o \
+obj/Cc4s.o: obj/Algorithm.o \
+obj/FtodRankDecomposition.o \
+obj/Options.o obj/PerturbationTensor.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o
 
 # create directories of not present

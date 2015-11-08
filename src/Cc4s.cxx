@@ -2,6 +2,7 @@
 
 #include "Cc4s.hpp"
 #include "Exception.hpp"
+#include "FtodRankDecomposition.hpp"
 #include <ctf.hpp>
 #include <iostream>
 #include <fstream>
@@ -28,6 +29,19 @@ void Cc4s::run() {
   // Read from disk
   readFTOD();
 
+  // experimental:
+  std::vector<Argument const *> arguments;
+  TensorData chiRData("chiR", *chiReal->gpq);
+  InputArgument chiR("chiR", &chiRData);
+  arguments.push_back(&chiR);
+  TensorData chiIData("chiI", *chiImag->gpq);
+  InputArgument chiI("chiI", &chiIData);
+  arguments.push_back(&chiI);
+  IntegerData rankData("rank", 100);
+  InputArgument rank("rank", &rankData);
+  arguments.push_back(&rank);
+  FtodRankDecomposition ftodRankDecomposition(arguments);
+  ftodRankDecomposition.run();
 
   Scalar<> energy(*world);
   double e, dire, exce, norm;
