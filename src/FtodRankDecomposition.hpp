@@ -6,21 +6,29 @@
 #include <ctf.hpp>
 
 class FtodRankDecomposition: public Algorithm {
-  public:
-    FtodRankDecomposition(std::vector<Argument const *> const &argumentList);
-    virtual ~FtodRankDecomposition();
-    virtual std::vector<std::string> getDefaultArgumentOrder() {
-      std::vector<std::string> argumentOrder;
-      argumentOrder.push_back("chi");
-      argumentOrder.push_back("x");
-      argumentOrder.push_back("gamma");
-      argumentOrder.push_back("rank");
+public:
+  FtodRankDecomposition(std::vector<Argument const *> const &argumentList);
+  virtual ~FtodRankDecomposition();
+  virtual std::vector<std::string> getDefaultArgumentOrder() {
+    std::vector<std::string> argumentOrder;
+    argumentOrder.push_back("chi");
+    argumentOrder.push_back("x");
+    argumentOrder.push_back("gamma");
+    argumentOrder.push_back("rank");
 //      argumentOrder.push_back("epsilon");
-      return argumentOrder;
-    }
-    virtual void run();
+    return argumentOrder;
+  }
+  virtual void run();
+    
   int64_t rank;
   CTF::Tensor<> *chiR, *chiI;
+  CTF::Matrix<> *X, *gamR, *gamI;
+
+protected:  
+  CTF::Matrix<> *dX, *dGamR, *dGamI;
+  double getLinearSearchDistance(double alpha);
+  double linearSearch(double alpha);
+  void calculateGradient();
 };
 
 #endif

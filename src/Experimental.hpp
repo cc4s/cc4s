@@ -12,7 +12,7 @@ class Experimental {
     // FIXME: cannot handle out of bound indicies
     static void from_index(CTF::Tensor<> const &t, int64_t index, int *pos) {
       for (int d(0); d < t.order; ++d) {
-        pos[d] = index % (int64_t)t.lens[d];
+        pos[d] = index % int64_t(t.lens[d]);
         index /= t.lens[d];
       }
     }
