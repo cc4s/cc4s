@@ -5,6 +5,10 @@
 #include "Algorithm.hpp"
 #include <ctf.hpp>
 
+/**
+ * \brief This algorithm provides a tensor rank decomposition of the
+ * Fourier tranformed overlap densities.
+ */
 class FtodRankDecomposition: public Algorithm {
 public:
   FtodRankDecomposition(std::vector<Argument const *> const &argumentList);
@@ -20,15 +24,81 @@ public:
   }
   virtual void run();
     
+  /**
+   * \brief the rank of the tensor rank decomposition
+   */
   int64_t rank;
-  CTF::Tensor<> *chiR, *chiI;
+  double R;
+  CTF::Tensor<> *chiR, *chiI, *chi0R, *chi0I, *RR, *RI;
   CTF::Matrix<> *X, *gamR, *gamI;
 
 protected:  
-  CTF::Matrix<> *dX, *dGamR, *dGamI;
-  double getLinearSearchDistance(double alpha);
-  double linearSearch(double alpha);
+  /**
+   * \brief gradient of \f$R\f$ with respect to \f$ X\f$.
+   */
+  CTF::Matrix<> *dX;
+  /**
+   * \brief gradient of \f$R\f$ with respect to the real part of
+   * \f$ \Gamma\f$.
+   */
+  CTF::Matrix<> *dGamR;
+  /**
+   * \brief gradient of \f$R\f$ with respect to the imaginary part of
+   * \f$ \Gamma\f$.
+   */
+  CTF::Matrix<> *dGamI;
+  /**
+   * \brief search direction for \f$X\f$.
+   */
+  CTF::Matrix<> *sX;
+  /**
+   * \brief real part of the search direction for \f$\Gamma\f$.
+   */
+  CTF::Matrix<> *sGamR;
+  /**
+   * \brief imaginary part of the search direction for \f$\Gamma\f$.
+   */
+  CTF::Matrix<> *sGamI;
+
+  /**
+   * \brief coefficients of
+   * \f${\rm const.} + \alpha^1a_1 + \alpha^2a_2+ \alpha^3a_3+ \alpha^4a_4\f$
+   * for the line search of \f$X\f$.
+   */
+  double a1, a2, a3, a4;
+
+  void initializeRandom(CTF::Tensor<> &t, int64_t seed);
+  void initializeX();
+  void initializeGam();
+
+  void calculateChi0();
+  void calculateResiduum();
+
   void calculateGradient();
+
+  void lineSearchXPart(
+    CTF::Tensor<> &chi0, CTF::Tensor<> &chi, CTF::Tensor<> &gam
+  );
+
+  /**
+   * \brief calculates
+   * \f${\rm argmin}_\alpha d(X_q(R)+\alpha X_q(R),\Gamma_G(R))\f$
+   * where \f$ d(X_q(R),\Gamma_G(R)) \f$ is the (square of) the Euclidian
+   * distance betwenn the tensor rank approximation and \f$\chi_r^q(G)\f$.
+   */
+  double lineSearchX();
+  /**
+   * \brief calculates
+   * \f${\rm argmin}_\alpha d(X_q(R),\Gamma_G(R)+\alpha \Gamma_G(R))\f$
+   * where \f$ d(X_q(R),\Gamma_G(R)) \f$ is the (square of) the Euclidian
+   * distance betwenn the tensor rank approximation and \f$\chi_r^q(G)\f$.
+   */
+  double lineSearchGam();
+
+  void optimizeX();
+  void optimizeGam();
+  // TODO: put in separate test class
+  void testGradient();
 };
 
 #endif
