@@ -65,7 +65,7 @@ protected:
    * \f${\rm const.} + \alpha^1a_1 + \alpha^2a_2+ \alpha^3a_3+ \alpha^4a_4\f$
    * for the line search of \f$X\f$.
    */
-  double a1, a2, a3, a4;
+  double a0, a1, a2, a3, a4;
 
   void initializeRandom(CTF::Tensor<> &t, int64_t seed);
   void initializeX();
@@ -78,6 +78,9 @@ protected:
 
   void lineSearchXPart(
     CTF::Tensor<> &chi0, CTF::Tensor<> &chi, CTF::Tensor<> &gam
+  );
+  void lineSearchGamPart(
+    CTF::Tensor<> &chi0, CTF::Tensor<> &chi, CTF::Tensor<> &dGam
   );
 
   /**
@@ -95,8 +98,8 @@ protected:
    */
   double lineSearchGam();
 
-  void optimizeX();
-  void optimizeGam();
+  void optimizeX(double const epsilon = 1e-10);
+  void optimizeGam(double const epsilon = 1e-10);
   // TODO: put in separate test class
   void testGradient();
 };

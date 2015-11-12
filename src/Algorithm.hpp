@@ -7,7 +7,7 @@
 
 class Data {
   public:
-    Data(std::string const &_name): name(_name) { }
+    Data(std::string const &name_): name(name_) { }
     virtual std::string getTypeName() const = 0;
     std::string name;
 };
@@ -20,8 +20,8 @@ class AtomData: public Data {
 class TextData: public AtomData {
   public:
     TextData(
-      std::string const &name, std::string const &_value
-    ): AtomData(name), value(_value) { }
+      std::string const &name, std::string const &value_
+    ): AtomData(name), value(value_) { }
     virtual std::string getTypeName() const { return "Text"; }
     std::string value;
 };
@@ -34,8 +34,8 @@ class NumberData: public AtomData {
 class RealData: public NumberData {
   public:
     RealData(
-      std::string const &name, double _value
-    ): NumberData(name), value(_value) { }
+      std::string const &name, double value_
+    ): NumberData(name), value(value_) { }
     virtual std::string getTypeName() const { return "Real"; }
     double value;
 };
@@ -43,8 +43,8 @@ class RealData: public NumberData {
 class IntegerData: public NumberData {
   public:
     IntegerData(
-      std::string const &name, int64_t _value
-    ): NumberData(name), value(_value) { }
+      std::string const &name, int64_t value_
+    ): NumberData(name), value(value_) { }
     virtual std::string getTypeName() const { return "Integer"; }
     int64_t value;
 };
@@ -52,8 +52,8 @@ class IntegerData: public NumberData {
 class TensorData: public AtomData {
   public:
     TensorData(
-      std::string const &name, CTF::Tensor<> const &_value
-    ): AtomData(name), value(_value) { }
+      std::string const &name, CTF::Tensor<> const &value_
+    ): AtomData(name), value(value_) { }
     virtual std::string getTypeName() const { return "Tensor"; }
     CTF::Tensor<> value;
 };
@@ -72,7 +72,7 @@ class SequenceData: public Data {
 
 class Argument {
   public:
-    Argument(std::string const &_name): name(_name) { }
+    Argument(std::string const &name_): name(name_) { }
     std::string getName() const { return name; }
     virtual bool isOutput() const = 0;
     virtual Data const *getData() const = 0;
@@ -84,8 +84,8 @@ class InputArgument: public Argument {
     InputArgument(InputArgument const &i): Argument(i.name), data(i.data) {
     }
     InputArgument(
-      std::string const &name, Data const *_data
-    ): Argument(name), data(_data) { }
+      std::string const &name, Data const *data_
+    ): Argument(name), data(data_) { }
     virtual bool isOutput() const { return false; }
     virtual Data const *getData() const { return data; }
   Data const *data;
@@ -96,8 +96,8 @@ class OutputArgument: public Argument {
     OutputArgument(OutputArgument const &o): Argument(o.name), data(o.data) {
     }
     OutputArgument(
-      std::string const &name, Data *_data
-    ): Argument(name), data(_data) { }
+      std::string const &name, Data *data_
+    ): Argument(name), data(data_) { }
     virtual bool isOutput() const { return true; }
     virtual Data const *getData() const { return data; }
     virtual Data *getData() { return data; }
