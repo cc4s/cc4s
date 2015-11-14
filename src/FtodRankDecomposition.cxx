@@ -2,6 +2,7 @@
 
 #include "FtodRankDecomposition.hpp"
 #include "Exception.hpp"
+#include "util/ComplexPolynomialRootFinder.hpp"
 #include "util/CubicPolynomialRootFinder.hpp"
 #include <iostream>
 #include <random>
@@ -9,25 +10,6 @@
 
 
 using namespace CTF;
-
-/*
- This does not work as nicely as expected... Try expand to full:
-C^2 + a^6*dG^2*dXdX^2 + a^5*(2*dG^2*dXdX*dXX + 2*dG*dXdX^2*G) - 2*C*G*XX + G^2*XX^2 +                                                                  
- a^4*(dG^2*dXX^2 + 4*dG*dXdX*dXX*G + dXdX^2*G^2 + 2*dG^2*dXdX*XX) +                                                                                    
- a^3*(-2*C*dG*dXdX + 2*dG*dXX^2*G + 2*dXdX*dXX*G^2 + 2*dG^2*dXX*XX + 4*dG*dXdX*G*XX) +
- a^2*(-2*C*dG*dXX - 2*C*dXdX*G + dXX^2*G^2 + 4*dG*dXX*G*XX + 2*dXdX*G^2*XX + dG^2*XX^2) +
- a*(-2*C*dXX*G - 2*C*dG*XX + 2*dXX*G^2*XX + 2*dG*G*XX^2)
- 
-where
-  C = chi["Gqr"]
-  G = gam["RG"]
-  dG = sGam["RG"]
-  XX = X["Rq"]*X["Rr"]
-  dXX = sX["Rq"]*X["Rr"] + X["Rq"]*sX["Rr"]
-  dXdX = sX["Rq"]*sX["Rr"]
-
-and then find the minimum in above 6th degree polynomial
-*/
 
 FtodRankDecomposition::FtodRankDecomposition(
   std::vector<Argument const *> const &argumentList
@@ -70,8 +52,9 @@ void FtodRankDecomposition::run() {
 
   initializeX();
   initializeGam();
-//  util::CubicPolynomialRootFinder::test();
   double epsilon = 1e-8;
+  optimize(epsilon);
+/*
   for (;;) {
     optimizeGam(epsilon);
     optimizeX(epsilon);
@@ -81,6 +64,7 @@ void FtodRankDecomposition::run() {
     (*gamI)["RG"] *= std::sqrt(s);
     epsilon /= 1000;
   }
+*/
 }
 
 
@@ -97,14 +81,14 @@ void FtodRankDecomposition::calculateChi0() {
   (*chi0I)["Gqr"] = x["Rqr"]*(*gamI)["RG"];
 }
 
-// TODO: find proper place for it
-double sqr(double x) { return x*x; }
-
 void FtodRankDecomposition::calculateResiduum() {
   // calculate the residuum
   (*RR)["Gqr"] = (*chi0R)["Gqr"] - (*chiR)["Gqr"];
   (*RI)["Gqr"] = (*chi0I)["Gqr"] - (*chiI)["Gqr"];
-  R = sqr(RR->norm2()) + sqr(RI->norm2());
+  Scalar<> s(*chiR->wrld);
+  s[""] =  (*RR)["Gqr"] * (*RR)["Gqr"];
+  s[""] += (*RI)["Gqr"] * (*RI)["Gqr"];
+  R = s.get_val();
 }
 
 void FtodRankDecomposition::calculateGradient() {
@@ -154,6 +138,166 @@ void FtodRankDecomposition::initializeGam() {
   initializeRandom(*gamR, 2*chiR->wrld->rank+0);
   initializeRandom(*gamI, 2*chiR->wrld->rank+1);
 }
+
+void FtodRankDecomposition::lineSearchPart(
+  Tensor<> &R, Tensor<> &G, Tensor<> &dG
+) {
+  int np(R.lens[1]);
+  int xLens[] = {int(rank), np, np};
+  int xSyms[] = {NS, NS, NS};
+  // TODO: try keeping these tensors for the
+  // evaluation of the real and the imaginary part
+  Tensor<> XX(3, xLens, xSyms, *R.wrld, "XXRqr", R.profile);
+  Tensor<> dXX(3, xLens, xSyms, *R.wrld, "dXXRqr", R.profile);
+  Tensor<> dXdX(3, xLens, xSyms, *R.wrld, "dXdXRqr", R.profile);
+  XX["Rqr"] = (*X)["Rq"] * (*X)["Rr"];
+  dXX["Rqr"]  =  (*sX)["Rq"] * (*X)["Rr"];
+  dXX["Rqr"] +=  (*X)["Rq"] * (*sX)["Rr"];
+  dXdX["Rqr"] = (*sX)["Rq"] * (*sX)["Rr"];
+
+  // TODO: no copy needed for the following allocations
+  // TODO: try keeping these tensors allocated for the
+  // evaluation of the real and the imaginary part
+  Tensor<> dXXG(R);
+  Tensor<> XXdG(R);
+  Tensor<> dXdXG(R);
+  Tensor<> dXXdG(R);
+  Tensor<> dXdXdG(R);
+  // 1 alpha:
+  dXXG["Gqr"] = dXX["Rqr"] * G["RG"];
+  XXdG["Gqr"] = XX["Rqr"] * dG["RG"];
+  // 2 alphas:
+  dXdXG["Gqr"] = dXdX["Rqr"] * G["RG"];
+  dXXdG["Gqr"] = dXX["Rqr"] * dG["RG"];
+  // 3 alphas:
+  dXdXdG["Gqr"] = dXdX["Rqr"] * dG["RG"];
+
+  // alpha^0:
+  Scalar<> s(*R.wrld);
+  s[""] = R["Gqr"] * R["Gqr"];
+  a[0] += s.get_val();
+
+  // alpha^1:
+  s[""] =  2.0 * dXXG["Gqr"] * R["Gqr"];
+  s[""] += 2.0 * XXdG["Gqr"] * R["Gqr"];
+  a[1] += s.get_val();
+
+  // alpha^2:
+  s[""] =  2.0 * dXdXG["Gqr"] * R["Gqr"];
+  s[""] += 2.0 * dXXdG["Gqr"] * R["Gqr"];
+  s[""] +=       dXXG["Gqr"] * dXXG["Gqr"];
+  s[""] += 2.0 * dXXG["Gqr"] * XXdG["Gqr"];
+  s[""] +=       XXdG["Gqr"] * XXdG["Gqr"];
+  a[2] += s.get_val();
+
+  // alpha^3:
+  s[""] =  2.0 * dXdXdG["Gqr"] * R["Gqr"];
+  s[""] += 2.0 * dXdXG["Gqr"] * dXXG["Gqr"];
+  s[""] += 2.0 * dXdXG["Gqr"] * XXdG["Gqr"];
+  s[""] += 2.0 * dXXdG["Gqr"] * dXXG["Gqr"];
+  s[""] += 2.0 * dXXdG["Gqr"] * XXdG["Gqr"];
+  a[3] += s.get_val();
+
+  // alpha^4:
+  s[""] =  2.0 * dXdXdG["Gqr"] * dXXG["Gqr"];
+  s[""] += 2.0 * dXdXdG["Gqr"] * XXdG["Gqr"];
+  s[""] +=       dXdXG["Gqr"] * dXdXG["Gqr"];
+  s[""] += 2.0 * dXdXG["Gqr"] * dXXdG["Gqr"];
+  s[""] +=       dXXdG["Gqr"] * dXXdG["Gqr"];
+  a[4] += s.get_val();
+
+  // alpha^5:
+  s[""] =  2.0 * dXdXdG["Gqr"] * dXdXG["Gqr"];
+  s[""] += 2.0 * dXdXdG["Gqr"] * dXXdG["Gqr"];
+  a[5] += s.get_val();
+  // alpha^6:
+  s[""] = dXdXdG["Gqr"] * dXdXdG["Gqr"];
+  a[6] += s.get_val();
+}
+
+double FtodRankDecomposition::lineSearch() {
+  for (int k(0); k <= 6; ++k) {
+    a[k] = 0.0;
+  }
+  lineSearchPart(*RR, *gamR, *sGamR);
+  lineSearchPart(*RI, *gamI, *sGamI);
+  util::Polynomial<double> p(a, 6);
+  // the derivative polynomial
+  // TODO: add retrieving derivative polynomial to Polynomial class
+  // TODO: add element cast to Polynomial class
+//  for (int k(0); k <= 6; ++k) std::cout << "a[" << k << "]=" << a[k] << std::endl;
+  std::complex<double> b[6];
+  for (int k(1); k <= 6; ++k) {
+    b[k-1] = k*a[k];
+  }
+//  for (int k(0); k <= 5; ++k) std::cout << "b[" << k << "]=" << b[k] << std::endl;
+  util::ScaledPolynomial<std::complex<double>> dp(b, 5);
+  util::ComplexPolynomialRootFinder rootFinder(&dp);
+  rootFinder.findRoots();
+  double min(std::numeric_limits<double>::infinity());
+  double argmin(0.0);
+  for (int i(0); i < 6; ++i) {
+    std::complex<double> root = rootFinder.getRoot(i);
+    // FIXME: control accuarcy:
+    if (std::abs(root.imag()) < 1e-10) {
+      root /= dp.getScale();
+      double r(p.at(root.real()));
+      if (r < min) {
+        argmin = root.real();
+        min = r;
+      }
+    }
+  }
+  std::cout << "alpha=" << argmin << std::endl;
+  std::cout << "min(R)=" << min << std::endl;
+  return argmin;
+}
+
+void FtodRankDecomposition::optimize(double const epsilon) {
+  calculateChi0();
+  calculateResiduum();
+  calculateGradient();
+  (*sX)["Rp"] = -1.0*(*dX)["Rp"];
+  (*sGamR)["RG"] = -1.0*(*dGamR)["RG"];
+  (*sGamI)["RG"] = -1.0*(*dGamI)["RG"];
+  double alpha(lineSearch());
+  (*X)["Rp"] += alpha*(*sX)["Rp"];
+  (*gamR)["RG"] += alpha*(*sGamR)["RG"];
+  (*gamI)["RG"] += alpha*(*sGamI)["RG"];
+  for (int count(0); ; ++count) {
+    Tensor<> lastDX(*dX);
+    Tensor<> lastDGamR(*dGamR);
+    Tensor<> lastDGamI(*dGamI);
+    calculateChi0();
+    calculateResiduum();
+    std::cout << count << ":" << std::endl;
+    std::cout << "  R=" << R << std::endl;
+    calculateGradient();
+    Scalar<> s(*lastDX.wrld);
+    s[""] = lastDX["Rp"] * lastDX["Rp"];
+    s[""] += lastDGamR["RG"] * lastDGamR["RG"];
+    s[""] += lastDGamI["RG"] * lastDGamI["RG"];
+    double beta(s.get_val());
+    std::cout << "  |lastD|=" << beta << std::endl;
+    lastDX["Rp"] -= (*dX)["Rp"];
+    lastDGamR["RG"] -= (*dGamR)["RG"];
+    lastDGamI["RG"] -= (*dGamI)["RG"];
+    s[""] = (*dX)["Rp"] * lastDX["Rp"];
+    s[""] += (*dGamR)["Rp"] * lastDGamR["Rp"];
+    s[""] += (*dGamI)["Rp"] * lastDGamI["Rp"];
+    beta = std::max(0.0, -s.get_val() / beta);
+    std::cout << "  beta=" << beta << std::endl;
+    (*sX)["Rp"] = beta*(*sX)["Rp"] - (*dX)["Rp"];
+    (*sGamR)["RG"] = beta*(*sGamR)["RG"] - (*dGamR)["RG"];
+    (*sGamI)["RG"] = beta*(*sGamI)["RG"] - (*dGamI)["RG"];
+    double alpha(lineSearch());
+    if (alpha < epsilon) return;
+    (*X)["Rp"] += alpha*(*sX)["Rp"];
+    (*gamR)["RG"] += alpha*(*sGamR)["RG"];
+    (*gamI)["RG"] += alpha*(*sGamI)["RG"];
+  }
+}
+
 
 void FtodRankDecomposition::lineSearchXPart(
   Tensor<> &chi0, Tensor<> &chi, Tensor<> &gam
@@ -336,11 +480,11 @@ void FtodRankDecomposition::testGradient() {
     calculateChi0();
     calculateResiduum();
     double epsilon(R - R0);
-    double dotEpsilon(
-      delta*(
-        sqr(dX->norm2()) + sqr(dGamR->norm2()) + sqr(dGamI->norm2())
-      )
-    );
+    Scalar<> s(*chiR->wrld);
+    s[""] =  (*dX)["Rq"] * (*dX)["Rq"];
+    s[""] += (*dGamR)["RG"] * (*dGamR)["RG"];
+    s[""] += (*dGamI)["RG"] * (*dGamI)["RG"];
+    double dotEpsilon(delta * s.get_val());
     if (std::abs(dotEpsilon-epsilon)/epsilon > accuracy)
       throw new Exception("wrong gradient");
 //  }

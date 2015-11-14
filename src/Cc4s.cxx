@@ -5,6 +5,8 @@
 #include "BinaryFtodReader.hpp"
 #include "Exception.hpp"
 #include "FtodRankDecomposition.hpp"
+#include "util/CubicPolynomialRootFinder.hpp"
+#include "util/ComplexPolynomialRootFinder.hpp"
 #include <ctf.hpp>
 #include <iostream>
 #include <fstream>
@@ -35,10 +37,13 @@ void Cc4s::run() {
   TensorData chiIData("chiI", *chiImag->gpq);
   InputArgument chiI("chiI", &chiIData);
   arguments.push_back(&chiI);
-  IntegerData rankData("rank", 100);
+  IntegerData rankData("rank", 1000);
   InputArgument rank("rank", &rankData);
   arguments.push_back(&rank);
   FtodRankDecomposition ftodRankDecomposition(arguments);
+//  util::CubicPolynomialRootFinder::test();
+//  util::ComplexPolynomialRootFinder::test();
+//  return;
   ftodRankDecomposition.run();
 
   Scalar<> energy(*world);
