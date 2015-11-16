@@ -1,6 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include "Cc4s.hpp"
+#include "util/Log.hpp"
 #include "TextFtodReader.hpp"
 #include "BinaryFtodReader.hpp"
 #include "Exception.hpp"
@@ -578,6 +579,7 @@ int main(int argumentCount, char **arguments) {
   try {
     Cc4s::world = new World(argumentCount, arguments);
     Cc4s::options = new Options(argumentCount, arguments);
+    Log::logLevel = Cc4s::world->rank == 0 ? Cc4s::options->logLevel : -1;
     Cc4s cc4s;
     cc4s.run();
   } catch (DetailedException *cause) {
@@ -587,3 +589,4 @@ int main(int argumentCount, char **arguments) {
   MPI_Finalize();
   return 0;
 }
+

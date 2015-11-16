@@ -2,6 +2,7 @@
 
 #include "FtodRankDecomposition.hpp"
 #include "Exception.hpp"
+#include "util/Log.hpp"
 #include "util/ComplexPolynomialRootFinder.hpp"
 #include "util/CubicPolynomialRootFinder.hpp"
 #include <iostream>
@@ -23,10 +24,10 @@ void FtodRankDecomposition::run() {
   rank = getIntegerArgument("rank");
   chiR = const_cast<Tensor<> *>(getTensorArgument("chiR"));
   chiI = const_cast<Tensor<> *>(getTensorArgument("chiI"));
-  std::cout << "rank=" << rank << std::endl;
+  LOG(3) << "rank=" << rank << std::endl;
   int nG(chiR->lens[0]);
   int np(chiR->lens[1]);
-  std::cout << "nG=" << nG << ", np=" << np << std::endl;
+  LOG(3) << "nG=" << nG << ", np=" << np << std::endl;
   // allocate decompisiton tensors
   X = new Matrix<>(int(rank), np, NS, *chiR->wrld, "XRp", chiR->profile);
   gamR = new Matrix<>(int(rank), nG, NS, *chiR->wrld, "gamRRG", chiR->profile);
@@ -225,12 +226,12 @@ double FtodRankDecomposition::lineSearch() {
   // the derivative polynomial
   // TODO: add retrieving derivative polynomial to Polynomial class
   // TODO: add element cast to Polynomial class
-//  for (int k(0); k <= 6; ++k) std::cout << "a[" << k << "]=" << a[k] << std::endl;
+  for (int k(0); k <= 6; ++k) LOG(4) << "a[" << k << "]=" << a[k] << std::endl;
   std::complex<double> b[6];
   for (int k(1); k <= 6; ++k) {
     b[k-1] = k*a[k];
   }
-//  for (int k(0); k <= 5; ++k) std::cout << "b[" << k << "]=" << b[k] << std::endl;
+  for (int k(0); k <= 5; ++k) LOG(4) << "b[" << k << "]=" << b[k] << std::endl;
   util::ScaledPolynomial<std::complex<double>> dp(b, 5);
   util::ComplexPolynomialRootFinder rootFinder(&dp);
   rootFinder.findRoots();
@@ -248,8 +249,9 @@ double FtodRankDecomposition::lineSearch() {
       }
     }
   }
-  std::cout << "alpha=" << argmin << std::endl;
-  std::cout << "min(R)=" << min << std::endl;
+  
+  LOG(3) << "alpha=" << argmin << std::endl;
+  LOG(3) << "min(R)=" << min << std::endl;
   return argmin;
 }
 
@@ -270,15 +272,15 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     Tensor<> lastDGamI(*dGamI);
     calculateChi0();
     calculateResiduum();
-    std::cout << count << ":" << std::endl;
-    std::cout << "  R=" << R << std::endl;
+    LOG(2) << count << ":" << std::endl;
+    LOG(2) << "  R=" << R << std::endl;
     calculateGradient();
     Scalar<> s(*lastDX.wrld);
     s[""] = lastDX["Rp"] * lastDX["Rp"];
     s[""] += lastDGamR["RG"] * lastDGamR["RG"];
     s[""] += lastDGamI["RG"] * lastDGamI["RG"];
     double beta(s.get_val());
-    std::cout << "  |lastD|=" << beta << std::endl;
+    LOG(2) << "  |lastD|=" << beta << std::endl;
     lastDX["Rp"] -= (*dX)["Rp"];
     lastDGamR["RG"] -= (*dGamR)["RG"];
     lastDGamI["RG"] -= (*dGamI)["RG"];
@@ -286,7 +288,7 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     s[""] += (*dGamR)["Rp"] * lastDGamR["Rp"];
     s[""] += (*dGamI)["Rp"] * lastDGamI["Rp"];
     beta = std::max(0.0, -s.get_val() / beta);
-    std::cout << "  beta=" << beta << std::endl;
+    LOG(2) << "  beta=" << beta << std::endl;
     (*sX)["Rp"] = beta*(*sX)["Rp"] - (*dX)["Rp"];
     (*sGamR)["RG"] = beta*(*sGamR)["RG"] - (*dGamR)["RG"];
     (*sGamI)["RG"] = beta*(*sGamI)["RG"] - (*dGamI)["RG"];
@@ -344,7 +346,7 @@ double FtodRankDecomposition::lineSearchX() {
   int rootsCount;
   rootsCount = rootFinder.findRoots(roots);
   double min(std::numeric_limits<double>::infinity());
-  double argmin;
+  double argmin(0.0);
   for (int i(0); i < rootsCount; ++i) {
     if (rootFinder.evaluateDerivativeAt(roots[i]) > 0.0) {
       // only if second derivative is positive consider it
@@ -358,8 +360,8 @@ double FtodRankDecomposition::lineSearchX() {
       }
     }
   }
-  std::cout << "alpha=" << argmin << std::endl;
-  std::cout << "min(R)=" << min << std::endl;
+  LOG(3) << "alpha=" << argmin << std::endl;
+  LOG(3) << "min(R)=" << min << std::endl;
   return argmin;
 }
 
@@ -374,17 +376,17 @@ void FtodRankDecomposition::optimizeX(double const epsilon) {
     Tensor<> lastDX(*dX);
     calculateChi0();
     calculateResiduum();
-    std::cout << "X " << count << ":" << std::endl;
-    std::cout << "  R=" << R << std::endl;
+    LOG(2) << "X " << count << ":" << std::endl;
+    LOG(2) << "  R=" << R << std::endl;
     calculateGradient();
     Scalar<> s(*lastDX.wrld);
     s[""] = lastDX["Rp"] * lastDX["Rp"];
     double beta(s.get_val());
-    std::cout << "  |lastDX|=" << beta << std::endl;
+    LOG(2) << "  |lastDX|=" << beta << std::endl;
     lastDX["Rp"] -= (*dX)["Rp"];
     s[""] = (*dX)["Rp"] * lastDX["Rp"];
     beta = std::max(0.0, -s.get_val() / beta);
-    std::cout << "  beta=" << beta << std::endl;
+    LOG(2) << "  beta=" << beta << std::endl;
     (*sX)["Rp"] = beta*(*sX)["Rp"] - (*dX)["Rp"];
     double alpha(lineSearchX());
     if (alpha < epsilon) return;
@@ -423,8 +425,8 @@ double FtodRankDecomposition::lineSearchGam() {
   double argmin(-0.5*a1/a2);
   double min(a2*argmin + a1);
   min = min*argmin + a0;
-  std::cout << "alpha=" << argmin << std::endl;
-  std::cout << "min(R)=" << min << std::endl;
+  LOG(3) << "alpha=" << argmin << std::endl;
+  LOG(3) << "min(R)=" << min << std::endl;
   return argmin;
 }
 
@@ -442,20 +444,20 @@ void FtodRankDecomposition::optimizeGam(double const epsilon) {
     Tensor<> lastDGamI(*dGamI);
     calculateChi0();
     calculateResiduum();
-    std::cout << "G " << count << ":" << std::endl;
-    std::cout << "  R=" << R << std::endl;
+    LOG(2) << "G " << count << ":" << std::endl;
+    LOG(2) << "  R=" << R << std::endl;
     calculateGradient();
     Scalar<> s(*lastDGamR.wrld);
     s[""] = lastDGamR["RG"] * lastDGamR["RG"];
     s[""] += lastDGamI["RG"] * lastDGamI["RG"];
     double beta(s.get_val());
-    std::cout << "  |lastDGam|=" << beta << std::endl;
+    LOG(2) << "  |lastDGam|=" << beta << std::endl;
     lastDGamR["RG"] -= (*dGamR)["RG"];
     lastDGamI["RG"] -= (*dGamI)["RG"];
     s[""] = (*dGamR)["RG"] * lastDGamR["RG"];
     s[""] += (*dGamI)["RG"] * lastDGamI["RG"];
     beta = std::max(0.0, -s.get_val() / beta);
-    std::cout << "  beta=" << beta << std::endl;
+    LOG(2) << "  beta=" << beta << std::endl;
     (*sGamR)["RG"] = beta*(*sGamR)["RG"] - (*dGamR)["RG"];
     (*sGamI)["RG"] = beta*(*sGamI)["RG"] - (*dGamI)["RG"];
     double alpha(lineSearchGam());

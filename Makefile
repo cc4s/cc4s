@@ -14,13 +14,19 @@ LIBS=-lblas -lgfortran
 # primary target
 cc4s: bin/${TARGET}
 
-OBJECTS=obj/Options.o obj/PerturbationTensor.o \
+OBJECTS= \
+obj/Options.o \
+obj/util/Log.o \
+obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o obj/${TARGET}.o
 # dependencies
-obj/${TARGET}.o: obj/Options.o obj/PerturbationTensor.o \
+obj/${TARGET}.o: \
+obj/Options.o \
+obj/util/Log.o \
+obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
@@ -32,6 +38,7 @@ clean:
 
 # compile object files
 obj/%.o: src/%.cxx src/%.hpp
+	mkdir -p $(dir $@)
 	${CXX} ${COPTIONS} ${OPTIMIZE} -c src/$*.cxx -o $@ -I${CTF}/include
 
 # compile and link executable

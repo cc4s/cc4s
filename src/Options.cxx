@@ -9,6 +9,7 @@ Options::Options(int argumentCount, char **arguments) {
   niter = DEFAULT_NITER;
   profile = DEFAULT_PROFILE;
   storeV = DEFAULT_STORE_V;
+  logLevel = DEFAULT_LOG_LEVEL;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
     if (argument == "-nw") {
@@ -25,6 +26,9 @@ Options::Options(int argumentCount, char **arguments) {
     } else if (argument == "-storeV") {
       std::stringstream stream(arguments[++i]);
       stream >> storeV;
+    } else if (argument == "-logLevel") {
+      std::stringstream stream(arguments[++i]);
+      stream >> logLevel;
     }
   }
 }
