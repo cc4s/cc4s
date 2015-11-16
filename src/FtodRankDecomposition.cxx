@@ -67,6 +67,7 @@ void FtodRankDecomposition::run() {
   rank = getIntegerArgument("rank");
   chiR = const_cast<Tensor<> *>(getTensorArgument("chiR"));
   chiI = const_cast<Tensor<> *>(getTensorArgument("chiI"));
+  double epsilon = getRealArgument("epsilon");
   LOG(3) << "rank=" << rank << std::endl;
   int nG(chiR->lens[0]);
   int np(chiR->lens[1]);
@@ -96,7 +97,6 @@ void FtodRankDecomposition::run() {
 
   initializeX();
   initializeGam();
-  double epsilon = 1e-8;
   optimize(epsilon);
 /*
   for (;;) {
@@ -316,20 +316,17 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     Decomposition lastGradient(&lastDX, &lastDGamR, &lastDGamI);
     LOG(2) << count << ":" << std::endl;
     calculateChi0();
-    LOG(2) << "  R=";
     calculateResiduum();
-    LOG(2) << R << std::endl;
-    LOG(2) << "  |gradient|^2 =";
+    LOG(2) << "  R=" << R << std::endl;
+    if (R < epsilon*epsilon) return;
     calculateGradient();
     double beta(lastGradient.dot(lastGradient));
-    LOG(2) << beta << std::endl;
-    LOG(2) << "  beta=" << std::endl << "\t";
+    LOG(2) << "  |gradient|^2=" << beta << std::endl;
     lastGradient.addTo(-1.0, gradient);
     beta = std::max(0.0, -gradient.dot(lastGradient) / beta);
-    LOG(2) << beta << std::endl;
+    LOG(2) << "  beta=" << beta << std::endl;
     direction.addTo(-1.0,gradient, beta);
     double alpha(lineSearch());
-    if (alpha < epsilon) return;
     approximation.addTo(alpha, direction);
   }
 }

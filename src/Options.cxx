@@ -10,6 +10,8 @@ Options::Options(int argumentCount, char **arguments) {
   profile = DEFAULT_PROFILE;
   storeV = DEFAULT_STORE_V;
   logLevel = DEFAULT_LOG_LEVEL;
+  rank = DEFAULT_RANK;
+  accuracy = DEFAULT_ACCURACY;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
     if (argument == "-nw") {
@@ -29,6 +31,12 @@ Options::Options(int argumentCount, char **arguments) {
     } else if (argument == "-logLevel") {
       std::stringstream stream(arguments[++i]);
       stream >> logLevel;
+    } else if (argument == "-rank") {
+      std::stringstream stream(arguments[++i]);
+      stream >> rank;
+    } else if (argument == "-accuracy") {
+      std::stringstream stream(arguments[++i]);
+      stream >> accuracy;
     }
   }
 }

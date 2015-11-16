@@ -38,14 +38,31 @@ void Cc4s::run() {
   TensorData chiIData("chiI", *chiImag->gpq);
   InputArgument chiI("chiI", &chiIData);
   arguments.push_back(&chiI);
-  IntegerData rankData("rank", 1000);
+  IntegerData rankData("rank", options->rank);
   InputArgument rank("rank", &rankData);
   arguments.push_back(&rank);
+  RealData epsilonData("epsilon", options->accuracy);
+  InputArgument epsilon("epsilon", &epsilonData);
+  arguments.push_back(&epsilon);
   FtodRankDecomposition ftodRankDecomposition(arguments);
 //  util::CubicPolynomialRootFinder::test();
 //  util::ComplexPolynomialRootFinder::test();
 //  return;
   ftodRankDecomposition.run();
+  return;
+
+  // calculate Coulomb integrals from Fourier transformed overlap densities
+  Cc4s::V->fetch();
+  // write V(1,1,1,1) for testing
+  int64_t readIndices[] = { 0 };
+  double readValues[] = { 0.0 };
+  Cc4s::V->ijkl->read(1l, readIndices, readValues);
+  if (Cc4s::world->rank == 0) {
+    std::cout << "V(1,1,1,1) = " << readValues[0] << std::endl;
+  }
+
+  // allocate and calculate the intial amplitudes
+  Cc4s::T = new Amplitudes(Cc4s::V);
 
   Scalar<> energy(*world);
   double e, dire, exce, norm;

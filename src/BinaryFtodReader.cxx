@@ -61,18 +61,6 @@ void BinaryFtodReader::read() {
     std::cout <<
       "2-Norm of (eps_i,eps_a) = (" << iNorm << "," << aNorm << ")" << std::endl;
   }
-  // calculate Coulomb integrals from Fourier transformed overlap densities
-  Cc4s::V->fetch();
-  // write V(1,1,1,1) for testing
-  int64_t readIndices[] = { 0 };
-  double readValues[] = { 0.0 };
-  Cc4s::V->ijkl->read(1l, readIndices, readValues);
-  if (Cc4s::world->rank == 0) {
-    std::cout << "V(1,1,1,1) = " << readValues[0] << std::endl;
-  }
-
-  // allocate and calculate the intial amplitudes
-  Cc4s::T = new Amplitudes(Cc4s::V);
 }
 
 void BinaryFtodReader::readChiChunk(std::ifstream &file, Chi *chi) {
