@@ -12,6 +12,49 @@
 
 using namespace CTF;
 
+class Decomposition {
+public:
+  Decomposition(
+    CTF::Tensor<> *X_, CTF::Tensor<> *GamR_, CTF::Tensor<> *GamI_
+  ): X(X_), GamR(GamR_), GamI(GamI_) {
+  }
+  Decomposition &set(Decomposition const &d, double alpha=1.0) {
+    (*X)["Rp"] = alpha*(*d.X)["Rp"];
+    (*GamR)["RG"] = alpha*(*d.GamR)["RG"];
+    (*GamI)["RG"] = alpha*(*d.GamI)["RG"];
+    return *this;
+  }
+  Decomposition &scale(double s) {
+    (*X)["Rp"] *= s;
+    (*GamR)["RG"] *= s;
+    (*GamI)["RG"] *= s;
+    return *this;
+  }
+  /**
+   * \brief calculates this = beta*this + alpha*d
+   * \returns reference to this decomposition
+   */
+  Decomposition &addTo(double alpha, Decomposition const &d, double beta=1.0) {
+    (*X)["Rp"] = beta*(*X)["Rp"] + alpha*(*d.X)["Rp"];
+    (*GamR)["RG"] = beta*(*GamR)["RG"] + alpha*(*d.GamR)["RG"];
+    (*GamI)["RG"] = beta*(*GamI)["RG"] + alpha*(*d.GamI)["RG"];
+    return *this;
+  }
+  /**
+   * \brief returns <this|d>
+   */
+  double dot(Decomposition const &d) const {
+    Scalar<> s(*X->wrld);
+    s[""] =  (*X)["Rp"] * (*d.X)["Rp"];
+    s[""] += (*GamR)["RG"] * (*d.GamR)["RG"];
+    s[""] += (*GamI)["RG"] * (*d.GamI)["RG"];
+    return s.get_val();
+  }
+
+  CTF::Tensor<> *X, *GamR, *GamI;
+};
+
+
 FtodRankDecomposition::FtodRankDecomposition(
   std::vector<Argument const *> const &argumentList
 ): Algorithm(argumentList) {
@@ -217,6 +260,7 @@ void FtodRankDecomposition::lineSearchPart(
 }
 
 double FtodRankDecomposition::lineSearch() {
+  LOG(2) << "  alpha=";
   for (int k(0); k <= 6; ++k) {
     a[k] = 0.0;
   }
@@ -248,10 +292,9 @@ double FtodRankDecomposition::lineSearch() {
         min = r;
       }
     }
-  }
-  
-  LOG(3) << "alpha=" << argmin << std::endl;
-  LOG(3) << "min(R)=" << min << std::endl;
+  }  
+  LOG(2) << argmin << std::endl;
+  LOG(3) << "  min(R)=" << min << std::endl;
   return argmin;
 }
 
@@ -259,44 +302,35 @@ void FtodRankDecomposition::optimize(double const epsilon) {
   calculateChi0();
   calculateResiduum();
   calculateGradient();
-  (*sX)["Rp"] = -1.0*(*dX)["Rp"];
-  (*sGamR)["RG"] = -1.0*(*dGamR)["RG"];
-  (*sGamI)["RG"] = -1.0*(*dGamI)["RG"];
+  Decomposition approximation(X, gamR, gamI);
+  Decomposition direction(sX, sGamR, sGamI);
+  Decomposition gradient(dX, dGamR, dGamI);
+  // initial search direction is steepest descent
+  direction.set(gradient,-1.0);
   double alpha(lineSearch());
-  (*X)["Rp"] += alpha*(*sX)["Rp"];
-  (*gamR)["RG"] += alpha*(*sGamR)["RG"];
-  (*gamI)["RG"] += alpha*(*sGamI)["RG"];
+  approximation.addTo(alpha, direction);
   for (int count(0); ; ++count) {
     Tensor<> lastDX(*dX);
     Tensor<> lastDGamR(*dGamR);
     Tensor<> lastDGamI(*dGamI);
-    calculateChi0();
-    calculateResiduum();
+    Decomposition lastGradient(&lastDX, &lastDGamR, &lastDGamI);
     LOG(2) << count << ":" << std::endl;
-    LOG(2) << "  R=" << R << std::endl;
+    calculateChi0();
+    LOG(2) << "  R=";
+    calculateResiduum();
+    LOG(2) << R << std::endl;
+    LOG(2) << "  |gradient|^2 =";
     calculateGradient();
-    Scalar<> s(*lastDX.wrld);
-    s[""] = lastDX["Rp"] * lastDX["Rp"];
-    s[""] += lastDGamR["RG"] * lastDGamR["RG"];
-    s[""] += lastDGamI["RG"] * lastDGamI["RG"];
-    double beta(s.get_val());
-    LOG(2) << "  |lastD|=" << beta << std::endl;
-    lastDX["Rp"] -= (*dX)["Rp"];
-    lastDGamR["RG"] -= (*dGamR)["RG"];
-    lastDGamI["RG"] -= (*dGamI)["RG"];
-    s[""] = (*dX)["Rp"] * lastDX["Rp"];
-    s[""] += (*dGamR)["Rp"] * lastDGamR["Rp"];
-    s[""] += (*dGamI)["Rp"] * lastDGamI["Rp"];
-    beta = std::max(0.0, -s.get_val() / beta);
-    LOG(2) << "  beta=" << beta << std::endl;
-    (*sX)["Rp"] = beta*(*sX)["Rp"] - (*dX)["Rp"];
-    (*sGamR)["RG"] = beta*(*sGamR)["RG"] - (*dGamR)["RG"];
-    (*sGamI)["RG"] = beta*(*sGamI)["RG"] - (*dGamI)["RG"];
+    double beta(lastGradient.dot(lastGradient));
+    LOG(2) << beta << std::endl;
+    LOG(2) << "  beta=" << std::endl << "\t";
+    lastGradient.addTo(-1.0, gradient);
+    beta = std::max(0.0, -gradient.dot(lastGradient) / beta);
+    LOG(2) << beta << std::endl;
+    direction.addTo(-1.0,gradient, beta);
     double alpha(lineSearch());
     if (alpha < epsilon) return;
-    (*X)["Rp"] += alpha*(*sX)["Rp"];
-    (*gamR)["RG"] += alpha*(*sGamR)["RG"];
-    (*gamI)["RG"] += alpha*(*sGamI)["RG"];
+    approximation.addTo(alpha, direction);
   }
 }
 

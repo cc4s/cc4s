@@ -5,6 +5,7 @@
 #include "Algorithm.hpp"
 #include <ctf.hpp>
 
+
 /**
  * \brief This algorithm provides a tensor rank decomposition of the
  * Fourier tranformed overlap densities.
@@ -67,6 +68,9 @@ protected:
    * \deprecated
    */
   double a0, a1, a2, a3, a4;
+  /**
+   * \brief coefficients for the line search
+   */
   double a[7];
 
   void initializeRandom(CTF::Tensor<> &t, int64_t seed);
@@ -82,20 +86,29 @@ protected:
     CTF::Tensor<> &R, CTF::Tensor<> &G, CTF::Tensor<> &dG
   );
 
+  double lineSearch();
+
+  void optimize(double const epsilon = 1e-10);
+
+  /**
+   * \deprecated
+   */
   void lineSearchXPart(
     CTF::Tensor<> &chi0, CTF::Tensor<> &chi, CTF::Tensor<> &gam
   );
+  /**
+   * \deprecated
+   */
   void lineSearchGamPart(
     CTF::Tensor<> &chi0, CTF::Tensor<> &chi, CTF::Tensor<> &dGam
   );
-
-  double lineSearch();
 
   /**
    * \brief calculates
    * \f${\rm argmin}_\alpha d(X_q(R)+\alpha X_q(R),\Gamma_G(R))\f$
    * where \f$ d(X_q(R),\Gamma_G(R)) \f$ is the (square of) the Euclidian
    * distance betwenn the tensor rank approximation and \f$\chi_r^q(G)\f$.
+   * \deprecated
    */
   double lineSearchX();
   /**
@@ -103,10 +116,10 @@ protected:
    * \f${\rm argmin}_\alpha d(X_q(R),\Gamma_G(R)+\alpha \Gamma_G(R))\f$
    * where \f$ d(X_q(R),\Gamma_G(R)) \f$ is the (square of) the Euclidian
    * distance betwenn the tensor rank approximation and \f$\chi_r^q(G)\f$.
+   * \deprecated: rather use the full lineSearch.
    */
   double lineSearchGam();
 
-  void optimize(double const epsilon = 1e-10);
   void optimizeX(double const epsilon = 1e-10);
   void optimizeGam(double const epsilon = 1e-10);
   // TODO: put in separate test class
