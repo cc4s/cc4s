@@ -51,6 +51,36 @@ public:
     return s.get_val();
   }
 
+  double normalizationConstant() const {
+    Scalar<> s(*X->wrld);
+    int np = X->lens[1];
+    s[""] = (*X)["Rp"] * (*X)["Rp"];
+    return s.get_val() / np;
+  }
+
+  /**
+   * \brief normalizes the elements X such that \f$\sum_{p,R}X_p^2(R) = N_p\f$.
+   */
+  void normalize(double lambda) {
+//    (*X)["Rp"] *= 1 / std::sqrt(lambda);
+//    (*GamR)["RG"] *= lambda;
+//    (*GamI)["RG"] *= lambda;
+  }
+
+  /**
+   * \brief The space of allowed decompositions such that
+   * \f$\forall q:\sum_R X_q(R) = 1\f$ form a manifold.
+   * This method projects this decomposition (a direction) onto
+   * the tangent space of the given decomposition (a point).
+   */
+  void projectOntoTangentSpace(Decomposition const &d) {
+    Scalar<> s(*X->wrld);
+    s[""] =   (*X)["Rq"] * (*d.X)["Rq"];
+    double dot(s.get_val());
+    s[""] = (*d.X)["Rq"] * (*d.X)["Rq"];
+    (*X)["Rq"] -= dot/s.get_val() * (*d.X)["Rq"];
+  }
+
   CTF::Tensor<> *X, *GamR, *GamI;
 };
 
@@ -181,6 +211,7 @@ void FtodRankDecomposition::initializeX() {
 void FtodRankDecomposition::initializeGam() {
   initializeRandom(*gamR, 2*chiR->wrld->rank+0);
   initializeRandom(*gamI, 2*chiR->wrld->rank+1);
+//  (*gamI)["RG"] *= 0.0;
 }
 
 void FtodRankDecomposition::lineSearchPart(
@@ -305,6 +336,7 @@ void FtodRankDecomposition::optimize(double const epsilon) {
   Decomposition approximation(X, gamR, gamI);
   Decomposition direction(sX, sGamR, sGamI);
   Decomposition gradient(dX, dGamR, dGamI);
+  gradient.projectOntoTangentSpace(approximation);
   // initial search direction is steepest descent
   direction.set(gradient,-1.0);
   double alpha(lineSearch());
@@ -320,6 +352,7 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     LOG(2) << "  R=" << R << std::endl;
     if (R < epsilon*epsilon) return;
     calculateGradient();
+    gradient.projectOntoTangentSpace(approximation);
     double beta(lastGradient.dot(lastGradient));
     LOG(2) << "  |gradient|^2=" << beta << std::endl;
     lastGradient.addTo(-1.0, gradient);
@@ -328,7 +361,12 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     direction.addTo(-1.0,gradient, beta);
     double alpha(lineSearch());
     approximation.addTo(alpha, direction);
+    LOG(3) << "  |X|=" << X->norm2() << std::endl;
+    LOG(3) << "  |GamR|=" << gamR->norm2() << std::endl;
+    LOG(3) << "  |GamI|=" << gamI->norm2() << std::endl;
   }
+  double lambda(approximation.normalizationConstant());
+  approximation.normalize(lambda);
 }
 
 
