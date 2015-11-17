@@ -20,6 +20,7 @@ obj/util/Log.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
+obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o obj/${TARGET}.o
 # dependencies
@@ -29,6 +30,7 @@ obj/util/Log.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
+obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o
 

@@ -6,6 +6,7 @@
 #include "BinaryFtodReader.hpp"
 #include "Exception.hpp"
 #include "FtodRankDecomposition.hpp"
+#include "CrossEntropyFtodRankDecomposition.hpp"
 #include "util/CubicPolynomialRootFinder.hpp"
 #include "util/ComplexPolynomialRootFinder.hpp"
 #include <ctf.hpp>
@@ -44,7 +45,8 @@ void Cc4s::run() {
   RealData epsilonData("epsilon", options->accuracy);
   InputArgument epsilon("epsilon", &epsilonData);
   arguments.push_back(&epsilon);
-  FtodRankDecomposition ftodRankDecomposition(arguments);
+  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
+//  FtodRankDecomposition ftodRankDecomposition(arguments);
 //  util::CubicPolynomialRootFinder::test();
 //  util::ComplexPolynomialRootFinder::test();
 //  return;

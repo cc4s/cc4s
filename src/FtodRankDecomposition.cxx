@@ -336,7 +336,7 @@ void FtodRankDecomposition::optimize(double const epsilon) {
   Decomposition approximation(X, gamR, gamI);
   Decomposition direction(sX, sGamR, sGamI);
   Decomposition gradient(dX, dGamR, dGamI);
-  gradient.projectOntoTangentSpace(approximation);
+//  gradient.projectOntoTangentSpace(approximation);
   // initial search direction is steepest descent
   direction.set(gradient,-1.0);
   double alpha(lineSearch());
@@ -352,7 +352,7 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     LOG(2) << "  R=" << R << std::endl;
     if (R < epsilon*epsilon) return;
     calculateGradient();
-    gradient.projectOntoTangentSpace(approximation);
+//    gradient.projectOntoTangentSpace(approximation);
     double beta(lastGradient.dot(lastGradient));
     LOG(2) << "  |gradient|^2=" << beta << std::endl;
     lastGradient.addTo(-1.0, gradient);
@@ -361,9 +361,6 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     direction.addTo(-1.0,gradient, beta);
     double alpha(lineSearch());
     approximation.addTo(alpha, direction);
-    LOG(3) << "  |X|=" << X->norm2() << std::endl;
-    LOG(3) << "  |GamR|=" << gamR->norm2() << std::endl;
-    LOG(3) << "  |GamI|=" << gamI->norm2() << std::endl;
   }
   double lambda(approximation.normalizationConstant());
   approximation.normalize(lambda);
