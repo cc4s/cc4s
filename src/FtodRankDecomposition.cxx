@@ -359,6 +359,7 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     beta = std::max(0.0, -gradient.dot(lastGradient) / beta);
     LOG(2) << "  beta=" << beta << std::endl;
     direction.addTo(-1.0,gradient, beta);
+    if (epsilon == 0.0 && beta == 0.0) return;
     double alpha(lineSearch());
     approximation.addTo(alpha, direction);
   }

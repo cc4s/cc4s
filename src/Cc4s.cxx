@@ -45,13 +45,16 @@ void Cc4s::run() {
   RealData epsilonData("epsilon", options->accuracy);
   InputArgument epsilon("epsilon", &epsilonData);
   arguments.push_back(&epsilon);
-  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
-//  FtodRankDecomposition ftodRankDecomposition(arguments);
+//  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
+  FtodRankDecomposition ftodRankDecomposition(arguments);
 //  util::CubicPolynomialRootFinder::test();
 //  util::ComplexPolynomialRootFinder::test();
 //  return;
   ftodRankDecomposition.run();
-  return;
+//  return;
+  // use the approximated chi0 now:
+  (*Cc4s::chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
+  (*Cc4s::chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
 
   // calculate Coulomb integrals from Fourier transformed overlap densities
   Cc4s::V->fetch();
