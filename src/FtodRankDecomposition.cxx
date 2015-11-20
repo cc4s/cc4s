@@ -131,11 +131,6 @@ void FtodRankDecomposition::run() {
 
   // allocate the mask tensor
   mask = new Tensor<>(3, chiR->lens, chiR->sym, *chiR->wrld, "maskGqr", chiR->profile);
-  setOptimizationMask(FtodDiagonalOptimizationMask());
-//  setOptimizationMask(FtodFirstRowOptimizationMask());
-//  setOptimizationMask(FtodFullOptimizationMask());
-  double n(mask->norm1());
-  LOG(3) << "|mask|=" << n << std::endl;
 
   // allocate intermediate tensors:
   // tensor rank approximation
@@ -157,6 +152,13 @@ void FtodRankDecomposition::run() {
 
   initializeX();
   initializeGam();
+/*
+  setOptimizationMask(FtodDiagonalOptimizationMask());
+  optimize(epsilon);
+  setOptimizationMask(FtodFirstRowOptimizationMask());
+  optimize(epsilon);
+*/
+  setOptimizationMask(FtodFullOptimizationMask());
   optimize(epsilon);
 
   // use the approximated chi0 now:
