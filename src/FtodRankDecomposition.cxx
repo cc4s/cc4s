@@ -5,12 +5,34 @@
 #include "util/Log.hpp"
 #include "util/ComplexPolynomialRootFinder.hpp"
 #include "util/CubicPolynomialRootFinder.hpp"
+#include "util/MathFunctions.hpp"
 #include <iostream>
 #include <random>
 #include <limits>
 
 
 using namespace CTF;
+
+class FtodFullOptimizationMask: public FtodOptimizationMask {
+public:
+  virtual double weight(int q, int r, int G) const {
+    return 1.0;
+  }
+};
+
+class FtodDiagonalOptimizationMask: public FtodOptimizationMask {
+public:
+  virtual double weight(int q, int r, int G) const {
+    return (r == q);
+  }
+};
+
+class FtodFirstRowOptimizationMask: public FtodOptimizationMask {
+public:
+  virtual double weight(int q, int r, int G) const {
+    return ((q == 0) && (q <= r)) || ((r == 0) && (r <= q));
+  }
+};
 
 class Decomposition {
 public:
@@ -107,6 +129,14 @@ void FtodRankDecomposition::run() {
   gamR = new Matrix<>(int(rank), nG, NS, *chiR->wrld, "gamRRG", chiR->profile);
   gamI = new Matrix<>(int(rank), nG, NS, *chiR->wrld, "gamIRG", chiR->profile);
 
+  // allocate the mask tensor
+  mask = new Tensor<>(3, chiR->lens, chiR->sym, *chiR->wrld, "maskGqr", chiR->profile);
+  setOptimizationMask(FtodDiagonalOptimizationMask());
+//  setOptimizationMask(FtodFirstRowOptimizationMask());
+//  setOptimizationMask(FtodFullOptimizationMask());
+  double n(mask->norm1());
+  LOG(3) << "|mask|=" << n << std::endl;
+
   // allocate intermediate tensors:
   // tensor rank approximation
   chi0R = new Tensor<>(3, chiR->lens, chiR->sym, *chiR->wrld, "chi0RGqr", chiR->profile);
@@ -128,17 +158,10 @@ void FtodRankDecomposition::run() {
   initializeX();
   initializeGam();
   optimize(epsilon);
-/*
-  for (;;) {
-    optimizeGam(epsilon);
-    optimizeX(epsilon);
-    double s(X->norm2());
-    (*X)["Rp"] *= 1.0/s;
-    (*gamR)["RG"] *= std::sqrt(s);
-    (*gamI)["RG"] *= std::sqrt(s);
-    epsilon /= 1000;
-  }
-*/
+
+  // use the approximated chi0 now:
+  (*chiR)["Gqr"] = (*chi0R)["Gqr"];
+  (*chiI)["Gqr"] = (*chi0I)["Gqr"];
 }
 
 
@@ -158,7 +181,9 @@ void FtodRankDecomposition::calculateChi0() {
 void FtodRankDecomposition::calculateResiduum() {
   // calculate the residuum
   (*RR)["Gqr"] = (*chi0R)["Gqr"] - (*chiR)["Gqr"];
+  (*RR)["Gqr"] *= (*mask)["Gqr"];
   (*RI)["Gqr"] = (*chi0I)["Gqr"] - (*chiI)["Gqr"];
+  (*RI)["Gqr"] *= (*mask)["Gqr"];
   Scalar<> s(*chiR->wrld);
   s[""] =  (*RR)["Gqr"] * (*RR)["Gqr"];
   s[""] += (*RI)["Gqr"] * (*RI)["Gqr"];
@@ -204,8 +229,44 @@ void FtodRankDecomposition::initializeRandom(Tensor<> &t, int64_t seed) {
   free(indices); free(values);
 }
 
+void FtodRankDecomposition::setOptimizationMask(
+  FtodOptimizationMask const &optimizationMask
+) {
+  int64_t indicesCount, *indices;
+  double *values;
+  mask->read_local(&indicesCount, &indices, &values);
+  for (int64_t i(0); i < indicesCount; ++i) {
+    int64_t index(indices[i]);
+    int q(index % mask->lens[0]);
+    index /= mask->lens[0];
+    int r(index % mask->lens[1]);
+    int G(index / mask->lens[1]);
+    values[i] = optimizationMask.weight(q,r,G);
+  }
+  mask->write(indicesCount, indices, values);
+  free(indices); free(values);
+}
+
+void FtodRankDecomposition::normalizeX() {
+
+  Vector<> norm(X->lens[1], *X->wrld);
+  norm["q"] = (*X)["Rq"] * (*X)["Rq"];
+  Matrix<> quotient(*X);
+  Univar_Function<> sqrt(&MathFunctions::sqrt);
+  quotient.sum(
+    1.0,norm,"q",
+    0.0,"Rq", sqrt
+  );
+  Bivar_Function<> divide(&MathFunctions::divide);
+  X->contract(
+    1.0,*X,"Rq", quotient,"Rq",
+    0.0,"Rq", divide
+  );
+}
+
 void FtodRankDecomposition::initializeX() {
   initializeRandom(*X, chiR->wrld->rank);
+//  normalizeX();
 }
 
 void FtodRankDecomposition::initializeGam() {
@@ -240,12 +301,17 @@ void FtodRankDecomposition::lineSearchPart(
   Tensor<> dXdXdG(R);
   // 1 alpha:
   dXXG["Gqr"] = dXX["Rqr"] * G["RG"];
+  dXXG["Gqr"] *= (*mask)["Gqr"];
   XXdG["Gqr"] = XX["Rqr"] * dG["RG"];
+  XXdG["Gqr"] *= (*mask)["Gqr"];
   // 2 alphas:
   dXdXG["Gqr"] = dXdX["Rqr"] * G["RG"];
+  dXdXG["Gqr"] *= (*mask)["Gqr"];
   dXXdG["Gqr"] = dXX["Rqr"] * dG["RG"];
+  dXXdG["Gqr"] *= (*mask)["Gqr"];
   // 3 alphas:
   dXdXdG["Gqr"] = dXdX["Rqr"] * dG["RG"];
+  dXdXdG["Gqr"] *= (*mask)["Gqr"];
 
   // alpha^0:
   Scalar<> s(*R.wrld);
@@ -336,7 +402,7 @@ void FtodRankDecomposition::optimize(double const epsilon) {
   Decomposition approximation(X, gamR, gamI);
   Decomposition direction(sX, sGamR, sGamI);
   Decomposition gradient(dX, dGamR, dGamI);
-//  gradient.projectOntoTangentSpace(approximation);
+  gradient.projectOntoTangentSpace(approximation);
   // initial search direction is steepest descent
   direction.set(gradient,-1.0);
   double alpha(lineSearch());
@@ -352,7 +418,7 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     LOG(2) << "  R=" << R << std::endl;
     if (R < epsilon*epsilon) return;
     calculateGradient();
-//    gradient.projectOntoTangentSpace(approximation);
+    gradient.projectOntoTangentSpace(approximation);
     double beta(lastGradient.dot(lastGradient));
     LOG(2) << "  |gradient|^2=" << beta << std::endl;
     lastGradient.addTo(-1.0, gradient);
@@ -362,9 +428,12 @@ void FtodRankDecomposition::optimize(double const epsilon) {
     if (epsilon == 0.0 && beta == 0.0) return;
     double alpha(lineSearch());
     approximation.addTo(alpha, direction);
+//    normalizeX();
+    double normX(X->norm2());
+    LOG(3) << "  X.X=" << normX*normX << std::endl;
   }
-  double lambda(approximation.normalizationConstant());
-  approximation.normalize(lambda);
+//  double lambda(approximation.normalizationConstant());
+//  approximation.normalize(lambda);
 }
 
 

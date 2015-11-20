@@ -17,6 +17,7 @@ cc4s: bin/${TARGET}
 OBJECTS= \
 obj/Options.o \
 obj/util/Log.o \
+obj/util/MathFunctions.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
@@ -27,6 +28,7 @@ obj/BinaryFtodReader.o obj/TextFtodReader.o obj/${TARGET}.o
 obj/${TARGET}.o: \
 obj/Options.o \
 obj/util/Log.o \
+obj/util/MathFunctions.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \

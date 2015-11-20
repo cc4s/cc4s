@@ -9,6 +9,7 @@
 #include "CrossEntropyFtodRankDecomposition.hpp"
 #include "util/CubicPolynomialRootFinder.hpp"
 #include "util/ComplexPolynomialRootFinder.hpp"
+#include "util/MathFunctions.hpp"
 #include <ctf.hpp>
 #include <iostream>
 #include <fstream>
@@ -51,10 +52,6 @@ void Cc4s::run() {
 //  util::ComplexPolynomialRootFinder::test();
 //  return;
   ftodRankDecomposition.run();
-//  return;
-  // use the approximated chi0 now:
-  (*Cc4s::chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
-  (*Cc4s::chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
 
   // calculate Coulomb integrals from Fourier transformed overlap densities
   Cc4s::V->fetch();
@@ -140,10 +137,6 @@ void Cc4s::printStatistics() {
 }
 
 
-double divide(double a, double b) {
-  return a / b;
-}
-
 void Cc4s::iterateRpa() {
   {
     int syms[] = {NS, NS, NS, NS};
@@ -175,7 +168,7 @@ void Cc4s::iterateRpa() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
+    Bivar_Function<> fctr(&MathFunctions::divide);
     T->abij->contract(1.0, Rabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
   }
 }
@@ -318,7 +311,7 @@ void Cc4s::iterateRccd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
+    Bivar_Function<> fctr(&MathFunctions::divide);
     T->abij->contract(1.0, Rabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
   }
 }
@@ -481,7 +474,7 @@ void Cc4s::iterateRccsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
+    Bivar_Function<> fctr(&MathFunctions::divide);
     T->abij->contract(1.0, Rabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
 
 
@@ -530,7 +523,7 @@ void Cc4s::iterateMp2() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
+    Bivar_Function<> fctr(&MathFunctions::divide);
     T->abij->contract(1.0, *V->abij, "abij", Dabij, "abij", 0.0, "abij", fctr);
   }
 }
@@ -582,7 +575,7 @@ void Cc4s::iterateCcsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
+    Bivar_Function<> fctr(&MathFunctions::divide);
     T->abij->contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
   }
 } 

@@ -5,6 +5,10 @@
 #include "Algorithm.hpp"
 #include <ctf.hpp>
 
+class FtodOptimizationMask {
+public:
+  virtual double weight(int q, int r, int G) const = 0;
+};
 
 /**
  * \brief This algorithm provides a tensor rank decomposition of the
@@ -61,6 +65,8 @@ protected:
    */
   CTF::Matrix<> *sGamI;
 
+  CTF::Tensor<> *mask;
+
   /**
    * \brief coefficients of
    * \f${\rm const.} + \alpha^1a_1 + \alpha^2a_2+ \alpha^3a_3+ \alpha^4a_4\f$
@@ -73,6 +79,8 @@ protected:
    */
   double a[7];
 
+  void setOptimizationMask(FtodOptimizationMask const &mask);
+  void normalizeX();
   void initializeRandom(CTF::Tensor<> &t, int64_t seed);
   void initializeX();
   void initializeGam();
