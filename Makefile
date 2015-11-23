@@ -43,7 +43,7 @@ clean:
 # compile object files
 obj/%.o: src/%.cxx src/%.hpp
 	mkdir -p $(dir $@)
-	${CXX} ${COPTIONS} ${OPTIMIZE} -c src/$*.cxx -o $@ -I${CTF}/include
+	${CXX} ${COPTIONS} ${OPTIMIZE} -c src/$*.cxx -o $@ -I${CTF}/include -Isrc
 
 # compile and link executable
 bin/%: obj/%.o

@@ -1,8 +1,9 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "CrossEntropyFtodRankDecomposition.hpp"
-#include "Exception.hpp"
-#include "util/Log.hpp"
+#include <CrossEntropyFtodRankDecomposition.hpp>
+#include <Exception.hpp>
+#include <util/Log.hpp>
+#include <util/MathFunctions.hpp>
 #include <iostream>
 #include <limits>
 
@@ -172,10 +173,6 @@ void CrossEntropyFtodRankDecomposition::calculateMu() {
   mu->GamI["RG"] *= 1.0 / estimatorsCount;
 }
 
-double sqrt_(double x) {
-  return std::sqrt(x);
-}
-
 double CrossEntropyFtodRankDecomposition::calculateSigma() {
   sigma->X["Rq"] *= 0.0;
   sigma->GamR["RG"] *= 0.0;
@@ -196,7 +193,7 @@ double CrossEntropyFtodRankDecomposition::calculateSigma() {
     sigma->GamI["RG"] += estimator->GamI["RG"];
   }
   // TODO: use division function for non-power-2 estimatorsCount
-  Univar_Function<> fsqrt(&sqrt_);
+  Univar_Function<> fsqrt(&MathFunctions::sqrt);
   Scalar<> s(*chiR->wrld);
   sigma->X.sum(
     1.0/(estimatorsCount-1), sigma->X, "Rq",
