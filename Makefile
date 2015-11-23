@@ -18,6 +18,7 @@ OBJECTS= \
 obj/Options.o \
 obj/util/Log.o \
 obj/util/MathFunctions.o \
+obj/util/IterativePseudoInverter.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
@@ -29,6 +30,7 @@ obj/${TARGET}.o: \
 obj/Options.o \
 obj/util/Log.o \
 obj/util/MathFunctions.o \
+obj/util/IterativePseudoInverter.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \

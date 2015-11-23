@@ -4,13 +4,15 @@
 #include <util/Complex.hpp>
 #include <ctf.hpp>
 
+template <typename F>
 class IterativePseudoInverter {
 public:
-  IterativePseudoInverter(CTF::Matrix<complex> const &matrix);
-  void invert(CTF::Matrix<complex> &pseudoInverse, double accuracy);
+  IterativePseudoInverter(CTF::Matrix<F> const &matrix);
+  void invert(CTF::Matrix<F> &pseudoInverse, double accuracy = 1e-3);
 
+  static void test(CTF::World *world);
 protected:
-  CTF::Matrix<complex> matrix, square;
+  CTF::Matrix<F> matrix, inverse, square;
 };
 
 #endif

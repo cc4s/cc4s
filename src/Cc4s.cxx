@@ -11,6 +11,7 @@
 #include "util/CubicPolynomialRootFinder.hpp"
 #include "util/ComplexPolynomialRootFinder.hpp"
 #include "util/MathFunctions.hpp"
+#include "util/IterativePseudoInverter.hpp"
 #include <ctf.hpp>
 #include <iostream>
 #include <fstream>
@@ -32,6 +33,9 @@ void Cc4s::run() {
 //  textFtodReader.read();
   binaryFtodReader.read();
 //  binaryFtodReader.write();
+
+  IterativePseudoInverter<double>::test(world);
+  IterativePseudoInverter<complex>::test(world);
 
   // experimental:
   std::vector<Argument const *> arguments;
