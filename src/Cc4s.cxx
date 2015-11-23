@@ -53,6 +53,8 @@ void Cc4s::run() {
 //  util::ComplexPolynomialRootFinder::test();
 //  return;
   ftodRankDecomposition.run();
+  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
+  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
 
   // calculate Coulomb integrals from Fourier transformed overlap densities
   Cc4s::V->fetch();
