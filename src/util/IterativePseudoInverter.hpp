@@ -3,17 +3,27 @@
 
 #include <util/Complex.hpp>
 #include <ctf.hpp>
+#include <random>
 
 template <typename F>
 class IterativePseudoInverter {
 public:
   IterativePseudoInverter(CTF::Matrix<F> const &matrix);
-  void invert(CTF::Matrix<F> &pseudoInverse, double accuracy = 1e-3);
+  CTF::Matrix<F> &invert(double accuracy = 1e-10);
 
   static void test(CTF::World *world);
 protected:
-  CTF::Matrix<F> matrix, inverse, square;
+  void iterate(double accuracy = 1e-10);
+  void iterateQuadratically(double accuracy = 1e-10);
+  static void setRandom(
+    F &value,
+    std::mt19937 &random, std::normal_distribution<double> &normalDistribution
+  );
+  static void generateHilbertMatrix(CTF::Matrix<F> &matrix);
+  static void generateRandomMatrix(CTF::Matrix<F> &matrix);
+
+  CTF::Matrix<F> matrix, square, inverse;
+  double alpha;
 };
 
 #endif
-

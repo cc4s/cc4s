@@ -254,16 +254,10 @@ void FtodRankDecomposition::normalizeX() {
   Vector<> norm(X->lens[1], *X->wrld);
   norm["q"] = (*X)["Rq"] * (*X)["Rq"];
   Matrix<> quotient(*X);
-  Univar_Function<> sqrt(&MathFunctions::sqrt);
-  quotient.sum(
-    1.0,norm,"q",
-    0.0,"Rq", sqrt
-  );
-  Bivar_Function<> divide(&MathFunctions::divide);
-  X->contract(
-    1.0,*X,"Rq", quotient,"Rq",
-    0.0,"Rq", divide
-  );
+  Univar_Function<> fSqrt(&MathFunctions::sqrt<>);
+  quotient.sum(1.0,norm,"q", 0.0,"Rq", fSqrt);
+  Bivar_Function<> fDivide(&MathFunctions::divide<>);
+  X->contract(1.0, *X,"Rq", quotient,"Rq", 0.0,"Rq", fDivide);
 }
 
 void FtodRankDecomposition::initializeX() {

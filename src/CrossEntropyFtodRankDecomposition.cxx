@@ -193,21 +193,21 @@ double CrossEntropyFtodRankDecomposition::calculateSigma() {
     sigma->GamI["RG"] += estimator->GamI["RG"];
   }
   // TODO: use division function for non-power-2 estimatorsCount
-  Univar_Function<> fsqrt(&MathFunctions::sqrt);
+  Univar_Function<> fSqrt(&MathFunctions::sqrt<>);
   Scalar<> s(*chiR->wrld);
   sigma->X.sum(
     1.0/(estimatorsCount-1), sigma->X, "Rq",
-    0.0, "Rq", fsqrt
+    0.0, "Rq", fSqrt
   );
   s[""]  = sigma->X["Rq"] * sigma->X["Rq"];
   sigma->GamR.sum(
     1.0/(estimatorsCount-1), sigma->GamR, "RG",
-    0.0, "RG", fsqrt
+    0.0, "RG", fSqrt
   );
   s[""] += sigma->GamR["RG"] * sigma->GamR["RG"];
   sigma->GamI.sum(
     1.0/(estimatorsCount-1), sigma->GamI, "RG",
-    0.0, "RG", fsqrt
+    0.0, "RG", fSqrt
   );
   s[""] += sigma->GamI["RG"] * sigma->GamI["RG"];
   return s.get_val();
