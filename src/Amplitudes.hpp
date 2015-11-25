@@ -6,14 +6,16 @@
 #include "CoulombIntegrals.hpp"
 #include <ctf.hpp>
 
-class Amplitudes: public PerturbationTensor {
-  public:
-    Amplitudes(CoulombIntegrals *V);
-    virtual ~Amplitudes();
-    virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
+namespace cc4s {
+  class Amplitudes: public PerturbationTensor {
+    public:
+      Amplitudes(CoulombIntegrals *V);
+      virtual ~Amplitudes();
+      virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
 
-    CTF::Tensor<> *ai, *abij;
-};
+      CTF::Tensor<> *ai, *abij;
+  };
+}
 
 #endif
 

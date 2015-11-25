@@ -16,6 +16,7 @@
 #include <iostream>
 #include <fstream>
 
+using namespace cc4s;
 using namespace CTF;
 
 Cc4s::Cc4s(): flopCounter() {
@@ -175,7 +176,7 @@ void Cc4s::iterateRpa() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&MathFunctions::divide<>);
+    Bivar_Function<> fDivide(&divide<>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -318,7 +319,7 @@ void Cc4s::iterateRccd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&MathFunctions::divide<>);
+    Bivar_Function<> fDivide(&divide<>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -481,7 +482,7 @@ void Cc4s::iterateRccsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&MathFunctions::divide<>);
+    Bivar_Function<> fDivide(&divide<>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 
 
@@ -530,7 +531,7 @@ void Cc4s::iterateMp2() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fDivide(&MathFunctions::divide<>);
+    Bivar_Function<> fDivide(&divide<>);
     T->abij->contract(1.0, *V->abij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -582,7 +583,7 @@ void Cc4s::iterateCcsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fDivide(&MathFunctions::divide<>);
+    Bivar_Function<> fDivide(&divide<>);
     T->abij->contract(1.0, tZabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 } 

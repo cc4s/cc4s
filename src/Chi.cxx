@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 
+using namespace cc4s;
 using namespace CTF;
 
 Chi::Chi(

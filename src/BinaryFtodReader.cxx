@@ -4,6 +4,8 @@
 #include <ctf.hpp>
 #include <fstream>
 
+using namespace cc4s;
+
 char const *BinaryFtodReader::Header::MAGIC = "cc4sFTOD";
 char const *BinaryFtodReader::Chunk::REALS_MAGIC = "FTODreal";
 char const *BinaryFtodReader::Chunk::IMAGS_MAGIC = "FTODimag";

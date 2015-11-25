@@ -4,6 +4,8 @@
 #include <ctf.hpp>
 #include <fstream>
 
+using namespace cc4s;
+
 /**
  * \brief Reads the Fourier transformed overlap densities from disk.
  */

@@ -6,6 +6,7 @@
 #include <limits>
 #include <random>
 
+using namespace cc4s;
 using namespace CTF;
 
 // TODO: place in proper file
@@ -31,11 +32,11 @@ IterativePseudoInverter<F>::IterativePseudoInverter(
   alpha()
 {
   Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], *matrix.wrld);
-  Univar_Function<F> fConj(&MathFunctions::conj<F>);
+  Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
   Matrix<F> square(matrix.lens[0], matrix.lens[0], *matrix.wrld);
   square["ij"] = matrix["ik"] * conjugate["kj"];
-  Univar_Function<F> fAbs(&MathFunctions::abs<F>);
+  Univar_Function<F> fAbs(&abs<F>);
   Vector<F> rowAbsNorms(square.lens[0], *matrix.wrld);
   rowAbsNorms.sum(1.0,square,"ij", 0.0,"i",fAbs);
   F *normValues(new F[rowAbsNorms.lens[0]]);
@@ -53,7 +54,7 @@ template <typename F>
 void IterativePseudoInverter<F>::iterate(double accuracy) {
   Scalar<F> s;
   Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], *matrix.wrld);
-  Univar_Function<F> fConj(&MathFunctions::conj<F>);
+  Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
   Matrix<F> sqr(matrix.lens[1], matrix.lens[1], *matrix.wrld);  double remainder(1.0), minRemainder(std::numeric_limits<double>::infinity());
   int n(0), nMin(0);
@@ -62,7 +63,7 @@ void IterativePseudoInverter<F>::iterate(double accuracy) {
 
     sqr["ij"] = -1.0 * inverse["ik"] * matrix["kj"];
     sqr["ii"] += 1.0;
-    Bivar_Function<F> fRealDot(&MathFunctions::realDot<F>);
+    Bivar_Function<F> fRealDot(&realDot<F>);
     s.contract(1.0, sqr,"ij", sqr,"ij", 0.0,"", fRealDot);
     inverse["ij"] += alpha * sqr["ik"] * conjugate["kj"];
     remainder = std::real(s.get_val());
@@ -91,7 +92,7 @@ void IterativePseudoInverter<F>::iterateQuadratically(double accuracy) {
     square["ii"] += 2.0;
     inverse["ij"] = inverse["ik"] * square["kj"];
     square["ii"] += -1.0;
-    Bivar_Function<F> fRealDot(&MathFunctions::realDot<F>);
+    Bivar_Function<F> fRealDot(&realDot<F>);
     s.contract(1.0, square,"ij", square,"ij", 0.0,"", fRealDot);
     remainder = std::real(s.get_val());
     if (remainder < minRemainder) {

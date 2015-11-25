@@ -4,6 +4,8 @@
 #include <string>
 #include <sstream>
 
+using namespace cc4s;
+
 Options::Options(int argumentCount, char **arguments) {
   nw = DEFAULT_NW;
   niter = DEFAULT_NITER;

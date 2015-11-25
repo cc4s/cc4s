@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+using namespace cc4s;
+
 Algorithm::Algorithm(std::vector<Argument const *> const &arguments) {
   for (auto arg(arguments.begin()); arg != arguments.end(); ++arg) {
     Argument const *argument = *arg;

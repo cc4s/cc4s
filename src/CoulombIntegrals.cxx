@@ -5,6 +5,7 @@
 #include "Exception.hpp"
 #include <iostream>
 
+using namespace cc4s;
 using namespace CTF;
 
 /**

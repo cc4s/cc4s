@@ -6,6 +6,7 @@
 #include <iostream>
 
 using namespace CTF;
+using namespace cc4s;
 
 /**
  * \brief Allocate all tensors

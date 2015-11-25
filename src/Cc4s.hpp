@@ -8,31 +8,33 @@
 #include "CoulombIntegrals.hpp"
 #include "Amplitudes.hpp"
 
-class Cc4s {
-  public:
-    Cc4s();
-    ~Cc4s();
-    void run();
+namespace cc4s {
+  class Cc4s {
+    public:
+      Cc4s();
+      ~Cc4s();
+      void run();
 
-    // static properties, accessible from everywhere
-    static CTF::World *world;
-    static Options *options;
-    static Chi *chiReal, *chiImag;
-    static CoulombIntegrals *V;
-    static Amplitudes *T;
+      // static properties, accessible from everywhere
+      static CTF::World *world;
+      static Options *options;
+      static Chi *chiReal, *chiImag;
+      static CoulombIntegrals *V;
+      static Amplitudes *T;
 
-protected:
-    void iterateMp2();
-    void iterateCcsd();
-    void iterateRpa();
-    void iterateRccd();
-    void iterateRccsd();
+  protected:
+      void iterateMp2();
+      void iterateCcsd();
+      void iterateRpa();
+      void iterateRccd();
+      void iterateRccsd();
 
-    void printBanner();
-    void printStatistics();
+      void printBanner();
+      void printStatistics();
 
-    CTF::Flop_counter flopCounter;
-};
+      CTF::Flop_counter flopCounter;
+  };
+}
 
 #endif
 

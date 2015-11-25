@@ -5,37 +5,36 @@
 #include <cmath>
 
 /**
- * \brief This class offers common math functions as static members.
+ * \brief Common inline math functions.
  * As opposed to the variants in the std namesapce, these functions
  * are type closed, i.e. return the same type as the arguments,
  * which is required by Tensor::sum for univariate functions and
  * by Tensor::contract for bivariate functions.
  */
-class MathFunctions {
-public:
+namespace cc4s {
   // univariate functions
   template <typename F=double>
-  static F sqrt(F const x) {
+  inline F sqrt(F const x) {
     return std::sqrt(x);
   }
 
   template <typename F=double>
-  static F abs(F const x) {
+  inline F abs(F const x) {
     return std::abs(x);
   }
 
   template <typename F=double>
-  static F conj(F const x) {
+  inline F conj(F const x) {
     return std::conj(x);
   }
 
-  static double conj(double const x) {
+  inline double conj(double const x) {
     return x;
   }
 
   // bivariate functions
   template <typename F=double>
-  static F dot(F const x, F const y) {
+  inline F dot(F const x, F const y) {
     return x * conj(y);
   }
 
@@ -43,14 +42,14 @@ public:
    * \brief Calculates only the real part of x*conj(y).
    */
   template <typename F=double>
-  static F realDot(F const x, F const y) {
+  inline F realDot(F const x, F const y) {
     return std::real(x*conj(y));
   }
 
   template <typename F=double>
-  static F divide(F const x, F const y) {
+  inline F divide(F const x, F const y) {
     return x / y;
   }
-};
+}
 
 #endif

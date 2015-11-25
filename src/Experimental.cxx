@@ -1,6 +1,7 @@
 #include "Experimental.hpp"
 #include <ctf.hpp>
 
+using namespace cc4s;
 using namespace CTF;
 
 void Experimental::readRandom(Tensor<> *tensor, int seed) {
