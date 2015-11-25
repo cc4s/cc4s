@@ -73,9 +73,12 @@ void RalsFtodRankDecomposition::fitAls(
   Tensor<complex> &b, char const idxB, Tensor<complex> &c, char const idxC,
   Tensor<complex> &a, char const idxA
 ) {
+  Matrix<complex> bb(rank, rank, NS, *chi->wrld, "bbRS", chi->profile);
   Matrix<complex> gramian(rank, rank, NS, *chi->wrld, "gRS", chi->profile);
-  gramian["RS"] =  b["Rj"]*b["Sj"];
-  gramian["RS"] *= c["Rk"]*c["Sk"];
+  Bivar_Function<complex> fDot(&dot<complex>);
+  bb.contract(1.0,b,"Rj", b,"Sj", 0.0,"RS", fDot);
+  gramian.contract(1.0,c,"Rk", c,"Sk", 0.0,"RS", fDot);
+  gramian["RS"] *= bb["RS"];
   IterativePseudoInverter<complex> gramianInverter(gramian);
   int bcLens[] = { b.lens[0], b.lens[1], c.lens[1] };
   int bcSyms[] = { NS, NS, NS };
