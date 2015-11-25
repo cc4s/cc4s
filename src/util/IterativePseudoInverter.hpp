@@ -20,7 +20,6 @@ protected:
     std::mt19937 &random, std::normal_distribution<double> &normalDistribution
   );
   static void generateHilbertMatrix(CTF::Matrix<F> &matrix);
-  static void generateRandomMatrix(CTF::Matrix<F> &matrix);
 
   CTF::Matrix<F> matrix, square, inverse;
   double alpha;

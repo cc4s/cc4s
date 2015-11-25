@@ -1,10 +1,10 @@
 #include <util/IterativePseudoInverter.hpp>
 
 #include <util/MathFunctions.hpp>
+#include <util/RandomTensor.hpp>
 #include <util/Log.hpp>
 #include <complex>
 #include <limits>
-#include <random>
 
 using namespace cc4s;
 using namespace CTF;
@@ -146,40 +146,6 @@ void IterativePseudoInverter<F>::generateHilbertMatrix(Matrix<F> &m) {
   free(indices); free(values);
 }
 
-template <>
-void IterativePseudoInverter<double>::setRandom(
-  double &value,
-  std::mt19937 &random, std::normal_distribution<double> &normalDistribution
-) {
-  value = normalDistribution(random);
-}
-
-template <>
-void IterativePseudoInverter<complex>::setRandom(
-  complex &value,
-  std::mt19937 &random, std::normal_distribution<double> &normalDistribution
-) {
-  value.real(normalDistribution(random));
-  value.imag(normalDistribution(random));
-}
-
-// TODO: place in proper file
-template <typename F>
-void IterativePseudoInverter<F>::generateRandomMatrix(Matrix<F> &m) {
-  int64_t indicesCount, *indices;
-  F *values;
-  std::mt19937 random;
-  random.seed(m.wrld->rank);
-  std::normal_distribution<double> normalDistribution(0.0, 1.0);
-  m.read_local(&indicesCount, &indices, &values);
-  for (int64_t i(0); i < indicesCount; ++i) {
-    setRandom(values[i], random, normalDistribution);
-  }
-  m.write(indicesCount, indices, values);
-  free(indices); free(values);
-}
-
-
 template <typename F>
 void IterativePseudoInverter<F>::test(World *world) {
   Matrix<F> m(10, 10, NS, *world);
@@ -196,7 +162,7 @@ void IterativePseudoInverter<F>::test(World *world) {
     LOG(3) << n << std::endl;
   }
   {
-    generateRandomMatrix(m);
+    setRandomTensor(m);
     IterativePseudoInverter pseudoInverter(m);
     Matrix<F> im(pseudoInverter.invert());
     dumpMatrix(im);

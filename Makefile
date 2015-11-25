@@ -18,10 +18,13 @@ OBJECTS= \
 obj/Options.o \
 obj/util/Log.o \
 obj/util/MathFunctions.o \
+obj/util/ComplexTensor.o \
+obj/util/RandomTensor.o \
 obj/util/IterativePseudoInverter.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
+obj/RalsFtodRankDecomposition.o \
 obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o obj/${TARGET}.o
@@ -30,10 +33,13 @@ obj/${TARGET}.o: \
 obj/Options.o \
 obj/util/Log.o \
 obj/util/MathFunctions.o \
+obj/util/ComplexTensor.o \
+obj/util/RandomTensor.o \
 obj/util/IterativePseudoInverter.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
+obj/RalsFtodRankDecomposition.o \
 obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o

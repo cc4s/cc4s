@@ -7,6 +7,7 @@
 #include "BinaryFtodReader.hpp"
 #include "Exception.hpp"
 #include "FtodRankDecomposition.hpp"
+#include "RalsFtodRankDecomposition.hpp"
 #include "CrossEntropyFtodRankDecomposition.hpp"
 #include "util/CubicPolynomialRootFinder.hpp"
 #include "util/ComplexPolynomialRootFinder.hpp"
@@ -35,9 +36,6 @@ void Cc4s::run() {
   binaryFtodReader.read();
 //  binaryFtodReader.write();
 
-  IterativePseudoInverter<double>::test(world);
-  IterativePseudoInverter<complex>::test(world);
-
   // experimental:
   std::vector<Argument const *> arguments;
   TensorData chiRData("chiR", *chiReal->gpq);
@@ -53,13 +51,14 @@ void Cc4s::run() {
   InputArgument epsilon("epsilon", &epsilonData);
   arguments.push_back(&epsilon);
 //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
-  FtodRankDecomposition ftodRankDecomposition(arguments);
+//  FtodRankDecomposition ftodRankDecomposition(arguments);
+  RalsFtodRankDecomposition ftodRankDecomposition(arguments);
 //  util::CubicPolynomialRootFinder::test();
 //  util::ComplexPolynomialRootFinder::test();
 //  return;
   ftodRankDecomposition.run();
-  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
-  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
+//  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
+//  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
 
   // calculate Coulomb integrals from Fourier transformed overlap densities
   Cc4s::V->fetch();
