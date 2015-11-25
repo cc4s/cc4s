@@ -84,6 +84,7 @@ void RalsFtodRankDecomposition::fitAls(
   int bcSyms[] = { NS, NS, NS };
   Tensor<complex> bc(3, bcLens, bcSyms, *chi->wrld, "bcRjk", chi->profile);
   bc["Sjk"] = b["Sj"] * c["Sk"];
+  // FIXME: check index order SR or RS in pseudo inverse.
   bc["Rjk"] = bc["Sjk"] * gramianInverter.invert()["SR"];
   char const indicesA[] = { 'R', idxA, 0 };
   char const indicesBC[] = { 'S', idxB, idxC, 0 };

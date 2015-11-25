@@ -36,6 +36,8 @@ void Cc4s::run() {
   binaryFtodReader.read();
 //  binaryFtodReader.write();
 
+//  IterativePseudoInverter<complex>::test(world);
+
   // experimental:
   std::vector<Argument const *> arguments;
   TensorData chiRData("chiR", *chiReal->gpq);

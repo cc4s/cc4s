@@ -148,7 +148,7 @@ void IterativePseudoInverter<F>::generateHilbertMatrix(Matrix<F> &m) {
 
 template <typename F>
 void IterativePseudoInverter<F>::test(World *world) {
-  Matrix<F> m(10, 10, NS, *world);
+  Matrix<F> m(5, 8, NS, *world);
   {
     generateHilbertMatrix(m);
     IterativePseudoInverter pseudoInverter(m);
