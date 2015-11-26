@@ -37,6 +37,7 @@ void Cc4s::run() {
 //  binaryFtodReader.write();
 
 //  IterativePseudoInverter<complex>::test(world);
+  RalsFtodRankDecomposition::test(world);
 
   // experimental:
   std::vector<Argument const *> arguments;

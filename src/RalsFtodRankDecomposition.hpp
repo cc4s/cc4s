@@ -33,14 +33,22 @@ namespace cc4s {
     CTF::Tensor<complex> *chi;
     CTF::Matrix<complex> *x, *gamma;
 
+    static void test(CTF::World *world);
   protected:
-    void fit();
+    void fit(double lambda);
 
     void fitAls(
       char const *indicesChi,
       CTF::Tensor<complex> &b, char const idxB,
       CTF::Tensor<complex> &c, char const idxC,
       CTF::Tensor<complex> &a, char const idxA
+    );
+    void fitRals(
+      char const *indicesChi,
+      CTF::Tensor<complex> &b, char const idxB,
+      CTF::Tensor<complex> &c, char const idxC,
+      CTF::Tensor<complex> &a, char const idxA,
+      double lambda
     );
   };
 }

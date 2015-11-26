@@ -8,7 +8,7 @@ namespace cc4s {
   template <
     typename Distribution, typename RandomEngine
   >
-  void setRandom(
+  inline void setRandom(
     double &value, Distribution &distribution, RandomEngine &randomEngine
   ) {
     value = distribution(randomEngine);
@@ -17,7 +17,7 @@ namespace cc4s {
   template <
     typename Distribution, typename RandomEngine
   >
-  void setRandom(
+  inline void setRandom(
     complex &value, Distribution &distribution, RandomEngine &randomEngine
   ) {
     value.real(distribution(randomEngine));

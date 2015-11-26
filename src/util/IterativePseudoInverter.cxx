@@ -9,18 +9,6 @@
 using namespace cc4s;
 using namespace CTF;
 
-// TODO: place in proper file
-template <typename F>
-void dumpMatrix(Matrix<F> &m) {
-  F *values(new F[m.lens[0]*m.lens[1]]);
-  m.read_all(values);
-  for (int i(0); i < m.lens[0]; ++i) {
-    for (int j(0); j < m.lens[1]; ++j) {
-      LOG(3) << " " << values[i+j*m.lens[0]];
-    }
-    LOG(3) << std::endl;
-  }
-}
 
 template <typename F>
 IterativePseudoInverter<F>::IterativePseudoInverter(
@@ -77,7 +65,7 @@ void IterativePseudoInverter<F>::iterate(double accuracy) {
     // failed to convege
     LOG(4) << "  failed to converge, remainder=" << remainder << std::endl;
     LOG(4) << "  minRemainder=" << minRemainder << std::endl;
-    dumpMatrix(inverse);
+    logMatrix(4, inverse);
   }
 }
 
@@ -87,7 +75,7 @@ void IterativePseudoInverter<F>::iterateQuadratically(double accuracy) {
   double remainder(1.0), minRemainder(std::numeric_limits<double>::infinity());
   int n(0), nMin(0);
   // TODO: use constants for limits
-  while (remainder > accuracy*accuracy && n-nMin < 20 && n < 10000) {
+  while (remainder > accuracy*accuracy && n-nMin < 2 && n < 10000) {
     square["ij"] = -1.0 * matrix["ik"] * inverse["kj"];
     square["ii"] += 2.0;
     inverse["ij"] = inverse["ik"] * square["kj"];
@@ -95,6 +83,7 @@ void IterativePseudoInverter<F>::iterateQuadratically(double accuracy) {
     Bivar_Function<F> fRealDot(&realDot<F>);
     s.contract(1.0, square,"ij", square,"ij", 0.0,"", fRealDot);
     remainder = std::real(s.get_val());
+    LOG(4) << "remainder=" << remainder << std::endl;
     if (remainder < minRemainder) {
       minRemainder = remainder;
       nMin = n;
@@ -105,7 +94,7 @@ void IterativePseudoInverter<F>::iterateQuadratically(double accuracy) {
     // failed to convege
     LOG(4) << " failed to converge, remainder=" << remainder << std::endl;
     LOG(4) << " minRemainder=" << minRemainder << std::endl;
-    dumpMatrix(inverse);
+    logMatrix(4, inverse);
   }
 }
 
@@ -153,7 +142,7 @@ void IterativePseudoInverter<F>::test(World *world) {
     generateHilbertMatrix(m);
     IterativePseudoInverter pseudoInverter(m);
     Matrix<F> im(pseudoInverter.invert());
-    dumpMatrix(im);
+    logMatrix(2, im);
     im["ij"] = m["ik"] * im["kj"];
     im["ii"] += -1.0;
     Scalar<F> s(*world);
@@ -165,7 +154,7 @@ void IterativePseudoInverter<F>::test(World *world) {
     setRandomTensor(m);
     IterativePseudoInverter pseudoInverter(m);
     Matrix<F> im(pseudoInverter.invert());
-    dumpMatrix(im);
+    logMatrix(2, im);
     im["ij"] = m["ik"] * im["kj"];
     im["ii"] += -1.0;
     Scalar<F> s(*world);
