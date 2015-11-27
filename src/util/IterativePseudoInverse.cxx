@@ -1,4 +1,4 @@
-#include <util/IterativePseudoInverter.hpp>
+#include <util/IterativePseudoInverse.hpp>
 
 #include <util/MathFunctions.hpp>
 #include <util/RandomTensor.hpp>
@@ -11,8 +11,8 @@ using namespace CTF;
 
 
 template <typename F>
-IterativePseudoInverter<F>::IterativePseudoInverter(
-  Matrix<F> const &matrix_
+IterativePseudoInverse<F>::IterativePseudoInverse(
+  Matrix<F> const &matrix_, double accuracy
 ):
   matrix(matrix_),
   square(matrix_.lens[0], matrix_.lens[0], *matrix_.wrld),
@@ -36,10 +36,12 @@ IterativePseudoInverter<F>::IterativePseudoInverter(
   alpha = 1.0/max;
   LOG(4) << "alpha=" << alpha << std::endl;
   inverse["ji"] = alpha * conjugate["ji"];
+  iterateQuadratically(accuracy);
+//  iterate(accuracy);
 }
 
 template <typename F>
-void IterativePseudoInverter<F>::iterate(double accuracy) {
+void IterativePseudoInverse<F>::iterate(double accuracy) {
   Scalar<F> s;
   Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], *matrix.wrld);
   Univar_Function<F> fConj(&conj<F>);
@@ -70,7 +72,7 @@ void IterativePseudoInverter<F>::iterate(double accuracy) {
 }
 
 template <typename F>
-void IterativePseudoInverter<F>::iterateQuadratically(double accuracy) {
+void IterativePseudoInverse<F>::iterateQuadratically(double accuracy) {
   Scalar<F> s;
   double remainder(1.0), minRemainder(std::numeric_limits<double>::infinity());
   int n(0), nMin(0);
@@ -99,30 +101,28 @@ void IterativePseudoInverter<F>::iterateQuadratically(double accuracy) {
 }
 
 template <typename F>
-Matrix<F> &IterativePseudoInverter<F>::invert(double accuracy) {
-  iterateQuadratically(accuracy);
-//  iterate(accuracy);
+Matrix<F> &IterativePseudoInverse<F>::get() {
   return inverse;
 }
 
 // instantiate
 template
-IterativePseudoInverter<double>::IterativePseudoInverter(
-  Matrix<double> const &matrix
+IterativePseudoInverse<double>::IterativePseudoInverse(
+  Matrix<double> const &matrix, double accuracy
 );
 template
-Matrix<double> &IterativePseudoInverter<double>::invert(double accuracy);
+Matrix<double> &IterativePseudoInverse<double>::get();
 
 template
-IterativePseudoInverter<complex>::IterativePseudoInverter(
-  Matrix<complex> const &matrix
+IterativePseudoInverse<complex>::IterativePseudoInverse(
+  Matrix<complex> const &matrix, double accuracy
 );
 template
-Matrix<complex> &IterativePseudoInverter<complex>::invert(double accuracy);
+Matrix<complex> &IterativePseudoInverse<complex>::get();
 
 
 template <typename F>
-void IterativePseudoInverter<F>::generateHilbertMatrix(Matrix<F> &m) {
+void IterativePseudoInverse<F>::generateHilbertMatrix(Matrix<F> &m) {
   int64_t indicesCount, *indices;
   F *values;
   m.read_local(&indicesCount, &indices, &values);
@@ -136,12 +136,12 @@ void IterativePseudoInverter<F>::generateHilbertMatrix(Matrix<F> &m) {
 }
 
 template <typename F>
-void IterativePseudoInverter<F>::test(World *world) {
+void IterativePseudoInverse<F>::test(World *world) {
   Matrix<F> m(5, 8, NS, *world);
   {
     generateHilbertMatrix(m);
-    IterativePseudoInverter pseudoInverter(m);
-    Matrix<F> im(pseudoInverter.invert());
+    IterativePseudoInverse pseudoInverse(m);
+    Matrix<F> im(pseudoInverse.get());
     logMatrix(2, im);
     im["ij"] = m["ik"] * im["kj"];
     im["ii"] += -1.0;
@@ -152,8 +152,8 @@ void IterativePseudoInverter<F>::test(World *world) {
   }
   {
     setRandomTensor(m);
-    IterativePseudoInverter pseudoInverter(m);
-    Matrix<F> im(pseudoInverter.invert());
+    IterativePseudoInverse pseudoInverse(m);
+    Matrix<F> im(pseudoInverse.get());
     logMatrix(2, im);
     im["ij"] = m["ik"] * im["kj"];
     im["ii"] += -1.0;
@@ -166,6 +166,6 @@ void IterativePseudoInverter<F>::test(World *world) {
 
 // instantiate
 template
-void IterativePseudoInverter<double>::test(World *world);
+void IterativePseudoInverse<double>::test(World *world);
 template
-void IterativePseudoInverter<complex>::test(World *world);
+void IterativePseudoInverse<complex>::test(World *world);

@@ -6,7 +6,7 @@
 #include <util/ComplexTensor.hpp>
 #include <util/RandomTensor.hpp>
 #include <util/MathFunctions.hpp>
-#include <util/IterativePseudoInverter.hpp>
+#include <util/IterativePseudoInverse.hpp>
 #include <iostream>
 #include <fstream>
 #include <random>
@@ -79,6 +79,7 @@ void RalsFtodRankDecomposition::fit(double lambda) {
   LOG(3) << "R(X1'-X1)=" << deltaX1 << std::endl;
   LOG(3) << "R(X2'-X2)=" << deltaX2 << std::endl;
   LOG(3) << "R(G'-G)=" << deltaG << std::endl;
+  (*chi0)["Gqr"] += (*chi)["Gqr"];
 }
 
 void RalsFtodRankDecomposition::fitAls(
@@ -93,13 +94,13 @@ void RalsFtodRankDecomposition::fitAls(
   bb.contract(1.0,b,"Rj", b,"Sj", 0.0,"SR", fDot);
   gramian.contract(1.0,c,"Rk", c,"Sk", 0.0,"SR", fDot);
   gramian["SR"] *= bb["SR"];
+  LOG(4) << "inverting Gramian..." << std::endl;
+  IterativePseudoInverse<complex> gramianInverse(gramian);
   int bcLens[] = { b.lens[0], b.lens[1], c.lens[1] };
   int bcSyms[] = { NS, NS, NS };
   Tensor<complex> bc(3, bcLens, bcSyms, *chi->wrld, "bcRjk", chi->profile);
   bc["Sjk"] = b["Sj"] * c["Sk"];
-  LOG(4) << "inverting Gramian..." << std::endl;
-  IterativePseudoInverter<complex> gramianInverter(gramian);
-  bc["Rjk"] = bc["Sjk"] * gramianInverter.invert()["SR"];
+  bc["Rjk"] = bc["Sjk"] * gramianInverse.get()["SR"];
   char const indicesA[] = { 'R', idxA, 0 };
   char const indicesBC[] = { 'R', idxB, idxC, 0 };
   LOG(4) << "building new estimate: A[" << indicesA <<
@@ -122,18 +123,20 @@ double RalsFtodRankDecomposition::fitRals(
   gramian.contract(1.0,c,"Rk", c,"Sk", 0.0,"SR", fDot);
   gramian["SR"] *= bb["SR"];
   gramian["RR"] += lambda;
+  LOG(4) << "inverting Gramian..." << std::endl;
+  IterativePseudoInverse<complex> gramianInverse(gramian);
   Tensor<complex> oldA(a);
   int bcLens[] = { b.lens[0], b.lens[1], c.lens[1] };
   int bcSyms[] = { NS, NS, NS };
+  LOG(4) << "building outer product..." << std::endl;
   Tensor<complex> bc(3, bcLens, bcSyms, *chi->wrld, "bcRjk", chi->profile);
   bc["Sjk"] = b["Sj"] * c["Sk"];
   char const indicesA[] = { 'R', idxA, 0 };
   char const indicesBC[] = { 'R', idxB, idxC, 0 };
+  LOG(4) << "applying outer product..." << std::endl;
   a.contract(1.0, *chi,indicesChi, bc,indicesBC, lambda, indicesA, fDot);
-
-  LOG(4) << "inverting Gramian..." << std::endl;
-  IterativePseudoInverter<complex> gramianInverter(gramian);
-  a.contract(1.0, a,"Si", gramianInverter.invert(), "SR", 0.0, "Ri", fDot);
+  LOG(4) << "applying inverse of Gramian..." << std::endl;
+  a.contract(1.0, a,"Si", gramianInverse.get(), "SR", 0.0, "Ri", fDot);
   oldA["Ri"] -= a["Ri"];
   double norm(frobeniusNorm(oldA));
   return norm*norm;
@@ -149,8 +152,8 @@ void RalsFtodRankDecomposition::test(CTF::World *world) {
   Matrix<complex> gramian(10,10, NS, *world, "GSR");
   gramian.contract(1.0,b,"jR", b,"jS", 0.0,"SR", fDot);
   Matrix<complex> bg(7,10, NS, *world, "BjR");
-  IterativePseudoInverter<complex> gramianInverter(gramian);
-  bg["jR"] = b["jS"] * gramianInverter.invert()["SR"];
+  IterativePseudoInverse<complex> gramianInverse(gramian);
+  bg["jR"] = b["jS"] * gramianInverse.get()["SR"];
   a.contract(1.0, t,"ij", bg,"jR", 0.0,"iR", fDot);
 
   Matrix<complex> ab(5,7, NS, *world, "Tij");

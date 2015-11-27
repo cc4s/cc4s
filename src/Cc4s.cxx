@@ -52,21 +52,23 @@ void Cc4s::run() {
 //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
 //  FtodRankDecomposition ftodRankDecomposition(arguments);
   RalsFtodRankDecomposition ftodRankDecomposition(arguments);
-/*
+
+  // calculate Coulomb integrals from Fourier transformed overlap densities
+  Cc4s::V->fetch();
   ftodRankDecomposition.run();
+  Tensor<> oldChiR(*chiReal->gpq);
+  Tensor<> oldChiI(*chiImag->gpq);
   fromComplexTensor(*ftodRankDecomposition.chi0, *chiReal->gpq, *chiImag->gpq);
-  Tensor<complex> oldChi0(*ftodRankDecomposition.chi0);
-  toComplexTensor(*chiReal->gpq, *chiImag->gpq, *ftodRankDecomposition.chi0);
-  oldChi0["Gqr"] -= (*ftodRankDecomposition.chi0)["Gqr"];
-  double n(frobeniusNorm(oldChi0));
-  LOG(4) << "n=" << n << std::endl;
-*/
+  oldChiR["Gqr"] -= (*chiReal->gpq)["Gqr"];
+  oldChiI["Gqr"] -= (*chiImag->gpq)["Gqr"];
+  double i(frobeniusNorm(oldChiI));
+  double r(frobeniusNorm(oldChiR));
+  LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
+
 
 //  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
 //  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
 
-  // calculate Coulomb integrals from Fourier transformed overlap densities
-  Cc4s::V->fetch();
   // write V(1,1,1,1) for testing
   int64_t readIndices[] = { 0 };
   double readValues[] = { 0.0 };
@@ -180,7 +182,7 @@ void Cc4s::iterateRpa() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -323,7 +325,7 @@ void Cc4s::iterateRccd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -486,7 +488,7 @@ void Cc4s::iterateRccsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 
 
@@ -535,7 +537,7 @@ void Cc4s::iterateMp2() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, *V->abij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -587,7 +589,7 @@ void Cc4s::iterateCcsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, tZabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 } 

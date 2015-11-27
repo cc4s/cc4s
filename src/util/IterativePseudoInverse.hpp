@@ -1,15 +1,15 @@
-#ifndef ITERATIVE_PSEUDO_INVERTER_DEFINED
-#define ITERATIVE_PSEUDO_INVERTER_DEFINED
+#ifndef ITERATIVE_PSEUDO_INVERSE_DEFINED
+#define ITERATIVE_PSEUDO_INVERSE_DEFINED
 
 #include <util/Complex.hpp>
 #include <ctf.hpp>
 #include <random>
 
 template <typename F>
-class IterativePseudoInverter {
+class IterativePseudoInverse {
 public:
-  IterativePseudoInverter(CTF::Matrix<F> const &matrix);
-  CTF::Matrix<F> &invert(double accuracy = 1e-10);
+  IterativePseudoInverse(CTF::Matrix<F> const &matrix, double accuracy = 1e-10);
+  CTF::Matrix<F> &get();
 
   static void test(CTF::World *world);
 protected:
