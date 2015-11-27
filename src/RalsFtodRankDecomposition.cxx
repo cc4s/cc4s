@@ -1,12 +1,12 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "RalsFtodRankDecomposition.hpp"
-#include "Exception.hpp"
-#include "util/Log.hpp"
-#include "util/ComplexTensor.hpp"
-#include "util/RandomTensor.hpp"
-#include "util/MathFunctions.hpp"
-#include "util/IterativePseudoInverter.hpp"
+#include <RalsFtodRankDecomposition.hpp>
+#include <Exception.hpp>
+#include <util/Log.hpp>
+#include <util/ComplexTensor.hpp>
+#include <util/RandomTensor.hpp>
+#include <util/MathFunctions.hpp>
+#include <util/IterativePseudoInverter.hpp>
 #include <iostream>
 #include <fstream>
 #include <random>
@@ -27,7 +27,7 @@ void RalsFtodRankDecomposition::run() {
   rank = getIntegerArgument("rank");
   Tensor<double> const *chiR(getTensorArgument("chiR"));
   Tensor<double> const *chiI(getTensorArgument("chiI"));
-  double epsilon = getRealArgument("epsilon");
+//  double epsilon = getRealArgument("epsilon");
   int nG(chiR->lens[0]);
   int np(chiR->lens[1]);
   LOG(3) << "rank=" << rank << std::endl;
@@ -49,31 +49,36 @@ void RalsFtodRankDecomposition::run() {
   setRandomTensor(*gamma);
   norm = frobeniusNorm(*gamma);
   (*gamma)["RG"] *= 1.0/norm;
+  chi0 = new Tensor<complex>(3, chi->lens, chi->sym, *chi->wrld, "chi0Gqr", chi->profile);
+
   while (true) {
     double lambda;
     std::ifstream lambdaFile;
     lambdaFile.open("lambda");
     lambdaFile >> lambda;
     lambdaFile.close();
+    if (lambda < 0.0) return;
     LOG(2) << "lambda=" << lambda << std::endl;
     fit(lambda);
   }
 }
 
 void RalsFtodRankDecomposition::fit(double lambda) {
-  fitRals("Gqr", *x,'q', *x,'r', *gamma,'G', lambda);
-  fitRals("Gqr", *x,'r', *gamma,'G', *x,'q', lambda);
-  fitRals("Gqr", *gamma,'G', *x,'q', *x,'r', lambda);
+  double deltaG(fitRals("Gqr", *x,'q', *x,'r', *gamma,'G', lambda));
+  double deltaX1(fitRals("Gqr", *x,'r', *gamma,'G', *x,'q', lambda));
+  double deltaX2(fitRals("Gqr", *gamma,'G', *x,'q', *x,'r', lambda));
 
   int bcLens[] = { x->lens[0], x->lens[1], x->lens[1] };
   int bcSyms[] = { NS, NS, NS };
   Tensor<complex> bc(3, bcLens, bcSyms, *chi->wrld, "bcRjk", chi->profile);
   bc["Rqr"] = (*x)["Rq"] * (*x)["Rr"];
-  Tensor<complex> chi0(3, chi->lens, chi->sym, *chi->wrld, "chi0Gqr", chi->profile);
-  chi0["Gqr"] = (*gamma)["RG"] * bc["Rqr"];
-  chi0["Gqr"] -= (*chi)["Gqr"];
-  double R(frobeniusNorm(chi0));
-  LOG(2) << R*R << std::endl;
+  (*chi0)["Gqr"] = (*gamma)["RG"] * bc["Rqr"];
+  (*chi0)["Gqr"] -= (*chi)["Gqr"];
+  double R(frobeniusNorm(*chi0));
+  LOG(0) << "R(XXG-chi)=" << R*R << std::endl;
+  LOG(3) << "R(X1'-X1)=" << deltaX1 << std::endl;
+  LOG(3) << "R(X2'-X2)=" << deltaX2 << std::endl;
+  LOG(3) << "R(G'-G)=" << deltaG << std::endl;
 }
 
 void RalsFtodRankDecomposition::fitAls(
@@ -103,7 +108,7 @@ void RalsFtodRankDecomposition::fitAls(
   LOG(4) << "done" << std::endl;
 }
 
-void RalsFtodRankDecomposition::fitRals(
+double RalsFtodRankDecomposition::fitRals(
   char const *indicesChi,
   Tensor<complex> &b, char const idxB, Tensor<complex> &c, char const idxC,
   Tensor<complex> &a, char const idxA,
@@ -117,6 +122,7 @@ void RalsFtodRankDecomposition::fitRals(
   gramian.contract(1.0,c,"Rk", c,"Sk", 0.0,"SR", fDot);
   gramian["SR"] *= bb["SR"];
   gramian["RR"] += lambda;
+  Tensor<complex> oldA(a);
   int bcLens[] = { b.lens[0], b.lens[1], c.lens[1] };
   int bcSyms[] = { NS, NS, NS };
   Tensor<complex> bc(3, bcLens, bcSyms, *chi->wrld, "bcRjk", chi->profile);
@@ -128,6 +134,9 @@ void RalsFtodRankDecomposition::fitRals(
   LOG(4) << "inverting Gramian..." << std::endl;
   IterativePseudoInverter<complex> gramianInverter(gramian);
   a.contract(1.0, a,"Si", gramianInverter.invert(), "SR", 0.0, "Ri", fDot);
+  oldA["Ri"] -= a["Ri"];
+  double norm(frobeniusNorm(oldA));
+  return norm*norm;
 }
 
 void RalsFtodRankDecomposition::test(CTF::World *world) {

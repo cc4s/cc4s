@@ -2,7 +2,7 @@
 #ifndef CROSS_ENTROPY_FTOD_RANK_DECOMPOSITION_DEFINED
 #define CROSS_ENTROPY_FTOD_RANK_DECOMPOSITION_DEFINED
 
-#include "Algorithm.hpp"
+#include <Algorithm.hpp>
 #include <random>
 #include <ctf.hpp>
 

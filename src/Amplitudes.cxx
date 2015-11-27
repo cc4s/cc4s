@@ -1,8 +1,8 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "Amplitudes.hpp"
-#include "Cc4s.hpp"
-#include "Exception.hpp"
+#include <Amplitudes.hpp>
+#include <Cc4s.hpp>
+#include <Exception.hpp>
 #include <iostream>
 
 using namespace CTF;

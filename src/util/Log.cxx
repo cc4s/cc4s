@@ -2,8 +2,15 @@
 
 #include <util/Complex.hpp>
 
-
 int cc4s::Log::logLevel(0);
+std::string cc4s::Log::indent("\t");
+
+std::ostream &cc4s::Log::logStream(int const level) {
+  for (int i(0); i < level; ++i) {
+    std::cout << indent.c_str();
+  }
+  return std::cout;
+}
 
 template <typename F>
 void cc4s::logMatrix(int level, CTF::Matrix<F> &m) {

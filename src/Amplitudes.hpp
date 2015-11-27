@@ -2,8 +2,8 @@
 #ifndef AMPLITUDES_DEFINED
 #define AMPLITUDES_DEFINED
 
-#include "PerturbationTensor.hpp"
-#include "CoulombIntegrals.hpp"
+#include <PerturbationTensor.hpp>
+#include <CoulombIntegrals.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {

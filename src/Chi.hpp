@@ -2,7 +2,7 @@
 #ifndef CHI_DEFINED
 #define CHI_DEFINED
 
-#include "PerturbationTensor.hpp"
+#include <PerturbationTensor.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {

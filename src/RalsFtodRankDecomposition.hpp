@@ -2,7 +2,7 @@
 #ifndef RALS_FTOD_RANK_DECOMPOSITION_DEFINED
 #define RALS_FTOD_RANK_DECOMPOSITION_DEFINED
 
-#include "Algorithm.hpp"
+#include <Algorithm.hpp>
 #include <util/Complex.hpp>
 #include <ctf.hpp>
 
@@ -30,7 +30,7 @@ namespace cc4s {
      */
     int64_t rank;
     double R;
-    CTF::Tensor<complex> *chi;
+    CTF::Tensor<complex> *chi, *chi0;
     CTF::Matrix<complex> *x, *gamma;
 
     static void test(CTF::World *world);
@@ -43,7 +43,7 @@ namespace cc4s {
       CTF::Tensor<complex> &c, char const idxC,
       CTF::Tensor<complex> &a, char const idxA
     );
-    void fitRals(
+    double fitRals(
       char const *indicesChi,
       CTF::Tensor<complex> &b, char const idxB,
       CTF::Tensor<complex> &c, char const idxC,

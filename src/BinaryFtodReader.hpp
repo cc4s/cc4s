@@ -2,8 +2,8 @@
 #ifndef BINARY_FTOD_READER_DEFINED
 #define BINARY_FTOD_READER_DEFINED
 
-#include "FtodReader.hpp"
-#include "Chi.hpp"
+#include <FtodReader.hpp>
+#include <Chi.hpp>
 #include <cstdint>
 #include <fstream>
 

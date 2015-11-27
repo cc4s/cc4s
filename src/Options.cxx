@@ -1,6 +1,6 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "Options.hpp"
+#include <Options.hpp>
 #include <string>
 #include <sstream>
 

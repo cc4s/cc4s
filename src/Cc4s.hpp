@@ -3,10 +3,10 @@
 #define CC4S_DEFINED
 
 #include <ctf.hpp>
-#include "Options.hpp"
-#include "Chi.hpp"
-#include "CoulombIntegrals.hpp"
-#include "Amplitudes.hpp"
+#include <Options.hpp>
+#include <Chi.hpp>
+#include <CoulombIntegrals.hpp>
+#include <Amplitudes.hpp>
 
 namespace cc4s {
   class Cc4s {

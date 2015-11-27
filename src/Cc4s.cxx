@@ -1,18 +1,15 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-// TODO: change "" includes to <> includes
-#include "Cc4s.hpp"
-#include "util/Log.hpp"
-#include "TextFtodReader.hpp"
-#include "BinaryFtodReader.hpp"
-#include "Exception.hpp"
-#include "FtodRankDecomposition.hpp"
-#include "RalsFtodRankDecomposition.hpp"
-#include "CrossEntropyFtodRankDecomposition.hpp"
-#include "util/CubicPolynomialRootFinder.hpp"
-#include "util/ComplexPolynomialRootFinder.hpp"
-#include "util/MathFunctions.hpp"
-#include "util/IterativePseudoInverter.hpp"
+#include <Cc4s.hpp>
+#include <util/Log.hpp>
+#include <TextFtodReader.hpp>
+#include <BinaryFtodReader.hpp>
+#include <Exception.hpp>
+#include <FtodRankDecomposition.hpp>
+#include <RalsFtodRankDecomposition.hpp>
+#include <CrossEntropyFtodRankDecomposition.hpp>
+#include <util/MathFunctions.hpp>
+#include <util/ComplexTensor.hpp>
 #include <ctf.hpp>
 #include <iostream>
 #include <fstream>
@@ -36,8 +33,7 @@ void Cc4s::run() {
   binaryFtodReader.read();
 //  binaryFtodReader.write();
 
-//  IterativePseudoInverter<complex>::test(world);
-  RalsFtodRankDecomposition::test(world);
+//  RalsFtodRankDecomposition::test(world);
 
   // experimental:
   std::vector<Argument const *> arguments;
@@ -56,10 +52,16 @@ void Cc4s::run() {
 //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
 //  FtodRankDecomposition ftodRankDecomposition(arguments);
   RalsFtodRankDecomposition ftodRankDecomposition(arguments);
-//  util::CubicPolynomialRootFinder::test();
-//  util::ComplexPolynomialRootFinder::test();
-//  return;
+/*
   ftodRankDecomposition.run();
+  fromComplexTensor(*ftodRankDecomposition.chi0, *chiReal->gpq, *chiImag->gpq);
+  Tensor<complex> oldChi0(*ftodRankDecomposition.chi0);
+  toComplexTensor(*chiReal->gpq, *chiImag->gpq, *ftodRankDecomposition.chi0);
+  oldChi0["Gqr"] -= (*ftodRankDecomposition.chi0)["Gqr"];
+  double n(frobeniusNorm(oldChi0));
+  LOG(4) << "n=" << n << std::endl;
+*/
+
 //  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
 //  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
 

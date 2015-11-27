@@ -1,6 +1,8 @@
 #ifndef LOG_DEFINED
 #define LOG_DEFINED
 
+#include <string>
+#include <iostream>
 #include <ctf.hpp>
 
 namespace cc4s {
@@ -11,11 +13,18 @@ namespace cc4s {
   class Log {
   public:
     /**
-     * The log level to use for subsequent LOG messages.
+     * \brief The log level to use for subsequent LOG messages.
      * A log message will only be
      * written if its log level is equal or below the current log level.
      */
     static int logLevel;
+    /**
+     * \brief Indentation string used for each log level.
+     * By default a tab character will be used.
+     */
+    static std::string indent;
+
+    static std::ostream &logStream(int const level);
   };
 
   template <typename F>
@@ -28,7 +37,8 @@ namespace cc4s {
  * Note that this macro must be used as a statement and cannot be used as an
  * rvalue.
  */
-#define LOG(level) if (level > cc4s::Log::logLevel) { } else std::cout
+#define LOG(level) \
+  if (level > cc4s::Log::logLevel) { } else cc4s::Log::logStream(level)
 
 #endif
 
