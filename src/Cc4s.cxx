@@ -55,16 +55,17 @@ void Cc4s::run() {
 
   // calculate Coulomb integrals from Fourier transformed overlap densities
   Cc4s::V->fetch();
-  ftodRankDecomposition.run();
-  Tensor<> oldChiR(*chiReal->gpq);
-  Tensor<> oldChiI(*chiImag->gpq);
-  fromComplexTensor(*ftodRankDecomposition.chi0, *chiReal->gpq, *chiImag->gpq);
-  oldChiR["Gqr"] -= (*chiReal->gpq)["Gqr"];
-  oldChiI["Gqr"] -= (*chiImag->gpq)["Gqr"];
-  double i(frobeniusNorm(oldChiI));
-  double r(frobeniusNorm(oldChiR));
-  LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
-
+  if (options->rank > 0) {
+    ftodRankDecomposition.run();
+    Tensor<> oldChiR(*chiReal->gpq);
+    Tensor<> oldChiI(*chiImag->gpq);
+    fromComplexTensor(*ftodRankDecomposition.chi0, *chiReal->gpq, *chiImag->gpq);
+    oldChiR["Gqr"] -= (*chiReal->gpq)["Gqr"];
+    oldChiI["Gqr"] -= (*chiImag->gpq)["Gqr"];
+    double i(frobeniusNorm(oldChiI));
+    double r(frobeniusNorm(oldChiR));
+    LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
+  }
 
 //  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
 //  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];

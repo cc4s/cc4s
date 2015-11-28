@@ -20,7 +20,7 @@ namespace cc4s {
       const bool DEFAULT_PROFILE = false;
       const bool DEFAULT_STORE_V = false;
       const int DEFAULT_LOG_LEVEL = 1;
-      const int DEFAULT_RANK = 100;
+      const int DEFAULT_RANK = 0;
       const double DEFAULT_ACCURACY = 1e-10;
 
       Options(int argumentCount, char **arguments);
