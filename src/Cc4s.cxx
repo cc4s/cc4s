@@ -1,18 +1,15 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-// TODO: change "" includes to <> includes
-#include "Cc4s.hpp"
-#include "util/Log.hpp"
-#include "TextFtodReader.hpp"
-#include "BinaryFtodReader.hpp"
-#include "Exception.hpp"
-#include "FtodRankDecomposition.hpp"
-#include "RalsFtodRankDecomposition.hpp"
-#include "CrossEntropyFtodRankDecomposition.hpp"
-#include "util/CubicPolynomialRootFinder.hpp"
-#include "util/ComplexPolynomialRootFinder.hpp"
-#include "util/MathFunctions.hpp"
-#include "util/IterativePseudoInverter.hpp"
+#include <Cc4s.hpp>
+#include <util/Log.hpp>
+#include <TextFtodReader.hpp>
+#include <BinaryFtodReader.hpp>
+#include <Exception.hpp>
+#include <FtodRankDecomposition.hpp>
+#include <RalsFtodRankDecomposition.hpp>
+#include <CrossEntropyFtodRankDecomposition.hpp>
+#include <util/MathFunctions.hpp>
+#include <util/ComplexTensor.hpp>
 #include <ctf.hpp>
 #include <iostream>
 #include <fstream>
@@ -36,7 +33,7 @@ void Cc4s::run() {
   binaryFtodReader.read();
 //  binaryFtodReader.write();
 
-//  IterativePseudoInverter<complex>::test(world);
+//  RalsFtodRankDecomposition::test(world);
 
   // experimental:
   std::vector<Argument const *> arguments;
@@ -55,15 +52,23 @@ void Cc4s::run() {
 //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
 //  FtodRankDecomposition ftodRankDecomposition(arguments);
   RalsFtodRankDecomposition ftodRankDecomposition(arguments);
-//  util::CubicPolynomialRootFinder::test();
-//  util::ComplexPolynomialRootFinder::test();
-//  return;
-  ftodRankDecomposition.run();
-//  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
-//  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
 
   // calculate Coulomb integrals from Fourier transformed overlap densities
   Cc4s::V->fetch();
+  ftodRankDecomposition.run();
+  Tensor<> oldChiR(*chiReal->gpq);
+  Tensor<> oldChiI(*chiImag->gpq);
+  fromComplexTensor(*ftodRankDecomposition.chi0, *chiReal->gpq, *chiImag->gpq);
+  oldChiR["Gqr"] -= (*chiReal->gpq)["Gqr"];
+  oldChiI["Gqr"] -= (*chiImag->gpq)["Gqr"];
+  double i(frobeniusNorm(oldChiI));
+  double r(frobeniusNorm(oldChiR));
+  LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
+
+
+//  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
+//  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
+
   // write V(1,1,1,1) for testing
   int64_t readIndices[] = { 0 };
   double readValues[] = { 0.0 };
@@ -177,7 +182,7 @@ void Cc4s::iterateRpa() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -320,7 +325,7 @@ void Cc4s::iterateRccd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -483,7 +488,7 @@ void Cc4s::iterateRccsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 
 
@@ -532,7 +537,7 @@ void Cc4s::iterateMp2() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, *V->abij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
@@ -584,7 +589,7 @@ void Cc4s::iterateCcsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fDivide(&divide<>);
+    Bivar_Function<> fDivide(&divide<double>);
     T->abij->contract(1.0, tZabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 } 

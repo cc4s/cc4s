@@ -1,11 +1,11 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "FtodRankDecomposition.hpp"
-#include "Exception.hpp"
-#include "util/Log.hpp"
-#include "util/ComplexPolynomialRootFinder.hpp"
-#include "util/CubicPolynomialRootFinder.hpp"
-#include "util/MathFunctions.hpp"
+#include <FtodRankDecomposition.hpp>
+#include <Exception.hpp>
+#include <util/Log.hpp>
+#include <util/ComplexPolynomialRootFinder.hpp>
+#include <util/CubicPolynomialRootFinder.hpp>
+#include <util/MathFunctions.hpp>
 #include <iostream>
 #include <random>
 #include <limits>
@@ -254,9 +254,9 @@ void FtodRankDecomposition::normalizeX() {
   Vector<> norm(X->lens[1], *X->wrld);
   norm["q"] = (*X)["Rq"] * (*X)["Rq"];
   Matrix<> quotient(*X);
-  Univar_Function<> fSqrt(&sqrt<>);
+  Univar_Function<> fSqrt(&sqrt<double>);
   quotient.sum(1.0,norm,"q", 0.0,"Rq", fSqrt);
-  Bivar_Function<> fDivide(&divide<>);
+  Bivar_Function<> fDivide(&divide<double>);
   X->contract(1.0, *X,"Rq", quotient,"Rq", 0.0,"Rq", fDivide);
 }
 

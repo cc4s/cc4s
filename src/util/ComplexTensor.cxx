@@ -1,10 +1,25 @@
 #include <util/ComplexTensor.hpp>
 
+#include <Exception.hpp>
+
+#define AssertCompatibleTensorShapes(c,r,i) \
+{ \
+  Assert( \
+    (c).order==(r).order && (c).order==(i).order, \
+    "Incompatible tensor orders" \
+  ); \
+  for (int k(0); k < c.order; ++k) \
+    Assert( \
+      (c).lens[k]==(r).lens[k] && (c).lens[k]==(i).lens[k], \
+      "Incompatible tensor shapes" \
+    ); \
+}
+
 void cc4s::fromComplexTensor(
   CTF::Tensor<complex> const &c,
   CTF::Tensor<double> &r, CTF::Tensor<double> &i
 ) {
-  // FIXME: no shape compatability check made
+  AssertCompatibleTensorShapes(c,r,i);
   int64_t indicesCount, *indices;
   complex *values;
   c.read_local(&indicesCount, &indices, &values);
@@ -25,7 +40,7 @@ void cc4s::toComplexTensor(
   CTF::Tensor<double> const &r, CTF::Tensor<double> &i,
   CTF::Tensor<complex> &c
 ) {
-  // FIXME: no shape compatability check made
+  AssertCompatibleTensorShapes(c,r,i);
   int64_t indicesCount, *indices;
   double *reals;
   r.read_local(&indicesCount, &indices, &reals);
@@ -46,7 +61,7 @@ void cc4s::toComplexTensor(
   CTF::Tensor<double> const &r, CTF::Tensor<double> const &i,
   CTF::Tensor<complex> &c
 ) {
-  // FIXME: no shape compatability check made
+  AssertCompatibleTensorShapes(c,r,i);
   int64_t indicesCount, *indices;
   double *components;
   r.read_local(&indicesCount, &indices, &components);

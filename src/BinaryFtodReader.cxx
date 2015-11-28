@@ -1,6 +1,6 @@
-#include "BinaryFtodReader.hpp"
-#include "Cc4s.hpp"
-#include "Exception.hpp"
+#include <BinaryFtodReader.hpp>
+#include <Cc4s.hpp>
+#include <Exception.hpp>
 #include <ctf.hpp>
 #include <fstream>
 
@@ -65,6 +65,9 @@ void BinaryFtodReader::read() {
   }
 }
 
+
+// TODO: use intrinsic tensor distribution rather than enforce own distribution
+// TODO: use several write calls instead of one big to reduce int64 requirement
 void BinaryFtodReader::readChiChunk(std::ifstream &file, Chi *chi) {
   // TODO: separate distribution from reading
   // allocate local indices and values of the chi tensors

@@ -1,8 +1,8 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "CoulombIntegrals.hpp"
-#include "Cc4s.hpp"
-#include "Exception.hpp"
+#include <CoulombIntegrals.hpp>
+#include <Cc4s.hpp>
+#include <Exception.hpp>
 #include <iostream>
 
 using namespace cc4s;

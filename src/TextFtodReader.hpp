@@ -2,7 +2,7 @@
 #ifndef TEXT_FTOD_READER_DEFINED
 #define TEXT_FTOD_READER_DEFINED
 
-#include "FtodReader.hpp"
+#include <FtodReader.hpp>
 
 namespace cc4s {
   class TextFtodReader: public FtodReader {

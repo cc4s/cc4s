@@ -2,7 +2,7 @@
 #ifndef FTOD_RANK_DECOMPOSITION_DEFINED
 #define FTOD_RANK_DECOMPOSITION_DEFINED
 
-#include "Algorithm.hpp"
+#include <Algorithm.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {

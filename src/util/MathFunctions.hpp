@@ -3,6 +3,7 @@
 
 #include <util/Complex.hpp>
 #include <cmath>
+#include <ctf.hpp>
 
 /**
  * \brief Common inline math functions.
@@ -50,6 +51,18 @@ namespace cc4s {
   inline F divide(F const x, F const y) {
     return x / y;
   }
+
+  template <typename F>
+  inline double frobeniusNorm(CTF::Tensor<F> &t) {
+    char *indices(new char[t.order+1]);
+    for (int index(0); index < t.order; ++index) indices[index] = 'a' + index;
+    indices[t.order] = 0;
+    CTF::Bivar_Function<F> fRealDot(&cc4s::realDot<F>);
+    CTF::Scalar<F> s(*t.wrld);
+    s.contract(1.0, t,indices, t,indices, 0.0,"", fRealDot);
+    return std::sqrt(std::real(s.get_val()));
+  }
 }
 
 #endif
+

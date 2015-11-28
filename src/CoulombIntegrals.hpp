@@ -2,8 +2,8 @@
 #ifndef COULOMB_INTEGRALS_DEFINED
 #define COULOMB_INTEGRALS_DEFINED
 
-#include "PerturbationTensor.hpp"
-#include "Chi.hpp"
+#include <PerturbationTensor.hpp>
+#include <Chi.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {

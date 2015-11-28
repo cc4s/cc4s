@@ -20,7 +20,7 @@ obj/util/Log.o \
 obj/util/MathFunctions.o \
 obj/util/ComplexTensor.o \
 obj/util/RandomTensor.o \
-obj/util/IterativePseudoInverter.o \
+obj/util/IterativePseudoInverse.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
@@ -35,7 +35,7 @@ obj/util/Log.o \
 obj/util/MathFunctions.o \
 obj/util/ComplexTensor.o \
 obj/util/RandomTensor.o \
-obj/util/IterativePseudoInverter.o \
+obj/util/IterativePseudoInverse.o \
 obj/PerturbationTensor.o \
 obj/Algorithm.o \
 obj/FtodRankDecomposition.o \
