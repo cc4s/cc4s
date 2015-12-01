@@ -23,6 +23,7 @@ namespace cc4s {
       void readChiChunk(std::ifstream &file, Chi *chi);
       void readChiChunkStrided(std::ifstream &file, Chi *chi);
       void readChiChunkBlocked(std::ifstream &file, Chi *chi);
+      void readChiaiChunkBlocked(std::ifstream &file, Chiai *chiai);
       void readEpsChunk(std::ifstream &file);
 
       class Header {
@@ -37,6 +38,8 @@ namespace cc4s {
           int64_t size;
           static char const *REALS_MAGIC;
           static char const *IMAGS_MAGIC;
+          static char const *REALSIA_MAGIC;
+          static char const *IMAGSIA_MAGIC;
           static char const *EPSILONS_MAGIC;
       };
   };

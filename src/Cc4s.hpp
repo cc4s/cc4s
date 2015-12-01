@@ -19,6 +19,7 @@ namespace cc4s {
       static CTF::World *world;
       static Options *options;
       static Chi *chiReal, *chiImag;
+      static Chiai *chiaiReal, *chiaiImag;
       static CoulombIntegrals *V;
       static Amplitudes *T;
 

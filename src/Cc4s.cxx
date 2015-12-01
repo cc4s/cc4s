@@ -625,6 +625,7 @@ void Cc4s::iterateCcsd() {
 World *Cc4s::world;
 Options *Cc4s::options;
 Chi *Cc4s::chiReal, *Cc4s::chiImag;
+Chiai *Cc4s::chiaiReal, *Cc4s::chiaiImag;
 CoulombIntegrals *Cc4s::V;
 Amplitudes *Cc4s::T;
 
