@@ -126,15 +126,39 @@ double RalsFtodRankDecomposition::fitRals(
   LOG(4) << "inverting Gramian..." << std::endl;
   IterativePseudoInverse<complex> gramianInverse(gramian);
   Tensor<complex> oldA(a);
+
   int bcLens[] = { b.lens[0], b.lens[1], c.lens[1] };
   int bcSyms[] = { NS, NS, NS };
   LOG(4) << "building outer product..." << std::endl;
   Tensor<complex> bc(3, bcLens, bcSyms, *chi->wrld, "bcRjk", chi->profile);
-  bc["Sjk"] = b["Sj"] * c["Sk"];
+//  bc["Sjk"] = b["Sj"] * c["Sk"];
+
   char const indicesA[] = { 'R', idxA, 0 };
   char const indicesBC[] = { 'R', idxB, idxC, 0 };
+  char const indicesB[] = { 'R', idxB, 0 };
+  char const indicesC[] = { 'R', idxC, 0 };
+  LOG(4) << "allocating aux matrices..." << std::endl;
+  // a = lambda*a + chi * conj(b*c)
+  LOG(4) << "allocating conjB" << std::endl;
+  Tensor<complex> conjB(b);
+  LOG(4) << "allocating conjC" << std::endl;
+  Tensor<complex> conjC(c);
+  LOG(4) << "allocating fConj" << std::endl;
+  Univar_Function<complex> fConj(&conj<complex>);
+// FIXME> cleanup
+  // conjB["Rj"] = 0*conjB["Rj"] + conj(b["Rj"])
+  LOG(4) << "conjugating B[" << indicesB << "]" << std::endl;
+  conjB.sum(1.0, b,"Rj", 0.0,"Rj", fConj); 
+  LOG(4) << "conjugating C[" << indicesC << "]" << std::endl;
+  conjC.sum(1.0, c,"Rk", 0.0,"Rk", fConj);
+//  a.contract(1.0, *chi,indicesChi, bc,indicesBC, lambda, indicesA, fDot);
   LOG(4) << "applying outer product..." << std::endl;
-  a.contract(1.0, *chi,indicesChi, bc,indicesBC, lambda, indicesA, fDot);
+  LOG(4) << "a[" << indicesA << "] = T[" << indicesChi << "] * b * c" << std::endl;
+  bc["Sjk"] = conjB["Sj"] * conjC["Sk"];
+// FIXME: add to DONT'S
+//  a[indicesA] = (*chi)[indicesChi] * (conjB[indicesB] * conjC[indicesC]);
+  a[indicesA] *= lambda;
+  a[indicesA] += (*chi)[indicesChi] * bc[indicesBC];
   LOG(4) << "applying inverse of Gramian..." << std::endl;
   a.contract(1.0, a,"Si", gramianInverse.get(), "SR", 0.0, "Ri", fDot);
   oldA["Ri"] -= a["Ri"];
