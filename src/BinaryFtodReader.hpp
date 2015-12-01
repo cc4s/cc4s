@@ -10,13 +10,19 @@
 namespace cc4s {
   class BinaryFtodReader: public FtodReader {
     public:
+      BinaryFtodReader(bool stridedIo=false);
+      virtual ~BinaryFtodReader();
       virtual void read();
       virtual void write();
 
     protected:
       int no, nv, nG;
       int64_t np;
+      bool stridedIo;
+
       void readChiChunk(std::ifstream &file, Chi *chi);
+      void readChiChunkStrided(std::ifstream &file, Chi *chi);
+      void readChiChunkBlocked(std::ifstream &file, Chi *chi);
       void readEpsChunk(std::ifstream &file);
 
       class Header {

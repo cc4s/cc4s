@@ -11,6 +11,7 @@ Options::Options(int argumentCount, char **arguments) {
   niter = DEFAULT_NITER;
   profile = DEFAULT_PROFILE;
   storeV = DEFAULT_STORE_V;
+  stridedIo = DEFAULT_STRIDED_IO;
   logLevel = DEFAULT_LOG_LEVEL;
   rank = DEFAULT_RANK;
   accuracy = DEFAULT_ACCURACY;
@@ -30,6 +31,9 @@ Options::Options(int argumentCount, char **arguments) {
     } else if (argument == "-storeV") {
       std::stringstream stream(arguments[++i]);
       stream >> storeV;
+    } else if (argument == "-stridedIo") {
+      std::stringstream stream(arguments[++i]);
+      stream >> stridedIo;
     } else if (argument == "-logLevel") {
       std::stringstream stream(arguments[++i]);
       stream >> logLevel;
