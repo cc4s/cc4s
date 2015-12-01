@@ -2,6 +2,7 @@
 
 #include <CoulombIntegrals.hpp>
 #include <Cc4s.hpp>
+#include <util/Log.hpp>
 #include <Exception.hpp>
 #include <iostream>
 
@@ -112,8 +113,7 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
 /* Fetch direct integrals only */
 void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
   if (strlen(indexMap) == 4) {
-    if (Cc4s::world->rank == 0)
-      std::cout << "Calculating V" << indexMap << "...";
+    LOG(0) << "Calculating V" << indexMap << "...";
     // 4 point tensors:
     char dirL[4] = {'g', indexMap[0], indexMap[2], 0};
     char dirR[4] = {'g', indexMap[3], indexMap[1], 0};
@@ -127,7 +127,7 @@ void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
       // NOTE: ctf double counts if lhs tensor is AS
       t[indexMap] = 0.5 * t[indexMap];
     }
-    if (Cc4s::world->rank == 0) std::cout << " OK" << std::endl;
+    LOG(0) << " OK" << std::endl;
   }
 }
 
