@@ -78,14 +78,21 @@ void Cc4s::run() {
   Scalar<> energy(*world);
   double e, dire, exce, norm;
   (*T)["abij"] = 0.0;
+  (*T)["ai"] = 0.0;
   for (int i(0); i < options->niter; ++i) {
     double d = MPI_Wtime();
-//    iterateMp2();
+ //   iterateMp2();
     iterateRccd();
+ //   iterateRccsd();
+ //   iterateRpa();
     energy[""] = 2.0 * (*T)["abij"] * (*V)["abij"];
     dire = energy.get_val();
+    energy[""] = 2.0 * (*T)["ai"] * (*T)["bj"] * (*V)["abij"];
+    dire += energy.get_val();
     energy[""] = (*T)["abji"] * (*V)["abij"];
     exce = -1.0 * energy.get_val();
+    energy[""] = (*T)["aj"] * (*T)["bi"] * (*V)["abij"];
+    exce += -1.0 * energy.get_val();
     e = dire + exce;
     norm = T->abij->norm2();
     LOG(0) << i+1 << ": on " << world->np << " node(s) in time " <<
@@ -315,6 +322,7 @@ void Cc4s::iterateRccd() {
 void Cc4s::iterateRccsd() {
   {
     int syms[] = {NS, NS, NS, NS};
+    std::cout << "Allocating stuff:" << std::endl;
     // Define Tensors
     //Allocate Tensors for T1 amplitude equations
     Tensor<> Rai = Tensor<>(T->ai);
@@ -324,18 +332,23 @@ void Cc4s::iterateRccsd() {
     Tensor<> Fba = Tensor<>(V->ab);
     Tensor<> Fji = Tensor<>(V->ij);
     Tensor<> Fai = Tensor<>(V->ai);
+    std::cout << "Allocating stuff 2:" << std::endl;
     //intermediates
-    Tensor<> Cai = Tensor<>(T->ai);
+    std::cout << "Allocating stuff 2a:" << std::endl;
+    Tensor<> Dai = Tensor<>(T->ai);
     Tensor<> Lac = Tensor<>(V->ab);
     Tensor<> Kac = Tensor<>(V->ab);
     Tensor<> Lki = Tensor<>(V->ij);
     Tensor<> Kki = Tensor<>(V->ij);
+    Tensor<> Kck = Tensor<>(T->ai);
+    std::cout << "Allocating stuff 2b:" << std::endl;
     Tensor<> Cklij = Tensor<>(V->ijkl);
     Tensor<> Cabcd = Tensor<>(V->abcd);
     Tensor<> Cakic = Tensor<>(V->aijb);
     Tensor<> Cakci = Tensor<>(V->aibj);
     //Tensor<> Chi(4, V->abij->lens, syms, *world, "Cabij");
     //Chi = new Amplitudes(V, world, options);
+    std::cout << "Allocating stuff 3:" << std::endl;
 
 
 //********************************************************************************
@@ -351,6 +364,7 @@ void Cc4s::iterateRccsd() {
     Kac["ac"] -= 2.0 * (*V)["klcd"] * (*T)["ak"] * (*T)["dl"];
     Kac["ac"] += (*V)["kldc"] * (*T)["ak"] * (*T)["dl"];
 
+    std::cout << "Building Lac:" << std::endl;
 //Build Lac
     Lac["ac"] = Kac["ac"];
     Lac["ac"] -= Fai["ck"] * (*T)["ak"];
@@ -358,6 +372,7 @@ void Cc4s::iterateRccsd() {
     Lac["ac"] -= (*V)["akdc"] * (*T)["dk"];
 
 
+    std::cout << "Building Kki:" << std::endl;
 //Build Kki
     Kki["ki"] = Fji["ki"];
     Kki["ki"] += 2.0 * (*V)["klcd"] * (*T)["cdil"];
@@ -365,31 +380,34 @@ void Cc4s::iterateRccsd() {
     Kki["ki"] += 2.0 * (*V)["klcd"] * (*T)["ci"] * (*T)["dl"];
     Kki["ki"] -= (*V)["kldc"] * (*T)["ci"] * (*T)["dl"];
 
+    std::cout << "Building Lki:" << std::endl;
 //Build Lki
     Lki["ki"] = Kki["ki"];
     Lki["ki"] += Fai["ck"] * (*T)["ci"];
-    Lki["ki"] += 2.0 * (*V)["klic"] * (*T)["cl"];
+    Lki["ki"] += 2.0 * (*V)["lkci"] * (*T)["cl"];
     Lki["ki"] -= (*V)["klci"] * (*T)["cl"];
 
+    std::cout << "Building Rabij:" << std::endl;
 //  Contract L_ac with T2 Amplitudes
-    Rabij["abij"] += Lac["ac"] * (*T)["cbij"];
+    Rabij["abij"] = Lac["ac"] * (*T)["cbij"];
 
 //  Contract L_ki with T2 Amplitudes
     Rabij["abij"] -= Lki["ki"] * (*T)["abkj"];
 
 //  Contract Coulomb integrals with T2 amplitudes
 
-    Rabij["abij"] += (*V)["abic"] * (*T)["cj"];
+    Rabij["abij"] += (*V)["baci"] * (*T)["cj"];
 
-    Rabij["abij"] -= (*V)["kbic"] * (*T)["ak"] * (*T)["cj"];
+    Rabij["abij"] -= (*V)["bkci"] * (*T)["ak"] * (*T)["cj"];
 
     Rabij["abij"] -= (*V)["akij"] * (*T)["bk"];
 
     Rabij["abij"] += (*V)["akic"] * (*T)["cj"] * (*T)["bk"];
 
+    std::cout << "Building Cakic:" << std::endl;
 //Build C_akic
     Cakic["akic"] = (*V)["akic"];
-    Cakic["akic"] -= (*V)["lkic"] * (*T)["al"];
+    Cakic["akic"] -= (*V)["klci"] * (*T)["al"];
     Cakic["akic"] += (*V)["akdc"] * (*T)["di"];
     Cakic["akic"] -= 0.5 * (*V)["lkdc"] * (*T)["dail"];
     Cakic["akic"] -= (*V)["lkdc"] * (*T)["di"] * (*T)["al"];
@@ -428,7 +446,7 @@ void Cc4s::iterateRccsd() {
 
 //  Build Chi_klij intermediate
     Cklij["klij"] = (*V)["klij"];
-    Cklij["klij"] += (*V)["klic"] * (*T)["cj"];
+    Cklij["klij"] += (*V)["lkci"] * (*T)["cj"];
     Cklij["klij"] += (*V)["klcj"] * (*T)["ci"];
     Cklij["klij"] += (*V)["klcd"] * (*T)["cdij"];
     Cklij["klij"] += (*V)["klcd"] * (*T)["ci"] * (*T)["dj"]; 
@@ -447,7 +465,7 @@ void Cc4s::iterateRccsd() {
       Tensor<> Cabcd(V->abcd);
   //  Build Chi_abcd intermediate
       Cabcd["abcd"] -= (*V)["akcd"] * (*T)["bk"];
-      Cabcd["abcd"] -= (*V)["kbcd"] * (*T)["ak"];
+      Cabcd["abcd"] -= (*V)["dcbk"] * (*T)["ak"];
 
   //  Contract Chi_abcd with T2 Amplitudes
       Rabij["abij"] += Cabcd["abcd"] * (*T)["cdij"];
@@ -481,8 +499,38 @@ void Cc4s::iterateRccsd() {
     
     Rai["ai"] += Kac["ac"] * (*T)["ci"];
 
-    Rai["ai"] -= Kki["ac"] * (*T)["ak"];
+    Rai["ai"] -= Kki["ki"] * (*T)["ak"];
+
+//Build Kck
+    Kck["ck"] = Fai["ck"];
+    Kck["ck"] += 2.0 * (*V)["cdkl"] * (*T)["dl"];
+    Kck["ck"] -= (*V)["cdlk"] * (*T)["dl"];
+
+    Rai["ai"] += 2.0 * Kck["ck"] * (*T)["caki"];
+    
+    Rai["ai"] -= Kck["ck"] * (*T)["caik"];
+    
+    Rai["ai"] += Kck["ck"] * (*T)["ci"] * (*T)["ak"];
+    
+    Rai["ai"] += 2.0 * (*V)["akic"] * (*T)["ck"];
+    
+    Rai["ai"] -= (*V)["akci"] * (*T)["ck"];
+
+    Rai["ai"] += 2.0 * (*V)["cdak"] * (*T)["cdik"];
+
+    Rai["ai"] -= (*V)["dcak"] * (*T)["cdik"];
   
+    Rai["ai"] += 2.0 * (*V)["cdak"] * (*T)["ci"] * (*T)["dk"];
+
+    Rai["ai"] -= (*V)["dcak"] * (*T)["ci"] * (*T)["dk"];
+
+    Rai["ai"] -= 2.0 * (*V)["lkci"] * (*T)["ackl"];
+
+    Rai["ai"] += (*V)["klci"] * (*T)["ackl"];
+
+    Rai["ai"] -= 2.0 * (*V)["lkci"] * (*T)["ak"] * (*T)["cl"];
+
+    Rai["ai"] += (*V)["klci"] * (*T)["ak"] * (*T)["cl"];
 //  Calculate Kki
   
 //    Rai["ai"] += Kki["ac"] * (*T)["ak"];
@@ -495,6 +543,12 @@ void Cc4s::iterateRccsd() {
 //    Rabij["abij"] += Cabij["abij"];
     //(*V)["cbkj"]*(*T)["acjk"];
 //    Rabij["abij"] += 2.0 * Cabij["acik"] * (*T)["cbkj"];
+
+
+    Dai["ai"] += (*V)["i"];
+    Dai["ai"] -= (*V)["a"];
+
+    T->ai->contract(1.0, Rai, "ai", Dai, "ai", 0.0, "ai", fDivide);
 
 
   }
