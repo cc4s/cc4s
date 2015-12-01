@@ -1,6 +1,6 @@
 #include <util/ComplexTensor.hpp>
 
-#include <Exception.hpp>
+#include <util/Exception.hpp>
 
 #define AssertCompatibleTensorShapes(c,r,i) \
 { \

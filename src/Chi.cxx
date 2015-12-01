@@ -1,8 +1,8 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <Chi.hpp>
-#include <Exception.hpp>
 #include <Cc4s.hpp>
+#include <util/Exception.hpp>
 #include <iostream>
 #include <string>
 #include <iostream>

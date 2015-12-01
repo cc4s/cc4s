@@ -4,12 +4,12 @@
 #include <util/Log.hpp>
 #include <TextFtodReader.hpp>
 #include <BinaryFtodReader.hpp>
-#include <Exception.hpp>
 #include <FtodRankDecomposition.hpp>
 #include <RalsFtodRankDecomposition.hpp>
 #include <CrossEntropyFtodRankDecomposition.hpp>
 #include <util/MathFunctions.hpp>
 #include <util/ComplexTensor.hpp>
+#include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <ctf.hpp>
 #include <iostream>
