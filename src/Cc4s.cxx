@@ -32,32 +32,31 @@ void Cc4s::run() {
   BinaryFtodReader binaryFtodReader(options->stridedIo);
 //  textFtodReader.read();
   binaryFtodReader.read();
-  return;
 //  binaryFtodReader.write();
 
-//  RalsFtodRankDecomposition::test(world);
-
-  // experimental:
-  std::vector<Argument const *> arguments;
-  TensorData chiRData("chiR", *chiReal->gpq);
-  InputArgument chiR("chiR", &chiRData);
-  arguments.push_back(&chiR);
-  TensorData chiIData("chiI", *chiImag->gpq);
-  InputArgument chiI("chiI", &chiIData);
-  arguments.push_back(&chiI);
-  IntegerData rankData("rank", options->rank);
-  InputArgument rank("rank", &rankData);
-  arguments.push_back(&rank);
-  RealData epsilonData("epsilon", options->accuracy);
-  InputArgument epsilon("epsilon", &epsilonData);
-  arguments.push_back(&epsilon);
-//  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
-//  FtodRankDecomposition ftodRankDecomposition(arguments);
-  RalsFtodRankDecomposition ftodRankDecomposition(arguments);
 
   // calculate Coulomb integrals from Fourier transformed overlap densities
-//  Cc4s::V->fetch();
+  Cc4s::V->fetch();
+
   if (options->rank > 0) {
+//    RalsFtodRankDecomposition::test(world);
+    // experimental:
+    std::vector<Argument const *> arguments;
+    TensorData chiRData("chiR", *chiReal->gpq);
+    InputArgument chiR("chiR", &chiRData);
+    arguments.push_back(&chiR);
+    TensorData chiIData("chiI", *chiImag->gpq);
+    InputArgument chiI("chiI", &chiIData);
+    arguments.push_back(&chiI);
+    IntegerData rankData("rank", options->rank);
+    InputArgument rank("rank", &rankData);
+    arguments.push_back(&rank);
+    RealData epsilonData("epsilon", options->accuracy);
+    InputArgument epsilon("epsilon", &epsilonData);
+    arguments.push_back(&epsilon);
+  //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
+  //  FtodRankDecomposition ftodRankDecomposition(arguments);
+    RalsFtodRankDecomposition ftodRankDecomposition(arguments);
     ftodRankDecomposition.run();
     Tensor<> oldChiR(*chiReal->gpq);
     Tensor<> oldChiI(*chiImag->gpq);
@@ -68,7 +67,7 @@ void Cc4s::run() {
     double r(frobeniusNorm(oldChiR));
     LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
   }
-  Cc4s::V->fetch();
+//  Cc4s::V->fetch();
 
 //  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
 //  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
