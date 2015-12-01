@@ -1,11 +1,11 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <FtodRankDecomposition.hpp>
-#include <Exception.hpp>
-#include <util/Log.hpp>
 #include <util/ComplexPolynomialRootFinder.hpp>
 #include <util/CubicPolynomialRootFinder.hpp>
 #include <util/MathFunctions.hpp>
+#include <util/Exception.hpp>
+#include <util/Log.hpp>
 #include <iostream>
 #include <random>
 #include <limits>

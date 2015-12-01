@@ -3,7 +3,7 @@
 #include <CoulombIntegrals.hpp>
 #include <Cc4s.hpp>
 #include <util/Log.hpp>
-#include <Exception.hpp>
+#include <util/Exception.hpp>
 #include <iostream>
 
 using namespace cc4s;

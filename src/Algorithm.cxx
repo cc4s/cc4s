@@ -1,7 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <Algorithm.hpp>
-#include <Exception.hpp>
+#include <util/Exception.hpp>
 
 #include <iostream>
 

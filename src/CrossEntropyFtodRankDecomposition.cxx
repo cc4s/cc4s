@@ -1,9 +1,9 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <CrossEntropyFtodRankDecomposition.hpp>
-#include <Exception.hpp>
-#include <util/Log.hpp>
 #include <util/MathFunctions.hpp>
+#include <util/Exception.hpp>
+#include <util/Log.hpp>
 #include <iostream>
 #include <limits>
 
