@@ -16,15 +16,10 @@ namespace cc4s {
       int nG, no, nv;
       CTF::Tensor<> *gpq;
   };
-  class Chiai: public PerturbationTensor {
+  class ChiAi: protected Chi {
     public:
-      Chiai(int nG, int no, int nv);
-      virtual ~Chiai();
+      ChiAi(int nG, int no, int nv);
       virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
-      //CTF::Tensor<> getSlice(int pStart, int pEnd, int qStart, int qEnd);
-
-      int nG, no, nv;
-      CTF::Tensor<> *gai;
   };
 
 }

@@ -50,6 +50,9 @@ namespace cc4s {
       CTF::Tensor<complex> &a, char const idxA,
       double lambda
     );
+
+    void normalizeX();
+    void realizeX();
   };
 }
 

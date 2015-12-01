@@ -23,7 +23,7 @@ namespace cc4s {
       void readChiChunk(std::ifstream &file, Chi *chi);
       void readChiChunkStrided(std::ifstream &file, Chi *chi);
       void readChiChunkBlocked(std::ifstream &file, Chi *chi);
-      void readChiaiChunkBlocked(std::ifstream &file, Chiai *chiai);
+      void readChiAiChunkBlocked(std::ifstream &file, ChiAi *chiAi);
       void readEpsChunk(std::ifstream &file);
 
       class Header {

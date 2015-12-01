@@ -42,8 +42,8 @@ void BinaryFtodReader::read() {
   // allocate chi and Coulomb integral tensors
   Cc4s::chiReal = new Chi(nG, no, nv);
   Cc4s::chiImag = new Chi(nG, no, nv);
-  Cc4s::chiaiReal = new Chiai(nG, no, nv);
-  Cc4s::chiaiImag = new Chiai(nG, no, nv);
+  Cc4s::chiAiReal = new ChiAi(nG, no, nv);
+  Cc4s::chiAiImag = new ChiAi(nG, no, nv);
   Cc4s::V = new CoulombIntegrals(Cc4s::chiReal, Cc4s::chiImag);
 
   Chunk chunk;
@@ -57,12 +57,12 @@ void BinaryFtodReader::read() {
     if (strncmp(chunk.magic, Chunk::REALSIA_MAGIC, sizeof(chunk.magic)) == 0) {
       LOG(0) << "Found ia chunk";
       //readChiChunk(file, Cc4s::chiIAReal);
-      readChiaiChunkBlocked(file, Cc4s::chiaiReal);
+      readChiAiChunkBlocked(file, Cc4s::chiAiReal);
     } else
     if (strncmp(chunk.magic, Chunk::IMAGSIA_MAGIC, sizeof(chunk.magic)) == 0) {
       LOG(0) << "Found ia chunk";
       //readChiChunk(file, Cc4s::chiIAImag);
-      readChiaiChunkBlocked(file, Cc4s::chiaiImag);
+      readChiAiChunkBlocked(file, Cc4s::chiAiImag);
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
       readEpsChunk(file);
@@ -115,12 +115,14 @@ void BinaryFtodReader::readChiChunkBlocked(std::ifstream &file, Chi *chi) {
 
 
 // TODO: use several write calls instead of one big to reduce int64 requirement
-void BinaryFtodReader::readChiaiChunkBlocked(std::ifstream &file, Chiai *chiai) {
+void BinaryFtodReader::readChiAiChunkBlocked(
+  std::ifstream &file, ChiAi *chiAi
+) {
   // TODO: separate distribution from reading
   // allocate local indices and values of the chi tensors
-  int64_t nvPerNode(nv / chiai->nv);
+  int64_t nvPerNode(nv / chiAi->nv);
   int64_t nvLocal(
-    Cc4s::world->rank+1 < chiai->nv ?
+    Cc4s::world->rank+1 < chiAi->nv ?
       nvPerNode : nv - Cc4s::world->rank * nvPerNode
   );
   int64_t nvToSkipBefore(Cc4s::world->rank * nvPerNode);
@@ -133,7 +135,7 @@ void BinaryFtodReader::readChiaiChunkBlocked(std::ifstream &file, Chiai *chiai) 
   for (int64_t i(0); i < nvLocal*no*nG; ++i) {
     indices[i] = i + nvToSkipBefore*no*nG;
   }
-  chiai->gai->write(nvLocal*no*nG, indices, values);
+  chiAi->gai->write(nvLocal*no*nG, indices, values);
   delete[] values; delete[] indices;
 }
 

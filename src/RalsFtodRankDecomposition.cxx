@@ -64,9 +64,11 @@ void RalsFtodRankDecomposition::run() {
 }
 
 void RalsFtodRankDecomposition::fit(double lambda) {
-  double deltaG(fitRals("Gqr", *x,'q', *x,'r', *gamma,'G', lambda));
   double deltaX1(fitRals("Gqr", *x,'r', *gamma,'G', *x,'q', lambda));
+  realizeX(); normalizeX();
   double deltaX2(fitRals("Gqr", *gamma,'G', *x,'q', *x,'r', lambda));
+  realizeX(); normalizeX();
+  double deltaG(fitRals("Gqr", *x,'q', *x,'r', *gamma,'G', lambda));
 
   int bcLens[] = { x->lens[0], x->lens[1], x->lens[1] };
   int bcSyms[] = { NS, NS, NS };
@@ -127,36 +129,19 @@ double RalsFtodRankDecomposition::fitRals(
   IterativePseudoInverse<complex> gramianInverse(gramian);
   Tensor<complex> oldA(a);
 
-  int bcLens[] = { b.lens[0], b.lens[1], c.lens[1] };
+  int bcLens[] = { int(rank), b.lens[1], c.lens[1] };
   int bcSyms[] = { NS, NS, NS };
   LOG(4) << "building outer product..." << std::endl;
   Tensor<complex> bc(3, bcLens, bcSyms, *chi->wrld, "bcRjk", chi->profile);
-//  bc["Sjk"] = b["Sj"] * c["Sk"];
-
   char const indicesA[] = { 'R', idxA, 0 };
   char const indicesBC[] = { 'R', idxB, idxC, 0 };
-  char const indicesB[] = { 'R', idxB, 0 };
-  char const indicesC[] = { 'R', idxC, 0 };
-  LOG(4) << "allocating aux matrices..." << std::endl;
-  // a = lambda*a + chi * conj(b*c)
-  LOG(4) << "allocating conjB" << std::endl;
   Tensor<complex> conjB(b);
-  LOG(4) << "allocating conjC" << std::endl;
   Tensor<complex> conjC(c);
-  LOG(4) << "allocating fConj" << std::endl;
   Univar_Function<complex> fConj(&conj<complex>);
-// FIXME> cleanup
-  // conjB["Rj"] = 0*conjB["Rj"] + conj(b["Rj"])
-  LOG(4) << "conjugating B[" << indicesB << "]" << std::endl;
   conjB.sum(1.0, b,"Rj", 0.0,"Rj", fConj); 
-  LOG(4) << "conjugating C[" << indicesC << "]" << std::endl;
   conjC.sum(1.0, c,"Rk", 0.0,"Rk", fConj);
-//  a.contract(1.0, *chi,indicesChi, bc,indicesBC, lambda, indicesA, fDot);
-  LOG(4) << "applying outer product..." << std::endl;
-  LOG(4) << "a[" << indicesA << "] = T[" << indicesChi << "] * b * c" << std::endl;
   bc["Sjk"] = conjB["Sj"] * conjC["Sk"];
-// FIXME: add to DONT'S
-//  a[indicesA] = (*chi)[indicesChi] * (conjB[indicesB] * conjC[indicesC]);
+  LOG(4) << "applying outer product..." << std::endl;
   a[indicesA] *= lambda;
   a[indicesA] += (*chi)[indicesChi] * bc[indicesBC];
   LOG(4) << "applying inverse of Gramian..." << std::endl;
@@ -186,5 +171,34 @@ void RalsFtodRankDecomposition::test(CTF::World *world) {
   logMatrix(2, ab);
   double error(frobeniusNorm(ab));
   LOG(2) << "error=" << error << std::endl;
+}
+
+/**
+ * \brief normalizes the X factor matrix.
+ */
+void RalsFtodRankDecomposition::normalizeX() {
+  Bivar_Function<complex> fDot(&cc4s::dot<complex>);
+  Vector<complex> norm(x->lens[1], *x->wrld);
+  // norm["q"] = (*x)["Rq"] * conj((*x)["Rq"])
+  norm.contract(1.0, *x,"Rq", *x,"Rq", 0.0,"q", fDot);
+  Matrix<complex> quotient(*x);
+  Univar_Function<complex> fSqrt(&cc4s::sqrt<complex>);
+  // quotient["Rq"] = sqrt(norm["q"])
+  quotient.sum(1.0, norm,"q", 0.0,"Rq", fSqrt);
+  Bivar_Function<complex> fDivide(&cc4s::divide<complex>);
+  // (*X)["Rq"] = (*X)["Rq"] / quotient["Rq"]
+  x->contract(1.0, *x,"Rq", quotient,"Rq", 0.0,"Rq", fDivide);
+}
+
+/**
+ * \brief discards the imaginary part of the X factor matrix.
+ */
+void RalsFtodRankDecomposition::realizeX() {
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  Matrix<complex> conjX(*x);
+  // conjX["Rq"] = *X["Rq"]
+  conjX.sum(1.0, *x,"Rq", 0.0,"Rq", fConj);
+  (*x)["Rq"] += conjX["Rq"];
+  (*x)["Rq"] *= 0.5;
 }
 
