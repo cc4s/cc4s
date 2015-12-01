@@ -1,13 +1,21 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "Cc4s.hpp"
-#include "TextFtodReader.hpp"
-#include "BinaryFtodReader.hpp"
-#include "Exception.hpp"
+#include <Cc4s.hpp>
+#include <util/Log.hpp>
+#include <TextFtodReader.hpp>
+#include <BinaryFtodReader.hpp>
+#include <Exception.hpp>
+#include <FtodRankDecomposition.hpp>
+#include <RalsFtodRankDecomposition.hpp>
+#include <CrossEntropyFtodRankDecomposition.hpp>
+#include <util/MathFunctions.hpp>
+#include <util/ComplexTensor.hpp>
+#include <util/Log.hpp>
 #include <ctf.hpp>
 #include <iostream>
 #include <fstream>
 
+using namespace cc4s;
 using namespace CTF;
 
 Cc4s::Cc4s(): flopCounter() {
@@ -21,10 +29,51 @@ void Cc4s::run() {
 
   // Read from disk
 //  TextFtodReader textFtodReader;
-  BinaryFtodReader binaryFtodReader;
+  BinaryFtodReader binaryFtodReader(options->stridedIo);
 //  textFtodReader.read();
   binaryFtodReader.read();
 //  binaryFtodReader.write();
+
+
+  // calculate Coulomb integrals from Fourier transformed overlap densities
+  Cc4s::V->fetch();
+
+  if (options->rank > 0) {
+//    RalsFtodRankDecomposition::test(world);
+    // experimental:
+    std::vector<Argument const *> arguments;
+    TensorData chiRData("chiR", *chiReal->gpq);
+    InputArgument chiR("chiR", &chiRData);
+    arguments.push_back(&chiR);
+    TensorData chiIData("chiI", *chiImag->gpq);
+    InputArgument chiI("chiI", &chiIData);
+    arguments.push_back(&chiI);
+    IntegerData rankData("rank", options->rank);
+    InputArgument rank("rank", &rankData);
+    arguments.push_back(&rank);
+    RealData epsilonData("epsilon", options->accuracy);
+    InputArgument epsilon("epsilon", &epsilonData);
+    arguments.push_back(&epsilon);
+  //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
+  //  FtodRankDecomposition ftodRankDecomposition(arguments);
+    RalsFtodRankDecomposition ftodRankDecomposition(arguments);
+    ftodRankDecomposition.run();
+    Tensor<> oldChiR(*chiReal->gpq);
+    Tensor<> oldChiI(*chiImag->gpq);
+    fromComplexTensor(*ftodRankDecomposition.chi0, *chiReal->gpq, *chiImag->gpq);
+    oldChiR["Gqr"] -= (*chiReal->gpq)["Gqr"];
+    oldChiI["Gqr"] -= (*chiImag->gpq)["Gqr"];
+    double i(frobeniusNorm(oldChiI));
+    double r(frobeniusNorm(oldChiR));
+    LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
+  }
+//  Cc4s::V->fetch();
+
+//  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
+//  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
+
+  // allocate and calculate the intial amplitudes
+  Cc4s::T = new Amplitudes(Cc4s::V);
 
   Scalar<> energy(*world);
   double e, dire, exce, norm;
@@ -46,22 +95,18 @@ void Cc4s::run() {
     exce += -1.0 * energy.get_val();
     e = dire + exce;
     norm = T->abij->norm2();
-    if (world->rank == 0) {
-      std::cout << i+1 << ": on " << world->np << " node(s) in time " <<
-        (MPI_Wtime()-d) << ", |T| = " << norm << std::endl;
-      std::cout << "e=" << e << std::endl;
-    }
+    LOG(0) << i+1 << ": on " << world->np << " node(s) in time " <<
+      (MPI_Wtime()-d) << ", |T| = " << norm << std::endl;
+    LOG(0) << "e=" << e << std::endl;
   }
   printStatistics();
 }
 
 void Cc4s::printBanner() {
-  if (Cc4s::world->rank == 0) {
-    std::cout << "====== Coupled Cluster for Solids ======" << std::endl;
-    std::cout << "version " << CC4S_VERSION << " " << CC4S_DATE << std::endl;
-    std::cout << "built " << __DATE__ << " " << __TIME__ <<
-      " with c++ " << __cplusplus << std::endl;
-  }
+  LOG(0) << "====== Coupled Cluster for Solids ======" << std::endl;
+  LOG(0) << "version " << CC4S_VERSION << " " << CC4S_DATE << std::endl;
+  LOG(0) << "built " << __DATE__ << " " << __TIME__ <<
+    " with c++ " << __cplusplus << std::endl;
 }
 
 void Cc4s::printStatistics() {
@@ -80,33 +125,25 @@ void Cc4s::printStatistics() {
   statStream.close();
   // in case x86-64 is configured to use 2MB pages
   int64_t pageSize = sysconf(_SC_PAGE_SIZE);
-  if (world->rank == 0) {
-    std::cout << "performance statistics:" << std::endl;
-    std::cout << "  on root: " << flops / 1.e9 << " GFLOPS" << std::endl;
-    std::cout << "    physical memory: " <<
-      rss * pageSize / 1e9 << " GB" << std::endl;
-    std::cout << "    virtual  memory: " <<
-      vsize / 1e9 << " GB" << std::endl;
-  }
+  LOG(0) << "performance statistics:" << std::endl;
+  LOG(0) << "  on root: " << flops / 1.e9 << " GFLOPS" << std::endl;
+  LOG(0) << "    physical memory: " <<
+    rss * pageSize / 1e9 << " GB" << std::endl;
+  LOG(0) << "    virtual  memory: " <<
+    vsize / 1e9 << " GB" << std::endl;
 
   flops = flopCounter.count(world->comm);
   int64_t globalVSize, globalRss;
   MPI_Reduce(&vsize, &globalVSize, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
   MPI_Reduce(&rss, &globalRss, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
-  if (world->rank == 0) {
-    std::cout << "  total:   " << flops / 1.e9 << " GFLOPS" << std::endl;
-    std::cout << "    physical memory: " <<
-      globalRss * pageSize / 1e9 << " GB" << std::endl;
-    std::cout << "    virtual  memory: " <<
-      globalVSize / 1e9 << " GB" << std::endl;
-  }
+  LOG(0) << "  total:   " << flops / 1.e9 << " GFLOPS" << std::endl;
+  LOG(0) << "    physical memory: " <<
+    globalRss * pageSize / 1e9 << " GB" << std::endl;
+  LOG(0) << "    virtual  memory: " <<
+    globalVSize / 1e9 << " GB" << std::endl;
   // TODO: timing
 }
 
-
-double divide(double a, double b) {
-  return a / b;
-}
 
 void Cc4s::iterateRpa() {
   {
@@ -119,9 +156,7 @@ void Cc4s::iterateRpa() {
     //Tensor<> Chi(4, V->abij->lens, syms, *world, "Cabij");
     //Chi = new Amplitudes(V, world, options);
 
-    if (world->rank == 0) {
-      std::cout << "Solving RPA Amplitude Equations:" << std::endl;
-    }
+    LOG(0) << "Solving RPA Amplitude Equations:" << std::endl;
 
 
     Rabij["abij"] = (*V)["abij"];
@@ -139,8 +174,8 @@ void Cc4s::iterateRpa() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
-    T->abij->contract(1.0, Rabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+    Bivar_Function<> fDivide(&divide<double>);
+    T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
 
@@ -170,9 +205,7 @@ void Cc4s::iterateRccd() {
     //Chi = new Amplitudes(V, world, options);
 
 
-    if (world->rank == 0) {
-      std::cout << "Solving restricted T2 CCD Amplitude Equations:" << std::endl;
-    }
+    LOG(0) << "Solving restricted T2 CCD Amplitude Equations:" << std::endl;
 
 
 
@@ -246,9 +279,7 @@ void Cc4s::iterateRccd() {
   // Slicing:
       for (int b(0); b < chiReal->nv; b += options->nw) {
         for (int a(b); a < chiReal->nv; a += options->nw) {
-          if (world->rank == 0) {
-            std::cout << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-          }
+          LOG(0) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           Tensor<> Vxycd(V->getSlice(a, b));
           int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
           int origin[] = {0, 0, 0, 0};
@@ -282,8 +313,8 @@ void Cc4s::iterateRccd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
-    T->abij->contract(1.0, Rabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+    Bivar_Function<> fDivide(&divide<double>);
+    T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
 
@@ -323,12 +354,8 @@ void Cc4s::iterateRccsd() {
 //********************************************************************************
 //  T2 amplitude equations
 //********************************************************************************
- 
-    if (world->rank == 0) {
-      std::cout << "Solving restricted T2 CCSD Amplitude Equations:" << std::endl;
-    }
 
-
+    LOG(0) << "Solving restricted T2 CCSD Amplitude Equations:" << std::endl;
 
 //Build Kac
     Kac["ac"] = Fba["ac"];
@@ -456,17 +483,15 @@ void Cc4s::iterateRccsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
-    T->abij->contract(1.0, Rabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+    Bivar_Function<> fDivide(&divide<double>);
+    T->abij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 
 
 //********************************************************************************
 //  T1 amplitude equations
 //********************************************************************************
 
-    if (world->rank == 0) {
-      std::cout << "Solving restricted T1 CCSD Amplitude Equations:" << std::endl;
-    }
+    LOG(0) << "Solving restricted T1 CCSD Amplitude Equations:" << std::endl;
 
     Rai["ai"] = Fai["ai"];
     
@@ -542,8 +567,8 @@ void Cc4s::iterateMp2() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
-    T->abij->contract(1.0, *V->abij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+    Bivar_Function<> fDivide(&divide<double>);
+    T->abij->contract(1.0, *V->abij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
 
@@ -559,9 +584,7 @@ void Cc4s::iterateCcsd() {
     for (int b(0); b < chiReal->nv; b += chiReal->no) {
   //    for (int a(b); a < nv; a += no) {
       for (int a(0); a < nv; a += no) {
-        if (world->rank == 0) {
-          std::cout << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-        }
+        LOG(0) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
         Tensor<> Vxycd(V->getSlice(a, b));
         Vxycd.set_name("Vxycd");
         int na(Vxycd.lens[0]), nb(Vxycd.lens[1]);
@@ -594,8 +617,8 @@ void Cc4s::iterateCcsd() {
     // NOTE: ctf double counts if lhs tensor is SH,SH
     Dabij["abij"] = 0.5 * Dabij["abij"];
 
-    Bivar_Function<> fctr(&divide);
-    T->abij->contract(1.0, tZabij, "abij", Dabij, "abij", 0.0, "abij", fctr);
+    Bivar_Function<> fDivide(&divide<double>);
+    T->abij->contract(1.0, tZabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 } 
 
@@ -613,12 +636,14 @@ int main(int argumentCount, char **arguments) {
   try {
     Cc4s::world = new World(argumentCount, arguments);
     Cc4s::options = new Options(argumentCount, arguments);
+    Log::logLevel = Cc4s::world->rank == 0 ? Cc4s::options->logLevel : -1;
     Cc4s cc4s;
     cc4s.run();
   } catch (DetailedException *cause) {
-    std::cout << std::endl << cause->getMessage() << std::endl;
+    LOG(0) << std::endl << cause->getMessage() << std::endl;
   }
 
   MPI_Finalize();
   return 0;
 }
+

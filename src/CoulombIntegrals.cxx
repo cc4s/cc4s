@@ -1,10 +1,12 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "CoulombIntegrals.hpp"
-#include "Cc4s.hpp"
-#include "Exception.hpp"
+#include <CoulombIntegrals.hpp>
+#include <Cc4s.hpp>
+#include <util/Log.hpp>
+#include <Exception.hpp>
 #include <iostream>
 
+using namespace cc4s;
 using namespace CTF;
 
 /**
@@ -55,9 +57,9 @@ CoulombIntegrals::CoulombIntegrals(
     add(abci = new Tensor<>(4, vvvo, symsNSNS, *Cc4s::world, "Vabci", profile));
     add(abcd = new Tensor<>(4, vvvv, symsNSNS, *Cc4s::world, "Vabcd", profile));
   } else {
-    aibc = NULL;
-    abci = NULL;
-    abcd = NULL;
+    aibc = nullptr;
+    abci = nullptr;
+    abcd = nullptr;
   }
 }
 
@@ -78,7 +80,7 @@ void CoulombIntegrals::add(Tensor<> *t) {
 
 Idx_Tensor CoulombIntegrals::get(char const *stdIndexMap, char const *indexMap){
   Tensor<> * t(v[stdIndexMap]);
-  if (t != NULL) {
+  if (t != nullptr) {
     return (*t)[indexMap];
   } else {
     std::stringstream stream("");
@@ -111,8 +113,7 @@ Tensor<> CoulombIntegrals::getSlice(int a, int b) {
 /* Fetch direct integrals only */
 void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
   if (strlen(indexMap) == 4) {
-    if (Cc4s::world->rank == 0)
-      std::cout << "Calculating V" << indexMap << "...";
+    LOG(0) << "Calculating V" << indexMap << "...";
     // 4 point tensors:
     char dirL[4] = {'g', indexMap[0], indexMap[2], 0};
     char dirR[4] = {'g', indexMap[3], indexMap[1], 0};
@@ -126,7 +127,7 @@ void CoulombIntegrals::fetch(Tensor<> &t, char const *indexMap) {
       // NOTE: ctf double counts if lhs tensor is AS
       t[indexMap] = 0.5 * t[indexMap];
     }
-    if (Cc4s::world->rank == 0) std::cout << " OK" << std::endl;
+    LOG(0) << " OK" << std::endl;
   }
 }
 

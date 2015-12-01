@@ -1,13 +1,14 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include "Chi.hpp"
-#include "Exception.hpp"
-#include "Cc4s.hpp"
+#include <Chi.hpp>
+#include <Exception.hpp>
+#include <Cc4s.hpp>
 #include <iostream>
 #include <string>
 #include <iostream>
 #include <fstream>
 
+using namespace cc4s;
 using namespace CTF;
 
 Chi::Chi(

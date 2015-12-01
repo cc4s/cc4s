@@ -14,11 +14,33 @@ LIBS=-lblas -lgfortran
 # primary target
 cc4s: bin/${TARGET}
 
-OBJECTS=obj/Options.o obj/PerturbationTensor.o \
+OBJECTS= \
+obj/Options.o \
+obj/util/Log.o \
+obj/util/MathFunctions.o \
+obj/util/ComplexTensor.o \
+obj/util/RandomTensor.o \
+obj/util/IterativePseudoInverse.o \
+obj/PerturbationTensor.o \
+obj/Algorithm.o \
+obj/FtodRankDecomposition.o \
+obj/RalsFtodRankDecomposition.o \
+obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o obj/${TARGET}.o
 # dependencies
-obj/${TARGET}.o: obj/Options.o obj/PerturbationTensor.o \
+obj/${TARGET}.o: \
+obj/Options.o \
+obj/util/Log.o \
+obj/util/MathFunctions.o \
+obj/util/ComplexTensor.o \
+obj/util/RandomTensor.o \
+obj/util/IterativePseudoInverse.o \
+obj/PerturbationTensor.o \
+obj/Algorithm.o \
+obj/FtodRankDecomposition.o \
+obj/RalsFtodRankDecomposition.o \
+obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o
 
@@ -28,7 +50,8 @@ clean:
 
 # compile object files
 obj/%.o: src/%.cxx src/%.hpp
-	${CXX} ${COPTIONS} ${OPTIMIZE} -c src/$*.cxx -o $@ -I${CTF}/include
+	mkdir -p $(dir $@)
+	${CXX} ${COPTIONS} ${OPTIMIZE} -c src/$*.cxx -o $@ -I${CTF}/include -Isrc
 
 # compile and link executable
 bin/%: obj/%.o

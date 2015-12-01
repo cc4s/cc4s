@@ -1,17 +1,18 @@
-#include "TextFtodReader.hpp"
-#include "Cc4s.hpp"
-#include "Exception.hpp"
+#include <TextFtodReader.hpp>
+#include <Cc4s.hpp>
+#include <util/Log.hpp>
+#include <Exception.hpp>
 #include <ctf.hpp>
 #include <fstream>
+
+using namespace cc4s;
 
 /**
  * \brief Reads the Fourier transformed overlap densities from disk.
  */
 void TextFtodReader::read() {
-  if (Cc4s::world->rank == 0) {
-    std::cout <<
-      "Reading Fourier transformed overlap densities from text FTOD...";
-  }
+  LOG(0) <<
+    "Reading Fourier transformed overlap densities from text FTOD...";
   std::ifstream file("FTOD");
   if (!file.is_open()) throw new Exception("Failed to open FTOD file");
   std::string line;
@@ -88,30 +89,15 @@ void TextFtodReader::read() {
   delete[] indices; delete[] reals; delete[] imags;
   delete[] iIndices; delete[] aIndices; delete[] iValues; delete[] aValues;
   file.close();
-  if (Cc4s::world->rank == 0) {
-    std::cout << " OK" << std::endl;
-  }
+  LOG(0) << " OK" << std::endl;
 
   double realNorm = Cc4s::chiReal->gpq->norm2();
   double imagNorm = Cc4s::chiImag->gpq->norm2();
   double iNorm = Cc4s::V->i->norm2();
   double aNorm = Cc4s::V->a->norm2();
-  if (Cc4s::world->rank == 0) {
-    std::cout <<
-      "2-Norm of FTOD = (" << realNorm << "," << imagNorm << ")" << std::endl;
-    std::cout <<
-      "2-Norm of (eps_i,eps_a) = (" << iNorm << "," << aNorm << ")" << std::endl;
-  }
-  // calculate Coulomb integrals from Fourier transformed overlap densities
-  Cc4s::V->fetch();
-  // write V(1,1,1,1) for testing
-  int64_t readIndices[] = { 0 };
-  double readValues[] = { 0.0 };
-  Cc4s::V->ijkl->read(1l, readIndices, readValues);
-  if (Cc4s::world->rank == 0) {
-    std::cout << "V(1,1,1,1) = " << readValues[0] << std::endl;
-  }
-
-  // allocate and calculate the intial amplitudes
-  Cc4s::T = new Amplitudes(Cc4s::V);
+  LOG(4) <<
+    "2-Norm of FTOD = (" << realNorm << "," << imagNorm << ")" << std::endl;
+  LOG(4) <<
+    "2-Norm of (eps_i,eps_a) = (" << iNorm << "," << aNorm << ")" << std::endl;
 }
+

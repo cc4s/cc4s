@@ -2,10 +2,12 @@
 #ifndef FTOD_READER_DEFINED
 #define FTOD_READER_DEFINED
 
-class FtodReader {
-  public:
-    virtual void read() = 0;
-};
+namespace cc4s {
+  class FtodReader {
+    public:
+      virtual void read() = 0;
+  };
+}
 
 
 #endif

@@ -1,22 +1,31 @@
-#include "BinaryFtodReader.hpp"
-#include "Cc4s.hpp"
-#include "Exception.hpp"
+#include <BinaryFtodReader.hpp>
+#include <Cc4s.hpp>
+#include <util/Log.hpp>
+#include <Exception.hpp>
 #include <ctf.hpp>
 #include <fstream>
+
+using namespace cc4s;
 
 char const *BinaryFtodReader::Header::MAGIC = "cc4sFTOD";
 char const *BinaryFtodReader::Chunk::REALS_MAGIC = "FTODreal";
 char const *BinaryFtodReader::Chunk::IMAGS_MAGIC = "FTODimag";
 char const *BinaryFtodReader::Chunk::EPSILONS_MAGIC = "FTODepsi";
 
+BinaryFtodReader::BinaryFtodReader(bool stridedIo_): stridedIo(stridedIo_) {
+}
+
+BinaryFtodReader::~BinaryFtodReader() {
+}
+
 /**
  * \brief Reads the Fourier transformed overlap densities from disk.
  */
 void BinaryFtodReader::read() {
-  if (Cc4s::world->rank == 0) {
-    std::cout <<
-      "Reading Fourier transformed overlap densities from binary FTODDUMP...";
-  }
+  LOG(4) <<
+    "using " << (stridedIo ? "strided" : "blocked") << " IO" << std::endl;
+  LOG(0) <<
+    "Reading Fourier transformed overlap densities from binary FTODDUMP...";
   std::ifstream file("FTODDUMP", std::ios::binary|std::ios::in);
   if (!file.is_open()) throw new Exception("Failed to open FTODDUMP file");
   // read header
@@ -46,36 +55,54 @@ void BinaryFtodReader::read() {
     }
   }
   file.close();
-  if (Cc4s::world->rank == 0) {
-    std::cout << " OK" << std::endl;
-  }
+  LOG(0) << " OK" << std::endl;
 
   // TODO: factorize out of reading methods
   double realNorm = Cc4s::chiReal->gpq->norm2();
   double imagNorm = Cc4s::chiImag->gpq->norm2();
   double iNorm = Cc4s::V->i->norm2();
   double aNorm = Cc4s::V->a->norm2();
-  if (Cc4s::world->rank == 0) {
-    std::cout <<
-      "2-Norm of FTOD = (" << realNorm << "," << imagNorm << ")" << std::endl;
-    std::cout <<
-      "2-Norm of (eps_i,eps_a) = (" << iNorm << "," << aNorm << ")" << std::endl;
-  }
-  // calculate Coulomb integrals from Fourier transformed overlap densities
-  Cc4s::V->fetch();
-  // write V(1,1,1,1) for testing
-  int64_t readIndices[] = { 0 };
-  double readValues[] = { 0.0 };
-  Cc4s::V->ijkl->read(1l, readIndices, readValues);
-  if (Cc4s::world->rank == 0) {
-    std::cout << "V(1,1,1,1) = " << readValues[0] << std::endl;
-  }
-
-  // allocate and calculate the intial amplitudes
-  Cc4s::T = new Amplitudes(Cc4s::V);
+  LOG(4) <<
+    "2-Norm of FTOD = (" << realNorm << "," << imagNorm << ")" << std::endl;
+  LOG(4) <<
+    "2-Norm of (eps_i,eps_a) = (" << iNorm << "," << aNorm << ")" << std::endl;
 }
 
 void BinaryFtodReader::readChiChunk(std::ifstream &file, Chi *chi) {
+  if (stridedIo) {
+    readChiChunkStrided(file, chi);
+  } else {
+    readChiChunkBlocked(file, chi);
+  }
+}
+
+// TODO: use several write calls instead of one big to reduce int64 requirement
+void BinaryFtodReader::readChiChunkBlocked(std::ifstream &file, Chi *chi) {
+  // TODO: separate distribution from reading
+  // allocate local indices and values of the chi tensors
+  int64_t npPerNode(np / Cc4s::world->np);
+  int64_t npLocal(
+    Cc4s::world->rank+1 < Cc4s::world->np ?
+      npPerNode : np - Cc4s::world->rank * npPerNode
+  );
+  int64_t npToSkipBefore(Cc4s::world->rank * npPerNode);
+  int64_t npToSkipAfter(np - (npToSkipBefore + npLocal));
+  double *values(new double[npLocal*np*nG]);
+  int64_t *indices(new int64_t[npLocal*np*nG]);
+  file.seekg(sizeof(double)*npToSkipBefore*np*nG, file.cur);
+  file.read(reinterpret_cast<char *>(values), sizeof(double)*npLocal*np*nG);
+  file.seekg(sizeof(double)*npToSkipAfter*np*nG, file.cur);
+  for (int64_t i(0); i < npLocal*np*nG; ++i) {
+    indices[i] = i + npToSkipBefore*np*nG;
+  }
+  chi->gpq->write(npLocal*np*nG, indices, values);
+  delete[] values; delete[] indices;
+}
+
+
+// TODO: use intrinsic tensor distribution rather than enforce own distribution
+// TODO: use several write calls instead of one big to reduce int64 requirement
+void BinaryFtodReader::readChiChunkStrided(std::ifstream &file, Chi *chi) {
   // TODO: separate distribution from reading
   // allocate local indices and values of the chi tensors
   // distributed along g: round up g/nprocs 
@@ -180,3 +207,4 @@ void BinaryFtodReader::write() {
   }
   delete[] reals; delete[] imags; delete[] epsilons;
 }
+

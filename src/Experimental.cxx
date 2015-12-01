@@ -1,15 +1,14 @@
-#include "Experimental.hpp"
+#include <Experimental.hpp>
 #include <ctf.hpp>
 
+using namespace cc4s;
 using namespace CTF;
 
 void Experimental::readRandom(Tensor<> *tensor, int seed) {
   int64_t indicesCount;
   int64_t *indices;
   double *values;
-  if (world->rank == 0) {
-    std::cout << "Fetching randomly " << tensor->get_name() << "...";
-  }
+  LOG(0) << "Fetching randomly " << tensor->get_name() << "...";
   tensor->read_local(&indicesCount, &indices, &values);
   for (int64_t j(0); j < indicesCount; ++j) {
     values[j] = ((indices[j]*13 + seed)%13077)/13077. -.5;
@@ -17,7 +16,7 @@ void Experimental::readRandom(Tensor<> *tensor, int seed) {
   }
   tensor->write(indicesCount, indices, values);
   free(indices); free(values);
-  if (world->rank == 0) std::cout << " OK" << std::endl;
+  LOG(0) << " OK" << std::endl;
 }
 
 void Experimental::testSymmetries() {
@@ -62,10 +61,8 @@ void Experimental::testSymmetries() {
   a["ij"] = 0.5*n["ij"];
   a.read_all(&indicesCount, &values, true);
   for (int i(0); i < indicesCount; ++i) {
-    if (world->rank == 0) {
-      std::cout << " " << values[i];
-      if (i % 3 == 2) std::cout << std::endl;
-    }
+    LOG(4) << " " << values[i];
+    if (i % 3 == 2) LOG(4) << std::endl;
   }
   free(values);
 */
@@ -77,8 +74,8 @@ void Experimental::testSymmetries() {
   n.read_all(&indicesCount, &values, true);
   for (int i(0); i < indicesCount; ++i) {
     if (world->rank == 0) {
-      std::cout << " " << values[i];
-      if (i % 3 == 2) std::cout << std::endl;
+      LOG(4) << " " << values[i];
+      if (i % 3 == 2) LOG(4) << std::endl;
     }
   }
   free(values);  
@@ -101,10 +98,8 @@ void Experimental::testSymmetries() {
   a.slice(aMin, aMax, 1.0, s, sMin, sMax, 1.0);
   a.read_all(&indicesCount, &values, true);
   for (int i(0); i < indicesCount; ++i) {
-    if (world->rank == 0) {
-      std::cout << " " << values[i];
-      if (i % 3 == 2) std::cout << std::endl;
-    }
+    LOG(4) << " " << values[i];
+    if (i % 3 == 2) LOG(4) << std::endl;
   }
   free(values);  
   // slicing on (anti-)symmetrical tensors works as expected
