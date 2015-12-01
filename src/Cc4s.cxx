@@ -548,8 +548,7 @@ void Cc4s::iterateRccsd() {
     Dai["ai"] += (*V)["i"];
     Dai["ai"] -= (*V)["a"];
 
-//    Bivar_Function<> fctr(&divide);
-    T->ai->contract(1.0, Rai, "ai", Dai, "ai", 0.0, "ai", fctr);
+    T->ai->contract(1.0, Rai, "ai", Dai, "ai", 0.0, "ai", fDivide);
 
 
   }
