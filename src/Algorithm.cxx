@@ -1,14 +1,15 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <Algorithm.hpp>
+#include <util/Complex.hpp>
 #include <util/Exception.hpp>
 
 #include <iostream>
 
 using namespace cc4s;
 
-Algorithm::Algorithm(std::vector<Argument const *> const &arguments) {
-  for (auto arg(arguments.begin()); arg != arguments.end(); ++arg) {
+Algorithm::Algorithm(std::vector<Argument const *> const &argumentList) {
+  for (auto arg(argumentList.begin()); arg != argumentList.end(); ++arg) {
     Argument const *argument = *arg;
     arguments[argument->getName()] = argument->getData();
   }
@@ -18,8 +19,8 @@ Algorithm::~Algorithm() {
 }
 
 Data *Algorithm::getArgument(std::string const &name) {
-  auto dataIterator = inputs.find(name);
-  if (dataIterator == inputs.end()) {
+  auto dataIterator = arguments.find(name);
+  if (dataIterator == arguments.end()) {
     std::stringstream sstream;
     sstream << "Missing argument: " << name;
     throw new Exception(sstream.str());
@@ -64,18 +65,33 @@ double Algorithm::getRealArgument(std::string const &name) {
   return realData->value;
 }
 
-TensorData *Algorithm::getTensorDataArgument(std::string const &name) {
+template <typename F>
+TensorData<F> *Algorithm::getTensorDataArgument(std::string const &name) {
   Data *data = getArgument(name);
-  TensorData *tensorData = dynamic_cast<TensorData *>(data);
+  TensorData<F> *tensorData = dynamic_cast<TensorData<F> *>(data);
   if (tensorData == nullptr) {
-    std::stringstream sstream;
-    sstream << "Incompatible tpye for argument: " << name << ". "
+    std::stringstream sStream;
+    sStream << "Incompatible tpye for argument: " << name << ". "
       << "Excpected Tensor, found " << data->getTypeName() << ".";
-    throw new Exception(sstream.str());
+    throw new Exception(sStream.str());
   }
-  return data;
+  return tensorData;
 }
 
-CTF::Tensor<> *Algorithm::getTensorArgument(std::string const &name) {
-  return getTensorDataArgument(name)->value;
+template <typename F>
+CTF::Tensor<F> *Algorithm::getTensorArgument(std::string const &name) {
+  return getTensorDataArgument<F>(name)->value;
 }
+
+
+// instantiate
+template
+TensorData<double> *Algorithm::getTensorDataArgument(std::string const &name);
+template
+TensorData<complex> *Algorithm::getTensorDataArgument(std::string const &name);
+
+template
+CTF::Tensor<double> *Algorithm::getTensorArgument(std::string const &name);
+template
+CTF::Tensor<complex> *Algorithm::getTensorArgument(std::string const &name);
+

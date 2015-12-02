@@ -38,8 +38,6 @@ namespace cc4s {
           int64_t size;
           static char const *REALS_MAGIC;
           static char const *IMAGS_MAGIC;
-          static char const *REALSIA_MAGIC;
-          static char const *IMAGSIA_MAGIC;
           static char const *EPSILONS_MAGIC;
       };
   };
