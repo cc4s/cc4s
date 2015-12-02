@@ -1,9 +1,11 @@
 #include <ParticleHoleCoulomb.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
+#include <Cc4s.hpp>
 #include <ctf.hpp>
 
 using namespace cc4s;
+using namespace CTF;
 
 ParticleHoleCoulomb::ParticleHoleCoulomb(
   std::vector<Argument const *> const &argumentList
@@ -11,13 +13,13 @@ ParticleHoleCoulomb::ParticleHoleCoulomb(
   
 }
 
-ParticleHoleCoulombVertexMp2::~ParticleHoleCoulombVertexMp2() {
+ParticleHoleCoulomb::~ParticleHoleCoulomb() {
 }
 
 /**
  * \brief Calculates Coulomb integrals Vabij from aiCoulombVertexReal/Imag
  */
-void ParticleHoleCoulombVertexMp2::run() {
+void ParticleHoleCoulomb::run() {
   TensorData<> *aiCoulombVertexRealData(
     getTensorDataArgument("aiCoulombVertexReal")
   );
@@ -26,9 +28,14 @@ void ParticleHoleCoulombVertexMp2::run() {
   );
   TensorData<> *vabijData(getTensorDataArgument("vabij"));
   // allocate
- Tensor<>*vabijData->value(V->abij);
+  int nv(aiCoulombVertexRealData->value->lens[1]);
+  int no(aiCoulombVertexRealData->value->lens[2]);
+  int lens[] = { nv, nv, no, no };
+  int syms[] = { NS, NS, NS, NS };
+  vabijData->value = new Tensor<>(4, lens, syms, *Cc4s::world, "Cabij");
  
 // read from tensors: aiCoulombVertexImagData->value
 // allocate and write to tensor vabijData->value
+//  (*vabijData->value)["i.."] = (*
 }
 

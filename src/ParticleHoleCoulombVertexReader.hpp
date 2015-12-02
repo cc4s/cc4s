@@ -3,6 +3,7 @@
 #define PARTICLE_HOLE_COULOMB_VERTEX_READER_DEFINED
 
 #include <Algorithm.hpp>
+#include <ctf.hpp>
 #include <cstdint>
 #include <fstream>
 
@@ -19,7 +20,7 @@ namespace cc4s {
       int no, nv, nG;
       int64_t np;
 
-      void readChiAiChunkBlocked(std::ifstream &file, ChiAi *chiAi);
+      void readChiAiChunkBlocked(std::ifstream &file, CTF::Tensor<> *chiAi);
       void readEpsChunk(std::ifstream &file);
 
       class Header {

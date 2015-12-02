@@ -1,17 +1,19 @@
 #include <ParticleHoleCoulombVertexReader.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
+#include <Cc4s.hpp>
 #include <ctf.hpp>
 #include <fstream>
 
 using namespace cc4s;
+using namespace CTF;
 
-char const *BinaryFtodReader::Header::MAGIC = "cc4sFTOD";
-char const *BinaryFtodReader::Chunk::REALS_MAGIC = "FTODreal";
-char const *BinaryFtodReader::Chunk::IMAGS_MAGIC = "FTODimag";
-char const *BinaryFtodReader::Chunk::REALSIA_MAGIC = "FTIAreal";
-char const *BinaryFtodReader::Chunk::IMAGSIA_MAGIC = "FTIAimag";
-char const *BinaryFtodReader::Chunk::EPSILONS_MAGIC = "FTODepsi";
+char const *ParticleHoleCoulombVertexReader::Header::MAGIC = "cc4sFTOD";
+char const *ParticleHoleCoulombVertexReader::Chunk::REALS_MAGIC = "FTODreal";
+char const *ParticleHoleCoulombVertexReader::Chunk::IMAGS_MAGIC = "FTODimag";
+char const *ParticleHoleCoulombVertexReader::Chunk::REALSIA_MAGIC = "FTIAreal";
+char const *ParticleHoleCoulombVertexReader::Chunk::IMAGSIA_MAGIC = "FTIAimag";
+char const *ParticleHoleCoulombVertexReader::Chunk::EPSILONS_MAGIC = "FTODepsi";
 
 ParticleHoleCoulombVertexReader::ParticleHoleCoulombVertexReader(
   std::vector<Argument const *> const &argumentList
@@ -26,7 +28,7 @@ ParticleHoleCoulombVertexReader::~ParticleHoleCoulombVertexReader() {
  * \brief Reads the Fourier transformed overlap densities from disk.
  */
 void ParticleHoleCoulombVertexReader::run() {
-  std::string fileName(getStringArgument("file"));
+  std::string fileName(getTextArgument("file"));
   LOG(0) <<
     "Reading particle hole Coulomb vertex from file " << fileName << " ...";
   std::ifstream file(fileName, std::ios::binary|std::ios::in);
@@ -39,44 +41,37 @@ void ParticleHoleCoulombVertexReader::run() {
   nG = header.nG;
   no = header.no;
   nv = header.nv;
-  np = no+nv;
 
   // allocate output tensors
-  TensorData *aiCoulombVertexRealData(
+  TensorData<> *aiCoulombVertexRealData(
     getTensorDataArgument("aiCoulombVertexReal")
   );
-  TensorData *aiCoulombVertexImagData(
+  TensorData<> *aiCoulombVertexImagData(
     getTensorDataArgument("aiCoulombVertexImag")
   );
-  TensorData *epsData(getTensorDataArgument("eps"));
+  TensorData<> *epsData(getTensorDataArgument("eps"));
   int vertexLens[] = { nG, nv, no };
   int vertexSyms[] = { NS, NS, NS };
   aiCoulombVertexRealData->value = new Tensor<>(
-    3, vertexLens, vertexSyms, *Cc4s::world, "SvRgai"
+    3, vertexLens, vertexSyms, *Cc4s::world, "SvRgai", true
   );
   aiCoulombVertexImagData->value = new Tensor<>(
-    3, vertexLens, vertexSyms, *Cc4s::world, "SvIgai"
+    3, vertexLens, vertexSyms, *Cc4s::world, "SvIgai", true
   );
   epsData->value = new Vector<>(np, *Cc4s::world, "epsp");
   // FIXME: continue here ...
 
   Chunk chunk;
   while (file.read(reinterpret_cast<char *>(&chunk), sizeof(chunk))) {
-    if (strncmp(chunk.magic, Chunk::REALS_MAGIC, sizeof(chunk.magic)) == 0) {
-      readChiChunk(file, Cc4s::chiReal);
-    } else
-    if (strncmp(chunk.magic, Chunk::IMAGS_MAGIC, sizeof(chunk.magic)) == 0) {
-      readChiChunk(file, Cc4s::chiImag);
-    } else
     if (strncmp(chunk.magic, Chunk::REALSIA_MAGIC, sizeof(chunk.magic)) == 0) {
       LOG(0) << "Found ia chunk";
       //readChiChunk(file, Cc4s::chiIAReal);
-      readChiAiChunkBlocked(file, Cc4s::chiAiReal);
+      readChiAiChunkBlocked(file, aiCoulombVertexRealData->value);
     } else
     if (strncmp(chunk.magic, Chunk::IMAGSIA_MAGIC, sizeof(chunk.magic)) == 0) {
       LOG(0) << "Found ia chunk";
       //readChiChunk(file, Cc4s::chiIAImag);
-      readChiAiChunkBlocked(file, Cc4s::chiAiImag);
+      readChiAiChunkBlocked(file, aiCoulombVertexImagData->value);
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
       readEpsChunk(file);
@@ -88,14 +83,15 @@ void ParticleHoleCoulombVertexReader::run() {
 
 
 // TODO: use several write calls instead of one big to reduce int64 requirement
-void BinaryFtodReader::readChiAiChunkBlocked(
-  std::ifstream &file, ChiAi *chiAi
+void ParticleHoleCoulombVertexReader::readChiAiChunkBlocked(
+  std::ifstream &file, Tensor<> *chiAi
 ) {
   // TODO: separate distribution from reading
   // allocate local indices and values of the chi tensors
-  int64_t nvPerNode(nv / chiAi->nv);
+  // FIXME: continue here...
+  int64_t nvPerNode(nv / nv);
   int64_t nvLocal(
-    Cc4s::world->rank+1 < chiAi->nv ?
+    Cc4s::world->rank+1 < nv ?
       nvPerNode : nv - Cc4s::world->rank * nvPerNode
   );
   int64_t nvToSkipBefore(Cc4s::world->rank * nvPerNode);
@@ -108,12 +104,12 @@ void BinaryFtodReader::readChiAiChunkBlocked(
   for (int64_t i(0); i < nvLocal*no*nG; ++i) {
     indices[i] = i + nvToSkipBefore*no*nG;
   }
-  chiAi->gai->write(nvLocal*no*nG, indices, values);
+  chiAi->write(nvLocal*no*nG, indices, values);
   delete[] values; delete[] indices;
 }
 
 
-void BinaryFtodReader::readEpsChunk(std::ifstream &file) {
+void ParticleHoleCoulombVertexReader::readEpsChunk(std::ifstream &file) {
   // allocate local indices and values of eigenenergies
   double *iValues(new double[no]);
   double *aValues(new double[nv]);
