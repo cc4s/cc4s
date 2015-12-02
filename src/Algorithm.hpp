@@ -50,16 +50,21 @@ namespace cc4s {
       int64_t value;
   };
 
+  template <typename F=double>
   class TensorData: public AtomData {
     public:
       TensorData(
-        std::string const &name, CTF::Tensor<> const &value_
-      ): AtomData(name), value(new CTF::Tenxor<>(value_)) { }
+        std::string const &name, CTF::Tensor<F> const &value_
+      ): AtomData(name), value(new CTF::Tensor<F>(value_)) { }
       TensorData(
         std::string const &name
       ): AtomData(name), value(nullptr) { }
-      virtual std::string getTypeName() const { return "Tensor"; }
-      CTF::Tensor<> *value;
+      virtual std::string getTypeName() const {
+        std::stringstream sStream("");
+        sStream << "Tensor<" << typeid(F).name() << ">";
+        return sStream.str();
+      }
+      CTF::Tensor<F> *value;
   };
 
   // TODO: maybe use iterator instead
@@ -76,10 +81,10 @@ namespace cc4s {
 
   class Argument {
     public:
-      Argument(InputArgument const &a): name(a.name), data(a.data) {
+      Argument(Argument const &a): name(a.name), data(a.data) {
       }
       Argument(
-        std::string const &name, Data const *data_
+        std::string const &name_, Data *data_
       ): name(name_), data(data_) { }
       std::string getName() const { return name; }
       Data *getData() const { return data; }
@@ -97,7 +102,10 @@ namespace cc4s {
       std::string getTextArgument(std::string const &name);
       int64_t getIntegerArgument(std::string const &name);
       double getRealArgument(std::string const &name);
-      CTF::Tensor<> const *getTensorArgument(std::string const &name);
+      template <typename F=double>
+      TensorData<F> *getTensorDataArgument(std::string const &name);
+      template <typename F=double>
+      CTF::Tensor<F> *getTensorArgument(std::string const &name);
     protected:
       std::map<std::string, Data *> arguments;
   };

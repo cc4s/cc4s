@@ -2,6 +2,7 @@
 
 #include <Cc4s.hpp>
 #include <util/Log.hpp>
+#include <ParticleHoleCoulombVertexReader.hpp>
 #include <TextFtodReader.hpp>
 #include <BinaryFtodReader.hpp>
 #include <FtodRankDecomposition.hpp>
@@ -45,10 +46,10 @@ void Cc4s::run() {
 //    RalsFtodRankDecomposition::test(world);
     // experimental:
     std::vector<Argument const *> arguments;
-    TensorData chiRData("chiR", *chiReal->gpq);
+    TensorData<> chiRData("chiR", *chiReal->gpq);
     Argument chiR("chiR", &chiRData);
     arguments.push_back(&chiR);
-    TensorData chiIData("chiI", *chiImag->gpq);
+    TensorData<> chiIData("chiI", *chiImag->gpq);
     Argument chiI("chiI", &chiIData);
     arguments.push_back(&chiI);
     IntegerData rankData("rank", options->rank);
@@ -111,19 +112,19 @@ void Cc4s::mp2Algorithm() {
   std::vector<Argument const *> arguments;
 
   // 1st algoirthm: read file
-  StringData fileData("file", "FTODDUMP");
+  TextData fileData("file", "FTODDUMP");
   Argument file("file", &fileData);
   arguments.push_back(&file);
 
-  TensorData aiCoulombVertexRealData("aiCoulombVertexReal");
+  TensorData<> aiCoulombVertexRealData("aiCoulombVertexReal");
   Argument aicoulombVertexReal("aiCoulombVertexReal", &aiCoulombVertexRealData);
   arguments.push_back(&aicoulombVertexReal);
 
-  TensorData aiCoulombVertexImagData("aiCoulombVertexImag");
+  TensorData<> aiCoulombVertexImagData("aiCoulombVertexImag");
   Argument aicoulombVertexImag("aiCoulombVertexImag", &aiCoulombVertexImagData);
   arguments.push_back(&aicoulombVertexReal);
 
-  TensorData epsData("eps");
+  TensorData<> epsData("eps");
   Argument eps("eps", &epsData);
   arguments.push_back(&eps);
 
@@ -131,11 +132,11 @@ void Cc4s::mp2Algorithm() {
   // immediate execution: (no planing for now)
   particleHoleCoulombVertexReader.run();
   arguments.clear();
-
+/*
   // 2nd algorithm: calculate coulomb
   arguments.push_back(&aicoulombVertexReal);
   arguments.push_back(&aicoulombVertexImag);
-  TensorData vabijData("vabij");
+  TensorData<> vabijData("vabij");
   Argument vabij("vabij", &vabijData);
   arguments.push_back(&vabij);
 
@@ -153,6 +154,7 @@ void Cc4s::mp2Algorithm() {
   mp2Energy.run();
 
   LOG(0) << "e=" << energyData.getValue() << std::endl;
+*/
 }
 
 void Cc4s::printBanner() {

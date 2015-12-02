@@ -10,8 +10,6 @@ using namespace cc4s;
 char const *BinaryFtodReader::Header::MAGIC = "cc4sFTOD";
 char const *BinaryFtodReader::Chunk::REALS_MAGIC = "FTODreal";
 char const *BinaryFtodReader::Chunk::IMAGS_MAGIC = "FTODimag";
-char const *BinaryFtodReader::Chunk::REALSIA_MAGIC = "FTIAreal";
-char const *BinaryFtodReader::Chunk::IMAGSIA_MAGIC = "FTIAimag";
 char const *BinaryFtodReader::Chunk::EPSILONS_MAGIC = "FTODepsi";
 
 BinaryFtodReader::BinaryFtodReader(bool stridedIo_): stridedIo(stridedIo_) {
@@ -42,8 +40,6 @@ void BinaryFtodReader::read() {
   // allocate chi and Coulomb integral tensors
   Cc4s::chiReal = new Chi(nG, no, nv);
   Cc4s::chiImag = new Chi(nG, no, nv);
-  Cc4s::chiAiReal = new ChiAi(nG, no, nv);
-  Cc4s::chiAiImag = new ChiAi(nG, no, nv);
   Cc4s::V = new CoulombIntegrals(Cc4s::chiReal, Cc4s::chiImag);
 
   Chunk chunk;
@@ -53,16 +49,6 @@ void BinaryFtodReader::read() {
     } else
     if (strncmp(chunk.magic, Chunk::IMAGS_MAGIC, sizeof(chunk.magic)) == 0) {
       readChiChunk(file, Cc4s::chiImag);
-    } else
-    if (strncmp(chunk.magic, Chunk::REALSIA_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(0) << "Found ia chunk";
-      //readChiChunk(file, Cc4s::chiIAReal);
-      readChiAiChunkBlocked(file, Cc4s::chiAiReal);
-    } else
-    if (strncmp(chunk.magic, Chunk::IMAGSIA_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(0) << "Found ia chunk";
-      //readChiChunk(file, Cc4s::chiIAImag);
-      readChiAiChunkBlocked(file, Cc4s::chiAiImag);
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
       readEpsChunk(file);
@@ -112,33 +98,6 @@ void BinaryFtodReader::readChiChunkBlocked(std::ifstream &file, Chi *chi) {
   chi->gpq->write(npLocal*np*nG, indices, values);
   delete[] values; delete[] indices;
 }
-
-
-// TODO: use several write calls instead of one big to reduce int64 requirement
-void BinaryFtodReader::readChiAiChunkBlocked(
-  std::ifstream &file, ChiAi *chiAi
-) {
-  // TODO: separate distribution from reading
-  // allocate local indices and values of the chi tensors
-  int64_t nvPerNode(nv / chiAi->nv);
-  int64_t nvLocal(
-    Cc4s::world->rank+1 < chiAi->nv ?
-      nvPerNode : nv - Cc4s::world->rank * nvPerNode
-  );
-  int64_t nvToSkipBefore(Cc4s::world->rank * nvPerNode);
-  int64_t nvToSkipAfter(nv - (nvToSkipBefore + nvLocal));
-  double *values(new double[nvLocal*no*nG]);
-  int64_t *indices(new int64_t[nvLocal*no*nG]);
-  file.seekg(sizeof(double)*nvToSkipBefore*no*nG, file.cur);
-  file.read(reinterpret_cast<char *>(values), sizeof(double)*nvLocal*no*nG);
-  file.seekg(sizeof(double)*nvToSkipAfter*no*nG, file.cur);
-  for (int64_t i(0); i < nvLocal*no*nG; ++i) {
-    indices[i] = i + nvToSkipBefore*no*nG;
-  }
-  chiAi->gai->write(nvLocal*no*nG, indices, values);
-  delete[] values; delete[] indices;
-}
-
 
 
 // TODO: use intrinsic tensor distribution rather than enforce own distribution
