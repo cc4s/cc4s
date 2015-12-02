@@ -237,23 +237,23 @@ void Cc4s::iterateRccd() {
     int syms[] = {NS, NS, NS, NS};
     // Define Tensors
     //Allocate Tensors for T1 amplitude equations
-    Tensor<> Dai = Tensor<>(V->ai);
-    Tensor<> Rai = Tensor<>(T->ai);
+    Tensor<> Dai(V->ai);
+    Tensor<> Rai(T->ai);
     //Allocate Tensors for T2 amplitudes
     Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
-    Tensor<> Rabij = Tensor<>(V->abij);
-    Tensor<> Fba = Tensor<>(V->ab);
-    Tensor<> Fji = Tensor<>(V->ij);
-    Tensor<> Fai = Tensor<>(V->ai);
+    Tensor<> Rabij(V->abij);
+    Tensor<> Fba(V->ab);
+    Tensor<> Fji(V->ij);
+    Tensor<> Fai(V->ai);
     //intermediates
-    Tensor<> Cai = Tensor<>(T->ai);
-    Tensor<> Lac = Tensor<>(V->ab);
-    Tensor<> Kac = Tensor<>(V->ab);
-    Tensor<> Lki = Tensor<>(V->ij);
-    Tensor<> Kki = Tensor<>(V->ij);
-    Tensor<> Cklij = Tensor<>(V->ijkl);
-    Tensor<> Cakic = Tensor<>(V->aijb);
-    Tensor<> Cakci = Tensor<>(V->aibj);
+    Tensor<> Cai(T->ai);
+    Tensor<> Lac(V->ab);
+    Tensor<> Kac(V->ab);
+    Tensor<> Lki(V->ij);
+    Tensor<> Kki(V->ij);
+    Tensor<> Cklij(V->ijkl);
+    Tensor<> Cakic(V->aijb);
+    Tensor<> Cakci(V->aibj);
     //Tensor<> Chi(4, V->abij->lens, syms, *world, "Cabij");
     //Chi = new Amplitudes(V, world, options);
 
@@ -378,27 +378,27 @@ void Cc4s::iterateRccsd() {
     LOG(0) << "Allocating stuff:" << std::endl;
     // Define Tensors
     //Allocate Tensors for T1 amplitude equations
-    Tensor<> Rai = Tensor<>(T->ai);
+    Tensor<> Rai(T->ai);
     //Allocate Tensors for T2 amplitudes
     Tensor<> Dabij(4, V->abij->lens, syms, *world, "Dabij");
-    Tensor<> Rabij = Tensor<>(V->abij);
-    Tensor<> Fba = Tensor<>(V->ab);
-    Tensor<> Fji = Tensor<>(V->ij);
-    Tensor<> Fai = Tensor<>(V->ai);
+    Tensor<> Rabij(V->abij);
+    Tensor<> Fba(V->ab);
+    Tensor<> Fji(V->ij);
+    Tensor<> Fai(V->ai);
     LOG(0) << "Allocating stuff 2:" << std::endl;
     //intermediates
     LOG(0) << "Allocating stuff 2a:" << std::endl;
-    Tensor<> Dai = Tensor<>(T->ai);
-    Tensor<> Lac = Tensor<>(V->ab);
-    Tensor<> Kac = Tensor<>(V->ab);
-    Tensor<> Lki = Tensor<>(V->ij);
-    Tensor<> Kki = Tensor<>(V->ij);
-    Tensor<> Kck = Tensor<>(T->ai);
+    Tensor<> Dai(T->ai);
+    Tensor<> Lac(V->ab);
+    Tensor<> Kac(V->ab);
+    Tensor<> Lki(V->ij);
+    Tensor<> Kki(V->ij);
+    Tensor<> Kck(T->ai);
     LOG(0) << "Allocating stuff 2b:" << std::endl;
-    Tensor<> Cklij = Tensor<>(V->ijkl);
-    Tensor<> Cabcd = Tensor<>(V->abcd);
-    Tensor<> Cakic = Tensor<>(V->aijb);
-    Tensor<> Cakci = Tensor<>(V->aibj);
+    Tensor<> Cklij(V->ijkl);
+    Tensor<> Cabcd(V->abcd);
+    Tensor<> Cakic(V->aijb);
+    Tensor<> Cakci(V->aibj);
     //Tensor<> Chi(4, V->abij->lens, syms, *world, "Cabij");
     //Chi = new Amplitudes(V, world, options);
     LOG(0) << "Allocating stuff 3:" << std::endl;

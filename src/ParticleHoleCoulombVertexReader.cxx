@@ -57,7 +57,7 @@ void ParticleHoleCoulombVertexReader::run() {
   aiCoulombVertexImagData->value = new Tensor<>(
     3, vertexLens, vertexSyms, *Cc4s::world, "SvIgai"
   );
-  epsData->value = new Vects<>(np, *Cc4s::world, "epsp");
+  epsData->value = new Vector<>(np, *Cc4s::world, "epsp");
   // FIXME: continue here ...
 
   Chunk chunk;
