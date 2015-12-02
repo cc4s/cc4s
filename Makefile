@@ -29,7 +29,8 @@ obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o obj/${TARGET}.o \
 obj/ParticleHoleCoulomb.o \
-obj/ParticleHoleCoulombVertexReader.o
+obj/ParticleHoleCoulombVertexReader.o \
+obj/CoulombMp2.o
 # dependencies
 obj/${TARGET}.o: \
 obj/Options.o \
@@ -46,7 +47,8 @@ obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
 obj/ParticleHoleCoulomb.o \
-obj/ParticleHoleCoulombVertexReader.o
+obj/ParticleHoleCoulombVertexReader.o \
+obj/CoulombMp2.o
 
 clean:
 	rm -rf bin/*

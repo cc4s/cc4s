@@ -34,6 +34,11 @@ void ParticleHoleCoulomb::run() {
   int syms[] = { NS, NS, NS, NS };
   vabijData->value = new Tensor<>(4, lens, syms, *Cc4s::world, "Cabij");
  
+  (*vabijData->value)["abij"] =  (*aiCoulombVertexRealData->value)["gai"]*
+                                 (*aiCoulombVertexRealData->value)["gbj"];
+
+  (*vabijData->value)["abij"] += (*aiCoulombVertexImagData->value)["gai"]*
+                                 (*aiCoulombVertexImagData->value)["gbj"];
 // read from tensors: aiCoulombVertexImagData->value
 // allocate and write to tensor vabijData->value
 //  (*vabijData->value)["i.."] = (*

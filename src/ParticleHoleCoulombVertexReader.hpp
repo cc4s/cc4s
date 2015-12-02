@@ -21,7 +21,7 @@ namespace cc4s {
       int64_t np;
 
       void readChiAiChunkBlocked(std::ifstream &file, CTF::Tensor<> *chiAi);
-      void readEpsChunk(std::ifstream &file);
+      void readEpsChunk(std::ifstream &file,  CTF::Tensor<> *ieps, CTF::Tensor<> *aeps);
 
       class Header {
         public:

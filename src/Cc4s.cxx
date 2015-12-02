@@ -3,6 +3,8 @@
 #include <Cc4s.hpp>
 #include <util/Log.hpp>
 #include <ParticleHoleCoulombVertexReader.hpp>
+#include <ParticleHoleCoulomb.hpp>
+#include <CoulombMp2.hpp>
 #include <TextFtodReader.hpp>
 #include <BinaryFtodReader.hpp>
 #include <FtodRankDecomposition.hpp>
@@ -122,16 +124,36 @@ void Cc4s::mp2Algorithm() {
 
   TensorData<> aiCoulombVertexImagData("aiCoulombVertexImag");
   Argument aicoulombVertexImag("aiCoulombVertexImag", &aiCoulombVertexImagData);
-  arguments.push_back(&aicoulombVertexReal);
+  arguments.push_back(&aicoulombVertexImag);
 
-  TensorData<> epsData("eps");
-  Argument eps("eps", &epsData);
-  arguments.push_back(&eps);
+  TensorData<> iEpsData("iEps");
+  Argument iEps("iEps", &iEpsData);
+  arguments.push_back(&iEps);
+
+  TensorData<> aEpsData("aEps");
+  Argument aEps("aEps", &aEpsData);
+  arguments.push_back(&aEps);
+
+  TensorData<> vabijData("vabij");
+  Argument vabij("vabij", &vabijData);
+  arguments.push_back(&vabij);
+
 
   ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
   // immediate execution: (no planing for now)
   particleHoleCoulombVertexReader.run();
+  LOG(4) << "Reader done."<< std::endl;
+
+  ParticleHoleCoulomb ParticleHoleCoulomb(arguments);
+  ParticleHoleCoulomb.run();
+  LOG(4) << "Coulomb done"<< std::endl;
+
+  CoulombMp2 CoulombMp2(arguments);
+  CoulombMp2.run();
+  LOG(4) << "CoulombMp2 done"<< std::endl;
+
   arguments.clear();
+
 /*
   // 2nd algorithm: calculate coulomb
   arguments.push_back(&aicoulombVertexReal);

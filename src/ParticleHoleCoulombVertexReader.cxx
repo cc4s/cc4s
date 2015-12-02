@@ -41,6 +41,10 @@ void ParticleHoleCoulombVertexReader::run() {
   nG = header.nG;
   no = header.no;
   nv = header.nv;
+  np = no + nv;
+
+  TensorData<> *iEpsData(getTensorDataArgument("iEps"));
+  TensorData<> *aEpsData(getTensorDataArgument("aEps"));
 
   // allocate output tensors
   TensorData<> *aiCoulombVertexRealData(
@@ -49,32 +53,33 @@ void ParticleHoleCoulombVertexReader::run() {
   TensorData<> *aiCoulombVertexImagData(
     getTensorDataArgument("aiCoulombVertexImag")
   );
-  TensorData<> *epsData(getTensorDataArgument("eps"));
   int vertexLens[] = { nG, nv, no };
   int vertexSyms[] = { NS, NS, NS };
   aiCoulombVertexRealData->value = new Tensor<>(
-    3, vertexLens, vertexSyms, *Cc4s::world, "SvRgai", true
+    3, vertexLens, vertexSyms, *Cc4s::world, "SvRgai"
   );
   aiCoulombVertexImagData->value = new Tensor<>(
-    3, vertexLens, vertexSyms, *Cc4s::world, "SvIgai", true
+    3, vertexLens, vertexSyms, *Cc4s::world, "SvIgai"
   );
-  epsData->value = new Vector<>(np, *Cc4s::world, "epsp");
+  iEpsData->value = new Vector<>(no, *Cc4s::world, "iEps");
+  aEpsData->value = new Vector<>(nv, *Cc4s::world, "aEps");
   // FIXME: continue here ...
 
   Chunk chunk;
   while (file.read(reinterpret_cast<char *>(&chunk), sizeof(chunk))) {
     if (strncmp(chunk.magic, Chunk::REALSIA_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(0) << "Found ia chunk";
+      LOG(4) << "Found ia chunk. ";
       //readChiChunk(file, Cc4s::chiIAReal);
       readChiAiChunkBlocked(file, aiCoulombVertexRealData->value);
     } else
     if (strncmp(chunk.magic, Chunk::IMAGSIA_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(0) << "Found ia chunk";
+      LOG(4) << "Found ia chunk. ";
       //readChiChunk(file, Cc4s::chiIAImag);
       readChiAiChunkBlocked(file, aiCoulombVertexImagData->value);
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
-      readEpsChunk(file);
+      LOG(4) << "Found eps chunk.";
+      readEpsChunk(file, iEpsData->value, aEpsData->value);
     }
   }
   file.close();
@@ -89,9 +94,9 @@ void ParticleHoleCoulombVertexReader::readChiAiChunkBlocked(
   // TODO: separate distribution from reading
   // allocate local indices and values of the chi tensors
   // FIXME: continue here...
-  int64_t nvPerNode(nv / nv);
+  int64_t nvPerNode(nv / Cc4s::world->np);
   int64_t nvLocal(
-    Cc4s::world->rank+1 < nv ?
+    Cc4s::world->rank+1 < Cc4s::world->np ?
       nvPerNode : nv - Cc4s::world->rank * nvPerNode
   );
   int64_t nvToSkipBefore(Cc4s::world->rank * nvPerNode);
@@ -109,7 +114,9 @@ void ParticleHoleCoulombVertexReader::readChiAiChunkBlocked(
 }
 
 
-void ParticleHoleCoulombVertexReader::readEpsChunk(std::ifstream &file) {
+void ParticleHoleCoulombVertexReader::readEpsChunk(
+  std::ifstream &file, Tensor<> *ieps, Tensor<> *aeps
+) {
   // allocate local indices and values of eigenenergies
   double *iValues(new double[no]);
   double *aValues(new double[nv]);
@@ -127,8 +134,8 @@ void ParticleHoleCoulombVertexReader::readEpsChunk(std::ifstream &file) {
   }
   int64_t iValuesCount(Cc4s::world->rank == 0 ? no : 0);
   int64_t aValuesCount(Cc4s::world->rank == 0 ? nv : 0);
-  Cc4s::V->i->write(iValuesCount, iIndices, iValues);
-  Cc4s::V->a->write(aValuesCount, aIndices, aValues);
+  ieps->write(iValuesCount, iIndices, iValues);
+  aeps->write(aValuesCount, aIndices, aValues);
   delete[] iValues; delete[] aValues;
 }
 
