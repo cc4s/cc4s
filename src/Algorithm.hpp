@@ -54,9 +54,12 @@ namespace cc4s {
     public:
       TensorData(
         std::string const &name, CTF::Tensor<> const &value_
-      ): AtomData(name), value(value_) { }
+      ): AtomData(name), value(new CTF::Tenxor<>(value_)) { }
+      TensorData(
+        std::string const &name
+      ): AtomData(name), value(nullptr) { }
       virtual std::string getTypeName() const { return "Tensor"; }
-      CTF::Tensor<> value;
+      CTF::Tensor<> *value;
   };
 
   // TODO: maybe use iterator instead
@@ -73,55 +76,30 @@ namespace cc4s {
 
   class Argument {
     public:
-      Argument(std::string const &name_): name(name_) { }
-      std::string getName() const { return name; }
-      virtual bool isOutput() const = 0;
-      virtual Data const *getData() const = 0;
-    std::string name;
-  };
-
-  class InputArgument: public Argument {
-    public:
-      InputArgument(InputArgument const &i): Argument(i.name), data(i.data) {
+      Argument(InputArgument const &a): name(a.name), data(a.data) {
       }
-      InputArgument(
+      Argument(
         std::string const &name, Data const *data_
-      ): Argument(name), data(data_) { }
-      virtual bool isOutput() const { return false; }
-      virtual Data const *getData() const { return data; }
-    Data const *data;
+      ): name(name_), data(data_) { }
+      std::string getName() const { return name; }
+      Data *getData() const { return data; }
+    protected:
+      std::string name;
+      Data *data;
   };
-
-  class OutputArgument: public Argument {
-    public:
-      OutputArgument(OutputArgument const &o): Argument(o.name), data(o.data) {
-      }
-      OutputArgument(
-        std::string const &name, Data *data_
-      ): Argument(name), data(data_) { }
-      virtual bool isOutput() const { return true; }
-      virtual Data const *getData() const { return data; }
-      virtual Data *getData() { return data; }
-    Data *data;
-  };
-
 
   class Algorithm {
     public:
       Algorithm(std::vector<Argument const *> const &argumentList);
       virtual ~Algorithm();
-  //    virtual std::vector<std::string> getDefaultArgumentOrder() = 0;
-  //    virtual Data const *getDefaultInputData(std::string const &name) = 0;
-  //    virtual Data *getOutputData(std::string const &name) = 0;
 
       Data *getArgument(std::string const &name);
       std::string getTextArgument(std::string const &name);
       int64_t getIntegerArgument(std::string const &name);
       double getRealArgument(std::string const &name);
       CTF::Tensor<> const *getTensorArgument(std::string const &name);
-
-    std::map<std::string, Data const *> inputs;
-    std::map<std::string, Data *> outputs;
+    protected:
+      std::map<std::string, Data *> arguments;
   };
 }
 

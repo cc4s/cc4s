@@ -10,14 +10,7 @@ using namespace cc4s;
 Algorithm::Algorithm(std::vector<Argument const *> const &arguments) {
   for (auto arg(arguments.begin()); arg != arguments.end(); ++arg) {
     Argument const *argument = *arg;
-    if (argument->isOutput()) {
-      outputs[argument->getName()] =
-        dynamic_cast<OutputArgument *>(
-          const_cast<Argument *>(argument)
-        )->getData();
-    } else {
-      inputs[argument->getName()] = argument->getData();
-    }
+    arguments[argument->getName()] = argument->getData();
   }
 }
 
@@ -71,14 +64,18 @@ double Algorithm::getRealArgument(std::string const &name) {
   return realData->value;
 }
 
-CTF::Tensor<> const *Algorithm::getTensorArgument(std::string const &name) {
-  Data const *data = getArgument(name);
-  TensorData const *tensorData = dynamic_cast<TensorData const *>(data);
+TensorData *Algorithm::getTensorDataArgument(std::string const &name) {
+  Data *data = getArgument(name);
+  TensorData *tensorData = dynamic_cast<TensorData *>(data);
   if (tensorData == nullptr) {
     std::stringstream sstream;
     sstream << "Incompatible tpye for argument: " << name << ". "
       << "Excpected Tensor, found " << data->getTypeName() << ".";
     throw new Exception(sstream.str());
   }
-  return &tensorData->value;
+  return data;
+}
+
+CTF::Tensor<> *Algorithm::getTensorArgument(std::string const &name) {
+  return getTensorDataArgument(name)->value;
 }

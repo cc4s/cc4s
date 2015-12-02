@@ -27,6 +27,9 @@ Cc4s::~Cc4s() {
 void Cc4s::run() {
   printBanner();
 
+  // experimental:
+  mp2Algorithm();
+
   // Read from disk
 //  TextFtodReader textFtodReader;
   BinaryFtodReader binaryFtodReader(options->stridedIo);
@@ -43,16 +46,16 @@ void Cc4s::run() {
     // experimental:
     std::vector<Argument const *> arguments;
     TensorData chiRData("chiR", *chiReal->gpq);
-    InputArgument chiR("chiR", &chiRData);
+    Argument chiR("chiR", &chiRData);
     arguments.push_back(&chiR);
     TensorData chiIData("chiI", *chiImag->gpq);
-    InputArgument chiI("chiI", &chiIData);
+    Argument chiI("chiI", &chiIData);
     arguments.push_back(&chiI);
     IntegerData rankData("rank", options->rank);
-    InputArgument rank("rank", &rankData);
+    Argument rank("rank", &rankData);
     arguments.push_back(&rank);
     RealData epsilonData("epsilon", options->accuracy);
-    InputArgument epsilon("epsilon", &epsilonData);
+    Argument epsilon("epsilon", &epsilonData);
     arguments.push_back(&epsilon);
   //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
   //  FtodRankDecomposition ftodRankDecomposition(arguments);
@@ -100,6 +103,56 @@ void Cc4s::run() {
     LOG(0) << "e=" << e << std::endl;
   }
   printStatistics();
+}
+
+void Cc4s::mp2Algorithm() {
+  // this should at some point be generated from input files
+  // see test/mp2.cc4s for how it could look like
+  std::vector<Argument const *> arguments;
+
+  // 1st algoirthm: read file
+  StringData fileData("file", "FTODDUMP");
+  Argument file("file", &fileData);
+  arguments.push_back(&file);
+
+  TensorData aiCoulombVertexRealData("aiCoulombVertexReal");
+  Argument aicoulombVertexReal("aiCoulombVertexReal", &aiCoulombVertexRealData);
+  arguments.push_back(&aicoulombVertexReal);
+
+  TensorData aiCoulombVertexImagData("aiCoulombVertexImag");
+  Argument aicoulombVertexImag("aiCoulombVertexImag", &aiCoulombVertexImagData);
+  arguments.push_back(&aicoulombVertexReal);
+
+  TensorData epsData("eps");
+  Argument eps("eps", &epsData);
+  arguments.push_back(&eps);
+
+  ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
+  // immediate execution: (no planing for now)
+  particleHoleCoulombVertexReader.run();
+  arguments.clear();
+
+  // 2nd algorithm: calculate coulomb
+  arguments.push_back(&aicoulombVertexReal);
+  arguments.push_back(&aicoulombVertexImag);
+  TensorData vabijData("vabij");
+  Argument vabij("vabij", &vabijData);
+  arguments.push_back(&vabij);
+
+  ParticleHoleCoulomb particleHoleCoulomb(arguments);
+  particleHoleCoulomb.run();
+  arguments.clear();
+
+  // 3rd algorithm: calculate mp2 energy
+  arguments.push_back(&vabij);
+  arguments.push_back(&eps);
+  RealData energyData("energy", 0.0);
+  Argument energy("energy", &energyData);
+  arguments.push_back(&energy);
+  Mp2Energy mp2Energy(arguments);
+  mp2Energy.run();
+
+  LOG(0) << "e=" << energyData.getValue() << std::endl;
 }
 
 void Cc4s::printBanner() {
@@ -322,7 +375,7 @@ void Cc4s::iterateRccd() {
 void Cc4s::iterateRccsd() {
   {
     int syms[] = {NS, NS, NS, NS};
-    std::cout << "Allocating stuff:" << std::endl;
+    LOG(0) << "Allocating stuff:" << std::endl;
     // Define Tensors
     //Allocate Tensors for T1 amplitude equations
     Tensor<> Rai = Tensor<>(T->ai);
@@ -332,23 +385,23 @@ void Cc4s::iterateRccsd() {
     Tensor<> Fba = Tensor<>(V->ab);
     Tensor<> Fji = Tensor<>(V->ij);
     Tensor<> Fai = Tensor<>(V->ai);
-    std::cout << "Allocating stuff 2:" << std::endl;
+    LOG(0) << "Allocating stuff 2:" << std::endl;
     //intermediates
-    std::cout << "Allocating stuff 2a:" << std::endl;
+    LOG(0) << "Allocating stuff 2a:" << std::endl;
     Tensor<> Dai = Tensor<>(T->ai);
     Tensor<> Lac = Tensor<>(V->ab);
     Tensor<> Kac = Tensor<>(V->ab);
     Tensor<> Lki = Tensor<>(V->ij);
     Tensor<> Kki = Tensor<>(V->ij);
     Tensor<> Kck = Tensor<>(T->ai);
-    std::cout << "Allocating stuff 2b:" << std::endl;
+    LOG(0) << "Allocating stuff 2b:" << std::endl;
     Tensor<> Cklij = Tensor<>(V->ijkl);
     Tensor<> Cabcd = Tensor<>(V->abcd);
     Tensor<> Cakic = Tensor<>(V->aijb);
     Tensor<> Cakci = Tensor<>(V->aibj);
     //Tensor<> Chi(4, V->abij->lens, syms, *world, "Cabij");
     //Chi = new Amplitudes(V, world, options);
-    std::cout << "Allocating stuff 3:" << std::endl;
+    LOG(0) << "Allocating stuff 3:" << std::endl;
 
 
 //********************************************************************************
@@ -364,7 +417,7 @@ void Cc4s::iterateRccsd() {
     Kac["ac"] -= 2.0 * (*V)["klcd"] * (*T)["ak"] * (*T)["dl"];
     Kac["ac"] += (*V)["kldc"] * (*T)["ak"] * (*T)["dl"];
 
-    std::cout << "Building Lac:" << std::endl;
+    LOG(0) << "Building Lac:" << std::endl;
 //Build Lac
     Lac["ac"] = Kac["ac"];
     Lac["ac"] -= Fai["ck"] * (*T)["ak"];
@@ -372,7 +425,7 @@ void Cc4s::iterateRccsd() {
     Lac["ac"] -= (*V)["akdc"] * (*T)["dk"];
 
 
-    std::cout << "Building Kki:" << std::endl;
+    LOG(0) << "Building Kki:" << std::endl;
 //Build Kki
     Kki["ki"] = Fji["ki"];
     Kki["ki"] += 2.0 * (*V)["klcd"] * (*T)["cdil"];
@@ -380,14 +433,14 @@ void Cc4s::iterateRccsd() {
     Kki["ki"] += 2.0 * (*V)["klcd"] * (*T)["ci"] * (*T)["dl"];
     Kki["ki"] -= (*V)["kldc"] * (*T)["ci"] * (*T)["dl"];
 
-    std::cout << "Building Lki:" << std::endl;
+    LOG(0) << "Building Lki:" << std::endl;
 //Build Lki
     Lki["ki"] = Kki["ki"];
     Lki["ki"] += Fai["ck"] * (*T)["ci"];
     Lki["ki"] += 2.0 * (*V)["lkci"] * (*T)["cl"];
     Lki["ki"] -= (*V)["klci"] * (*T)["cl"];
 
-    std::cout << "Building Rabij:" << std::endl;
+    LOG(0) << "Building Rabij:" << std::endl;
 //  Contract L_ac with T2 Amplitudes
     Rabij["abij"] = Lac["ac"] * (*T)["cbij"];
 
@@ -404,7 +457,7 @@ void Cc4s::iterateRccsd() {
 
     Rabij["abij"] += (*V)["akic"] * (*T)["cj"] * (*T)["bk"];
 
-    std::cout << "Building Cakic:" << std::endl;
+    LOG(0) << "Building Cakic:" << std::endl;
 //Build C_akic
     Cakic["akic"] = (*V)["akic"];
     Cakic["akic"] -= (*V)["klci"] * (*T)["al"];
@@ -625,7 +678,6 @@ void Cc4s::iterateCcsd() {
 World *Cc4s::world;
 Options *Cc4s::options;
 Chi *Cc4s::chiReal, *Cc4s::chiImag;
-ChiAi *Cc4s::chiAiReal, *Cc4s::chiAiImag;
 CoulombIntegrals *Cc4s::V;
 Amplitudes *Cc4s::T;
 

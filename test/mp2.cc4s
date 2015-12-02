@@ -1,0 +1,9 @@
+% argument names may be omitted if the symbol has the same name:
+particleHoleCoulombVertexReader file="FTODDUMP"
+  aiCoulombVertexReal aiCoulombVertexImag eps.
+particleHoleCoulomb aiCoulombVertexReal aiCoulombVertexImag vabij.
+mp2Energy vabij eps energy=e.
+
+%amplitudesWriter tabij file="AMPLITUDES".
+
+? e
