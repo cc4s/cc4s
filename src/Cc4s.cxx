@@ -5,6 +5,7 @@
 #include <ParticleHoleCoulombVertexReader.hpp>
 #include <ParticleHoleCoulomb.hpp>
 #include <CoulombMp2.hpp>
+#include <CoulombRpa.hpp>
 #include <TextFtodReader.hpp>
 #include <BinaryFtodReader.hpp>
 #include <FtodRankDecomposition.hpp>
@@ -32,6 +33,7 @@ void Cc4s::run() {
 
   // experimental:
   mp2Algorithm();
+  rpaAlgorithm();
 
   // Read from disk
 //  TextFtodReader textFtodReader;
@@ -178,6 +180,82 @@ void Cc4s::mp2Algorithm() {
   LOG(0) << "e=" << energyData.getValue() << std::endl;
 */
 }
+
+void Cc4s::rpaAlgorithm() {
+  // this should at some point be generated from input files
+  // see test/mp2.cc4s for how it could look like
+  std::vector<Argument const *> arguments;
+
+  // 1st algoirthm: read file
+  TextData fileData("file", "FTODDUMP");
+  Argument file("file", &fileData);
+  arguments.push_back(&file);
+
+  TensorData<> aiCoulombVertexRealData("aiCoulombVertexReal");
+  Argument aicoulombVertexReal("aiCoulombVertexReal", &aiCoulombVertexRealData);
+  arguments.push_back(&aicoulombVertexReal);
+
+  TensorData<> aiCoulombVertexImagData("aiCoulombVertexImag");
+  Argument aicoulombVertexImag("aiCoulombVertexImag", &aiCoulombVertexImagData);
+  arguments.push_back(&aicoulombVertexImag);
+
+  TensorData<> iEpsData("iEps");
+  Argument iEps("iEps", &iEpsData);
+  arguments.push_back(&iEps);
+
+  TensorData<> aEpsData("aEps");
+  Argument aEps("aEps", &aEpsData);
+  arguments.push_back(&aEps);
+
+  TensorData<> vabijData("vabij");
+  Argument vabij("vabij", &vabijData);
+  arguments.push_back(&vabij);
+
+  ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
+  // immediate execution: (no planing for now)
+  particleHoleCoulombVertexReader.run();
+  LOG(4) << "Reader done."<< std::endl;
+
+  ParticleHoleCoulomb ParticleHoleCoulomb(arguments);
+  ParticleHoleCoulomb.run();
+  LOG(4) << "Coulomb done"<< std::endl;
+
+  TensorData<> tabijData("tabij");
+  Argument tabij("tabij", &tabijData);
+  arguments.push_back(&tabij);
+
+  CoulombRpa CoulombRpa(arguments);
+  CoulombRpa.run();
+  LOG(4) << "CoulombRpa done"<< std::endl;
+
+  arguments.clear();
+
+/*
+  // 2nd algorithm: calculate coulomb
+  arguments.push_back(&aicoulombVertexReal);
+  arguments.push_back(&aicoulombVertexImag);
+  TensorData<> vabijData("vabij");
+  Argument vabij("vabij", &vabijData);
+  arguments.push_back(&vabij);
+
+  ParticleHoleCoulomb particleHoleCoulomb(arguments);
+  particleHoleCoulomb.run();
+  arguments.clear();
+
+  // 3rd algorithm: calculate mp2 energy
+  arguments.push_back(&vabij);
+  arguments.push_back(&eps);
+  RealData energyData("energy", 0.0);
+  Argument energy("energy", &energyData);
+  arguments.push_back(&energy);
+  Mp2Energy mp2Energy(arguments);
+  mp2Energy.run();
+
+  LOG(0) << "e=" << energyData.getValue() << std::endl;
+*/
+}
+
+
 
 void Cc4s::printBanner() {
   LOG(0) << "====== Coupled Cluster for Solids ======" << std::endl;
