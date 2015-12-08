@@ -43,43 +43,42 @@ void ParticleHoleCoulombVertexReader::run() {
   nv = header.nv;
   np = no + nv;
 
-  TensorData<> *iEpsData(getTensorDataArgument("iEps"));
-  TensorData<> *aEpsData(getTensorDataArgument("aEps"));
-
   // allocate output tensors
-  TensorData<> *aiCoulombVertexRealData(
-    getTensorDataArgument("aiCoulombVertexReal")
-  );
-  TensorData<> *aiCoulombVertexImagData(
-    getTensorDataArgument("aiCoulombVertexImag")
-  );
   int vertexLens[] = { nG, nv, no };
   int vertexSyms[] = { NS, NS, NS };
-  aiCoulombVertexRealData->value = new Tensor<>(
-    3, vertexLens, vertexSyms, *Cc4s::world, "SvRgai"
+  Tensor<> *iEps(new Vector<>(no, *Cc4s::world, "iEps"));
+  Tensor<> *aEps(new Vector<>(nv, *Cc4s::world, "aEps"));
+  Tensor<> *aiCoulombVertexReal(
+    new Tensor<>(
+      3, vertexLens, vertexSyms, *Cc4s::world, "SvRgai"
+    )
   );
-  aiCoulombVertexImagData->value = new Tensor<>(
-    3, vertexLens, vertexSyms, *Cc4s::world, "SvIgai"
+  Tensor<> *aiCoulombVertexImag(
+    new Tensor<>(
+      3, vertexLens, vertexSyms, *Cc4s::world, "SvIgai"
+    )
   );
-  iEpsData->value = new Vector<>(no, *Cc4s::world, "iEps");
-  aEpsData->value = new Vector<>(nv, *Cc4s::world, "aEps");
-  // FIXME: continue here ...
+  // enter the allocated data (and by that type the output data to tensors)
+  allocatedTensorArgument("iEps", iEps);
+  allocatedTensorArgument("aEps", aEps);
+  allocatedTensorArgument("aiCoulombVertexReal", aiCoulombVertexReal);
+  allocatedTensorArgument("aiCoulombVertexImag", aiCoulombVertexImag);
 
   Chunk chunk;
   while (file.read(reinterpret_cast<char *>(&chunk), sizeof(chunk))) {
     if (strncmp(chunk.magic, Chunk::REALSIA_MAGIC, sizeof(chunk.magic)) == 0) {
       LOG(4) << "Found ia chunk. ";
       //readChiChunk(file, Cc4s::chiIAReal);
-      readChiAiChunkBlocked(file, aiCoulombVertexRealData->value);
+      readChiAiChunkBlocked(file, aiCoulombVertexReal);
     } else
     if (strncmp(chunk.magic, Chunk::IMAGSIA_MAGIC, sizeof(chunk.magic)) == 0) {
       LOG(4) << "Found ia chunk. ";
       //readChiChunk(file, Cc4s::chiIAImag);
-      readChiAiChunkBlocked(file, aiCoulombVertexImagData->value);
+      readChiAiChunkBlocked(file, aiCoulombVertexImag);
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
       LOG(4) << "Found eps chunk.";
-      readEpsChunk(file, iEpsData->value, aEpsData->value);
+      readEpsChunk(file, iEps, aEps);
     }
   }
   file.close();

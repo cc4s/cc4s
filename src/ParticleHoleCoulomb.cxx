@@ -20,25 +20,24 @@ ParticleHoleCoulomb::~ParticleHoleCoulomb() {
  * \brief Calculates Coulomb integrals Vabij from aiCoulombVertexReal/Imag
  */
 void ParticleHoleCoulomb::run() {
-  TensorData<> *aiCoulombVertexRealData(
-    getTensorDataArgument("aiCoulombVertexReal")
+  Tensor<> *aiCoulombVertexReal(
+    getTensorArgument("aiCoulombVertexReal")
   );
-  TensorData<> *aiCoulombVertexImagData(
-    getTensorDataArgument("aiCoulombVertexImag")
+  Tensor<> *aiCoulombVertexImag(
+    getTensorArgument("aiCoulombVertexImag")
   );
-  TensorData<> *vabijData(getTensorDataArgument("vabij"));
   // allocate
-  int nv(aiCoulombVertexRealData->value->lens[1]);
-  int no(aiCoulombVertexRealData->value->lens[2]);
+  int nv(aiCoulombVertexReal->lens[1]);
+  int no(aiCoulombVertexReal->lens[2]);
   int lens[] = { nv, nv, no, no };
   int syms[] = { NS, NS, NS, NS };
-  vabijData->value = new Tensor<>(4, lens, syms, *Cc4s::world, "Cabij");
- 
-  (*vabijData->value)["abij"] =  (*aiCoulombVertexRealData->value)["gai"]*
-                                 (*aiCoulombVertexRealData->value)["gbj"];
+  Tensor<> *vabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Cabij"));
+  allocatedTensorArgument("vabij", vabij);
+  (*vabij)["abij"] =  (*aiCoulombVertexReal)["gai"]*
+                                 (*aiCoulombVertexReal)["gbj"];
 
-  (*vabijData->value)["abij"] += (*aiCoulombVertexImagData->value)["gai"]*
-                                 (*aiCoulombVertexImagData->value)["gbj"];
+  (*vabij)["abij"] += (*aiCoulombVertexImag)["gai"]*
+                                 (*aiCoulombVertexImag)["gbj"];
 // read from tensors: aiCoulombVertexImagData->value
 // allocate and write to tensor vabijData->value
 //  (*vabijData->value)["i.."] = (*

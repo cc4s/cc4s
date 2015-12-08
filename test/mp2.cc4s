@@ -1,9 +1,15 @@
-% argument names may be omitted if the symbol has the same name:
-particleHoleCoulombVertexReader file="FTODDUMP"
-  aiCoulombVertexReal aiCoulombVertexImag eps.
-particleHoleCoulomb aiCoulombVertexReal aiCoulombVertexImag vabij.
-mp2Energy vabij eps energy=e.
+particleHoleCoulombVertexFromFile [
+  (file "FTODDUMP")
+] [
+  particleHoleCoulombVertex
+  particleEigenEnergies
+  holeEigenEnergies
+].
+mp2EnergyFromParticleHoleCoulombVertex [
+  particleHoleCoulombVertex
+  particleEigenEnergies
+  holeEigenEnergies
+] [
+  mp2Energy
+].
 
-%amplitudesWriter tabij file="AMPLITUDES".
-
-? e

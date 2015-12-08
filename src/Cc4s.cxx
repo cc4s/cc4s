@@ -45,20 +45,21 @@ void Cc4s::run() {
   Cc4s::V->fetch();
 
   if (options->rank > 0) {
+
 //    RalsFtodRankDecomposition::test(world);
     // experimental:
     std::vector<Argument const *> arguments;
-    TensorData<> chiRData("chiR", *chiReal->gpq);
-    Argument chiR("chiR", &chiRData);
+    new Data("chiR");
+    Argument chiR("chiR", "chiR");
     arguments.push_back(&chiR);
-    TensorData<> chiIData("chiI", *chiImag->gpq);
-    Argument chiI("chiI", &chiIData);
+    new Data("chiI");
+    Argument chiI("chiR", "chiR");
     arguments.push_back(&chiI);
-    IntegerData rankData("rank", options->rank);
-    Argument rank("rank", &rankData);
+    new IntegerData("rank", options->rank);
+    Argument rank("rank", "rank");
     arguments.push_back(&rank);
-    RealData epsilonData("epsilon", options->accuracy);
-    Argument epsilon("epsilon", &epsilonData);
+    new RealData("epsilon", options->accuracy);
+    Argument epsilon("epsilon", "epsilon");
     arguments.push_back(&epsilon);
   //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
   //  FtodRankDecomposition ftodRankDecomposition(arguments);
@@ -113,31 +114,34 @@ void Cc4s::mp2Algorithm() {
   // see test/mp2.cc4s for how it could look like
   std::vector<Argument const *> arguments;
 
-  // 1st algoirthm: read file
-  TextData fileData("file", "FTODDUMP");
-  Argument file("file", &fileData);
+  // NOTE: same arguments are given to all algorithms
+  new TextData("file", "FTODDUMP");
+  Argument file("file");
   arguments.push_back(&file);
 
-  TensorData<> aiCoulombVertexRealData("aiCoulombVertexReal");
-  Argument aicoulombVertexReal("aiCoulombVertexReal", &aiCoulombVertexRealData);
+  new Data("aiCoulombVertexReal");
+  Argument aicoulombVertexReal("aiCoulombVertexReal");
   arguments.push_back(&aicoulombVertexReal);
 
-  TensorData<> aiCoulombVertexImagData("aiCoulombVertexImag");
-  Argument aicoulombVertexImag("aiCoulombVertexImag", &aiCoulombVertexImagData);
+  new Data("aiCoulombVertexImag");
+  Argument aicoulombVertexImag("aiCoulombVertexImag");
   arguments.push_back(&aicoulombVertexImag);
 
-  TensorData<> iEpsData("iEps");
-  Argument iEps("iEps", &iEpsData);
+  new Data("iEps");
+  Argument iEps("iEps");
   arguments.push_back(&iEps);
 
-  TensorData<> aEpsData("aEps");
-  Argument aEps("aEps", &aEpsData);
+  new Data("aEps");
+  Argument aEps("aEps");
   arguments.push_back(&aEps);
 
-  TensorData<> vabijData("vabij");
-  Argument vabij("vabij", &vabijData);
+  new Data("vabij");
+  Argument vabij("vabij");
   arguments.push_back(&vabij);
 
+  new Data("mp2Energy");
+  Argument mp2Energy("mp2Energy");
+  arguments.push_back(&mp2Energy);
 
   ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
   // immediate execution: (no planing for now)
@@ -147,36 +151,12 @@ void Cc4s::mp2Algorithm() {
   ParticleHoleCoulomb ParticleHoleCoulomb(arguments);
   ParticleHoleCoulomb.run();
   LOG(4) << "Coulomb done"<< std::endl;
-
+  
   CoulombMp2 CoulombMp2(arguments);
   CoulombMp2.run();
   LOG(4) << "CoulombMp2 done"<< std::endl;
 
   arguments.clear();
-
-/*
-  // 2nd algorithm: calculate coulomb
-  arguments.push_back(&aicoulombVertexReal);
-  arguments.push_back(&aicoulombVertexImag);
-  TensorData<> vabijData("vabij");
-  Argument vabij("vabij", &vabijData);
-  arguments.push_back(&vabij);
-
-  ParticleHoleCoulomb particleHoleCoulomb(arguments);
-  particleHoleCoulomb.run();
-  arguments.clear();
-
-  // 3rd algorithm: calculate mp2 energy
-  arguments.push_back(&vabij);
-  arguments.push_back(&eps);
-  RealData energyData("energy", 0.0);
-  Argument energy("energy", &energyData);
-  arguments.push_back(&energy);
-  Mp2Energy mp2Energy(arguments);
-  mp2Energy.run();
-
-  LOG(0) << "e=" << energyData.getValue() << std::endl;
-*/
 }
 
 void Cc4s::printBanner() {
