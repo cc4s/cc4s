@@ -24,6 +24,7 @@ namespace cc4s {
 
   protected:
       void mp2Algorithm();
+      void rpaAlgorithm();
 
       void iterateMp2();
       void iterateCcsd();

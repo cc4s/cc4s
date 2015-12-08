@@ -31,7 +31,8 @@ obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
 obj/ParticleHoleCoulomb.o \
 obj/ParticleHoleCoulombVertexReader.o \
-obj/CoulombMp2.o
+obj/CoulombMp2.o \
+obj/CoulombRpa.o
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 

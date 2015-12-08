@@ -5,6 +5,7 @@
 #include <ParticleHoleCoulombVertexReader.hpp>
 #include <ParticleHoleCoulomb.hpp>
 #include <CoulombMp2.hpp>
+#include <CoulombRpa.hpp>
 #include <TextFtodReader.hpp>
 #include <BinaryFtodReader.hpp>
 #include <FtodRankDecomposition.hpp>
@@ -31,7 +32,8 @@ void Cc4s::run() {
   printBanner();
 
   // experimental:
-  mp2Algorithm();
+//  mp2Algorithm();
+  rpaAlgorithm();
 
   // Read from disk
 //  TextFtodReader textFtodReader;
@@ -158,6 +160,60 @@ void Cc4s::mp2Algorithm() {
 
   arguments.clear();
 }
+
+void Cc4s::rpaAlgorithm() {
+  // this should at some point be generated from input files
+  // see test/mp2.cc4s for how it could look like
+  std::vector<Argument const *> arguments;
+
+  // NOTE: same arguments are given to all algorithms
+  new TextData("file", "FTODDUMP");
+  Argument file("file");
+  arguments.push_back(&file);
+
+  new Data("aiCoulombVertexReal");
+  Argument aicoulombVertexReal("aiCoulombVertexReal");
+  arguments.push_back(&aicoulombVertexReal);
+
+  new Data("aiCoulombVertexImag");
+  Argument aicoulombVertexImag("aiCoulombVertexImag");
+  arguments.push_back(&aicoulombVertexImag);
+
+  new Data("iEps");
+  Argument iEps("iEps");
+  arguments.push_back(&iEps);
+
+  new Data("aEps");
+  Argument aEps("aEps");
+  arguments.push_back(&aEps);
+
+  new Data("vabij");
+  Argument vabij("vabij");
+  arguments.push_back(&vabij);
+
+  new Data("tabij");
+  Argument tabij("tabij");
+  arguments.push_back(&tabij);
+
+  new Data("rpaEnergy");
+  Argument rpaEnergy("rpaEnergy");
+  arguments.push_back(&rpaEnergy);
+
+  ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
+  // immediate execution: (no planing for now)
+  particleHoleCoulombVertexReader.run();
+  LOG(4) << "Reader done."<< std::endl;
+
+  ParticleHoleCoulomb ParticleHoleCoulomb(arguments);
+  ParticleHoleCoulomb.run();
+  LOG(4) << "Coulomb done"<< std::endl;
+
+  CoulombRpa CoulombRpa(arguments);
+  CoulombRpa.run();
+  LOG(4) << "CoulombRpa done"<< std::endl;
+}
+
+
 
 void Cc4s::printBanner() {
   LOG(0) << "====== Coupled Cluster for Solids ======" << std::endl;
