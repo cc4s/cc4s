@@ -7,20 +7,22 @@
 
 namespace cc4s {
   class CoulombRpa: public Algorithm {
-    public:
-      CoulombRpa(
-        std::vector<Argument const *> const &argumentList
-      );
-      virtual ~CoulombRpa();
-      virtual void run();
+  public:
+    CoulombRpa(
+      std::vector<Argument const *> const &argumentList
+    );
+    virtual ~CoulombRpa();
+    virtual void run();
 
- 
-    protected:
-      void iterateCoulombRpa();
+    static Algorithm *create(std::vector<Argument const*> const &argumentList) {
+      return new CoulombRpa(argumentList);
+    }
 
-     // static properties, accessible from everywhere
-      static Options *options;
- 
+  protected:
+    void iterateCoulombRpa();
+
+   // static properties, accessible from everywhere
+    static Options *options;
   };
 }
 

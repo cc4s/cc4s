@@ -23,6 +23,12 @@ using namespace cc4s;
 using namespace CTF;
 
 Cc4s::Cc4s(): flopCounter() {
+  Algorithm::add(
+    "ParticleHoleCoulombVertexReader", ParticleHoleCoulombVertexReader::create
+  );
+  Algorithm::add("ParticleHoleCoulomb", ParticleHoleCoulomb::create);
+  Algorithm::add("CoulombMp2", CoulombMp2::create);
+  Algorithm::add("CoulombRpa", CoulombRpa::create);
 }
 
 Cc4s::~Cc4s() {

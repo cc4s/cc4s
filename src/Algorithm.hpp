@@ -42,9 +42,20 @@ namespace cc4s {
       );
       void setRealArgument(std::string const &argumentName, double const value);
 
+      static void add(
+        std::string const &name,
+        std::function<Algorithm *(std::vector<Argument const *> const &)>
+          const &createFunction
+      );
+
     protected:
       Data *getArgumentData(std::string const &argumentName);
       std::map<std::string, std::string> arguments;
+
+      static std::map<
+        std::string,
+        std::function<Algorithm *(std::vector<Argument const *> const &)>
+      > algorithmMap;
   };
 }
 

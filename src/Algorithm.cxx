@@ -114,3 +114,21 @@ void Algorithm::setRealArgument(std::string const &name, double const value) {
   new RealData(mentionedData->getName(), value);  
 }
 
+void Algorithm::add(
+  std::string const &name,
+  std::function<Algorithm *(std::vector<Argument const *> const &)>
+    const &createFunction
+) {
+  if (algorithmMap[name] != nullptr) {
+    std::stringstream sStream;
+    sStream << "Algorithm already existing: " << name;
+    throw new Exception(sStream.str());
+  }
+  algorithmMap[name] = createFunction;
+}
+
+std::map<
+  std::string,
+  std::function<Algorithm *(std::vector<Argument const *> const &)>
+> Algorithm::algorithmMap;
+

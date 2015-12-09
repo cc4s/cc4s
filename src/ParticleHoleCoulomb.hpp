@@ -6,12 +6,16 @@
 
 namespace cc4s {
   class ParticleHoleCoulomb: public Algorithm {
-    public:
-      ParticleHoleCoulomb(
-        std::vector<Argument const *> const &argumentList
-      );
-      virtual ~ParticleHoleCoulomb();
-      virtual void run();
+  public:
+    ParticleHoleCoulomb(
+      std::vector<Argument const *> const &argumentList
+    );
+    virtual ~ParticleHoleCoulomb();
+    virtual void run();
+
+    static Algorithm *create(std::vector<Argument const*> const &argumentList) {
+      return new ParticleHoleCoulomb(argumentList);
+    }
   };
 }
 
