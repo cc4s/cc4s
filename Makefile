@@ -14,6 +14,9 @@ LIBS=-lblas -lgfortran
 # primary target
 cc4s: bin/${TARGET}
 
+doc:
+	doxygen
+
 OBJECTS= \
 obj/Options.o \
 obj/util/Log.o \
