@@ -23,6 +23,7 @@ using namespace cc4s;
 using namespace CTF;
 
 Cc4s::Cc4s(): flopCounter() {
+  // register all algorithms for language access
   Algorithm::add(
     "ParticleHoleCoulombVertexReader", ParticleHoleCoulombVertexReader::create
   );
