@@ -19,5 +19,5 @@ namespace cc4s {
   };
 }
 
-
 #endif
+

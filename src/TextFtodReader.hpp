@@ -6,9 +6,10 @@
 
 namespace cc4s {
   class TextFtodReader: public FtodReader {
-    public:
-      virtual void read();
+  public:
+    virtual void read();
   };
 }
 
 #endif
+

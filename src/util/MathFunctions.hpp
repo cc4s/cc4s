@@ -5,13 +5,6 @@
 #include <cmath>
 #include <ctf.hpp>
 
-/**
- * \brief Common inline math functions.
- * As opposed to the variants in the std namesapce, these functions
- * are type closed, i.e. return the same type as the arguments,
- * which is required by Tensor::sum for univariate functions and
- * by Tensor::contract for bivariate functions.
- */
 namespace cc4s {
   // univariate functions
   template <typename F=double>

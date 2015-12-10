@@ -115,8 +115,6 @@ namespace util {
 
   /**
   * \brief Finds complex roots of a polynomial of arbitrary ordrer.
-  * The algorithm follows the suggestions of Deiters and Macias-Salinas
-  * http://pubs.acs.org/doi/pdf/10.1021/ie4038664.
   */
   class ComplexPolynomialRootFinder {
   public:
@@ -194,3 +192,4 @@ namespace util {
 }
 
 #endif
+

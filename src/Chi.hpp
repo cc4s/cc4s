@@ -7,19 +7,19 @@
 
 namespace cc4s {
   class Chi: public PerturbationTensor {
-    public:
-      Chi(int nG, int no, int nv);
-      virtual ~Chi();
-      virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
-      CTF::Tensor<> getSlice(int pStart, int pEnd, int qStart, int qEnd);
+  public:
+    Chi(int nG, int no, int nv);
+    virtual ~Chi();
+    virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
+    CTF::Tensor<> getSlice(int pStart, int pEnd, int qStart, int qEnd);
 
-      int nG, no, nv;
-      CTF::Tensor<> *gpq;
+    int nG, no, nv;
+    CTF::Tensor<> *gpq;
   };
   class ChiAi: protected Chi {
-    public:
-      ChiAi(int nG, int no, int nv);
-      virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
+  public:
+    ChiAi(int nG, int no, int nv);
+    virtual CTF::Idx_Tensor get(char const *stdIndexMap, char const *indexMap);
   };
 
 }

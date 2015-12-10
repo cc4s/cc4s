@@ -6,7 +6,6 @@
 #include <util/Complex.hpp>
 #include <ctf.hpp>
 
-
 namespace cc4s {
   /**
    * \brief This algorithm provides a tensor rank decomposition of the
