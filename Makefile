@@ -27,7 +27,7 @@ obj/util/IterativePseudoInverse.o \
 obj/PerturbationTensor.o \
 obj/Data.o \
 obj/Algorithm.o \
-obj/Interpreter.o \
+obj/Parser.o \
 obj/FtodRankDecomposition.o \
 obj/RalsFtodRankDecomposition.o \
 obj/CrossEntropyFtodRankDecomposition.o \

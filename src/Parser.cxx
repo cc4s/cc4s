@@ -1,4 +1,4 @@
-#include <Interpreter.hpp>
+#include <Parser.hpp>
 
 #include <Algorithm.hpp>
 #include <util/Exception.hpp>
@@ -75,6 +75,8 @@ Argument Parser::parseArgument() {
 
 Argument Parser::parseImplicitlyNamedArgument() {
   std::string argumentName(parseSymbolName());
+  Data *data(Data::get(argumentName));
+  if (!data) new Data(argumentName);
   return Argument(argumentName, argumentName);
 }
 
@@ -93,7 +95,7 @@ Argument Parser::parseExplicitlyNamedArgument() {
 std::string Parser::parseData() {
   char character(stream.peek());
   if (isalpha(character)) {
-    return parseSymbolName();
+    return parseSymbol()->getName();
   } else if (isdigit(character)) {
     return parseNumber()->getName();
   } else if (character == '"') {
@@ -112,6 +114,12 @@ std::string Parser::parseSymbolName() {
     sStream.put(stream.get());
   }
   return sStream.str();
+}
+
+Data *Parser::parseSymbol() {
+  std::string symbolName(parseSymbolName());
+  Data *data(Data::get(symbolName));
+  return data ? data : new Data(symbolName);
 }
 
 TextData *Parser::parseText() {
@@ -156,12 +164,6 @@ RealData *Parser::parseReal(int64_t const sign, int64_t const integerPart){
     numerator += stream.get() - '0';
   }
   return new RealData(sign * (integerPart + double(numerator) / denominator));
-}
-
-Data *Parser::parseSymbol() {
-  std::string symbolName(parseSymbolName());
-  Data *symbol(Data::get(symbolName));
-  return symbol ? symbol : new Data(symbolName);
 }
 
 

@@ -35,10 +35,10 @@ namespace cc4s {
     Argument parseExplicitlyNamedArgument();
     std::string parseData();
     std::string parseSymbolName();
+    Data *parseSymbol();
     TextData *parseText();
     NumericData *parseNumber();
     RealData *parseReal(int64_t const sign, int64_t const integerPart);
-    Data *parseSymbol();
 
     void skipWhiteSpaceCharacters();
     void expectCharacter(char const character);

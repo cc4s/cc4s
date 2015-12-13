@@ -2,7 +2,7 @@
 
 #include <Cc4s.hpp>
 #include <Algorithm.hpp>
-#include <Interpreter.hpp>
+#include <Parser.hpp>
 #include <util/Log.hpp>
 #include <ParticleHoleCoulombVertexReader.hpp>
 #include <ParticleHoleCoulomb.hpp>
@@ -41,7 +41,8 @@ void Cc4s::run() {
   printBanner();
   Parser parser(options->file);
   std::vector<Algorithm *> algorithms(parser.parse());
-  LOG(0) << "Execution plan has " << algorithms.size() << " steps" << std::endl;
+  LOG(0) <<
+    "Execution plan has " << algorithms.size() << " step(s)" << std::endl;
   for (unsigned int i(0); i < algorithms.size(); ++i) {
     algorithms[i]->run();
   }

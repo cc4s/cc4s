@@ -58,10 +58,7 @@ namespace cc4s {
     /**
      * \brief Protected constructor for anonymous constant data.
      */
-    TypedData(std::string const &typeName_): Data("", typeName_) {
-      std::stringstream sStream;
-      sStream << "Constant" << nextId++;
-      name = sStream.str();
+    TypedData(std::string const &typeName_): Data(nextName(), typeName_) {
     }
     /**
      * \brief Protected constructor for named data.
@@ -69,6 +66,12 @@ namespace cc4s {
     TypedData(
       std::string const &name_, std::string const &typeName_
     ): Data(name_, typeName_) {
+    }
+
+    static std::string nextName() {
+      std::stringstream sStream;
+      sStream << "Constant" << nextId++;
+      return sStream.str();
     }
 
     /**
