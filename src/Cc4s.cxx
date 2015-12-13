@@ -25,7 +25,7 @@ using namespace cc4s;
 using namespace CTF;
 
 Cc4s::Cc4s(): flopCounter() {
-  // register all algorithms for language access
+  // register all algorithms for cc4s execution plan access
   Algorithm::add(
     "ParticleHoleCoulombVertexReader", ParticleHoleCoulombVertexReader::create
   );
@@ -39,8 +39,12 @@ Cc4s::~Cc4s() {
 
 void Cc4s::run() {
   printBanner();
-  Interpreter interpreter(options->file);
-  interpreter.execute();
+  Parser parser(options->file);
+  std::vector<Algorithm *> algorithms(parser.parse());
+  LOG(0) << "Execution plan has " << algorithms.size() << " steps" << std::endl;
+  for (unsigned int i(0); i < algorithms.size(); ++i) {
+    algorithms[i]->run();
+  }
   printStatistics();
 }
 

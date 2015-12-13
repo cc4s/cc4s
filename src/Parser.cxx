@@ -7,11 +7,11 @@
 
 using namespace cc4s;
 
-// TODO: create ParseException and LineNumberStream
+// TODO: create ParseException
 
-Interpreter::Interpreter(
+Parser::Parser(
   std::string const &fileName
-): stream(new std::ifstream(fileName)) {
+): stream(new std::ifstream(fileName), fileName) {
   std::ifstream *fileStream(dynamic_cast<std::ifstream *>(stream.getStream()));
   if (!fileStream->is_open()) {
     std::stringstream sStream;
@@ -20,18 +20,20 @@ Interpreter::Interpreter(
   }
 }
 
-Interpreter::~Interpreter() {
+Parser::~Parser() {
 }
 
-void Interpreter::execute() {
+std::vector<Algorithm *> Parser::parse() {
+  std::vector<Algorithm *> algorithms;
   skipWhiteSpaceCharacters();
   while (stream.peek() > 0) {
-    parseAlgorithm();
+    algorithms.push_back(parseAlgorithm());
     skipWhiteSpaceCharacters();
   }
+  return algorithms;
 }
 
-void Interpreter::parseAlgorithm() {
+Algorithm *Parser::parseAlgorithm() {
   // an algorithm starts with the name
   std::string algorithmName(parseSymbolName());
   std::function<Algorithm *(std::vector<Argument>)> createFunction(
@@ -50,14 +52,11 @@ void Interpreter::parseAlgorithm() {
   arguments.insert(
     arguments.end(), outputArguments.begin(), outputArguments.end()
   );
-  // create an instance of the algorithm
-  Algorithm *algorithm(createFunction(arguments));
-  // execute the algorithm
-  algorithm->run();
-  delete algorithm;
+  // create and return an instance of the algorithm
+  return createFunction(arguments);
 }
 
-std::vector<Argument> Interpreter::parseArguments() {
+std::vector<Argument> Parser::parseArguments() {
   std::vector<Argument> arguments;
   expectCharacter('[');
   skipWhiteSpaceCharacters();
@@ -69,29 +68,29 @@ std::vector<Argument> Interpreter::parseArguments() {
   return arguments;
 }
 
-Argument Interpreter::parseArgument() {
+Argument Parser::parseArgument() {
   if (stream.peek() == '(') return parseExplicitlyNamedArgument();
   else return parseImplicitlyNamedArgument();
 }
 
-Argument Interpreter::parseImplicitlyNamedArgument() {
+Argument Parser::parseImplicitlyNamedArgument() {
   std::string argumentName(parseSymbolName());
   return Argument(argumentName, argumentName);
 }
 
-Argument Interpreter::parseExplicitlyNamedArgument() {
+Argument Parser::parseExplicitlyNamedArgument() {
   // first character must be '('
   stream.get();
   skipWhiteSpaceCharacters();
   std::string argumentName(parseSymbolName());
   skipWhiteSpaceCharacters();
-  std::string dataName(parseSymbolName());
+  std::string dataName(parseData());
   skipWhiteSpaceCharacters();
   expectCharacter(')');
   return Argument(argumentName, dataName);
 }
 
-std::string Interpreter::parseData() {
+std::string Parser::parseData() {
   char character(stream.peek());
   if (isalpha(character)) {
     return parseSymbolName();
@@ -104,9 +103,9 @@ std::string Interpreter::parseData() {
   }
 }
 
-std::string Interpreter::parseSymbolName() {
+std::string Parser::parseSymbolName() {
   std::stringstream sStream;
-  // the first character is expected to be a alphabetic character
+  // the first character is expected to be an alphabetic character
   sStream.put(stream.get());
   char c;
   while (isalpha(c = stream.peek()) || isdigit(c)) {
@@ -115,7 +114,7 @@ std::string Interpreter::parseSymbolName() {
   return sStream.str();
 }
 
-TextData *Interpreter::parseText() {
+TextData *Parser::parseText() {
   std::stringstream sStream;
   // TODO: parse escape sequences
   // the first character is expected to be a double quote '"'
@@ -128,7 +127,7 @@ TextData *Interpreter::parseText() {
   return new TextData(sStream.str());
 }
 
-NumericData *Interpreter::parseNumber() {
+NumericData *Parser::parseNumber() {
   // the first character can be a sign
   int64_t sign(1);
   switch (stream.peek()) {
@@ -148,7 +147,7 @@ NumericData *Interpreter::parseNumber() {
   else return new IntegerData(sign * integer);
 }
 
-RealData *Interpreter::parseReal(int64_t const sign, int64_t const integerPart){
+RealData *Parser::parseReal(int64_t const sign, int64_t const integerPart){
   // the first character is expected to be the decimal point
   stream.get();
   int64_t numerator(0), denominator(1);
@@ -159,22 +158,26 @@ RealData *Interpreter::parseReal(int64_t const sign, int64_t const integerPart){
   return new RealData(sign * (integerPart + double(numerator) / denominator));
 }
 
-Data *Interpreter::parseSymbol() {
+Data *Parser::parseSymbol() {
   std::string symbolName(parseSymbolName());
   Data *symbol(Data::get(symbolName));
   return symbol ? symbol : new Data(symbolName);
 }
 
 
-void Interpreter::skipWhiteSpaceCharacters() {
+void Parser::skipWhiteSpaceCharacters() {
   while (isspace(stream.peek())) stream.get();
 }
 
-void Interpreter::expectCharacter(char const character) {
-  if (stream.get() != character) {
+void Parser::expectCharacter(char const expectedCharacter) {
+  char character(stream.get());
+  if (character != expectedCharacter) {
     std::stringstream sStream;
-    sStream << "Expected '" << character << "'";
-    throw new Exception(sStream.str());
+    sStream <<
+      "Expected '" << expectedCharacter << "', got '" << character << "'";
+    throw new DetailedException(
+      sStream.str(), stream.getSource(), stream.getLine(), stream.getColumn()
+    );
   }
 }
 
