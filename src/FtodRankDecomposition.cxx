@@ -108,7 +108,7 @@ public:
 
 
 FtodRankDecomposition::FtodRankDecomposition(
-  std::vector<Argument const *> const &argumentList
+  std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 

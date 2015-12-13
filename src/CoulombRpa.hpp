@@ -9,12 +9,12 @@ namespace cc4s {
   class CoulombRpa: public Algorithm {
   public:
     CoulombRpa(
-      std::vector<Argument const *> const &argumentList
+      std::vector<Argument> const &argumentList
     );
     virtual ~CoulombRpa();
     virtual void run();
 
-    static Algorithm *create(std::vector<Argument const*> const &argumentList) {
+    static Algorithm *create(std::vector<Argument> const &argumentList) {
       return new CoulombRpa(argumentList);
     }
 

@@ -23,9 +23,10 @@ namespace cc4s {
     static Amplitudes *T;
 
   protected:
+/*
     void mp2Algorithm();
     void rpaAlgorithm();
-
+*/
     void iterateMp2();
     void iterateCcsd();
     void iterateRpa();

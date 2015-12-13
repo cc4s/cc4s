@@ -2,6 +2,8 @@
 #ifndef OPTIONS_DEFINED
 #define OPTIONS_DEFINED
 
+#include <string>
+
 namespace cc4s {
   class Options {
   public:
@@ -15,6 +17,7 @@ namespace cc4s {
     int logLevel;
     int rank;
     double accuracy;
+    std::string file;
 
     const int DEFAULT_NITER = 8, DEFAULT_NW = 100;
     const bool DEFAULT_PROFILE = false;

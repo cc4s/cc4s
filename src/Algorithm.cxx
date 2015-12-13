@@ -8,10 +8,10 @@
 
 using namespace cc4s;
 
-Algorithm::Algorithm(std::vector<Argument const *> const &argumentList) {
+Algorithm::Algorithm(std::vector<Argument> const &argumentList) {
   for (auto arg(argumentList.begin()); arg != argumentList.end(); ++arg) {
-    Argument const *argument = *arg;
-    arguments[argument->getName()] = argument->getData();
+    Argument argument = *arg;
+    arguments[argument.getName()] = argument.getData();
   }
 }
 
@@ -116,7 +116,7 @@ void Algorithm::setRealArgument(std::string const &name, double const value) {
 
 void Algorithm::add(
   std::string const &name,
-  std::function<Algorithm *(std::vector<Argument const *> const &)>
+  std::function<Algorithm *(std::vector<Argument> const &)>
     const &createFunction
 ) {
   if (algorithmMap[name] != nullptr) {
@@ -127,8 +127,21 @@ void Algorithm::add(
   algorithmMap[name] = createFunction;
 }
 
+std::function<Algorithm *(std::vector<Argument> const &)> Algorithm::get(
+  std::string const &name
+) {
+  auto iterator(algorithmMap.find(name));
+  if (iterator == algorithmMap.end()) {
+    std::stringstream sStream;
+    sStream << "Algorithm not found: " << name;
+    throw new Exception(sStream.str());
+  }
+  return iterator->second;
+}
+
+
 std::map<
   std::string,
-  std::function<Algorithm *(std::vector<Argument const *> const &)>
+  std::function<Algorithm *(std::vector<Argument> const &)>
 > Algorithm::algorithmMap;
 

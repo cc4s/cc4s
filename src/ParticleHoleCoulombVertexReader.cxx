@@ -16,7 +16,7 @@ char const *ParticleHoleCoulombVertexReader::Chunk::IMAGSIA_MAGIC = "FTIAimag";
 char const *ParticleHoleCoulombVertexReader::Chunk::EPSILONS_MAGIC = "FTODepsi";
 
 ParticleHoleCoulombVertexReader::ParticleHoleCoulombVertexReader(
-  std::vector<Argument const *> const &argumentList
+  std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
   
 }

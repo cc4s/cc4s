@@ -17,7 +17,7 @@ namespace cc4s {
    */
   class FtodRankDecomposition: public Algorithm {
   public:
-    FtodRankDecomposition(std::vector<Argument const *> const &argumentList);
+    FtodRankDecomposition(std::vector<Argument> const &argumentList);
     virtual ~FtodRankDecomposition();
     virtual void run();
       

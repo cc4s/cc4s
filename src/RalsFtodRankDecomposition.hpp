@@ -13,15 +13,8 @@ namespace cc4s {
    */
   class RalsFtodRankDecomposition: public Algorithm {
   public:
-    RalsFtodRankDecomposition(std::vector<Argument const *> const &argumentList);
+    RalsFtodRankDecomposition(std::vector<Argument> const &argumentList);
     virtual ~RalsFtodRankDecomposition();
-    /**
-     * \deprecated
-     */
-    virtual std::vector<std::string> getDefaultArgumentOrder() {
-      std::vector<std::string> argumentOrder;
-      return argumentOrder;
-    }
     virtual void run();
       
     /**

@@ -10,7 +10,7 @@ using namespace CTF;
 using namespace cc4s;
 
 CoulombRpa::CoulombRpa(
-  std::vector<Argument const *> const &argumentList
+  std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
   
 }

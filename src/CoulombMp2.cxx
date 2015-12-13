@@ -9,7 +9,7 @@ using namespace CTF;
 using namespace cc4s;
 
 CoulombMp2::CoulombMp2(
-  std::vector<Argument const *> const &argumentList
+  std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
   
 }

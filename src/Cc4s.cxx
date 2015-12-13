@@ -1,6 +1,8 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <Cc4s.hpp>
+#include <Algorithm.hpp>
+#include <Interpreter.hpp>
 #include <util/Log.hpp>
 #include <ParticleHoleCoulombVertexReader.hpp>
 #include <ParticleHoleCoulomb.hpp>
@@ -37,10 +39,15 @@ Cc4s::~Cc4s() {
 
 void Cc4s::run() {
   printBanner();
+  Interpreter interpreter(options->file);
+  interpreter.execute();
+  printStatistics();
+}
 
+/*
   // experimental:
 //  mp2Algorithm();
-  rpaAlgorithm();
+//  rpaAlgorithm();
 
   // Read from disk
 //  TextFtodReader textFtodReader;
@@ -57,7 +64,7 @@ void Cc4s::run() {
 
 //    RalsFtodRankDecomposition::test(world);
     // experimental:
-    std::vector<Argument const *> arguments;
+    std::vector<Argument> arguments;
     new Data("chiR");
     Argument chiR("chiR", "chiR");
     arguments.push_back(&chiR);
@@ -115,13 +122,13 @@ void Cc4s::run() {
       (MPI_Wtime()-d) << ", |T| = " << norm << std::endl;
     LOG(0) << "e=" << e << std::endl;
   }
-  printStatistics();
-}
+*/
 
+/*
 void Cc4s::mp2Algorithm() {
   // this should at some point be generated from input files
   // see test/mp2.cc4s for how it could look like
-  std::vector<Argument const *> arguments;
+  std::vector<Argument> arguments;
 
   // NOTE: same arguments are given to all algorithms
   new TextData("file", "FTODDUMP");
@@ -171,12 +178,12 @@ void Cc4s::mp2Algorithm() {
 void Cc4s::rpaAlgorithm() {
   // this should at some point be generated from input files
   // see test/mp2.cc4s for how it could look like
-  std::vector<Argument const *> arguments;
+  std::vector<Argument> arguments;
 
   // NOTE: same arguments are given to all algorithms
   new TextData("file", "FTODDUMP");
   Argument file("file");
-  arguments.push_back(&file);
+  arguments.push_back(file);
 
   new Data("aiCoulombVertexReal");
   Argument aicoulombVertexReal("aiCoulombVertexReal");
@@ -219,7 +226,7 @@ void Cc4s::rpaAlgorithm() {
   CoulombRpa.run();
   LOG(4) << "CoulombRpa done"<< std::endl;
 }
-
+*/
 
 
 void Cc4s::printBanner() {

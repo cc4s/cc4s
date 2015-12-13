@@ -8,12 +8,12 @@ namespace cc4s {
   class CoulombMp2: public Algorithm {
   public:
     CoulombMp2(
-      std::vector<Argument const *> const &argumentList
+      std::vector<Argument> const &argumentList
     );
     virtual ~CoulombMp2();
     virtual void run();
 
-    static Algorithm *create(std::vector<Argument const*> const &argumentList) {
+    static Algorithm *create(std::vector<Argument> const &argumentList) {
       return new CoulombMp2(argumentList);
     }
   };

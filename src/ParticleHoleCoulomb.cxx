@@ -8,7 +8,7 @@ using namespace cc4s;
 using namespace CTF;
 
 ParticleHoleCoulomb::ParticleHoleCoulomb(
-  std::vector<Argument const *> const &argumentList
+  std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
   
 }

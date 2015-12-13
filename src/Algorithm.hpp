@@ -25,8 +25,9 @@ namespace cc4s {
 
   class Algorithm {
   public:
-    Algorithm(std::vector<Argument const *> const &argumentList);
+    Algorithm(std::vector<Argument> const &argumentList);
     virtual ~Algorithm();
+    virtual void run() = 0;
 
     // retrieving input arguments
     std::string getTextArgument(std::string const &argumentName);
@@ -44,8 +45,11 @@ namespace cc4s {
 
     static void add(
       std::string const &name,
-      std::function<Algorithm *(std::vector<Argument const *> const &)>
+      std::function<Algorithm *(std::vector<Argument> const &)>
         const &createFunction
+    );
+    static std::function<Algorithm *(std::vector<Argument> const &)> get(
+      std::string const &name
     );
 
   protected:
@@ -54,7 +58,7 @@ namespace cc4s {
 
     static std::map<
       std::string,
-      std::function<Algorithm *(std::vector<Argument const *> const &)>
+      std::function<Algorithm *(std::vector<Argument> const &)>
     > algorithmMap;
   };
 }
