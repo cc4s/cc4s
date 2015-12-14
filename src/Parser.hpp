@@ -40,6 +40,8 @@ namespace cc4s {
     NumericData *parseNumber();
     RealData *parseReal(int64_t const sign, int64_t const integerPart);
 
+    void skipIrrelevantCharacters();
+    void skipComment();
     void skipWhiteSpaceCharacters();
     void expectCharacter(char const character);
 

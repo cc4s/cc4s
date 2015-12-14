@@ -50,20 +50,6 @@ void Cc4s::run() {
 }
 
 /*
-  // experimental:
-//  mp2Algorithm();
-//  rpaAlgorithm();
-
-  // Read from disk
-//  TextFtodReader textFtodReader;
-  BinaryFtodReader binaryFtodReader(options->stridedIo);
-//  textFtodReader.read();
-  binaryFtodReader.read();
-//  binaryFtodReader.write();
-
-
-  // calculate Coulomb integrals from Fourier transformed overlap densities
-  Cc4s::V->fetch();
 
   if (options->rank > 0) {
 
@@ -95,143 +81,11 @@ void Cc4s::run() {
     double r(frobeniusNorm(oldChiR));
     LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
   }
-//  Cc4s::V->fetch();
 
 //  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
 //  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
-
-  // allocate and calculate the intial amplitudes
-  Cc4s::T = new Amplitudes(Cc4s::V);
-
-  Scalar<> energy(*world);
-  double e, dire, exce, norm;
-  (*T)["abij"] = 0.0;
-  (*T)["ai"] = 0.0;
-  for (int i(0); i < options->niter; ++i) {
-    double d = MPI_Wtime();
- //   iterateMp2();
-    iterateRccd();
- //   iterateRccsd();
- //   iterateRpa();
-    energy[""] = 2.0 * (*T)["abij"] * (*V)["abij"];
-    dire = energy.get_val();
-    energy[""] = 2.0 * (*T)["ai"] * (*T)["bj"] * (*V)["abij"];
-    dire += energy.get_val();
-    energy[""] = (*T)["abji"] * (*V)["abij"];
-    exce = -1.0 * energy.get_val();
-    energy[""] = (*T)["aj"] * (*T)["bi"] * (*V)["abij"];
-    exce += -1.0 * energy.get_val();
-    e = dire + exce;
-    norm = T->abij->norm2();
-    LOG(0) << i+1 << ": on " << world->np << " node(s) in time " <<
-      (MPI_Wtime()-d) << ", |T| = " << norm << std::endl;
-    LOG(0) << "e=" << e << std::endl;
-  }
 */
 
-/*
-void Cc4s::mp2Algorithm() {
-  // this should at some point be generated from input files
-  // see test/mp2.cc4s for how it could look like
-  std::vector<Argument> arguments;
-
-  // NOTE: same arguments are given to all algorithms
-  new TextData("file", "FTODDUMP");
-  Argument file("file");
-  arguments.push_back(&file);
-
-  new Data("aiCoulombVertexReal");
-  Argument aicoulombVertexReal("aiCoulombVertexReal");
-  arguments.push_back(&aicoulombVertexReal);
-
-  new Data("aiCoulombVertexImag");
-  Argument aicoulombVertexImag("aiCoulombVertexImag");
-  arguments.push_back(&aicoulombVertexImag);
-
-  new Data("iEps");
-  Argument iEps("iEps");
-  arguments.push_back(&iEps);
-
-  new Data("aEps");
-  Argument aEps("aEps");
-  arguments.push_back(&aEps);
-
-  new Data("vabij");
-  Argument vabij("vabij");
-  arguments.push_back(&vabij);
-
-  new Data("mp2Energy");
-  Argument mp2Energy("mp2Energy");
-  arguments.push_back(&mp2Energy);
-
-  ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
-  // immediate execution: (no planing for now)
-  particleHoleCoulombVertexReader.run();
-  LOG(4) << "Reader done."<< std::endl;
-
-  ParticleHoleCoulomb ParticleHoleCoulomb(arguments);
-  ParticleHoleCoulomb.run();
-  LOG(4) << "Coulomb done"<< std::endl;
-  
-  CoulombMp2 CoulombMp2(arguments);
-  CoulombMp2.run();
-  LOG(4) << "CoulombMp2 done"<< std::endl;
-
-  arguments.clear();
-}
-
-void Cc4s::rpaAlgorithm() {
-  // this should at some point be generated from input files
-  // see test/mp2.cc4s for how it could look like
-  std::vector<Argument> arguments;
-
-  // NOTE: same arguments are given to all algorithms
-  new TextData("file", "FTODDUMP");
-  Argument file("file");
-  arguments.push_back(file);
-
-  new Data("aiCoulombVertexReal");
-  Argument aicoulombVertexReal("aiCoulombVertexReal");
-  arguments.push_back(&aicoulombVertexReal);
-
-  new Data("aiCoulombVertexImag");
-  Argument aicoulombVertexImag("aiCoulombVertexImag");
-  arguments.push_back(&aicoulombVertexImag);
-
-  new Data("iEps");
-  Argument iEps("iEps");
-  arguments.push_back(&iEps);
-
-  new Data("aEps");
-  Argument aEps("aEps");
-  arguments.push_back(&aEps);
-
-  new Data("vabij");
-  Argument vabij("vabij");
-  arguments.push_back(&vabij);
-
-  new Data("tabij");
-  Argument tabij("tabij");
-  arguments.push_back(&tabij);
-
-  new Data("rpaEnergy");
-  Argument rpaEnergy("rpaEnergy");
-  arguments.push_back(&rpaEnergy);
-
-  ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
-  // immediate execution: (no planing for now)
-  particleHoleCoulombVertexReader.run();
-  LOG(4) << "Reader done."<< std::endl;
-
-  ParticleHoleCoulomb ParticleHoleCoulomb(arguments);
-  ParticleHoleCoulomb.run();
-  LOG(4) << "Coulomb done"<< std::endl;
-
-  CoulombRpa CoulombRpa(arguments);
-  CoulombRpa.run();
-  LOG(4) << "CoulombRpa done"<< std::endl;
-}
-*/
 
 
 void Cc4s::printBanner() {

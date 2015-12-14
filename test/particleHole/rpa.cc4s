@@ -1,0 +1,10 @@
+% RPA execution plan
+ParticleHoleCoulombVertexReader [
+  (file "FTODDUMP")
+] [
+  aiCoulombVertexReal aiCoulombVertexImag iEps aEps
+].
+
+ParticleHoleCoulomb [aiCoulombVertexReal aiCoulombVertexImag] [vabij].
+
+CoulombRpa [vabij iEps aEps] [tabij rpaEnergy].

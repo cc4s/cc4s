@@ -37,7 +37,7 @@ namespace cc4s {
       std::string const &name_, std::string const &typeName_
     ): name(name_), typeName(typeName_), stage(TYPED) {
       Data *mentionedData(dataMap[name_]);
-      if (mentionedData != nullptr) {
+      if (mentionedData) {
         if (mentionedData->getStage() == MENTIONED) {
           delete mentionedData;
         } else {

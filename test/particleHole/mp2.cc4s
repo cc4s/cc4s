@@ -1,0 +1,10 @@
+% MP2 execution plan
+ParticleHoleCoulombVertexReader [
+  (file "FTODDUMP")
+] [
+  aiCoulombVertexReal aiCoulombVertexImag iEps aEps
+].
+
+ParticleHoleCoulomb [aiCoulombVertexReal aiCoulombVertexImag] [vabij].
+
+CoulombMp2 [vabij iEps aEps] [mp2Energy].

@@ -25,10 +25,10 @@ Parser::~Parser() {
 
 std::vector<Algorithm *> Parser::parse() {
   std::vector<Algorithm *> algorithms;
-  skipWhiteSpaceCharacters();
+  skipIrrelevantCharacters();
   while (stream.peek() > 0) {
     algorithms.push_back(parseAlgorithm());
-    skipWhiteSpaceCharacters();
+    skipIrrelevantCharacters();
   }
   return algorithms;
 }
@@ -39,13 +39,13 @@ Algorithm *Parser::parseAlgorithm() {
   std::function<Algorithm *(std::vector<Argument>)> createFunction(
     Algorithm::get(algorithmName)
   );
-  skipWhiteSpaceCharacters();
+  skipIrrelevantCharacters();
   // next comes its input arguments
   std::vector<Argument> arguments(parseArguments());
-  skipWhiteSpaceCharacters();
+  skipIrrelevantCharacters();
   // next comes its output arguments
   std::vector<Argument> outputArguments(parseArguments());
-  skipWhiteSpaceCharacters();
+  skipIrrelevantCharacters();
   // the algorithm must end with a period
   expectCharacter('.');
   // currently there is no distinction between input and output arguments
@@ -59,10 +59,10 @@ Algorithm *Parser::parseAlgorithm() {
 std::vector<Argument> Parser::parseArguments() {
   std::vector<Argument> arguments;
   expectCharacter('[');
-  skipWhiteSpaceCharacters();
+  skipIrrelevantCharacters();
   while (stream.peek() != ']') {
     arguments.push_back(parseArgument());
-    skipWhiteSpaceCharacters();
+    skipIrrelevantCharacters();
   }
   expectCharacter(']');
   return arguments;
@@ -83,11 +83,11 @@ Argument Parser::parseImplicitlyNamedArgument() {
 Argument Parser::parseExplicitlyNamedArgument() {
   // first character must be '('
   stream.get();
-  skipWhiteSpaceCharacters();
+  skipIrrelevantCharacters();
   std::string argumentName(parseSymbolName());
-  skipWhiteSpaceCharacters();
+  skipIrrelevantCharacters();
   std::string dataName(parseData());
-  skipWhiteSpaceCharacters();
+  skipIrrelevantCharacters();
   expectCharacter(')');
   return Argument(argumentName, dataName);
 }
@@ -166,13 +166,25 @@ RealData *Parser::parseReal(int64_t const sign, int64_t const integerPart){
   return new RealData(sign * (integerPart + double(numerator) / denominator));
 }
 
+void Parser::skipIrrelevantCharacters() {
+  skipWhiteSpaceCharacters();
+  while (stream.peek() == '%') {
+    skipComment();
+    skipWhiteSpaceCharacters();
+  }
+}
+
+void Parser::skipComment() {
+  char c;
+  while ((c = stream.get()) > 0 && c != '\n');
+}
 
 void Parser::skipWhiteSpaceCharacters() {
   while (isspace(stream.peek())) stream.get();
 }
 
 void Parser::expectCharacter(char const expectedCharacter) {
-  char character(stream.get());
+  char character(stream.peek());
   if (character != expectedCharacter) {
     std::stringstream sStream;
     sStream <<
@@ -181,5 +193,6 @@ void Parser::expectCharacter(char const expectedCharacter) {
       sStream.str(), stream.getSource(), stream.getLine(), stream.getColumn()
     );
   }
+  stream.get();
 }
 
