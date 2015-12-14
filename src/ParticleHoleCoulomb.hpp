@@ -7,6 +7,7 @@
 namespace cc4s {
   class ParticleHoleCoulomb: public Algorithm {
   public:
+    ALGORITHM_REGISTRAR_DECLARATION(ParticleHoleCoulomb);
     ParticleHoleCoulomb(
       std::vector<Argument> const &argumentList
     );

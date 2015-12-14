@@ -10,15 +10,12 @@
 namespace cc4s {
   class ParticleHoleCoulombVertexReader: public Algorithm {
   public:
+    ALGORITHM_REGISTRAR_DECLARATION(ParticleHoleCoulombVertexReader);
     ParticleHoleCoulombVertexReader(
       std::vector<Argument> const &argumentList
     );
     virtual ~ParticleHoleCoulombVertexReader();
     virtual void run();
-
-    static Algorithm *create(std::vector<Argument> const &argumentList) {
-      return new ParticleHoleCoulombVertexReader(argumentList);
-    }
 
   protected:
     int no, nv, nG;

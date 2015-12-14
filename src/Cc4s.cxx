@@ -10,9 +10,7 @@
 #include <CoulombRpa.hpp>
 #include <TextFtodReader.hpp>
 #include <BinaryFtodReader.hpp>
-#include <FtodRankDecomposition.hpp>
 #include <RalsFtodRankDecomposition.hpp>
-#include <CrossEntropyFtodRankDecomposition.hpp>
 #include <util/MathFunctions.hpp>
 #include <util/ComplexTensor.hpp>
 #include <util/Exception.hpp>
@@ -25,13 +23,6 @@ using namespace cc4s;
 using namespace CTF;
 
 Cc4s::Cc4s(): flopCounter() {
-  // register all algorithms for cc4s execution plan access
-  Algorithm::add(
-    "ParticleHoleCoulombVertexReader", ParticleHoleCoulombVertexReader::create
-  );
-  Algorithm::add("ParticleHoleCoulomb", ParticleHoleCoulomb::create);
-  Algorithm::add("CoulombMp2", CoulombMp2::create);
-  Algorithm::add("CoulombRpa", CoulombRpa::create);
 }
 
 Cc4s::~Cc4s() {
@@ -42,8 +33,9 @@ void Cc4s::run() {
   Parser parser(options->file);
   std::vector<Algorithm *> algorithms(parser.parse());
   LOG(0) <<
-    "Execution plan has " << algorithms.size() << " step(s)" << std::endl;
+    "Execution plan read: " << algorithms.size() << " step(s)" << std::endl;
   for (unsigned int i(0); i < algorithms.size(); ++i) {
+    LOG(0) << "Step " << (i+1) << ": " << algorithms[i]->getName() << std::endl;
     algorithms[i]->run();
   }
   printStatistics();

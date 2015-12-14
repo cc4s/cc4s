@@ -8,6 +8,7 @@
 namespace cc4s {
   class CoulombRpa: public Algorithm {
   public:
+    ALGORITHM_REGISTRAR_DECLARATION(CoulombRpa);
     CoulombRpa(
       std::vector<Argument> const &argumentList
     );

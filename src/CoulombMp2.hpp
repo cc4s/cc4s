@@ -7,6 +7,7 @@
 namespace cc4s {
   class CoulombMp2: public Algorithm {
   public:
+    ALGORITHM_REGISTRAR_DECLARATION(CoulombMp2);
     CoulombMp2(
       std::vector<Argument> const &argumentList
     );

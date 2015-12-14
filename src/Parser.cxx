@@ -36,9 +36,6 @@ std::vector<Algorithm *> Parser::parse() {
 Algorithm *Parser::parseAlgorithm() {
   // an algorithm starts with the name
   std::string algorithmName(parseSymbolName());
-  std::function<Algorithm *(std::vector<Argument>)> createFunction(
-    Algorithm::get(algorithmName)
-  );
   skipIrrelevantCharacters();
   // next comes its input arguments
   std::vector<Argument> arguments(parseArguments());
@@ -53,7 +50,7 @@ Algorithm *Parser::parseAlgorithm() {
     arguments.end(), outputArguments.begin(), outputArguments.end()
   );
   // create and return an instance of the algorithm
-  return createFunction(arguments);
+  return AlgorithmFactory::create(algorithmName, arguments);
 }
 
 std::vector<Argument> Parser::parseArguments() {

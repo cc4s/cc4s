@@ -8,10 +8,11 @@
 using namespace CTF;
 using namespace cc4s;
 
+ALGORITHM_REGISTRAR_DEFINITION(CoulombMp2);
+
 CoulombMp2::CoulombMp2(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
-  
 }
 
 CoulombMp2::~CoulombMp2() {

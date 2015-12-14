@@ -15,6 +15,8 @@
 using namespace cc4s;
 using namespace CTF;
 
+ALGORITHM_REGISTRAR_DEFINITION(RalsFtodRankDecomposition);
+
 RalsFtodRankDecomposition::RalsFtodRankDecomposition(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {

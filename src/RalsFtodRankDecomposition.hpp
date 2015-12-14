@@ -13,6 +13,7 @@ namespace cc4s {
    */
   class RalsFtodRankDecomposition: public Algorithm {
   public:
+    ALGORITHM_REGISTRAR_DECLARATION(RalsFtodRankDecomposition);
     RalsFtodRankDecomposition(std::vector<Argument> const &argumentList);
     virtual ~RalsFtodRankDecomposition();
     virtual void run();

@@ -9,10 +9,11 @@
 using namespace CTF;
 using namespace cc4s;
 
+ALGORITHM_REGISTRAR_DEFINITION(CoulombRpa);
+
 CoulombRpa::CoulombRpa(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
-  
 }
 
 CoulombRpa::~CoulombRpa() {

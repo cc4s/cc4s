@@ -28,9 +28,7 @@ obj/PerturbationTensor.o \
 obj/Data.o \
 obj/Algorithm.o \
 obj/Parser.o \
-obj/FtodRankDecomposition.o \
 obj/RalsFtodRankDecomposition.o \
-obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
 obj/ParticleHoleCoulomb.o \

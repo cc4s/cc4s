@@ -114,34 +114,5 @@ void Algorithm::setRealArgument(std::string const &name, double const value) {
   new RealData(mentionedData->getName(), value);  
 }
 
-void Algorithm::add(
-  std::string const &name,
-  std::function<Algorithm *(std::vector<Argument> const &)>
-    const &createFunction
-) {
-  if (algorithmMap[name] != nullptr) {
-    std::stringstream sStream;
-    sStream << "Algorithm already existing: " << name;
-    throw new Exception(sStream.str());
-  }
-  algorithmMap[name] = createFunction;
-}
-
-std::function<Algorithm *(std::vector<Argument> const &)> Algorithm::get(
-  std::string const &name
-) {
-  auto iterator(algorithmMap.find(name));
-  if (iterator == algorithmMap.end()) {
-    std::stringstream sStream;
-    sStream << "Algorithm not found: " << name;
-    throw new Exception(sStream.str());
-  }
-  return iterator->second;
-}
-
-
-std::map<
-  std::string,
-  std::function<Algorithm *(std::vector<Argument> const &)>
-> Algorithm::algorithmMap;
+AlgorithmFactory::AlgorithmMap *AlgorithmFactory::algorithmMap;
 

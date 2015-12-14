@@ -57,11 +57,11 @@ namespace cc4s {
      */
     std::string getSource() { return source; }
     /**
-     * \breif Returns the line of the next character to be read.
+     * \brief Returns the line of the next character to be read.
      */
     int getLine() { return line; }
     /**
-     * \breif Returns the column of the next character to be read.
+     * \brief Returns the column of the next character to be read.
      */
     int getColumn() { return column; }
 
