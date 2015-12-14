@@ -14,5 +14,5 @@ ParticleHoleCoulombIntegrals [
 Mp2EnergyFromCoulombIntegrals [
   ParticleHoleCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
 ] [
-  mp2Energy
+  Mp2Energy
 ].

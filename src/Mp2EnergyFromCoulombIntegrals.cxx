@@ -49,6 +49,6 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   e = dire + exce;
   LOG(0) << "e=" << e << std::endl;
 
-  setRealArgument("mp2Energy", e);
+  setRealArgument("Mp2Energy", e);
 }
 
