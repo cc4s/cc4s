@@ -34,6 +34,7 @@ std::vector<Algorithm *> Parser::parse() {
 }
 
 Algorithm *Parser::parseAlgorithm() {
+  int line(stream.getLine()), column(stream.getColumn());
   // an algorithm starts with the name
   std::string algorithmName(parseSymbolName());
   skipIrrelevantCharacters();
@@ -50,7 +51,13 @@ Algorithm *Parser::parseAlgorithm() {
     arguments.end(), outputArguments.begin(), outputArguments.end()
   );
   // create and return an instance of the algorithm
-  return AlgorithmFactory::create(algorithmName, arguments);
+  Algorithm *algorithm(AlgorithmFactory::create(algorithmName, arguments));
+  if (!algorithm) {
+    std::stringstream sStream;
+    sStream << "Unknown algorithm " << algorithmName;
+    throw new DetailedException(sStream.str(), stream.getSource(), line,column);
+  }
+  return algorithm;
 }
 
 std::vector<Argument> Parser::parseArguments() {

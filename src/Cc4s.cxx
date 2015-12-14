@@ -4,20 +4,11 @@
 #include <Algorithm.hpp>
 #include <Parser.hpp>
 #include <util/Log.hpp>
-#include <ParticleHoleCoulombVertexReader.hpp>
-#include <ParticleHoleCoulomb.hpp>
-#include <CoulombMp2.hpp>
-#include <CoulombRpa.hpp>
-#include <TextFtodReader.hpp>
-#include <BinaryFtodReader.hpp>
-#include <RalsFtodRankDecomposition.hpp>
-#include <util/MathFunctions.hpp>
-#include <util/ComplexTensor.hpp>
 #include <util/Exception.hpp>
-#include <util/Log.hpp>
-#include <ctf.hpp>
-#include <iostream>
 #include <fstream>
+
+// TODO: to be removed from the main class
+#include <util/MathFunctions.hpp>
 
 using namespace cc4s;
 using namespace CTF;

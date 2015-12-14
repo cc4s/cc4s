@@ -1,4 +1,4 @@
-#include <CoulombRpa.hpp>
+#include <DrccdEnergyFromCoulombIntegrals.hpp>
 #include <util/Log.hpp>
 #include <util/MathFunctions.hpp>
 #include <util/Exception.hpp>
@@ -9,37 +9,39 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CoulombRpa);
+ALGORITHM_REGISTRAR_DEFINITION(DrccdEnergyFromCoulombIntegrals);
 
-CoulombRpa::CoulombRpa(
+DrccdEnergyFromCoulombIntegrals::DrccdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-CoulombRpa::~CoulombRpa() {
+DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 }
 
 /**
  * \brief Calculates MP2 energy from Coulomb integrals Vabij
  */
-void CoulombRpa::run() {
-  Tensor<> *vabij(getTensorArgument("vabij"));
+void DrccdEnergyFromCoulombIntegrals::run() {
+  Tensor<> *vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
 
   int nv(vabij->lens[0]);
   int no(vabij->lens[2]);
   int lens[] = { nv, nv, no, no };
   int syms[] = { NS, NS, NS, NS };
   Tensor<> *tabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Tabij"));
-  allocatedTensorArgument("tabij", tabij);
+  allocatedTensorArgument("DrccdDoublesAmplitudes", tabij);
   
   Scalar<> energy(*Cc4s::world);
   double e(0), dire, exce;
 
-  LOG(0) << "Solving RPA Amplitude Equations:" << std::endl;
+  LOG(0) <<
+    "Solving direct ring Coupled Cluster Doubles Amplitude Equations:" <<
+    std::endl;
  
   for (int i(0); i < Cc4s::options->niter; ++i) {
-    LOG(0) << "iteration : " << i << std::endl;
-    iterateCoulombRpa();
+    LOG(0) << "iteration: " << i << std::endl;
+    iterate();
     energy[""] = 2.0 * (*tabij)["abij"] * (*vabij)["abij"];
     dire = energy.get_val();
     energy[""] = (*tabij)["abji"] * (*vabij)["abij"];
@@ -48,15 +50,15 @@ void CoulombRpa::run() {
     LOG(0) << "e=" << e << std::endl;
   }
 
-  setRealArgument("rpaEnergy", e);
+  setRealArgument("DrccdEnergy", e);
 }
 
-void CoulombRpa::iterateCoulombRpa() {
+void DrccdEnergyFromCoulombIntegrals::iterate() {
   // get tensors
-  Tensor<> *iEps(getTensorArgument("iEps"));
-  Tensor<> *aEps(getTensorArgument("aEps"));
-  Tensor<> *vabij(getTensorArgument("vabij"));
-  Tensor<> *tabij(getTensorArgument("tabij"));
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  Tensor<> *vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
+  Tensor<> *tabij(getTensorArgument("DrccdDoublesAmplitudes"));
   Tensor<> Rabij(*vabij);
   Tensor<> Cabij(*vabij);
   Tensor<> Dabij(*vabij);
@@ -67,15 +69,14 @@ void CoulombRpa::iterateCoulombRpa() {
   Rabij["abij"] += Cabij["abij"];
   Rabij["abij"] += 2.0 * Cabij["acik"] * (*tabij)["cbkj"];
 
-  Dabij["abij"] += (*iEps)["i"];
-  Dabij["abij"] += (*iEps)["j"];
-  Dabij["abij"] -= (*aEps)["a"];
-  Dabij["abij"] -= (*aEps)["b"];
+  Dabij["abij"] += (*epsi)["i"];
+  Dabij["abij"] += (*epsi)["j"];
+  Dabij["abij"] -= (*epsa)["a"];
+  Dabij["abij"] -= (*epsa)["b"];
     // NOTE: ctf double counts if lhs tensor is SH,SH
   Dabij["abij"] = Dabij["abij"];
 
   Bivar_Function<> fDivide(&divide<double>);
   tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 }
-
 

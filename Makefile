@@ -31,10 +31,10 @@ obj/Parser.o \
 obj/RalsFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
-obj/ParticleHoleCoulomb.o \
+obj/ParticleHoleCoulombIntegrals.o \
 obj/ParticleHoleCoulombVertexReader.o \
-obj/CoulombMp2.o \
-obj/CoulombRpa.o
+obj/Mp2EnergyFromCoulombIntegrals.o \
+obj/DrccdEnergyFromCoulombIntegrals.o
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 

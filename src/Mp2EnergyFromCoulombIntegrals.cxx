@@ -1,4 +1,4 @@
-#include <CoulombMp2.hpp>
+#include <Mp2EnergyFromCoulombIntegrals.hpp>
 #include <util/Log.hpp>
 #include <util/MathFunctions.hpp>
 #include <util/Exception.hpp>
@@ -8,31 +8,31 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CoulombMp2);
+ALGORITHM_REGISTRAR_DEFINITION(Mp2EnergyFromCoulombIntegrals);
 
-CoulombMp2::CoulombMp2(
+Mp2EnergyFromCoulombIntegrals::Mp2EnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-CoulombMp2::~CoulombMp2() {
+Mp2EnergyFromCoulombIntegrals::~Mp2EnergyFromCoulombIntegrals() {
 }
 
 /**
  * \brief Calculates MP2 energy from Coulomb integrals Vabij
  */
-void CoulombMp2::run() {
-  Tensor<> *iEps(getTensorArgument("iEps"));
-  Tensor<> *aEps(getTensorArgument("aEps"));
-  Tensor<> *vabij(getTensorArgument("vabij"));
+void Mp2EnergyFromCoulombIntegrals::run() {
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  Tensor<> *vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
  
   Tensor<> Dabij(vabij);
   Tensor<> Tabij(vabij);
 
-  Dabij["abij"] += (*iEps)["i"];
-  Dabij["abij"] += (*iEps)["j"];
-  Dabij["abij"] -= (*aEps)["a"];
-  Dabij["abij"] -= (*aEps)["b"];
+  Dabij["abij"] += (*epsi)["i"];
+  Dabij["abij"] += (*epsi)["j"];
+  Dabij["abij"] -= (*epsa)["a"];
+  Dabij["abij"] -= (*epsa)["b"];
   // NOTE: ctf double counts if lhs tensor is SH,SH
   Dabij["abij"] = Dabij["abij"];
 

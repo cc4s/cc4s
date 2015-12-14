@@ -21,8 +21,10 @@ namespace cc4s {
     int no, nv, nG;
     int64_t np;
 
-    void readChiAiChunkBlocked(std::ifstream &file, CTF::Tensor<> *chiAi);
-    void readEpsChunk(std::ifstream &file,  CTF::Tensor<> *ieps, CTF::Tensor<> *aeps);
+    void readGammaGaiChunkBlocked(std::ifstream &file, CTF::Tensor<> *gammaGai);
+    void readEpsChunk(
+      std::ifstream &file,  CTF::Tensor<> *epsi, CTF::Tensor<> *epsa
+    );
 
     class Header {
     public:

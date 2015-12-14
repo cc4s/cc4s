@@ -2,9 +2,17 @@
 ParticleHoleCoulombVertexReader [
   (file "FTODDUMP")
 ] [
-  aiCoulombVertexReal aiCoulombVertexImag iEps aEps
+  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
 
-ParticleHoleCoulomb [aiCoulombVertexReal aiCoulombVertexImag] [vabij].
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+  ParticleHoleCoulombIntegrals
+].
 
-CoulombMp2 [vabij iEps aEps] [mp2Energy].
+Mp2EnergyFromCoulombIntegrals [
+  ParticleHoleCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+] [
+  mp2Energy
+].
