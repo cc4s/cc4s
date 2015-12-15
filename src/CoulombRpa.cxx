@@ -61,18 +61,26 @@ void CoulombRpa::iterateCoulombRpa() {
   Tensor<> Cabij(*vabijData->value);
   Tensor<> Dabij(*vabijData->value);
 
+  LOG(0) << "Setting Rabij." << std::endl;
   Rabij["abij"] = (*vabijData->value)["abij"];
-  Rabij["abij"] += 2.0 * (*vabijData->value)["acik"] * (*tabijData->value)["cbkj"];
+//  Cabij["abij"] = 2.0 * (*vabijData->value)["acik"] * (*tabijData->value)["cbkj"];
+  LOG(0) << "Contracting Vabij with Tabij." << std::endl;
   Cabij["abij"] =  2.0 * (*vabijData->value)["cbkj"] * (*tabijData->value)["acik"];
+  LOG(0) << "done." << std::endl;
   Rabij["abij"] += Cabij["abij"];
+  Rabij["abij"] += Cabij["baji"];
+  LOG(0) << "Contracting Cabij with Tabij." << std::endl;
   Rabij["abij"] += 2.0 * Cabij["acik"] * (*tabijData->value)["cbkj"];
+  LOG(0) << "done." << std::endl;
 
+  LOG(0) << "Calculating Dabij." << std::endl;
   Dabij["abij"] += (*iEpsData->value)["i"];
   Dabij["abij"] += (*iEpsData->value)["j"];
   Dabij["abij"] -= (*aEpsData->value)["a"];
   Dabij["abij"] -= (*aEpsData->value)["b"];
-    // NOTE: ctf double counts if lhs tensor is SH,SH
-  Dabij["abij"] = Dabij["abij"];
+  LOG(0) << "done." << std::endl;
+  // NOTE: ctf double counts if lhs tensor is SH,SH
+  //Dabij["abij"] = Dabij["abij"];
 
   Bivar_Function<> fDivide(&divide<double>);
   tabijData->value->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
