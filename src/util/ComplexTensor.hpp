@@ -16,7 +16,7 @@ namespace cc4s {
   );
 
   /**
-   * \brief composes a tensor of complex elements
+   * \brief Composes a tensor of complex elements
    * containing of the given tensors of real and imaginary parts.
    * Note that in this overload the imaginary part may be redistributed
    * during reading.
@@ -27,7 +27,7 @@ namespace cc4s {
   );
 
   /**
-   * \brief composes a tensor of complex elements
+   * \brief Composes a tensor of complex elements
    * containing of the given tensors of real and imaginary parts.
    * Note this may redistribute the tensor c during writing
    * if the distributions of r and i differ.

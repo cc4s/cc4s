@@ -9,37 +9,37 @@
 
 namespace cc4s {
   class BinaryFtodReader: public FtodReader {
+  public:
+    BinaryFtodReader(bool stridedIo=false);
+    virtual ~BinaryFtodReader();
+    virtual void read();
+    virtual void write();
+
+  protected:
+    int no, nv, nG;
+    int64_t np;
+    bool stridedIo;
+
+    void readChiChunk(std::ifstream &file, Chi *chi);
+    void readChiChunkStrided(std::ifstream &file, Chi *chi);
+    void readChiChunkBlocked(std::ifstream &file, Chi *chi);
+    void readChiAiChunkBlocked(std::ifstream &file, ChiAi *chiAi);
+    void readEpsChunk(std::ifstream &file);
+
+    class Header {
     public:
-      BinaryFtodReader(bool stridedIo=false);
-      virtual ~BinaryFtodReader();
-      virtual void read();
-      virtual void write();
-
-    protected:
-      int no, nv, nG;
-      int64_t np;
-      bool stridedIo;
-
-      void readChiChunk(std::ifstream &file, Chi *chi);
-      void readChiChunkStrided(std::ifstream &file, Chi *chi);
-      void readChiChunkBlocked(std::ifstream &file, Chi *chi);
-      void readChiAiChunkBlocked(std::ifstream &file, ChiAi *chiAi);
-      void readEpsChunk(std::ifstream &file);
-
-      class Header {
-        public:
-          char magic[8];
-          int32_t no, nv, nG, nSpins, kPoints, reserved_;
-          static char const *MAGIC;
-      };
-      class Chunk {
-        public:
-          char magic[8];
-          int64_t size;
-          static char const *REALS_MAGIC;
-          static char const *IMAGS_MAGIC;
-          static char const *EPSILONS_MAGIC;
-      };
+      char magic[8];
+      int32_t no, nv, nG, nSpins, kPoints, reserved_;
+      static char const *MAGIC;
+    };
+    class Chunk {
+    public:
+      char magic[8];
+      int64_t size;
+      static char const *REALS_MAGIC;
+      static char const *IMAGS_MAGIC;
+      static char const *EPSILONS_MAGIC;
+    };
   };
 }
 

@@ -6,7 +6,6 @@
 #include <util/Complex.hpp>
 #include <ctf.hpp>
 
-
 namespace cc4s {
   /**
    * \brief This algorithm provides a tensor rank decomposition of the
@@ -14,15 +13,9 @@ namespace cc4s {
    */
   class RalsFtodRankDecomposition: public Algorithm {
   public:
-    RalsFtodRankDecomposition(std::vector<Argument const *> const &argumentList);
+    ALGORITHM_REGISTRAR_DECLARATION(RalsFtodRankDecomposition);
+    RalsFtodRankDecomposition(std::vector<Argument> const &argumentList);
     virtual ~RalsFtodRankDecomposition();
-    /**
-     * \deprecated
-     */
-    virtual std::vector<std::string> getDefaultArgumentOrder() {
-      std::vector<std::string> argumentOrder;
-      return argumentOrder;
-    }
     virtual void run();
       
     /**

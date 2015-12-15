@@ -15,8 +15,10 @@
 using namespace cc4s;
 using namespace CTF;
 
+ALGORITHM_REGISTRAR_DEFINITION(RalsFtodRankDecomposition);
+
 RalsFtodRankDecomposition::RalsFtodRankDecomposition(
-  std::vector<Argument const *> const &argumentList
+  std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
@@ -174,7 +176,7 @@ void RalsFtodRankDecomposition::test(CTF::World *world) {
 }
 
 /**
- * \brief normalizes the X factor matrix.
+ * \brief Normalizes the factor orbitals.
  */
 void RalsFtodRankDecomposition::normalizeX() {
   Bivar_Function<complex> fDot(&cc4s::dot<complex>);
@@ -191,7 +193,7 @@ void RalsFtodRankDecomposition::normalizeX() {
 }
 
 /**
- * \brief discards the imaginary part of the X factor matrix.
+ * \brief Discards the imaginary part of the factor orbitals.
  */
 void RalsFtodRankDecomposition::realizeX() {
   Univar_Function<complex> fConj(&cc4s::conj<complex>);

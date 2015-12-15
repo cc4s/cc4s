@@ -17,7 +17,9 @@ Options::Options(int argumentCount, char **arguments) {
   accuracy = DEFAULT_ACCURACY;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
-    if (argument == "-nw") {
+    if (argument == "-file") {
+      file = arguments[++i];
+    } else if (argument == "-nw") {
       std::stringstream stream(arguments[++i]);
       stream >> nw;
       if (nw < 0) nw = DEFAULT_NW;

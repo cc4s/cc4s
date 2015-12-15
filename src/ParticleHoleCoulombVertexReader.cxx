@@ -1,4 +1,5 @@
 #include <ParticleHoleCoulombVertexReader.hpp>
+#include <util/ComplexTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -15,8 +16,10 @@ char const *ParticleHoleCoulombVertexReader::Chunk::REALSIA_MAGIC = "FTIAreal";
 char const *ParticleHoleCoulombVertexReader::Chunk::IMAGSIA_MAGIC = "FTIAimag";
 char const *ParticleHoleCoulombVertexReader::Chunk::EPSILONS_MAGIC = "FTODepsi";
 
+ALGORITHM_REGISTRAR_DEFINITION(ParticleHoleCoulombVertexReader);
+
 ParticleHoleCoulombVertexReader::ParticleHoleCoulombVertexReader(
-  std::vector<Argument const *> const &argumentList
+  std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
   
 }
@@ -32,68 +35,65 @@ void ParticleHoleCoulombVertexReader::run() {
   LOG(0) <<
     "Reading particle hole Coulomb vertex from file " << fileName << " ...";
   std::ifstream file(fileName, std::ios::binary|std::ios::in);
-  if (!file.is_open()) throw new Exception("Failed to open FTODDUMP file");
+  if (!file.is_open()) throw new Exception("Failed to open file");
   // read header
   Header header;
   file.read(reinterpret_cast<char *>(&header), sizeof(header));
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format of FTODDUMP file");
+    throw new Exception("Invalid file format");
   nG = header.nG;
   no = header.no;
   nv = header.nv;
   np = no + nv;
 
-  TensorData<> *iEpsData(getTensorDataArgument("iEps"));
-  TensorData<> *aEpsData(getTensorDataArgument("aEps"));
-
   // allocate output tensors
-  TensorData<> *aiCoulombVertexRealData(
-    getTensorDataArgument("aiCoulombVertexReal")
-  );
-  TensorData<> *aiCoulombVertexImagData(
-    getTensorDataArgument("aiCoulombVertexImag")
-  );
   int vertexLens[] = { nG, nv, no };
   int vertexSyms[] = { NS, NS, NS };
-  aiCoulombVertexRealData->value = new Tensor<>(
-    3, vertexLens, vertexSyms, *Cc4s::world, "SvRgai"
+  Tensor<> *epsi(new Vector<>(no, *Cc4s::world, "epsi"));
+  Tensor<> *epsa(new Vector<>(nv, *Cc4s::world, "epsa"));
+  Tensor<complex> *gammaGai(
+    new Tensor<complex>(
+      3, vertexLens, vertexSyms, *Cc4s::world, "GammaGai"
+    )
   );
-  aiCoulombVertexImagData->value = new Tensor<>(
-    3, vertexLens, vertexSyms, *Cc4s::world, "SvIgai"
+  // enter the allocated data (and by that type the output data to tensors)
+  allocatedTensorArgument("HoleEigenEnergies", epsi);
+  allocatedTensorArgument("ParticleEigenEnergies", epsa);
+  allocatedTensorArgument("ParticleHoleCoulombVertex", gammaGai);
+
+  // real and imaginary parts are read in seperately
+  Tensor<> realGammaGai(
+    3, vertexLens, vertexSyms, *Cc4s::world, "RealGammaGai"
   );
-  iEpsData->value = new Vector<>(no, *Cc4s::world, "iEps");
-  aEpsData->value = new Vector<>(nv, *Cc4s::world, "aEps");
-  // FIXME: continue here ...
+  Tensor<> imagGammaGai(
+    3, vertexLens, vertexSyms, *Cc4s::world, "ImagGammaGai"
+  );
 
   Chunk chunk;
   while (file.read(reinterpret_cast<char *>(&chunk), sizeof(chunk))) {
     if (strncmp(chunk.magic, Chunk::REALSIA_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(4) << "Found ia chunk. ";
-      //readChiChunk(file, Cc4s::chiIAReal);
-      readChiAiChunkBlocked(file, aiCoulombVertexRealData->value);
+      readGammaGaiChunkBlocked(file, &realGammaGai);
     } else
     if (strncmp(chunk.magic, Chunk::IMAGSIA_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(4) << "Found ia chunk. ";
-      //readChiChunk(file, Cc4s::chiIAImag);
-      readChiAiChunkBlocked(file, aiCoulombVertexImagData->value);
+      readGammaGaiChunkBlocked(file, &imagGammaGai);
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(4) << "Found eps chunk.";
-      readEpsChunk(file, iEpsData->value, aEpsData->value);
+      readEpsChunk(file, epsi, epsa);
     }
   }
   file.close();
+  // combine to complex tensor
+  toComplexTensor(realGammaGai, imagGammaGai, *gammaGai);
   LOG(0) << " OK" << std::endl;
 }
 
 
 // TODO: use several write calls instead of one big to reduce int64 requirement
-void ParticleHoleCoulombVertexReader::readChiAiChunkBlocked(
-  std::ifstream &file, Tensor<> *chiAi
+void ParticleHoleCoulombVertexReader::readGammaGaiChunkBlocked(
+  std::ifstream &file, Tensor<> *gammaGai
 ) {
   // TODO: separate distribution from reading
   // allocate local indices and values of the chi tensors
-  // FIXME: continue here...
   int64_t nvPerNode(nv / Cc4s::world->np);
   int64_t nvLocal(
     Cc4s::world->rank+1 < Cc4s::world->np ?
@@ -109,13 +109,13 @@ void ParticleHoleCoulombVertexReader::readChiAiChunkBlocked(
   for (int64_t i(0); i < nvLocal*no*nG; ++i) {
     indices[i] = i + nvToSkipBefore*no*nG;
   }
-  chiAi->write(nvLocal*no*nG, indices, values);
+  gammaGai->write(nvLocal*no*nG, indices, values);
   delete[] values; delete[] indices;
 }
 
 
 void ParticleHoleCoulombVertexReader::readEpsChunk(
-  std::ifstream &file, Tensor<> *ieps, Tensor<> *aeps
+  std::ifstream &file, Tensor<> *epsi, Tensor<> *epsa
 ) {
   // allocate local indices and values of eigenenergies
   double *iValues(new double[no]);
@@ -134,8 +134,8 @@ void ParticleHoleCoulombVertexReader::readEpsChunk(
   }
   int64_t iValuesCount(Cc4s::world->rank == 0 ? no : 0);
   int64_t aValuesCount(Cc4s::world->rank == 0 ? nv : 0);
-  ieps->write(iValuesCount, iIndices, iValues);
-  aeps->write(aValuesCount, aIndices, aValues);
+  epsi->write(iValuesCount, iIndices, iValues);
+  epsa->write(aValuesCount, aIndices, aValues);
   delete[] iValues; delete[] aValues;
 }
 

@@ -1,23 +1,14 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <Cc4s.hpp>
+#include <Algorithm.hpp>
+#include <Parser.hpp>
 #include <util/Log.hpp>
-#include <ParticleHoleCoulombVertexReader.hpp>
-#include <ParticleHoleCoulomb.hpp>
-#include <CoulombMp2.hpp>
-#include <CoulombRpa.hpp>
-#include <TextFtodReader.hpp>
-#include <BinaryFtodReader.hpp>
-#include <FtodRankDecomposition.hpp>
-#include <RalsFtodRankDecomposition.hpp>
-#include <CrossEntropyFtodRankDecomposition.hpp>
-#include <util/MathFunctions.hpp>
-#include <util/ComplexTensor.hpp>
 #include <util/Exception.hpp>
-#include <util/Log.hpp>
-#include <ctf.hpp>
-#include <iostream>
 #include <fstream>
+
+// TODO: to be removed from the main class
+#include <util/MathFunctions.hpp>
 
 using namespace cc4s;
 using namespace CTF;
@@ -30,37 +21,35 @@ Cc4s::~Cc4s() {
 
 void Cc4s::run() {
   printBanner();
+  Parser parser(options->file);
+  std::vector<Algorithm *> algorithms(parser.parse());
+  LOG(0) <<
+    "Execution plan read: " << algorithms.size() << " step(s)" << std::endl;
+  for (unsigned int i(0); i < algorithms.size(); ++i) {
+    LOG(0) << "Step " << (i+1) << ": " << algorithms[i]->getName() << std::endl;
+    algorithms[i]->run();
+  }
+  printStatistics();
+}
 
-  // experimental:
-  mp2Algorithm();
-  rpaAlgorithm();
-
-  // Read from disk
-//  TextFtodReader textFtodReader;
-  BinaryFtodReader binaryFtodReader(options->stridedIo);
-//  textFtodReader.read();
-  binaryFtodReader.read();
-//  binaryFtodReader.write();
-
-
-  // calculate Coulomb integrals from Fourier transformed overlap densities
-  Cc4s::V->fetch();
+/*
 
   if (options->rank > 0) {
+
 //    RalsFtodRankDecomposition::test(world);
     // experimental:
-    std::vector<Argument const *> arguments;
-    TensorData<> chiRData("chiR", *chiReal->gpq);
-    Argument chiR("chiR", &chiRData);
+    std::vector<Argument> arguments;
+    new Data("chiR");
+    Argument chiR("chiR", "chiR");
     arguments.push_back(&chiR);
-    TensorData<> chiIData("chiI", *chiImag->gpq);
-    Argument chiI("chiI", &chiIData);
+    new Data("chiI");
+    Argument chiI("chiR", "chiR");
     arguments.push_back(&chiI);
-    IntegerData rankData("rank", options->rank);
-    Argument rank("rank", &rankData);
+    new IntegerData("rank", options->rank);
+    Argument rank("rank", "rank");
     arguments.push_back(&rank);
-    RealData epsilonData("epsilon", options->accuracy);
-    Argument epsilon("epsilon", &epsilonData);
+    new RealData("epsilon", options->accuracy);
+    Argument epsilon("epsilon", "epsilon");
     arguments.push_back(&epsilon);
   //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
   //  FtodRankDecomposition ftodRankDecomposition(arguments);
@@ -75,185 +64,10 @@ void Cc4s::run() {
     double r(frobeniusNorm(oldChiR));
     LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
   }
-//  Cc4s::V->fetch();
 
 //  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
 //  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
-
-  // allocate and calculate the intial amplitudes
-  Cc4s::T = new Amplitudes(Cc4s::V);
-
-  Scalar<> energy(*world);
-  double e, dire, exce, norm;
-  (*T)["abij"] = 0.0;
-  (*T)["ai"] = 0.0;
-  for (int i(0); i < options->niter; ++i) {
-    double d = MPI_Wtime();
- //   iterateMp2();
-    iterateRccd();
- //   iterateRccsd();
- //   iterateRpa();
-    energy[""] = 2.0 * (*T)["abij"] * (*V)["abij"];
-    dire = energy.get_val();
-    energy[""] = 2.0 * (*T)["ai"] * (*T)["bj"] * (*V)["abij"];
-    dire += energy.get_val();
-    energy[""] = (*T)["abji"] * (*V)["abij"];
-    exce = -1.0 * energy.get_val();
-    energy[""] = (*T)["aj"] * (*T)["bi"] * (*V)["abij"];
-    exce += -1.0 * energy.get_val();
-    e = dire + exce;
-    norm = T->abij->norm2();
-    LOG(0) << i+1 << ": on " << world->np << " node(s) in time " <<
-      (MPI_Wtime()-d) << ", |T| = " << norm << std::endl;
-    LOG(0) << "e=" << e << std::endl;
-  }
-  printStatistics();
-}
-
-void Cc4s::mp2Algorithm() {
-  // this should at some point be generated from input files
-  // see test/mp2.cc4s for how it could look like
-  std::vector<Argument const *> arguments;
-
-  // 1st algoirthm: read file
-  TextData fileData("file", "FTODDUMP");
-  Argument file("file", &fileData);
-  arguments.push_back(&file);
-
-  TensorData<> aiCoulombVertexRealData("aiCoulombVertexReal");
-  Argument aicoulombVertexReal("aiCoulombVertexReal", &aiCoulombVertexRealData);
-  arguments.push_back(&aicoulombVertexReal);
-
-  TensorData<> aiCoulombVertexImagData("aiCoulombVertexImag");
-  Argument aicoulombVertexImag("aiCoulombVertexImag", &aiCoulombVertexImagData);
-  arguments.push_back(&aicoulombVertexImag);
-
-  TensorData<> iEpsData("iEps");
-  Argument iEps("iEps", &iEpsData);
-  arguments.push_back(&iEps);
-
-  TensorData<> aEpsData("aEps");
-  Argument aEps("aEps", &aEpsData);
-  arguments.push_back(&aEps);
-
-  TensorData<> vabijData("vabij");
-  Argument vabij("vabij", &vabijData);
-  arguments.push_back(&vabij);
-
-
-  ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
-  // immediate execution: (no planing for now)
-  particleHoleCoulombVertexReader.run();
-  LOG(4) << "Reader done."<< std::endl;
-
-  ParticleHoleCoulomb ParticleHoleCoulomb(arguments);
-  ParticleHoleCoulomb.run();
-  LOG(4) << "Coulomb done"<< std::endl;
-
-  CoulombMp2 CoulombMp2(arguments);
-  CoulombMp2.run();
-  LOG(4) << "CoulombMp2 done"<< std::endl;
-
-  arguments.clear();
-
-/*
-  // 2nd algorithm: calculate coulomb
-  arguments.push_back(&aicoulombVertexReal);
-  arguments.push_back(&aicoulombVertexImag);
-  TensorData<> vabijData("vabij");
-  Argument vabij("vabij", &vabijData);
-  arguments.push_back(&vabij);
-
-  ParticleHoleCoulomb particleHoleCoulomb(arguments);
-  particleHoleCoulomb.run();
-  arguments.clear();
-
-  // 3rd algorithm: calculate mp2 energy
-  arguments.push_back(&vabij);
-  arguments.push_back(&eps);
-  RealData energyData("energy", 0.0);
-  Argument energy("energy", &energyData);
-  arguments.push_back(&energy);
-  Mp2Energy mp2Energy(arguments);
-  mp2Energy.run();
-
-  LOG(0) << "e=" << energyData.getValue() << std::endl;
 */
-}
-
-void Cc4s::rpaAlgorithm() {
-  // this should at some point be generated from input files
-  // see test/mp2.cc4s for how it could look like
-  std::vector<Argument const *> arguments;
-
-  // 1st algoirthm: read file
-  TextData fileData("file", "FTODDUMP");
-  Argument file("file", &fileData);
-  arguments.push_back(&file);
-
-  TensorData<> aiCoulombVertexRealData("aiCoulombVertexReal");
-  Argument aicoulombVertexReal("aiCoulombVertexReal", &aiCoulombVertexRealData);
-  arguments.push_back(&aicoulombVertexReal);
-
-  TensorData<> aiCoulombVertexImagData("aiCoulombVertexImag");
-  Argument aicoulombVertexImag("aiCoulombVertexImag", &aiCoulombVertexImagData);
-  arguments.push_back(&aicoulombVertexImag);
-
-  TensorData<> iEpsData("iEps");
-  Argument iEps("iEps", &iEpsData);
-  arguments.push_back(&iEps);
-
-  TensorData<> aEpsData("aEps");
-  Argument aEps("aEps", &aEpsData);
-  arguments.push_back(&aEps);
-
-  TensorData<> vabijData("vabij");
-  Argument vabij("vabij", &vabijData);
-  arguments.push_back(&vabij);
-
-  ParticleHoleCoulombVertexReader particleHoleCoulombVertexReader(arguments);
-  // immediate execution: (no planing for now)
-  particleHoleCoulombVertexReader.run();
-  LOG(4) << "Reader done."<< std::endl;
-
-  ParticleHoleCoulomb ParticleHoleCoulomb(arguments);
-  ParticleHoleCoulomb.run();
-  LOG(4) << "Coulomb done"<< std::endl;
-
-  TensorData<> tabijData("tabij");
-  Argument tabij("tabij", &tabijData);
-  arguments.push_back(&tabij);
-
-  CoulombRpa CoulombRpa(arguments);
-  CoulombRpa.run();
-  LOG(4) << "CoulombRpa done"<< std::endl;
-
-  arguments.clear();
-
-/*
-  // 2nd algorithm: calculate coulomb
-  arguments.push_back(&aicoulombVertexReal);
-  arguments.push_back(&aicoulombVertexImag);
-  TensorData<> vabijData("vabij");
-  Argument vabij("vabij", &vabijData);
-  arguments.push_back(&vabij);
-
-  ParticleHoleCoulomb particleHoleCoulomb(arguments);
-  particleHoleCoulomb.run();
-  arguments.clear();
-
-  // 3rd algorithm: calculate mp2 energy
-  arguments.push_back(&vabij);
-  arguments.push_back(&eps);
-  RealData energyData("energy", 0.0);
-  Argument energy("energy", &energyData);
-  arguments.push_back(&energy);
-  Mp2Energy mp2Energy(arguments);
-  mp2Energy.run();
-
-  LOG(0) << "e=" << energyData.getValue() << std::endl;
-*/
-}
 
 
 

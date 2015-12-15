@@ -1,0 +1,18 @@
+% RPA execution plan
+ParticleHoleCoulombVertexReader [
+  (file "FTODDUMP")
+] [
+  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+  ParticleHoleCoulombIntegrals
+].
+
+DrccdEnergyFromCoulombIntegrals [
+  ParticleHoleCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+] [
+  DrccdEnergy DrccdDoublesAmplitudes
+].

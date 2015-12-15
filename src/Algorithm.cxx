@@ -8,29 +8,36 @@
 
 using namespace cc4s;
 
-Algorithm::Algorithm(std::vector<Argument const *> const &argumentList) {
+Algorithm::Algorithm(std::vector<Argument> const &argumentList) {
   for (auto arg(argumentList.begin()); arg != argumentList.end(); ++arg) {
-    Argument const *argument = *arg;
-    arguments[argument->getName()] = argument->getData();
+    Argument argument = *arg;
+    arguments[argument.getName()] = argument.getData();
   }
 }
 
 Algorithm::~Algorithm() {
 }
 
-Data *Algorithm::getArgument(std::string const &name) {
-  auto dataIterator = arguments.find(name);
+Data *Algorithm::getArgumentData(std::string const &name) {
+  auto dataIterator(arguments.find(name));
   if (dataIterator == arguments.end()) {
-    std::stringstream sstream;
-    sstream << "Missing argument: " << name;
-    throw new Exception(sstream.str());
+    std::stringstream sStream;
+    sStream << "Missing argument: " << name;
+//    throw new Exception(std::stringstream() << "Missing argument: " << name);
+    throw new Exception(sStream.str());
   }
-  //FIXME: decide whether to use explicit in/out information
-  return const_cast<Data *>(dataIterator->second);
+  Data *data = Data::get(dataIterator->second);
+  if (data == nullptr) {
+    std::stringstream sStream;
+    sStream << "Missing data: " << dataIterator->second;
+//    throw new Exception(std::stringstream() << "Missing data: " << dataIterator->second);
+    throw new Exception(sStream.str());
+  }
+  return data;
 }
 
 std::string Algorithm::getTextArgument(std::string const &name) {
-  Data *data = getArgument(name);
+  Data *data(getArgumentData(name));
   TextData const *textData = dynamic_cast<TextData const *>(data);
   if (textData == nullptr) {
     std::stringstream sstream;
@@ -42,7 +49,7 @@ std::string Algorithm::getTextArgument(std::string const &name) {
 }
 
 int64_t Algorithm::getIntegerArgument(std::string const &name) {
-  Data const *data = getArgument(name);
+  Data const *data(getArgumentData(name));
   IntegerData const *integerData = dynamic_cast<IntegerData const *>(data);
   if (integerData == nullptr) {
     std::stringstream sstream;
@@ -54,7 +61,7 @@ int64_t Algorithm::getIntegerArgument(std::string const &name) {
 }
 
 double Algorithm::getRealArgument(std::string const &name) {
-  Data const *data = getArgument(name);
+  Data const *data(getArgumentData(name));
   RealData const *realData = dynamic_cast<RealData const *>(data);
   if (realData == nullptr) {
     std::stringstream sstream;
@@ -66,8 +73,8 @@ double Algorithm::getRealArgument(std::string const &name) {
 }
 
 template <typename F>
-TensorData<F> *Algorithm::getTensorDataArgument(std::string const &name) {
-  Data *data = getArgument(name);
+CTF::Tensor<F> *Algorithm::getTensorArgument(std::string const &name) {
+  Data *data(getArgumentData(name));
   TensorData<F> *tensorData = dynamic_cast<TensorData<F> *>(data);
   if (tensorData == nullptr) {
     std::stringstream sStream;
@@ -75,23 +82,37 @@ TensorData<F> *Algorithm::getTensorDataArgument(std::string const &name) {
       << "Excpected Tensor, found " << data->getTypeName() << ".";
     throw new Exception(sStream.str());
   }
-  return tensorData;
+  return tensorData->value;
 }
-
-template <typename F>
-CTF::Tensor<F> *Algorithm::getTensorArgument(std::string const &name) {
-  return getTensorDataArgument<F>(name)->value;
-}
-
-
 // instantiate
-template
-TensorData<double> *Algorithm::getTensorDataArgument(std::string const &name);
-template
-TensorData<complex> *Algorithm::getTensorDataArgument(std::string const &name);
-
 template
 CTF::Tensor<double> *Algorithm::getTensorArgument(std::string const &name);
 template
 CTF::Tensor<complex> *Algorithm::getTensorArgument(std::string const &name);
+
+template <typename F>
+void Algorithm::allocatedTensorArgument(
+  std::string const &name, CTF::Tensor<F> *tensor
+) {
+  Data *mentionedData(getArgumentData(name));
+  new TensorData<F>(mentionedData->getName(), tensor);
+  // NOTE: the constructor of TensorData enteres its location in the
+  // data map and destroys the previous content, i.e. mentionedData.
+}
+// instantiate
+template
+void Algorithm::allocatedTensorArgument(
+  std::string const &name, CTF::Tensor<double> *tensor
+);
+template
+void Algorithm::allocatedTensorArgument(
+  std::string const &name, CTF::Tensor<complex> *tensor
+);
+
+void Algorithm::setRealArgument(std::string const &name, double const value) {
+  Data *mentionedData(getArgumentData(name));
+  new RealData(mentionedData->getName(), value);  
+}
+
+AlgorithmFactory::AlgorithmMap *AlgorithmFactory::algorithmMap;
 

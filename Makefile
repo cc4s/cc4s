@@ -14,6 +14,9 @@ LIBS=-lblas -lgfortran
 # primary target
 cc4s: bin/${TARGET}
 
+doc:
+	doxygen
+
 OBJECTS= \
 obj/Options.o \
 obj/util/Log.o \
@@ -22,35 +25,18 @@ obj/util/ComplexTensor.o \
 obj/util/RandomTensor.o \
 obj/util/IterativePseudoInverse.o \
 obj/PerturbationTensor.o \
+obj/Data.o \
 obj/Algorithm.o \
-obj/FtodRankDecomposition.o \
+obj/Parser.o \
 obj/RalsFtodRankDecomposition.o \
-obj/CrossEntropyFtodRankDecomposition.o \
-obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
-obj/BinaryFtodReader.o obj/TextFtodReader.o obj/${TARGET}.o \
-obj/ParticleHoleCoulomb.o \
-obj/ParticleHoleCoulombVertexReader.o \
-obj/CoulombMp2.o \
-obj/CoulombRpa.o
-# dependencies
-obj/${TARGET}.o: \
-obj/Options.o \
-obj/util/Log.o \
-obj/util/MathFunctions.o \
-obj/util/ComplexTensor.o \
-obj/util/RandomTensor.o \
-obj/util/IterativePseudoInverse.o \
-obj/PerturbationTensor.o \
-obj/Algorithm.o \
-obj/FtodRankDecomposition.o \
-obj/RalsFtodRankDecomposition.o \
-obj/CrossEntropyFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
-obj/ParticleHoleCoulomb.o \
+obj/ParticleHoleCoulombIntegrals.o \
 obj/ParticleHoleCoulombVertexReader.o \
-obj/CoulombMp2.o \
-obj/CoulombRpa.o
+obj/Mp2EnergyFromCoulombIntegrals.o \
+obj/DrccdEnergyFromCoulombIntegrals.o
+# dependencies
+obj/${TARGET}.o: ${OBJECTS}
 
 clean:
 	rm -rf bin/*
@@ -63,5 +49,5 @@ obj/%.o: src/%.cxx src/%.hpp
 
 # compile and link executable
 bin/%: obj/%.o
-	${CXX} ${COPTIONS} ${OPTIMIZE} ${OBJECTS} -o $@ -I${CTF}/include/ -L${CTF}/lib -lctf ${LIBS}
+	${CXX} ${COPTIONS} ${OPTIMIZE} ${OBJECTS} obj/${TARGET}.o -o $@ -I${CTF}/include/ -L${CTF}/lib -lctf ${LIBS}
 

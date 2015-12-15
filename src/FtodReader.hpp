@@ -4,10 +4,10 @@
 
 namespace cc4s {
   class FtodReader {
-    public:
-      virtual void read() = 0;
+  public:
+    virtual void read() = 0;
   };
 }
 
-
 #endif
+

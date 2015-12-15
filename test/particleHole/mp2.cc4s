@@ -1,0 +1,18 @@
+% MP2 execution plan
+ParticleHoleCoulombVertexReader [
+  (file "FTODDUMP")
+] [
+  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+  ParticleHoleCoulombIntegrals
+].
+
+Mp2EnergyFromCoulombIntegrals [
+  ParticleHoleCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+] [
+  Mp2Energy
+].
