@@ -34,7 +34,8 @@ obj/BinaryFtodReader.o obj/TextFtodReader.o \
 obj/ParticleHoleCoulombIntegrals.o \
 obj/ParticleHoleCoulombVertexReader.o \
 obj/Mp2EnergyFromCoulombIntegrals.o \
-obj/DrccdEnergyFromCoulombIntegrals.o
+obj/DrccdEnergyFromCoulombIntegrals.o \
+obj/RalsParticleHoleCoulombVertexDecomposition.o
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 

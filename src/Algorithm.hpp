@@ -30,6 +30,7 @@ namespace cc4s {
     virtual std::string getName() = 0;
     virtual void run() = 0;
 
+    bool isArgumentGiven(std::string const &argumentName);
     // retrieving input arguments
     std::string getTextArgument(std::string const &argumentName);
     int64_t getIntegerArgument(std::string const &argumentName);

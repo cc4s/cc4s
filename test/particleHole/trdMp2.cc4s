@@ -1,0 +1,28 @@
+% tensor rank decomposition MP2 execution plan
+ParticleHoleCoulombVertexReader [
+  (file "FTODDUMP")
+] [
+  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+RalsParticleHoleCoulombVertexDecomposition [
+  ParticleHoleCoulombVertex
+  (rank 400) (epsilon 1.) (lambda 0.1)
+] [
+  HoleFactorOrbitals ParticleFactorOrbitals ParticleHoleCoulombFactors
+  % approximation from the rank decomposition:
+  ComposedParticleHoleCoulombVertex
+].
+
+ParticleHoleCoulombIntegrals [
+  % use the above approximation to build Coulomb integrals
+  (ParticleHoleCoulombVertex ComposedParticleHoleCoulombVertex)
+] [
+  ParticleHoleCoulombIntegrals
+].
+
+Mp2EnergyFromCoulombIntegrals [
+  ParticleHoleCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+] [
+  Mp2Energy
+].

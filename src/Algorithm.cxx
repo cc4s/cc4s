@@ -18,6 +18,10 @@ Algorithm::Algorithm(std::vector<Argument> const &argumentList) {
 Algorithm::~Algorithm() {
 }
 
+bool Algorithm::isArgumentGiven(std::string const &name) {
+  return arguments.find(name) != arguments.end();
+}
+
 Data *Algorithm::getArgumentData(std::string const &name) {
   auto dataIterator(arguments.find(name));
   if (dataIterator == arguments.end()) {
