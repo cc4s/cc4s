@@ -72,10 +72,10 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
 }
 
 void RalsParticleHoleCoulombVertexDecomposition::fit(double lambda) {
-  double deltaPiiR(fitRals("Gai", *piiR,'i', *lambdaGR,'G', *piaR,'a', lambda));
-  realizePi(*piaR); normalizePi(*piaR);
-  double deltaPiaR(fitRals("Gai", *lambdaGR,'G', *piaR,'a', *piiR,'i', lambda));
+  double deltaPiiR(fitRals("Gai", *lambdaGR,'G', *piaR,'a', *piiR,'i', lambda));
   realizePi(*piiR); normalizePi(*piiR);
+  double deltaPiaR(fitRals("Gai", *piiR,'i', *lambdaGR,'G', *piaR,'a', lambda));
+  realizePi(*piaR); normalizePi(*piaR);
   double deltaLambda(fitRals("Gai", *piaR,'a',*piiR,'i', *lambdaGR,'G',lambda));
 
   int bcLens[] = { piiR->lens[1], piaR->lens[0], piiR->lens[0] };
