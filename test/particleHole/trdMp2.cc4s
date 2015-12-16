@@ -7,7 +7,7 @@ ParticleHoleCoulombVertexReader [
 
 RalsParticleHoleCoulombVertexDecomposition [
   ParticleHoleCoulombVertex
-  (rank 1140) (epsilon 1.) (lambda 0.01)
+  (rank 570) (epsilon 1.) (lambda 0.01)
 ] [
   HoleFactorOrbitals ParticleFactorOrbitals ParticleHoleCoulombFactors
   % approximation from the rank decomposition:

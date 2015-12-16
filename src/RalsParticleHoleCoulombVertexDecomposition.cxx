@@ -49,7 +49,9 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
     nG, int(rank), NS, *gammaGai->wrld, "LambdaGR", gammaGai->profile
   );
   setRandomTensor(*piiR);
+  realizePi(*piiR); normalizePi(*piiR);
   setRandomTensor(*piaR);
+  realizePi(*piiR); normalizePi(*piaR);
   setRandomTensor(*lambdaGR);
   allocatedTensorArgument("HoleFactorOrbitals", piiR);
   allocatedTensorArgument("ParticleFactorOrbitals", piaR);
@@ -80,9 +82,9 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
 
 void RalsParticleHoleCoulombVertexDecomposition::fit(double lambda) {
   double deltaPiiR(fitRals("Gai", *piaR,'a', *lambdaGR,'G', *piiR,'i', lambda));
-  realizePi(*piiR); normalizePi(*piiR);
+//  realizePi(*piiR); normalizePi(*piiR);
   double deltaPiaR(fitRals("Gai", *lambdaGR,'G', *piiR,'i', *piaR,'a', lambda));
-  realizePi(*piaR); normalizePi(*piaR);
+//  realizePi(*piaR); normalizePi(*piaR);
   double deltaLambda(fitRals("Gai", *piiR,'i',*piaR,'a', *lambdaGR,'G',lambda));
 
   int bcLens[] = { piiR->lens[1], piaR->lens[0], piiR->lens[0] };
