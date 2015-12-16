@@ -66,6 +66,13 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
   residuum = std::numeric_limits<double>::infinity();
   while (residuum > epsilon) {
     double lambda(getRealArgument("lambda"));
+    std::ifstream lambdaFile("lambda");
+    if (lambdaFile.is_open()) {
+      // override with lambda given from file if existing
+      lambdaFile >> lambda;
+      lambdaFile.close();
+    }
+    if (lambda < 0.0) return;
     LOG(2) << "lambda=" << lambda << std::endl;
     fit(lambda);
   }
