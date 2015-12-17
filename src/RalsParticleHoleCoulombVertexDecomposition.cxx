@@ -110,35 +110,37 @@ double RalsParticleHoleCoulombVertexDecomposition::fitRals(
   Tensor<complex> &a, char const idxA,
   double lambda
 ) {
+  Tensor<complex> conjB(b);
+  Tensor<complex> conjC(c);
+  Univar_Function<complex> fConj(&conj<complex>);
+  conjB.sum(1.0, b,"jR", 0.0,"jR", fConj); 
+  conjC.sum(1.0, c,"kR", 0.0,"kR", fConj);
+
   Matrix<complex> bb(rank, rank, NS, *gammaGai->wrld, "bbRS",gammaGai->profile);
   Matrix<complex> gramian(rank,rank,NS,*gammaGai->wrld,"gRS",gammaGai->profile);
-  Bivar_Function<complex> fDot(&dot<complex>);
   LOG(4) << "building Gramian..." << std::endl;
-  bb.contract(1.0,b,"jR", b,"jS", 0.0,"SR", fDot);
-  gramian.contract(1.0,c,"kR", c,"kS", 0.0,"SR", fDot);
+  bb["SR"] = b["jR"] * conjB["jS"];
+  gramian["SR"] = c["kR"] * conjC["kS"];
   gramian["SR"] *= bb["SR"];
   gramian["RR"] += lambda;
   LOG(4) << "inverting Gramian..." << std::endl;
   IterativePseudoInverse<complex> gramianInverse(gramian);
-  Tensor<complex> oldA(a);
 
+  Tensor<complex> oldA(a);
   int bcLens[] = { int(rank), b.lens[0], c.lens[0] };
   int bcSyms[] = { NS, NS, NS };
   LOG(4) << "building outer product..." << std::endl;
   Tensor<complex> bc(3,bcLens,bcSyms,*gammaGai->wrld,"bcRjk",gammaGai->profile);
   char const indicesA[] = { idxA, 'R', 0 };
   char const indicesBC[] = { 'R', idxB, idxC, 0 };
-  Tensor<complex> conjB(b);
-  Tensor<complex> conjC(c);
-  Univar_Function<complex> fConj(&conj<complex>);
-  conjB.sum(1.0, b,"jR", 0.0,"jR", fConj); 
-  conjC.sum(1.0, c,"kR", 0.0,"kR", fConj);
   bc["Sjk"] = conjB["jS"] * conjC["kS"];
   LOG(4) << "applying outer product..." << std::endl;
   a[indicesA] *= lambda;
   a[indicesA] += (*gammaGai)[indicesGamma] * bc[indicesBC];
   LOG(4) << "applying inverse of Gramian..." << std::endl;
-  a.contract(1.0, a,"iS", gramianInverse.get(), "SR", 0.0, "iR", fDot);
+  Tensor<complex> conjInvGramian(gramianInverse.get());
+  conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
+  a["iR"] = a["iS"] * conjInvGramian["SR"];
   oldA["iR"] -= a["iR"];
   double norm(frobeniusNorm(oldA));
   return norm*norm;
