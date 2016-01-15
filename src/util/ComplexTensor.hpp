@@ -16,6 +16,14 @@ namespace cc4s {
   );
 
   /**
+   * \brief Discards the real part of a complex tensor.
+   */
+  void fromComplexTensor(
+    CTF::Tensor<complex> const &c,
+    CTF::Tensor<double> &r
+  );
+
+  /**
    * \brief Composes a tensor of complex elements
    * containing of the given tensors of real and imaginary parts.
    * Note that in this overload the imaginary part may be redistributed

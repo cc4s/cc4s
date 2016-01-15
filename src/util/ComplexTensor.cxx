@@ -15,6 +15,19 @@
     ); \
 }
 
+#define AssertCompatibleTensorShape(c,r) \
+{ \
+  Assert( \
+    (c).order==(r).order, \
+    "Incompatible tensor orders" \
+  ); \
+  for (int k(0); k < c.order; ++k) \
+    Assert( \
+      (c).lens[k]==(r).lens[k], \
+      "Incompatible tensor shapes" \
+    ); \
+}
+
 void cc4s::fromComplexTensor(
   CTF::Tensor<complex> const &c,
   CTF::Tensor<double> &r, CTF::Tensor<double> &i
@@ -33,6 +46,24 @@ void cc4s::fromComplexTensor(
   i.write(indicesCount, indices, imags);
   free(indices);
   delete[] reals; delete[] imags;
+}
+
+void cc4s::fromComplexTensor(
+  CTF::Tensor<complex> const &c,
+  CTF::Tensor<double> &r
+) {
+  AssertCompatibleTensorShape(c,r);
+  int64_t indicesCount, *indices;
+  complex *values;
+  c.read_local(&indicesCount, &indices, &values);
+  double *reals(new double[indicesCount]);
+  for (int64_t i(0); i < indicesCount; ++i) {
+    reals[i] = std::real(values[i]);
+  }
+  free(values);
+  r.write(indicesCount, indices, reals);
+  free(indices);
+  delete[] reals;
 }
 
 
