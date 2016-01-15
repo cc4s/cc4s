@@ -48,6 +48,8 @@ void DrccdEnergyFromCoulombIntegrals::run() {
     exce = -1.0 * energy.get_val();
     e = dire + exce;
     LOG(0) << "e=" << e << std::endl;
+    LOG(1) << "RPA=" << dire << std::endl;
+    LOG(1) << "SOSEX=" << exce << std::endl;
   }
 
   setRealArgument("DrccdEnergy", e);
@@ -59,9 +61,9 @@ void DrccdEnergyFromCoulombIntegrals::iterate() {
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
   Tensor<> *tabij(getTensorArgument("DrccdDoublesAmplitudes"));
-  Tensor<> Rabij(*vabij);
-  Tensor<> Cabij(*vabij);
-  Tensor<> Dabij(*vabij);
+  Tensor<> Rabij(false, *vabij);
+  Tensor<> Cabij(false, *vabij);
+  Tensor<> Dabij(false, *vabij);
 
   Rabij["abij"] = (*vabij)["abij"];
   Rabij["abij"] += 2.0 * (*vabij)["acik"] * (*tabij)["cbkj"];
@@ -69,7 +71,7 @@ void DrccdEnergyFromCoulombIntegrals::iterate() {
   Rabij["abij"] += Cabij["abij"];
   Rabij["abij"] += 2.0 * Cabij["acik"] * (*tabij)["cbkj"];
 
-  Dabij["abij"] += (*epsi)["i"];
+  Dabij["abij"] =  (*epsi)["i"];
   Dabij["abij"] += (*epsi)["j"];
   Dabij["abij"] -= (*epsa)["a"];
   Dabij["abij"] -= (*epsa)["b"];

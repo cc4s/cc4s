@@ -26,15 +26,13 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
  
-  Tensor<> Dabij(vabij);
-  Tensor<> Tabij(vabij);
+  Tensor<> Dabij(false, vabij);
+  Tensor<> Tabij(false, vabij);
 
-  Dabij["abij"] += (*epsi)["i"];
+  Dabij["abij"] =  (*epsi)["i"];
   Dabij["abij"] += (*epsi)["j"];
   Dabij["abij"] -= (*epsa)["a"];
   Dabij["abij"] -= (*epsa)["b"];
-  // NOTE: ctf double counts if lhs tensor is SH,SH
-  Dabij["abij"] = Dabij["abij"];
 
   Bivar_Function<> fDivide(&divide<double>);
   Tabij.contract(1.0, (*vabij),"abij", Dabij,"abij", 0.0,"abij", fDivide);
@@ -48,6 +46,8 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   exce = -1.0 * energy.get_val();
   e = dire + exce;
   LOG(0) << "e=" << e << std::endl;
+  LOG(1) << "MP2d=" << dire << std::endl;
+  LOG(1) << "MP2x=" << exce << std::endl;
 
   setRealArgument("Mp2Energy", e);
 }
