@@ -5,6 +5,10 @@
 #include <FtodReader.hpp>
 
 namespace cc4s {
+  /**
+   * \deprecated This will no longer be used in the Data-Algorithm
+   * design.
+   */
   class TextFtodReader: public FtodReader {
   public:
     virtual void read();

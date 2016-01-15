@@ -6,6 +6,10 @@
 #include <ctf.hpp>
 
 namespace cc4s {
+  /**
+   * \deprecated This will no longer be used in the Data-Algorithm
+   * design.
+   */
   class Chi: public PerturbationTensor {
   public:
     Chi(int nG, int no, int nv);

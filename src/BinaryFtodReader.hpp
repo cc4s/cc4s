@@ -8,6 +8,10 @@
 #include <fstream>
 
 namespace cc4s {
+  /**
+   * \deprecated This will no longer be used in the Data-Algorithm
+   * design.
+   */
   class BinaryFtodReader: public FtodReader {
   public:
     BinaryFtodReader(bool stridedIo=false);

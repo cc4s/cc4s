@@ -5,6 +5,10 @@
 #include <ctf.hpp>
 
 namespace cc4s {
+  /**
+   * \deprecated This will no longer be used in the Data-Algorithm
+   * design.
+   */
   class PerturbationTensor {
   public:
     /**

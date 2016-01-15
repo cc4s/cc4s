@@ -7,6 +7,10 @@
 #include <ctf.hpp>
 
 namespace cc4s {
+  /**
+   * \deprecated This will no longer be used in the Data-Algorithm
+   * design.
+   */
   class CoulombIntegrals: public PerturbationTensor {
   public:
     CoulombIntegrals(Chi *chiReal, Chi *chiImag);
