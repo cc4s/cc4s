@@ -1,4 +1,5 @@
 #include <ParticleHoleCoulombIntegrals.hpp>
+#include <util/Complex.hpp>
 #include <util/ComplexTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -19,7 +20,7 @@ ParticleHoleCoulombIntegrals::~ParticleHoleCoulombIntegrals() {
 }
 
 /**
- * \brief Calculates Coulomb integrals \f from aiCoulombVertexReal/Imag
+ * \brief Calculates Coulomb integrals from aiCoulombVertexReal/Imag
  */
 void ParticleHoleCoulombIntegrals::run() {
   Tensor<complex> *gammaGai(
