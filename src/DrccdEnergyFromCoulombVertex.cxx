@@ -39,21 +39,33 @@ void DrccdEnergyFromCoulombVertex::run() {
   int no(gammaGai->lens[2]);
   int lens[] = { nv, nv, no, no };
   int syms[] = { NS, NS, NS, NS };
-  Tensor<> *realTabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Tabij"));
-  allocatedTensorArgument("DrccdDoublesAmplitudes", realTabij);
-  vabij = new Tensor<complex>(
-    4, realTabij->lens, realTabij->sym, *Cc4s::world, "Vabij"
-  );
+  Tensor<> *tabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Tabij"));
+  allocatedTensorArgument("DrccdDoublesAmplitudes", tabij);
+  vabij = new Tensor<>(4, tabij->lens, tabij->sym, *Cc4s::world, "Vabij");
 
-  Tensor<complex> conjGammaGai(*gammaGai);
-  Univar_Function<complex> fConj(&conj<complex>);
-  conjGammaGai.sum(1.0, *gammaGai,"Gai", 0.0,"Gai", fConj);
-  (*vabij)["abij"] = conjGammaGai["Gai"] * (*gammaGai)["Gbj"];
-  Tensor<> realVabij(false, *realTabij);
-  Tensor<> imagVabij(false, *realTabij);
-  fromComplexTensor(*vabij, realVabij, imagVabij);
+  (*vabij)["abij"] =  (*realGammaGai)["Gai"] * (*realGammaGai)["Gbj"];
+  (*vabij)["abij"] += (*imagGammaGai)["Gai"] * (*imagGammaGai)["Gbj"];
+
+  // NOTE: for debugging:
+  Tensor<> imagVabij(false, *tabij);
+  imagVabij["abij"] =  (*realGammaGai)["Gai"] * (*imagGammaGai)["Gbj"];
+  imagVabij["abij"] -= (*imagGammaGai)["Gai"] * (*realGammaGai)["Gbj"];
   double error(imagVabij.norm2());
   LOG(4) << "|imag(Vabij)| = " << error << std::endl;
+
+  // allocate intermediate tensors
+  Rabij = new Tensor<>(false, *tabij);
+  Dabij = new Tensor<>(false, *tabij);
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  (*Dabij)["abij"] =  (*epsi)["i"];
+  (*Dabij)["abij"] += (*epsi)["j"];
+  (*Dabij)["abij"] -= (*epsa)["a"];
+  (*Dabij)["abij"] -= (*epsa)["b"];
+  realLGai = new Tensor<>(false, *realGammaGai);
+  imagLGai = new Tensor<>(false, *imagGammaGai);
+  realRGai = new Tensor<>(false, *realGammaGai);
+  imagRGai = new Tensor<>(false, *imagGammaGai);
 
   Scalar<> energy(*Cc4s::world);
   double e(0), dire, exce;
@@ -65,9 +77,9 @@ void DrccdEnergyFromCoulombVertex::run() {
   for (int i(0); i < Cc4s::options->niter; ++i) {
     LOG(0) << "iteration: " << i << std::endl;
     iterate();
-    energy[""] = 2.0 * (*realTabij)["abij"] * realVabij["abij"];
+    energy[""] = 2.0 * (*tabij)["abij"] * (*vabij)["abij"];
     dire = energy.get_val();
-    energy[""] = -1.0 * (*realTabij)["abji"] * realVabij["abij"];
+    energy[""] = -1.0 * (*tabij)["abji"] * (*vabij)["abij"];
     exce = energy.get_val();
     e = dire + exce;
     LOG(0) << "e=" << e << std::endl;
@@ -76,57 +88,43 @@ void DrccdEnergyFromCoulombVertex::run() {
   }
 
   setRealArgument("DrccdEnergy", e);
+
+  // deallocate intermediate tensors
+  delete Rabij; delete Dabij;
+  delete realLGai; delete imagLGai;
+  delete realRGai; delete imagRGai;
+  delete realGammaGai; delete imagGammaGai;
 }
 
 void DrccdEnergyFromCoulombVertex::iterate() {
   // get tensors
-  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  Tensor<complex> *gammaGai(
-    getTensorArgument<complex>("ParticleHoleCoulombVertex")
-  );
-  Tensor<> *realTabij(getTensorArgument("DrccdDoublesAmplitudes"));
-  Tensor<> imagTabij(false, *realTabij);
-  Tensor<complex> tabij(
-    4, realTabij->lens, realTabij->sym, *Cc4s::world, "Tabij"
-  );
-  toComplexTensor(*realTabij, imagTabij, tabij);
-  Tensor<complex> Rabij(false, tabij);
-  Tensor<complex> conjGammaGai(false, *gammaGai);
-  Univar_Function<complex> fConj(&conj<complex>);
-  conjGammaGai.sum(1.0, *gammaGai,"Gai", 0.0,"Gai", fConj);
-
+  Tensor<> *tabij(getTensorArgument("DrccdDoublesAmplitudes"));
 
   // Coulomb term
-  Rabij["abij"] = (*vabij)["abij"];
+  (*Rabij)["abij"] = (*vabij)["abij"];
 
   // Bubble on the right
-  Tensor<complex> LGai(false, *gammaGai);
-  LGai["Gai"] = 2.0 * tabij["acik"] * conjGammaGai["Gck"];
-  Rabij["abij"] += LGai["Gai"] * (*gammaGai)["Gbj"];
+  // LGai["Gai"] = 2.0 * tabij["acik"] * conj(gammaGai["Gck"]);
+  (*realLGai)["Gai"] = +2.0 * (*tabij)["acik"] * (*realGammaGai)["Gck"];
+  (*imagLGai)["Gai"] = -2.0 * (*tabij)["acik"] * (*imagGammaGai)["Gck"];
+  // Rabij["abij"] += real( LGai["Gai"] * (*gammaGai)["Gbj"] );
+  (*Rabij)["abij"] += (*realLGai)["Gai"] * (*realGammaGai)["Gbj"];
+  (*Rabij)["abij"] -= (*imagLGai)["Gai"] * (*imagGammaGai)["Gbj"];
 
   // Bubble on the left
-  Tensor<complex> RGai(false, *gammaGai);
-  RGai["Gbj"] = 2.0 * (*gammaGai)["Gck"] * tabij["cbkj"];
-  Rabij["abij"] += conjGammaGai["Gai"] * RGai["Gbj"];
+  // RGai["Gbj"] = 2.0 * (*gammaGai)["Gck"] * tabij["cbkj"];
+  (*realRGai)["Gbj"] = +2.0 * (*realGammaGai)["Gck"] * (*tabij)["cbkj"];
+  (*imagRGai)["Gbj"] = +2.0 * (*imagGammaGai)["Gck"] * (*tabij)["cbkj"];
+  // Rabij["abij"] += real( conj(gammaGai["Gai"]) * RGai["Gbj"] );
+  (*Rabij)["abij"] += (*realGammaGai)["Gai"] * (*realRGai)["Gbj"];
+  (*Rabij)["abij"] += (*imagGammaGai)["Gai"] * (*imagRGai)["Gbj"];
 
   // Bubbles on both sides
-  Rabij["abij"] += LGai["Gai"] * RGai["Gbj"];
-
-  Tensor<> realRabij(false, *realTabij);
-  Tensor<> imagRabij(false, *realTabij);
-  fromComplexTensor(Rabij, realRabij, imagRabij);
-  double error(imagRabij.norm2());
-  LOG(4) << "|imag(Rabij)| = " << error << std::endl;
-
-  // to complex
-  Tensor<> Dabij(false, *realTabij);
-  Dabij["abij"] =  (*epsi)["i"];
-  Dabij["abij"] += (*epsi)["j"];
-  Dabij["abij"] -= (*epsa)["a"];
-  Dabij["abij"] -= (*epsa)["b"];
+  // Rabij["abij"] += real( LGai["Gai"] * RGai["Gbj"] );
+  (*Rabij)["abij"] += (*realLGai)["Gai"] * (*realRGai)["Gbj"];
+  (*Rabij)["abij"] -= (*imagLGai)["Gai"] * (*imagRGai)["Gbj"];
 
   Bivar_Function<> fDivide(&divide<double>);
-  realTabij->contract(1.0, realRabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+  tabij->contract(1.0, *Rabij,"abij", *Dabij,"abij", 0.0,"abij", fDivide);
 }
 

@@ -1,4 +1,4 @@
-% RPA execution plan
+% RPA execution plan for smaller systems with Nv * No <= NG
 ParticleHoleCoulombVertexReader [
   (file "FTODDUMP")
 ] [

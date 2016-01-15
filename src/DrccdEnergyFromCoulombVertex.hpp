@@ -23,8 +23,9 @@ namespace cc4s {
   protected:
     void iterate();
 
-    CTF::Tensor<complex> *vabij;
-    CTF::Tensor<> *realGammaGai, *imagGammaGai;
+    CTF::Tensor<> *vabij, *Rabij, *Dabij,
+      *realGammaGai, *imagGammaGai,
+      *realLGai, *imagLGai, *realRGai, *imagRGai;
   };
 }
 
