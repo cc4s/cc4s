@@ -21,7 +21,7 @@ DrccdEnergyFromCoulombVertex::~DrccdEnergyFromCoulombVertex() {
 }
 
 /**
- * \brief Calculates MP2 energy from Coulomb integrals Vabij
+ * \brief Calculates Drccd energy from Coulomb vertex gammaGai
  */
 void DrccdEnergyFromCoulombVertex::run() {
   Tensor<complex> *gammaGai(

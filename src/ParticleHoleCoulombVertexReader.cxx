@@ -85,6 +85,12 @@ void ParticleHoleCoulombVertexReader::run() {
   // combine to complex tensor
   toComplexTensor(realGammaGai, imagGammaGai, *gammaGai);
   LOG(0) << " OK" << std::endl;
+
+  // print the number of nG's, nv's, no's, and np's at the level of LOG(2)
+  LOG(2) << "nG = " << nG << std::endl;
+  LOG(2) << "nv = " << nv << std::endl;
+  LOG(2) << "no = " << no << std::endl;
+  LOG(2) << "np = " << np << std::endl;
 }
 
 
