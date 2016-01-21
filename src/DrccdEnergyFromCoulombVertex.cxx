@@ -49,7 +49,7 @@ void DrccdEnergyFromCoulombVertex::run() {
   // NOTE: for debugging:
   Tensor<> imagVabij(false, *tabij);
   imagVabij["abij"] =  (*realGammaGai)["Gai"] * (*imagGammaGai)["Gbj"];
-  imagVabij["abij"] -= (*imagGammaGai)["Gai"] * (*realGammaGai)["Gbj"];
+  imagVabij["abij"] += (*imagGammaGai)["Gai"] * (*realGammaGai)["Gbj"];
   double error(imagVabij.norm2());
   LOG(4) << "|imag(Vabij)| = " << error << std::endl;
 

@@ -31,7 +31,7 @@ RalsParticleHoleCoulombVertexDecomposition::
 void RalsParticleHoleCoulombVertexDecomposition::run() {
   rank = getIntegerArgument("rank");
   gammaGai = getTensorArgument<complex>("ParticleHoleCoulombVertex");
-  double epsilon = getRealArgument("epsilon");
+  double delta = getRealArgument("delta");
   int nG(gammaGai->lens[0]);
   int nv(gammaGai->lens[1]);
   int no(gammaGai->lens[2]);
@@ -64,8 +64,10 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
     allocatedTensorArgument("ComposedParticleHoleCoulombVertex", gamma0Gai);
   }
 
+  int64_t iterationsCount(0);
+  int64_t maxIterationsCount(getIntegerArgument("maxIterations"));
   residuum = std::numeric_limits<double>::infinity();
-  while (residuum > epsilon) {
+  while (iterationsCount < maxIterationsCount && residuum > delta) {
     double lambda(getRealArgument("lambda"));
     std::ifstream lambdaFile("lambda");
     if (lambdaFile.is_open()) {
@@ -76,6 +78,7 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
     if (lambda < 0.0) return;
     LOG(2) << "lambda=" << lambda << std::endl;
     fit(lambda);
+    ++iterationsCount;
   }
 }
 
@@ -95,11 +98,10 @@ void RalsParticleHoleCoulombVertexDecomposition::fit(double lambda) {
   (*gamma0Gai)["Gai"] = (*lambdaGR)["GR"] * bc["Rai"];
   (*gamma0Gai)["Gai"] -= (*gammaGai)["Gai"];
   residuum = frobeniusNorm(*gamma0Gai);
-  residuum *= residuum;
-  LOG(0) << "R(Pi_aR Pi_iR Lambda_GR - Gamma^a_iG)=" << residuum << std::endl;
-  LOG(3) << "R(Pi_iR'-Pi_iR)=" << deltaPiiR << std::endl;
-  LOG(3) << "R(Pi_aR'-Pi_aR)=" << deltaPiaR << std::endl;
-  LOG(3) << "R(Lambda_GR'-Lambda_GR)=" << deltaLambda << std::endl;
+  LOG(0) << "|Pi_aR Pi_iR Lambda_GR - Gamma^a_iG|=" << residuum << std::endl;
+  LOG(3) << "|Pi_iR'-Pi_iR|=" << deltaPiiR << std::endl;
+  LOG(3) << "|Pi_aR'-Pi_aR|=" << deltaPiaR << std::endl;
+  LOG(3) << "|Lambda_GR'-Lambda_GR|=" << deltaLambda << std::endl;
   (*gamma0Gai)["Gai"] += (*gammaGai)["Gai"];
 }
 

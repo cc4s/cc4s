@@ -1,11 +1,12 @@
 TARGET=Cc4s
+INSTALL=~/bin/cc4s
 VERSION:=$(shell git describe --all --dirty --long)
 DATE:=$(shell git log -1 --format="%cd")
 # location of the Cyclops Tensor Framework library
 CTF=../ctf
 #TODO: use configuration files
 CXX=mpicxx
-OPTIMIZE=-O3
+OPTIMIZE=-O3 -mavx2 -mfma
 COPTIONS=-std=c++0x -fopenmp -Wall -g -fmax-errors=3 -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
 "-DCC4S_DATE=\"${DATE}\""
@@ -16,6 +17,10 @@ cc4s: bin/${TARGET}
 
 doc:
 	doxygen
+
+install: bin/${TARGET}
+	mkdir -p ${INSTALL}
+	cp bin/${TARGET} ${INSTALL}
 
 OBJECTS= \
 obj/Options.o \
@@ -36,7 +41,8 @@ obj/ParticleHoleCoulombVertexReader.o \
 obj/Mp2EnergyFromCoulombIntegrals.o \
 obj/DrccdEnergyFromCoulombIntegrals.o \
 obj/DrccdEnergyFromCoulombVertex.o \
-obj/RalsParticleHoleCoulombVertexDecomposition.o
+obj/RalsParticleHoleCoulombVertexDecomposition.o \
+obj/CtfTest.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 
