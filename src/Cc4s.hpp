@@ -27,6 +27,7 @@ namespace cc4s {
     void mp2Algorithm();
     void rpaAlgorithm();
 */
+    void benchFlops();
     void iterateMp2();
     void iterateCcsd();
     void iterateRpa();

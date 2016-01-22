@@ -6,6 +6,8 @@
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
+#include <ctime>
+#include <util/RandomTensor.hpp>
 
 // TODO: to be removed from the main class
 #include <util/MathFunctions.hpp>
@@ -21,6 +23,7 @@ Cc4s::~Cc4s() {
 
 void Cc4s::run() {
   printBanner();
+  //benchFlops();
   Parser parser(options->file);
   std::vector<Algorithm *> algorithms(parser.parse());
   LOG(0) <<
@@ -523,6 +526,62 @@ void Cc4s::iterateRccsd() {
   }
 }
 
+void Cc4s::benchFlops() {
+  int64_t nrow = 1500;
+  int64_t ncol = 1500;
+  int64_t mflops ;
+  int i;
+  double passedseconds;
+
+  LOG(0) << "Running brief benchmark for " << nrow << " x " << ncol << "matrix." << std::endl;
+  LOG(0) << "Filling the matrices with random numbers. " << std::endl;
+  int lensA[] = {nrow, ncol};
+  int syms[] = {NS, NS};
+  Tensor<> Aij(2, lensA, syms, *world, "Aij");
+  setRandomTensor(Aij); 
+  int lensB[] = {ncol, nrow};
+  Tensor<> Bij(2, lensB, syms, *world, "Bij");
+  setRandomTensor(Bij); 
+  int lensC[] = {nrow, nrow};
+  Tensor<> Cij(2, lensC, syms, *world, "Cij");
+  setRandomTensor(Cij); 
+
+  clock_t start = clock();
+  LOG(0) << "Multiplying the matrices .. " << std::endl;
+  mflops=0;
+  i=1;
+  for (int i; i < 2; i += 1) {
+    Cij["ij"] += Aij["ik"] * Bij["kj"];
+    LOG(0) << "Iteration " << i << std::endl;
+    mflops+=nrow*nrow*ncol*2/1000000;
+  }
+  passedseconds=(double) (clock() - start) / CLOCKS_PER_SEC;;
+  LOG(0) << "Performed " << mflops << " MFlop in " << passedseconds << " seconds." << std::endl;
+  LOG(0) << "The BLAS level 3 performance of your processor is  " << mflops/(passedseconds)/1000 << " GFlop/s" << std::endl;
+
+/*  LOG(0) << "Running brief benchmark for " << nrow << " x " << ncol << "x1x1 Tensor." << std::endl;
+  int lensA4[] = {nrow, ncol,1,1};
+  int syms4[] = {NS, NS, NS, NS};
+  Tensor<> Aijkl(4, lensA4, syms4, *world, "Aijkl");
+  int lensB4[] = {ncol, nrow,1,1};
+  Tensor<> Bijkl(4, lensB4, syms4, *world, "Bijkl");
+  int lensC4[] = {nrow, nrow,1,1};
+  Tensor<> Cijkl(4, lensC4, syms4, *world, "Cijkl");
+
+  mflops=0;
+
+  i=1;
+  for (int i; i < 100; i += 1) {
+    Cijkl["ijlm"] += 0.5 * Aijkl["iklm"] * Bijkl["kjlm"];
+    LOG(0) << "Iteration " << i << std::endl;
+  }
+  mflops=nrow*nrow*ncol*2/1000000;
+  LOG(0) << "Performed " << mflops << std::endl;
+*/
+
+} 
+
+
 
 void Cc4s::iterateMp2() {
   {
@@ -539,6 +598,7 @@ void Cc4s::iterateMp2() {
     T->abij->contract(1.0, *V->abij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
   }
 }
+
 
 void Cc4s::iterateCcsd() {
   int no = chiReal->no;
