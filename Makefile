@@ -10,7 +10,6 @@ COPTIONS=${CXXOPTIONS} -std=c++0x -Wall -fmax-errors=3 \
 -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
 "-DCC4S_DATE=\"${DATE}\""
-#LIBS=-lblas -lgfortran
 
 # primary target
 cc4s: bin/${TARGET}
@@ -42,7 +41,9 @@ obj/Mp2EnergyFromCoulombIntegrals.o \
 obj/DrccdEnergyFromCoulombIntegrals.o \
 obj/DrccdEnergyFromCoulombVertex.o \
 obj/RalsParticleHoleCoulombVertexDecomposition.o \
-obj/CtfTest.o \
+obj/GenerateRandomTensor.o \
+obj/TensorContraction.o \
+obj/TensorSum.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 

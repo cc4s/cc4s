@@ -6,6 +6,7 @@
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
+#include <sys/time.h>
 
 // TODO: to be removed from the main class
 #include <util/MathFunctions.hpp>
@@ -25,11 +26,55 @@ void Cc4s::run() {
   std::vector<Algorithm *> algorithms(parser.parse());
   LOG(0) <<
     "Execution plan read: " << algorithms.size() << " step(s)" << std::endl;
+
+  timespec realTimeStart, cpuTimeStart;
+  clock_gettime(CLOCK_REALTIME, &realTimeStart);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cpuTimeStart);
+
   for (unsigned int i(0); i < algorithms.size(); ++i) {
     LOG(0) << "Step " << (i+1) << ": " << algorithms[i]->getName() << std::endl;
+
+    // TODO: move to proper class
+    timespec timeStart, timeEnd;
+    int64_t flopsStart(flopCounter.count());
+    clock_gettime(CLOCK_REALTIME, &timeStart);
+
     algorithms[i]->run();
+
+    clock_gettime(CLOCK_REALTIME, &timeEnd);
+    int64_t flopsEnd(flopCounter.count());
+
+    LOG(1) << "Elapsed Realtime: " <<
+      diff(timeStart, timeEnd) << " s" << std::endl;
+
+    LOG(1) << "On root: " <<
+      (flopsEnd - flopsStart) / 1e9 << " GFLOPS ( " <<
+      (flopsEnd - flopsStart) / 1e9 / diff(timeStart, timeEnd) <<
+      " GFLOPS/s )" << std::endl;
   }
+  // TODO: move to proper class
+  timespec realTimeEnd, cpuTimeEnd;
+  clock_gettime(CLOCK_REALTIME, &realTimeEnd);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cpuTimeEnd);
+
+  LOG(0) << "Total realtime: " <<
+    diff(realTimeStart, realTimeEnd) << " s" << std::endl;
+  LOG(0) << "Total cpu time: " <<
+    diff(cpuTimeStart, cpuTimeEnd) << " s" << std::endl;
   printStatistics();
+}
+
+// TODO: move to proper class
+double Cc4s::diff(timespec const &start, timespec const &end) {
+  timespec temp;
+  if ((end.tv_nsec - start.tv_nsec) < 0) {
+    temp.tv_sec = end.tv_sec - start.tv_sec - 1;
+    temp.tv_nsec = 1000000000l + end.tv_nsec - start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec - start.tv_sec;
+    temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+  }
+  return temp.tv_sec + temp.tv_nsec / 1e9;
 }
 
 /*
