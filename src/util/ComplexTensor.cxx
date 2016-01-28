@@ -1,6 +1,7 @@
 #include <util/ComplexTensor.hpp>
 
 #include <util/Exception.hpp>
+#include <complex>
 
 #define AssertCompatibleTensorShapes(c,r,i) \
 { \
@@ -79,8 +80,13 @@ void cc4s::toComplexTensor(
   i.read(indicesCount, indices, imags);
   complex *values(new complex[indicesCount]);
   for (int64_t i(0); i < indicesCount; ++i) {
+#ifdef INTEL_COMPILER
+    values[i].real() = reals[i];
+    values[i].imag() = imags[i];
+#else
     values[i].real(reals[i]);
     values[i].imag(imags[i]);
+#endif
   }
   free(reals); delete[] imags;
   c.write(indicesCount, indices, values);
@@ -98,7 +104,11 @@ void cc4s::toComplexTensor(
   r.read_local(&indicesCount, &indices, &components);
   complex *values(new complex[indicesCount]);
   for (int64_t i(0); i < indicesCount; ++i) {
+#ifdef INTEL_COMPILER
+    values[i].real() = components[i];
+#else
     values[i].real(components[i]);
+#endif
   }
   free(components);
   c.write(indicesCount, indices, values);
@@ -112,7 +122,11 @@ void cc4s::toComplexTensor(
   // tensor.
   c.read(indicesCount, indices, values);
   for (int64_t i(0); i < indicesCount; ++i) {
+#ifdef INTEL_COMPILER
+    values[i].imag() = components[i];
+#else
     values[i].imag(components[i]);
+#endif
   }
   free(components);
   c.write(indicesCount, indices, values);

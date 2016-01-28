@@ -11,7 +11,7 @@ using namespace cc4s;
 
 Parser::Parser(
   std::string const &fileName
-): stream(new std::ifstream(fileName), fileName) {
+): stream(new std::ifstream(fileName.c_str()), fileName) {
   std::ifstream *fileStream(dynamic_cast<std::ifstream *>(stream.getStream()));
   if (!fileStream->is_open()) {
     std::stringstream sStream;

@@ -17,11 +17,12 @@ namespace cc4s {
     return std::abs(x);
   }
 
-  template <typename F=double>
+  template <typename F>
   inline F conj(F const x) {
     return std::conj(x);
   }
 
+  template <>
   inline double conj(double const x) {
     return x;
   }

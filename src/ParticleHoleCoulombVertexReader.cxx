@@ -34,7 +34,7 @@ void ParticleHoleCoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
   LOG(0) <<
     "Reading particle hole Coulomb vertex from file " << fileName << " ...";
-  std::ifstream file(fileName, std::ios::binary|std::ios::in);
+  std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
   if (!file.is_open()) throw new Exception("Failed to open file");
   // read header
   Header header;

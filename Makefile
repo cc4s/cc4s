@@ -4,13 +4,13 @@ VERSION:=$(shell git describe --all --dirty --long)
 DATE:=$(shell git log -1 --format="%cd")
 # location of the Cyclops Tensor Framework library
 CTF=../ctf
-#TODO: use configuration files
-CXX=mpicxx
-OPTIMIZE=-O3 -mavx2 -mfma
-COPTIONS=-std=c++0x -fopenmp -Wall -g -fmax-errors=3 -D_POSIX_C_SOURCE=200112L \
+include config.mk
+OPTIMIZE=${CXXOPTIMIZE} -O3
+COPTIONS=${CXXOPTIONS} -std=c++0x -Wall -fmax-errors=3 \
+-D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
 "-DCC4S_DATE=\"${DATE}\""
-LIBS=-lblas -lgfortran
+#LIBS=-lblas -lgfortran
 
 # primary target
 cc4s: bin/${TARGET}

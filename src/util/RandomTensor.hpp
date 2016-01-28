@@ -3,6 +3,7 @@
 
 #include <util/Complex.hpp>
 #include <ctf.hpp>
+#include <complex>
 
 namespace cc4s {
   template <
@@ -11,7 +12,8 @@ namespace cc4s {
   inline void setRandom(
     double &value, Distribution &distribution, RandomEngine &randomEngine
   ) {
-    value = distribution(randomEngine);
+//    value = distribution(randomEngine);
+    value = -1.0 + 2.0*rand() / RAND_MAX; // distribution(randomEngine);
   }
 
   template <
@@ -20,8 +22,13 @@ namespace cc4s {
   inline void setRandom(
     complex &value, Distribution &distribution, RandomEngine &randomEngine
   ) {
+#ifdef INTEL_COMPILER
+    value.real() = -1.0 + 2.0*rand() / RAND_MAX; // distribution(randomEngine);
+    value.imag() = -1.0 + 2.0*rand() / RAND_MAX; // distribution(randomEngine);
+#else
     value.real(distribution(randomEngine));
     value.imag(distribution(randomEngine));
+#endif
   }
 
   template <typename F>
