@@ -1,15 +1,17 @@
 TARGET=Cc4s
 INSTALL=~/bin/cc4s
+include config.mk
 VERSION:=$(shell git describe --all --dirty --long)
 DATE:=$(shell git log -1 --format="%cd")
+COMPILER_VERSION:=$(shell ${CXX} -v | head -n 1)
 # location of the Cyclops Tensor Framework library
 CTF=../ctf
-include config.mk
 OPTIMIZE=${CXXOPTIMIZE} -O3
 COPTIONS=${CXXOPTIONS} -std=c++0x -Wall -fmax-errors=3 \
 -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
-"-DCC4S_DATE=\"${DATE}\""
+"-DCC4S_DATE=\"${DATE}\"" \
+"-DCOMPILER_VERSION=\"${COMPILER_VERSION}\""
 
 # primary target
 cc4s: bin/${TARGET}
@@ -24,6 +26,8 @@ install: bin/${TARGET}
 OBJECTS= \
 obj/Options.o \
 obj/util/Log.o \
+obj/util/Timer.o \
+obj/util/FlopsCounter.o \
 obj/util/MathFunctions.o \
 obj/util/ComplexTensor.o \
 obj/util/RandomTensor.o \

@@ -7,7 +7,6 @@
 #include <Chi.hpp>
 #include <CoulombIntegrals.hpp>
 #include <Amplitudes.hpp>
-#include <sys/time.h>
 
 namespace cc4s {
   class Cc4s {
@@ -35,11 +34,9 @@ namespace cc4s {
     void iterateRccsd();
 
     void printBanner();
-    void printStatistics();
-    // TODO: move in proper class
-    double diff(timespec const &start, timespec const &end);
-
-    CTF::Flop_counter flopCounter;
+    void printStatistics(
+      int64_t rootFlops, int64_t totalFlops, double totalTime
+    );
   };
 }
 

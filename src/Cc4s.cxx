@@ -3,10 +3,11 @@
 #include <Cc4s.hpp>
 #include <Algorithm.hpp>
 #include <Parser.hpp>
+#include <util/Timer.hpp>
+#include <util/FlopsCounter.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
-#include <sys/time.h>
 
 // TODO: to be removed from the main class
 #include <util/MathFunctions.hpp>
@@ -14,7 +15,7 @@
 using namespace cc4s;
 using namespace CTF;
 
-Cc4s::Cc4s(): flopCounter() {
+Cc4s::Cc4s() {
 }
 
 Cc4s::~Cc4s() {
@@ -27,54 +28,31 @@ void Cc4s::run() {
   LOG(0) <<
     "Execution plan read: " << algorithms.size() << " step(s)" << std::endl;
 
-  timespec realTimeStart, cpuTimeStart;
-  clock_gettime(CLOCK_REALTIME, &realTimeStart);
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cpuTimeStart);
+  int64_t rootFlops, totalFlops;
+  double totalTime;
+  {
+    FlopsCounter rootCounter(&rootFlops);
+    FlopsCounter totalCounter(&totalFlops, world->comm);
+    Timer totalTimer(&totalTime);
 
-  for (unsigned int i(0); i < algorithms.size(); ++i) {
-    LOG(0) << "Step " << (i+1) << ": " << algorithms[i]->getName() << std::endl;
+    for (unsigned int i(0); i < algorithms.size(); ++i) {
+      LOG(0) << "Step " << (i+1) << ": " << algorithms[i]->getName() << std::endl;
 
-    // TODO: move to proper class
-    timespec timeStart, timeEnd;
-    int64_t flopsStart(flopCounter.count());
-    clock_gettime(CLOCK_REALTIME, &timeStart);
+      int64_t flops;
+      double time;
+      {
+        FlopsCounter flopsCounter(&flops);
+        Timer timer(&time);
+        algorithms[i]->run();
+      }
 
-    algorithms[i]->run();
-
-    clock_gettime(CLOCK_REALTIME, &timeEnd);
-    int64_t flopsEnd(flopCounter.count());
-
-    LOG(1) << "Elapsed Realtime: " <<
-      diff(timeStart, timeEnd) << " s" << std::endl;
-
-    LOG(1) << "On root: " <<
-      (flopsEnd - flopsStart) / 1e9 << " GFLOPS ( " <<
-      (flopsEnd - flopsStart) / 1e9 / diff(timeStart, timeEnd) <<
-      " GFLOPS/s )" << std::endl;
+      LOG(1) << "elapsed realtime: " << time << " s" << std::endl;
+      LOG(1) << "on root: " << flops / 1e9 << " GFLOPS ( " <<
+        flops / 1e9 / time << " GFLOPS/s )" << std::endl;
+    }
   }
-  // TODO: move to proper class
-  timespec realTimeEnd, cpuTimeEnd;
-  clock_gettime(CLOCK_REALTIME, &realTimeEnd);
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cpuTimeEnd);
 
-  LOG(0) << "Total realtime: " <<
-    diff(realTimeStart, realTimeEnd) << " s" << std::endl;
-  LOG(0) << "Total cpu time: " <<
-    diff(cpuTimeStart, cpuTimeEnd) << " s" << std::endl;
-  printStatistics();
-}
-
-// TODO: move to proper class
-double Cc4s::diff(timespec const &start, timespec const &end) {
-  timespec temp;
-  if ((end.tv_nsec - start.tv_nsec) < 0) {
-    temp.tv_sec = end.tv_sec - start.tv_sec - 1;
-    temp.tv_nsec = 1000000000l + end.tv_nsec - start.tv_nsec;
-  } else {
-    temp.tv_sec = end.tv_sec - start.tv_sec;
-    temp.tv_nsec = end.tv_nsec - start.tv_nsec;
-  }
-  return temp.tv_sec + temp.tv_nsec / 1e9;
+  printStatistics(rootFlops, totalFlops, totalTime);
 }
 
 /*
@@ -117,14 +95,20 @@ double Cc4s::diff(timespec const &start, timespec const &end) {
 
 
 void Cc4s::printBanner() {
-  LOG(0) << "====== Coupled Cluster for Solids ======" << std::endl;
-  LOG(0) << "version " << CC4S_VERSION << " " << CC4S_DATE << std::endl;
-  LOG(0) << "built " << __DATE__ << " " << __TIME__ <<
-    " with c++ " << __cplusplus << std::endl;
+LOG(0) << "                __ __      " << std::endl
+       << "     __________/ // / _____" << std::endl
+       << "    / ___/ ___/ // /_/ ___/" << std::endl
+       << "   / /__/ /__/__  __(__  ) " << std::endl
+       << "   \\___/\\___/  /_/ /____/  " << std::endl;
+  LOG(0) << "  Coupled Cluster for Solids" << std::endl << std::endl;
+  LOG(0) << "version: " << CC4S_VERSION << " " << CC4S_DATE << std::endl;
+  LOG(0) << "built:   " << __DATE__ << " " << __TIME__ << std::endl;
+  LOG(0) << "with:    " << COMPILER_VERSION << std::endl << std::endl;
 }
 
-void Cc4s::printStatistics() {
-  int64_t flops = flopCounter.count();
+void Cc4s::printStatistics(
+  int64_t rootFlops, int64_t totalFlops, double totalTime
+) {
   std::string pid, comm, state, ppid, pgrp, session, ttyNr,
     tpgid, flags, minflt, cminflt, majflt, cmajflt,
     utime, stime, cutime, cstime, priority, nice,
@@ -139,18 +123,19 @@ void Cc4s::printStatistics() {
   statStream.close();
   // in case x86-64 is configured to use 2MB pages
   int64_t pageSize = sysconf(_SC_PAGE_SIZE);
-  LOG(0) << "performance statistics:" << std::endl;
-  LOG(0) << "  on root: " << flops / 1.e9 << " GFLOPS" << std::endl;
+  LOG(0) << std::endl << "performance statistics:" << std::endl;
+  LOG(0) << "  total realtime: " << totalTime << " s" << std::endl;
+  LOG(0) << "  on root: " << rootFlops / 1e9 << " GFLOPS ( "
+    << rootFlops / 1e9 / totalTime << " GFLOPS/s )" << std::endl;
   LOG(0) << "    physical memory: " <<
     rss * pageSize / 1e9 << " GB" << std::endl;
   LOG(0) << "    virtual  memory: " <<
     vsize / 1e9 << " GB" << std::endl;
 
-  flops = flopCounter.count(world->comm);
   int64_t globalVSize, globalRss;
   MPI_Reduce(&vsize, &globalVSize, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
   MPI_Reduce(&rss, &globalRss, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
-  LOG(0) << "  total:   " << flops / 1.e9 << " GFLOPS" << std::endl;
+  LOG(0) << "  total:   " << totalFlops / 1.e9 << " GFLOPS" << std::endl;
   LOG(0) << "    physical memory: " <<
     globalRss * pageSize / 1e9 << " GB" << std::endl;
   LOG(0) << "    virtual  memory: " <<
