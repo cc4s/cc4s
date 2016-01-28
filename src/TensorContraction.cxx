@@ -1,5 +1,4 @@
 #include <TensorContraction.hpp>
-#include <Cc4s.hpp>
 #include <ctf.hpp>
 
 using namespace CTF;

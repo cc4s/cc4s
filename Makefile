@@ -48,6 +48,7 @@ obj/RalsParticleHoleCoulombVertexDecomposition.o \
 obj/GenerateRandomTensor.o \
 obj/TensorContraction.o \
 obj/TensorSum.o \
+obj/TensorNorm.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 
