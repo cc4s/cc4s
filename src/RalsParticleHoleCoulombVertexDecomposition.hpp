@@ -66,6 +66,11 @@ namespace cc4s {
       *regularizationEstimatorPiiR, *regularizationEstimatorPiaR,
       *regularizationEstimatorLambdaGR;
 
+    static int64_t constexpr DEFAULT_MAX_ITERATIONS = 32;
+    static double constexpr DEFAULT_DELTA = 0.0;
+    static double constexpr DEFAULT_SWAMPING_THRESHOLD = 1.0;
+    static double constexpr DEFAULT_REGULARIZATION_FRICTION = 0.125;
+
   protected:
     void fit(int64_t iterationsCount);
 
