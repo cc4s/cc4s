@@ -51,6 +51,11 @@ std::string Algorithm::getTextArgument(std::string const &name) {
   }
   return textData->value;
 }
+std::string Algorithm::getTextArgument(
+  std::string const &name, std::string const &defaultValue
+) {
+  return isArgumentGiven(name) ? getTextArgument(name) : defaultValue;
+}
 
 int64_t Algorithm::getIntegerArgument(std::string const &name) {
   Data const *data(getArgumentData(name));
@@ -63,6 +68,11 @@ int64_t Algorithm::getIntegerArgument(std::string const &name) {
   }
   return integerData->value;
 }
+int64_t Algorithm::getIntegerArgument(
+  std::string const &name, int64_t const defaultValue
+) {
+  return isArgumentGiven(name) ? getIntegerArgument(name) : defaultValue;
+}
 
 double Algorithm::getRealArgument(std::string const &name) {
   Data const *data(getArgumentData(name));
@@ -74,6 +84,11 @@ double Algorithm::getRealArgument(std::string const &name) {
     throw new Exception(sstream.str());
   }
   return realData->value;
+}
+double Algorithm::getRealArgument(
+  std::string const &name, double const defaultValue
+) {
+  return isArgumentGiven(name) ? getRealArgument(name) : defaultValue;
 }
 
 template <typename F>
