@@ -3,7 +3,7 @@
 #include <Algorithm.hpp>
 #include <util/Complex.hpp>
 #include <util/Exception.hpp>
-
+#include <util/Log.hpp>
 #include <iostream>
 
 using namespace cc4s;
@@ -31,7 +31,7 @@ Data *Algorithm::getArgumentData(std::string const &name) {
     throw new Exception(sStream.str());
   }
   Data *data = Data::get(dataIterator->second);
-  if (data == nullptr) {
+  if (!data) {
     std::stringstream sStream;
     sStream << "Missing data: " << dataIterator->second;
 //    throw new Exception(std::stringstream() << "Missing data: " << dataIterator->second);
@@ -43,7 +43,7 @@ Data *Algorithm::getArgumentData(std::string const &name) {
 std::string Algorithm::getTextArgument(std::string const &name) {
   Data *data(getArgumentData(name));
   TextData const *textData = dynamic_cast<TextData const *>(data);
-  if (textData == nullptr) {
+  if (!textData) {
     std::stringstream sstream;
     sstream << "Incompatible tpye for argument: " << name << ". "
       << "Excpected Text, found " << data->getTypeName() << ".";
@@ -60,7 +60,7 @@ std::string Algorithm::getTextArgument(
 int64_t Algorithm::getIntegerArgument(std::string const &name) {
   Data const *data(getArgumentData(name));
   IntegerData const *integerData = dynamic_cast<IntegerData const *>(data);
-  if (integerData == nullptr) {
+  if (!integerData) {
     std::stringstream sstream;
     sstream << "Incompatible tpye for argument: " << name << ". "
       << "Excpected Integer, found " << data->getTypeName() << ".";
@@ -77,7 +77,9 @@ int64_t Algorithm::getIntegerArgument(
 double Algorithm::getRealArgument(std::string const &name) {
   Data const *data(getArgumentData(name));
   RealData const *realData = dynamic_cast<RealData const *>(data);
-  if (realData == nullptr) {
+  return realData ? realData->value : getRealArgumentFromInteger(data);
+  if (!realData) {
+    return getRealArgumentFromInteger(data);
     std::stringstream sstream;
     sstream << "Incompatible tpye for argument: " << name << ". "
       << "Excpected Real, found " << data->getTypeName() << ".";
@@ -90,12 +92,27 @@ double Algorithm::getRealArgument(
 ) {
   return isArgumentGiven(name) ? getRealArgument(name) : defaultValue;
 }
+double Algorithm::getRealArgumentFromInteger(Data const *data) {
+  IntegerData const *integerData = dynamic_cast<IntegerData const *>(data);
+  if (!integerData) {
+    std::stringstream sstream;
+    sstream << "Incompatible tpye for argument: " << data->getName() << ". "
+      << "Excpected Real, found " << data->getTypeName() << ".";
+    throw new Exception(sstream.str());
+  }
+  double value(integerData->value);
+  if (int64_t(value) != integerData->value) {
+    LOG(0) << "Warning: loss of precision in conversion from integer to real."
+      << std::endl;
+  }
+  return value;
+}
 
 template <typename F>
 CTF::Tensor<F> *Algorithm::getTensorArgument(std::string const &name) {
   Data *data(getArgumentData(name));
   TensorData<F> *tensorData = dynamic_cast<TensorData<F> *>(data);
-  if (tensorData == nullptr) {
+  if (!tensorData) {
     std::stringstream sStream;
     sStream << "Incompatible tpye for argument: " << name << ". "
       << "Excpected Tensor, found " << data->getTypeName() << ".";

@@ -55,6 +55,8 @@ namespace cc4s {
     void setRealArgument(std::string const &argumentName, double const value);
 
   protected:
+    double getRealArgumentFromInteger(Data const *data);
+
     Data *getArgumentData(std::string const &argumentName);
     std::map<std::string, std::string> arguments;
   };
