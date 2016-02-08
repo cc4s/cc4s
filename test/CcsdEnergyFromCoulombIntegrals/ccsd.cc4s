@@ -1,0 +1,21 @@
+CoulombVertexReader [
+  (file "FTODDUMP")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CcsdCoulombIntegrals [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals
+  PPHHCoulombIntegrals HHHHCoulombIntegrals HHHPCoulombIntegrals
+  PPPHCoulombIntegrals
+].
+
+CcsdEnergyFromCoulombIntegrals [
+  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals 
+  PPHHCoulombIntegrals HHHHCoulombIntegrals HHHPCoulombIntegrals
+  PPPHCoulombIntegrals HoleEigenEnergies    ParticleEigenEnergies
+] [
+  CcsdEnergy CcsdSinglesAmplitudes CcsdDoublesAmplitudes
+].
