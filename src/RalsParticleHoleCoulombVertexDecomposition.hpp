@@ -28,6 +28,7 @@ namespace cc4s {
      * \brief The rank of the tensor rank decomposition
      */
     int64_t rank;
+
     /**
      * \brief The sum of squares of the difference between the current
      * decomposition and the particle hole Coulomb vertex.
@@ -36,8 +37,42 @@ namespace cc4s {
     CTF::Tensor<complex> *gammaGai, *gamma0Gai;
     CTF::Matrix<complex> *piiR, *piaR, *lambdaGR;
 
+    class RegularizationEstimator {
+    public:
+      RegularizationEstimator(
+        double swampingThreshold_, double regularizationFriction_,
+        double initialLambda_
+      ):
+        swampingThreshold(swampingThreshold_),
+        regularizationFriction(regularizationFriction_),
+        lambda(initialLambda_)
+      { }
+      double getLambda() {
+        return lambda;
+      }
+      void update(double const swampingFactor) {
+        double s(swampingFactor / swampingThreshold);
+        double estimatedLambda(lambda * s*s);
+        lambda =
+          (1-regularizationFriction)*estimatedLambda +
+          regularizationFriction*lambda;
+      }
+    protected:
+      double swampingThreshold, regularizationFriction;
+      double lambda;
+    };
+
+    RegularizationEstimator
+      *regularizationEstimatorPiiR, *regularizationEstimatorPiaR,
+      *regularizationEstimatorLambdaGR;
+
+    static int64_t constexpr DEFAULT_MAX_ITERATIONS = 32;
+    static double constexpr DEFAULT_DELTA = 0.0;
+    static double constexpr DEFAULT_SWAMPING_THRESHOLD = 1.0;
+    static double constexpr DEFAULT_REGULARIZATION_FRICTION = 0.125;
+
   protected:
-    void fit(double lambda);
+    void fit(int64_t iterationsCount);
 
     void fitAls(
       char const *indicesGamma,
@@ -45,12 +80,12 @@ namespace cc4s {
       CTF::Tensor<complex> &c, char const idxC,
       CTF::Tensor<complex> &a, char const idxA
     );
-    double fitRals(
+    void fitRals(
       char const *indicesGamma,
       CTF::Tensor<complex> &b, char const idxB,
       CTF::Tensor<complex> &c, char const idxC,
       CTF::Tensor<complex> &a, char const idxA,
-      double lambda
+      RegularizationEstimator &regularizationEstimatorA
     );
 
     void normalizePi(CTF::Matrix<complex> &pi);
