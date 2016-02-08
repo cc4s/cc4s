@@ -34,8 +34,8 @@ namespace cc4s {
      * decomposition and the particle hole Coulomb vertex.
      */
     double residuum;
-    CTF::Tensor<complex> *gammaGai, *gamma0Gai;
-    CTF::Matrix<complex> *piiR, *piaR, *lambdaGR;
+    CTF::Tensor<complex> *GammaGai, *Gamma0Gai;
+    CTF::Matrix<complex> *PiiR, *PiaR, *LambdaGR;
 
     class RegularizationEstimator {
     public:
@@ -76,20 +76,20 @@ namespace cc4s {
 
     void fitAls(
       char const *indicesGamma,
-      CTF::Tensor<complex> &b, char const idxB,
-      CTF::Tensor<complex> &c, char const idxC,
-      CTF::Tensor<complex> &a, char const idxA
+      CTF::Tensor<complex> &B, char const idxB,
+      CTF::Tensor<complex> &C, char const idxC,
+      CTF::Tensor<complex> &A, char const idxA
     );
     void fitRals(
       char const *indicesGamma,
-      CTF::Tensor<complex> &b, char const idxB,
-      CTF::Tensor<complex> &c, char const idxC,
-      CTF::Tensor<complex> &a, char const idxA,
+      CTF::Tensor<complex> &B, char const idxB,
+      CTF::Tensor<complex> &C, char const idxC,
+      CTF::Tensor<complex> &A, char const idxA,
       RegularizationEstimator &regularizationEstimatorA
     );
 
-    void normalizePi(CTF::Matrix<complex> &pi);
-    void realizePi(CTF::Matrix<complex> &pi);
+    void normalizePi(CTF::Matrix<complex> &Pi);
+    void realizePi(CTF::Matrix<complex> &Pi);
   };
 }
 

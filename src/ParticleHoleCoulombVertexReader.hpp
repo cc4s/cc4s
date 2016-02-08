@@ -18,10 +18,10 @@ namespace cc4s {
     virtual void run();
 
   protected:
-    int no, nv, nG;
-    int64_t np;
+    int No, Nv, NG;
+    int64_t Np;
 
-    void readGammaGaiChunkBlocked(std::ifstream &file, CTF::Tensor<> *gammaGai);
+    void readGammaGaiChunkBlocked(std::ifstream &file, CTF::Tensor<> *GammaGai);
     void readEpsChunk(
       std::ifstream &file,  CTF::Tensor<> *epsi, CTF::Tensor<> *epsa
     );
@@ -29,7 +29,7 @@ namespace cc4s {
     class Header {
     public:
       char magic[8];
-      int32_t no, nv, nG, nSpins, kPoints, reserved_;
+      int32_t No, Nv, NG, NSpins, kPoints, reserved_;
       static char const *MAGIC;
     };
     class Chunk {

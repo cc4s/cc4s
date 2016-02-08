@@ -24,10 +24,10 @@ Mp2EnergyFromCoulombIntegrals::~Mp2EnergyFromCoulombIntegrals() {
 void Mp2EnergyFromCoulombIntegrals::run() {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  Tensor<> *vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
+  Tensor<> *Vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
  
-  Tensor<> Dabij(false, vabij);
-  Tensor<> Tabij(false, vabij);
+  Tensor<> Dabij(false, Vabij);
+  Tensor<> Tabij(false, Vabij);
 
   Dabij["abij"] =  (*epsi)["i"];
   Dabij["abij"] += (*epsi)["j"];
@@ -35,14 +35,14 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   Dabij["abij"] -= (*epsa)["b"];
 
   Bivar_Function<> fDivide(&divide<double>);
-  Tabij.contract(1.0, (*vabij),"abij", Dabij,"abij", 0.0,"abij", fDivide);
+  Tabij.contract(1.0, (*Vabij),"abij", Dabij,"abij", 0.0,"abij", fDivide);
 
   Scalar<> energy(*Cc4s::world);
   double e, dire, exce;
 
-  energy[""] = 2.0 * Tabij["abij"] * (*vabij)["abij"];
+  energy[""] = 2.0 * Tabij["abij"] * (*Vabij)["abij"];
   dire = energy.get_val();
-  energy[""] = Tabij["abji"] * (*vabij)["abij"];
+  energy[""] = Tabij["abji"] * (*Vabij)["abij"];
   exce = -1.0 * energy.get_val();
   e = dire + exce;
   LOG(0) << "e=" << e << std::endl;

@@ -41,17 +41,17 @@ void ParticleHoleCoulombVertexReader::run() {
   file.read(reinterpret_cast<char *>(&header), sizeof(header));
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
     throw new Exception("Invalid file format");
-  nG = header.nG;
-  no = header.no;
-  nv = header.nv;
-  np = no + nv;
+  NG = header.NG;
+  No = header.No;
+  Nv = header.Nv;
+  Np = No + Nv;
 
   // allocate output tensors
-  int vertexLens[] = { nG, nv, no };
+  int vertexLens[] = { NG, Nv, No };
   int vertexSyms[] = { NS, NS, NS };
-  Tensor<> *epsi(new Vector<>(no, *Cc4s::world, "epsi"));
-  Tensor<> *epsa(new Vector<>(nv, *Cc4s::world, "epsa"));
-  Tensor<complex> *gammaGai(
+  Tensor<> *epsi(new Vector<>(No, *Cc4s::world, "epsi"));
+  Tensor<> *epsa(new Vector<>(Nv, *Cc4s::world, "epsa"));
+  Tensor<complex> *GammaGai(
     new Tensor<complex>(
       3, vertexLens, vertexSyms, *Cc4s::world, "GammaGai"
     )
@@ -59,7 +59,7 @@ void ParticleHoleCoulombVertexReader::run() {
   // enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
-  allocatedTensorArgument("ParticleHoleCoulombVertex", gammaGai);
+  allocatedTensorArgument("ParticleHoleCoulombVertex", GammaGai);
 
   // real and imaginary parts are read in seperately
   Tensor<> realGammaGai(
@@ -83,39 +83,39 @@ void ParticleHoleCoulombVertexReader::run() {
   }
   file.close();
   // combine to complex tensor
-  toComplexTensor(realGammaGai, imagGammaGai, *gammaGai);
+  toComplexTensor(realGammaGai, imagGammaGai, *GammaGai);
   LOG(0) << " OK" << std::endl;
 
-  // print the number of nG's, nv's, no's, and np's at the level of LOG(2)
-  LOG(2) << "nG = " << nG << std::endl;
-  LOG(2) << "nv = " << nv << std::endl;
-  LOG(2) << "no = " << no << std::endl;
-  LOG(2) << "np = " << np << std::endl;
+  // print the number of NG's, Nv's, No's, and Np's at the level of LOG(2)
+  LOG(2) << "NG = " << NG << std::endl;
+  LOG(2) << "Nv = " << Nv << std::endl;
+  LOG(2) << "No = " << No << std::endl;
+  LOG(2) << "Np = " << Np << std::endl;
 }
 
 
 // TODO: use several write calls instead of one big to reduce int64 requirement
 void ParticleHoleCoulombVertexReader::readGammaGaiChunkBlocked(
-  std::ifstream &file, Tensor<> *gammaGai
+  std::ifstream &file, Tensor<> *GammaGai
 ) {
   // TODO: separate distribution from reading
   // allocate local indices and values of the chi tensors
-  int64_t nvPerNode(nv / Cc4s::world->np);
-  int64_t nvLocal(
+  int64_t NvPerNode(Nv / Cc4s::world->np);
+  int64_t NvLocal(
     Cc4s::world->rank+1 < Cc4s::world->np ?
-      nvPerNode : nv - Cc4s::world->rank * nvPerNode
+      NvPerNode : Nv - Cc4s::world->rank * NvPerNode
   );
-  int64_t nvToSkipBefore(Cc4s::world->rank * nvPerNode);
-  int64_t nvToSkipAfter(nv - (nvToSkipBefore + nvLocal));
-  double *values(new double[nvLocal*no*nG]);
-  int64_t *indices(new int64_t[nvLocal*no*nG]);
-  file.seekg(sizeof(double)*nvToSkipBefore*no*nG, file.cur);
-  file.read(reinterpret_cast<char *>(values), sizeof(double)*nvLocal*no*nG);
-  file.seekg(sizeof(double)*nvToSkipAfter*no*nG, file.cur);
-  for (int64_t i(0); i < nvLocal*no*nG; ++i) {
-    indices[i] = i + nvToSkipBefore*no*nG;
+  int64_t NvToSkipBefore(Cc4s::world->rank * NvPerNode);
+  int64_t NvToSkipAfter(Nv - (NvToSkipBefore + NvLocal));
+  double *values(new double[NvLocal*No*NG]);
+  int64_t *indices(new int64_t[NvLocal*No*NG]);
+  file.seekg(sizeof(double)*NvToSkipBefore*No*NG, file.cur);
+  file.read(reinterpret_cast<char *>(values), sizeof(double)*NvLocal*No*NG);
+  file.seekg(sizeof(double)*NvToSkipAfter*No*NG, file.cur);
+  for (int64_t i(0); i < NvLocal*No*NG; ++i) {
+    indices[i] = i + NvToSkipBefore*No*NG;
   }
-  gammaGai->write(nvLocal*no*nG, indices, values);
+  GammaGai->write(NvLocal*No*NG, indices, values);
   delete[] values; delete[] indices;
 }
 
@@ -124,22 +124,22 @@ void ParticleHoleCoulombVertexReader::readEpsChunk(
   std::ifstream &file, Tensor<> *epsi, Tensor<> *epsa
 ) {
   // allocate local indices and values of eigenenergies
-  double *iValues(new double[no]);
-  double *aValues(new double[nv]);
-  int64_t *iIndices(new int64_t[no]);
-  int64_t *aIndices(new int64_t[nv]);
+  double *iValues(new double[No]);
+  double *aValues(new double[Nv]);
+  int64_t *iIndices(new int64_t[No]);
+  int64_t *aIndices(new int64_t[Nv]);
 
   if (Cc4s::world->rank == 0) {
-    file.read(reinterpret_cast<char *>(iValues), no*sizeof(double));
-    for (int i(0); i < no; ++i) iIndices[i] = i;
-    file.read(reinterpret_cast<char *>(aValues), nv*sizeof(double));
-    for (int a(0); a < nv; ++a) aIndices[a] = a;
+    file.read(reinterpret_cast<char *>(iValues), No*sizeof(double));
+    for (int i(0); i < No; ++i) iIndices[i] = i;
+    file.read(reinterpret_cast<char *>(aValues), Nv*sizeof(double));
+    for (int a(0); a < Nv; ++a) aIndices[a] = a;
   } else {
     // skip the data otherwise
-    file.seekg(sizeof(double)*np, file.cur);
+    file.seekg(sizeof(double)*Np, file.cur);
   }
-  int64_t iValuesCount(Cc4s::world->rank == 0 ? no : 0);
-  int64_t aValuesCount(Cc4s::world->rank == 0 ? nv : 0);
+  int64_t iValuesCount(Cc4s::world->rank == 0 ? No : 0);
+  int64_t aValuesCount(Cc4s::world->rank == 0 ? Nv : 0);
   epsi->write(iValuesCount, iIndices, iValues);
   epsa->write(aValuesCount, aIndices, aValues);
   delete[] iValues; delete[] aValues;
