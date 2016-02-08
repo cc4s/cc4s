@@ -29,14 +29,14 @@ RalsParticleHoleCoulombVertexDecomposition::
 }
 
 void RalsParticleHoleCoulombVertexDecomposition::run() {
-  rank = getIntegerArgument("rank");
   gammaGai = getTensorArgument<complex>("ParticleHoleCoulombVertex");
-  double delta = getRealArgument("delta");
   int nG(gammaGai->lens[0]);
   int nv(gammaGai->lens[1]);
   int no(gammaGai->lens[2]);
+  rank = getIntegerArgument("rank", nG);
   LOG(3) << "rank=" << rank << std::endl;
   LOG(3) << "nG=" << nG << ", no=" << no << ", nv=" << nv << std::endl;
+
   // allocate factor tensors
   piiR = new Matrix<complex>(
     no, int(rank), NS, *gammaGai->wrld, "PiiR", gammaGai->profile
@@ -64,30 +64,49 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
     allocatedTensorArgument("ComposedParticleHoleCoulombVertex", gamma0Gai);
   }
 
+  double swampingThreshold(
+    getRealArgument("swampingThreshold", DEFAULT_SWAMPING_THRESHOLD)
+  );
+  double regularizationFriction(
+    getRealArgument("regularizationFriction", DEFAULT_REGULARIZATION_FRICTION)
+  );
+  regularizationEstimatorPiiR = new RegularizationEstimator(
+    swampingThreshold, regularizationFriction, 1
+  );
+  regularizationEstimatorPiaR = new RegularizationEstimator(
+    swampingThreshold, regularizationFriction, 1
+  );
+  regularizationEstimatorLambdaGR = new RegularizationEstimator(
+    swampingThreshold, regularizationFriction, 1
+  );
   int64_t iterationsCount(0);
-  int64_t maxIterationsCount(getIntegerArgument("maxIterations"));
+  int64_t maxIterationsCount(
+    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
+  );
+  double delta(getRealArgument("delta", DEFAULT_DELTA));
   residuum = std::numeric_limits<double>::infinity();
+  LOG(0) << "n :  Delta" << std::endl;
   while (iterationsCount < maxIterationsCount && residuum > delta) {
-    double lambda(getRealArgument("lambda"));
-    std::ifstream lambdaFile("lambda");
-    if (lambdaFile.is_open()) {
-      // override with lambda given from file if existing
-      lambdaFile >> lambda;
-      lambdaFile.close();
-    }
-    if (lambda < 0.0) return;
-    LOG(2) << "lambda=" << lambda << std::endl;
-    fit(lambda);
+    fit(iterationsCount);
     ++iterationsCount;
   }
 }
 
-void RalsParticleHoleCoulombVertexDecomposition::fit(double lambda) {
-  double deltaPiiR(fitRals("Gai", *piaR,'a', *lambdaGR,'G', *piiR,'i', lambda));
+void RalsParticleHoleCoulombVertexDecomposition::fit(
+  int64_t const iterationsCount
+) {
+  LOG(1) << "lambda   s" << std::endl;
+  fitRals(
+    "Gai", *piaR,'a', *lambdaGR,'G', *piiR,'i', *regularizationEstimatorPiiR
+  );
 //  realizePi(*piiR); normalizePi(*piiR);
-  double deltaPiaR(fitRals("Gai", *lambdaGR,'G', *piiR,'i', *piaR,'a', lambda));
+  fitRals(
+    "Gai", *lambdaGR,'G', *piiR,'i', *piaR,'a', *regularizationEstimatorPiaR
+  );
 //  realizePi(*piaR); normalizePi(*piaR);
-  double deltaLambda(fitRals("Gai", *piiR,'i',*piaR,'a', *lambdaGR,'G',lambda));
+  fitRals(
+    "Gai", *piiR,'i',*piaR,'a', *lambdaGR,'G', *regularizationEstimatorLambdaGR
+  );
 
   int bcLens[] = { piiR->lens[1], piaR->lens[0], piiR->lens[0] };
   int bcSyms[] = { NS, NS, NS };
@@ -98,19 +117,17 @@ void RalsParticleHoleCoulombVertexDecomposition::fit(double lambda) {
   (*gamma0Gai)["Gai"] = (*lambdaGR)["GR"] * bc["Rai"];
   (*gamma0Gai)["Gai"] -= (*gammaGai)["Gai"];
   residuum = frobeniusNorm(*gamma0Gai);
-  LOG(0) << "|Pi_aR Pi_iR Lambda_GR - Gamma^a_iG|=" << residuum << std::endl;
-  LOG(3) << "|Pi_iR'-Pi_iR|=" << deltaPiiR << std::endl;
-  LOG(3) << "|Pi_aR'-Pi_aR|=" << deltaPiaR << std::endl;
-  LOG(3) << "|Lambda_GR'-Lambda_GR|=" << deltaLambda << std::endl;
+  LOG(0) << iterationsCount << ":  " << residuum << std::endl;
   (*gamma0Gai)["Gai"] += (*gammaGai)["Gai"];
 }
 
-double RalsParticleHoleCoulombVertexDecomposition::fitRals(
+void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   char const *indicesGamma,
   Tensor<complex> &b, char const idxB, Tensor<complex> &c, char const idxC,
   Tensor<complex> &a, char const idxA,
-  double lambda
+  RegularizationEstimator &regularizationEstimatorA
 ) {
+  double lambda(regularizationEstimatorA.getLambda());
   Tensor<complex> conjB(b);
   Tensor<complex> conjC(c);
   Univar_Function<complex> fConj(&conj<complex>);
@@ -143,8 +160,11 @@ double RalsParticleHoleCoulombVertexDecomposition::fitRals(
   conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
   a["iR"] = a["iS"] * conjInvGramian["SR"];
   oldA["iR"] -= a["iR"];
-  double norm(frobeniusNorm(oldA));
-  return norm*norm;
+  double normDifference(frobeniusNorm(oldA));
+  double norm(frobeniusNorm(a));
+  double swampingFactor(normDifference / norm);
+  LOG(1) << lambda << "  " << swampingFactor << std::endl;
+  regularizationEstimatorA.update(swampingFactor);
 }
 
 /**

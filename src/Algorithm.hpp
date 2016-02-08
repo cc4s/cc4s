@@ -33,8 +33,17 @@ namespace cc4s {
     bool isArgumentGiven(std::string const &argumentName);
     // retrieving input arguments
     std::string getTextArgument(std::string const &argumentName);
+    std::string getTextArgument(
+      std::string const &argumentName, std::string const &defaultValue
+    );
     int64_t getIntegerArgument(std::string const &argumentName);
+    int64_t getIntegerArgument(
+      std::string const &argumentName, int64_t const defaultValue
+    );
     double getRealArgument(std::string const &argumentName);
+    double getRealArgument(
+      std::string const &argumentName, double const defaultValue
+    );
     template <typename F=double>
     CTF::Tensor<F> *getTensorArgument(std::string const &argumentName);
 
@@ -46,6 +55,8 @@ namespace cc4s {
     void setRealArgument(std::string const &argumentName, double const value);
 
   protected:
+    double getRealArgumentFromInteger(Data const *data);
+
     Data *getArgumentData(std::string const &argumentName);
     std::map<std::string, std::string> arguments;
   };
