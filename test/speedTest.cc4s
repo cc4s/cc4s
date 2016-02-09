@@ -8,4 +8,4 @@ TensorContraction [
 ] [
   (Result C)
 ].
-
+TensorNorm [A] [Norm].

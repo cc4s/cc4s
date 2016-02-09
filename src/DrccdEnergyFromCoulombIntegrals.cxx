@@ -23,14 +23,14 @@ DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
  * \brief Calculates MP2 energy from Coulomb integrals Vabij
  */
 void DrccdEnergyFromCoulombIntegrals::run() {
-  Tensor<> *vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
+  Tensor<> *Vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
 
-  int nv(vabij->lens[0]);
-  int no(vabij->lens[2]);
+  int nv(Vabij->lens[0]);
+  int no(Vabij->lens[2]);
   int lens[] = { nv, nv, no, no };
   int syms[] = { NS, NS, NS, NS };
-  Tensor<> *tabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Tabij"));
-  allocatedTensorArgument("DrccdDoublesAmplitudes", tabij);
+  Tensor<> *Tabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Tabij"));
+  allocatedTensorArgument("DrccdDoublesAmplitudes", Tabij);
   
   Scalar<> energy(*Cc4s::world);
   double e(0), dire, exce;
@@ -42,9 +42,9 @@ void DrccdEnergyFromCoulombIntegrals::run() {
   for (int i(0); i < Cc4s::options->niter; ++i) {
     LOG(0) << "iteration: " << i << std::endl;
     iterate();
-    energy[""] = 2.0 * (*tabij)["abij"] * (*vabij)["abij"];
+    energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     dire = energy.get_val();
-    energy[""] = (*tabij)["abji"] * (*vabij)["abij"];
+    energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
     e = dire + exce;
     LOG(0) << "e=" << e << std::endl;
@@ -59,17 +59,17 @@ void DrccdEnergyFromCoulombIntegrals::iterate() {
   // get tensors
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  Tensor<> *vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
-  Tensor<> *tabij(getTensorArgument("DrccdDoublesAmplitudes"));
-  Tensor<> Rabij(false, *vabij);
-  Tensor<> Cabij(false, *vabij);
-  Tensor<> Dabij(false, *vabij);
+  Tensor<> *Vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
+  Tensor<> *Tabij(getTensorArgument("DrccdDoublesAmplitudes"));
+  Tensor<> Rabij(false, *Vabij);
+  Tensor<> Cabij(false, *Vabij);
+  Tensor<> Dabij(false, *Vabij);
 
-  Rabij["abij"] = (*vabij)["abij"];
-  Rabij["abij"] += 2.0 * (*vabij)["acik"] * (*tabij)["cbkj"];
-  Cabij["abij"] =  2.0 * (*vabij)["cbkj"] * (*tabij)["acik"];
+  Rabij["abij"] = (*Vabij)["abij"];
+  Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
+  Cabij["abij"] =  2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
   Rabij["abij"] += Cabij["abij"];
-  Rabij["abij"] += 2.0 * Cabij["acik"] * (*tabij)["cbkj"];
+  Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
 
   Dabij["abij"] =  (*epsi)["i"];
   Dabij["abij"] += (*epsi)["j"];
@@ -79,6 +79,6 @@ void DrccdEnergyFromCoulombIntegrals::iterate() {
   Dabij["abij"] = Dabij["abij"];
 
   Bivar_Function<> fDivide(&divide<double>);
-  tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+  Tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 }
 

@@ -29,39 +29,39 @@ RalsParticleHoleCoulombVertexDecomposition::
 }
 
 void RalsParticleHoleCoulombVertexDecomposition::run() {
-  gammaGai = getTensorArgument<complex>("ParticleHoleCoulombVertex");
-  int nG(gammaGai->lens[0]);
-  int nv(gammaGai->lens[1]);
-  int no(gammaGai->lens[2]);
-  rank = getIntegerArgument("rank", nG);
+  GammaGai = getTensorArgument<complex>("ParticleHoleCoulombVertex");
+  int NG(GammaGai->lens[0]);
+  int Nv(GammaGai->lens[1]);
+  int No(GammaGai->lens[2]);
+  rank = getIntegerArgument("rank", NG);
   LOG(3) << "rank=" << rank << std::endl;
-  LOG(3) << "nG=" << nG << ", no=" << no << ", nv=" << nv << std::endl;
+  LOG(3) << "NG=" << NG << ", No=" << No << ", Nv=" << Nv << std::endl;
 
   // allocate factor tensors
-  piiR = new Matrix<complex>(
-    no, int(rank), NS, *gammaGai->wrld, "PiiR", gammaGai->profile
+  PiiR = new Matrix<complex>(
+    No, int(rank), NS, *GammaGai->wrld, "PiiR", GammaGai->profile
   );
-  piaR = new Matrix<complex>(
-    nv, int(rank), NS, *gammaGai->wrld, "PiaR", gammaGai->profile
+  PiaR = new Matrix<complex>(
+    Nv, int(rank), NS, *GammaGai->wrld, "PiaR", GammaGai->profile
   );
-  lambdaGR = new Matrix<complex>(
-    nG, int(rank), NS, *gammaGai->wrld, "LambdaGR", gammaGai->profile
+  LambdaGR = new Matrix<complex>(
+    NG, int(rank), NS, *GammaGai->wrld, "LambdaGR", GammaGai->profile
   );
-  setRandomTensor(*piiR);
-  realizePi(*piiR); normalizePi(*piiR);
-  setRandomTensor(*piaR);
-  realizePi(*piiR); normalizePi(*piaR);
-  setRandomTensor(*lambdaGR);
-  allocatedTensorArgument("HoleFactorOrbitals", piiR);
-  allocatedTensorArgument("ParticleFactorOrbitals", piaR);
-  allocatedTensorArgument("ParticleHoleCoulombFactors", lambdaGR);
+  setRandomTensor(*PiiR);
+  realizePi(*PiiR); normalizePi(*PiiR);
+  setRandomTensor(*PiaR);
+  realizePi(*PiiR); normalizePi(*PiaR);
+  setRandomTensor(*LambdaGR);
+  allocatedTensorArgument("HoleFactorOrbitals", PiiR);
+  allocatedTensorArgument("ParticleFactorOrbitals", PiaR);
+  allocatedTensorArgument("ParticleHoleCoulombFactors", LambdaGR);
 
-  gamma0Gai = new Tensor<complex>(
-    3, gammaGai->lens, gammaGai->sym, *gammaGai->wrld, "gamma0Gai",
-    gammaGai->profile
+  Gamma0Gai = new Tensor<complex>(
+    3, GammaGai->lens, GammaGai->sym, *GammaGai->wrld, "Gamma0Gai",
+    GammaGai->profile
   );
   if (isArgumentGiven("ComposedParticleHoleCoulombVertex")) {
-    allocatedTensorArgument("ComposedParticleHoleCoulombVertex", gamma0Gai);
+    allocatedTensorArgument("ComposedParticleHoleCoulombVertex", Gamma0Gai);
   }
 
   double swampingThreshold(
@@ -97,69 +97,69 @@ void RalsParticleHoleCoulombVertexDecomposition::fit(
 ) {
   LOG(1) << "lambda   s/s_0" << std::endl;
   fitRals(
-    "Gai", *piaR,'a', *lambdaGR,'G', *piiR,'i', *regularizationEstimatorPiiR
+    "Gai", *PiaR,'a', *LambdaGR,'G', *PiiR,'i', *regularizationEstimatorPiiR
   );
-//  realizePi(*piiR); normalizePi(*piiR);
+//  realizePi(*PiiR); normalizePi(*PiiR);
   fitRals(
-    "Gai", *lambdaGR,'G', *piiR,'i', *piaR,'a', *regularizationEstimatorPiaR
+    "Gai", *LambdaGR,'G', *PiiR,'i', *PiaR,'a', *regularizationEstimatorPiaR
   );
-//  realizePi(*piaR); normalizePi(*piaR);
+//  realizePi(*PiaR); normalizePi(*PiaR);
   fitRals(
-    "Gai", *piiR,'i',*piaR,'a', *lambdaGR,'G', *regularizationEstimatorLambdaGR
+    "Gai", *PiiR,'i',*PiaR,'a', *LambdaGR,'G', *regularizationEstimatorLambdaGR
   );
 
-  int bcLens[] = { piiR->lens[1], piaR->lens[0], piiR->lens[0] };
+  int bcLens[] = { PiiR->lens[1], PiaR->lens[0], PiiR->lens[0] };
   int bcSyms[] = { NS, NS, NS };
-  Tensor<complex> bc(
-    3, bcLens, bcSyms, *gammaGai->wrld, "bcRjk", gammaGai->profile
+  Tensor<complex> BC(
+    3, bcLens, bcSyms, *GammaGai->wrld, "BCRjk", GammaGai->profile
   );
-  bc["Rai"] = (*piaR)["aR"] * (*piiR)["iR"];
-  (*gamma0Gai)["Gai"] = (*lambdaGR)["GR"] * bc["Rai"];
-  (*gamma0Gai)["Gai"] -= (*gammaGai)["Gai"];
-  residuum = frobeniusNorm(*gamma0Gai);
+  BC["Rai"] = (*PiaR)["aR"] * (*PiiR)["iR"];
+  (*Gamma0Gai)["Gai"] = (*LambdaGR)["GR"] * BC["Rai"];
+  (*Gamma0Gai)["Gai"] -= (*GammaGai)["Gai"];
+  residuum = frobeniusNorm(*Gamma0Gai);
   LOG(0) << iterationsCount << ":  " << residuum << std::endl;
-  (*gamma0Gai)["Gai"] += (*gammaGai)["Gai"];
+  (*Gamma0Gai)["Gai"] += (*GammaGai)["Gai"];
 }
 
 void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   char const *indicesGamma,
-  Tensor<complex> &b, char const idxB, Tensor<complex> &c, char const idxC,
-  Tensor<complex> &a, char const idxA,
+  Tensor<complex> &B, char const idxB, Tensor<complex> &C, char const idxC,
+  Tensor<complex> &A, char const idxA,
   RegularizationEstimator &regularizationEstimatorA
 ) {
   double lambda(regularizationEstimatorA.getLambda());
-  Tensor<complex> conjB(b);
-  Tensor<complex> conjC(c);
+  Tensor<complex> conjB(B);
+  Tensor<complex> conjC(C);
   Univar_Function<complex> fConj(&conj<complex>);
-  conjB.sum(1.0, b,"jR", 0.0,"jR", fConj); 
-  conjC.sum(1.0, c,"kR", 0.0,"kR", fConj);
+  conjB.sum(1.0, B,"jR", 0.0,"jR", fConj); 
+  conjC.sum(1.0, C,"kR", 0.0,"kR", fConj);
 
-  Matrix<complex> bb(rank, rank, NS, *gammaGai->wrld, "bbRS",gammaGai->profile);
-  Matrix<complex> gramian(rank,rank,NS,*gammaGai->wrld,"gRS",gammaGai->profile);
+  Matrix<complex> BB(rank, rank, NS, *GammaGai->wrld, "BBRS",GammaGai->profile);
+  Matrix<complex> gramian(rank,rank,NS,*GammaGai->wrld,"GRS",GammaGai->profile);
   LOG(4) << "building Gramian..." << std::endl;
-  bb["SR"] = b["jR"] * conjB["jS"];
-  gramian["SR"] = c["kR"] * conjC["kS"];
-  gramian["SR"] *= bb["SR"];
+  BB["SR"] = B["jR"] * conjB["jS"];
+  gramian["SR"] = C["kR"] * conjC["kS"];
+  gramian["SR"] *= BB["SR"];
   gramian["RR"] += lambda;
   LOG(4) << "inverting Gramian..." << std::endl;
   IterativePseudoInverse<complex> gramianInverse(gramian);
 
-  Tensor<complex> oldA(a);
-  int bcLens[] = { int(rank), b.lens[0], c.lens[0] };
+  Tensor<complex> oldA(A);
+  int bcLens[] = { int(rank), B.lens[0], C.lens[0] };
   int bcSyms[] = { NS, NS, NS };
   LOG(4) << "building outer product..." << std::endl;
-  Tensor<complex> bc(3,bcLens,bcSyms,*gammaGai->wrld,"bcRjk",gammaGai->profile);
+  Tensor<complex> BC(3,bcLens,bcSyms,*GammaGai->wrld,"BCRjk",GammaGai->profile);
   char const indicesA[] = { idxA, 'R', 0 };
   char const indicesBC[] = { 'R', idxB, idxC, 0 };
-  bc["Sjk"] = conjB["jS"] * conjC["kS"];
+  BC["Sjk"] = conjB["jS"] * conjC["kS"];
   LOG(4) << "applying outer product..." << std::endl;
-  a[indicesA] *= lambda;
-  a[indicesA] += (*gammaGai)[indicesGamma] * bc[indicesBC];
+  A[indicesA] *= lambda;
+  A[indicesA] += (*GammaGai)[indicesGamma] * BC[indicesBC];
   LOG(4) << "applying inverse of Gramian..." << std::endl;
   Tensor<complex> conjInvGramian(gramianInverse.get());
   conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
-  a["iR"] = a["iS"] * conjInvGramian["SR"];
-  oldA["iR"] -= a["iR"];
+  A["iR"] = A["iS"] * conjInvGramian["SR"];
+  oldA["iR"] -= A["iR"];
   double normDifference(frobeniusNorm(oldA));
   double norm(frobeniusNorm(a));
   double swampingFactor(
@@ -173,32 +173,32 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
  * \brief Normalizes the given factor orbitals.
  */
 void RalsParticleHoleCoulombVertexDecomposition::normalizePi(
-  Matrix<complex> &pi
+  Matrix<complex> &Pi
 ) {
   Bivar_Function<complex> fDot(&cc4s::dot<complex>);
-  Vector<complex> norm(pi.lens[0], *pi.wrld);
-  // norm["q"] = pi["qR"] * conj(pi["qR"])
-  norm.contract(1.0, pi,"qR", pi,"qR", 0.0,"q", fDot);
-  Matrix<complex> quotient(pi);
+  Vector<complex> norm(Pi.lens[0], *Pi.wrld);
+  // norm["q"] = Pi["qR"] * conj(Pi["qR"])
+  norm.contract(1.0, Pi,"qR", Pi,"qR", 0.0,"q", fDot);
+  Matrix<complex> quotient(Pi);
   Univar_Function<complex> fSqrt(&cc4s::sqrt<complex>);
   // quotient["qR"] = sqrt(norm["q"])
   quotient.sum(1.0, norm,"q", 0.0,"qR", fSqrt);
   Bivar_Function<complex> fDivide(&cc4s::divide<complex>);
-  // pi["qR"] = pi["qR"] / quotient["qR"]
-  pi.contract(1.0, pi,"qR", quotient,"qR", 0.0,"qR", fDivide);
+  // Pi["qR"] = Pi["qR"] / quotient["qR"]
+  Pi.contract(1.0, Pi,"qR", quotient,"qR", 0.0,"qR", fDivide);
 }
 
 /**
  * \brief Discards the imaginary part of the given factor orbitals.
  */
 void RalsParticleHoleCoulombVertexDecomposition::realizePi(
-  Matrix<complex> &pi
+  Matrix<complex> &Pi
 ) {
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  Matrix<complex> conjX(pi);
-  // conjX["qR"] = pi["qR"]
-  conjX.sum(1.0, pi,"qR", 0.0,"qR", fConj);
-  pi["qR"] += conjX["qR"];
-  pi["qR"] *= 0.5;
+  Matrix<complex> conjX(Pi);
+  // conjX["qR"] = Pi["qR"]
+  conjX.sum(1.0, Pi,"qR", 0.0,"qR", fConj);
+  Pi["qR"] += conjX["qR"];
+  Pi["qR"] *= 0.5;
 }
 

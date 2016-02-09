@@ -49,6 +49,12 @@ obj/GenerateRandomTensor.o \
 obj/TensorContraction.o \
 obj/TensorSum.o \
 obj/TensorNorm.o \
+obj/CoulombVertexReader.o \
+obj/CcdCoulombIntegrals.o \
+obj/CcdEnergyFromCoulombIntegrals.o \
+obj/DcdEnergyFromCoulombIntegrals.o \
+obj/CcsdCoulombIntegrals.o \
+obj/CcsdEnergyFromCoulombIntegrals.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 
