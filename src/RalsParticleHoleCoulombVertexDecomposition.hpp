@@ -47,6 +47,9 @@ namespace cc4s {
         regularizationFriction(regularizationFriction_),
         lambda(initialLambda_)
       { }
+      double getSwampingThreshold() {
+        return swampingThreshold;
+      }
       double getLambda() {
         return lambda;
       }

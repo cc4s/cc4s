@@ -95,7 +95,7 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
 void RalsParticleHoleCoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
-  LOG(1) << "lambda   s" << std::endl;
+  LOG(1) << "lambda   s/s_0" << std::endl;
   fitRals(
     "Gai", *piaR,'a', *lambdaGR,'G', *piiR,'i', *regularizationEstimatorPiiR
   );
@@ -162,7 +162,9 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   oldA["iR"] -= a["iR"];
   double normDifference(frobeniusNorm(oldA));
   double norm(frobeniusNorm(a));
-  double swampingFactor(normDifference / norm);
+  double swampingFactor(
+    normDifference / norm / regularizationEstimatorA.getSwampingThreshold()
+  );
   LOG(1) << lambda << "  " << swampingFactor << std::endl;
   regularizationEstimatorA.update(swampingFactor);
 }
