@@ -157,7 +157,7 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   A["iR"] = A["iS"] * conjInvGramian["SR"];
   oldA["iR"] -= A["iR"];
   double normDifference(frobeniusNorm(oldA));
-  double norm(frobeniusNorm(a));
+  double norm(frobeniusNorm(A));
   double swampingFactor(
     normDifference / norm / regularizationEstimatorA.getSwampingThreshold()
   );
