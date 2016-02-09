@@ -1,0 +1,11 @@
+====== Coupled Cluster for Solids ======
+
+===== Building =====
+  * Setup the ''config.mk'' file for your build environment.
+  * ''config.mk.gcc'' and ''config.mk.icc'' contain templates for gcc and icc, respectively.
+  * run ''make -j 8'' to build (in parallel for some speed)
+  * run ''make install'' to copy the executable to the specified target directory. The default is ''~/bin/cc4s''.
+
+===== Running =====
+  * operation file, e.g. ''mp2.cc4s'', can be run with ''~/bin/cc4s/Cc4s -file mp2.cc4s -logLevel 2''.
+
