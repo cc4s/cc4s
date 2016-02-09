@@ -97,7 +97,6 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata() {
 
     int syms[] = { NS, NS, NS, NS };
     int voov[] = { nv, no, no, nv };
-    int vo[] = { nv, no };
     int vv[] = { nv, nv };
     int oo[] = { no, no };
 
