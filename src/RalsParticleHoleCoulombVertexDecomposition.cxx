@@ -145,16 +145,12 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   IterativePseudoInverse<complex> gramianInverse(gramian);
 
   Tensor<complex> oldA(A);
-  int bcLens[] = { int(rank), B.lens[0], C.lens[0] };
-  int bcSyms[] = { NS, NS, NS };
-  LOG(4) << "building outer product..." << std::endl;
-  Tensor<complex> BC(3,bcLens,bcSyms,*GammaGai->wrld,"BCRjk",GammaGai->profile);
   char const indicesA[] = { idxA, 'R', 0 };
-  char const indicesBC[] = { 'R', idxB, idxC, 0 };
-  BC["Sjk"] = conjB["jS"] * conjC["kS"];
-  LOG(4) << "applying outer product..." << std::endl;
+  char const indicesB[] = { idxB, 'R', 0 };
+  char const indicesC[] = { idxC, 'R', 0 };
+  LOG(4) << "applying to Gamma..." << std::endl;
   A[indicesA] *= lambda;
-  A[indicesA] += (*GammaGai)[indicesGamma] * BC[indicesBC];
+  A[indicesA] += (*GammaGai)[indicesGamma] * conjB[indicesB] * conjC[indicesC];
   LOG(4) << "applying inverse of Gramian..." << std::endl;
   Tensor<complex> conjInvGramian(gramianInverse.get());
   conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
