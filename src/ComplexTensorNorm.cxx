@@ -1,4 +1,5 @@
-#include <TensorNorm.hpp>
+#include <ComplexTensorNorm.hpp>
+#include <util/Complex.hpp>
 #include <util/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <ctf.hpp>
@@ -7,23 +8,22 @@ using namespace CTF;
 using namespace cc4s;
 
 
-ALGORITHM_REGISTRAR_DEFINITION(TensorNorm);
+ALGORITHM_REGISTRAR_DEFINITION(ComplexTensorNorm);
 
-TensorNorm::TensorNorm(
+ComplexTensorNorm::ComplexTensorNorm(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-TensorNorm::~TensorNorm() {
+ComplexTensorNorm::~ComplexTensorNorm() {
 }
 
 /**
  * \brief Testing environement
  */
-void TensorNorm::run() {
-  Tensor<> *A(getTensorArgument("A"));
+void ComplexTensorNorm::run() {
+  Tensor<complex> *A(getTensorArgument<complex>("A"));
   double norm(frobeniusNorm(*A));
-//  double norm(A->norm2());
   LOG(0) << "|A| = " << norm << std::endl;
   setRealArgument("Norm", norm);
 }

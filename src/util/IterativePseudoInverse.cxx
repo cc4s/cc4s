@@ -15,14 +15,14 @@ IterativePseudoInverse<F>::IterativePseudoInverse(
   Matrix<F> const &matrix_, double accuracy
 ):
   matrix(matrix_),
-  square(matrix_.lens[0], matrix_.lens[0], *matrix_.wrld),
-  inverse(matrix_.lens[1], matrix_.lens[0], *matrix_.wrld),
+  square(matrix_.lens[0], matrix_.lens[0], NS, *matrix_.wrld),
+  inverse(matrix_.lens[1], matrix_.lens[0], NS, *matrix_.wrld),
   alpha()
 {
-  Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], *matrix.wrld);
+  Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], NS, *matrix.wrld);
   Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
-  Matrix<F> square(matrix.lens[0], matrix.lens[0], *matrix.wrld);
+  Matrix<F> square(matrix.lens[0], matrix.lens[0], NS, *matrix.wrld);
   square["ij"] = matrix["ik"] * conjugate["kj"];
   Univar_Function<F> fAbs(&abs<F>);
   Vector<F> rowAbsNorms(square.lens[0], *matrix.wrld);
@@ -43,7 +43,7 @@ IterativePseudoInverse<F>::IterativePseudoInverse(
 template <typename F>
 void IterativePseudoInverse<F>::iterate(double accuracy) {
   Scalar<F> s;
-  Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], *matrix.wrld);
+  Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], NS, *matrix.wrld);
   Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
   Matrix<F> sqr(matrix.lens[1], matrix.lens[1], *matrix.wrld);  double remainder(1.0), minRemainder(std::numeric_limits<double>::infinity());
@@ -73,7 +73,7 @@ void IterativePseudoInverse<F>::iterate(double accuracy) {
 
 template <typename F>
 void IterativePseudoInverse<F>::iterateQuadratically(double accuracy) {
-  Scalar<F> s;
+  Scalar<F> s(*matrix.wrld);
   double remainder(1.0), minRemainder(std::numeric_limits<double>::infinity());
   int n(0), nMin(0);
   // TODO: use constants for limits

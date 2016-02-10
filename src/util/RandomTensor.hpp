@@ -12,8 +12,12 @@ namespace cc4s {
   inline void setRandom(
     double &value, Distribution &distribution, RandomEngine &randomEngine
   ) {
+#ifdef INTEL_COMPILER
 //    value = distribution(randomEngine);
     value = -1.0 + 2.0*rand() / RAND_MAX; // distribution(randomEngine);
+#else
+    value = distribution(randomEngine);
+#endif
   }
 
   template <

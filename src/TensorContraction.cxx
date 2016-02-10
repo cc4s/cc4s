@@ -4,7 +4,6 @@
 using namespace CTF;
 using namespace cc4s;
 
-
 ALGORITHM_REGISTRAR_DEFINITION(TensorContraction);
 
 TensorContraction::TensorContraction(
@@ -19,12 +18,15 @@ TensorContraction::~TensorContraction() {
  * \brief Testing environement
  */
 void TensorContraction::run() {
-
-  Tensor<> *A(getTensorArgument("A"));
-  Tensor<> *B(getTensorArgument("B"));
-  Tensor<> *C(getTensorArgument("Result"));
-  (*C)[ getTextArgument("ResultIndex").c_str() ] =
-    (*A)[ getTextArgument("AIndex").c_str() ] *
-    (*B)[ getTextArgument("BIndex").c_str() ];
-
+  Tensor<> *A(getTensorArgument<>("A"));
+  Tensor<> *B(getTensorArgument<>("B"));
+  Tensor<> *C(getTensorArgument<>("Result"));
+  C->contract(
+    getRealArgument("alpha", 1.0),
+    *A, getTextArgument("AIndex").c_str(),
+    *B, getTextArgument("BIndex").c_str(),
+    getRealArgument("beta", 0.0),
+    getTextArgument("ResultIndex").c_str()
+  );
 }
+
