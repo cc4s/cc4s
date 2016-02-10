@@ -15,11 +15,7 @@ namespace cc4s {
       READY = 3,
       UNUSED = 4, LINGERING = 5
     };
-    Data(
-      std::string const &name_
-    ): name(name_), typeName("unknown"), stage(MENTIONED) {
-      dataMap[name_] = this;
-    }
+    Data(std::string const &name_);
     virtual ~Data() { }
     std::string getName() const { return name; }
     std::string getTypeName() const { return typeName; }

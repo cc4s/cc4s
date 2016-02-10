@@ -100,7 +100,7 @@ std::string Parser::parseData() {
   char character(stream.peek());
   if (isalpha(character)) {
     return parseSymbol()->getName();
-  } else if (isdigit(character)) {
+  } else if (isdigit(character) || character == '+' || character == '-') {
     return parseNumber()->getName();
   } else if (character == '"') {
     return parseText()->getName();

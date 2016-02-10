@@ -5,6 +5,7 @@
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <iostream>
+#include <sstream>
 
 using namespace cc4s;
 
@@ -45,7 +46,7 @@ std::string Algorithm::getTextArgument(std::string const &name) {
   TextData const *textData = dynamic_cast<TextData const *>(data);
   if (!textData) {
     std::stringstream sstream;
-    sstream << "Incompatible tpye for argument: " << name << ". "
+    sstream << "Incompatible type for argument: " << name << ". "
       << "Excpected Text, found " << data->getTypeName() << ".";
     throw new Exception(sstream.str());
   }
@@ -62,7 +63,7 @@ int64_t Algorithm::getIntegerArgument(std::string const &name) {
   IntegerData const *integerData = dynamic_cast<IntegerData const *>(data);
   if (!integerData) {
     std::stringstream sstream;
-    sstream << "Incompatible tpye for argument: " << name << ". "
+    sstream << "Incompatible type for argument: " << name << ". "
       << "Excpected Integer, found " << data->getTypeName() << ".";
     throw new Exception(sstream.str());
   }
@@ -81,7 +82,7 @@ double Algorithm::getRealArgument(std::string const &name) {
   if (!realData) {
     return getRealArgumentFromInteger(data);
     std::stringstream sstream;
-    sstream << "Incompatible tpye for argument: " << name << ". "
+    sstream << "Incompatible type for argument: " << name << ". "
       << "Excpected Real, found " << data->getTypeName() << ".";
     throw new Exception(sstream.str());
   }
@@ -96,7 +97,7 @@ double Algorithm::getRealArgumentFromInteger(Data const *data) {
   IntegerData const *integerData = dynamic_cast<IntegerData const *>(data);
   if (!integerData) {
     std::stringstream sstream;
-    sstream << "Incompatible tpye for argument: " << data->getName() << ". "
+    sstream << "Incompatible type for argument: " << data->getName() << ". "
       << "Excpected Real, found " << data->getTypeName() << ".";
     throw new Exception(sstream.str());
   }
@@ -114,8 +115,8 @@ CTF::Tensor<F> *Algorithm::getTensorArgument(std::string const &name) {
   TensorData<F> *tensorData = dynamic_cast<TensorData<F> *>(data);
   if (!tensorData) {
     std::stringstream sStream;
-    sStream << "Incompatible tpye for argument: " << name << ". "
-      << "Excpected Tensor, found " << data->getTypeName() << ".";
+    sStream << "Incompatible type for argument: " << name << ". "
+      << "Excpected tensor, found " << data->getTypeName() << ".";
     throw new Exception(sStream.str());
   }
   return tensorData->value;
