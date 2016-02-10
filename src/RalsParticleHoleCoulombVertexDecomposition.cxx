@@ -167,6 +167,7 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   Tensor<complex> oldA(A);
   A["iR"] *= lambda;
   applyToGamma(indicesGamma, conjB, idxB, conjC, idxC, A, idxA);
+//  applyToGammaSliced(indicesGamma, conjB, idxB, conjC, idxC, A, idxA);
   LOG(4) << "applying inverse of Gramian..." << std::endl;
   Tensor<complex> conjInvGramian(gramianInverse.get());
   conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
@@ -227,6 +228,58 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGamma(
   }
 }
 
+void RalsParticleHoleCoulombVertexDecomposition::applyToGammaSliced(
+  char const *indicesGamma,
+  Tensor<complex> &conjB, char const idxB,
+  Tensor<complex> &conjC, char const idxC,
+  Tensor<complex> &A, char const idxA
+) {
+  char const indicesA[] = { idxA, 'S', 0 };
+  char const indicesB[] = { idxB, 'S', 0 };
+  char const indicesC[] = { idxC, 'S', 0 };
+  int dimA(std::string(indicesGamma).find(idxA));
+  int dimB(std::string(indicesGamma).find(idxB));
+  int dimC(std::string(indicesGamma).find(idxC));
+  int nA(GammaGai->lens[dimA]);
+  int nB(GammaGai->lens[dimB]), nC(GammaGai->lens[dimC]);
+  int nR(conjB.lens[1]);
+  int contractionWindow(getIntegerArgument("contractionWindow", 32));
+  for (int i(0); i < nA; i += contractionWindow) {
+    for (int j(0); j < nB; j += contractionWindow) {
+      int GammaGaiStart[3], GammaGaiEnd[3];
+      GammaGaiStart[dimA] = i;
+      GammaGaiEnd[dimA] = std::min(i+contractionWindow, nA);
+      GammaGaiStart[dimB] = j;
+      GammaGaiEnd[dimB] = std::min(j+contractionWindow, nB);
+      GammaGaiStart[dimC] = 0;
+      GammaGaiEnd[dimC] = nC;
+      int TCLens[] = {
+        GammaGaiEnd[dimA] - GammaGaiStart[dimA],
+        GammaGaiEnd[dimB] - GammaGaiStart[dimB],
+        nR
+      };
+      int TCSyms[] = { NS, NS, NS };
+      Tensor<complex> TC(3, TCLens, TCSyms, *conjB.wrld, "TCijS");
+      char const indicesTC[] = { idxA, idxB, 'S', 0 };
+      LOG(4) << "slicing Gamma..." << std::endl;
+      TC[indicesTC] =
+        GammaGai->slice(GammaGaiStart,GammaGaiEnd)[indicesGamma] *
+        conjC[indicesC];
+      int BStart[] = { GammaGaiStart[dimB], 0 };
+      int BEnd[] = { GammaGaiEnd[dimB], nR };
+      int TBCLens[] = { GammaGaiEnd[dimA]-GammaGaiStart[dimA], nR };
+      int TBCSyms[] = { NS, NS };
+      Tensor<complex> TBC(2, TBCLens, TBCSyms, *conjB.wrld, "TBCijS");
+      LOG(4) << "slicing B..." << std::endl;
+      TBC[indicesA] = TC[indicesTC] * conjB.slice(BStart,BEnd)[indicesB];
+      int AStart[] = { GammaGaiStart[dimA], 0 };
+      int AEnd[] = { GammaGaiEnd[dimA], nR };
+      int TBCOffsets[] = { 0, 0, 0 };
+      LOG(4) << "slicing into A..." << std::endl;
+      A.slice(AStart,AEnd,1.0, TBC,TBCOffsets,TBCLens,1.0);
+    }
+  }
+}
 
 /**
  * \brief Normalizes the given factor orbitals.

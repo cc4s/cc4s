@@ -98,6 +98,12 @@ namespace cc4s {
       CTF::Tensor<complex> &conjC, char const idxC,
       CTF::Tensor<complex> &A, char const idxA
     );
+    void applyToGammaSliced(
+      char const *indicesGamma,
+      CTF::Tensor<complex> &conjB, char const idxB,
+      CTF::Tensor<complex> &conjC, char const idxC,
+      CTF::Tensor<complex> &A, char const idxA
+    );
 
     void normalizePi(CTF::Matrix<complex> &Pi);
     void realizePi(CTF::Matrix<complex> &Pi);
