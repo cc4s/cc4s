@@ -108,18 +108,38 @@ void RalsParticleHoleCoulombVertexDecomposition::fit(
     "Gai", *PiiR,'i',*PiaR,'a', *LambdaGR,'G', *regularizationEstimatorLambdaGR
   );
 
-  int bcLens[] = { PiiR->lens[1], PiaR->lens[0], PiiR->lens[0] };
-  int bcSyms[] = { NS, NS, NS };
-  Tensor<complex> BC(
-    3, bcLens, bcSyms, *GammaGai->wrld, "BCRjk", GammaGai->profile
-  );
-  BC["Rai"] = (*PiaR)["aR"] * (*PiiR)["iR"];
-  (*Gamma0Gai)["Gai"] = (*LambdaGR)["GR"] * BC["Rai"];
+  calculateGamma0();
+
   (*Gamma0Gai)["Gai"] -= (*GammaGai)["Gai"];
   residuum = frobeniusNorm(*Gamma0Gai);
   LOG(0) << iterationsCount << ":  " << residuum << std::endl;
   (*Gamma0Gai)["Gai"] += (*GammaGai)["Gai"];
 }
+
+
+/**
+ * \brief Calculates \f$\Lambda^a_{iG}\f$.
+ */
+void RalsParticleHoleCoulombVertexDecomposition::calculateGamma0() {
+  if (PiaR->lens[0] < LambdaGR->lens[0]) {
+    int lens[] = { PiiR->lens[1], PiaR->lens[0], PiiR->lens[0] };
+    int syms[] = { NS, NS, NS };
+    Tensor<complex> PiPi(
+      3, lens, syms, *GammaGai->wrld, "PiPiRjk", GammaGai->profile
+    );
+    PiPi["Rai"] = (*PiaR)["aR"] * (*PiiR)["iR"];
+    (*Gamma0Gai)["Gai"] = (*LambdaGR)["GR"] * PiPi["Rai"];
+  } else {
+    int lens[] = { PiiR->lens[1], LambdaGR->lens[0], PiiR->lens[0] };
+    int syms[] = { NS, NS, NS };
+    Tensor<complex> LambdaPi(
+      3, lens, syms, *GammaGai->wrld, "BCRjk", GammaGai->profile
+    );
+    LambdaPi["RGi"] = (*LambdaGR)["GR"] * (*PiiR)["iR"];
+    (*Gamma0Gai)["Gai"] = (*PiaR)["aR"] * LambdaPi["RGi"];
+  }
+}
+
 
 void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   char const *indicesGamma,
@@ -145,12 +165,8 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   IterativePseudoInverse<complex> gramianInverse(gramian);
 
   Tensor<complex> oldA(A);
-  char const indicesA[] = { idxA, 'R', 0 };
-  char const indicesB[] = { idxB, 'R', 0 };
-  char const indicesC[] = { idxC, 'R', 0 };
-  LOG(4) << "applying to Gamma..." << std::endl;
-  A[indicesA] *= lambda;
-  A[indicesA] += (*GammaGai)[indicesGamma] * conjB[indicesB] * conjC[indicesC];
+  A["iR"] *= lambda;
+  applyToGamma(indicesGamma, conjB, idxB, conjC, idxC, A, idxA);
   LOG(4) << "applying inverse of Gramian..." << std::endl;
   Tensor<complex> conjInvGramian(gramianInverse.get());
   conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
@@ -164,6 +180,53 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   LOG(1) << lambda << "  " << swampingFactor << std::endl;
   regularizationEstimatorA.update(swampingFactor);
 }
+
+
+/**
+ * \brief Calculates \f$A_{iR} = A_{iR} + T_{ijk}{B^\ast}^{jR}{C^\ast}^{kR}\f$
+ * using a contraction order with minimal memory footprint.
+ */
+void RalsParticleHoleCoulombVertexDecomposition::applyToGamma(
+  char const *indicesGamma,
+  Tensor<complex> &conjB, char const idxB,
+  Tensor<complex> &conjC, char const idxC,
+  Tensor<complex> &A, char const idxA
+) {
+  char const indicesA[] = { idxA, 'R', 0 };
+  char const indicesB[] = { idxB, 'R', 0 };
+  char const indicesC[] = { idxC, 'R', 0 };
+  // choose contraction order with minimal memory footprint
+  int largestIndex(std::max(GammaGai->lens[0], GammaGai->lens[1]));
+  if (A.lens[0] == largestIndex) {
+    // A has largest index: contract conjB and conjC first
+    LOG(4) << "applying to Gamma with largest A..." << std::endl;
+    const char indicesBC[] = { idxB, idxC, 'R' , 0};
+    int lens[] = { conjB.lens[0], conjC.lens[0], A.lens[1] };
+    int syms[] = { NS, NS, NS };
+    Tensor<complex> BC(3, lens, syms, *GammaGai->wrld, "BC");
+    BC[indicesBC] = conjB[indicesB]*conjC[indicesC];
+    A[indicesA] += (*GammaGai)[indicesGamma] * BC[indicesBC];
+  } else if (conjB.lens[0] == largestIndex) {
+    // B has largest index: contract Gamma and conjB first
+    LOG(4) << "applying to Gamma with largest B..." << std::endl;
+    const char indicesGammaB[] = { idxA, idxC, 'R' , 0};
+    int lens[] = { A.lens[0], conjC.lens[0], A.lens[1] };
+    int syms[] = { NS, NS, NS };
+    Tensor<complex> GammaB(3, lens, syms, *GammaGai->wrld, "GammaB");
+    GammaB[indicesGammaB] = (*GammaGai)[indicesGamma]*conjB[indicesB];
+    A[indicesA] += GammaB[indicesGammaB] * conjC[indicesC];
+  } else {
+    // C has largest index: contract Gamma and conjC first
+    LOG(4) << "applying to Gamma with largest C..." << std::endl;
+    const char indicesGammaC[] = { idxA, idxB, 'R' , 0};
+    int lens[] = { A.lens[0], conjB.lens[0], A.lens[1] };
+    int syms[] = { NS, NS, NS };
+    Tensor<complex> GammaC(3, lens, syms, *GammaGai->wrld, "GammaC");
+    GammaC[indicesGammaC] = (*GammaGai)[indicesGamma]*conjC[indicesC];
+    A[indicesA] += GammaC[indicesGammaC] * conjB[indicesB];
+  }
+}
+
 
 /**
  * \brief Normalizes the given factor orbitals.

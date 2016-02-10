@@ -1,4 +1,5 @@
 *~
+config.mk
 bin/*
 obj/*
 docs/*

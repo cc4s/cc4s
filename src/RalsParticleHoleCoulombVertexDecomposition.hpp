@@ -76,6 +76,7 @@ namespace cc4s {
 
   protected:
     void fit(int64_t iterationsCount);
+    void calculateGamma0();
 
     void fitAls(
       char const *indicesGamma,
@@ -89,6 +90,13 @@ namespace cc4s {
       CTF::Tensor<complex> &C, char const idxC,
       CTF::Tensor<complex> &A, char const idxA,
       RegularizationEstimator &regularizationEstimatorA
+    );
+
+    void applyToGamma(
+      char const *indicesGamma,
+      CTF::Tensor<complex> &conjB, char const idxB,
+      CTF::Tensor<complex> &conjC, char const idxC,
+      CTF::Tensor<complex> &A, char const idxA
     );
 
     void normalizePi(CTF::Matrix<complex> &Pi);
