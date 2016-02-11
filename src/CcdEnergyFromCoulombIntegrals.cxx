@@ -58,9 +58,9 @@ void CcdEnergyFromCoulombIntegrals::run() {
     energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
     e = dire + exce;
-    LOG(0) << "e=" << e << std::endl;
-    LOG(1) << "CCDdir=" << dire << std::endl;
-    LOG(1) << "CCDexc=" << exce << std::endl;
+    LOG(0) << "e = " << e << std::endl;
+    LOG(1) << "CCDdir = " << dire << std::endl;
+    LOG(1) << "CCDexc = " << exce << std::endl;
   }
 
   LOG(0) << "CCD correlation energy = " << e << std::endl;
