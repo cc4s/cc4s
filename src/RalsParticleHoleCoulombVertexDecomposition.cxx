@@ -99,11 +99,11 @@ void RalsParticleHoleCoulombVertexDecomposition::fit(
   fitRals(
     "Gai", *PiaR,'a', *LambdaGR,'G', *PiiR,'i', *regularizationEstimatorPiiR
   );
-//  realizePi(*PiiR); normalizePi(*PiiR);
+//  realizePi(*PiiR); // normalizePi(*PiiR);
   fitRals(
     "Gai", *LambdaGR,'G', *PiiR,'i', *PiaR,'a', *regularizationEstimatorPiaR
   );
-//  realizePi(*PiaR); normalizePi(*PiaR);
+//  realizePi(*PiaR); // normalizePi(*PiaR);
   fitRals(
     "Gai", *PiiR,'i',*PiaR,'a', *LambdaGR,'G', *regularizationEstimatorLambdaGR
   );
@@ -197,7 +197,11 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGamma(
   char const indicesB[] = { idxB, 'R', 0 };
   char const indicesC[] = { idxC, 'R', 0 };
   // choose contraction order with minimal memory footprint
-  int largestIndex(std::max(GammaGai->lens[0], GammaGai->lens[1]));
+  int largestIndex(
+    std::max(
+      std::max(GammaGai->lens[0], GammaGai->lens[1]), GammaGai->lens[2]
+    )
+  );
   if (A.lens[0] == largestIndex) {
     // A has largest index: contract conjB and conjC first
     LOG(4) << "applying to Gamma with largest A..." << std::endl;
@@ -245,12 +249,14 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGammaSliced(
   int nR(conjB.lens[1]);
   int contractionWindow(getIntegerArgument("contractionWindow", 32));
   for (int i(0); i < nA; i += contractionWindow) {
-    for (int j(0); j < nB; j += contractionWindow) {
+//    for (int j(0); j < nB; j += contractionWindow) {
       int GammaGaiStart[3], GammaGaiEnd[3];
       GammaGaiStart[dimA] = i;
       GammaGaiEnd[dimA] = std::min(i+contractionWindow, nA);
-      GammaGaiStart[dimB] = j;
-      GammaGaiEnd[dimB] = std::min(j+contractionWindow, nB);
+//      GammaGaiStart[dimB] = j;
+//      GammaGaiEnd[dimB] = std::min(j+contractionWindow, nB);
+      GammaGaiStart[dimB] = 0;
+      GammaGaiEnd[dimB] = nB;
       GammaGaiStart[dimC] = 0;
       GammaGaiEnd[dimC] = nC;
       int TCLens[] = {
@@ -265,19 +271,20 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGammaSliced(
       TC[indicesTC] =
         GammaGai->slice(GammaGaiStart,GammaGaiEnd)[indicesGamma] *
         conjC[indicesC];
-      int BStart[] = { GammaGaiStart[dimB], 0 };
-      int BEnd[] = { GammaGaiEnd[dimB], nR };
+//      int BStart[] = { GammaGaiStart[dimB], 0 };
+//      int BEnd[] = { GammaGaiEnd[dimB], nR };
       int TBCLens[] = { GammaGaiEnd[dimA]-GammaGaiStart[dimA], nR };
       int TBCSyms[] = { NS, NS };
       Tensor<complex> TBC(2, TBCLens, TBCSyms, *conjB.wrld, "TBCijS");
-      LOG(4) << "slicing B..." << std::endl;
-      TBC[indicesA] = TC[indicesTC] * conjB.slice(BStart,BEnd)[indicesB];
+//      LOG(4) << "slicing B..." << std::endl;
+//      TBC[indicesA] = TC[indicesTC] * conjB.slice(BStart,BEnd)[indicesB];
+      TBC[indicesA] = TC[indicesTC] * conjB[indicesB];
       int AStart[] = { GammaGaiStart[dimA], 0 };
       int AEnd[] = { GammaGaiEnd[dimA], nR };
       int TBCOffsets[] = { 0, 0, 0 };
       LOG(4) << "slicing into A..." << std::endl;
       A.slice(AStart,AEnd,1.0, TBC,TBCOffsets,TBCLens,1.0);
-    }
+//    }
   }
 }
 

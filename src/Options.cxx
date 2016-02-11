@@ -12,7 +12,9 @@ Options::Options(int argumentCount, char **arguments) {
   profile = DEFAULT_PROFILE;
   storeV = DEFAULT_STORE_V;
   stridedIo = DEFAULT_STRIDED_IO;
+  file = "calculation.cc4s";
   logLevel = DEFAULT_LOG_LEVEL;
+  logFile = "cc4s.log";
   rank = DEFAULT_RANK;
   accuracy = DEFAULT_ACCURACY;
   for (int i(0); i < argumentCount; ++i) {
@@ -39,6 +41,8 @@ Options::Options(int argumentCount, char **arguments) {
     } else if (argument == "-logLevel") {
       std::stringstream stream(arguments[++i]);
       stream >> logLevel;
+    } else if (argument == "-logFile") {
+      logFile = arguments[++i];
     } else if (argument == "-rank") {
       std::stringstream stream(arguments[++i]);
       stream >> rank;

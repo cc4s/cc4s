@@ -634,13 +634,16 @@ int main(int argumentCount, char **arguments) {
   try {
     Cc4s::world = new World(argumentCount, arguments);
     Cc4s::options = new Options(argumentCount, arguments);
-    Log::logLevel = Cc4s::world->rank == 0 ? Cc4s::options->logLevel : -1;
+    Log::setRank(Cc4s::world->rank);
+    Log::setLogStream(
+      new LogStream(Cc4s::options->logFile, Cc4s::options->logLevel)
+    );
     Cc4s cc4s;
     cc4s.run();
   } catch (DetailedException *cause) {
     LOG(0) << std::endl << cause->getMessage() << std::endl;
   }
-
+  Log::setLogStream(nullptr);
   MPI_Finalize();
   return 0;
 }

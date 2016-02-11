@@ -2,14 +2,52 @@
 
 #include <util/Complex.hpp>
 
-int cc4s::Log::logLevel(0);
-std::string cc4s::Log::indent("\t");
+using namespace cc4s;
 
-std::ostream &cc4s::Log::logStream(int const level) {
-  for (int i(0); i < level; ++i) {
-    std::cout << indent.c_str();
+LogStream::LogStream(
+  std::string const &logFileName,
+  int const logLevel_,
+  std::string const &indent_
+):
+  std::ostream(&logBuffer),
+  logFile(logFileName.c_str()), logLevel(logLevel_), indent(indent_),
+  logBuffer(logFile.rdbuf(), std::cout.rdbuf())
+{
+}
+
+std::ostream &LogStream::prepare(int rank, int const level) {
+  // TODO: add time here
+  logFile << rank << " " << level << ": ";
+  if (logLevel >= level) {
+    for (int i(0); i < level; ++i) {
+      std::cout << indent.c_str();
+    }
+    // next puts should go to logFile and std::out, done by this->put
+    return *this;
+  } else {
+    // next puts should only go to logFile
+    return logFile;
   }
-  return std::cout;
+}
+
+int Log::rank(-1);
+LogStream *Log::logStream(nullptr); 
+
+void Log::setRank(int const rank_) {
+  rank = rank_;
+}
+
+int Log::getRank() {
+  return rank;
+}
+
+void Log::setLogStream(LogStream *logStream_) {
+  if (logStream) delete logStream;
+  logStream = logStream_;
+}
+
+LogStream &Log::getLogStream() {
+  return *logStream;
 }
 
 template <typename F>

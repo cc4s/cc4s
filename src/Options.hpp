@@ -8,13 +8,18 @@ namespace cc4s {
   class Options {
   public:
     /**
+     * \deprecated
      * \brief They are only needed when doing memory tests with random dummy
      * data
      */
     int nw;
+    /**
+     * \deprecated
+     */
     int niter;
     bool profile, storeV, stridedIo;
     int logLevel;
+    std::string logFile;
     int rank;
     double accuracy;
     std::string file;
