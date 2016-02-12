@@ -26,16 +26,14 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
  
-  Tensor<> Dabij(false, Vabij);
   Tensor<> Tabij(false, Vabij);
-
-  Dabij["abij"] =  (*epsi)["i"];
-  Dabij["abij"] += (*epsi)["j"];
-  Dabij["abij"] -= (*epsa)["a"];
-  Dabij["abij"] -= (*epsa)["b"];
+  Tabij["abij"] =  (*epsi)["i"];
+  Tabij["abij"] += (*epsi)["j"];
+  Tabij["abij"] -= (*epsa)["a"];
+  Tabij["abij"] -= (*epsa)["b"];
 
   Bivar_Function<> fDivide(&divide<double>);
-  Tabij.contract(1.0, (*Vabij),"abij", Dabij,"abij", 0.0,"abij", fDivide);
+  Tabij.contract(1.0, (*Vabij),"abij", Tabij,"abij", 0.0,"abij", fDivide);
 
   Scalar<> energy(*Cc4s::world);
   double e, dire, exce;
@@ -45,6 +43,7 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   energy[""] = Tabij["abji"] * (*Vabij)["abij"];
   exce = -1.0 * energy.get_val();
   e = dire + exce;
+
   LOG(0) << "e=" << e << std::endl;
   LOG(1) << "MP2d=" << dire << std::endl;
   LOG(1) << "MP2x=" << exce << std::endl;

@@ -77,6 +77,8 @@ namespace cc4s {
   void logMatrix(int level, CTF::Matrix<F> &matrix);
 }
 
+// TODO: return output stream for all processes, including those
+// who shouldn't print, so that formating functions can be used.
 /**
  * \brief Provides an output stream for writing a log message of the
  * log level specified by the argument.
