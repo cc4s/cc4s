@@ -59,9 +59,9 @@ void DcdEnergyFromCoulombIntegrals::run() {
     energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
     e = dire + exce;
-    LOG(0) << "e=" << e << std::endl;
-    LOG(1) << "DCDdir=" << dire << std::endl;
-    LOG(1) << "DCDexc=" << exce << std::endl;
+    LOG(0) << "e = " << e << std::endl;
+    LOG(1) << "DCDdir = " << dire << std::endl;
+    LOG(1) << "DCDexc = " << exce << std::endl;
   }
 
   LOG(0) << "DCD correlation energy = " << e << std::endl;
@@ -97,7 +97,6 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata() {
 
     int syms[] = { NS, NS, NS, NS };
     int voov[] = { nv, no, no, nv };
-    int vo[] = { nv, no };
     int vv[] = { nv, nv };
     int oo[] = { no, no };
 

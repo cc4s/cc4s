@@ -70,9 +70,12 @@ void CcsdEnergyFromCoulombIntegrals::run() {
     exce = -1.0 * energy.get_val();
     // Compute total energy
     e = dire + exce;
-    LOG(0) << "e=" << e << std::endl;
-    LOG(1) << "CCSDdir=" << dire << std::endl;
-    LOG(1) << "CCSDexc=" << exce << std::endl;
+    LOG(0) << "e = " << e << std::endl;
+    LOG(1) << "CCSDdir = " << dire << std::endl;
+    LOG(1) << "CCSDexc = " << exce << std::endl;
+    if (i == 0) {
+      LOG(1) << "MP2 correlation energy = " << e << std::endl;      
+    }
   }
 
   LOG(0) << "CCSD correlation energy = " << e << std::endl;
