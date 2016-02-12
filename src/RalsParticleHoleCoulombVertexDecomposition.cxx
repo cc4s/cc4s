@@ -34,8 +34,9 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
   int Nv(GammaGai->lens[1]);
   int No(GammaGai->lens[2]);
   rank = getIntegerArgument("rank", NG);
-  LOG(3) << "rank=" << rank << std::endl;
-  LOG(3) << "NG=" << NG << ", No=" << No << ", Nv=" << Nv << std::endl;
+  LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank << std::endl;
+  LOG(1, "RALS") << "decompising Coulomb vertex with NG=" << NG
+    << " No=" << No << " Nv=" << Nv << std::endl;
 
   // allocate factor tensors
   PiiR = new Matrix<complex>(
@@ -85,7 +86,6 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
   );
   double delta(getRealArgument("delta", DEFAULT_DELTA));
   residuum = std::numeric_limits<double>::infinity();
-  LOG(0) << "n :  Delta" << std::endl;
   while (iterationsCount < maxIterationsCount && residuum > delta) {
     fit(iterationsCount);
     ++iterationsCount;
@@ -95,7 +95,6 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
 void RalsParticleHoleCoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
-  LOG(1) << "lambda   s/s_0" << std::endl;
   fitRals(
     "Gai", *PiaR,'a', *LambdaGR,'G', *PiiR,'i', *regularizationEstimatorPiiR
   );
@@ -112,7 +111,8 @@ void RalsParticleHoleCoulombVertexDecomposition::fit(
 
   (*Gamma0Gai)["Gai"] -= (*GammaGai)["Gai"];
   residuum = frobeniusNorm(*Gamma0Gai);
-  LOG(0) << iterationsCount << ":  " << residuum << std::endl;
+  LOG(0, "RALS") << "iteration=" << iterationsCount
+    << " Delta=" << residuum << std::endl;
   (*Gamma0Gai)["Gai"] += (*GammaGai)["Gai"];
 }
 
@@ -156,19 +156,19 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
 
   Matrix<complex> BB(rank, rank, NS, *GammaGai->wrld, "BBRS",GammaGai->profile);
   Matrix<complex> gramian(rank,rank,NS,*GammaGai->wrld,"GRS",GammaGai->profile);
-  LOG(4) << "building Gramian..." << std::endl;
+  LOG(4, "RALS") << "building Gramian..." << std::endl;
   BB["SR"] = B["jR"] * conjB["jS"];
   gramian["SR"] = C["kR"] * conjC["kS"];
   gramian["SR"] *= BB["SR"];
   gramian["RR"] += lambda;
-  LOG(4) << "inverting Gramian..." << std::endl;
+  LOG(4, "RALS") << "inverting Gramian..." << std::endl;
   IterativePseudoInverse<complex> gramianInverse(gramian);
 
   Tensor<complex> oldA(A);
   A["iR"] *= lambda;
   applyToGamma(indicesGamma, conjB, idxB, conjC, idxC, A, idxA);
 //  applyToGammaSliced(indicesGamma, conjB, idxB, conjC, idxC, A, idxA);
-  LOG(4) << "applying inverse of Gramian..." << std::endl;
+  LOG(4, "RALS") << "applying inverse of Gramian..." << std::endl;
   Tensor<complex> conjInvGramian(gramianInverse.get());
   conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
   A["iR"] = A["iS"] * conjInvGramian["SR"];
@@ -178,7 +178,8 @@ void RalsParticleHoleCoulombVertexDecomposition::fitRals(
   double swampingFactor(
     normDifference / norm / regularizationEstimatorA.getSwampingThreshold()
   );
-  LOG(1) << lambda << "  " << swampingFactor << std::endl;
+  LOG(1, "RALS") << "lambda=" << lambda << " s/s_0=" << swampingFactor
+    << std::endl;
   regularizationEstimatorA.update(swampingFactor);
 }
 
@@ -204,7 +205,7 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGamma(
   );
   if (A.lens[0] == largestIndex) {
     // A has largest index: contract conjB and conjC first
-    LOG(4) << "applying to Gamma with largest A..." << std::endl;
+    LOG(4, "RALS") << "applying to Gamma with largest A..." << std::endl;
     const char indicesBC[] = { idxB, idxC, 'R' , 0};
     int lens[] = { conjB.lens[0], conjC.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
@@ -213,7 +214,7 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGamma(
     A[indicesA] += (*GammaGai)[indicesGamma] * BC[indicesBC];
   } else if (conjB.lens[0] == largestIndex) {
     // B has largest index: contract Gamma and conjB first
-    LOG(4) << "applying to Gamma with largest B..." << std::endl;
+    LOG(4, "RALS") << "applying to Gamma with largest B..." << std::endl;
     const char indicesGammaB[] = { idxA, idxC, 'R' , 0};
     int lens[] = { A.lens[0], conjC.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
@@ -222,7 +223,7 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGamma(
     A[indicesA] += GammaB[indicesGammaB] * conjC[indicesC];
   } else {
     // C has largest index: contract Gamma and conjC first
-    LOG(4) << "applying to Gamma with largest C..." << std::endl;
+    LOG(4, "RALS") << "applying to Gamma with largest C..." << std::endl;
     const char indicesGammaC[] = { idxA, idxB, 'R' , 0};
     int lens[] = { A.lens[0], conjB.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
@@ -267,7 +268,7 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGammaSliced(
       int TCSyms[] = { NS, NS, NS };
       Tensor<complex> TC(3, TCLens, TCSyms, *conjB.wrld, "TCijS");
       char const indicesTC[] = { idxA, idxB, 'S', 0 };
-      LOG(4) << "slicing Gamma..." << std::endl;
+      LOG(4, "RALS") << "slicing Gamma..." << std::endl;
       TC[indicesTC] =
         GammaGai->slice(GammaGaiStart,GammaGaiEnd)[indicesGamma] *
         conjC[indicesC];
@@ -276,13 +277,13 @@ void RalsParticleHoleCoulombVertexDecomposition::applyToGammaSliced(
       int TBCLens[] = { GammaGaiEnd[dimA]-GammaGaiStart[dimA], nR };
       int TBCSyms[] = { NS, NS };
       Tensor<complex> TBC(2, TBCLens, TBCSyms, *conjB.wrld, "TBCijS");
-//      LOG(4) << "slicing B..." << std::endl;
+//      LOG(4, "RALS") << "slicing B..." << std::endl;
 //      TBC[indicesA] = TC[indicesTC] * conjB.slice(BStart,BEnd)[indicesB];
       TBC[indicesA] = TC[indicesTC] * conjB[indicesB];
       int AStart[] = { GammaGaiStart[dimA], 0 };
       int AEnd[] = { GammaGaiEnd[dimA], nR };
       int TBCOffsets[] = { 0, 0, 0 };
-      LOG(4) << "slicing into A..." << std::endl;
+      LOG(4, "RALS") << "slicing into A..." << std::endl;
       A.slice(AStart,AEnd,1.0, TBC,TBCOffsets,TBCLens,1.0);
 //    }
   }

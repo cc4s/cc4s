@@ -1,5 +1,5 @@
 test.*
+*.log
 launch.sh
 core
-lambda
 FTODDUMP.bak

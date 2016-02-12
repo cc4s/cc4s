@@ -15,19 +15,25 @@ LogStream::LogStream(
 {
 }
 
-std::ostream &LogStream::prepare(int rank, int const level) {
+std::ostream &LogStream::prepare(
+  int const rank,
+  std::string const &fileName,
+  int const level,
+  std::string const &category
+) {
   // TODO: add time here
-  logFile << rank << " " << level << ": ";
+  logFile << rank << " " << level << " ";
+  std::ostream *log(&logFile);
   if (logLevel >= level) {
     for (int i(0); i < level; ++i) {
       std::cout << indent.c_str();
     }
     // next puts should go to logFile and std::out, done by this->put
-    return *this;
-  } else {
-    // next puts should only go to logFile
-    return logFile;
+    log = this;
   }
+  if (category == "root") logFile << "root: ";
+  else (*log) << (category.length() > 0 ? category : fileName) << ": ";
+  return *log;
 }
 
 int Log::rank(-1);

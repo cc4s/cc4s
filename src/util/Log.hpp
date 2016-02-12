@@ -40,7 +40,12 @@ namespace cc4s {
       std::string const &indent = "\t"
     );
 
-    std::ostream &prepare(int const rank, int const level);
+    std::ostream &prepare(
+      int const rank,
+      std::string const &fileName,
+      int const level,
+      std::string const &category = ""
+    );
   protected:
     std::ofstream logFile;
     LogBuffer logBuffer;
@@ -85,11 +90,14 @@ namespace cc4s {
  * Note that this macro must be used as a statement and cannot be used as an
  * rvalue.
  */
-#define LOG(level) \
+#define OUT() \
   if (cc4s::Log::getRank() != 0) { \
-  } else cc4s::Log::getLogStream().prepare(0, level)
-#define LOG_RANK(level) \
-  cc4s::Log::getLogStream().prepare(cc4s::Log::getRank(), level)
+  } else std::cout
+#define LOG(...) \
+  if (cc4s::Log::getRank() != 0) { \
+  } else cc4s::Log::getLogStream().prepare(0, __FILE__, __VA_ARGS__)
+#define LOG_RANK(...) \
+  cc4s::Log::getLogStream().prepare(cc4s::Log::getRank(), __FILE__, __VA_ARGS__)
 
 #endif
 

@@ -7,7 +7,7 @@ ParticleHoleCoulombVertexReader [
 
 RalsParticleHoleCoulombVertexDecomposition [
   ParticleHoleCoulombVertex
-  (maxIterations 16)
+  (maxIterations 32)
 ] [
   HoleFactorOrbitals ParticleFactorOrbitals ParticleHoleCoulombFactors
   % approximation from the rank decomposition:

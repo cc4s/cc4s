@@ -25,8 +25,8 @@ void Cc4s::run() {
   printBanner();
   Parser parser(options->file);
   std::vector<Algorithm *> algorithms(parser.parse());
-  LOG(0) <<
-    "Execution plan read: " << algorithms.size() << " step(s)" << std::endl;
+  LOG(0, "root") <<
+    "execution plan read, steps=" << algorithms.size() << std::endl;
 
   int64_t rootFlops, totalFlops;
   double totalTime;
@@ -36,7 +36,7 @@ void Cc4s::run() {
     Timer totalTimer(&totalTime);
 
     for (unsigned int i(0); i < algorithms.size(); ++i) {
-      LOG(0) << "Step " << (i+1) << ": " << algorithms[i]->getName() << std::endl;
+      LOG(0, "root") << "step=" << (i+1) << ", " << algorithms[i]->getName() << std::endl;
 
       int64_t flops;
       double time;
@@ -46,64 +46,27 @@ void Cc4s::run() {
         algorithms[i]->run();
       }
 
-      LOG(1) << "elapsed realtime: " << time << " s" << std::endl;
-      LOG(1) << "on root: " << flops / 1e9 << " GFLOPS ( " <<
-        flops / 1e9 / time << " GFLOPS/s )" << std::endl;
+      LOG(1, "root") << "step=" << (i+1) << ", realtime=" << time << " s"
+        << ", operations=" << flops / 1e9 << " GFLOPS/core"
+        << ", speed=" << flops / 1e9 / time << " GFLOPS/s/core" << std::endl;
     }
   }
 
   printStatistics(rootFlops, totalFlops, totalTime);
 }
 
-/*
-
-  if (options->rank > 0) {
-
-//    RalsFtodRankDecomposition::test(world);
-    // experimental:
-    std::vector<Argument> arguments;
-    new Data("chiR");
-    Argument chiR("chiR", "chiR");
-    arguments.push_back(&chiR);
-    new Data("chiI");
-    Argument chiI("chiR", "chiR");
-    arguments.push_back(&chiI);
-    new IntegerData("rank", options->rank);
-    Argument rank("rank", "rank");
-    arguments.push_back(&rank);
-    new RealData("epsilon", options->accuracy);
-    Argument epsilon("epsilon", "epsilon");
-    arguments.push_back(&epsilon);
-  //  CrossEntropyFtodRankDecomposition ftodRankDecomposition(arguments);
-  //  FtodRankDecomposition ftodRankDecomposition(arguments);
-    RalsFtodRankDecomposition ftodRankDecomposition(arguments);
-    ftodRankDecomposition.run();
-    Tensor<> oldChiR(*chiReal->gpq);
-    Tensor<> oldChiI(*chiImag->gpq);
-    fromComplexTensor(*ftodRankDecomposition.chi0, *chiReal->gpq, *chiImag->gpq);
-    oldChiR["Gqr"] -= (*chiReal->gpq)["Gqr"];
-    oldChiI["Gqr"] -= (*chiImag->gpq)["Gqr"];
-    double i(frobeniusNorm(oldChiI));
-    double r(frobeniusNorm(oldChiR));
-    LOG(4) << "R(Re(XXG-chi))+R(Im(XXG-chi))=" << r*r+i*i << std::endl;
-  }
-
-//  (*chiReal->gpq)["Gqr"] = (*ftodRankDecomposition.chi0R)["Gqr"];
-//  (*chiImag->gpq)["Gqr"] = (*ftodRankDecomposition.chi0I)["Gqr"];
-*/
-
-
 
 void Cc4s::printBanner() {
-LOG(0) << "                __ __      " << std::endl
-       << "     __________/ // / _____" << std::endl
-       << "    / ___/ ___/ // /_/ ___/" << std::endl
-       << "   / /__/ /__/__  __(__  ) " << std::endl
-       << "   \\___/\\___/  /_/ /____/  " << std::endl;
-  LOG(0) << "  Coupled Cluster for Solids" << std::endl << std::endl;
-  LOG(0) << "version: " << CC4S_VERSION << " " << CC4S_DATE << std::endl;
-  LOG(0) << "built:   " << __DATE__ << " " << __TIME__ << std::endl;
-  LOG(0) << "with:    " << COMPILER_VERSION << std::endl << std::endl;
+  OUT() << "                __ __      " << std::endl
+        << "     __________/ // / _____" << std::endl
+        << "    / ___/ ___/ // /_/ ___/" << std::endl
+        << "   / /__/ /__/__  __(__  ) " << std::endl
+        << "   \\___/\\___/  /_/ /____/  " << std::endl
+        << "  Coupled Cluster for Solids" << std::endl << std::endl;
+  LOG(0, "root") << "version=" << CC4S_VERSION <<
+    ", date=" << CC4S_DATE << std::endl;
+  LOG(0, "root") << "build date=" << __DATE__ << " " << __TIME__ << std::endl;
+  LOG(0, "root") << "compiler=" << COMPILER_VERSION << std::endl << std::endl;
 }
 
 void Cc4s::printStatistics(
@@ -123,24 +86,20 @@ void Cc4s::printStatistics(
   statStream.close();
   // in case x86-64 is configured to use 2MB pages
   int64_t pageSize = sysconf(_SC_PAGE_SIZE);
-  LOG(0) << std::endl << "performance statistics:" << std::endl;
-  LOG(0) << "  total realtime: " << totalTime << " s" << std::endl;
-  LOG(0) << "  on root: " << rootFlops / 1e9 << " GFLOPS ( "
-    << rootFlops / 1e9 / totalTime << " GFLOPS/s )" << std::endl;
-  LOG(0) << "    physical memory: " <<
-    rss * pageSize / 1e9 << " GB" << std::endl;
-  LOG(0) << "    virtual  memory: " <<
-    vsize / 1e9 << " GB" << std::endl;
+  LOG(0, "root") << "total realtime=" << totalTime << " s" << std::endl;
+  LOG(0, "root") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
+    << " spped=" << rootFlops/1e9 / totalTime << " GFLOPS/s/core" << std::endl;
+  LOG(0, "root") << "physical memory=" << rss * pageSize / 1e9 << " GB/core"
+    << ", virtual memory: " << vsize / 1e9 << " GB/core" << std::endl;
 
   int64_t globalVSize, globalRss;
   MPI_Reduce(&vsize, &globalVSize, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
   MPI_Reduce(&rss, &globalRss, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
-  LOG(0) << "  total:   " << totalFlops / 1.e9 << " GFLOPS" << std::endl;
-  LOG(0) << "    physical memory: " <<
-    globalRss * pageSize / 1e9 << " GB" << std::endl;
-  LOG(0) << "    virtual  memory: " <<
-    globalVSize / 1e9 << " GB" << std::endl;
-  // TODO: timing
+  LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
+    << std::endl;
+  LOG(0, "root") << "overall physical memory="
+    << globalRss * pageSize / 1e9 << " GB"
+    << ", overall virtual memory=" << globalVSize / 1e9 << " GB" << std::endl;
 }
 
 

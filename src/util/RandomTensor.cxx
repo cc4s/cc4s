@@ -38,7 +38,6 @@ void cc4s::setRandomTensor(CTF::Tensor<F> &t) {
   for (int64_t i(0); i < indicesCount; ++i) {
     setRandom(values[i], normalDistribution, random);
   }
-  LOG(4) << "writing " << indicesCount << " random indices on root" << std::endl;
   t.write(indicesCount, indices, values);
   free(indices); free(values);
 }
