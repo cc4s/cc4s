@@ -2,12 +2,37 @@
 #ifndef DATA_DEFINED
 #define DATA_DEFINED
 
+#include <util/Complex.hpp>
 #include <string>
 #include <map>
 #include <ctf.hpp>
 #include <util/Exception.hpp>
 
 namespace cc4s {
+  /**
+   * Traits class for tensor element types used in cc4s.
+   * It provides type specific information such as type name to
+   * be displayed to the user.
+   */
+  template <typename F>
+  class TypeTraits;
+
+  template <>
+  class TypeTraits<int64_t> {
+  public:
+    static std::string getName() { return "integer"; }
+  };
+  template <>
+  class TypeTraits<double> {
+  public:
+    static std::string getName() { return "real"; }
+  };
+  template <>
+  class TypeTraits<complex> {
+  public:
+    static std::string getName() { return "complex"; }
+  };
+
   class Data {
   public:
     enum Stage {
@@ -117,11 +142,15 @@ namespace cc4s {
   template <typename F=double>
   class TensorData: public NumericData {
   public:
-    TensorData(CTF::Tensor<F> *value_): NumericData("tensor"), value(value_) {
+    TensorData(
+      CTF::Tensor<F> *value_
+    ): NumericData("tensor of " + TypeTraits<F>::getName()), value(value_) {
     }
     TensorData(
       std::string const &name_, CTF::Tensor<F> *value_
-    ): NumericData(name_, "tensor"), value(value_) {
+    ):
+      NumericData(name_, "tensor of " + TypeTraits<F>::getName()), value(value_)
+    {
     }
     CTF::Tensor<F> *value;
   };

@@ -1,6 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <Algorithm.hpp>
+#include <Data.hpp>
 #include <util/Complex.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
@@ -76,56 +77,76 @@ int64_t Algorithm::getIntegerArgument(
 }
 
 double Algorithm::getRealArgument(std::string const &name) {
-  Data const *data(getArgumentData(name));
-  RealData const *realData = dynamic_cast<RealData const *>(data);
-  return realData ? realData->value : getRealArgumentFromInteger(data);
-  if (!realData) {
-    return getRealArgumentFromInteger(data);
-    std::stringstream sstream;
-    sstream << "Incompatible type for argument: " << name << ". "
-      << "Excpected Real, found " << data->getTypeName() << ".";
-    throw new Exception(sstream.str());
-  }
-  return realData->value;
+  Data *data(getArgumentData(name));
+  RealData *realData(dynamic_cast<RealData *>(data));
+  if (realData) return realData->value;
+  IntegerData *integerData(dynamic_cast<IntegerData *>(data));
+  if (integerData) return getRealArgumentFromInteger(integerData);
+  return realData ? realData->value : getRealArgumentFromInteger(integerData);
+  TensorData<double> *tensorData(dynamic_cast<TensorData<double> *>(data));
+  if (tensorData) return getRealArgumentFromTensor(tensorData);
+  std::stringstream sstream;
+  sstream << "Incompatible type for argument: " << name << ". "
+    << "Excpected Real, found " << data->getTypeName() << ".";
+  throw new Exception(sstream.str());
 }
 double Algorithm::getRealArgument(
   std::string const &name, double const defaultValue
 ) {
   return isArgumentGiven(name) ? getRealArgument(name) : defaultValue;
 }
-double Algorithm::getRealArgumentFromInteger(Data const *data) {
-  IntegerData const *integerData = dynamic_cast<IntegerData const *>(data);
-  if (!integerData) {
-    std::stringstream sstream;
-    sstream << "Incompatible type for argument: " << data->getName() << ". "
-      << "Excpected Real, found " << data->getTypeName() << ".";
-    throw new Exception(sstream.str());
-  }
+double Algorithm::getRealArgumentFromInteger(IntegerData *integerData ) {
   double value(integerData->value);
   if (int64_t(value) != integerData->value) {
-    LOG(0) << "Warning: loss of precision in conversion from integer to real."
+    LOG(0, "root") << "Warning: loss of precision in conversion from integer to real."
       << std::endl;
   }
+  return value;
+}
+double Algorithm::getRealArgumentFromTensor(TensorData<double> *data) {
+  Assert(
+    data->value->order == 0,
+    "Scalar expected in conversion from tensor to real."
+  );
+  int64_t index(0); double value;
+  // retrieve the real value from the tensor
+  data->value->read(1, &index, &value);
   return value;
 }
 
 template <typename F>
 CTF::Tensor<F> *Algorithm::getTensorArgument(std::string const &name) {
   Data *data(getArgumentData(name));
-  TensorData<F> *tensorData = dynamic_cast<TensorData<F> *>(data);
-  if (!tensorData) {
-    std::stringstream sStream;
-    sStream << "Incompatible type for argument: " << name << ". "
-      << "Excpected tensor, found " << data->getTypeName() << ".";
-    throw new Exception(sStream.str());
-  }
-  return tensorData->value;
+  TensorData<F> *tensorData(dynamic_cast<TensorData<F> *>(data));
+  if (tensorData) return tensorData->value;
+  RealData *realData(dynamic_cast<RealData *>(data));
+  if (realData) return getTensorArgumentFromReal<F>(realData);
+  // TODO: provide conversion routines from real to complex tensors
+  std::stringstream sStream;
+  sStream << "Incompatible type for argument: " << name << ". "
+    << "Excpected tensor of " << TypeTraits<F>::getName()
+    << ", found " << data->getTypeName() << ".";
+  throw new Exception(sStream.str());
 }
 // instantiate
 template
-CTF::Tensor<double> *Algorithm::getTensorArgument(std::string const &name);
+CTF::Tensor<double> *Algorithm::getTensorArgument(std::string const &);
 template
-CTF::Tensor<complex> *Algorithm::getTensorArgument(std::string const &name);
+CTF::Tensor<complex> *Algorithm::getTensorArgument(std::string const &);
+
+template <typename F>
+CTF::Tensor<F> *Algorithm::getTensorArgumentFromReal(RealData *realData) {
+  // FIXME: left to leak memory...
+  // a better solution would be to replace the RealData with the allocated
+  // TensorData and support down-cast for Scalars to Real
+  return new CTF::Scalar<F>(realData->value);
+}
+// instantiate
+template
+CTF::Tensor<double> *Algorithm::getTensorArgumentFromReal(RealData *);
+template
+CTF::Tensor<complex> *Algorithm::getTensorArgumentFromReal(RealData *);
+
 
 template <typename F>
 void Algorithm::allocatedTensorArgument(

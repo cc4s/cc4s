@@ -16,3 +16,5 @@ Mp2EnergyFromCoulombIntegrals [
 ] [
   Mp2Energy
 ].
+
+TensorWriter [(Data Mp2Energy)] [].

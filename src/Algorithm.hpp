@@ -55,7 +55,11 @@ namespace cc4s {
     void setRealArgument(std::string const &argumentName, double const value);
 
   protected:
-    double getRealArgumentFromInteger(Data const *data);
+    // type promotions:
+    double getRealArgumentFromInteger(IntegerData *data);
+    double getRealArgumentFromTensor(TensorData<double> *data);
+    template <typename F=double>
+    CTF::Tensor<F> *getTensorArgumentFromReal(RealData *realData);
 
     Data *getArgumentData(std::string const &argumentName);
     std::map<std::string, std::string> arguments;
