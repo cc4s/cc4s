@@ -1,0 +1,15 @@
+GenerateRandomMatrix [(m 2) (n 3)] [(Result A)].
+GenerateRandomMatrix [(m 3) (n 3)] [(Result B)].
+GenerateRandomMatrix [(m 2) (n 3)] [(Result C)].
+TensorContraction [
+  A (AIndex "ik")
+  B (BIndex "kj")
+  (ResultIndex "ij")
+] [
+  (Result C)
+].
+
+TensorNorm [(A C)] [Norm].
+TensorWriter [(Data C) (file "CColumnMajor.dat")] [].
+TensorWriter [(Data C) (rowIndexOrder "i") (columnIndexOrder "j")] [].
+TensorWriter [(Data C) (rowIndexOrder "ji") (file "CRowMajor.dat")] [].

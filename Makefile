@@ -7,7 +7,7 @@ COMPILER_VERSION:=$(shell ${CXX} -v | head -n 1)
 # location of the Cyclops Tensor Framework library
 CTF=../ctf
 OPTIMIZE=${CXXOPTIMIZE} -O3
-COPTIONS=${CXXOPTIONS} -std=c++11 -Wall -fmax-errors=3 \
+COPTIONS=${CXXOPTIONS} -std=c++0x -Wall -fmax-errors=3 \
 -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
 "-DCC4S_DATE=\"${DATE}\"" \
@@ -48,6 +48,7 @@ obj/RalsParticleHoleCoulombVertexDecomposition.o \
 obj/GenerateRandomMatrix.o \
 obj/GenerateRandomComplexMatrix.o \
 obj/GenerateRandomTensor.o \
+obj/TensorWriter.o \
 obj/TensorContraction.o \
 obj/TensorSum.o \
 obj/TensorNorm.o \

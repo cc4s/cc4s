@@ -1,3 +1,4 @@
+/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include "Log.hpp"
 
 #include <util/Complex.hpp>
@@ -10,8 +11,9 @@ LogStream::LogStream(
   std::string const &indent_
 ):
   std::ostream(&logBuffer),
-  logFile(logFileName.c_str()), logLevel(logLevel_), indent(indent_),
-  logBuffer(logFile.rdbuf(), std::cout.rdbuf())
+  logFile(logFileName.c_str()),
+  logBuffer(logFile.rdbuf(), std::cout.rdbuf()),
+  logLevel(logLevel_), indent(indent_)
 {
 }
 
