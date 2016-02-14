@@ -64,29 +64,32 @@ void TensorWriter::run() {
     "Wrong number of elements read"
   );
 
-  // create file and write header
-  std::string dataName(getArgumentData("Data")->getName());
-  // by default the file is named after the written data
-  std::ofstream file(getTextArgument("file", dataName + ".dat"));
-  std::string delimiter(getTextArgument("delimiter", " "));
-  file << dataName << delimiter << A->order;
-  for (int i(0); i < A->order; ++i) {
-    file << delimiter << A->lens[i];
-  }
-  file << std::endl;
-  file << "\"" << rowIndexOrder << "\"" << delimiter
-    << "\"" << columnIndexOrder << "\"" << std::endl;
-
-  // write the actual data
-  int64_t index(0);
-  LOG(4) << "rows=" << rowElementsCount
-    << ", columns=" << columnElementsCount << std::endl;
-  for (int64_t row(0); row < rowElementsCount; ++row) {
-    file << values[index++];
-    for (int64_t column(1); column < columnElementsCount; ++column) {
-      file << delimiter << values[index++];
+  // only the root writes the file
+  if (A->wrld->rank == 0) {
+    // create file and write header
+    std::string dataName(getArgumentData("Data")->getName());
+    // by default the file is named after the written data
+    std::ofstream file(getTextArgument("file", dataName + ".dat"));
+    std::string delimiter(getTextArgument("delimiter", " "));
+    file << dataName << delimiter << A->order;
+    for (int i(0); i < A->order; ++i) {
+      file << delimiter << A->lens[i];
     }
     file << std::endl;
+    file << "\"" << rowIndexOrder << "\"" << delimiter
+      << "\"" << columnIndexOrder << "\"" << std::endl;
+
+    // write the actual data
+    int64_t index(0);
+    LOG(4) << "rows=" << rowElementsCount
+      << ", columns=" << columnElementsCount << std::endl;
+    for (int64_t row(0); row < rowElementsCount; ++row) {
+      file << values[index++];
+      for (int64_t column(1); column < columnElementsCount; ++column) {
+        file << delimiter << values[index++];
+      }
+      file << std::endl;
+    }
   }
   free(values);
 }
