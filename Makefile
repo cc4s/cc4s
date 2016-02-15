@@ -3,7 +3,7 @@ INSTALL=~/bin/cc4s
 include config.mk
 VERSION:=$(shell git describe --all --dirty --long)
 DATE:=$(shell git log -1 --format="%cd")
-COMPILER_VERSION:=$(shell ${CXX} -v | head -n 1)
+COMPILER_VERSION:=$(shell ${CXX} --version | head -n 1)
 # location of the Cyclops Tensor Framework library
 CTF=../ctf
 OPTIMIZE=${CXXOPTIMIZE} -O3

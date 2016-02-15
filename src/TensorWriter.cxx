@@ -69,7 +69,7 @@ void TensorWriter::run() {
     // create file and write header
     std::string dataName(getArgumentData("Data")->getName());
     // by default the file is named after the written data
-    std::ofstream file(getTextArgument("file", dataName + ".dat"));
+    std::ofstream file(getTextArgument("file", dataName + ".dat").c_str());
     std::string delimiter(getTextArgument("delimiter", " "));
     file << dataName << delimiter << A->order;
     for (int i(0); i < A->order; ++i) {
