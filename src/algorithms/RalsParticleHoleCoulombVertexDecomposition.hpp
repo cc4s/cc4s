@@ -4,6 +4,7 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
+#include <math/RegularizedAlternatingLeastSquares.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {
@@ -37,35 +38,7 @@ namespace cc4s {
     CTF::Tensor<complex> *GammaGai, *Gamma0Gai;
     CTF::Matrix<complex> *PiiR, *PiaR, *LambdaGR;
 
-    class RegularizationEstimator {
-    public:
-      RegularizationEstimator(
-        double swampingThreshold_, double regularizationFriction_,
-        double initialLambda_
-      ):
-        swampingThreshold(swampingThreshold_),
-        regularizationFriction(regularizationFriction_),
-        lambda(initialLambda_)
-      { }
-      double getSwampingThreshold() {
-        return swampingThreshold;
-      }
-      double getLambda() {
-        return lambda;
-      }
-      void update(double const swampingFactor) {
-        double s(swampingFactor / swampingThreshold);
-        double estimatedLambda(lambda * s*s);
-        lambda =
-          (1-regularizationFriction)*estimatedLambda +
-          regularizationFriction*lambda;
-      }
-    protected:
-      double swampingThreshold, regularizationFriction;
-      double lambda;
-    };
-
-    RegularizationEstimator
+    AlternatingLeastSquaresRegularizationEstimator
       *regularizationEstimatorPiiR, *regularizationEstimatorPiaR,
       *regularizationEstimatorLambdaGR;
 
@@ -76,32 +49,11 @@ namespace cc4s {
 
   protected:
     void fit(int64_t iterationsCount);
-    void calculateGamma0();
 
     void fitAls(
       char const *indicesGamma,
       CTF::Tensor<complex> &B, char const idxB,
       CTF::Tensor<complex> &C, char const idxC,
-      CTF::Tensor<complex> &A, char const idxA
-    );
-    void fitRals(
-      char const *indicesGamma,
-      CTF::Tensor<complex> &B, char const idxB,
-      CTF::Tensor<complex> &C, char const idxC,
-      CTF::Tensor<complex> &A, char const idxA,
-      RegularizationEstimator &regularizationEstimatorA
-    );
-
-    void applyToGamma(
-      char const *indicesGamma,
-      CTF::Tensor<complex> &conjB, char const idxB,
-      CTF::Tensor<complex> &conjC, char const idxC,
-      CTF::Tensor<complex> &A, char const idxA
-    );
-    void applyToGammaSliced(
-      char const *indicesGamma,
-      CTF::Tensor<complex> &conjB, char const idxB,
-      CTF::Tensor<complex> &conjC, char const idxC,
       CTF::Tensor<complex> &A, char const idxA
     );
 

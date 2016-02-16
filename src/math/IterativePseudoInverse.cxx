@@ -34,7 +34,7 @@ IterativePseudoInverse<F>::IterativePseudoInverse(
     if (std::real(normValues[i]) > max) max = std::real(normValues[i]);
   }
   alpha = 1.0/max;
-  LOG(4) << "PseudoInverse: alpha=" << alpha << std::endl;
+  LOG(4, "PseudoInverse") << "alpha=" << alpha << std::endl;
   inverse["ji"] = alpha * conjugate["ji"];
   iterateQuadratically(accuracy);
 //  iterate(accuracy);
@@ -65,8 +65,8 @@ void IterativePseudoInverse<F>::iterate(double accuracy) {
   }
   if (n >= 10000) {
     // failed to convege
-    LOG(4) << "PseudoInverse: failed to converge, remainder=" << remainder << std::endl;
-    LOG(4) << "PseudoInverse: minRemainder=" << minRemainder << std::endl;
+    LOG(4, "PseudoInverse") << "failed to converge, remainder=" << remainder
+      << ", minRemainder=" << minRemainder << std::endl;
     logMatrix(4, inverse);
   }
 }
@@ -85,7 +85,7 @@ void IterativePseudoInverse<F>::iterateQuadratically(double accuracy) {
     Bivar_Function<F> fRealDot(&realDot<F>);
     s.contract(1.0, square,"ij", square,"ij", 0.0,"", fRealDot);
     remainder = std::real(s.get_val());
-    LOG(4) << "PseudoInverse: remainder=" << remainder << std::endl;
+    LOG(4, "PseudoInverse") << "remainder=" << remainder << std::endl;
     if (remainder < minRemainder) {
       minRemainder = remainder;
       nMin = n;
@@ -94,8 +94,8 @@ void IterativePseudoInverse<F>::iterateQuadratically(double accuracy) {
   }
   if (n >= 10000) {
     // failed to convege
-    LOG(4) << "PseudoInverse: failed to converge, remainder=" << remainder << std::endl;
-    LOG(4) << "PseudoInverse: minRemainder=" << minRemainder << std::endl;
+    LOG(4, "PseudoInverse") << "failed to converge, remainder=" << remainder
+      << ", minRemainder=" << minRemainder << std::endl;
     logMatrix(4, inverse);
   }
 }
