@@ -1,0 +1,16 @@
+% tensor rank decomposition execution plan
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombVertexDecomposition [
+  CoulombVertex
+  (maxIterations 32) (realFactorOrbitals 1)
+] [
+  FactorOrbitals CoulombFactors
+  % approximation from the rank decomposition:
+  ComposedCoulombVertex
+].
+
