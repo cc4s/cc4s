@@ -32,7 +32,7 @@ obj/math/MathFunctions.o \
 obj/math/ComplexTensor.o \
 obj/math/RandomTensor.o \
 obj/math/IterativePseudoInverse.o \
-obj/PerturbationTensor.o obj/RalsFtodRankDecomposition.o \
+obj/PerturbationTensor.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
 obj/Data.o \
@@ -43,6 +43,7 @@ obj/algorithms/ParticleHoleCoulombVertexReader.o \
 obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombVertex.o \
+obj/algorithms/RalsFtodRankDecomposition.o \
 obj/algorithms/RalsParticleHoleCoulombVertexDecomposition.o \
 obj/algorithms/GenerateRandomMatrix.o \
 obj/algorithms/GenerateRandomComplexMatrix.o \

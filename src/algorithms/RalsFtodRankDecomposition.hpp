@@ -2,7 +2,7 @@
 #ifndef RALS_FTOD_RANK_DECOMPOSITION_DEFINED
 #define RALS_FTOD_RANK_DECOMPOSITION_DEFINED
 
-#include <Algorithm.hpp>
+#include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
 #include <ctf.hpp>
 
