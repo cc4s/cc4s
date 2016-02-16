@@ -45,8 +45,8 @@ obj/algorithms/ParticleHoleCoulombVertexReader.o \
 obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombVertex.o \
-obj/algorithms/RalsFtodRankDecomposition.o \
-obj/algorithms/RalsParticleHoleCoulombVertexDecomposition.o \
+obj/algorithms/CoulombVertexDecomposition.o \
+obj/algorithms/ParticleHoleCoulombVertexDecomposition.o \
 obj/algorithms/GenerateRandomMatrix.o \
 obj/algorithms/GenerateRandomComplexMatrix.o \
 obj/algorithms/GenerateRandomTensor.o \

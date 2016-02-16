@@ -1,6 +1,6 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef RALS_PARTICLE_HOLE_COULOMB_VERTEX_DECOMPOSITION_DEFINED
-#define RALS_PARTICLE_HOLE_COULOMB_VERTEX_DECOMPOSITION_DEFINED
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+#ifndef PARTICLE_HOLE_COULOMB_VERTEX_DECOMPOSITION_DEFINED
+#define PARTICLE_HOLE_COULOMB_VERTEX_DECOMPOSITION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
@@ -16,28 +16,68 @@ namespace cc4s {
    * regularized alternating least squares (RALS) algorithm, requiring
    * only a few dozen steps for sufficient convergence.
    */
-  class RalsParticleHoleCoulombVertexDecomposition: public Algorithm {
+  class ParticleHoleCoulombVertexDecomposition: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(RalsParticleHoleCoulombVertexDecomposition);
-    RalsParticleHoleCoulombVertexDecomposition(
+    ALGORITHM_REGISTRAR_DECLARATION(ParticleHoleCoulombVertexDecomposition);
+    ParticleHoleCoulombVertexDecomposition(
       std::vector<Argument> const &argumentList
     );
-    virtual ~RalsParticleHoleCoulombVertexDecomposition();
+    virtual ~ParticleHoleCoulombVertexDecomposition();
     virtual void run();
       
     /**
-     * \brief The rank of the tensor rank decomposition
+     * \brief The rank \f$N_R\f$ of the tensor rank decomposition
      */
     int64_t rank;
 
     /**
-     * \brief The sum of squares of the difference between the current
-     * decomposition and the particle hole Coulomb vertex.
+     * \brief The Frobenius norm of the difference between
+     * \f$\Gamma^a_{iG}\f$ and its decomposition.
      */
-    double residuum;
-    CTF::Tensor<complex> *GammaGai, *Gamma0Gai;
-    CTF::Matrix<complex> *PiiR, *PiaR, *LambdaGR;
+    double Delta;
 
+    /**
+     * \brief Whether the factor orbitals \f$\Pi_{aR},\Pi_{iR}\f$
+     * are required to be real.
+     */
+    bool realFactorOrbitals;
+    /**
+     * \brief Whether the factor orbitals \f$\Pi_{aR},\Pi_{iR}\f$
+     * are required to be normalized, i.e.
+     * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta{qq}\f$.
+     */
+    bool normalizedFactorOrbitals;
+
+    /**
+     * \brief The Coulomb vertex \f$\Gamma^a_{iG}\f$ restricted to
+     * a particle and a hole index.
+     */
+    CTF::Tensor<complex> *GammaGai;
+    /**
+     * \brief The fit \f${\Pi^\ast}^{aR}\Pi_{iR}\Lambda_{GR}\f$.
+     */
+    CTF::Tensor<complex> *Gamma0Gai;
+    /**
+     * \brief The factor orbitals for occupied states \f$\Pi_{iR}\f$.
+     */
+    CTF::Matrix<complex> *PiiR;
+    /**
+     * \brief The conjugated factor orbitals for virtual states
+     * \f${\Pi^\ast}^{aR}\f$.
+     */
+    CTF::Matrix<complex> *PiaR;
+    /**
+     * \brief The Coulomb factors \f$\Lambda_{GR}\f$
+     * in the particle/hole decomposition.
+     */
+    CTF::Matrix<complex> *LambdaGR;
+
+    /**
+     * \brief Estimators for the regularization parameter during
+     * the alternating least squares fits. They estimate the
+     * regularization parameter \f$\lambda\f$ in each iteration from
+     * the swamping factor in the previous iteration.
+     */
     AlternatingLeastSquaresRegularizationEstimator
       *regularizationEstimatorPiiR, *regularizationEstimatorPiaR,
       *regularizationEstimatorLambdaGR;
@@ -46,18 +86,23 @@ namespace cc4s {
     static double constexpr DEFAULT_DELTA = 0.0;
     static double constexpr DEFAULT_SWAMPING_THRESHOLD = 1.0;
     static double constexpr DEFAULT_REGULARIZATION_FRICTION = 0.125;
+    static bool constexpr DEFAULT_REAL_FACTOR_ORBITALS = false;
+    static bool constexpr DEFAULT_NORMALIZED_FACTOR_ORBITALS = false;
 
   protected:
+    /**
+     * \brief Performs one iteration in fitting the factor orbitals
+     * and the Coulomb factors according to the given algorithm.
+     */
     void fit(int64_t iterationsCount);
-
-    void fitAls(
-      char const *indicesGamma,
-      CTF::Tensor<complex> &B, char const idxB,
-      CTF::Tensor<complex> &C, char const idxC,
-      CTF::Tensor<complex> &A, char const idxA
-    );
-
+    /**
+     * \brief Normalizes the given factor orbitals, such that
+     * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta_{qq}\f$.
+     */
     void normalizePi(CTF::Matrix<complex> &Pi);
+    /**
+     * \brief Discards the imaginary part of the given factor orbitals.
+     */
     void realizePi(CTF::Matrix<complex> &Pi);
   };
 }

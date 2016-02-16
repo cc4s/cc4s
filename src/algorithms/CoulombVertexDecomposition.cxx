@@ -1,62 +1,65 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include <RalsCoulombVertexDecomposition.hpp>
-#include <math/ComplexTensor.hpp>
+#include <algorithms/CoulombVertexDecomposition.hpp>
+#include <math/CanonicalPolyadicDecomposition.hpp>
 #include <math/RandomTensor.hpp>
 #include <math/MathFunctions.hpp>
-#include <math/IterativePseudoInverse.hpp>
-#include <util/Exception.hpp>
 #include <util/Log.hpp>
-#include <iostream>
-#include <fstream>
 #include <limits>
 
 using namespace cc4s;
 using namespace CTF;
 
-ALGORITHM_REGISTRAR_DEFINITION(RalsCoulombVertexDecomposition);
+ALGORITHM_REGISTRAR_DEFINITION(CoulombVertexDecomposition);
 
-RalsCoulombVertexDecomposition::
-  RalsCoulombVertexDecomposition
+CoulombVertexDecomposition::
+  CoulombVertexDecomposition
 (
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-RalsCoulombVertexDecomposition::
-  ~RalsCoulombVertexDecomposition()
+CoulombVertexDecomposition::
+  ~CoulombVertexDecomposition()
 {
 }
 
-void RalsCoulombVertexDecomposition::run() {
+void CoulombVertexDecomposition::run() {
   GammaGqr = getTensorArgument<complex>("CoulombVertex");
   int NG(GammaGqr->lens[0]);
-  int Nv(GammaGqr->lens[1]);
-  int No(GammaGqr->lens[2]);
+  int Np(GammaGqr->lens[1]);
   rank = getIntegerArgument("rank", NG);
-  LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank << std::endl;
+  realFactorOrbitals = getIntegerArgument(
+    "realFactorOrbitals", DEFAULT_REAL_FACTOR_ORBITALS
+  );
+  normalizedFactorOrbitals = getIntegerArgument(
+    "normalizedFactorOrbitals", DEFAULT_NORMALIZED_FACTOR_ORBITALS
+  );
+  LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank
+    << ", realFactorOrbitals=" << realFactorOrbitals
+    << ", normalizedFactorOrbitals=" << normalizedFactorOrbitals << std::endl;
   LOG(1, "RALS") << "decompising Coulomb vertex with NG=" << NG
-    << " No=" << No << " Nv=" << Nv << std::endl;
+    << " Np=" << Np << std::endl;
 
   // allocate factor tensors
-  PiiR = new Matrix<complex>(
-    Np, int(rank), NS, *GammaGqr->wrld, "PiiR", GammaGqr->profile
+  PiqR = new Matrix<complex>(
+    Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile
   );
   LambdaGR = new Matrix<complex>(
     NG, int(rank), NS, *GammaGqr->wrld, "LambdaGR", GammaGqr->profile
   );
   setRandomTensor(*PiqR);
-  realizePi(*PiiR); normalizePi(*PiqR);
+  realizePi(*PiqR); normalizePi(*PiqR);
   setRandomTensor(*LambdaGR);
   allocatedTensorArgument("FactorOrbitals", PiqR);
   allocatedTensorArgument("CoulombFactors", LambdaGR);
 
-  Gamma0Gai = new Tensor<complex>(
-    3, GammaGqr->lens, GammaGqr->sym, *GammaGqr->wrld, "Gamma0Gai",
+  Gamma0Gqr = new Tensor<complex>(
+    3, GammaGqr->lens, GammaGqr->sym, *GammaGqr->wrld, "Gamma0Gqr",
     GammaGqr->profile
   );
   if (isArgumentGiven("ComposedCoulombVertex")) {
-    allocatedTensorArgument("ComposedCoulombVertex", Gamma0Gai);
+    allocatedTensorArgument("ComposedCoulombVertex", Gamma0Gqr);
   }
 
   double swampingThreshold(
@@ -65,173 +68,67 @@ void RalsCoulombVertexDecomposition::run() {
   double regularizationFriction(
     getRealArgument("regularizationFriction", DEFAULT_REGULARIZATION_FRICTION)
   );
-  regularizationEstimatorPiiR = new RegularizationEstimator(
-    swampingThreshold, regularizationFriction, 1
-  );
-  regularizationEstimatorPiaR = new RegularizationEstimator(
-    swampingThreshold, regularizationFriction, 1
-  );
-  regularizationEstimatorLambdaGR = new RegularizationEstimator(
-    swampingThreshold, regularizationFriction, 1
-  );
+  regularizationEstimatorPiqR =
+    new AlternatingLeastSquaresRegularizationEstimator(
+      swampingThreshold, regularizationFriction, 1
+    );
+  regularizationEstimatorPirR =
+    new AlternatingLeastSquaresRegularizationEstimator(
+      swampingThreshold, regularizationFriction, 1
+    );
+  regularizationEstimatorLambdaGR =
+    new AlternatingLeastSquaresRegularizationEstimator(
+      swampingThreshold, regularizationFriction, 1
+    );
   int64_t iterationsCount(0);
   int64_t maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );
   double delta(getRealArgument("delta", DEFAULT_DELTA));
-  residuum = std::numeric_limits<double>::infinity();
-  while (iterationsCount < maxIterationsCount && residuum > delta) {
+  Delta = std::numeric_limits<double>::infinity();
+  while (iterationsCount < maxIterationsCount && Delta > delta) {
     fit(iterationsCount);
     ++iterationsCount;
   }
 }
 
-void RalsCoulombVertexDecomposition::fit(
+void CoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
-  fitRals(
-    "Gai", *PiaR,'a', *LambdaGR,'G', *PiiR,'i', *regularizationEstimatorPiiR
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  fitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
+    *PirR,'r', *regularizationEstimatorPirR
   );
-//  realizePi(*PiiR); // normalizePi(*PiiR);
-  fitRals(
-    "Gai", *LambdaGR,'G', *PiiR,'i', *PiaR,'a', *regularizationEstimatorPiaR
+  if (realFactorOrbitals) realizePi(*PiqR);
+  if (normalizedFactorOrbitals) normalizePi(*PiqR);
+  // PirR["qR"] = conj(PiqR["qR"])
+  PirR->sum(1.0, *PiqR,"qR", 0.0,"qR", fConj);
+  fitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *LambdaGR,'G', *PirR,'r',
+    *PiqR,'q', *regularizationEstimatorPiqR
   );
-//  realizePi(*PiaR); // normalizePi(*PiaR);
-  fitRals(
-    "Gai", *PiiR,'i',*PiaR,'a', *LambdaGR,'G', *regularizationEstimatorLambdaGR
+  if (realFactorOrbitals) realizePi(*PiqR);
+  if (normalizedFactorOrbitals) normalizePi(*PiqR);
+  // PiqR["qR"] = conj(PirR["qR"])
+  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR", fConj);
+  fitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
+    *LambdaGR,'G', *regularizationEstimatorLambdaGR
   );
 
-  calculateGamma0();
+  composeCanonicalPolyadicDecompositionTensors(
+    *LambdaGR, *PiqR, *PirR, *Gamma0Gqr
+  );
 
-  (*Gamma0Gai)["Gai"] -= (*GammaGqr)["Gai"];
-  residuum = frobeniusNorm(*Gamma0Gai);
-  LOG(0, "RALS") << "iteration=" << iterationsCount
-    << " Delta=" << residuum << std::endl;
-  (*Gamma0Gai)["Gai"] += (*GammaGqr)["Gai"];
+  (*Gamma0Gqr)["Gqr"] -= (*GammaGqr)["Gqr"];
+  Delta = frobeniusNorm(*Gamma0Gqr);
+  LOG(0, "RALS") << "iteration=" << (iterationsCount+1)
+    << " Delta=" << Delta << std::endl;
+  (*Gamma0Gqr)["Gqr"] += (*GammaGqr)["Gqr"];
 }
 
-
-/**
- * \brief Calculates \f$\Lambda^a_{iG}\f$.
- */
-void RalsCoulombVertexDecomposition::calculateGamma0() {
-  if (PiaR->lens[0] < LambdaGR->lens[0]) {
-    int lens[] = { PiiR->lens[1], PiaR->lens[0], PiiR->lens[0] };
-    int syms[] = { NS, NS, NS };
-    Tensor<complex> PiPi(
-      3, lens, syms, *GammaGqr->wrld, "PiPiRjk", GammaGqr->profile
-    );
-    PiPi["Rai"] = (*PiaR)["aR"] * (*PiiR)["iR"];
-    (*Gamma0Gai)["Gai"] = (*LambdaGR)["GR"] * PiPi["Rai"];
-  } else {
-    int lens[] = { PiiR->lens[1], LambdaGR->lens[0], PiiR->lens[0] };
-    int syms[] = { NS, NS, NS };
-    Tensor<complex> LambdaPi(
-      3, lens, syms, *GammaGqr->wrld, "BCRjk", GammaGqr->profile
-    );
-    LambdaPi["RGi"] = (*LambdaGR)["GR"] * (*PiiR)["iR"];
-    (*Gamma0Gai)["Gai"] = (*PiaR)["aR"] * LambdaPi["RGi"];
-  }
-}
-
-
-void RalsCoulombVertexDecomposition::fitRals(
-  char const *indicesGamma,
-  Tensor<complex> &B, char const idxB, Tensor<complex> &C, char const idxC,
-  Tensor<complex> &A, char const idxA,
-  RegularizationEstimator &regularizationEstimatorA
-) {
-  double lambda(regularizationEstimatorA.getLambda());
-  Tensor<complex> conjB(B);
-  Tensor<complex> conjC(C);
-  Univar_Function<complex> fConj(&conj<complex>);
-  conjB.sum(1.0, B,"jR", 0.0,"jR", fConj); 
-  conjC.sum(1.0, C,"kR", 0.0,"kR", fConj);
-
-  Matrix<complex> BB(rank, rank, NS, *GammaGqr->wrld, "BBRS",GammaGqr->profile);
-  Matrix<complex> gramian(rank,rank,NS,*GammaGqr->wrld,"GRS",GammaGqr->profile);
-  LOG(4, "RALS") << "building Gramian..." << std::endl;
-  BB["SR"] = B["jR"] * conjB["jS"];
-  gramian["SR"] = C["kR"] * conjC["kS"];
-  gramian["SR"] *= BB["SR"];
-  gramian["RR"] += lambda;
-  LOG(4, "RALS") << "inverting Gramian..." << std::endl;
-  IterativePseudoInverse<complex> gramianInverse(gramian);
-
-  Tensor<complex> oldA(A);
-  A["iR"] *= lambda;
-  applyToGamma(indicesGamma, conjB, idxB, conjC, idxC, A, idxA);
-//  applyToGammaSliced(indicesGamma, conjB, idxB, conjC, idxC, A, idxA);
-  LOG(4, "RALS") << "applying inverse of Gramian..." << std::endl;
-  Tensor<complex> conjInvGramian(gramianInverse.get());
-  conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
-  A["iR"] = A["iS"] * conjInvGramian["SR"];
-  oldA["iR"] -= A["iR"];
-  double normDifference(frobeniusNorm(oldA));
-  double norm(frobeniusNorm(A));
-  double swampingFactor(
-    normDifference / norm / regularizationEstimatorA.getSwampingThreshold()
-  );
-  LOG(1, "RALS") << "lambda=" << lambda << " s/s_0=" << swampingFactor
-    << std::endl;
-  regularizationEstimatorA.update(swampingFactor);
-}
-
-
-/**
- * \brief Calculates \f$A_{iR} = A_{iR} + T_{ijk}{B^\ast}^{jR}{C^\ast}^{kR}\f$
- * using a contraction order with minimal memory footprint.
- */
-void RalsCoulombVertexDecomposition::applyToGamma(
-  char const *indicesGamma,
-  Tensor<complex> &conjB, char const idxB,
-  Tensor<complex> &conjC, char const idxC,
-  Tensor<complex> &A, char const idxA
-) {
-  char const indicesA[] = { idxA, 'R', 0 };
-  char const indicesB[] = { idxB, 'R', 0 };
-  char const indicesC[] = { idxC, 'R', 0 };
-  // choose contraction order with minimal memory footprint
-  int largestIndex(
-    std::max(
-      std::max(GammaGqr->lens[0], GammaGqr->lens[1]), GammaGqr->lens[2]
-    )
-  );
-  if (A.lens[0] == largestIndex) {
-    // A has largest index: contract conjB and conjC first
-    LOG(4, "RALS") << "applying to Gamma with largest A..." << std::endl;
-    const char indicesBC[] = { idxB, idxC, 'R' , 0};
-    int lens[] = { conjB.lens[0], conjC.lens[0], A.lens[1] };
-    int syms[] = { NS, NS, NS };
-    Tensor<complex> BC(3, lens, syms, *GammaGqr->wrld, "BC");
-    BC[indicesBC] = conjB[indicesB]*conjC[indicesC];
-    A[indicesA] += (*GammaGqr)[indicesGamma] * BC[indicesBC];
-  } else if (conjB.lens[0] == largestIndex) {
-    // B has largest index: contract Gamma and conjB first
-    LOG(4, "RALS") << "applying to Gamma with largest B..." << std::endl;
-    const char indicesGammaB[] = { idxA, idxC, 'R' , 0};
-    int lens[] = { A.lens[0], conjC.lens[0], A.lens[1] };
-    int syms[] = { NS, NS, NS };
-    Tensor<complex> GammaB(3, lens, syms, *GammaGqr->wrld, "GammaB");
-    GammaB[indicesGammaB] = (*GammaGqr)[indicesGamma]*conjB[indicesB];
-    A[indicesA] += GammaB[indicesGammaB] * conjC[indicesC];
-  } else {
-    // C has largest index: contract Gamma and conjC first
-    LOG(4, "RALS") << "applying to Gamma with largest C..." << std::endl;
-    const char indicesGammaC[] = { idxA, idxB, 'R' , 0};
-    int lens[] = { A.lens[0], conjB.lens[0], A.lens[1] };
-    int syms[] = { NS, NS, NS };
-    Tensor<complex> GammaC(3, lens, syms, *GammaGqr->wrld, "GammaC");
-    GammaC[indicesGammaC] = (*GammaGqr)[indicesGamma]*conjC[indicesC];
-    A[indicesA] += GammaC[indicesGammaC] * conjB[indicesB];
-  }
-}
-
-
-/**
- * \brief Normalizes the given factor orbitals.
- */
-void RalsCoulombVertexDecomposition::normalize(
+void CoulombVertexDecomposition::normalizePi(
   Matrix<complex> &Pi
 ) {
   Bivar_Function<complex> fDot(&cc4s::dot<complex>);
@@ -247,15 +144,12 @@ void RalsCoulombVertexDecomposition::normalize(
   Pi.contract(1.0, Pi,"qR", quotient,"qR", 0.0,"qR", fDivide);
 }
 
-/**
- * \brief Discards the imaginary part of the given factor orbitals.
- */
-void RalsCoulombVertexDecomposition::realize(
+void CoulombVertexDecomposition::realizePi(
   Matrix<complex> &Pi
 ) {
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
   Matrix<complex> conjX(Pi);
-  // conjX["qR"] = Pi["qR"]
+  // conjX["qR"] = conj(Pi["qR"])
   conjX.sum(1.0, Pi,"qR", 0.0,"qR", fConj);
   Pi["qR"] += conjX["qR"];
   Pi["qR"] *= 0.5;

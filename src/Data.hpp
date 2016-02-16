@@ -19,6 +19,11 @@ namespace cc4s {
   class TypeTraits;
 
   template <>
+  class TypeTraits<bool> {
+  public:
+    static std::string getName() { return "boolean"; }
+  };
+  template <>
   class TypeTraits<int64_t> {
   public:
     static std::string getName() { return "integer"; }
@@ -111,6 +116,15 @@ namespace cc4s {
       std::string const &name_, std::string const &value_
     ): TypedData(name_, "text"), value(value_) { }
     std::string value;
+  };
+
+  class BooleanData: public TypedData {
+  public:
+    BooleanData(bool const value_): TypedData("boolean"), value(value_) { }
+    BooleanData(
+      std::string const &name_, bool const value_
+    ): TypedData(name_, "boolean"), value(value_) { }
+    bool value;
   };
 
   class NumericData: public TypedData {

@@ -1,9 +1,10 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef RALS_COULOMB_VERTEX_DECOMPOSITION_DEFINED
-#define RALS_COULOMB_VERTEX_DECOMPOSITION_DEFINED
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+#ifndef COULOMB_VERTEX_DECOMPOSITION_DEFINED
+#define COULOMB_VERTEX_DECOMPOSITION_DEFINED
 
-#include <Algorithm.hpp>
+#include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
+#include <math/RegularizedAlternatingLeastSquares.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {
@@ -15,98 +16,91 @@ namespace cc4s {
    * regularized alternating least squares (RALS) algorithm, requiring
    * only a few dozen steps for sufficient convergence.
    */
-  class RalsCoulombVertexDecomposition: public Algorithm {
+  class CoulombVertexDecomposition: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(RalsCoulombVertexDecomposition);
-    RalsCoulombVertexDecomposition(
+    ALGORITHM_REGISTRAR_DECLARATION(CoulombVertexDecomposition);
+    CoulombVertexDecomposition(
       std::vector<Argument> const &argumentList
     );
-    virtual ~RalsCoulombVertexDecomposition();
+    virtual ~CoulombVertexDecomposition();
     virtual void run();
       
     /**
-     * \brief The rank of the tensor rank decomposition
+     * \brief The rank \f$N_R\f$ of the tensor rank decomposition
      */
     int64_t rank;
 
     /**
-     * \brief The sum of squares of the difference between the current
-     * decomposition and the particle hole Coulomb vertex.
+     * \brief The Frobenius norm of the difference between
+     * \f$\Gamma^a_{iG}\f$ and its decomposition.
      */
-    double residuum;
-    CTF::Tensor<complex> *GammaGai, *Gamma0Gai;
-    CTF::Matrix<complex> *PiiR, *PiaR, *LambdaGR;
+    double Delta;
 
-    class RegularizationEstimator {
-    public:
-      RegularizationEstimator(
-        double swampingThreshold_, double regularizationFriction_,
-        double initialLambda_
-      ):
-        swampingThreshold(swampingThreshold_),
-        regularizationFriction(regularizationFriction_),
-        lambda(initialLambda_)
-      { }
-      double getSwampingThreshold() {
-        return swampingThreshold;
-      }
-      double getLambda() {
-        return lambda;
-      }
-      void update(double const swampingFactor) {
-        double s(swampingFactor / swampingThreshold);
-        double estimatedLambda(lambda * s*s);
-        lambda =
-          (1-regularizationFriction)*estimatedLambda +
-          regularizationFriction*lambda;
-      }
-    protected:
-      double swampingThreshold, regularizationFriction;
-      double lambda;
-    };
+    /**
+     * \brief Whether the factor orbitals \f$\Pi_{aR},\Pi_{iR}\f$
+     * are required to be real.
+     */
+    bool realFactorOrbitals;
+    /**
+     * \brief Whether the factor orbitals \f$\Pi_{aR},\Pi_{iR}\f$
+     * are required to be normalized, i.e.
+     * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta{qq}\f$.
+     */
+    bool normalizedFactorOrbitals;
 
-    RegularizationEstimator
-      *regularizationEstimatorPiiR, *regularizationEstimatorPiaR,
+    /**
+     * \brief The full Coulomb vertex \f$\Gamma^q_{rG}\f$.
+     */
+    CTF::Tensor<complex> *GammaGqr;
+    /**
+     * \brief The fit \f${\Pi^\ast}^{qR}\Pi_{rR}\Lambda_{GR}\f$.
+     */
+    CTF::Tensor<complex> *Gamma0Gqr;
+    /**
+     * \brief The factor orbitals \f${\Pi^\ast}^{qR} = (\Pi_{qR})^\ast\f$.
+     */
+    CTF::Matrix<complex> *PiqR;
+    /**
+     * \brief The factor orbitals \f$\Pi_{rR} = ({\Pi^\ast}^{rR})^\ast\f$.
+     */
+    CTF::Matrix<complex> *PirR;
+    /**
+     * \brief The full Coulomb factors \f$\Lambda_{GR}\f$.
+     */
+    CTF::Matrix<complex> *LambdaGR;
+
+    /**
+     * \brief Estimators for the regularization parameter during
+     * the alternating least squares fits. They estimate the
+     * regularization parameter \f$\lambda\f$ in each iteration from
+     * the swamping factor in the previous iteration.
+     */
+    AlternatingLeastSquaresRegularizationEstimator
+      *regularizationEstimatorPiqR, *regularizationEstimatorPirR,
       *regularizationEstimatorLambdaGR;
 
     static int64_t constexpr DEFAULT_MAX_ITERATIONS = 32;
     static double constexpr DEFAULT_DELTA = 0.0;
     static double constexpr DEFAULT_SWAMPING_THRESHOLD = 1.0;
     static double constexpr DEFAULT_REGULARIZATION_FRICTION = 0.125;
+    static bool constexpr DEFAULT_REAL_FACTOR_ORBITALS = false;
+    static bool constexpr DEFAULT_NORMALIZED_FACTOR_ORBITALS = false;
 
   protected:
+    /**
+     * \brief Performs one iteration in fitting the factor orbitals
+     * and the Coulomb factors according to the given algorithm.
+     */
     void fit(int64_t iterationsCount);
-    void calculateGamma0();
-
-    void fitAls(
-      char const *indicesGamma,
-      CTF::Tensor<complex> &B, char const idxB,
-      CTF::Tensor<complex> &C, char const idxC,
-      CTF::Tensor<complex> &A, char const idxA
-    );
-    void fitRals(
-      char const *indicesGamma,
-      CTF::Tensor<complex> &B, char const idxB,
-      CTF::Tensor<complex> &C, char const idxC,
-      CTF::Tensor<complex> &A, char const idxA,
-      RegularizationEstimator &regularizationEstimatorA
-    );
-
-    void applyToGamma(
-      char const *indicesGamma,
-      CTF::Tensor<complex> &conjB, char const idxB,
-      CTF::Tensor<complex> &conjC, char const idxC,
-      CTF::Tensor<complex> &A, char const idxA
-    );
-    void applyToGammaSliced(
-      char const *indicesGamma,
-      CTF::Tensor<complex> &conjB, char const idxB,
-      CTF::Tensor<complex> &conjC, char const idxC,
-      CTF::Tensor<complex> &A, char const idxA
-    );
-
-    void normalize(CTF::Matrix<complex> &Pi);
-    void realize(CTF::Matrix<complex> &Pi);
+    /**
+     * \brief Normalizes the given factor orbitals, such that
+     * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta_{qq}\f$.
+     */
+    void normalizePi(CTF::Matrix<complex> &Pi);
+    /**
+     * \brief Discards the imaginary part of the given factor orbitals.
+     */
+    void realizePi(CTF::Matrix<complex> &Pi);
   };
 }
 

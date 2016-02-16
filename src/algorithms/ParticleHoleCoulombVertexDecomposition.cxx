@@ -1,41 +1,44 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
-#include <algorithms/RalsParticleHoleCoulombVertexDecomposition.hpp>
+#include <algorithms/ParticleHoleCoulombVertexDecomposition.hpp>
 #include <math/CanonicalPolyadicDecomposition.hpp>
-// #include <math/ComplexTensor.hpp>
 #include <math/RandomTensor.hpp>
 #include <math/MathFunctions.hpp>
-#include <math/IterativePseudoInverse.hpp>
-#include <util/Exception.hpp>
 #include <util/Log.hpp>
-#include <iostream>
-#include <fstream>
 #include <limits>
 
 using namespace cc4s;
 using namespace CTF;
 
-ALGORITHM_REGISTRAR_DEFINITION(RalsParticleHoleCoulombVertexDecomposition);
+ALGORITHM_REGISTRAR_DEFINITION(ParticleHoleCoulombVertexDecomposition);
 
-RalsParticleHoleCoulombVertexDecomposition::
-  RalsParticleHoleCoulombVertexDecomposition
+ParticleHoleCoulombVertexDecomposition::
+  ParticleHoleCoulombVertexDecomposition
 (
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-RalsParticleHoleCoulombVertexDecomposition::
-  ~RalsParticleHoleCoulombVertexDecomposition()
+ParticleHoleCoulombVertexDecomposition::
+  ~ParticleHoleCoulombVertexDecomposition()
 {
 }
 
-void RalsParticleHoleCoulombVertexDecomposition::run() {
+void ParticleHoleCoulombVertexDecomposition::run() {
   GammaGai = getTensorArgument<complex>("ParticleHoleCoulombVertex");
   int NG(GammaGai->lens[0]);
   int Nv(GammaGai->lens[1]);
   int No(GammaGai->lens[2]);
   rank = getIntegerArgument("rank", NG);
-  LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank << std::endl;
+  realFactorOrbitals = getIntegerArgument(
+    "realFactorOrbitals", DEFAULT_REAL_FACTOR_ORBITALS
+  );
+  normalizedFactorOrbitals = getIntegerArgument(
+    "normalizedFactorOrbitals", DEFAULT_NORMALIZED_FACTOR_ORBITALS
+  );
+  LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank
+    << ", realFactorOrbitals=" << realFactorOrbitals
+    << ", normalizedFactorOrbitals=" << normalizedFactorOrbitals << std::endl;
   LOG(1, "RALS") << "decompising Coulomb vertex with NG=" << NG
     << " No=" << No << " Nv=" << Nv << std::endl;
 
@@ -89,26 +92,28 @@ void RalsParticleHoleCoulombVertexDecomposition::run() {
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );
   double delta(getRealArgument("delta", DEFAULT_DELTA));
-  residuum = std::numeric_limits<double>::infinity();
-  while (iterationsCount < maxIterationsCount && residuum > delta) {
+  Delta = std::numeric_limits<double>::infinity();
+  while (iterationsCount < maxIterationsCount && Delta > delta) {
     fit(iterationsCount);
     ++iterationsCount;
   }
 }
 
-void RalsParticleHoleCoulombVertexDecomposition::fit(
+void ParticleHoleCoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGai,"Gai", *PiaR,'a', *LambdaGR,'G',
     *PiiR,'i', *regularizationEstimatorPiiR
   );
-//  realizePi(*PiiR); // normalizePi(*PiiR);
+  if (realFactorOrbitals) realizePi(*PiiR);
+  if (normalizedFactorOrbitals) normalizePi(*PiiR);
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGai,"Gai", *LambdaGR,'G', *PiiR,'i',
     *PiaR,'a', *regularizationEstimatorPiaR
   );
-//  realizePi(*PiaR); // normalizePi(*PiaR);
+  if (realFactorOrbitals) realizePi(*PiiR);
+  if (normalizedFactorOrbitals) normalizePi(*PiiR);
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGai,"Gai", *PiiR,'i',*PiaR,'a',
     *LambdaGR,'G', *regularizationEstimatorLambdaGR
@@ -119,16 +124,13 @@ void RalsParticleHoleCoulombVertexDecomposition::fit(
   );
 
   (*Gamma0Gai)["Gai"] -= (*GammaGai)["Gai"];
-  residuum = frobeniusNorm(*Gamma0Gai);
+  Delta = frobeniusNorm(*Gamma0Gai);
   LOG(0, "RALS") << "iteration=" << (iterationsCount+1)
-    << " Delta=" << residuum << std::endl;
+    << " Delta=" << Delta << std::endl;
   (*Gamma0Gai)["Gai"] += (*GammaGai)["Gai"];
 }
 
-/**
- * \brief Normalizes the given factor orbitals.
- */
-void RalsParticleHoleCoulombVertexDecomposition::normalizePi(
+void ParticleHoleCoulombVertexDecomposition::normalizePi(
   Matrix<complex> &Pi
 ) {
   Bivar_Function<complex> fDot(&cc4s::dot<complex>);
@@ -144,10 +146,7 @@ void RalsParticleHoleCoulombVertexDecomposition::normalizePi(
   Pi.contract(1.0, Pi,"qR", quotient,"qR", 0.0,"qR", fDivide);
 }
 
-/**
- * \brief Discards the imaginary part of the given factor orbitals.
- */
-void RalsParticleHoleCoulombVertexDecomposition::realizePi(
+void ParticleHoleCoulombVertexDecomposition::realizePi(
   Matrix<complex> &Pi
 ) {
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
