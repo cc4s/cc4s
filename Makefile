@@ -32,6 +32,8 @@ obj/math/MathFunctions.o \
 obj/math/ComplexTensor.o \
 obj/math/RandomTensor.o \
 obj/math/IterativePseudoInverse.o \
+obj/math/CanonicalPolyadicDecomposition.o \
+obj/math/RegularizedAlternatingLeastSquares.o \
 obj/PerturbationTensor.o obj/RalsFtodRankDecomposition.o \
 obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
