@@ -1,8 +1,8 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <Cc4s.hpp>
-#include <Algorithm.hpp>
 #include <Parser.hpp>
+#include <algorithms/Algorithm.hpp>
 #include <util/Timer.hpp>
 #include <util/FlopsCounter.hpp>
 #include <util/Log.hpp>

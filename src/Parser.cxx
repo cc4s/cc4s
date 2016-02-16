@@ -1,6 +1,6 @@
 #include <Parser.hpp>
 
-#include <Algorithm.hpp>
+#include <algorithms/Algorithm.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
 #include <locale>
