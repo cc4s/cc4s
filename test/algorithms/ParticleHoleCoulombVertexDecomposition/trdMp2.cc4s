@@ -1,13 +1,13 @@
 % tensor rank decomposition MP2 execution plan
 ParticleHoleCoulombVertexReader [
-  (file "FTODDUMP")
+  (file "../../ParticleHoleCoulombVertex.bin")
 ] [
   ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
 
-RalsParticleHoleCoulombVertexDecomposition [
+ParticleHoleCoulombVertexDecomposition [
   ParticleHoleCoulombVertex
-  (maxIterations 32)
+  (rank 370) (maxIterations 32) (realFactorOrbitals 1)
 ] [
   HoleFactorOrbitals ParticleFactorOrbitals ParticleHoleCoulombFactors
   % approximation from the rank decomposition:

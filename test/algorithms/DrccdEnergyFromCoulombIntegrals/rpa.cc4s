@@ -1,6 +1,6 @@
 % RPA execution plan for smaller systems with Nv * No <= NG
 ParticleHoleCoulombVertexReader [
-  (file "FTODDUMP")
+  (file "../../resources/ParticleHoleCoulombVertex.bin")
 ] [
   ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].

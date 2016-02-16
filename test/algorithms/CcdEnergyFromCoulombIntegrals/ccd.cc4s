@@ -1,5 +1,5 @@
 CoulombVertexReader [
-  (file "FTODDUMP")
+  (file "../../resources/CoulombVertex.bin")
 ] [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
