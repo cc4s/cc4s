@@ -1,6 +1,6 @@
 #include <DrccdEnergyFromCoulombIntegrals.hpp>
+#include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
-#include <util/MathFunctions.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>

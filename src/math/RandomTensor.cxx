@@ -1,6 +1,6 @@
-#include <util/RandomTensor.hpp>
+#include <math/RandomTensor.hpp>
 
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 #include <util/Log.hpp>
 #include <random>
 

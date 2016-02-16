@@ -1,5 +1,5 @@
 #include <ParticleHoleCoulombVertexReader.hpp>
-#include <util/ComplexTensor.hpp>
+#include <math/ComplexTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>

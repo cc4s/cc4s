@@ -2,7 +2,7 @@
 #ifndef COMPLEX_POLYNOMIAL_ROOT_FINDER_DEFINED
 #define COMPLEX_POLYNOMIAL_ROOT_FINDER_DEFINED
 
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 
 namespace util {
   template <typename T>

@@ -1,7 +1,7 @@
 #ifndef MATH_FUNCTIONS_DEFINED
 #define MATH_FUNCTIONS_DEFINED
 
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 #include <cmath>
 #include <ctf.hpp>
 

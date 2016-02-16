@@ -10,7 +10,7 @@
 #include <fstream>
 
 // TODO: to be removed from the main class
-#include <util/MathFunctions.hpp>
+#include <math/MathFunctions.hpp>
 
 using namespace cc4s;
 using namespace CTF;

@@ -2,10 +2,11 @@
 #ifndef DATA_DEFINED
 #define DATA_DEFINED
 
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 #include <string>
 #include <map>
 #include <ctf.hpp>
+// TODO: find out why Exception must be included after string,map and ctf
 #include <util/Exception.hpp>
 
 namespace cc4s {

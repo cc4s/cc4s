@@ -1,4 +1,4 @@
-#include <util/ComplexTensor.hpp>
+#include <math/ComplexTensor.hpp>
 
 #include <util/Exception.hpp>
 #include <complex>

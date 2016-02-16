@@ -1,7 +1,7 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include "Log.hpp"
 
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 
 using namespace cc4s;
 

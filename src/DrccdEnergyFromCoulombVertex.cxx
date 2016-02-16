@@ -1,7 +1,7 @@
 #include <DrccdEnergyFromCoulombVertex.hpp>
+#include <math/MathFunctions.hpp>
+#include <math/ComplexTensor.hpp>
 #include <util/Log.hpp>
-#include <util/MathFunctions.hpp>
-#include <util/ComplexTensor.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>

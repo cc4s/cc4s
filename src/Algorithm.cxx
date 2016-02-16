@@ -2,7 +2,7 @@
 
 #include <Algorithm.hpp>
 #include <Data.hpp>
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <iostream>

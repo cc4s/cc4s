@@ -1,6 +1,6 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef RALS_PARTICLE_HOLE_COULOMB_VERTEX_DECOMPOSITION_DEFINED
-#define RALS_PARTICLE_HOLE_COULOMB_VERTEX_DECOMPOSITION_DEFINED
+#ifndef RALS_COULOMB_VERTEX_DECOMPOSITION_DEFINED
+#define RALS_COULOMB_VERTEX_DECOMPOSITION_DEFINED
 
 #include <Algorithm.hpp>
 #include <math/Complex.hpp>
@@ -15,13 +15,13 @@ namespace cc4s {
    * regularized alternating least squares (RALS) algorithm, requiring
    * only a few dozen steps for sufficient convergence.
    */
-  class RalsParticleHoleCoulombVertexDecomposition: public Algorithm {
+  class RalsCoulombVertexDecomposition: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(RalsParticleHoleCoulombVertexDecomposition);
-    RalsParticleHoleCoulombVertexDecomposition(
+    ALGORITHM_REGISTRAR_DECLARATION(RalsCoulombVertexDecomposition);
+    RalsCoulombVertexDecomposition(
       std::vector<Argument> const &argumentList
     );
-    virtual ~RalsParticleHoleCoulombVertexDecomposition();
+    virtual ~RalsCoulombVertexDecomposition();
     virtual void run();
       
     /**
@@ -105,8 +105,8 @@ namespace cc4s {
       CTF::Tensor<complex> &A, char const idxA
     );
 
-    void normalizePi(CTF::Matrix<complex> &Pi);
-    void realizePi(CTF::Matrix<complex> &Pi);
+    void normalize(CTF::Matrix<complex> &Pi);
+    void realize(CTF::Matrix<complex> &Pi);
   };
 }
 

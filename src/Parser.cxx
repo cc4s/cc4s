@@ -78,6 +78,7 @@ Argument Parser::parseArgument() {
 }
 
 Argument Parser::parseImplicitlyNamedArgument() {
+  // TODO: store debug info for later reference in case of errors
   std::string argumentName(parseSymbolName());
   Data *data(Data::get(argumentName));
   if (!data) new Data(argumentName);
@@ -85,6 +86,7 @@ Argument Parser::parseImplicitlyNamedArgument() {
 }
 
 Argument Parser::parseExplicitlyNamedArgument() {
+  // TODO: store debug info for later reference in case of errors
   // first character must be '('
   stream.get();
   skipIrrelevantCharacters();

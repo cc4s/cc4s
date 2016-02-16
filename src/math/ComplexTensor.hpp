@@ -1,7 +1,7 @@
 #ifndef COMPLEX_TENSOR_DEFINED
 #define COMPLEX_TENSOR_DEFINED
 
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {

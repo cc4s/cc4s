@@ -1,10 +1,10 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <RalsFtodRankDecomposition.hpp>
-#include <util/ComplexTensor.hpp>
-#include <util/RandomTensor.hpp>
-#include <util/MathFunctions.hpp>
-#include <util/IterativePseudoInverse.hpp>
+#include <math/ComplexTensor.hpp>
+#include <math/RandomTensor.hpp>
+#include <math/MathFunctions.hpp>
+#include <math/IterativePseudoInverse.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <iostream>

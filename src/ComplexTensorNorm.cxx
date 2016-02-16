@@ -1,6 +1,6 @@
 #include <ComplexTensorNorm.hpp>
-#include <util/Complex.hpp>
-#include <util/MathFunctions.hpp>
+#include <math/Complex.hpp>
+#include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <ctf.hpp>
 

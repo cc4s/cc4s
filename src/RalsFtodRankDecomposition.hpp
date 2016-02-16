@@ -3,7 +3,7 @@
 #define RALS_FTOD_RANK_DECOMPOSITION_DEFINED
 
 #include <Algorithm.hpp>
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {

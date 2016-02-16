@@ -1,6 +1,6 @@
 #include <GenerateRandomMatrix.hpp>
-#include <util/Complex.hpp>
-#include <util/RandomTensor.hpp>
+#include <math/Complex.hpp>
+#include <math/RandomTensor.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
 

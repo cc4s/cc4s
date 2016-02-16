@@ -1,5 +1,5 @@
 #include <ComplexTensorSum.hpp>
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 #include <ctf.hpp>
 
 using namespace CTF;

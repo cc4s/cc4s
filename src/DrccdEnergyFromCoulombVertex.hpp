@@ -4,7 +4,7 @@
 
 #include <Algorithm.hpp>
 #include <Options.hpp>
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 
 namespace cc4s {
   class DrccdEnergyFromCoulombVertex: public Algorithm {

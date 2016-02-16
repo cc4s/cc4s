@@ -1,5 +1,5 @@
 #include <GenerateRandomComplexMatrix.hpp>
-#include <util/RandomTensor.hpp>
+#include <math/RandomTensor.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
 

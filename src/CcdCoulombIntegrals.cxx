@@ -1,6 +1,6 @@
 #include <CcdCoulombIntegrals.hpp>
-#include <util/Complex.hpp>
-#include <util/ComplexTensor.hpp>
+#include <math/Complex.hpp>
+#include <math/ComplexTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>

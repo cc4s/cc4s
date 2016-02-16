@@ -28,10 +28,10 @@ obj/Options.o \
 obj/util/Log.o \
 obj/util/Timer.o \
 obj/util/FlopsCounter.o \
-obj/util/MathFunctions.o \
-obj/util/ComplexTensor.o \
-obj/util/RandomTensor.o \
-obj/util/IterativePseudoInverse.o \
+obj/math/MathFunctions.o \
+obj/math/ComplexTensor.o \
+obj/math/RandomTensor.o \
+obj/math/IterativePseudoInverse.o \
 obj/PerturbationTensor.o \
 obj/Data.o \
 obj/Algorithm.o \

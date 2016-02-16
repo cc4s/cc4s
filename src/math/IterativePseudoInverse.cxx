@@ -1,7 +1,7 @@
-#include <util/IterativePseudoInverse.hpp>
+#include <math/IterativePseudoInverse.hpp>
 
-#include <util/MathFunctions.hpp>
-#include <util/RandomTensor.hpp>
+#include <math/MathFunctions.hpp>
+#include <math/RandomTensor.hpp>
 #include <util/Log.hpp>
 #include <complex>
 #include <limits>

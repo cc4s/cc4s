@@ -1,7 +1,7 @@
 #ifndef RANDOM_TENSOR_DEFINED
 #define RANDOM_TENSOR_DEFINED
 
-#include <util/Complex.hpp>
+#include <math/Complex.hpp>
 #include <ctf.hpp>
 #include <complex>
 
