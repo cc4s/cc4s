@@ -98,6 +98,8 @@ namespace cc4s {
     static bool constexpr DEFAULT_NORMALIZED_FACTOR_ORBITALS = false;
 
   protected:
+    double mp2Energy;
+
     /**
      * \brief Performs one iteration in fitting the factor orbitals
      * and the Coulomb factors according to the given algorithm.

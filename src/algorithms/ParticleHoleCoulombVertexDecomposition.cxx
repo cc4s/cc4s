@@ -96,10 +96,11 @@ void ParticleHoleCoulombVertexDecomposition::run() {
   double delta(getRealArgument("delta", DEFAULT_DELTA));
   Delta = std::numeric_limits<double>::infinity();
   epsilonStep = getIntegerArgument("epsilonStep", DEFAULT_EPSILON_STEP);
+  if (epsilonStep > 0) mp2Energy = evaluateMp2(*GammaGai);
   while (iterationsCount < maxIterationsCount && Delta > delta) {
     fit(iterationsCount);
-    if (epsilonStep > 0 && iterationsCount%epsilonStep == 0) evaluateMp2Error();
     ++iterationsCount;
+    if (epsilonStep > 0 && iterationsCount%epsilonStep == 0) evaluateMp2Error();
   }
 }
 
@@ -162,9 +163,10 @@ void ParticleHoleCoulombVertexDecomposition::realizePi(
 }
 
 void ParticleHoleCoulombVertexDecomposition::evaluateMp2Error() {
-  LOG(1, "RALS") << "epsilon="
-    << (evaluateMp2(*Gamma0Gai) - evaluateMp2(*GammaGai))
-    << " E_h" << std::endl;
+  double approximateMp2(evaluateMp2(*Gamma0Gai));
+  LOG(2, "RALS") << "approxiomate mp2=" << approximateMp2 << std::endl;
+  LOG(2, "RALS") << "mp2=" << mp2Energy << std::endl;
+  LOG(1, "RALS") << "epsilon=" << ((approximateMp2-mp2Energy)/mp2Energy) << std::endl;
 }
 
 double ParticleHoleCoulombVertexDecomposition::evaluateMp2(
@@ -178,7 +180,7 @@ double ParticleHoleCoulombVertexDecomposition::evaluateMp2(
     3, Gamma.lens, Gamma.sym, *Gamma.wrld, "ImagGammaGai"
   );
   // split into real and imaginary parts
-  fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
+  fromComplexTensor(Gamma, realGammaGai, imagGammaGai);
 
   // allocate coulomb integrals
   int Nv(Gamma.lens[1]);
