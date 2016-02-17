@@ -92,6 +92,7 @@ namespace cc4s {
      * and the Coulomb factors according to the given algorithm.
      */
     void fit(int64_t iterationsCount);
+    void fitConjugated(int64_t iterationsCount);
     /**
      * \brief Normalizes the given factor orbitals, such that
      * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta_{qq}\f$.

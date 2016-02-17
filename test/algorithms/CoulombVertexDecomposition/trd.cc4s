@@ -7,7 +7,7 @@ CoulombVertexReader [
 
 CoulombVertexDecomposition [
   CoulombVertex
-  (maxIterations 32) (realFactorOrbitals 1)
+  (rank 150) (maxIterations 32)
 ] [
   FactorOrbitals CoulombFactors
   % approximation from the rank decomposition:

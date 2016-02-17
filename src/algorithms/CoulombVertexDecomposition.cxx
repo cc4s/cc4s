@@ -101,6 +101,41 @@ void CoulombVertexDecomposition::run() {
 void CoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
+  fitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
+    *PirR,'r', *regularizationEstimatorPirR
+  );
+  if (realFactorOrbitals) realizePi(*PirR);
+  if (normalizedFactorOrbitals) normalizePi(*PirR);
+  (*PiqR)["qR"] = (*PirR)["qR"];
+
+  fitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *LambdaGR,'G', *PirR,'r',
+    *PiqR,'q', *regularizationEstimatorPiqR
+  );
+  if (realFactorOrbitals) realizePi(*PirR);
+  if (normalizedFactorOrbitals) normalizePi(*PirR);
+  (*PirR)["qR"] = (*PiqR)["qR"];
+
+  fitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
+    *LambdaGR,'G', *regularizationEstimatorLambdaGR
+  );
+
+  composeCanonicalPolyadicDecompositionTensors(
+    *LambdaGR, *PiqR, *PirR, *Gamma0Gqr
+  );
+
+  (*Gamma0Gqr)["Gqr"] -= (*GammaGqr)["Gqr"];
+  Delta = frobeniusNorm(*Gamma0Gqr);
+  LOG(0, "RALS") << "iteration=" << (iterationsCount+1)
+    << " Delta=" << Delta << std::endl;
+  (*Gamma0Gqr)["Gqr"] += (*GammaGqr)["Gqr"];
+}
+
+void CoulombVertexDecomposition::fitConjugated(
+  int64_t const iterationsCount
+) {
   // TODO: why is it swamping considerably more when fitting
   // {\Pi^ast}^{qR} \Pi_{rR} \Lambda_{GR} rather than
   // \Pi_{qR} \Pi_{rR} \Lambda_{GR} ?
