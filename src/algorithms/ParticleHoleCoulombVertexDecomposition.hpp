@@ -37,6 +37,13 @@ namespace cc4s {
     double Delta;
 
     /**
+     * \brief The number of steps between two evaluations of the
+     * error in the MP2 energy of the decomposition.
+     * A value below 1 results in no evaluations.
+     */
+    int epsilonStep;
+
+    /**
      * \brief Whether the factor orbitals \f$\Pi_{aR},\Pi_{iR}\f$
      * are required to be real.
      */
@@ -84,6 +91,7 @@ namespace cc4s {
 
     static int64_t constexpr DEFAULT_MAX_ITERATIONS = 32;
     static double constexpr DEFAULT_DELTA = 0.0;
+    static int constexpr DEFAULT_EPSILON_STEP = 0;
     static double constexpr DEFAULT_SWAMPING_THRESHOLD = 1.0;
     static double constexpr DEFAULT_REGULARIZATION_FRICTION = 0.125;
     static bool constexpr DEFAULT_REAL_FACTOR_ORBITALS = false;
@@ -104,6 +112,16 @@ namespace cc4s {
      * \brief Discards the imaginary part of the given factor orbitals.
      */
     void realizePi(CTF::Matrix<complex> &Pi);
+
+    /**
+     * \brief Evaluates and prints the error of the MP2 energy between
+     * the current decomposition and the full MP2 energy.
+     */
+    void evaluateMp2Error();
+    /**
+     * \brief Evaluates the MP2 energy for the given Coulomb vertex.
+     */
+    double evaluateMp2(CTF::Tensor<complex> &Gamma);
   };
 }
 

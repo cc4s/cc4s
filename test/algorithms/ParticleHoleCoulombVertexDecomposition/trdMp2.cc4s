@@ -6,8 +6,9 @@ ParticleHoleCoulombVertexReader [
 ].
 
 ParticleHoleCoulombVertexDecomposition [
-  ParticleHoleCoulombVertex
-  (rank 370) (maxIterations 32) (realFactorOrbitals 1)
+  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (rank 370) (maxIterations 32) (realFactorOrbitals 0)
+  (epsilonStep 8)
 ] [
   HoleFactorOrbitals ParticleFactorOrbitals ParticleHoleCoulombFactors
   % approximation from the rank decomposition:

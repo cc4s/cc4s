@@ -47,7 +47,9 @@ namespace cc4s {
       UNUSED = 4, LINGERING = 5
     };
     Data(std::string const &name_);
-    virtual ~Data() { }
+    virtual ~Data() {
+      dataMap[name] = nullptr;
+    }
     std::string getName() const { return name; }
     std::string getTypeName() const { return typeName; }
     Stage getStage() const { return stage; }

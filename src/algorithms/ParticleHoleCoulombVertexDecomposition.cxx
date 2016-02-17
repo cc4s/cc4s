@@ -5,6 +5,8 @@
 #include <math/RandomTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
+// FIXME: only used by MP2 functions which need to be factored.
+#include <math/ComplexTensor.hpp>
 #include <limits>
 
 using namespace cc4s;
@@ -93,8 +95,10 @@ void ParticleHoleCoulombVertexDecomposition::run() {
   );
   double delta(getRealArgument("delta", DEFAULT_DELTA));
   Delta = std::numeric_limits<double>::infinity();
+  epsilonStep = getIntegerArgument("epsilonStep", DEFAULT_EPSILON_STEP);
   while (iterationsCount < maxIterationsCount && Delta > delta) {
     fit(iterationsCount);
+    if (epsilonStep > 0 && iterationsCount%epsilonStep == 0) evaluateMp2Error();
     ++iterationsCount;
   }
 }
@@ -155,5 +159,55 @@ void ParticleHoleCoulombVertexDecomposition::realizePi(
   conjX.sum(1.0, Pi,"qR", 0.0,"qR", fConj);
   Pi["qR"] += conjX["qR"];
   Pi["qR"] *= 0.5;
+}
+
+void ParticleHoleCoulombVertexDecomposition::evaluateMp2Error() {
+  LOG(1, "RALS") << "epsilon="
+    << (evaluateMp2(*Gamma0Gai) - evaluateMp2(*GammaGai))
+    << " E_h" << std::endl;
+}
+
+double ParticleHoleCoulombVertexDecomposition::evaluateMp2(
+  Tensor<complex> &Gamma
+) {
+  // FIXME: use sequence type for output to factorize this code
+  Tensor<> realGammaGai(
+    3, Gamma.lens, Gamma.sym, *Gamma.wrld, "RealGammaGai"
+  );
+  Tensor<> imagGammaGai(
+    3, Gamma.lens, Gamma.sym, *Gamma.wrld, "ImagGammaGai"
+  );
+  // split into real and imaginary parts
+  fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
+
+  // allocate coulomb integrals
+  int Nv(Gamma.lens[1]);
+  int No(Gamma.lens[2]);
+  int lens[] = { Nv, Nv, No, No };
+  int syms[] = { NS, NS, NS, NS };
+  Tensor<> Vabij(4, lens, syms, *Gamma.wrld, "Vabij");
+  Vabij["abij"] =  realGammaGai["gai"] * realGammaGai["gbj"];
+  Vabij["abij"] += imagGammaGai["gai"] * imagGammaGai["gbj"];
+
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+ 
+  Tensor<> Tabij(false, Vabij);
+  Tabij["abij"] =  (*epsi)["i"];
+  Tabij["abij"] += (*epsi)["j"];
+  Tabij["abij"] -= (*epsa)["a"];
+  Tabij["abij"] -= (*epsa)["b"];
+
+  Bivar_Function<> fDivide(&divide<double>);
+  Tabij.contract(1.0, Vabij,"abij", Tabij,"abij", 0.0,"abij", fDivide);
+
+  Scalar<> energy(*Vabij.wrld);
+  double dire, exce;
+
+  energy[""] = 2.0 * Tabij["abij"] * Vabij["abij"];
+  dire = energy.get_val();
+  energy[""] = Tabij["abji"] * Vabij["abij"];
+  exce = -1.0 * energy.get_val();
+  return dire + exce;
 }
 
