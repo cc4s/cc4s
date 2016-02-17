@@ -112,8 +112,8 @@ void ParticleHoleCoulombVertexDecomposition::fit(
     *GammaGai,"Gai", *LambdaGR,'G', *PiiR,'i',
     *PiaR,'a', *regularizationEstimatorPiaR
   );
-  if (realFactorOrbitals) realizePi(*PiiR);
-  if (normalizedFactorOrbitals) normalizePi(*PiiR);
+  if (realFactorOrbitals) realizePi(*PiaR);
+  if (normalizedFactorOrbitals) normalizePi(*PiaR);
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGai,"Gai", *PiiR,'i',*PiaR,'a',
     *LambdaGR,'G', *regularizationEstimatorLambdaGR

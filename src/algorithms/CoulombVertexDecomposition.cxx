@@ -45,11 +45,17 @@ void CoulombVertexDecomposition::run() {
   PiqR = new Matrix<complex>(
     Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile
   );
+  PirR = new Matrix<complex>(
+    Np, int(rank), NS, *GammaGqr->wrld, "PirR", GammaGqr->profile
+  );
   LambdaGR = new Matrix<complex>(
     NG, int(rank), NS, *GammaGqr->wrld, "LambdaGR", GammaGqr->profile
   );
   setRandomTensor(*PiqR);
   realizePi(*PiqR); normalizePi(*PiqR);
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  // PirR["qR"] = conj(PiqR["qR"])
+  PirR->sum(1.0, *PiqR,"qR", 0.0,"qR", fConj);
   setRandomTensor(*LambdaGR);
   allocatedTensorArgument("FactorOrbitals", PiqR);
   allocatedTensorArgument("CoulombFactors", LambdaGR);
@@ -95,23 +101,34 @@ void CoulombVertexDecomposition::run() {
 void CoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
+  // TODO: why is it swamping considerably more when fitting
+  // {\Pi^ast}^{qR} \Pi_{rR} \Lambda_{GR} rather than
+  // \Pi_{qR} \Pi_{rR} \Lambda_{GR} ?
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
     *PirR,'r', *regularizationEstimatorPirR
   );
-  if (realFactorOrbitals) realizePi(*PiqR);
-  if (normalizedFactorOrbitals) normalizePi(*PiqR);
-  // PirR["qR"] = conj(PiqR["qR"])
-  PirR->sum(1.0, *PiqR,"qR", 0.0,"qR", fConj);
-  fitRegularizedAlternatingLeastSquaresFactor(
-    *GammaGqr,"Gqr", *LambdaGR,'G', *PirR,'r',
-    *PiqR,'q', *regularizationEstimatorPiqR
-  );
-  if (realFactorOrbitals) realizePi(*PiqR);
-  if (normalizedFactorOrbitals) normalizePi(*PiqR);
+  if (realFactorOrbitals) realizePi(*PirR);
+  if (normalizedFactorOrbitals) normalizePi(*PirR);
   // PiqR["qR"] = conj(PirR["qR"])
   PiqR->sum(1.0, *PirR,"qR", 0.0,"qR", fConj);
+
+  // fit \Pi^{qR}: conjugate the equation
+  conjugateFactors();
+  // note that conjugation swaps Pi_{rR} and {\Pi^\ast}^{qR},
+  // i.e. we actually fit PirR again but we use the PiqR
+  // regularization estimator
+  fitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *LambdaGR,'G', *PiqR,'r',
+    *PirR,'q', *regularizationEstimatorPiqR
+  );
+  conjugateFactors();
+  if (realFactorOrbitals) realizePi(*PirR);
+  if (normalizedFactorOrbitals) normalizePi(*PirR);
+  // PiqR["qR"] = conj(PirR["qR"])
+  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR", fConj);
+
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
     *LambdaGR,'G', *regularizationEstimatorLambdaGR
@@ -153,5 +170,11 @@ void CoulombVertexDecomposition::realizePi(
   conjX.sum(1.0, Pi,"qR", 0.0,"qR", fConj);
   Pi["qR"] += conjX["qR"];
   Pi["qR"] *= 0.5;
+}
+
+void CoulombVertexDecomposition::conjugateFactors() {
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  LambdaGR->sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
+  GammaGqr->sum(1.0, *GammaGqr,"Gqr", 0.0,"Gqr", fConj);
 }
 

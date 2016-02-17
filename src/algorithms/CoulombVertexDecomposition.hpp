@@ -101,6 +101,7 @@ namespace cc4s {
      * \brief Discards the imaginary part of the given factor orbitals.
      */
     void realizePi(CTF::Matrix<complex> &Pi);
+    void conjugateFactors();
   };
 }
 
