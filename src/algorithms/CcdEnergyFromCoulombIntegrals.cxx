@@ -58,12 +58,16 @@ void CcdEnergyFromCoulombIntegrals::run() {
     energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
     e = dire + exce;
-    LOG(0) << "e = " << e << std::endl;
-    LOG(1) << "CCDdir = " << dire << std::endl;
-    LOG(1) << "CCDexc = " << exce << std::endl;
+    LOG(0) << "e=" << e << std::endl;
+    LOG(1) << "CCDdir=" << dire << std::endl;
+    LOG(1) << "CCDexc=" << exce << std::endl;
+    // Print the MP2 energy in 1st iteration
+    if (i == 0) {
+      LOG(1) << "MP2 correlation energy = " << e << std::endl;      
+    }
   }
 
-  LOG(0) << "CCD correlation energy = " << e << std::endl;
+  LOG(1) << "CCD correlation energy = " << e << std::endl;
 
   setRealArgument("CcdEnergy", e);
 }

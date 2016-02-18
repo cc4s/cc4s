@@ -63,6 +63,7 @@ obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
 obj/algorithms/CcsdCoulombIntegrals.o \
 obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
+obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 
