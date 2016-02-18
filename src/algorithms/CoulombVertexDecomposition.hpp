@@ -9,12 +9,14 @@
 
 namespace cc4s {
   /**
-   * \brief Decomposes the particle hole Coulomb vertex \f$\Gamma_{iG}^a\f$
-   * into the occupied factor orbitals \f$\Pi_{iR}\f$,
-   * the virtual factor orbitals \f$\Pi_{aR}\f$, and the Coulom
-   * factors \f$\Lambda_{GR}\f$. The decomposition is done with a
+   * \brief Decomposes the Coulomb vertex \f$\Gamma_{rG}^q\f$
+   * into the factor orbitals \f$\Pi_{qR}\f$
+   * and the Coulom factors \f$\Lambda_{GR}\f$.
+   * The decomposition is done with a
    * regularized alternating least squares (RALS) algorithm, requiring
    * only a few dozen steps for sufficient convergence.
+   * Note that currently the employed fit is \f$\Pi_{qR}\Pi_{rR}\Lambda_{GR}\f$
+   * rather than the form with \f$\Pi_{qR}\f$ conjugated.
    */
   class CoulombVertexDecomposition: public Algorithm {
   public:
@@ -32,17 +34,17 @@ namespace cc4s {
 
     /**
      * \brief The Frobenius norm of the difference between
-     * \f$\Gamma^a_{iG}\f$ and its decomposition.
+     * \f$\Gamma^q_{rG}\f$ and its decomposition.
      */
     double Delta;
 
     /**
-     * \brief Whether the factor orbitals \f$\Pi_{aR},\Pi_{iR}\f$
+     * \brief Whether the factor orbitals \f$\Pi_{qR}\f$
      * are required to be real.
      */
     bool realFactorOrbitals;
     /**
-     * \brief Whether the factor orbitals \f$\Pi_{aR},\Pi_{iR}\f$
+     * \brief Whether the factor orbitals \f$\Pi_{qR}\f$
      * are required to be normalized, i.e.
      * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta{qq}\f$.
      */
@@ -57,7 +59,8 @@ namespace cc4s {
      */
     CTF::Tensor<complex> *Gamma0Gqr;
     /**
-     * \brief The factor orbitals \f${\Pi^\ast}^{qR} = (\Pi_{qR})^\ast\f$.
+     * \brief The conjugated factor orbitals
+     * \f${\Pi^\ast}^{qR} = (\Pi_{qR})^\ast\f$.
      */
     CTF::Matrix<complex> *PiqR;
     /**
