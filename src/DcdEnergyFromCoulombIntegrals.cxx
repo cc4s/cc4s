@@ -53,18 +53,22 @@ void DcdEnergyFromCoulombIntegrals::run() {
   // and the Dcd energy e
   for (int i(0); i < Cc4s::options->niter; ++i) {
     LOG(0) << "iteration: " << i+1 << std::endl;
-    iterateBartlett();
+    iterateHirata();
     energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     dire = energy.get_val();
     energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
     e = dire + exce;
-    LOG(0) << "e = " << e << std::endl;
-    LOG(1) << "DCDdir = " << dire << std::endl;
-    LOG(1) << "DCDexc = " << exce << std::endl;
+    LOG(0) << "e=" << e << std::endl;
+    LOG(1) << "DCDdir=" << dire << std::endl;
+    LOG(1) << "DCDexc=" << exce << std::endl;
+    // Print the MP2 energy in 1st iteration
+    if (i == 0) {
+      LOG(1) << "MP2 correlation energy = " << e << std::endl;      
+    }
   }
 
-  LOG(0) << "DCD correlation energy = " << e << std::endl;
+  LOG(1) << "DCD correlation energy = " << e << std::endl;
 
   setRealArgument("DcdEnergy", e);
 }
@@ -74,8 +78,6 @@ void DcdEnergyFromCoulombIntegrals::run() {
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 // Modified according to D. Kats, J. Chem. Phys. 139, 021102 (2013)
 //////////////////////////////////////////////////////////////////////
-
-// TODO: fix iterateHirata() to give DCD instead of CCD
 void DcdEnergyFromCoulombIntegrals::iterateHirata() {
   {
     // Read the DCD amplitudes Tabij
@@ -121,20 +123,20 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata() {
     Kki["ki"] -= (*Vabij)["dckl"] * (*Tabij)["cdil"];
     
     // Contract Kac with T2 Amplitudes
-    Rabij["abij"] = Kac["ac"] * (*Tabij)["cbij"];
+    Rabij["abij"]  = 0.5 * Kac["ac"] * (*Tabij)["cbij"]; // Multiplied by 0.5 in DCD
 
     // Contract Kki with T2 Amplitudes
-    Rabij["abij"] -= Kki["ki"] * (*Tabij)["abkj"];
+    Rabij["abij"] -= 0.5 * Kki["ki"] * (*Tabij)["abkj"]; // Multiplied by 0.5 in DCD
 
     // Build Xakic
     Xakic["akic"]  = (*Vabij)["acik"];
     Xakic["akic"] -= 0.5 * (*Vabij)["dclk"] * (*Tabij)["dail"];
     Xakic["akic"] += (*Vabij)["dclk"] * (*Tabij)["adil"];
-    Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"];
+    //Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
 
     // Build Xakci
     Xakci["akci"]  = (*Vaibj)["akci"];
-    Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"];
+    //Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
 
     // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
     Rabij["abij"] += 2.0 * Xakic["akic"] * (*Tabij)["cbkj"];
