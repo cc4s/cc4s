@@ -46,35 +46,35 @@ void DcsdEnergyFromCoulombIntegrals::run() {
   Scalar<> energy(*Cc4s::world);
   double e(0), dire, exce;
 
-  LOG(0) <<
+  LOG(0, "DCSD") <<
     "Solving Distinguishable Cluster Singles and Doubles amplitude equations:" <<
     std::endl;
 
   // Iteration for determining the DCSD amplitudes Tabij, Tai
   // and the Dcsd energy e
   for (int i(0); i < Cc4s::options->niter; ++i) {
-    LOG(0) << "iteration: " << i+1 << std::endl;
+    LOG(0, "DCSD") << "iteration: " << i+1 << std::endl;
     iterate();
     // Singles direct term
-    energy[""]  = 4.0 * (*Vabij)["abij"] * (*Tai)["ai"] * (*Tai)["bj"];
+    energy[""]  = 2.0 * (*Vabij)["abij"] * (*Tai)["ai"] * (*Tai)["bj"];
     // Doubles direct term
     energy[""] += 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     // Compute direct energy
     dire = energy.get_val();
     // Singles exchange term
-    energy[""]  = 2.0 * (*Vabij)["baij"] * (*Tai)["ai"] * (*Tai)["bj"];
+    energy[""]  = (*Vabij)["baij"] * (*Tai)["ai"] * (*Tai)["bj"];
     // Doubles exchange term
     energy[""] += (*Tabij)["abji"] * (*Vabij)["abij"];
     // Compute exchange energy
     exce = -1.0 * energy.get_val();
     // Compute total energy
     e = dire + exce;
-    LOG(0) << "e=" << e << std::endl;
-    LOG(1) << "DCSDdir=" << dire << std::endl;
-    LOG(1) << "DCSDexc=" << exce << std::endl;
+    LOG(0, "DCSD") << "e=" << e << std::endl;
+    LOG(1, "DCSD") << "DCSDdir=" << dire << std::endl;
+    LOG(1, "DCSD") << "DCSDexc=" << exce << std::endl;
   }
 
-  LOG(1) << "DCSD correlation energy = " << e << std::endl;
+  LOG(1, "DCSD") << "DCSD correlation energy = " << e << std::endl;
 
   setRealArgument("DcsdEnergy", e);
 }
@@ -137,7 +137,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     //***********************  T2 amplitude equations  *******************************
     //********************************************************************************
 
-    LOG(1) << "Solving T2 DCSD Amplitude Equations  ...";
+    LOG(1, "DCSD") << "Solving T2 DCSD Amplitude Equations  ...";
 
     // Build Kac
     Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
@@ -146,9 +146,12 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     Kac["ac"] += (*Vabij)["dckl"] * (*Tai)["ak"] * (*Tai)["dl"];
 
     // Build Lac
-    Lac["ac"]  = 0.5 * Kac["ac"]; // Multiplied by 0.5 in DCSD
-    Lac["ac"] += 2.0 * (*Vabci)["cdak"] * (*Tai)["dk"];
-    Lac["ac"] -= (*Vabci)["dcak"] * (*Tai)["dk"];
+    Lac["ac"]  = -1.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"]; // Multiplied by 0.5 in DCSD
+    Lac["ac"] +=  0.5 * (*Vabij)["dckl"] * (*Tabij)["adkl"]; // Multiplied by 0.5 in DCSD
+    Lac["ac"] -=  2.0 * (*Vabij)["cdkl"] * (*Tai)["ak"] * (*Tai)["dl"];
+    Lac["ac"] +=  1.0 * (*Vabij)["dckl"] * (*Tai)["ak"] * (*Tai)["dl"];
+    Lac["ac"] +=  2.0 * (*Vabci)["cdak"] * (*Tai)["dk"];
+    Lac["ac"] -=  (*Vabci)["dcak"] * (*Tai)["dk"];
 
     // Build Kki
     Kki["ki"]  = 2.0 * (*Vabij)["cdkl"] * (*Tabij)["cdil"];
@@ -157,7 +160,10 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     Kki["ki"] -= (*Vabij)["dckl"] * (*Tai)["ci"] * (*Tai)["dl"];
 
     // Build Lki
-    Lki["ki"]  = 0.5 * Kki["ki"]; // Multiplied by 0.5 in DCSD
+    Lki["ki"]  = 1.0 * (*Vabij)["cdkl"] * (*Tabij)["cdil"]; // Multiplied by 0.5 in DCSD
+    Lki["ki"] -= 0.5 * (*Vabij)["dckl"] * (*Tabij)["cdil"]; // Multiplied by 0.5 in DCSD
+    Lki["ki"] += 2.0 * (*Vabij)["cdkl"] * (*Tai)["ci"] * (*Tai)["dl"];
+    Lki["ki"] -= 1.0 * (*Vabij)["dckl"] * (*Tai)["ci"] * (*Tai)["dl"];
     Lki["ki"] += 2.0 * (*Vijka)["klic"] * (*Tai)["cl"];
     Lki["ki"] -= (*Vijka)["lkic"] * (*Tai)["cl"];
     
@@ -180,13 +186,13 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     Xakic["akic"] -= 0.5 * (*Vabij)["dclk"] * (*Tabij)["dail"];
     Xakic["akic"] -= (*Vabij)["dclk"] * (*Tai)["di"] * (*Tai)["al"];
     Xakic["akic"] += (*Vabij)["dclk"] * (*Tabij)["adil"];
-    //Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
+    //Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCSD
 
     // Build Xakci
     Xakci["akci"]  = (*Vaibj)["akci"];
     Xakci["akci"] -= (*Vijka)["klic"] * (*Tai)["al"];
     Xakci["akci"] += (*Vabci)["adck"] * (*Tai)["di"];
-    //Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
+    //Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCSD
     Xakci["akci"] -= (*Vabij)["cdlk"] * (*Tai)["di"] * (*Tai)["al"];
 
     // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
@@ -213,13 +219,13 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     Xklij["klij"]  = (*Vijkl)["klij"];
     Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
     Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
-    //Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in Dcd
     Xklij["klij"] += (*Vabij)["cdkl"] * (*Tai)["ci"] * (*Tai)["dj"]; 
 
     // Contract Xklij with T2 Amplitudes
     Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
 
     // Contract Xklij with T1 Amplitudes
+    Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in Dcsd from T2 Amplitudes
     Rabij["abij"] += Xklij["klij"] * (*Tai)["ak"] * (*Tai)["bl"];
 
     // Build Xabcd intermediate
@@ -243,19 +249,19 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     Bivar_Function<> fDivide(&divide<double>);
     Tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 
-    LOG(1) << " OK" << std::endl;
+    LOG(1, "DCSD") << " OK" << std::endl;
 
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
 
-    LOG(1) << "Solving T1 DCSD Amplitude Equations  ...";
+    LOG(1, "DCSD") << "Solving T1 DCSD Amplitude Equations  ...";
 
     // Contract Kac and Kki with T1 amplitudes
     Rai["ai"]  = Kac["ac"] * (*Tai)["ci"];
     Rai["ai"] -= Kki["ki"] * (*Tai)["ak"];
 
-    //Build Kck
+    // Build Kck
     Kck["ck"]  = 2.0 * (*Vabij)["cdkl"] * (*Tai)["dl"];
     Kck["ck"] -= (*Vabij)["cdlk"] * (*Tai)["dl"];
 
@@ -283,6 +289,6 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     // Divide Rai/Dai to get Tai
     Tai->contract(1.0, Rai,"ai", Dai,"ai", 0.0,"ai", fDivide);
 
-    LOG(1) << " OK" << std::endl;
+    LOG(1, "DCSD") << " OK" << std::endl;
   }
 }

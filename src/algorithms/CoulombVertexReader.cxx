@@ -30,7 +30,7 @@ CoulombVertexReader::~CoulombVertexReader() {
  */
 void CoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
-  LOG(0) <<
+  LOG(0, "CoulombVertexReader") <<
     "Reading Coulomb vertex from file " << fileName << " ...";
   std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
   if (!file.is_open()) throw new Exception("Failed to open file");
@@ -82,13 +82,13 @@ void CoulombVertexReader::run() {
   file.close();
   // combine to complex tensor
   toComplexTensor(realGammaGpq, imagGammaGpq, *GammaGpq);
-  LOG(0) << " OK" << std::endl;
+  LOG(0, "CoulombVertexReader") << " OK" << std::endl;
   
   // print nG, no, nv, np
-  LOG(4) << "nG = " << nG << std::endl;
-  LOG(4) << "no = " << no << std::endl;
-  LOG(4) << "nv = " << nv << std::endl;
-  LOG(4) << "np = " << np << std::endl;
+  //LOG(4) << "nG = " << nG << std::endl;
+  //LOG(4) << "no = " << no << std::endl;
+  //LOG(4) << "nv = " << nv << std::endl;
+  //LOG(4) << "np = " << np << std::endl;
 
   // Test print the norm of GammaGpq
   //double result(realGammaGpq.norm2());

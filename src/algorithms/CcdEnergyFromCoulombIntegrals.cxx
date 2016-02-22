@@ -44,30 +44,30 @@ void CcdEnergyFromCoulombIntegrals::run() {
   Scalar<> energy(*Cc4s::world);
   double e(0), dire, exce;
 
-  LOG(0) <<
+  LOG(0, "CCD") <<
     "Solving Coupled Cluster Doubles Amplitude Equations:" <<
     std::endl;
 
   // Iteration for determining the CCD amplitudes Tabij
   // and the Ccd energy e
   for (int i(0); i < Cc4s::options->niter; ++i) {
-    LOG(0) << "iteration: " << i+1 << std::endl;
+    LOG(0, "CCD") << "iteration: " << i+1 << std::endl;
     iterateHirata();
     energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     dire = energy.get_val();
     energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
     e = dire + exce;
-    LOG(0) << "e=" << e << std::endl;
-    LOG(1) << "CCDdir=" << dire << std::endl;
-    LOG(1) << "CCDexc=" << exce << std::endl;
+    LOG(0, "CCD") << "e=" << e << std::endl;
+    LOG(1, "CCD") << "CCDdir=" << dire << std::endl;
+    LOG(1, "CCD") << "CCDexc=" << exce << std::endl;
     // Print the MP2 energy in 1st iteration
     if (i == 0) {
-      LOG(1) << "MP2 correlation energy = " << e << std::endl;      
+      LOG(1, "CCD") << "MP2 correlation energy = " << e << std::endl;      
     }
   }
 
-  LOG(1) << "CCD correlation energy = " << e << std::endl;
+  LOG(1, "CCD") << "CCD correlation energy = " << e << std::endl;
 
   setRealArgument("CcdEnergy", e);
 }

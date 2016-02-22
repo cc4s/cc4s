@@ -47,35 +47,35 @@ void CcsdEnergyFromCoulombIntegrals::run() {
   Scalar<> energy(*Cc4s::world);
   double e(0), dire, exce;
 
-  LOG(0) <<
+  LOG(0, "CCSD") <<
     "Solving Coupled Cluster Singles and Doubles amplitude equations:" <<
     std::endl;
 
   // Iteration for determining the CCSD amplitudes Tabij, Tai
   // and the Ccsd energy e
   for (int i(0); i < Cc4s::options->niter; ++i) {
-    LOG(0) << "iteration: " << i+1 << std::endl;
+    LOG(0, "CCSD") << "iteration: " << i+1 << std::endl;
     iterate();
     // Singles direct term
-    energy[""]  = 4.0 * (*Vabij)["abij"] * (*Tai)["ai"] * (*Tai)["bj"];
+    energy[""]  = 2.0 * (*Vabij)["abij"] * (*Tai)["ai"] * (*Tai)["bj"];
     // Doubles direct term
     energy[""] += 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     // Compute direct energy
     dire = energy.get_val();
     // Singles exchange term
-    energy[""]  = 2.0 * (*Vabij)["baij"] * (*Tai)["ai"] * (*Tai)["bj"];
+    energy[""]  = (*Vabij)["baij"] * (*Tai)["ai"] * (*Tai)["bj"];
     // Doubles exchange term
     energy[""] += (*Tabij)["abji"] * (*Vabij)["abij"];
     // Compute exchange energy
     exce = -1.0 * energy.get_val();
     // Compute total energy
     e = dire + exce;
-    LOG(0) << "e=" << e << std::endl;
-    LOG(1) << "CCSDdir=" << dire << std::endl;
-    LOG(1) << "CCSDexc=" << exce << std::endl;
+    LOG(0, "CCSD") << "e=" << e << std::endl;
+    LOG(1, "CCSD") << "CCSDdir=" << dire << std::endl;
+    LOG(1, "CCSD") << "CCSDexc=" << exce << std::endl;
   }
 
-  LOG(1) << "CCSD correlation energy = " << e << std::endl;
+  LOG(1, "CCSD") << "CCSD correlation energy = " << e << std::endl;
 
   setRealArgument("CcsdEnergy", e);
 }
@@ -136,7 +136,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate() {
     //***********************  T2 amplitude equations  *******************************
     //********************************************************************************
 
-    LOG(1) << "Solving T2 CCSD Amplitude Equations  ...";
+    LOG(1, "CCSD") << "Solving T2 CCSD Amplitude Equations  ...";
 
     // Build Kac
     Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
@@ -242,13 +242,13 @@ void CcsdEnergyFromCoulombIntegrals::iterate() {
     Bivar_Function<> fDivide(&divide<double>);
     Tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 
-    LOG(1) << " OK" << std::endl;
+    LOG(1, "CCSD") << " OK" << std::endl;
 
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
 
-    LOG(1) << "Solving T1 CCSD Amplitude Equations  ...";
+    LOG(1, "CCSD") << "Solving T1 CCSD Amplitude Equations  ...";
 
     // Contract Kac and Kki with T1 amplitudes
     Rai["ai"]  = Kac["ac"] * (*Tai)["ci"];
@@ -282,6 +282,6 @@ void CcsdEnergyFromCoulombIntegrals::iterate() {
     // Divide Rai/Dai to get Tai
     Tai->contract(1.0, Rai,"ai", Dai,"ai", 0.0,"ai", fDivide);
 
-    LOG(1) << " OK" << std::endl;
+    LOG(1, "CCSD") << " OK" << std::endl;
   }
 }

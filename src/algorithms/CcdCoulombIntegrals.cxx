@@ -35,7 +35,7 @@ void CcdCoulombIntegrals::run() {
     getTensorArgument<>("ParticleEigenEnergies")
   );
 
-  LOG(0) <<
+  LOG(0, "CCDCoulombIntegrals") <<
     "Reading Coulomb integrals form vertex " << GammaGpq->get_name() << " ...";
 
   // Compute the no,nv,nG,np
@@ -106,7 +106,7 @@ void CcdCoulombIntegrals::run() {
   (*Vijkl)["ijkl"] += imagGammaGij["Gik"] * imagGammaGij["Gjl"];
 
   // Print okay
-  LOG(0) << " OK" << std::endl;
+  LOG(0, "CCDCoulombIntegrals") << " OK" << std::endl;
 
   // Print test norm2 of GammaGai, GammaGab, GammaGij
   // GammaGai
