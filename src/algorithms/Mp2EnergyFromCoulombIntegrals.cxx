@@ -24,7 +24,7 @@ Mp2EnergyFromCoulombIntegrals::~Mp2EnergyFromCoulombIntegrals() {
 void Mp2EnergyFromCoulombIntegrals::run() {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  Tensor<> *Vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
+  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
  
   Tensor<> Tabij(false, Vabij);
   Tabij["abij"] =  (*epsi)["i"];
@@ -44,9 +44,11 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   exce = -1.0 * energy.get_val();
   e = dire + exce;
 
-  LOG(0) << "e=" << e << std::endl;
-  LOG(1) << "MP2d=" << dire << std::endl;
-  LOG(1) << "MP2x=" << exce << std::endl;
+  LOG(0, "MP2") << "e=" << e << std::endl;
+  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
+  LOG(1, "MP2") << "MP2x=" << exce << std::endl;
+
+  LOG(1, "MP2") << "MP2 correlation energy = " << e << std::endl;      
 
   setRealArgument("Mp2Energy", e);
 }
