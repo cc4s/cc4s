@@ -20,7 +20,7 @@ Mp2CoulombIntegrals::~Mp2CoulombIntegrals() {
 }
 
 /**
- * \brief Calculates Coulomb integrals Vabij from GammaGai Coulomb Vertex
+ * \brief Calculates Coulomb integrals Vabij from GammaGpq Coulomb Vertex
  */
 void Mp2CoulombIntegrals::run() {
   Tensor<complex> *GammaGpq(
@@ -44,13 +44,13 @@ void Mp2CoulombIntegrals::run() {
   int nv(epsa->lens[0]);
   int np = no + nv;
 
-  // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
+  // Allocate coulomb integrals Vabij
   int syms[] = { NS, NS, NS, NS };
   int vvoo[] = { nv, nv, no, no };
   Tensor<> *Vabij(new Tensor<>(4, vvoo, syms, *Cc4s::world, "Vabij"));
   allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
 
-  // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
+  // Allocate and compute GammaGai from GammaGpq
   int GaiStart[] = {0 ,no, 0};
   int GaiEnd[]   = {nG,np,no};
   Tensor<complex> GammaGai(GammaGpq->slice(GaiStart,GaiEnd));
@@ -70,31 +70,4 @@ void Mp2CoulombIntegrals::run() {
 
   // Print okay
   LOG(0, "MP2CoulombIntegrals") << " OK" << std::endl;
-
-  // Print test norm2 of GammaGai, GammaGab, GammaGij
-  // GammaGai
-  //double error(realGammaGai.norm2());
-  //LOG(4) << "|realGammaGai| = " << error << std::endl;
-  //error = imagGammaGai.norm2();
-  //LOG(4) << "|imagGammaGai| = " << error << std::endl;
-  // GammaGab
-  //error = realGammaGab.norm2();
-  //LOG(4) << "|realGammaGab| = " << error << std::endl;
-  //error = imagGammaGab.norm2();
-  //LOG(4) << "|imagGammaGab| = " << error << std::endl;
-  // GammaGij
-  //error = realGammaGij.norm2();
-  //LOG(4) << "|realGammaGij| = " << error << std::endl;
-  //error = imagGammaGij.norm2();
-  //LOG(4) << "|imagGammaGij| = " << error << std::endl;
-
-  // Print test norm2 of Vabij Vaibj Vaijb Vijkl Vabcd
-  //error = Vabcd->norm2();
-  //LOG(4) << "|Vabcd| = " << error << std::endl;
-  //error = Vabij->norm2();
-  //LOG(4) << "|Vabij| = " << error << std::endl;
-  //error = Vaibj->norm2();
-  //LOG(4) << "|Vaibj| = " << error << std::endl;
-  //error = Vijkl->norm2();
-  //LOG(4) << "|Vijkl| = " << error << std::endl;
 }

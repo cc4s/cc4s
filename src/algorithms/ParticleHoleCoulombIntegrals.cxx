@@ -41,7 +41,7 @@ void ParticleHoleCoulombIntegrals::run() {
   int lens[] = { Nv, Nv, No, No };
   int syms[] = { NS, NS, NS, NS };
   Tensor<> *Vabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Vabij"));
-  allocatedTensorArgument("ParticleHoleCoulombIntegrals", Vabij);
+  allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
   (*Vabij)["abij"] =  realGammaGai["gai"] * realGammaGai["gbj"];
   (*Vabij)["abij"] += imagGammaGai["gai"] * imagGammaGai["gbj"];
 }
