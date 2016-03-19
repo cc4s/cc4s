@@ -50,7 +50,6 @@ int Log::getRank() {
 }
 
 void Log::setLogStream(LogStream *logStream_) {
-  if (logStream) delete logStream;
   logStream = logStream_;
 }
 
