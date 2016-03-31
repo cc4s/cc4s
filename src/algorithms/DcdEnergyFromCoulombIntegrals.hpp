@@ -19,7 +19,7 @@ namespace cc4s {
     }
 
   protected:
-    void iterateHirata();
+    void iterateHirata(int i);
     void iterateBartlett();
   };
 }

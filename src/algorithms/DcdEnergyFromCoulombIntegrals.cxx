@@ -53,7 +53,7 @@ void DcdEnergyFromCoulombIntegrals::run() {
   // and the Dcd energy e
   for (int i(0); i < Cc4s::options->niter; ++i) {
     LOG(0, "DCD") << "iteration: " << i+1 << std::endl;
-    iterateHirata();
+    iterateHirata(i);
     energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     dire = energy.get_val();
     energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
@@ -74,7 +74,7 @@ void DcdEnergyFromCoulombIntegrals::run() {
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 // Modified according to D. Kats, J. Chem. Phys. 139, 021102 (2013)
 //////////////////////////////////////////////////////////////////////
-void DcdEnergyFromCoulombIntegrals::iterateHirata() {
+void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
   {
     // Read the DCD amplitudes Tabij
     Tensor<> *Tabij(getTensorArgument("DcdDoublesAmplitudes"));
