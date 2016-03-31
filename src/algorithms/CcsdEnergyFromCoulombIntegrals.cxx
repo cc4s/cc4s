@@ -175,7 +175,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate() {
     // Build Xakic
     Xakic["akic"]  = (*Vabij)["acik"];
     Xakic["akic"] -= (*Vijka)["lkic"] * (*Tai)["al"];
-    Xakic["akic"] += (*Vabci)["adck"] * (*Tai)["di"];
+    Xakic["akic"] += (*Vabci)["acdk"] * (*Tai)["di"];
     Xakic["akic"] -= 0.5 * (*Vabij)["dclk"] * (*Tabij)["dail"];
     Xakic["akic"] -= (*Vabij)["dclk"] * (*Tai)["di"] * (*Tai)["al"];
     Xakic["akic"] += (*Vabij)["dclk"] * (*Tabij)["adil"];
