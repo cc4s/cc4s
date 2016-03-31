@@ -62,10 +62,6 @@ void DcdEnergyFromCoulombIntegrals::run() {
     LOG(0, "DCD") << "e=" << e << std::endl;
     LOG(1, "DCD") << "DCDdir=" << dire << std::endl;
     LOG(1, "DCD") << "DCDexc=" << exce << std::endl;
-    // Print the MP2 energy in 1st iteration
-    if (i == 0) {
-      LOG(1, "DCD") << "MP2 correlation energy = " << e << std::endl;      
-    }
   }
 
   LOG(1, "DCD") << "DCD correlation energy = " << e << std::endl;

@@ -43,7 +43,6 @@ obj/Parser.o \
 obj/algorithms/Algorithm.o \
 obj/algorithms/ParticleHoleCoulombIntegrals.o \
 obj/algorithms/ParticleHoleCoulombVertexReader.o \
-obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombVertex.o \
 obj/algorithms/CoulombVertexDecomposition.o \
@@ -59,6 +58,8 @@ obj/algorithms/ComplexTensorContraction.o \
 obj/algorithms/ComplexTensorSum.o \
 obj/algorithms/ComplexTensorNorm.o \
 obj/algorithms/CoulombVertexReader.o \
+obj/algorithms/Mp2CoulombIntegrals.o \
+obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 obj/algorithms/CcdCoulombIntegrals.o \
 obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcdEnergyFromCoulombIntegrals.o \

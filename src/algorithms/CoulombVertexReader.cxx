@@ -86,10 +86,10 @@ void CoulombVertexReader::run() {
   LOG(0, "CoulombVertexReader") << " OK" << std::endl;
   
   // print nG, no, nv, np
-  //LOG(4) << "nG = " << nG << std::endl;
-  //LOG(4) << "no = " << no << std::endl;
-  //LOG(4) << "nv = " << nv << std::endl;
-  //LOG(4) << "np = " << np << std::endl;
+  LOG(4, "CoulombVertexReader") << "nG = " << nG << std::endl;
+  LOG(4, "CoulombVertexReader") << "no = " << no << std::endl;
+  LOG(4, "CoulombVertexReader") << "nv = " << nv << std::endl;
+  LOG(4, "CoulombVertexReader") << "np = " << np << std::endl;
 
   // Test print the norm of GammaGpq
   //double result(realGammaGpq.norm2());

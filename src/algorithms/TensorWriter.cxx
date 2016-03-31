@@ -2,6 +2,7 @@
 #include <algorithms/TensorWriter.hpp>
 #include <util/Log.hpp>
 #include <fstream> 
+#include <iomanip>
 #include <ctf.hpp>
 
 using namespace CTF;
@@ -83,6 +84,7 @@ void TensorWriter::run() {
     int64_t index(0);
     LOG(4) << "rows=" << rowElementsCount
       << ", columns=" << columnElementsCount << std::endl;
+    file << std::setprecision(16);
     for (int64_t row(0); row < rowElementsCount; ++row) {
       file << values[index++];
       for (int64_t column(1); column < columnElementsCount; ++column) {

@@ -47,11 +47,11 @@ void DrccdEnergyFromCoulombVertex::run() {
   (*vabij)["abij"] += (*imagGammaGai)["Gai"] * (*imagGammaGai)["Gbj"];
 
   // NOTE: for debugging:
-  Tensor<> imagVabij(false, *tabij);
-  imagVabij["abij"] =  (*realGammaGai)["Gai"] * (*imagGammaGai)["Gbj"];
-  imagVabij["abij"] -= (*imagGammaGai)["Gai"] * (*realGammaGai)["Gbj"];
-  double error(imagVabij.norm2());
-  LOG(4) << "|imag(Vabij)| = " << error << std::endl;
+  //Tensor<> imagVabij(false, *tabij);
+  //imagVabij["abij"] =  (*realGammaGai)["Gai"] * (*imagGammaGai)["Gbj"];
+  //imagVabij["abij"] -= (*imagGammaGai)["Gai"] * (*realGammaGai)["Gbj"];
+  //double error(imagVabij.norm2());
+  //LOG(4) << "|imag(Vabij)| = " << error << std::endl;
 
   // allocate intermediate tensors
   Rabij = new Tensor<>(false, *tabij);
@@ -70,21 +70,21 @@ void DrccdEnergyFromCoulombVertex::run() {
   Scalar<> energy(*Cc4s::world);
   double e(0), dire, exce;
 
-  LOG(0) <<
+  LOG(0, "RPA") <<
     "Solving direct ring Coupled Cluster Doubles Amplitude Equations:" <<
     std::endl;
  
   for (int i(0); i < Cc4s::options->niter; ++i) {
-    LOG(0) << "iteration: " << i << std::endl;
+    LOG(0, "RPA") << "iteration: " << i << std::endl;
     iterate();
     energy[""] = 2.0 * (*tabij)["abij"] * (*vabij)["abij"];
     dire = energy.get_val();
     energy[""] = -1.0 * (*tabij)["abji"] * (*vabij)["abij"];
     exce = energy.get_val();
     e = dire + exce;
-    LOG(0) << "e=" << e << std::endl;
-    LOG(1) << "RPA=" << dire << std::endl;
-    LOG(1) << "SOSEX=" << exce << std::endl;
+    LOG(0, "RPA") << "e=" << e << std::endl;
+    LOG(1, "RPA") << "RPA=" << dire << std::endl;
+    LOG(1, "RPA") << "SOSEX=" << exce << std::endl;
   }
 
   setRealArgument("DrccdEnergy", e);
