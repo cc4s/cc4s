@@ -63,6 +63,54 @@ void cc4s::composeCanonicalPolyadicDecompositionTensors(
 
 
 template <typename F=double>
+void cc4s::dryComposeCanonicalPolyadicDecompositionTensors(
+  DryTensor<F> &A, DryTensor<F> &B, DryTensor<F> &C,
+  DryTensor<F> &T
+) {
+  Assert(
+    A.order == 2 && B.order == 2 && C.order == 2 && T.order == 3 &&
+    A.lens[0]==T.lens[0] && B.lens[0]==T.lens[1] && C.lens[0]==T.lens[2] &&
+    A.lens[1] == B.lens[1] && B.lens[1] == C.lens[1] && C.lens[1] == A.lens[1],
+   "Incompatible tensor shapes for CPD"
+  );
+  // choose contraction order with minimal memory footprint
+  int largestIndex(
+    std::max(
+      std::max(T.lens[0], T.lens[1]), T.lens[2]
+    )
+  );
+  if (A.lens[0] == largestIndex) {
+    LOG(4, "CPD") << "calculating T with largest A..." << std::endl;
+    int lens[] = { A.lens[1], B.lens[0], C.lens[0] };
+    int syms[] = { NS, NS, NS };
+    DryTensor<F> BC(3, lens, syms);
+  } else if (B.lens[0] == largestIndex) {
+    LOG(4, "CPD") << "calculating T with largest B..." << std::endl;
+    int lens[] = { A.lens[1], C.lens[0], A.lens[0] };
+    int syms[] = { NS, NS, NS };
+    DryTensor<F> CA(3, lens, syms);
+  } else {
+    LOG(4, "CPD") << "calculating T with largest C..." << std::endl;
+    int lens[] = { A.lens[1], A.lens[0], B.lens[0] };
+    int syms[] = { NS, NS, NS };
+    DryTensor<F> AB(3, lens, syms);
+  }
+}
+
+// instantiate
+template
+void cc4s::dryComposeCanonicalPolyadicDecompositionTensors(
+  DryTensor<double> &A, DryTensor<double> &B, DryTensor<double> &C,
+  DryTensor<double> &T
+);
+template
+void cc4s::dryComposeCanonicalPolyadicDecompositionTensors(
+  DryTensor<complex> &A, DryTensor<complex> &B, DryTensor<complex> &C,
+  DryTensor<complex> &T
+);
+
+
+template <typename F=double>
 void cc4s::contractWithCanonicalPolyadicDecompositionTensors(
   Tensor<F> &T, char const *indicesT,
   Tensor<F> &B, char const idxB,
@@ -127,5 +175,67 @@ void cc4s::contractWithCanonicalPolyadicDecompositionTensors(
   Tensor<complex> &conjB, char const idxB,
   Tensor<complex> &conjC, char const idxC,
   Tensor<complex> &A, char const idxA
+);
+
+
+template <typename F=double>
+void cc4s::dryContractWithCanonicalPolyadicDecompositionTensors(
+  DryTensor<F> &T, char const *indicesT,
+  DryTensor<F> &B, char const idxB,
+  DryTensor<F> &C, char const idxC,
+  DryTensor<F> &A, char const idxA
+) {
+  Assert(
+    A.order == 2 && B.order == 2 && C.order == 2 && T.order == 3 &&
+    A.lens[1] == B.lens[1] && B.lens[1] == C.lens[1] && C.lens[1] == A.lens[1],
+   "Incompatible tensor shapes for CPD"
+  );
+  char const indicesA[] = { idxA, 'R', 0 };
+  char const indicesB[] = { idxB, 'R', 0 };
+  char const indicesC[] = { idxC, 'R', 0 };
+  // choose contraction order with minimal memory footprint
+  int largestIndex(
+    std::max(
+      std::max(T.lens[0], T.lens[1]), T.lens[2]
+    )
+  );
+  if (A.lens[0] == largestIndex) {
+    // A has largest index: contract B and C first
+    LOG(4, "CPD") << "applying to T with largest A..." << std::endl;
+    const char indicesBC[] = { idxB, idxC, 'R' , 0};
+    int lens[] = { B.lens[0], C.lens[0], A.lens[1] };
+    int syms[] = { NS, NS, NS };
+    DryTensor<F> BC(3, lens, syms);
+  } else if (B.lens[0] == largestIndex) {
+    // B has largest index: contract T and B first
+    LOG(4, "CPD") << "applying to T with largest B..." << std::endl;
+    const char indicesTB[] = { idxA, idxC, 'R' , 0};
+    int lens[] = { A.lens[0], C.lens[0], A.lens[1] };
+    int syms[] = { NS, NS, NS };
+    DryTensor<F> TB(3, lens, syms);
+  } else {
+    // C has largest index: contract T and C first
+    LOG(4, "CPD") << "applying to T with largest C..." << std::endl;
+    const char indicesTC[] = { idxA, idxB, 'R' , 0};
+    int lens[] = { A.lens[0], B.lens[0], A.lens[1] };
+    int syms[] = { NS, NS, NS };
+    DryTensor<F> TC(3, lens, syms);
+  }
+}
+
+// instantiate
+template
+void cc4s::dryContractWithCanonicalPolyadicDecompositionTensors(
+  DryTensor<double> &T, char const *indicesT,
+  DryTensor<double> &conjB, char const idxB,
+  DryTensor<double> &conjC, char const idxC,
+  DryTensor<double> &A, char const idxA
+);
+template
+void cc4s::dryContractWithCanonicalPolyadicDecompositionTensors(
+  DryTensor<complex> &T, char const *indicesT,
+  DryTensor<complex> &conjB, char const idxB,
+  DryTensor<complex> &conjC, char const idxC,
+  DryTensor<complex> &A, char const idxA
 );
 

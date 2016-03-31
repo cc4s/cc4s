@@ -3,6 +3,7 @@
 #include <algorithms/Algorithm.hpp>
 #include <Data.hpp>
 #include <math/Complex.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <iostream>
@@ -18,6 +19,14 @@ Algorithm::Algorithm(std::vector<Argument> const &argumentList) {
 }
 
 Algorithm::~Algorithm() {
+}
+
+/**
+ * \brief The dryRun estimates resource consumption, especially
+ * memory and processor time.
+ */
+void Algorithm::dryRun() {
+  LOG(0, getName()) << "dry run not implemented" << std::endl;
 }
 
 bool Algorithm::isArgumentGiven(std::string const &name) {
@@ -114,13 +123,13 @@ double Algorithm::getRealArgumentFromTensor(TensorData<double> *data) {
   return value;
 }
 
-template <typename F>
-CTF::Tensor<F> *Algorithm::getTensorArgument(std::string const &name) {
+template <typename F, typename T>
+T *Algorithm::getTensorArgument(std::string const &name) {
   Data *data(getArgumentData(name));
-  TensorData<F> *tensorData(dynamic_cast<TensorData<F> *>(data));
+  TensorData<F, T> *tensorData(dynamic_cast<TensorData<F, T> *>(data));
   if (tensorData) return tensorData->value;
   RealData *realData(dynamic_cast<RealData *>(data));
-  if (realData) return getTensorArgumentFromReal<F>(realData);
+  if (realData) return getTensorArgumentFromReal<F, T>(realData);
   // TODO: provide conversion routines from real to complex tensors
   std::stringstream sStream;
   sStream << "Incompatible type for argument: " << name << ". "
@@ -130,42 +139,184 @@ CTF::Tensor<F> *Algorithm::getTensorArgument(std::string const &name) {
 }
 // instantiate
 template
-CTF::Tensor<double> *Algorithm::getTensorArgument(std::string const &);
+CTF::Tensor<double> *Algorithm::getTensorArgument<
+  double, CTF::Tensor<double>
+>(std::string const &);
 template
-CTF::Tensor<complex> *Algorithm::getTensorArgument(std::string const &);
+CTF::Tensor<complex> *Algorithm::getTensorArgument<
+  complex, CTF::Tensor<complex>
+>(std::string const &);
+template
+DryTensor<double> *Algorithm::getTensorArgument<
+  double, DryTensor<double>
+>(std::string const &);
+template
+DryTensor<complex> *Algorithm::getTensorArgument<
+  complex, DryTensor<complex>
+>(std::string const &);
+
+
+/**
+ * \brief Traits for retrieving the Scalar, Vector and Matrix tensor type.
+ */
+template < typename F, typename T=CTF::Tensor<F> >
+class TensorTypeTraits;
 
 template <typename F>
-CTF::Tensor<F> *Algorithm::getTensorArgumentFromReal(RealData *realData) {
+class TensorTypeTraits< F, CTF::Tensor<F> > {
+public:
+  typedef CTF::Tensor<F> BaseType;
+  typedef CTF::Scalar<F> ScalarType;
+  typedef CTF::Vector<F> VectorType;
+  typedef CTF::Matrix<F> MatrixType;
+};
+template <typename F>
+class TensorTypeTraits< F, CTF::Matrix<F> > {
+public:
+  typedef CTF::Tensor<F> BaseType;
+};
+template <typename F>
+class TensorTypeTraits< F, CTF::Vector<F> > {
+public:
+  typedef CTF::Tensor<F> BaseType;
+};
+template <typename F>
+class TensorTypeTraits< F, CTF::Scalar<F> > {
+public:
+  typedef CTF::Tensor<F> BaseType;
+};
+template <typename F>
+class TensorTypeTraits< F, DryTensor<F> > {
+public:
+  typedef DryTensor<F> BaseType;
+  typedef DryScalar<F> ScalarType;
+  typedef DryVector<F> VectorType;
+  typedef DryMatrix<F> MatrixType;
+};
+template <typename F>
+class TensorTypeTraits< F, DryMatrix<F> > {
+public:
+  typedef DryTensor<F> BaseType;
+};
+template <typename F>
+class TensorTypeTraits< F, DryVector<F> > {
+public:
+  typedef DryTensor<F> BaseType;
+};
+template <typename F>
+class TensorTypeTraits< F, DryScalar<F> > {
+public:
+  typedef DryTensor<F> BaseType;
+};
+
+
+/**
+ * \brief Converts the given real data into a scalar tensor.
+ */
+template <typename F, typename T>
+T *Algorithm::getTensorArgumentFromReal(RealData *realData) {
   // FIXME: left to leak memory...
   // a better solution would be to replace the RealData with the allocated
   // TensorData and support down-cast for Scalars to Real
-  return new CTF::Scalar<F>(realData->value);
+  return new typename TensorTypeTraits<F,T>::ScalarType(realData->value);
 }
 // instantiate
 template
-CTF::Tensor<double> *Algorithm::getTensorArgumentFromReal(RealData *);
+CTF::Tensor<double> *Algorithm::getTensorArgumentFromReal<
+  double, CTF::Tensor<double>
+>(RealData *);
 template
-CTF::Tensor<complex> *Algorithm::getTensorArgumentFromReal(RealData *);
+CTF::Tensor<complex> *Algorithm::getTensorArgumentFromReal<
+  complex, CTF::Tensor<complex>
+>(RealData *);
+template
+DryTensor<double> *Algorithm::getTensorArgumentFromReal<
+  double, DryTensor<double>
+>(RealData *);
+template
+DryTensor<complex> *Algorithm::getTensorArgumentFromReal<
+  complex, DryTensor<complex>
+>(RealData *);
 
-
-template <typename F>
+template <typename F, typename T>
 void Algorithm::allocatedTensorArgument(
-  std::string const &name, CTF::Tensor<F> *tensor
+  std::string const &name, T *tensor
 ) {
   Data *mentionedData(getArgumentData(name));
-  new TensorData<F>(mentionedData->getName(), tensor);
+  new TensorData<F, typename TensorTypeTraits<F, T>::BaseType>(
+    mentionedData->getName(), tensor
+  );
   // NOTE: the constructor of TensorData enteres its location in the
   // data map and destroys the previous content, i.e. mentionedData.
 }
 // instantiate
 template
-void Algorithm::allocatedTensorArgument(
-  std::string const &name, CTF::Tensor<double> *tensor
-);
+void Algorithm::allocatedTensorArgument<
+  double, CTF::Tensor<double>
+>(std::string const &name, CTF::Tensor<double> *tensor);
 template
-void Algorithm::allocatedTensorArgument(
-  std::string const &name, CTF::Tensor<complex> *tensor
-);
+void Algorithm::allocatedTensorArgument<
+  double, CTF::Matrix<double>
+>(std::string const &name, CTF::Matrix<double> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  double, CTF::Vector<double>
+>(std::string const &name, CTF::Vector<double> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  double, CTF::Scalar<double>
+>(std::string const &name, CTF::Scalar<double> *tensor);
+
+template
+void Algorithm::allocatedTensorArgument<
+  complex, CTF::Tensor<complex>
+>(std::string const &name, CTF::Tensor<complex> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  complex, CTF::Matrix<complex>
+>(std::string const &name, CTF::Matrix<complex> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  complex, CTF::Vector<complex>
+>(std::string const &name, CTF::Vector<complex> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  complex, CTF::Scalar<complex>
+>(std::string const &name, CTF::Scalar<complex> *tensor);
+
+template
+void Algorithm::allocatedTensorArgument<
+  double, DryTensor<double>
+>(std::string const &name, DryTensor<double> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  double, DryMatrix<double>
+>(std::string const &name, DryMatrix<double> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  double, DryVector<double>
+>(std::string const &name, DryVector<double> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  double, DryScalar<double>
+>(std::string const &name, DryScalar<double> *tensor);
+
+template
+void Algorithm::allocatedTensorArgument<
+  complex, DryTensor<complex>
+>(std::string const &name, DryTensor<complex> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  complex, DryMatrix<complex>
+>(std::string const &name, DryMatrix<complex> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  complex, DryVector<complex>
+>(std::string const &name, DryVector<complex> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  complex, DryScalar<complex>
+>(std::string const &name, DryScalar<complex> *tensor);
 
 void Algorithm::setRealArgument(std::string const &name, double const value) {
   Data *mentionedData(getArgumentData(name));

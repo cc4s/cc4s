@@ -1,6 +1,7 @@
 #include <algorithms/CcdCoulombIntegrals.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -135,3 +136,60 @@ void CcdCoulombIntegrals::run() {
   //error = Vijkl->norm2();
   //LOG(4) << "|Vijkl| = " << error << std::endl;
 }
+
+void CcdCoulombIntegrals::dryRun() {
+  DryTensor<complex> *GammaGpq(
+    getTensorArgument<complex, DryTensor<complex>>("CoulombVertex")
+  );
+
+  // Read the Particle/Hole Eigenenergies
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
+  );
+
+  // Compute the no,nv,nG,np
+  int nG(GammaGpq->lens[0]);
+  int no(epsi->lens[0]);
+  int nv(epsa->lens[0]);
+
+  // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
+  int syms[] = { NS, NS, NS, NS };
+  int vvvv[] = { nv, nv, nv, nv };
+  int vovo[] = { nv, no, nv, no };
+  int vvoo[] = { nv, nv, no, no };
+  int oooo[] = { no, no, no, no };
+  DryTensor<> *Vabcd(new DryTensor<>(4, vvvv, syms));
+  DryTensor<> *Vaibj(new DryTensor<>(4, vovo, syms));
+  DryTensor<> *Vabij(new DryTensor<>(4, vvoo, syms));
+  DryTensor<> *Vijkl(new DryTensor<>(4, oooo, syms));
+  allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
+  allocatedTensorArgument("PHPHCoulombIntegrals", Vaibj);
+  allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
+  allocatedTensorArgument("HHHHCoulombIntegrals", Vijkl);
+
+  // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
+  int GaiLens[]   = {nG,nv,no};
+  int GabLens[]   = {nG,nv,nv};
+  int GijLens[]   = {nG,no,no};
+
+  DryTensor<complex> GammaGai(3, GaiLens, syms);
+  DryTensor<complex> GammaGab(3, GabLens, syms);
+  DryTensor<complex> GammaGij(3, GijLens, syms);
+
+  // Split GammaGab,GammaGai,GammaGij into real and imaginary parts
+  DryTensor<> realGammaGai(3, GaiLens, syms);
+  DryTensor<> imagGammaGai(3, GaiLens, syms);
+
+  DryTensor<> realGammaGab(3, GabLens, syms);
+  DryTensor<> imagGammaGab(3, GabLens, syms);
+
+  DryTensor<> realGammaGij(3, GijLens, syms);
+  DryTensor<> imagGammaGij(3, GijLens, syms);
+
+  // Print okay
+  LOG(0, "CCDCoulombIntegrals") << " OK" << std::endl;
+}
+

@@ -16,6 +16,7 @@ namespace cc4s {
     );
     virtual ~CoulombVertexReader();
     virtual void run();
+    virtual void dryRun();
 
   protected:
     int no, nv, nG, np;

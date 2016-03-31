@@ -13,6 +13,7 @@ namespace cc4s {
     );
     virtual ~CcdCoulombIntegrals();
     virtual void run();
+    virtual void dryRun();
 
   };
 }

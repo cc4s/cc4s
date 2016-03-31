@@ -17,6 +17,7 @@ Options::Options(int argumentCount, char **arguments) {
   logFile = "cc4s.log";
   rank = DEFAULT_RANK;
   accuracy = DEFAULT_ACCURACY;
+  dryRun = false;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
     if (argument == "-file") {
@@ -49,6 +50,8 @@ Options::Options(int argumentCount, char **arguments) {
     } else if (argument == "-accuracy") {
       std::stringstream stream(arguments[++i]);
       stream >> accuracy;
+    } else if (argument == "-dryRun") {
+      dryRun = true;
     }
   }
 }

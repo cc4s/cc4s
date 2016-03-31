@@ -5,6 +5,7 @@
 #include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
 #include <math/RegularizedAlternatingLeastSquares.hpp>
+#include <util/DryTensor.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {
@@ -24,6 +25,7 @@ namespace cc4s {
     );
     virtual ~ParticleHoleCoulombVertexDecomposition();
     virtual void run();
+    virtual void dryRun();
       
     /**
      * \brief The rank \f$N_R\f$ of the tensor rank decomposition
@@ -67,17 +69,17 @@ namespace cc4s {
     /**
      * \brief The factor orbitals for occupied states \f$\Pi_{iR}\f$.
      */
-    CTF::Matrix<complex> *PiiR;
+    CTF::Tensor<complex> *PiiR;
     /**
      * \brief The conjugated factor orbitals for virtual states
      * \f${\Pi^\ast}^{aR}\f$.
      */
-    CTF::Matrix<complex> *PiaR;
+    CTF::Tensor<complex> *PiaR;
     /**
      * \brief The Coulomb factors \f$\Lambda_{GR}\f$
      * in the particle/hole decomposition.
      */
-    CTF::Matrix<complex> *LambdaGR;
+    CTF::Tensor<complex> *LambdaGR;
 
     /**
      * \brief Estimators for the regularization parameter during
@@ -106,14 +108,24 @@ namespace cc4s {
      */
     void fit(int64_t iterationsCount);
     /**
+     * \brief Performs a dry run of one iteration in fitting the factor
+     * orbitals and the Coulomb factors according to the given algorithm.
+     */
+    void dryFit(
+      DryTensor<complex> *GammaGai,
+      DryTensor<complex> *PiaR, DryTensor<complex> *PiiR,
+      DryTensor<complex> *LambdaGR,
+      DryTensor<complex> *Gamma0Gai
+    );
+    /**
      * \brief Normalizes the given factor orbitals, such that
      * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta_{qq}\f$.
      */
-    void normalizePi(CTF::Matrix<complex> &Pi);
+    void normalizePi(CTF::Tensor<complex> &Pi);
     /**
      * \brief Discards the imaginary part of the given factor orbitals.
      */
-    void realizePi(CTF::Matrix<complex> &Pi);
+    void realizePi(CTF::Tensor<complex> &Pi);
 
     /**
      * \brief Evaluates and prints the error of the MP2 energy between
@@ -124,6 +136,11 @@ namespace cc4s {
      * \brief Evaluates the MP2 energy for the given Coulomb vertex.
      */
     double evaluateMp2(CTF::Tensor<complex> &Gamma);
+    /**
+     * \brief Performs a dry run of evaluating the MP2 energy
+     * for the given Coulomb vertex.
+     */
+    void dryEvaluateMp2(DryTensor<complex> &Gamma);
   };
 }
 

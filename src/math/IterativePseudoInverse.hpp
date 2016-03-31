@@ -2,6 +2,7 @@
 #define ITERATIVE_PSEUDO_INVERSE_DEFINED
 
 #include <math/Complex.hpp>
+#include <util/DryTensor.hpp>
 #include <ctf.hpp>
 #include <random>
 
@@ -24,6 +25,16 @@ namespace cc4s {
 
     CTF::Matrix<F> matrix, square, inverse;
     double alpha;
+  };
+
+  template <typename F>
+  class DryIterativePseudoInverse {
+  public:
+    DryIterativePseudoInverse(DryMatrix<F> const &matrix);
+    DryMatrix<F> &get();
+
+  protected:
+    DryMatrix<F> matrix, square, inverse;
   };
 }
 

@@ -3,6 +3,7 @@
 #define PARTICLE_HOLE_COULOMB_VERTEX_READER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <util/DryTensor.hpp>
 #include <ctf.hpp>
 #include <cstdint>
 #include <fstream>
@@ -16,12 +17,14 @@ namespace cc4s {
     );
     virtual ~ParticleHoleCoulombVertexReader();
     virtual void run();
+    virtual void dryRun();
 
   protected:
     int No, Nv, NG;
     int64_t Np;
 
     void readGammaGaiChunkBlocked(std::ifstream &file, CTF::Tensor<> *GammaGai);
+    void dryReadGammaGaiChunkBlocked(DryTensor<> *GammaGai);
     void readEpsChunk(
       std::ifstream &file,  CTF::Tensor<> *epsi, CTF::Tensor<> *epsa
     );

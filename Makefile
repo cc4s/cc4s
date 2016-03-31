@@ -28,6 +28,7 @@ obj/Options.o \
 obj/util/Log.o \
 obj/util/Timer.o \
 obj/util/FlopsCounter.o \
+obj/util/DryTensor.o \
 obj/math/MathFunctions.o \
 obj/math/ComplexTensor.o \
 obj/math/RandomTensor.o \

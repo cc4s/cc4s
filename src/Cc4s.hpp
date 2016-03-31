@@ -14,6 +14,7 @@ namespace cc4s {
     Cc4s();
     ~Cc4s();
     void run();
+    void dryRun();
 
     // static properties, accessible from everywhere
     static CTF::World *world;
@@ -23,16 +24,6 @@ namespace cc4s {
     static Amplitudes *T;
 
   protected:
-/*
-    void mp2Algorithm();
-    void rpaAlgorithm();
-*/
-    void iterateMp2();
-    void iterateCcsd();
-    void iterateRpa();
-    void iterateRccd();
-    void iterateRccsd();
-
     void printBanner();
     void printStatistics(
       int64_t rootFlops, int64_t totalFlops, double totalTime

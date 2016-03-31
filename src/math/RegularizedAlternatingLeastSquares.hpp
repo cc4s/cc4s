@@ -3,6 +3,7 @@
 #define REGULARIZED_ALTERNATING_LEAST_SQUARES_DEFINED
 
 #include <math/Complex.hpp>
+#include <util/DryTensor.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {
@@ -49,6 +50,14 @@ namespace cc4s {
     CTF::Tensor<F> &C, char const idxC,
     CTF::Tensor<F> &A, char const idxA,
     AlternatingLeastSquaresRegularizationEstimator &regularizationEstimatorA
+  );
+
+  template <typename F=double>
+  void dryFitRegularizedAlternatingLeastSquaresFactor(
+    DryTensor<F> &T, char const *indicesT,
+    DryTensor<F> &B, char const idxB,
+    DryTensor<F> &C, char const idxC,
+    DryTensor<F> &A, char const idxA
   );
 }
 
