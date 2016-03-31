@@ -1,6 +1,7 @@
 #include <algorithms/Mp2CoulombIntegrals.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -71,3 +72,42 @@ void Mp2CoulombIntegrals::run() {
   // Print okay
   LOG(0, "MP2CoulombIntegrals") << " OK" << std::endl;
 }
+
+/**
+ * \brief Performs a dry run for calculating the Coulomb integrals Vabij
+ * from GammaGpq Coulomb Vertex
+ */
+void Mp2CoulombIntegrals::dryRun() {
+  DryTensor<complex> *GammaGpq(
+    getTensorArgument<complex, DryTensor<complex>>("CoulombVertex")
+  );
+
+  // Read the Particle/Hole Eigenenergies
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<>>("HoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<>>("ParticleEigenEnergies")
+  );
+
+  // Compute the no,nv,nG,np
+  int nG(GammaGpq->lens[0]);
+  int no(epsi->lens[0]);
+  int nv(epsa->lens[0]);
+
+  // Allocate coulomb integrals Vabij
+  int syms[] = { NS, NS, NS, NS };
+  int vvoo[] = { nv, nv, no, no };
+  DryTensor<> *Vabij(new DryTensor<>(4, vvoo, syms));
+  allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
+
+  // Allocate and compute GammaGai from GammaGpq
+  int GaiLens[]   = {nG,nv,no};
+  int GaiSyms[]   = {NS,NS,NS};
+  DryTensor<complex> GammaGai(3, GaiLens, GaiSyms);
+
+  // Split GammaGab,GammaGai,GammaGij into real and imaginary parts
+  DryTensor<> realGammaGai(3, GaiLens, GaiSyms);
+  DryTensor<> imagGammaGai(3, GaiLens, GaiSyms);
+}
+
