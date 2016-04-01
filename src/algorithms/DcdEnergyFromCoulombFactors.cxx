@@ -2,6 +2,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
+#include <mixers/Mixer.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -19,6 +20,8 @@ DcdEnergyFromCoulombFactors::DcdEnergyFromCoulombFactors(
 }
 
 DcdEnergyFromCoulombFactors::~DcdEnergyFromCoulombFactors() {
+  // delete the mixer to free its resources
+  if (TabijMixer) delete TabijMixer;
 }
 
 /**
@@ -37,11 +40,22 @@ void DcdEnergyFromCoulombFactors::run() {
   int no(epsi->lens[0]);
   int nv(epsa->lens[0]);
 
-  // Allocate the DCD amplitudes Tabij
-  int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { nv, nv, no, no };
-  Tensor<> *Tabij(new Tensor<>(4, vvoo, syms, *Cc4s::world, "Tabij"));
-  allocatedTensorArgument("DcdDoublesAmplitudes", Tabij);
+  // instantiate mixer for the amplitudes, by default use the trivial mixer
+  std::string mixerName(getTextArgument("mixer", "TrivialMixer"));
+  TabijMixer = MixerFactory<double>::create(mixerName);
+  if (!TabijMixer) {
+    std::stringstream stringStream;
+    stringStream << "Mixer not implemented: " << mixerName;
+    throw new Exception(stringStream.str());
+  }
+  {
+    // Allocate the DCD amplitudes Tabij and append it to the mixer
+    int syms[] = { NS, NS, NS, NS };
+    int vvoo[] = { nv, nv, no, no };
+    Tensor<> Tabij(4, vvoo, syms, *Cc4s::world, "Tabij");
+    TabijMixer->append(Tabij);
+    // the amplitudes will from now on be managed by the mixer
+  }
 
   // Allocate the DCD energy e
   Scalar<> energy(*Cc4s::world);
@@ -53,13 +67,14 @@ void DcdEnergyFromCoulombFactors::run() {
 
   // Iteration for determining the DCD amplitudes Tabij
   // and the Dcd energy e
-  int64_t iterationsCount(0);
   int64_t maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, "DCD") << "iteration: " << i+1 << std::endl;
     iterate(i);
+    // get the current amplitdues from the mixer
+    Tensor<> *Tabij(&TabijMixer->getNext());
     energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     dire = energy.get_val();
     energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
@@ -72,6 +87,12 @@ void DcdEnergyFromCoulombFactors::run() {
 
   LOG(1, "DCD") << "DCD correlation energy = " << e << std::endl;
 
+  // return a copy of the amplitudes contained in the mixer
+  // the amplitdues contained in the mixer will be deleted upon
+  // destruction of this algorithm
+  allocatedTensorArgument(
+    "DcdDoublesAmplitudes", new Tensor<>(TabijMixer->getNext())
+  );
   setRealArgument("DcdEnergy", e);
 }
 
@@ -82,8 +103,8 @@ void DcdEnergyFromCoulombFactors::run() {
 //////////////////////////////////////////////////////////////////////
 void DcdEnergyFromCoulombFactors::iterate(int i) {
   {
-    // Read the DCD amplitudes Tabij
-    Tensor<> *Tabij(getTensorArgument("DcdDoublesAmplitudes"));
+    // get the current amplitdues for this iteration from the mixer
+    Tensor<> *Tabij(&TabijMixer->getNext());
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -231,6 +252,12 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
 
     // Divide Rabij/Dabij to get Tabij
     Bivar_Function<> fDivide(&divide<double>);
-    Tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+    // dont't use Tabij, since it actually is part of the mixer
+    // and must be modified. Rabij is, however, available
+    Rabij.contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+
+    // pass the new amplitudes to the mixer
+    TabijMixer->append(Rabij);
   }
 }
+

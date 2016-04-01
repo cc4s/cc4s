@@ -3,6 +3,7 @@
 #define DCD_ENERGY_FROM_COULOMB_FACTORS_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <mixers/Mixer.hpp>
 
 namespace cc4s {
   class DcdEnergyFromCoulombFactors: public Algorithm {
@@ -21,6 +22,7 @@ namespace cc4s {
     static int64_t constexpr DEFAULT_MAX_ITERATIONS = 16;
 
   protected:
+    Mixer<double> *TabijMixer;
     void iterate(int i);
   };
 }

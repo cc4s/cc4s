@@ -51,7 +51,10 @@ void DcdEnergyFromCoulombIntegrals::run() {
 
   // Iteration for determining the DCD amplitudes Tabij
   // and the Dcd energy e
-  for (int i(0); i < Cc4s::options->niter; ++i) {
+  int64_t maxIterationsCount(
+    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
+  );
+  for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, "DCD") << "iteration: " << i+1 << std::endl;
     iterateHirata(i);
     energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];

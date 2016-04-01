@@ -40,6 +40,8 @@ obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
 obj/Data.o \
 obj/Parser.o \
+obj/mixers/Mixer.o \
+obj/mixers/TrivialMixer.o \
 obj/algorithms/Algorithm.o \
 obj/algorithms/ParticleHoleCoulombIntegrals.o \
 obj/algorithms/ParticleHoleCoulombVertexReader.o \
