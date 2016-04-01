@@ -41,7 +41,7 @@ void ParticleHoleCoulombVertexDecomposition::run() {
   LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank
     << ", realFactorOrbitals=" << realFactorOrbitals
     << ", normalizedFactorOrbitals=" << normalizedFactorOrbitals << std::endl;
-  LOG(1, "RALS") << "decompising Coulomb vertex with NG=" << NG
+  LOG(1, "RALS") << "decomposing Coulomb vertex with NG=" << NG
     << " No=" << No << " Nv=" << Nv << std::endl;
 
   // allocate factor tensors
@@ -149,6 +149,8 @@ void ParticleHoleCoulombVertexDecomposition::normalizePi(
   Bivar_Function<complex> fDivide(&cc4s::divide<complex>);
   // Pi["qR"] = Pi["qR"] / quotient["qR"]
   Pi.contract(1.0, Pi,"qR", quotient,"qR", 0.0,"qR", fDivide);
+  double normalization(frobeniusNorm(quotient));
+  LOG(4, "RALS") << "|normalization quotient|=" << normalization << std::endl;
 }
 
 void ParticleHoleCoulombVertexDecomposition::realizePi(
