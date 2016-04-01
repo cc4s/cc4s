@@ -23,6 +23,7 @@ namespace cc4s {
     int rank;
     double accuracy;
     std::string file;
+    bool dryRun;
 
     const int DEFAULT_NITER = 8, DEFAULT_NW = 100;
     const bool DEFAULT_PROFILE = false;

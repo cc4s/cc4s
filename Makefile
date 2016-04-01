@@ -28,6 +28,7 @@ obj/Options.o \
 obj/util/Log.o \
 obj/util/Timer.o \
 obj/util/FlopsCounter.o \
+obj/util/DryTensor.o \
 obj/math/MathFunctions.o \
 obj/math/ComplexTensor.o \
 obj/math/RandomTensor.o \
@@ -39,10 +40,11 @@ obj/Chi.o obj/CoulombIntegrals.o obj/Amplitudes.o \
 obj/BinaryFtodReader.o obj/TextFtodReader.o \
 obj/Data.o \
 obj/Parser.o \
+obj/mixers/Mixer.o \
+obj/mixers/TrivialMixer.o \
 obj/algorithms/Algorithm.o \
 obj/algorithms/ParticleHoleCoulombIntegrals.o \
 obj/algorithms/ParticleHoleCoulombVertexReader.o \
-obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombVertex.o \
 obj/algorithms/CoulombVertexDecomposition.o \
@@ -58,12 +60,15 @@ obj/algorithms/ComplexTensorContraction.o \
 obj/algorithms/ComplexTensorSum.o \
 obj/algorithms/ComplexTensorNorm.o \
 obj/algorithms/CoulombVertexReader.o \
+obj/algorithms/Mp2CoulombIntegrals.o \
+obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 obj/algorithms/CcdCoulombIntegrals.o \
 obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
 obj/algorithms/CcsdCoulombIntegrals.o \
 obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
+obj/algorithms/DcdEnergyFromCoulombFactors.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 

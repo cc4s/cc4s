@@ -57,15 +57,15 @@ void CoulombVertexDecomposition::run() {
   // PirR["qR"] = conj(PiqR["qR"])
   PirR->sum(1.0, *PiqR,"qR", 0.0,"qR", fConj);
   setRandomTensor(*LambdaGR);
-  allocatedTensorArgument("FactorOrbitals", PiqR);
-  allocatedTensorArgument("CoulombFactors", LambdaGR);
+  allocatedTensorArgument<complex>("FactorOrbitals", (CTF::Tensor<complex> *)PiqR);
+  allocatedTensorArgument<complex>("CoulombFactors", (CTF::Tensor<complex> *)LambdaGR);
 
   Gamma0Gqr = new Tensor<complex>(
     3, GammaGqr->lens, GammaGqr->sym, *GammaGqr->wrld, "Gamma0Gqr",
     GammaGqr->profile
   );
   if (isArgumentGiven("ComposedCoulombVertex")) {
-    allocatedTensorArgument("ComposedCoulombVertex", Gamma0Gqr);
+    allocatedTensorArgument<complex>("ComposedCoulombVertex", (CTF::Tensor<complex> *)Gamma0Gqr);
   }
 
   double swampingThreshold(
@@ -97,6 +97,47 @@ void CoulombVertexDecomposition::run() {
     ++iterationsCount;
   }
 }
+
+void CoulombVertexDecomposition::dryRun() {
+  // NOTE that in the dry run GammaGai,... are local variables
+  DryTensor<complex> *GammaGqr(
+    getTensorArgument<complex, DryTensor<complex>>("CoulombVertex")
+  );
+  int NG(GammaGqr->lens[0]);
+  int Np(GammaGqr->lens[1]);
+  rank = getIntegerArgument("rank", NG);
+  realFactorOrbitals = getIntegerArgument(
+    "realFactorOrbitals", DEFAULT_REAL_FACTOR_ORBITALS
+  );
+  normalizedFactorOrbitals = getIntegerArgument(
+    "normalizedFactorOrbitals", DEFAULT_NORMALIZED_FACTOR_ORBITALS
+  );
+  LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank
+    << ", realFactorOrbitals=" << realFactorOrbitals
+    << ", normalizedFactorOrbitals=" << normalizedFactorOrbitals << std::endl;
+  LOG(1, "RALS") << "decompising Coulomb vertex with NG=" << NG
+    << " Np=" << Np << std::endl;
+
+  // allocate factor tensors
+  DryTensor<complex> *PiqR = new DryMatrix<complex>(Np, int(rank), NS);
+  DryTensor<complex> *PirR = new DryMatrix<complex>(Np, int(rank), NS);
+  DryTensor<complex> *LambdaGR = new DryMatrix<complex>(NG, int(rank), NS);
+  allocatedTensorArgument<complex, DryTensor<complex>>(
+    "FactorOrbitals", PiqR
+  );
+  allocatedTensorArgument<complex, DryTensor<complex>>(
+    "CoulombFactors", LambdaGR
+  );
+
+  DryTensor<complex> *Gamma0Gqr(new DryTensor<complex>(*GammaGqr));
+  if (isArgumentGiven("ComposedCoulombVertex")) {
+    allocatedTensorArgument<complex, DryTensor<complex>>(
+      "ComposedCoulombVertex", Gamma0Gqr
+    );
+  }
+  dryFit(GammaGqr, PiqR, PirR, LambdaGR, Gamma0Gqr);
+}
+
 
 void CoulombVertexDecomposition::fit(
   int64_t const iterationsCount
@@ -132,6 +173,30 @@ void CoulombVertexDecomposition::fit(
     << " Delta=" << Delta << std::endl;
   (*Gamma0Gqr)["Gqr"] += (*GammaGqr)["Gqr"];
 }
+
+void CoulombVertexDecomposition::dryFit(
+  DryTensor<complex> *GammaGqr,
+  DryTensor<complex> *PiqR, DryTensor<complex> *PirR,
+  DryTensor<complex> *LambdaGR,
+  DryTensor<complex> *Gamma0Gqr
+) {
+  dryFitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
+    *PirR,'r'
+  );
+  dryFitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *LambdaGR,'G', *PirR,'r',
+    *PiqR,'q'
+  );
+  dryFitRegularizedAlternatingLeastSquaresFactor(
+    *GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
+    *LambdaGR,'G'
+  );
+  dryComposeCanonicalPolyadicDecompositionTensors(
+    *LambdaGR, *PiqR, *PirR, *Gamma0Gqr
+  );
+}
+
 
 void CoulombVertexDecomposition::fitConjugated(
   int64_t const iterationsCount

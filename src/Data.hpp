@@ -156,20 +156,20 @@ namespace cc4s {
     int64_t value;
   };
 
-  template <typename F=double>
+  template < typename F=double, typename T=CTF::Tensor<F> >
   class TensorData: public NumericData {
   public:
     TensorData(
-      CTF::Tensor<F> *value_
+      T *value_
     ): NumericData("tensor of " + TypeTraits<F>::getName()), value(value_) {
     }
     TensorData(
-      std::string const &name_, CTF::Tensor<F> *value_
+      std::string const &name_, T *value_
     ):
       NumericData(name_, "tensor of " + TypeTraits<F>::getName()), value(value_)
     {
     }
-    CTF::Tensor<F> *value;
+    T *value;
   };
 }
 

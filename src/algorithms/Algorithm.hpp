@@ -29,6 +29,7 @@ namespace cc4s {
     virtual ~Algorithm();
     virtual std::string getName() = 0;
     virtual void run() = 0;
+    virtual void dryRun();
 
     bool isArgumentGiven(std::string const &argumentName);
     // retrieving input arguments
@@ -44,13 +45,24 @@ namespace cc4s {
     double getRealArgument(
       std::string const &argumentName, double const defaultValue
     );
-    template <typename F=double>
-    CTF::Tensor<F> *getTensorArgument(std::string const &argumentName);
+    template < typename F=double, typename T=CTF::Tensor<F> >
+    T *getTensorArgument(std::string const &argumentName);
 
     // typing, allocating and setting output arguments
-    template <typename F=double>
+    /**
+     * \brief Specifies the location of an output tensor data.
+     * \param[in] argumentName The argument name as specified in the cc4s file
+     * \param[in] tensor The reference of the tensor data allocated by the
+     * caller and later freed by the system if not needed any further.
+     * \note
+     * often explicit instantiation may be necessary, e.g.
+     * \code{.cxx}
+     * allocatedTensorArgument<complex>(complexTensor);
+     * \endcode
+     */
+    template < typename F=double, typename T=CTF::Tensor<F> >
     void allocatedTensorArgument(
-      std::string const &argumentName, CTF::Tensor<F> *tensor
+      std::string const &argumentName, T *tensor
     );
     void setRealArgument(std::string const &argumentName, double const value);
 
@@ -58,8 +70,8 @@ namespace cc4s {
     // type promotions:
     double getRealArgumentFromInteger(IntegerData *data);
     double getRealArgumentFromTensor(TensorData<double> *data);
-    template <typename F=double>
-    CTF::Tensor<F> *getTensorArgumentFromReal(RealData *realData);
+    template < typename F=double, typename T=CTF::Tensor<F> >
+    T *getTensorArgumentFromReal(RealData *realData);
 
     Data *getArgumentData(std::string const &argumentName);
     std::map<std::string, std::string> arguments;

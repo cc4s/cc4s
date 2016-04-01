@@ -4,6 +4,7 @@
 #include <math/CanonicalPolyadicDecomposition.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/IterativePseudoInverse.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 
@@ -68,5 +69,43 @@ void cc4s::fitRegularizedAlternatingLeastSquaresFactor(
   Tensor<complex> &B, char const idxB, Tensor<complex> &C, char const idxC,
   Tensor<complex> &A, char const idxA,
   AlternatingLeastSquaresRegularizationEstimator &regularizationEstimatorA
+);
+
+
+template <typename F=double>
+void cc4s::dryFitRegularizedAlternatingLeastSquaresFactor(
+  DryTensor<F> &T, char const *indicesT,
+  DryTensor<F> &B, char const idxB, DryTensor<F> &C, char const idxC,
+  DryTensor<F> &A, char const idxA
+) {
+  DryTensor<F> conjB(B);
+  DryTensor<F> conjC(C);
+
+  DryMatrix<F> BB(B.lens[1], B.lens[1], NS);
+  DryMatrix<F> gramian(B.lens[1], B.lens[1], NS);
+  LOG(4, "RALS") << "building Gramian..." << std::endl;
+  LOG(4, "RALS") << "inverting Gramian..." << std::endl;
+  DryIterativePseudoInverse<F> gramianInverse(gramian);
+
+  DryTensor<F> previousA(A);
+  dryContractWithCanonicalPolyadicDecompositionTensors(
+    T, indicesT, conjB, idxB, conjC, idxC, A, idxA
+  );
+  LOG(4, "RALS") << "applying inverse of Gramian..." << std::endl;
+  DryTensor<F> conjInvGramian(gramianInverse.get());
+}
+
+// instantiate
+template
+void cc4s::dryFitRegularizedAlternatingLeastSquaresFactor(
+  DryTensor<double> &T, char const *indicesT,
+  DryTensor<double> &B, char const idxB, DryTensor<double> &C, char const idxC,
+  DryTensor<double> &A, char const idxA
+);
+template
+void cc4s::dryFitRegularizedAlternatingLeastSquaresFactor(
+  DryTensor<complex> &T, char const *indicesT,
+  DryTensor<complex> &B, char const idxB, DryTensor<complex> &C, char const idxC,
+  DryTensor<complex> &A, char const idxA
 );
 

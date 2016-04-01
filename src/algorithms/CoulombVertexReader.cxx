@@ -1,5 +1,6 @@
 #include <algorithms/CoulombVertexReader.hpp>
 #include <math/ComplexTensor.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -57,7 +58,7 @@ void CoulombVertexReader::run() {
   // enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
-  allocatedTensorArgument("CoulombVertex", GammaGpq);
+  allocatedTensorArgument<complex>("CoulombVertex", GammaGpq);
 
   // real and imaginary parts are read in seperately
   Tensor<> realGammaGpq(
@@ -85,10 +86,10 @@ void CoulombVertexReader::run() {
   LOG(0, "CoulombVertexReader") << " OK" << std::endl;
   
   // print nG, no, nv, np
-  //LOG(4) << "nG = " << nG << std::endl;
-  //LOG(4) << "no = " << no << std::endl;
-  //LOG(4) << "nv = " << nv << std::endl;
-  //LOG(4) << "np = " << np << std::endl;
+  LOG(4, "CoulombVertexReader") << "nG = " << nG << std::endl;
+  LOG(4, "CoulombVertexReader") << "no = " << no << std::endl;
+  LOG(4, "CoulombVertexReader") << "nv = " << nv << std::endl;
+  LOG(4, "CoulombVertexReader") << "np = " << np << std::endl;
 
   // Test print the norm of GammaGpq
   //double result(realGammaGpq.norm2());
@@ -107,6 +108,47 @@ void CoulombVertexReader::run() {
   //vpqrs["prqs"] += imagGammaGpq["Gpq"] * imagGammaGpq["Grs"];
   //double error(vpqrs.norm2());
   //LOG(4) << "|Vpqrs| = " << error << std::endl;
+}
+
+/**
+ * \brief Reads the Full Fourier transformed overlap densities GammaGpq from FTODDUMP.
+ */
+void CoulombVertexReader::dryRun() {
+  std::string fileName(getTextArgument("file"));
+  LOG(0, "CoulombVertexReader") <<
+    "Reading Coulomb vertex from file " << fileName << std::endl;
+  std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
+  if (!file.is_open()) throw new Exception("Failed to open file");
+  // read header
+  Header header;
+  file.read(reinterpret_cast<char *>(&header), sizeof(header));
+  if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
+    throw new Exception("Invalid file format");
+  file.close();
+  nG = header.nG;
+  no = header.no;
+  nv = header.nv;
+  np = no + nv;
+
+  // allocate output tensors
+  int vertexLens[] = { nG, np, np };
+  int vertexSyms[] = { NS, NS, NS };
+  DryTensor<> *epsi(new DryVector<>(no));
+  DryTensor<> *epsa(new DryVector<>(nv));
+  DryTensor<complex> *GammaGpq(
+    new DryTensor<complex>(3, vertexLens, vertexSyms)
+  );
+  // enter the allocated data (and by that type the output data to tensors)
+  allocatedTensorArgument("HoleEigenEnergies", epsi);
+  allocatedTensorArgument("ParticleEigenEnergies", epsa);
+  allocatedTensorArgument<
+    complex, DryTensor<complex>
+  >("CoulombVertex", GammaGpq);
+
+  // real and imaginary parts are read in seperately
+  DryTensor<> realGammaGpq(3, vertexLens, vertexSyms);
+  DryTensor<> imagGammaGpq(3, vertexLens, vertexSyms);
+//  realGammaGpq.use();
 }
 
 

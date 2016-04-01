@@ -3,6 +3,7 @@
 #define COULOMB_VERTEX_DECOMPOSITION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <util/DryTensor.hpp>
 #include <math/Complex.hpp>
 #include <math/RegularizedAlternatingLeastSquares.hpp>
 #include <ctf.hpp>
@@ -26,6 +27,7 @@ namespace cc4s {
     );
     virtual ~CoulombVertexDecomposition();
     virtual void run();
+    virtual void dryRun();
       
     /**
      * \brief The rank \f$N_R\f$ of the tensor rank decomposition
@@ -95,6 +97,16 @@ namespace cc4s {
      * and the Coulomb factors according to the given algorithm.
      */
     void fit(int64_t iterationsCount);
+    /**
+     * \brief Performs a dry run of one iteration in fitting the factor
+     * orbitals and the Coulomb factors according to the given algorithm.
+     */
+    void dryFit(
+      DryTensor<complex> *GammaGqr,
+      DryTensor<complex> *PiqR, DryTensor<complex> *PirR,
+      DryTensor<complex> *LambdaGR,
+      DryTensor<complex> *Gamma0Gqr
+    );
     void fitConjugated(int64_t iterationsCount);
     /**
      * \brief Normalizes the given factor orbitals, such that

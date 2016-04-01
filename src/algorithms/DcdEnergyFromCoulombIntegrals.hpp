@@ -18,8 +18,10 @@ namespace cc4s {
       return new DcdEnergyFromCoulombIntegrals(argumentList);
     }
 
+    static int64_t constexpr DEFAULT_MAX_ITERATIONS = 16;
+
   protected:
-    void iterateHirata();
+    void iterateHirata(int i);
     void iterateBartlett();
   };
 }

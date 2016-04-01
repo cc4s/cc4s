@@ -1,20 +1,19 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef CCD_COULOMB_INTEGRALS_DEFINED
-#define CCD_COULOMB_INTEGRALS_DEFINED
+#ifndef MP2_COULOMB_INTEGRALS_DEFINED
+#define MP2_COULOMB_INTEGRALS_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 
 namespace cc4s {
-  class CcdCoulombIntegrals: public Algorithm {
+  class Mp2CoulombIntegrals: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CcdCoulombIntegrals);
-    CcdCoulombIntegrals(
+    ALGORITHM_REGISTRAR_DECLARATION(Mp2CoulombIntegrals);
+    Mp2CoulombIntegrals(
       std::vector<Argument> const &argumentList
     );
-    virtual ~CcdCoulombIntegrals();
+    virtual ~Mp2CoulombIntegrals();
     virtual void run();
     virtual void dryRun();
-
   };
 }
 

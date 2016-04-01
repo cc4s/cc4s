@@ -169,3 +169,38 @@ template
 void IterativePseudoInverse<double>::test(World *world);
 template
 void IterativePseudoInverse<complex>::test(World *world);
+
+
+template <typename F>
+DryIterativePseudoInverse<F>::DryIterativePseudoInverse(
+  DryMatrix<F> const &matrix_
+):
+  matrix(matrix_),
+  square(matrix_.lens[0], matrix_.lens[0], NS),
+  inverse(matrix_.lens[1], matrix_.lens[0], NS)
+{
+  DryMatrix<F> conjugate(matrix.lens[1], matrix.lens[0], NS);
+  DryMatrix<F> square(matrix.lens[0], matrix.lens[0], NS);
+  DryVector<F> rowAbsNorms(square.lens[0]);
+}
+
+template <typename F>
+DryMatrix<F> &DryIterativePseudoInverse<F>::get() {
+  return inverse;
+}
+
+// instantiate
+template
+DryIterativePseudoInverse<double>::DryIterativePseudoInverse(
+  DryMatrix<double> const &matrix
+);
+template
+DryMatrix<double> &DryIterativePseudoInverse<double>::get();
+
+template
+DryIterativePseudoInverse<complex>::DryIterativePseudoInverse(
+  DryMatrix<complex> const &matrix
+);
+template
+DryMatrix<complex> &DryIterativePseudoInverse<complex>::get();
+

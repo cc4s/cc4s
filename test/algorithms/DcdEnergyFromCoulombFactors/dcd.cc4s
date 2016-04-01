@@ -1,0 +1,58 @@
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombVertexDecomposition [
+  CoulombVertex
+  (rank 66) (maxIterations 120)
+] [
+  FactorOrbitals CoulombFactors
+  ComposedCoulombVertex
+].
+
+CcdCoulombIntegrals [
+  % compute the Coulomb integratls from the composed vertex
+  % rather than from the original one, for comparability
+  (CoulombVertex ComposedCoulombVertex)
+%  CoulombVertex
+  HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals
+  PPHHCoulombIntegrals HHHHCoulombIntegrals
+].
+
+% compute the DcdEnergy once from the integrals
+DcdEnergyFromCoulombIntegrals [
+  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals 
+  PPHHCoulombIntegrals HHHHCoulombIntegrals HoleEigenEnergies 
+  ParticleEigenEnergies
+  (maxIterations 32)
+] [
+  DcdEnergy DcdDoublesAmplitudes
+].
+
+TensorWriter [(Data DcdEnergy)] [].
+
+% and once from the factors
+DcdEnergyFromCoulombFactors [
+  % the factors are used for when necessary for low memory and O(N^5)
+  FactorOrbitals CoulombFactors
+  % the Coulomb vertex is directly used where possible
+  CoulombVertex
+  HoleEigenEnergies ParticleEigenEnergies
+  % where memory is not a concern, the integrals are used
+  PHPHCoulombIntegrals PHHPCoulombIntegrals
+  PPHHCoulombIntegrals HHHHCoulombIntegrals
+  (maxIterations 32)
+  % the TrivialMixer is used by default
+  (mixer "TrivialMixer")
+  (mixingRatio 1.5)
+] [
+  (DcdEnergy DcdEnergyFromFactors)
+  (DcdDoublesAmplitudes DcdDoublesAmplitudesFromFactors)
+].
+
+TensorWriter [(Data DcdEnergyFromFactors)] [].
+

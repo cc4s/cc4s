@@ -1,5 +1,6 @@
 #include <algorithms/ParticleHoleCoulombVertexReader.hpp>
 #include <math/ComplexTensor.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -28,7 +29,7 @@ ParticleHoleCoulombVertexReader::~ParticleHoleCoulombVertexReader() {
 }
 
 /**
- * \brief Reads the Fourier transformed overlap densities from disk.
+ * \brief Reads binary Coulomb vertex file from disk.
  */
 void ParticleHoleCoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
@@ -59,7 +60,7 @@ void ParticleHoleCoulombVertexReader::run() {
   // enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
-  allocatedTensorArgument("ParticleHoleCoulombVertex", GammaGai);
+  allocatedTensorArgument<complex>("ParticleHoleCoulombVertex", GammaGai);
 
   // real and imaginary parts are read in seperately
   Tensor<> realGammaGai(
@@ -87,10 +88,58 @@ void ParticleHoleCoulombVertexReader::run() {
   LOG(0) << " OK" << std::endl;
 
   // print the number of NG's, Nv's, No's, and Np's at the level of LOG(2)
-  LOG(2) << "NG = " << NG << std::endl;
-  LOG(2) << "Nv = " << Nv << std::endl;
-  LOG(2) << "No = " << No << std::endl;
-  LOG(2) << "Np = " << Np << std::endl;
+  LOG(2) << "NG=" << NG << std::endl;
+  LOG(2) << "Nv=" << Nv << std::endl;
+  LOG(2) << "No=" << No << std::endl;
+  LOG(2) << "Np=" << Np << std::endl;
+}
+
+/**
+ * \brief Performs a dry run on reading the
+ * binary Coulomb vertex file from disk.
+ * Only the header information is read containing size information.
+ */
+void ParticleHoleCoulombVertexReader::dryRun() {
+  std::string fileName(getTextArgument("file"));
+  LOG(0) <<
+    "Reading particle hole Coulomb vertex from file " << fileName << std::endl;
+  std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
+  if (!file.is_open()) throw new Exception("Failed to open file");
+  // read header
+  Header header;
+  file.read(reinterpret_cast<char *>(&header), sizeof(header));
+  if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
+    throw new Exception("Invalid file format");
+  file.close();
+  NG = header.NG;
+  No = header.No;
+  Nv = header.Nv;
+  Np = No + Nv;
+
+  // allocate output tensors
+  int vertexLens[] = { NG, Nv, No };
+  int vertexSyms[] = { NS, NS, NS };
+  DryTensor<> *epsi(new DryVector<>(No));
+  DryTensor<> *epsa(new DryVector<>(Nv));
+  DryTensor<complex> *GammaGai(
+    new DryTensor<complex>(3, vertexLens, vertexSyms)
+  );
+  // enter the allocated data (and by that type the output data to tensors)
+  allocatedTensorArgument("HoleEigenEnergies", epsi);
+  allocatedTensorArgument("ParticleEigenEnergies", epsa);
+  allocatedTensorArgument<complex>("ParticleHoleCoulombVertex", GammaGai);
+
+  // real and imaginary parts are read in seperately
+  DryTensor<> realGammaGai(3, vertexLens, vertexSyms);
+  DryTensor<> imagGammaGai(3, vertexLens, vertexSyms);
+  dryReadGammaGaiChunkBlocked(&realGammaGai);
+  dryReadGammaGaiChunkBlocked(&imagGammaGai);
+
+  // print the number of NG's, Nv's, No's, and Np's at the level of LOG(2)
+  LOG(2) << "number of plane waves NG=" << NG << std::endl;
+  LOG(2) << "number of virtual orbitals Nv=" << Nv << std::endl;
+  LOG(2) << "number of occupied orbitals No=" << No << std::endl;
+  LOG(2) << "total number of orbitals Np=" << Np << std::endl;
 }
 
 
@@ -119,6 +168,17 @@ void ParticleHoleCoulombVertexReader::readGammaGaiChunkBlocked(
   delete[] values; delete[] indices;
 }
 
+void ParticleHoleCoulombVertexReader::dryReadGammaGaiChunkBlocked(
+  DryTensor<> *GammaGai
+) {
+  int64_t elements(Nv*No*NG);
+  // values array
+  DryMemory::allocate(sizeof(double)*elements);
+  // indices array
+  DryMemory::allocate(sizeof(int64_t)*elements);
+  DryMemory::free(sizeof(int64_t)*elements);
+  DryMemory::free(sizeof(double)*elements);
+}
 
 void ParticleHoleCoulombVertexReader::readEpsChunk(
   std::ifstream &file, Tensor<> *epsi, Tensor<> *epsa
