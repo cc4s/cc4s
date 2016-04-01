@@ -1,4 +1,5 @@
 #include <mixers/TrivialMixer.hpp>
+#include <util/Log.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
 
@@ -8,11 +9,18 @@ using namespace cc4s;
 MIXER_REGISTRAR_DEFINITION(TrivialMixer);
 
 template <typename F>
-TrivialMixer<F>::TrivialMixer(): last(nullptr) {
+TrivialMixer<F>::TrivialMixer(
+  Algorithm *algorithm
+):
+  Mixer<F>(algorithm), last(nullptr)
+{
+  ratio = (algorithm->getRealArgument("mixingRatio", 1.0));
+  LOG(1,"TrivialMixer") << "ratio=" << ratio << std::endl;
 }
 
 template <typename F>
 TrivialMixer<F>::~TrivialMixer() {
+  if (last) delete last;
 }
 
 template <typename F>
@@ -23,7 +31,8 @@ void TrivialMixer<F>::append(Tensor<F> &A) {
   } else {
     // overwrite last with A
     std::string idx(Mixer<F>::indices(A));
-    (*last)[idx.c_str()] = A[idx.c_str()];
+    // (*last)[] = ratio*A[idx.c_str()] + (1-ratio)*(*last);
+    last->sum(ratio, A, idx.c_str(), 1-ratio, idx.c_str());
   }
 }
 

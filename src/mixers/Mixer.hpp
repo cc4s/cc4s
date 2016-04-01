@@ -2,6 +2,7 @@
 #ifndef MIXER_DEFINED
 #define MIXER_DEFINED
 
+#include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
 #include <string>
 #include <ctf.hpp>
@@ -10,7 +11,7 @@ namespace cc4s {
   template <typename F>
   class Mixer {
   public:
-    Mixer();
+    Mixer(Algorithm *algorithm);
     virtual ~Mixer();
     virtual std::string getName() = 0;
 
@@ -22,6 +23,8 @@ namespace cc4s {
     virtual void append(CTF::Tensor<F> &A) = 0;
     virtual CTF::Tensor<F> &getNext() = 0;
 
+    Algorithm *algorithm;
+
     static std::string indices(CTF::Tensor<F> const &A);
   };
 
@@ -32,7 +35,7 @@ namespace cc4s {
 /*
     typedef std::map<
       std::string,
-      std::function<Mixer<F> *()>
+      std::function<Mixer<F> *(Algorithm *)>
     > MixerMap;
 */
     /**
@@ -41,16 +44,29 @@ namespace cc4s {
      * The instantiated mixer must be registered using the
      * MixerRegistrar class.
      */
-    static Mixer<F> *create(std::string const &name) {
+    static Mixer<F> *create(
+      std::string const &name, Algorithm *algorithm
+    ) {
       auto iterator(getMixerMap()->find(name));
       return iterator != getMixerMap()->end() ?
-        iterator->second() : nullptr;
+        iterator->second(algorithm) : nullptr;
     }
   protected:
-    static std::map<std::string,std::function<Mixer<F> *()>> *getMixerMap() {
-      return mixerMap ? mixerMap : (mixerMap = new std::map<std::string,std::function<Mixer<F> *()>>);
+    static std::map<
+      std::string,
+      std::function<Mixer<F> *(Algorithm *algorithm)>
+    > *getMixerMap() {
+      return mixerMap ? mixerMap : (
+        mixerMap = new std::map<
+          std::string,
+          std::function<Mixer<F> *(Algorithm *)>
+        >
+      );
     }
-    static std::map<std::string,std::function<Mixer<F> *()>> *mixerMap;
+    static std::map<
+      std::string,
+      std::function<Mixer<F> *(Algorithm *)>
+    > *mixerMap;
 /*
     static MixerMap *getMixerMap() {
       return mixerMap ? mixerMap : (mixerMap = new MixerMap);
@@ -63,8 +79,8 @@ namespace cc4s {
    * \brief template function creating an instance of the given class.
    */
   template <typename F, typename MixerType>
-  Mixer<F> *createMixer() {
-    return new MixerType();
+  Mixer<F> *createMixer(Algorithm *algorithm) {
+    return new MixerType(algorithm);
   }
 
   /**

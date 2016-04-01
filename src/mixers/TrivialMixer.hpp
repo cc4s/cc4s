@@ -9,13 +9,14 @@ namespace cc4s {
   class TrivialMixer: public Mixer<F> {
   public:
     MIXER_REGISTRAR_DECLARATION(TrivialMixer);
-    TrivialMixer();
+    TrivialMixer(Algorithm *algorithm);
     virtual ~TrivialMixer();
 
     virtual void append(CTF::Tensor<F> &A);
     virtual CTF::Tensor<F> &getNext();
 
     CTF::Tensor<F> *last;
+    double ratio;
   };
 }
 

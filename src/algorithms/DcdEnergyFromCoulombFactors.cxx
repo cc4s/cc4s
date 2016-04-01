@@ -42,7 +42,7 @@ void DcdEnergyFromCoulombFactors::run() {
 
   // instantiate mixer for the amplitudes, by default use the trivial mixer
   std::string mixerName(getTextArgument("mixer", "TrivialMixer"));
-  TabijMixer = MixerFactory<double>::create(mixerName);
+  TabijMixer = MixerFactory<double>::create(mixerName, this);
   if (!TabijMixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
