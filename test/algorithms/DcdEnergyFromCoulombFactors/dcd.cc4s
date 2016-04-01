@@ -6,7 +6,7 @@ CoulombVertexReader [
 
 CoulombVertexDecomposition [
   CoulombVertex
-  (rank 66) (maxIterations 120)
+  (rank 66) (maxIterations 20)
 ] [
   FactorOrbitals CoulombFactors
   ComposedCoulombVertex
@@ -23,12 +23,14 @@ CcdCoulombIntegrals [
   PPHHCoulombIntegrals HHHHCoulombIntegrals
 ].
 
-% compute the DcdEnergy once from the integrals
+% compute the DcdEnergy once from the integrals using slicing
 DcdEnergyFromCoulombIntegrals [
-  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals 
-  PPHHCoulombIntegrals HHHHCoulombIntegrals HoleEigenEnergies 
-  ParticleEigenEnergies
-  (maxIterations 32)
+%  PPPPCoulombIntegrals
+  (CoulombVertex ComposedCoulombVertex)
+  PHPHCoulombIntegrals PHHPCoulombIntegrals 
+  PPHHCoulombIntegrals HHHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (maxIterations 2)
 ] [
   DcdEnergy DcdDoublesAmplitudes
 ].
@@ -45,10 +47,10 @@ DcdEnergyFromCoulombFactors [
   % where memory is not a concern, the integrals are used
   PHPHCoulombIntegrals PHHPCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
-  (maxIterations 32)
+  (maxIterations 2)
   % the TrivialMixer is used by default
-  (mixer "TrivialMixer")
-  (mixingRatio 1.5)
+%  (mixer "TrivialMixer")
+%  (mixingRatio 1.5)
 ] [
   (DcdEnergy DcdEnergyFromFactors)
   (DcdDoublesAmplitudes DcdDoublesAmplitudesFromFactors)

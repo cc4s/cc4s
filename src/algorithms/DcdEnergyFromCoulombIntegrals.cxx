@@ -1,5 +1,6 @@
 #include <algorithms/DcdEnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
+#include <math/ComplexTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -83,7 +84,11 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
     Tensor<> *Tabij(getTensorArgument("DcdDoublesAmplitudes"));
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
-    Tensor<> *Vabcd(getTensorArgument("PPPPCoulombIntegrals"));
+    // the PPPPCoulombIntegrals may not be given then slicing is required
+    Tensor<> *Vabcd(
+      isArgumentGiven("PPPPCoulombIntegrals") ?
+        getTensorArgument("PPPPCoulombIntegrals") : nullptr
+    );
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
     Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
@@ -93,13 +98,13 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
     Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
   
     // Compute the no,nv,np
-    int no(epsi->lens[0]);
-    int nv(epsa->lens[0]);
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
 
     int syms[] = { NS, NS, NS, NS };
-    int voov[] = { nv, no, no, nv };
-    int vv[] = { nv, nv };
-    int oo[] = { no, no };
+    int voov[] = { Nv, No, No, Nv };
+    int vv[] = { Nv, Nv };
+    int oo[] = { No, No };
 
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
@@ -165,7 +170,23 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
     Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
 
     // Contract Vabcd with T2 Amplitudes
-    Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
+    if (Vabcd) {
+      Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
+    } else {
+      for (int b(0); b < Nv; b += No) {
+        for (int a(b); a < Nv; a += No) {
+          LOG(0) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          Tensor<> *Vxycd(sliceCoulombIntegrals(a, b));
+          int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+          int syms[] = {NS, NS, NS, NS};
+          Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);
+          Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
+          sliceIntoResiduum(Rxyij, a, b, Rabij);
+          // the integrals of this slice are not needed anymore
+          delete Vxycd;
+        }
+      }
+    }
 
     // Build Dabij
     Dabij["abij"]  = (*epsi)["i"];
@@ -178,6 +199,68 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
     // Divide Rabij/Dabij to get Tabij
     Bivar_Function<> fDivide(&divide<double>);
     Tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+  }
+}
+
+Tensor<> *DcdEnergyFromCoulombIntegrals::sliceCoulombIntegrals(int a, int b) {
+  Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(No+Nv);
+  int NG(GammaGqr->lens[0]);
+  
+  // slice the respective parts from the Coulomb vertex
+  int leftGammaStart[] = { 0, No+a, No };
+  int leftGammaEnd[] = { NG, std::min(No+a+No, Np), Np };
+  int rightGammaStart[] = { 0, No+b, No };
+  int rightGammaEnd[] = { NG, std::min(No+b+No, Np), Np };
+  Tensor<complex> leftGamma(GammaGqr->slice(leftGammaStart, leftGammaEnd));
+  Tensor<complex> rightGamma(GammaGqr->slice(rightGammaStart, rightGammaEnd));
+  // split into real and imaginary parts
+  Tensor<> realLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld);
+  Tensor<> imagLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld);
+  fromComplexTensor(leftGamma, realLeftGamma, imagLeftGamma);
+  Tensor<> realRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld);
+  Tensor<> imagRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld);
+  fromComplexTensor(rightGamma, realRightGamma, imagRightGamma);
+
+  // allocate sliced Coulomb integrals
+  int lens[] = {
+    leftGamma.lens[1], rightGamma.lens[1], leftGamma.lens[2], rightGamma.lens[2]
+  };
+  int syms[] = { NS, NS, NS, NS };
+  Tensor<> *Vxycd(new Tensor<>(4, lens, syms, *GammaGqr->wrld));
+
+  // contract left and right slices of the Coulomb vertices
+  (*Vxycd)["xycd"] =  realLeftGamma["Gxc"] * realRightGamma["Gyd"];
+  (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
+  return Vxycd;
+}
+
+void DcdEnergyFromCoulombIntegrals::sliceIntoResiduum(
+  Tensor<> &Rxyij, int a, int b, Tensor<> &Rabij
+) {
+  int Nx(Rxyij.lens[0]);
+  int Ny(Rxyij.lens[1]);
+  int No(Rxyij.lens[2]);
+  int dstStart[] = { a, b, 0, 0 };
+  int dstEnd[] = { a+Nx, b+Ny, No, No };
+  int srcStart[] = { 0, 0, 0, 0 };
+  int srcEnd[] = { Nx, Ny, No, No };
+  // R["abij"] += R["xyij"] at current x,y
+  Rabij.slice(dstStart,dstEnd,1.0, Rxyij,srcStart,srcEnd,1.0);
+  if (a>b) {
+    // add the same slice at (b,a,j,i):
+    dstStart[0] = b; dstStart[1] = a;
+    dstEnd[0] = b+Ny; dstEnd[1] = a+Nx;
+    srcEnd[0] = Ny; srcEnd[1] = Nx;
+    // swap xy and ij simultaneously
+    Tensor<> Ryxji(4, srcEnd, Rxyij.sym, *Rxyij.wrld);
+    Ryxji["yxji"] = Rxyij["xyij"];
+    // and add it
+    Rabij.slice(dstStart,dstEnd,1.0, Ryxji,srcStart,srcEnd,1.0);
   }
 }
 

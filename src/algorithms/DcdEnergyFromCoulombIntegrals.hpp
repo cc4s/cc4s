@@ -3,6 +3,7 @@
 #define DCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <ctf.hpp>
 
 namespace cc4s {
   class DcdEnergyFromCoulombIntegrals: public Algorithm {
@@ -23,6 +24,11 @@ namespace cc4s {
   protected:
     void iterateHirata(int i);
     void iterateBartlett();
+
+    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b);
+    void sliceIntoResiduum(
+      CTF::Tensor<> &Rxyij, int a, int b, CTF::Tensor<> &Rabij
+    );
   };
 }
 
