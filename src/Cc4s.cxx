@@ -45,6 +45,7 @@ void Cc4s::run() {
         FlopsCounter flopsCounter(&flops);
         Timer timer(&time);
         algorithms[i]->run();
+        delete algorithms[i];
       }
 
       LOG(1, "root") << "step=" << (i+1) << ", realtime=" << time << " s"
