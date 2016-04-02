@@ -95,6 +95,25 @@ void ClusterDoublesAlgorithm::run() {
   setRealArgument(energyName.str(), e);
 }
 
+void ClusterDoublesAlgorithm::amplitudesFromResiduum(CTF::Tensor<> &Rabij) {
+  // Build Dabij
+  Tensor<> Dabij(false, Rabij);
+  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+  Dabij["abij"]  = (*epsi)["i"];
+  Dabij["abij"] += (*epsi)["j"];
+  Dabij["abij"] -= (*epsa)["a"];
+  Dabij["abij"] -= (*epsa)["b"];
+
+  // TODO:
+  // levelshifting can be implemented here
+
+  // Divide Rabij/Dabij to get Tabij
+  Bivar_Function<> fDivide(&divide<double>);
+  Rabij.contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+}
+
+
 Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b) {
   Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));

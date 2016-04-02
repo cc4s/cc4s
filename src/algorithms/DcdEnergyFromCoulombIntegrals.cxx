@@ -55,7 +55,6 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
 
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
-    Tensor<> Dabij(false, *Vabij);
 
     // Define intermediates
     Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
@@ -135,18 +134,10 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
         }
       }
     }
-
-    // Build Dabij
-    Dabij["abij"]  = (*epsi)["i"];
-    Dabij["abij"] += (*epsi)["j"];
-    Dabij["abij"] -= (*epsa)["a"];
-    Dabij["abij"] -= (*epsa)["b"];
-    // NOTE: ctf double counts if lhs tensor is SH,SH
-    Dabij["abij"] = Dabij["abij"];
-
-    // Divide Rabij/Dabij to get Tabij
-    Bivar_Function<> fDivide(&divide<double>);
-    Tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+    // calculate the amplitdues from the residuum
+    amplitudesFromResiduum(Rabij);
+    // and append them to the mixer
+    TabijMixer->append(Rabij);
   }
 }
 

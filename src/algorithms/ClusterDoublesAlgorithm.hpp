@@ -34,6 +34,15 @@ namespace cc4s {
     virtual void iterate(int i) = 0;
 
     /**
+     * \brief Calculates the amplitudes from the current residuum and
+     * returns them in-place.
+     * Usually this is done by calculating
+     * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_b-\varepsilon_b)\f$,
+     * but other methods, such as level shifting may be used.
+     */
+    void amplitudesFromResiduum(CTF::Tensor<> &Rabij);
+
+    /**
      * \brief Calculates and returns one slice Vxycd of the Coulomb integrals
      * from the Coulomb vertex. The indices x and y are restricted to the
      * range {No+a, ..., No+a+No-1} and {No+b, ..., No+b+No-1}, respectively.
