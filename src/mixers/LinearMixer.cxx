@@ -1,4 +1,4 @@
-#include <mixers/TrivialMixer.hpp>
+#include <mixers/LinearMixer.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
@@ -6,25 +6,25 @@
 using namespace CTF;
 using namespace cc4s;
 
-MIXER_REGISTRAR_DEFINITION(TrivialMixer);
+MIXER_REGISTRAR_DEFINITION(LinearMixer);
 
 template <typename F>
-TrivialMixer<F>::TrivialMixer(
+LinearMixer<F>::LinearMixer(
   Algorithm *algorithm
 ):
   Mixer<F>(algorithm), last(nullptr)
 {
   ratio = (algorithm->getRealArgument("mixingRatio", 1.0));
-  LOG(1,"TrivialMixer") << "ratio=" << ratio << std::endl;
+  LOG(1,"LinearMixer") << "ratio=" << ratio << std::endl;
 }
 
 template <typename F>
-TrivialMixer<F>::~TrivialMixer() {
+LinearMixer<F>::~LinearMixer() {
   if (last) delete last;
 }
 
 template <typename F>
-void TrivialMixer<F>::append(Tensor<F> &A) {
+void LinearMixer<F>::append(Tensor<F> &A) {
   if (!last) {
     // create new, copying A
     last = new Tensor<F>(A);
@@ -37,11 +37,11 @@ void TrivialMixer<F>::append(Tensor<F> &A) {
 }
 
 template <typename F>
-Tensor<F> &TrivialMixer<F>::getNext() {
+Tensor<F> &LinearMixer<F>::getNext() {
   return *last;
 }
 
 // instantiate
-template class TrivialMixer<double>;
-template class TrivialMixer<complex>;
+template class LinearMixer<double>;
+template class LinearMixer<complex>;
 

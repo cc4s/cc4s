@@ -5,7 +5,6 @@
 #include <mixers/Mixer.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
-#include <Cc4s.hpp>
 #include <ctf.hpp>
 #include <Options.hpp>
 
@@ -40,8 +39,8 @@ void DcdEnergyFromCoulombFactors::run() {
   int no(epsi->lens[0]);
   int nv(epsa->lens[0]);
 
-  // instantiate mixer for the amplitudes, by default use the trivial mixer
-  std::string mixerName(getTextArgument("mixer", "TrivialMixer"));
+  // instantiate mixer for the amplitudes, by default use the linear mixer
+  std::string mixerName(getTextArgument("mixer", "LinearMixer"));
   TabijMixer = MixerFactory<double>::create(mixerName, this);
   if (!TabijMixer) {
     std::stringstream stringStream;
@@ -52,13 +51,13 @@ void DcdEnergyFromCoulombFactors::run() {
     // Allocate the DCD amplitudes Tabij and append it to the mixer
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { nv, nv, no, no };
-    Tensor<> Tabij(4, vvoo, syms, *Cc4s::world, "Tabij");
+    Tensor<> Tabij(4, vvoo, syms, *epsi->wrld, "Tabij");
     TabijMixer->append(Tabij);
     // the amplitudes will from now on be managed by the mixer
   }
 
   // Allocate the DCD energy e
-  Scalar<> energy(*Cc4s::world);
+  Scalar<> energy(*epsi->wrld);
   double e(0), dire, exce;
 
   LOG(0, "DCD") <<
@@ -138,12 +137,12 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
     Tensor<> Dabij(false, *Vabij);
 
     // Define intermediates
-    Tensor<> Kac(2, vv, syms, *Cc4s::world, "Kac");
-    Tensor<> Kki(2, oo, syms, *Cc4s::world, "Kki");
+    Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
+    Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
 
     Tensor<> Xklij(false, *Vijkl);
     Tensor<> Xakci(false, *Vaibj);
-    Tensor<> Xakic(4, voov, syms, *Cc4s::world, "Xakic");
+    Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
 
     // Build Kac
     Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
@@ -199,10 +198,10 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
     // Contract Vabcd with T2 Amplitudes
     // Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
     {
-      Tensor<complex> VRS(2, RR, syms, *Cc4s::world, "VRS");
+      Tensor<complex> VRS(2, RR, syms, *epsi->wrld, "VRS");
 
-      Tensor<> realXRaij(4, Rvoo, syms, *Cc4s::world, "RealXRaij");
-      Tensor<> imagXRaij(4, Rvoo, syms, *Cc4s::world, "ImagXRaij");
+      Tensor<> realXRaij(4, Rvoo, syms, *epsi->wrld, "RealXRaij");
+      Tensor<> imagXRaij(4, Rvoo, syms, *epsi->wrld, "ImagXRaij");
 
       // Allocate and compute PiaR
       int aRStart[] = {no , 0};
@@ -222,10 +221,10 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
       //        First Pi not conjugated.
       realXRaij["Rdij"] = +1.0 * (*Tabij)["cdij"] * realPiaR["cR"];
       imagXRaij["Rdij"] = -1.0 * (*Tabij)["cdij"] * imagPiaR["cR"];
-      Tensor<complex> XRaij(4, Rvoo, syms, *Cc4s::world, "XRaij");
+      Tensor<complex> XRaij(4, Rvoo, syms, *epsi->wrld, "XRaij");
       toComplexTensor(realXRaij, imagXRaij, XRaij);
 
-      Tensor<complex> XRSij(4, RRoo, syms, *Cc4s::world, "XRSij");
+      Tensor<complex> XRSij(4, RRoo, syms, *epsi->wrld, "XRSij");
       XRSij["RSij"] = XRaij["Rdij"] * PiaR["dS"];
 
       Univar_Function<complex> fConj(&cc4s::conj<complex>);

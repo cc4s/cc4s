@@ -1,16 +1,16 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TRIVIAL_MIXER_DEFINED 
-#define TRIVIAL_MIXER_DEFINED
+#ifndef LINEAR_MIXER_DEFINED 
+#define LINEAR_MIXER_DEFINED
 
 #include <mixers/Mixer.hpp>
 
 namespace cc4s {
   template <typename F>
-  class TrivialMixer: public Mixer<F> {
+  class LinearMixer: public Mixer<F> {
   public:
-    MIXER_REGISTRAR_DECLARATION(TrivialMixer);
-    TrivialMixer(Algorithm *algorithm);
-    virtual ~TrivialMixer();
+    MIXER_REGISTRAR_DECLARATION(LinearMixer);
+    LinearMixer(Algorithm *algorithm);
+    virtual ~LinearMixer();
 
     virtual void append(CTF::Tensor<F> &A);
     virtual CTF::Tensor<F> &getNext();

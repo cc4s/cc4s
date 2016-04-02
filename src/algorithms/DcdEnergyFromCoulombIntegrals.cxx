@@ -1,11 +1,8 @@
 #include <algorithms/DcdEnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
-#include <math/ComplexTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
-#include <Cc4s.hpp>
 #include <ctf.hpp>
-#include <Options.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -14,63 +11,10 @@ ALGORITHM_REGISTRAR_DEFINITION(DcdEnergyFromCoulombIntegrals);
 
 DcdEnergyFromCoulombIntegrals::DcdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
-): Algorithm(argumentList) {
+): ClusterDoublesAlgorithm(argumentList) {
 }
 
 DcdEnergyFromCoulombIntegrals::~DcdEnergyFromCoulombIntegrals() {
-}
-
-/**
- * \brief Calculates DCD energy from Coulomb integrals Vabcd Vabij Vaibj Vijkl
- */
-
-void DcdEnergyFromCoulombIntegrals::run() {
-  // Read the Coulomb Integrals Vabij required for the DCD energy
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the DCD energy
-  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
-  
-  // Compute the no,nv,np
-  int no(epsi->lens[0]);
-  int nv(epsa->lens[0]);
-
-  // Allocate the DCD amplitudes Tabij
-  int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { nv, nv, no, no };
-  Tensor<> *Tabij(new Tensor<>(4, vvoo, syms, *Cc4s::world, "Tabij"));
-  allocatedTensorArgument("DcdDoublesAmplitudes", Tabij);
-
-  // Allocate the DCD energy e
-  Scalar<> energy(*Cc4s::world);
-  double e(0), dire, exce;
-
-  LOG(0, "DCD") <<
-    "Solving Distinguishable Cluster Doubles Amplitude Equations:" <<
-    std::endl;
-
-  // Iteration for determining the DCD amplitudes Tabij
-  // and the Dcd energy e
-  int64_t maxIterationsCount(
-    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
-  );
-  for (int i(0); i < maxIterationsCount; ++i) {
-    LOG(0, "DCD") << "iteration: " << i+1 << std::endl;
-    iterateHirata(i);
-    energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
-    dire = energy.get_val();
-    energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
-    exce = -1.0 * energy.get_val();
-    e = dire + exce;
-    LOG(0, "DCD") << "e=" << e << std::endl;
-    LOG(1, "DCD") << "DCDdir=" << dire << std::endl;
-    LOG(1, "DCD") << "DCDexc=" << exce << std::endl;
-  }
-
-  LOG(1, "DCD") << "DCD correlation energy = " << e << std::endl;
-
-  setRealArgument("DcdEnergy", e);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -78,10 +22,13 @@ void DcdEnergyFromCoulombIntegrals::run() {
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 // Modified according to D. Kats, J. Chem. Phys. 139, 021102 (2013)
 //////////////////////////////////////////////////////////////////////
-void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
+/**
+ * \brief Implements the iterate method with the DCD iteration
+ */
+void DcdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the DCD amplitudes Tabij
-    Tensor<> *Tabij(getTensorArgument("DcdDoublesAmplitudes"));
+    Tensor<> *Tabij(&TabijMixer->getNext());
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
     // the PPPPCoulombIntegrals may not be given then slicing is required
@@ -111,12 +58,12 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
     Tensor<> Dabij(false, *Vabij);
 
     // Define intermediates
-    Tensor<> Kac(2, vv, syms, *Cc4s::world, "Kac");
-    Tensor<> Kki(2, oo, syms, *Cc4s::world, "Kki");
+    Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
+    Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
 
     Tensor<> Xklij(false, *Vijkl);
     Tensor<> Xakci(false, *Vaibj);
-    Tensor<> Xakic(4, voov, syms, *Cc4s::world, "Xakic");
+    Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
 
     // Build Kac
     Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
@@ -173,6 +120,7 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
     if (Vabcd) {
       Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
     } else {
+      // slice if Vabcd is not specified
       for (int b(0); b < Nv; b += No) {
         for (int a(b); a < Nv; a += No) {
           LOG(0) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
@@ -202,68 +150,6 @@ void DcdEnergyFromCoulombIntegrals::iterateHirata(int i) {
   }
 }
 
-Tensor<> *DcdEnergyFromCoulombIntegrals::sliceCoulombIntegrals(int a, int b) {
-  Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
-  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-  int Np(No+Nv);
-  int NG(GammaGqr->lens[0]);
-  
-  // slice the respective parts from the Coulomb vertex
-  int leftGammaStart[] = { 0, No+a, No };
-  int leftGammaEnd[] = { NG, std::min(No+a+No, Np), Np };
-  int rightGammaStart[] = { 0, No+b, No };
-  int rightGammaEnd[] = { NG, std::min(No+b+No, Np), Np };
-  Tensor<complex> leftGamma(GammaGqr->slice(leftGammaStart, leftGammaEnd));
-  Tensor<complex> rightGamma(GammaGqr->slice(rightGammaStart, rightGammaEnd));
-  // split into real and imaginary parts
-  Tensor<> realLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld);
-  Tensor<> imagLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld);
-  fromComplexTensor(leftGamma, realLeftGamma, imagLeftGamma);
-  Tensor<> realRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld);
-  Tensor<> imagRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld);
-  fromComplexTensor(rightGamma, realRightGamma, imagRightGamma);
-
-  // allocate sliced Coulomb integrals
-  int lens[] = {
-    leftGamma.lens[1], rightGamma.lens[1], leftGamma.lens[2], rightGamma.lens[2]
-  };
-  int syms[] = { NS, NS, NS, NS };
-  Tensor<> *Vxycd(new Tensor<>(4, lens, syms, *GammaGqr->wrld));
-
-  // contract left and right slices of the Coulomb vertices
-  (*Vxycd)["xycd"] =  realLeftGamma["Gxc"] * realRightGamma["Gyd"];
-  (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
-  return Vxycd;
-}
-
-void DcdEnergyFromCoulombIntegrals::sliceIntoResiduum(
-  Tensor<> &Rxyij, int a, int b, Tensor<> &Rabij
-) {
-  int Nx(Rxyij.lens[0]);
-  int Ny(Rxyij.lens[1]);
-  int No(Rxyij.lens[2]);
-  int dstStart[] = { a, b, 0, 0 };
-  int dstEnd[] = { a+Nx, b+Ny, No, No };
-  int srcStart[] = { 0, 0, 0, 0 };
-  int srcEnd[] = { Nx, Ny, No, No };
-  // R["abij"] += R["xyij"] at current x,y
-  Rabij.slice(dstStart,dstEnd,1.0, Rxyij,srcStart,srcEnd,1.0);
-  if (a>b) {
-    // add the same slice at (b,a,j,i):
-    dstStart[0] = b; dstStart[1] = a;
-    dstEnd[0] = b+Ny; dstEnd[1] = a+Nx;
-    srcEnd[0] = Ny; srcEnd[1] = Nx;
-    // swap xy and ij simultaneously
-    Tensor<> Ryxji(4, srcEnd, Rxyij.sym, *Rxyij.wrld);
-    Ryxji["yxji"] = Rxyij["xyij"];
-    // and add it
-    Rabij.slice(dstStart,dstEnd,1.0, Ryxji,srcStart,srcEnd,1.0);
-  }
-}
-
 //////////////////////////////////////////////////////////////////////
 // Bartlett iteration routine for the DCD amplitudes Tabij 
 // Rev. Mod. Phys. 79, 291  Page 305, Figure 8. -> CCD
@@ -272,7 +158,7 @@ void DcdEnergyFromCoulombIntegrals::sliceIntoResiduum(
 void DcdEnergyFromCoulombIntegrals::iterateBartlett() {
   {
     // Read the DCD amplitudes Tabij
-    Tensor<> *Tabij(getTensorArgument("DcdDoublesAmplitudes"));
+    Tensor<> *Tabij(&TabijMixer->getNext());
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
     Tensor<> *Vabcd(getTensorArgument("PPPPCoulombIntegrals"));
@@ -300,8 +186,8 @@ void DcdEnergyFromCoulombIntegrals::iterateBartlett() {
     Tensor<> Cabij(false, *Vabij);
     Tensor<> Caibj(false, *Vaibj);
     Tensor<> Cabcd(false, *Vabcd);
-    Tensor<> Cij(2, oo, syms, *Cc4s::world, "Cij");
-    Tensor<> Cab(2, vv, syms, *Cc4s::world, "Cab");
+    Tensor<> Cij(2, oo, syms, *epsi->wrld, "Cij");
+    Tensor<> Cab(2, vv, syms, *epsi->wrld, "Cab");
 
     //////////////////////////////////////////////////////////////////////
     // Create linear terms with T2 Amplitudes that need permutation

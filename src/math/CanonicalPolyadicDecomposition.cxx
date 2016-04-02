@@ -190,9 +190,6 @@ void cc4s::dryContractWithCanonicalPolyadicDecompositionTensors(
     A.lens[1] == B.lens[1] && B.lens[1] == C.lens[1] && C.lens[1] == A.lens[1],
    "Incompatible tensor shapes for CPD"
   );
-  char const indicesA[] = { idxA, 'R', 0 };
-  char const indicesB[] = { idxB, 'R', 0 };
-  char const indicesC[] = { idxC, 'R', 0 };
   // choose contraction order with minimal memory footprint
   int largestIndex(
     std::max(
@@ -202,21 +199,18 @@ void cc4s::dryContractWithCanonicalPolyadicDecompositionTensors(
   if (A.lens[0] == largestIndex) {
     // A has largest index: contract B and C first
     LOG(4, "CPD") << "applying to T with largest A..." << std::endl;
-    const char indicesBC[] = { idxB, idxC, 'R' , 0};
     int lens[] = { B.lens[0], C.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> BC(3, lens, syms);
   } else if (B.lens[0] == largestIndex) {
     // B has largest index: contract T and B first
     LOG(4, "CPD") << "applying to T with largest B..." << std::endl;
-    const char indicesTB[] = { idxA, idxC, 'R' , 0};
     int lens[] = { A.lens[0], C.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> TB(3, lens, syms);
   } else {
     // C has largest index: contract T and C first
     LOG(4, "CPD") << "applying to T with largest C..." << std::endl;
-    const char indicesTC[] = { idxA, idxB, 'R' , 0};
     int lens[] = { A.lens[0], B.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> TC(3, lens, syms);

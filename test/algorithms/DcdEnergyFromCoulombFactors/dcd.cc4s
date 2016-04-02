@@ -48,8 +48,8 @@ DcdEnergyFromCoulombFactors [
   PHPHCoulombIntegrals PHHPCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
   (maxIterations 2)
-  % the TrivialMixer is used by default
-%  (mixer "TrivialMixer")
+  % the LinearMixer is used by default
+%  (mixer "LinearMixer")
 %  (mixingRatio 1.5)
 ] [
   (DcdEnergy DcdEnergyFromFactors)

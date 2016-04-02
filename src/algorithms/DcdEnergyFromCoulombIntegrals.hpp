@@ -1,34 +1,26 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
 #define DCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
-#include <algorithms/Algorithm.hpp>
-#include <ctf.hpp>
+#include <algorithms/ClusterDoublesAlgorithm.hpp>
 
 namespace cc4s {
-  class DcdEnergyFromCoulombIntegrals: public Algorithm {
+  // this algorithm is now based on the ClusterDoublesAlgorithm
+  // inheriting its iteration and slicing functionality.
+  // Only the abstract (left out) methods getAbbreviation and iterate have
+  // to be implemented.
+  class DcdEnergyFromCoulombIntegrals: public ClusterDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(DcdEnergyFromCoulombIntegrals);
     DcdEnergyFromCoulombIntegrals(
       std::vector<Argument> const &argumentList
     );
     virtual ~DcdEnergyFromCoulombIntegrals();
-    virtual void run();
-
-    static Algorithm *create(std::vector<Argument> const &argumentList) {
-      return new DcdEnergyFromCoulombIntegrals(argumentList);
-    }
-
-    static int64_t constexpr DEFAULT_MAX_ITERATIONS = 16;
+    virtual std::string getAbbreviation() { return "Dcd"; }
 
   protected:
-    void iterateHirata(int i);
+    virtual void iterate(int i);
     void iterateBartlett();
-
-    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b);
-    void sliceIntoResiduum(
-      CTF::Tensor<> &Rxyij, int a, int b, CTF::Tensor<> &Rabij
-    );
   };
 }
 

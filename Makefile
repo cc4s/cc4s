@@ -41,8 +41,9 @@ obj/BinaryFtodReader.o obj/TextFtodReader.o \
 obj/Data.o \
 obj/Parser.o \
 obj/mixers/Mixer.o \
-obj/mixers/TrivialMixer.o \
+obj/mixers/LinearMixer.o \
 obj/algorithms/Algorithm.o \
+obj/algorithms/ClusterDoublesAlgorithm.o \
 obj/algorithms/ParticleHoleCoulombIntegrals.o \
 obj/algorithms/ParticleHoleCoulombVertexReader.o \
 obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
