@@ -13,10 +13,15 @@ CcsdCoulombIntegrals [
 ].
 
 DcsdEnergyFromCoulombIntegrals [
-  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals 
+  % if PPPPCoulombIntegrals are not given, slicing will be used
+%  PPPPCoulombIntegrals
+  CoulombVertex
+  PHPHCoulombIntegrals PHHPCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
   HHHPCoulombIntegrals PPPHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
 ] [
   DcsdEnergy DcsdSinglesAmplitudes DcsdDoublesAmplitudes
 ].
+
+TensorWriter [(Data DcsdEnergy)] [].

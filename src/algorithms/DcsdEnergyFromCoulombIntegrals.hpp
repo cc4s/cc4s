@@ -2,24 +2,21 @@
 #ifndef DCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
 #define DCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
-#include <algorithms/Algorithm.hpp>
+#include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
 
 namespace cc4s {
-  class DcsdEnergyFromCoulombIntegrals: public Algorithm {
+  class DcsdEnergyFromCoulombIntegrals: public ClusterSinglesDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(DcsdEnergyFromCoulombIntegrals);
     DcsdEnergyFromCoulombIntegrals(
       std::vector<Argument> const &argumentList
     );
     virtual ~DcsdEnergyFromCoulombIntegrals();
-    virtual void run();
 
-    static Algorithm *create(std::vector<Argument> const &argumentList) {
-      return new DcsdEnergyFromCoulombIntegrals(argumentList);
-    }
+    virtual std::string getAbbreviation() { return "Dcsd"; }
 
   protected:
-    void iterate();
+    virtual void iterate(int i);
   };
 }
 

@@ -44,6 +44,7 @@ obj/mixers/Mixer.o \
 obj/mixers/LinearMixer.o \
 obj/algorithms/Algorithm.o \
 obj/algorithms/ClusterDoublesAlgorithm.o \
+obj/algorithms/ClusterSinglesDoublesAlgorithm.o \
 obj/algorithms/ParticleHoleCoulombIntegrals.o \
 obj/algorithms/ParticleHoleCoulombVertexReader.o \
 obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \

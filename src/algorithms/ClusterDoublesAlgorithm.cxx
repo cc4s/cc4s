@@ -95,7 +95,9 @@ void ClusterDoublesAlgorithm::run() {
   setRealArgument(energyName.str(), e);
 }
 
-void ClusterDoublesAlgorithm::amplitudesFromResiduum(CTF::Tensor<> &Rabij) {
+void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
+  CTF::Tensor<> &Rabij
+) {
   // Build Dabij
   Tensor<> Dabij(false, Rabij);
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));

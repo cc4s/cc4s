@@ -29,7 +29,7 @@ namespace cc4s {
     Mixer<double> *TabijMixer;
 
     /**
-     * \brief erforms one iteration of the concrete algorithm.
+     * \brief Performs one iteration of the concrete algorithm.
      */
     virtual void iterate(int i) = 0;
 
@@ -40,7 +40,7 @@ namespace cc4s {
      * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_b-\varepsilon_b)\f$,
      * but other methods, such as level shifting may be used.
      */
-    void amplitudesFromResiduum(CTF::Tensor<> &Rabij);
+    void doublesAmplitudesFromResiduum(CTF::Tensor<> &Rabij);
 
     /**
      * \brief Calculates and returns one slice Vxycd of the Coulomb integrals

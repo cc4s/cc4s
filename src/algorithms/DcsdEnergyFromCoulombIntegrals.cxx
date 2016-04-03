@@ -2,7 +2,6 @@
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
-#include <Cc4s.hpp>
 #include <ctf.hpp>
 
 using namespace CTF;
@@ -12,72 +11,12 @@ ALGORITHM_REGISTRAR_DEFINITION(DcsdEnergyFromCoulombIntegrals);
 
 DcsdEnergyFromCoulombIntegrals::DcsdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
-): Algorithm(argumentList) {
+): ClusterSinglesDoublesAlgorithm(argumentList) {
 }
 
 DcsdEnergyFromCoulombIntegrals::~DcsdEnergyFromCoulombIntegrals() {
 }
 
-/**
- * \brief Calculates DCSD energy from Coulomb integrals Vabcd Vabij Vaibj Vaijb Vijkl Vabci Vijka
- */
-void DcsdEnergyFromCoulombIntegrals::run() {
-  // Read the Coulomb Integrals Vabij required for the DCSD energy
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the DCSD energy
-  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
-  
-  // Compute the no,nv,np
-  int no(epsi->lens[0]);
-  int nv(epsa->lens[0]);
-
-  // Allocate the DCSD amplitudes Tabij and Tai
-  int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { nv, nv, no, no };
-  int vo[]   = { nv, no };
-  Tensor<> *Tabij(new Tensor<>(4, vvoo, syms, *Cc4s::world, "Tabij"));
-  allocatedTensorArgument("DcsdDoublesAmplitudes", Tabij);
-  Tensor<> *Tai(new Tensor<>(2, vo, syms, *Cc4s::world, "Tai"));
-  allocatedTensorArgument("DcsdSinglesAmplitudes", Tai);
-
-  // Allocate the DCSD energy e
-  Scalar<> energy(*Cc4s::world);
-  double e(0), dire, exce;
-
-  LOG(0, "DCSD") <<
-    "Solving Distinguishable Cluster Singles and Doubles amplitude equations:" <<
-    std::endl;
-
-  // Iteration for determining the DCSD amplitudes Tabij, Tai
-  // and the Dcsd energy e
-  for (int i(0); i < Cc4s::options->niter; ++i) {
-    LOG(0, "DCSD") << "iteration: " << i+1 << std::endl;
-    iterate();
-    // Singles direct term
-    energy[""]  = 2.0 * (*Vabij)["abij"] * (*Tai)["ai"] * (*Tai)["bj"];
-    // Doubles direct term
-    energy[""] += 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
-    // Compute direct energy
-    dire = energy.get_val();
-    // Singles exchange term
-    energy[""]  = (*Vabij)["baij"] * (*Tai)["ai"] * (*Tai)["bj"];
-    // Doubles exchange term
-    energy[""] += (*Tabij)["abji"] * (*Vabij)["abij"];
-    // Compute exchange energy
-    exce = -1.0 * energy.get_val();
-    // Compute total energy
-    e = dire + exce;
-    LOG(0, "DCSD") << "e=" << e << std::endl;
-    LOG(1, "DCSD") << "DCSDdir=" << dire << std::endl;
-    LOG(1, "DCSD") << "DCSDexc=" << exce << std::endl;
-  }
-
-  LOG(1, "DCSD") << "DCSD correlation energy = " << e << std::endl;
-
-  setRealArgument("DcsdEnergy", e);
-}
 
 //////////////////////////////////////////////////////////////////////
 // Hirata iteration routine for the CCSD amplitudes Tabij and Tai from
@@ -85,14 +24,18 @@ void DcsdEnergyFromCoulombIntegrals::run() {
 // modified to give DCSD amplitudes according to
 // D. Kats, et. al., J. Chem. Phys. 142, 064111 (2015)
 //////////////////////////////////////////////////////////////////////
-void DcsdEnergyFromCoulombIntegrals::iterate() {
+void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the DCSD amplitudes Tai and Tabij
-    Tensor<> *Tai(getTensorArgument("DcsdSinglesAmplitudes"));
-    Tensor<> *Tabij(getTensorArgument("DcsdDoublesAmplitudes"));
+    Tensor<> *Tai(&TaiMixer->getNext());
+    Tensor<> *Tabij(&TabijMixer->getNext());
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vabci Vijka
-    Tensor<> *Vabcd(getTensorArgument("PPPPCoulombIntegrals"));
+    // the PPPPCoulombIntegrals may not be given then slicing is required
+    Tensor<> *Vabcd(
+      isArgumentGiven("PPPPCoulombIntegrals") ?
+        getTensorArgument("PPPPCoulombIntegrals") : nullptr
+    );
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
     Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
@@ -103,15 +46,15 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
     Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
   
-    // Compute the no,nv,np
-    int no(epsi->lens[0]);
-    int nv(epsa->lens[0]);
+    // Compute the No,Nv
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
 
     int syms[] = { NS, NS, NS, NS };
-    int voov[] = { nv, no, no, nv };
-    int vo[] = { nv, no };
-    int vv[] = { nv, nv };
-    int oo[] = { no, no };
+    int voov[] = { Nv, No, No, Nv };
+    int vo[] = { Nv, No };
+    int vv[] = { Nv, Nv };
+    int oo[] = { No, No };
 
     // Allocate Tensors for T1 amplitudes
     Tensor<> Rai(false, *Tai);
@@ -119,19 +62,17 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
 
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
-    Tensor<> Dabij(false, *Vabij);
 
     // Define intermediates
-    Tensor<> Lac(2, vv, syms, *Cc4s::world, "Lac");
-    Tensor<> Kac(2, vv, syms, *Cc4s::world, "Kac");
-    Tensor<> Lki(2, oo, syms, *Cc4s::world, "Lki");
-    Tensor<> Kki(2, oo, syms, *Cc4s::world, "Kki");
-    Tensor<> Kck(2, vo, syms, *Cc4s::world, "Kck");
+    Tensor<> Lac(2, vv, syms, *epsi->wrld, "Lac");
+    Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
+    Tensor<> Lki(2, oo, syms, *epsi->wrld, "Lki");
+    Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
+    Tensor<> Kck(2, vo, syms, *epsi->wrld, "Kck");
 
     Tensor<> Xklij(false, *Vijkl);
     Tensor<> Xakci(false, *Vaibj);
-    Tensor<> Xabcd(false, *Vabcd);
-    Tensor<> Xakic(4, voov, syms, *Cc4s::world, "Xakic");
+    Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
 
     //********************************************************************************
     //***********************  T2 amplitude equations  *******************************
@@ -228,26 +169,38 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in Dcsd from T2 Amplitudes
     Rabij["abij"] += Xklij["klij"] * (*Tai)["ak"] * (*Tai)["bl"];
 
-    // Build Xabcd intermediate
-    Xabcd["abcd"]  = (*Vabcd)["abcd"];
-    Xabcd["abcd"] -= (*Vabci)["cdak"] * (*Tai)["bk"];
-    Xabcd["abcd"] -= (*Vabci)["dcbk"] * (*Tai)["ak"];
-    
-    // Contract Xabcd with T2 and T1 Amplitudes
-    Rabij["abij"] += Xabcd["abcd"] * (*Tabij)["cdij"];
-    Rabij["abij"] += Xabcd["abcd"] * (*Tai)["ci"] * (*Tai)["dj"];
+    if (Vabcd) {
+      // Build Xabcd intermediate
+      Tensor<> Xabcd(Vabcd);
+      Xabcd["abcd"] -= (*Vabci)["cdak"] * (*Tai)["bk"];
+      Xabcd["abcd"] -= (*Vabci)["dcbk"] * (*Tai)["ak"];
 
-    // Build Dabij
-    Dabij["abij"]  = (*epsi)["i"];
-    Dabij["abij"] += (*epsi)["j"];
-    Dabij["abij"] -= (*epsa)["a"];
-    Dabij["abij"] -= (*epsa)["b"];
-    // NOTE: ctf double counts if lhs tensor is SH,SH
-    Dabij["abij"] = Dabij["abij"];
+      // Contract Xabcd with T2 and T1 Amplitudes
+      Rabij["abij"] += Xabcd["abcd"] * (*Tabij)["cdij"];
+      Rabij["abij"] += Xabcd["abcd"] * (*Tai)["ci"] * (*Tai)["dj"];
+    } else {
+      // slice if Vabcd is not specified
+      for (int b(0); b < Nv; b += No) {
+        for (int a(b); a < Nv; a += No) {
+          LOG(0, "DCSD") << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          // get the sliced integrals already coupled to the singles
+          Tensor<> *Xxycd(sliceCoupledCoulombIntegrals(a, b));
+          int lens[] = { Xxycd->lens[0], Xxycd->lens[1], No, No };
+          int syms[] = {NS, NS, NS, NS};
+          Tensor<> Rxyij(4, lens, syms, *Xxycd->wrld);
+          Rxyij["xyij"] =  (*Xxycd)["xycd"] * (*Tabij)["cdij"];
+          Rxyij["xyij"] += (*Xxycd)["xycd"] * (*Tai)["ci"] * (*Tai)["dj"];
+          sliceIntoResiduum(Rxyij, a, b, Rabij);
+          // the integrals of this slice are not needed anymore
+          delete Xxycd;
+        }
+      }
+    }
 
-    // Divide Rabij/Dabij to get Tabij
-    Bivar_Function<> fDivide(&divide<double>);
-    Tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+    // calculate the amplitdues from the residuum
+    doublesAmplitudesFromResiduum(Rabij);
+    // and append them to the mixer
+    TabijMixer->append(Rabij);
 
     LOG(1, "DCSD") << " OK" << std::endl;
 
@@ -280,15 +233,10 @@ void DcsdEnergyFromCoulombIntegrals::iterate() {
     Rai["ai"] -= 2.0 * (*Vijka)["klic"] * (*Tai)["ak"] * (*Tai)["cl"];
     Rai["ai"] += (*Vijka)["lkic"] * (*Tai)["ak"] * (*Tai)["cl"];
 
-    // Build Dai
-    Dai["ai"]  = (*epsi)["i"];
-    Dai["ai"] -= (*epsa)["a"];
-    // NOTE: ctf double counts if lhs tensor is SH,SH
-    Dai["ai"] = Dai["ai"];
-
-    // Divide Rai/Dai to get Tai
-    Tai->contract(1.0, Rai,"ai", Dai,"ai", 0.0,"ai", fDivide);
+    singlesAmplitudesFromResiduum(Rai);
+    TaiMixer->append(Rai);
 
     LOG(1, "DCSD") << " OK" << std::endl;
   }
 }
+

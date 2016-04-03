@@ -122,7 +122,7 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
       // slice if Vabcd is not specified
       for (int b(0); b < Nv; b += No) {
         for (int a(b); a < Nv; a += No) {
-          LOG(0) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          LOG(0, "DCD") << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           Tensor<> *Vxycd(sliceCoulombIntegrals(a, b));
           int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
           int syms[] = {NS, NS, NS, NS};
@@ -135,7 +135,7 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
       }
     }
     // calculate the amplitdues from the residuum
-    amplitudesFromResiduum(Rabij);
+    doublesAmplitudesFromResiduum(Rabij);
     // and append them to the mixer
     TabijMixer->append(Rabij);
   }
