@@ -76,10 +76,12 @@ void CoulombVertexDecomposition::run() {
   );
   regularizationEstimatorPiqR =
     new AlternatingLeastSquaresRegularizationEstimator(
+//    new NoRegularizationEstimator();
       swampingThreshold, regularizationFriction, 1
     );
   regularizationEstimatorPirR =
     new AlternatingLeastSquaresRegularizationEstimator(
+//    new NoRegularizationEstimator();
       swampingThreshold, regularizationFriction, 1
     );
   regularizationEstimatorLambdaGR =
@@ -144,27 +146,27 @@ void CoulombVertexDecomposition::fit(
 ) {
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
-    *PirR,'r', *regularizationEstimatorPirR
+    *PiqR,'r', regularizationEstimatorPiqR
   );
-  if (realFactorOrbitals) realizePi(*PirR);
-  if (normalizedFactorOrbitals) normalizePi(*PirR);
-  (*PiqR)["qR"] = (*PirR)["qR"];
+  if (realFactorOrbitals) realizePi(*PiqR);
+  if (normalizedFactorOrbitals) normalizePi(*PiqR);
+//  (*PiqR)["qR"] = (*PirR)["qR"];
 
   fitRegularizedAlternatingLeastSquaresFactor(
-    *GammaGqr,"Gqr", *LambdaGR,'G', *PirR,'r',
-    *PiqR,'q', *regularizationEstimatorPiqR
+    *GammaGqr,"Gqr", *LambdaGR,'G', *PiqR,'r',
+    *PiqR,'q', regularizationEstimatorPiqR
   );
-  if (realFactorOrbitals) realizePi(*PirR);
-  if (normalizedFactorOrbitals) normalizePi(*PirR);
-  (*PirR)["qR"] = (*PiqR)["qR"];
+  if (realFactorOrbitals) realizePi(*PiqR);
+  if (normalizedFactorOrbitals) normalizePi(*PiqR);
+//  (*PirR)["qR"] = (*PiqR)["qR"];
 
   fitRegularizedAlternatingLeastSquaresFactor(
-    *GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
-    *LambdaGR,'G', *regularizationEstimatorLambdaGR
+    *GammaGqr,"Gqr", *PiqR,'r', *PiqR,'q',
+    *LambdaGR,'G', regularizationEstimatorLambdaGR
   );
 
   composeCanonicalPolyadicDecompositionTensors(
-    *LambdaGR, *PiqR, *PirR, *Gamma0Gqr
+    *LambdaGR, *PiqR, *PiqR, *Gamma0Gqr
   );
 
   (*Gamma0Gqr)["Gqr"] -= (*GammaGqr)["Gqr"];
@@ -207,7 +209,7 @@ void CoulombVertexDecomposition::fitConjugated(
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
-    *PirR,'r', *regularizationEstimatorPirR
+    *PirR,'r', regularizationEstimatorPirR
   );
   if (realFactorOrbitals) realizePi(*PirR);
   if (normalizedFactorOrbitals) normalizePi(*PirR);
@@ -221,7 +223,7 @@ void CoulombVertexDecomposition::fitConjugated(
   // regularization estimator
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGqr,"Gqr", *LambdaGR,'G', *PiqR,'r',
-    *PirR,'q', *regularizationEstimatorPiqR
+    *PirR,'q', regularizationEstimatorPiqR
   );
   conjugateFactors();
   if (realFactorOrbitals) realizePi(*PirR);
@@ -231,7 +233,7 @@ void CoulombVertexDecomposition::fitConjugated(
 
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
-    *LambdaGR,'G', *regularizationEstimatorLambdaGR
+    *LambdaGR,'G', regularizationEstimatorLambdaGR
   );
 
   composeCanonicalPolyadicDecompositionTensors(

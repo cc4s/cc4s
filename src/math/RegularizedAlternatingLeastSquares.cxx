@@ -16,9 +16,9 @@ void cc4s::fitRegularizedAlternatingLeastSquaresFactor(
   Tensor<F> &T, char const *indicesT,
   Tensor<F> &B, char const idxB, Tensor<F> &C, char const idxC,
   Tensor<F> &A, char const idxA,
-  AlternatingLeastSquaresRegularizationEstimator &regularizationEstimatorA
+  AlternatingLeastSquaresRegularizationEstimator *regularizationEstimatorA
 ) {
-  double lambda(regularizationEstimatorA.getLambda());
+  double lambda(regularizationEstimatorA->getLambda());
   Tensor<F> conjB(B);
   Tensor<F> conjC(C);
   Univar_Function<F> fConj(&conj<F>);
@@ -48,11 +48,11 @@ void cc4s::fitRegularizedAlternatingLeastSquaresFactor(
   double normDifference(frobeniusNorm(previousA));
   double norm(frobeniusNorm(A));
   double swampingFactor(
-    normDifference / norm / regularizationEstimatorA.getSwampingThreshold()
+    normDifference / norm / regularizationEstimatorA->getSwampingThreshold()
   );
   LOG(1, "RALS") << "lambda=" << lambda << " s/s_0=" << swampingFactor
     << std::endl;
-  regularizationEstimatorA.update(swampingFactor);
+  regularizationEstimatorA->update(swampingFactor);
 }
 
 // instantiate
@@ -61,14 +61,14 @@ void cc4s::fitRegularizedAlternatingLeastSquaresFactor(
   Tensor<double> &T, char const *indicesT,
   Tensor<double> &B, char const idxB, Tensor<double> &C, char const idxC,
   Tensor<double> &A, char const idxA,
-  AlternatingLeastSquaresRegularizationEstimator &regularizationEstimatorA
+  AlternatingLeastSquaresRegularizationEstimator *regularizationEstimatorA
 );
 template
 void cc4s::fitRegularizedAlternatingLeastSquaresFactor(
   Tensor<complex> &T, char const *indicesT,
   Tensor<complex> &B, char const idxB, Tensor<complex> &C, char const idxC,
   Tensor<complex> &A, char const idxA,
-  AlternatingLeastSquaresRegularizationEstimator &regularizationEstimatorA
+  AlternatingLeastSquaresRegularizationEstimator *regularizationEstimatorA
 );
 
 

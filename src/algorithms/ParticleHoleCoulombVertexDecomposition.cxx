@@ -161,19 +161,19 @@ void ParticleHoleCoulombVertexDecomposition::fit(
 ) {
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGai,"Gai", *PiaR,'a', *LambdaGR,'G',
-    *PiiR,'i', *regularizationEstimatorPiiR
+    *PiiR,'i', regularizationEstimatorPiiR
   );
   if (realFactorOrbitals) realizePi(*PiiR);
   if (normalizedFactorOrbitals) normalizePi(*PiiR);
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGai,"Gai", *LambdaGR,'G', *PiiR,'i',
-    *PiaR,'a', *regularizationEstimatorPiaR
+    *PiaR,'a', regularizationEstimatorPiaR
   );
   if (realFactorOrbitals) realizePi(*PiaR);
   if (normalizedFactorOrbitals) normalizePi(*PiaR);
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGai,"Gai", *PiiR,'i',*PiaR,'a',
-    *LambdaGR,'G', *regularizationEstimatorLambdaGR
+    *LambdaGR,'G', regularizationEstimatorLambdaGR
   );
 
   composeCanonicalPolyadicDecompositionTensors(

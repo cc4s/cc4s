@@ -4,11 +4,14 @@
 
 #include <math/Complex.hpp>
 #include <util/DryTensor.hpp>
+#include <util/Log.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {
   class AlternatingLeastSquaresRegularizationEstimator {
   public:
+    AlternatingLeastSquaresRegularizationEstimator(): swampingThreshold(0.0) {
+    }
     AlternatingLeastSquaresRegularizationEstimator(
       double swampingThreshold_, double regularizationFriction_,
       double initialLambda_
@@ -17,13 +20,15 @@ namespace cc4s {
       regularizationFriction(regularizationFriction_),
       lambda(initialLambda_)
     { }
+    virtual ~AlternatingLeastSquaresRegularizationEstimator() {
+    }
     double getSwampingThreshold() {
       return swampingThreshold;
     }
-    double getLambda() {
+    virtual double getLambda() {
       return lambda;
     }
-    void update(double const swampingFactor) {
+    virtual void update(double const swampingFactor) {
       double s(swampingFactor / swampingThreshold);
       double estimatedLambda(lambda * s*s);
       lambda =
@@ -33,6 +38,19 @@ namespace cc4s {
   protected:
     double swampingThreshold, regularizationFriction;
     double lambda;
+  };
+
+  class NoRegularizationEstimator:
+    public AlternatingLeastSquaresRegularizationEstimator
+  {
+  public:
+    virtual ~NoRegularizationEstimator() {
+    }
+    virtual double getLambda() {
+      return 0.0;
+    }
+    virtual void update(double const swampingFactor) {
+    }
   };
 
   template <typename F=double>
@@ -49,7 +67,7 @@ namespace cc4s {
     CTF::Tensor<F> &B, char const idxB,
     CTF::Tensor<F> &C, char const idxC,
     CTF::Tensor<F> &A, char const idxA,
-    AlternatingLeastSquaresRegularizationEstimator &regularizationEstimatorA
+    AlternatingLeastSquaresRegularizationEstimator *regularizationEstimatorA
   );
 
   template <typename F=double>
