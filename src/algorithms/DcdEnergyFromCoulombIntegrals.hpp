@@ -21,6 +21,7 @@ namespace cc4s {
   protected:
     virtual void iterate(int i);
     virtual void iterateBartlett(int i);
+    virtual void dryIterate();
   };
 }
 

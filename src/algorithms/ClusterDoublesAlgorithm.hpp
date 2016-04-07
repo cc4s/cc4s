@@ -15,6 +15,7 @@ namespace cc4s {
     );
     virtual ~ClusterDoublesAlgorithm();
     virtual void run();
+    virtual void dryRun();
     /**
      * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCD".
      */
@@ -32,6 +33,13 @@ namespace cc4s {
      * \brief Performs one iteration of the concrete algorithm.
      */
     virtual void iterate(int i) = 0;
+
+    /**
+     * \brief Performs a dry run of one iteration of the concrete algorithm.
+     * The base class does not perform accounting and writes a warning about
+     * that.
+     */
+    virtual void dryIterate();
 
     /**
      * \brief Calculates the amplitudes from the current residuum and

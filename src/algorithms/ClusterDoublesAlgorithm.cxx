@@ -1,6 +1,7 @@
 #include <algorithms/ClusterDoublesAlgorithm.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
@@ -93,6 +94,77 @@ void ClusterDoublesAlgorithm::run() {
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";
   setRealArgument(energyName.str(), e);
+}
+
+void ClusterDoublesAlgorithm::dryRun() {
+  // Read the Coulomb Integrals Vabij required for the energy
+//  DryTensor<> *Vabij(
+    getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
+//  );
+  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
+  );
+  
+  // Compute the No,Nv
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+
+  std::string abbreviation(getAbbreviation());
+  std::transform(
+    abbreviation.begin(), abbreviation.end(), abbreviation.begin(),
+    ::toupper
+  );
+  std::stringstream amplitudesName;
+  amplitudesName << getAbbreviation() << "DoublesAmplitudes";
+
+  // instantiate mixer for the doubles amplitudes, by default use the linear one
+  std::string mixerName(getTextArgument("mixer", "LinearMixer"));
+  TabijMixer = MixerFactory<double>::create(mixerName, this);
+  if (!TabijMixer) {
+    std::stringstream stringStream;
+    stringStream << "Mixer not implemented: " << mixerName;
+    throw new Exception(stringStream.str());
+  }
+  // TODO: implement DryTensor in mixers
+  if (mixerName != "LinearMixer") {
+    LOG(0, abbreviation)
+      << "Warning: dry run not implemented for " << mixerName
+      << ", assuming the same memory usage." << std::endl;
+  }
+  {
+    // Allocate the doubles amplitudes and append it to the mixer
+    int syms[] = { NS, NS, NS, NS };
+    int vvoo[] = { Nv, Nv, No, No };
+    DryTensor<> Tabij(4, vvoo, syms);
+    allocatedTensorArgument(amplitudesName.str(), new DryTensor<>(Tabij));
+  }
+
+  // Allocate the energy e
+  DryScalar<> energy();
+
+  LOG(0, abbreviation) << "Solving Doubles Amplitude Equations" << std::endl;
+
+  // Iteration for determining the DCD amplitudes Tabij
+  // and the Dcd energy e
+//  int64_t maxIterationsCount(
+    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
+//  );
+
+  // call the dry iterate of the actual algorithm, which is left open here
+  dryIterate();
+
+  std::stringstream energyName;
+  energyName << getAbbreviation() << "Energy";
+  setRealArgument(energyName.str(), 0.0);
+}
+
+void ClusterDoublesAlgorithm::dryIterate() {
+  LOG(0, "CluserDoubles") << "Dry run for iteration not given for "
+    << getAbbreviation() << std::endl;
 }
 
 void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(

@@ -1,5 +1,6 @@
 #include <algorithms/DcdEnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
@@ -140,6 +141,66 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
     doublesAmplitudesFromResiduum(Rabij);
     // and append them to the mixer
     TabijMixer->append(Rabij);
+  }
+}
+
+/**
+ * \brief Implements the dry iterate method with the DCD iteration
+ */
+void DcdEnergyFromCoulombIntegrals::dryIterate() {
+  {
+    // TODO: the Mixer should provide a DryTensor in the future
+    // Read the DCD amplitudes Tabij
+//    DryTensor<> *Tabij(
+      getTensorArgument<double, DryTensor<double>>("DcdDoublesAmplitudes");
+//    );
+
+    // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
+    // the PPPPCoulombIntegrals may not be given then slicing is required
+    DryTensor<> *Vabcd(
+      isArgumentGiven("PPPPCoulombIntegrals") ?
+        getTensorArgument<double, DryTensor<double>>("PPPPCoulombIntegrals") :
+        nullptr
+    );
+    DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
+    DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
+    DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
+
+    // Read the Particle/Hole Eigenenergies epsi epsa
+    DryTensor<> *epsi(getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies"));
+    DryTensor<> *epsa(getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies"));
+  
+    // Compute the no,nv,np
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
+
+    int syms[] = { NS, NS, NS, NS };
+    int voov[] = { Nv, No, No, Nv };
+    int vv[] = { Nv, Nv };
+    int oo[] = { No, No };
+
+    // Allocate Tensors for T2 amplitudes
+    DryTensor<> Rabij(*Vabij);
+
+    // Define intermediates
+    DryTensor<> Kac(2, vv, syms);
+    DryTensor<> Kki(2, oo, syms);
+
+    DryTensor<> Xklij(*Vijkl);
+    DryTensor<> Xakci(*Vaibj);
+    DryTensor<> Xakic(4, voov, syms);
+
+    if (!Vabcd) {
+      // slice if Vabcd is not specified
+      int lens[] = { No, No, Nv, Nv };
+      int syms[] = {NS, NS, NS, NS};
+      // TODO: implement drySliceCoulombIntegrals
+      DryTensor<> Vxycd(4, lens, syms);
+      DryTensor<> Rxyij(*Vijkl);
+    }
+    // TODO: implment dryDoublesAmplitudesFromResiduum
+    // at the moment, assume usage of Dabij
+    DryTensor<> Dabij(*Vabij);
   }
 }
 
