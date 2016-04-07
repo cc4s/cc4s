@@ -71,6 +71,7 @@ obj/algorithms/CcsdCoulombIntegrals.o \
 obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcdEnergyFromCoulombFactors.o \
+obj/algorithms/CoulombIntegralsFromVertex.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 
