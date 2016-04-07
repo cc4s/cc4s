@@ -150,9 +150,9 @@ void ClusterDoublesAlgorithm::dryRun() {
 
   // Iteration for determining the DCD amplitudes Tabij
   // and the Dcd energy e
-//  int64_t maxIterationsCount(
-    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
-//  );
+  // int64_t maxIterationsCount(
+  getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
+  // );
 
   // call the dry iterate of the actual algorithm, which is left open here
   dryIterate();
