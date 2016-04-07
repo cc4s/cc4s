@@ -10,6 +10,9 @@ namespace cc4s {
     ALGORITHM_REGISTRAR_DECLARATION(Mp2EnergyFromCoulombIntegrals);
     Mp2EnergyFromCoulombIntegrals(std::vector<Argument> const &argumentList);
     virtual ~Mp2EnergyFromCoulombIntegrals();
+    /**
+     * \brief Calculates MP2 energy from Coulomb integrals Vabij
+     */
     virtual void run();
   };
 }

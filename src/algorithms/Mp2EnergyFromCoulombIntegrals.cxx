@@ -18,9 +18,6 @@ Mp2EnergyFromCoulombIntegrals::Mp2EnergyFromCoulombIntegrals(
 Mp2EnergyFromCoulombIntegrals::~Mp2EnergyFromCoulombIntegrals() {
 }
 
-/**
- * \brief Calculates MP2 energy from Coulomb integrals Vabij
- */
 void Mp2EnergyFromCoulombIntegrals::run() {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
