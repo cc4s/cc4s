@@ -34,7 +34,7 @@ void CoulombIntegralsFromVertex::run() {
   );
 
   LOG(0, "CoulombIntegrals") <<
-    "Reading Coulomb integrals form vertex " << GammaGpq->get_name() << " ...";
+    "Reading Coulomb integrals form vertex " << GammaGpq->get_name() << " ..." << std::endl;
 
   // Compute the no,nv,nG,np
   int nG(GammaGpq->lens[0]);
