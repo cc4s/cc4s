@@ -26,13 +26,10 @@ CoulombVertexReader::CoulombVertexReader(
 CoulombVertexReader::~CoulombVertexReader() {
 }
 
-/**
- * \brief Reads the Full Coulomb Vertex GammaGpq from FTODDUMP.
- */
 void CoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
   LOG(0, "CoulombVertexReader") <<
-    "Reading Coulomb vertex from file " << fileName << " ...";
+    "Reading Coulomb vertex from file " << fileName << " ..." << std::endl;
   std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
   if (!file.is_open()) throw new Exception("Failed to open file");
   // read header
@@ -112,9 +109,6 @@ void CoulombVertexReader::run() {
   //LOG(4) << "|Vpqrs| = " << error << std::endl;
 }
 
-/**
- * \brief Reads the Full Fourier transformed overlap densities GammaGpq from FTODDUMP.
- */
 void CoulombVertexReader::dryRun() {
   std::string fileName(getTextArgument("file"));
   LOG(0, "CoulombVertexReader") <<
@@ -156,7 +150,7 @@ void CoulombVertexReader::dryRun() {
   // real and imaginary parts are read in seperately
   DryTensor<> realGammaGpq(3, vertexLens, vertexSyms);
   DryTensor<> imagGammaGpq(3, vertexLens, vertexSyms);
-//  realGammaGpq.use();
+  //realGammaGpq.use();
 }
 
 

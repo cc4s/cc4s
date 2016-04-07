@@ -15,13 +15,40 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~CoulombVertexReader();
+
+    /**
+     * \brief Reads the Full Coulomb Vertex GammaGpq from FTODDUMP file.
+     */
     virtual void run();
+
+    /**
+     * \brief Reads the size of the Full Coulomb Vertex GammaGpq from FTODDUMP
+     * file.
+     */
     virtual void dryRun();
 
   protected:
-    int no, nv, nG, np;
+    /** \brief number of occupied orbitals */
+    int no;
+    /** \brief number of unoccupied orbitals */
+    int nv;
+    /** \brief number of occupied plus unoccupied orbitals */
+    int np;
+    /** \brief number of G-vectors */
+    int nG;
 
+    /**
+     * \brief Reads a chunk from the Full Coulomb Vertex GammaGpq
+     * \param[in] file name of file of Coulomb Vertex
+     * \param[in,out] GammaGpq tensor to read the Coulomb vertex
+     */
     void readGammaGpqChunkBlocked(std::ifstream &file, CTF::Tensor<> &GammaGpq);
+    /**
+     * \brief Reads a chunk from the orbital energies epsi, epsa
+     * \param[in] file name of file of Coulomb Vertex
+     * \param[in,out] epsi energies of occupied orbitals
+     * \param[in,out] epsa energies of unoccupied orbitals
+     */
     void readEpsChunk(
       std::ifstream &file,  CTF::Tensor<> &epsi, CTF::Tensor<> &epsa
     );
