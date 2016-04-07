@@ -27,7 +27,7 @@ CoulombVertexReader::~CoulombVertexReader() {
 }
 
 /**
- * \brief Reads the Full Fourier transformed overlap densities GammaGpq from FTODDUMP.
+ * \brief Reads the Full Coulomb Vertex GammaGpq from FTODDUMP.
  */
 void CoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
@@ -83,13 +83,15 @@ void CoulombVertexReader::run() {
   file.close();
   // combine to complex tensor
   toComplexTensor(realGammaGpq, imagGammaGpq, *GammaGpq);
-  LOG(0, "CoulombVertexReader") << " OK" << std::endl;
+  
+  // Print Ok
+  //LOG(0, "CoulombVertexReader") << " OK" << std::endl;
   
   // print nG, no, nv, np
-  LOG(4, "CoulombVertexReader") << "nG = " << nG << std::endl;
-  LOG(4, "CoulombVertexReader") << "no = " << no << std::endl;
-  LOG(4, "CoulombVertexReader") << "nv = " << nv << std::endl;
-  LOG(4, "CoulombVertexReader") << "np = " << np << std::endl;
+  LOG(1, "CoulombVertexReader") << "nG = " << nG << std::endl;
+  LOG(1, "CoulombVertexReader") << "no = " << no << std::endl;
+  LOG(1, "CoulombVertexReader") << "nv = " << nv << std::endl;
+  LOG(1, "CoulombVertexReader") << "np = " << np << std::endl;
 
   // Test print the norm of GammaGpq
   //double result(realGammaGpq.norm2());
@@ -129,6 +131,12 @@ void CoulombVertexReader::dryRun() {
   no = header.no;
   nv = header.nv;
   np = no + nv;
+  
+  // print nG, no, nv, np
+  LOG(1, "CoulombVertexReader") << "nG = " << nG << std::endl;
+  LOG(1, "CoulombVertexReader") << "no = " << no << std::endl;
+  LOG(1, "CoulombVertexReader") << "nv = " << nv << std::endl;
+  LOG(1, "CoulombVertexReader") << "np = " << np << std::endl;
 
   // allocate output tensors
   int vertexLens[] = { nG, np, np };

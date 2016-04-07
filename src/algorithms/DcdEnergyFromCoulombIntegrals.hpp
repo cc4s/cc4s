@@ -20,7 +20,7 @@ namespace cc4s {
 
   protected:
     virtual void iterate(int i);
-    void iterateBartlett();
+    virtual void iterateBartlett(int i);
   };
 }
 
