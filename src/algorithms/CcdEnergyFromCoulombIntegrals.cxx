@@ -21,9 +21,6 @@ CcdEnergyFromCoulombIntegrals::~CcdEnergyFromCoulombIntegrals() {
 // Hiarata iteration routine for the CCD amplitudes Tabij (Table. 1)
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 //////////////////////////////////////////////////////////////////////
-/**
- * \brief Implements the iterate method with the CCD iteration
- */
 void CcdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the CCD amplitudes Tabij

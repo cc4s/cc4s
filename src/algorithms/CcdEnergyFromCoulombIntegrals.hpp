@@ -16,10 +16,24 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~CcdEnergyFromCoulombIntegrals();
+    /**
+     * \brief Returns the abbreviation of the routine (Dcd).
+     * \return abbreviation of the routine
+     */
     virtual std::string getAbbreviation() { return "Ccd"; }
 
   protected:
+    /**
+     * \brief Implements the iterate method with the DCD iteration. Iteration
+     * routine taken from So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001).
+     * \param[in] i Iteration number
+     */
     virtual void iterate(int i);
+    /**
+     * \brief Implements the iterate method with the DCD iteration. Iteration
+     * routine taken from Rev. Mod. Phys. 79, 291  Page 305, Figure 8.
+     * \param[in] i Iteration number
+     */
     virtual void iterateBartlett(int i);
   };
 }

@@ -20,11 +20,6 @@ CoulombIntegralsFromVertex::CoulombIntegralsFromVertex(
 CoulombIntegralsFromVertex::~CoulombIntegralsFromVertex() {
 }
 
-/**
- * \brief Calculates Coulomb integrals Vabcd,Vabij,Vaibj,Vabci,Vijka,Vijkl 
- from GammaGai,GammaGab,GammaGij Coulomb Vertices.
- Arguments can be PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
-*/
 void CoulombIntegralsFromVertex::run() {
   Tensor<complex> *GammaGpq(
     getTensorArgument<complex>("CoulombVertex")

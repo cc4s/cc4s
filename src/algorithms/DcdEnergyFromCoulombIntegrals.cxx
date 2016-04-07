@@ -23,9 +23,6 @@ DcdEnergyFromCoulombIntegrals::~DcdEnergyFromCoulombIntegrals() {
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 // Modified according to D. Kats, J. Chem. Phys. 139, 021102 (2013)
 //////////////////////////////////////////////////////////////////////
-/**
- * \brief Implements the iterate method with the DCD iteration
- */
 void DcdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the DCD amplitudes Tabij
@@ -144,9 +141,6 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
   }
 }
 
-/**
- * \brief Implements the dry iterate method with the DCD iteration
- */
 void DcdEnergyFromCoulombIntegrals::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
@@ -209,9 +203,6 @@ void DcdEnergyFromCoulombIntegrals::dryIterate() {
 // Rev. Mod. Phys. 79, 291  Page 305, Figure 8. -> CCD
 // J. Chem. Phys. 139, 021102 (2013) -> DCD
 //////////////////////////////////////////////////////////////////////
-/**
- * \brief Implements the iterate method with the DCD iteration
- */
 void DcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
   {
     // Read the DCD amplitudes Tabij

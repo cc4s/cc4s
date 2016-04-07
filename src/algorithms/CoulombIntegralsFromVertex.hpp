@@ -12,7 +12,18 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~CoulombIntegralsFromVertex();
+    /**
+     * \brief Calculates Coulomb integrals Vabcd,Vabij,Vaibj,Vabci,Vijka,Vijkl
+     * from GammaGai,GammaGab,GammaGij Coulomb Vertices. Arguments can be
+     * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
+    */
     virtual void run();
+    /**
+     * \brief Dry run for calculating Coulomb integrals
+     * Vabcd,Vabij,Vaibj,Vabci,Vijka Vijkl
+     * from GammaGai,GammaGab,GammaGij Coulomb Vertices. Arguments can be
+     * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
+    */
     virtual void dryRun();
 
   };
