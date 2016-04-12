@@ -179,12 +179,18 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
       Rabij["abij"] += Xabcd["abcd"] * (*Tabij)["cdij"];
       Rabij["abij"] += Xabcd["abcd"] * (*Tai)["ci"] * (*Tai)["dj"];
     } else {
-      // slice if Vabcd is not specified
-      for (int b(0); b < Nv; b += No) {
-        for (int a(b); a < Nv; a += No) {
+      // Slice if Vabcd is not specified
+
+      // Read the sliceRank. If not provided use No
+      int64_t sliceRank(getIntegerArgument
+			("sliceRank",No));
+
+      // Slice loop starts here
+      for (int b(0); b < Nv; b += sliceRank) {
+        for (int a(b); a < Nv; a += sliceRank) {
           LOG(0, "DCSD") << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           // get the sliced integrals already coupled to the singles
-          Tensor<> *Xxycd(sliceCoupledCoulombIntegrals(a, b));
+          Tensor<> *Xxycd(sliceCoupledCoulombIntegrals(a, b, sliceRank));
           int lens[] = { Xxycd->lens[0], Xxycd->lens[1], No, No };
           int syms[] = {NS, NS, NS, NS};
           Tensor<> Rxyij(4, lens, syms, *Xxycd->wrld);

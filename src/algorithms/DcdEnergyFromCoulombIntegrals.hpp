@@ -17,7 +17,7 @@ namespace cc4s {
     );
     virtual ~DcdEnergyFromCoulombIntegrals();
     /**
-     * \brief Returns the abbreviation of the routine (Dcd).
+     * \brief Returns the abbreviation of the routine (DCD).
      * \return abbreviation of the routine
      */
     virtual std::string getAbbreviation() { return "Dcd"; }

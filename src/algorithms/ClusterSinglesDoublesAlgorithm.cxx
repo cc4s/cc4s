@@ -142,24 +142,24 @@ void ClusterSinglesDoublesAlgorithm::singlesAmplitudesFromResiduum(
 }
 
 Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
-  int a, int b
-) {
-  // get the sliced Coulomb integrals Vxycd
-  Tensor<> *Xxycd(sliceCoulombIntegrals(a, b));
+  int a, int b, int sliceRank) 
+{
+  // get the sliced Coulomb integrals Vxycd                                                                                                                                                   
+  Tensor<> *Xxycd(sliceCoulombIntegrals(a, b, sliceRank));
 
-  // couple to singles
+  // couple to singles                                                                                                                                                                        
   Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
   Tensor<> *Tai(&TaiMixer->getNext());
   int Nx(Xxycd->lens[0]);
   int Ny(Xxycd->lens[1]);
   int No(Tai->lens[1]);
   int Nv(Tai->lens[0]);
-  // calculate Xxycd["xycd"] -= (*Vabci)["cdxk"] * (*Tai)["yk"];
+  // calculate Xxycd["xycd"] -= (*Vabci)["cdxk"] * (*Tai)["yk"];                                                                                                                              
   int VStart[] = { 0, 0, a, 0 }; int VEnd[] = { Nv, Nv, a+Nx, No };
   int TStart[] = { b, 0 }; int TEnd[] = { b+Ny, No };
   (*Xxycd)["xycd"] -=
     Vabci->slice(VStart,VEnd)["cdxk"] * Tai->slice(TStart,TEnd)["yk"];
-  // calculate Xxycd["xycd"] -= (*Vabyi)["dcyk"] * (*Txi)["xk"];
+  // calculate Xxycd["xycd"] -= (*Vabyi)["dcyk"] * (*Txi)["xk"];                                                                                                                              
   VStart[2] = b; VEnd[2] = b+Ny;
   TStart[0] = a; TEnd[0] = a+Nx;
   (*Xxycd)["xycd"] -=

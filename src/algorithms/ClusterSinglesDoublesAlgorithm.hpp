@@ -42,7 +42,7 @@ namespace cc4s {
      * The caller is responsible for deleting the dynamically allocated
      * result tensor. 
      */
-    CTF::Tensor<> *sliceCoupledCoulombIntegrals(int a, int b);
+    CTF::Tensor<> *sliceCoupledCoulombIntegrals(int a, int b, int sliceRank);
   };
 }
 

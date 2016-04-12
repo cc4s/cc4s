@@ -50,6 +50,8 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
     int oo[] = { No, No };
 
     std::string abbreviation(getAbbreviation());
+    std::transform(abbreviation.begin(), abbreviation.end(), 
+		   abbreviation.begin(), ::toupper);
 
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
@@ -118,10 +120,16 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
       Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
     } else {
       // slice if Vabcd is not specified
-      for (int b(0); b < Nv; b += No) {
-        for (int a(b); a < Nv; a += No) {
-          LOG(0, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-          Tensor<> *Vxycd(sliceCoulombIntegrals(a, b));
+
+      // Read the sliceRank. If not provided use No
+      int64_t sliceRank(getIntegerArgument
+			("sliceRank",No));
+
+      // Slice loop starts here
+      for (int b(0); b < Nv; b += sliceRank) {
+        for (int a(b); a < Nv; a += sliceRank) {
+          LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
           int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
           int syms[] = {NS, NS, NS, NS};
           Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);

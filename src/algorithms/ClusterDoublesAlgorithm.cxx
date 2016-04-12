@@ -185,7 +185,7 @@ void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
 }
 
 
-Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b) {
+Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int sliceRank) {
   Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
@@ -196,9 +196,9 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b) {
   
   // slice the respective parts from the Coulomb vertex
   int leftGammaStart[] = { 0, No+a, No };
-  int leftGammaEnd[] = { NG, std::min(No+a+No, Np), Np };
+  int leftGammaEnd[] = { NG, std::min(No+a+sliceRank, Np), Np };
   int rightGammaStart[] = { 0, No+b, No };
-  int rightGammaEnd[] = { NG, std::min(No+b+No, Np), Np };
+  int rightGammaEnd[] = { NG, std::min(No+b+sliceRank, Np), Np };
   Tensor<complex> leftGamma(GammaGqr->slice(leftGammaStart, leftGammaEnd));
   Tensor<complex> rightGamma(GammaGqr->slice(rightGammaStart, rightGammaEnd));
   // split into real and imaginary parts

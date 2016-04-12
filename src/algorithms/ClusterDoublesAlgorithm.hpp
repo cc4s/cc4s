@@ -64,7 +64,7 @@ namespace cc4s {
      * The caller is responsible for deleting the dynamically allocated
      * result tensor. 
      */
-    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b);
+    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b, int sliceRank);
     /**
      * \brief Adds the given slice of the residuum tensor Rxyij to the
      * entire residuum tensor Rabij at the respective index range.
