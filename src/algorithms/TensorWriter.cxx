@@ -18,9 +18,6 @@ TensorWriter::TensorWriter(
 TensorWriter::~TensorWriter() {
 }
 
-/**
- * \brief Writes the real tensor data given as Data argument to a file.
- */
 void TensorWriter::run() {
   Tensor<> *A(getTensorArgument<>("Data"));
   char defaultIndexOrder[A->order + 1];
@@ -82,7 +79,7 @@ void TensorWriter::run() {
 
     // write the actual data
     int64_t index(0);
-    LOG(4) << "rows=" << rowElementsCount
+    LOG(4, "TensorWriter") << "rows=" << rowElementsCount
       << ", columns=" << columnElementsCount << std::endl;
     file << std::setprecision(16);
     for (int64_t row(0); row < rowElementsCount; ++row) {

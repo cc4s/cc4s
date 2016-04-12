@@ -8,6 +8,11 @@
 #include <fstream>
 
 namespace cc4s {
+  /**
+   * \brief Reads the Coulomb vertex \f$\Gamma_{pG}^q\f$ and the occupied and
+   * virtual orbital energies \f$\varepsilon_i, \varepsilon_a\f$ from binary
+   * data file, and stores them in the CTF Tensors GammaGpq, epsi, epsa.
+   */
   class CoulombVertexReader: public Algorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(CoulombVertexReader);
@@ -20,6 +25,13 @@ namespace cc4s {
      * \brief Reads the Full Coulomb Vertex GammaGpq from FTODDUMP file.
      */
     virtual void run();
+
+    /** \brief The occupied orbital energies  */
+    CTF::Tensor<> *epsi;
+    /** \brief The virtual orbital energies  */
+    CTF::Tensor<> *epsa;
+    /** \brief The Coulomb Vertex GammaGpq  */
+    CTF::Tensor<complex> *GammaGpq;
 
     /**
      * \brief Reads the size of the Full Coulomb Vertex GammaGpq from FTODDUMP

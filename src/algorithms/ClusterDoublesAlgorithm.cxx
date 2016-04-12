@@ -18,9 +18,6 @@ ClusterDoublesAlgorithm::ClusterDoublesAlgorithm(
 ClusterDoublesAlgorithm::~ClusterDoublesAlgorithm() {
 }
 
-/**
- * \brief Calculates the energy of a ClusterDoubles algorithm
- */
 void ClusterDoublesAlgorithm::run() {
   // Read the Coulomb Integrals Vabij required for the energy
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));

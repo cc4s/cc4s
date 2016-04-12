@@ -19,9 +19,6 @@ ParticleHoleCoulombIntegrals::ParticleHoleCoulombIntegrals(
 ParticleHoleCoulombIntegrals::~ParticleHoleCoulombIntegrals() {
 }
 
-/**
- * \brief Calculates Coulomb integrals from aiCoulombVertexReal/Imag
- */
 void ParticleHoleCoulombIntegrals::run() {
   Tensor<complex> *GammaGai(
     getTensorArgument<complex>("ParticleHoleCoulombVertex")

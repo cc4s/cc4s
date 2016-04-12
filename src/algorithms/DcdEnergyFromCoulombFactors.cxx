@@ -1,12 +1,11 @@
 #include <algorithms/DcdEnergyFromCoulombFactors.hpp>
 #include <math/MathFunctions.hpp>
+#include <util/DryTensor.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
-#include <mixers/Mixer.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
-#include <Options.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -15,84 +14,10 @@ ALGORITHM_REGISTRAR_DEFINITION(DcdEnergyFromCoulombFactors);
 
 DcdEnergyFromCoulombFactors::DcdEnergyFromCoulombFactors(
   std::vector<Argument> const &argumentList
-): Algorithm(argumentList) {
+): ClusterDoublesAlgorithm(argumentList) {
 }
 
 DcdEnergyFromCoulombFactors::~DcdEnergyFromCoulombFactors() {
-  // delete the mixer to free its resources
-  if (TabijMixer) delete TabijMixer;
-}
-
-/**
- * \brief Calculates DCD energy from Coulomb integrals Vabcd Vabij Vaibj Vijkl
- */
-
-void DcdEnergyFromCoulombFactors::run() {
-  // Read the Coulomb Integrals Vabij required for the DCD energy
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the DCD energy
-  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
-  
-  // Compute the no,nv,np
-  int no(epsi->lens[0]);
-  int nv(epsa->lens[0]);
-
-  // instantiate mixer for the amplitudes, by default use the linear mixer
-  std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-  TabijMixer = MixerFactory<double>::create(mixerName, this);
-  if (!TabijMixer) {
-    std::stringstream stringStream;
-    stringStream << "Mixer not implemented: " << mixerName;
-    throw new Exception(stringStream.str());
-  }
-  {
-    // Allocate the DCD amplitudes Tabij and append it to the mixer
-    int syms[] = { NS, NS, NS, NS };
-    int vvoo[] = { nv, nv, no, no };
-    Tensor<> Tabij(4, vvoo, syms, *epsi->wrld, "Tabij");
-    TabijMixer->append(Tabij);
-    // the amplitudes will from now on be managed by the mixer
-  }
-
-  // Allocate the DCD energy e
-  Scalar<> energy(*epsi->wrld);
-  double e(0), dire, exce;
-
-  LOG(0, "DCD") <<
-    "Solving Distinguishable Cluster Doubles Amplitude Equations:" <<
-    std::endl;
-
-  // Iteration for determining the DCD amplitudes Tabij
-  // and the Dcd energy e
-  int64_t maxIterationsCount(
-    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
-  );
-  for (int i(0); i < maxIterationsCount; ++i) {
-    LOG(0, "DCD") << "iteration: " << i+1 << std::endl;
-    iterate(i);
-    // get the current amplitdues from the mixer
-    Tensor<> *Tabij(&TabijMixer->getNext());
-    energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
-    dire = energy.get_val();
-    energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
-    exce = -1.0 * energy.get_val();
-    e = dire + exce;
-    LOG(0, "DCD") << "e=" << e << std::endl;
-    LOG(1, "DCD") << "DCDdir=" << dire << std::endl;
-    LOG(1, "DCD") << "DCDexc=" << exce << std::endl;
-  }
-
-  LOG(1, "DCD") << "DCD correlation energy = " << e << std::endl;
-
-  // return a copy of the amplitudes contained in the mixer
-  // the amplitdues contained in the mixer will be deleted upon
-  // destruction of this algorithm
-  allocatedTensorArgument(
-    "DcdDoublesAmplitudes", new Tensor<>(TabijMixer->getNext())
-  );
-  setRealArgument("DcdEnergy", e);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -102,10 +27,10 @@ void DcdEnergyFromCoulombFactors::run() {
 //////////////////////////////////////////////////////////////////////
 void DcdEnergyFromCoulombFactors::iterate(int i) {
   {
-    // get the current amplitdues for this iteration from the mixer
+    // Read the DCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
 
-    // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
+    // Read the Coulomb Integrals Vabij Vaibj Vijkl
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
     Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
@@ -118,23 +43,22 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
     Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
     Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
   
-    // Compute the no,nv,np
-    int no(epsi->lens[0]);
-    int nv(epsa->lens[0]);
-    int np=no+nv;
-    int nR(PiqR->lens[1]);
+    // Compute the No,Nv,Np,NR
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
+    int Np=No+Nv;
+    int NR(PiqR->lens[1]);
 
     int syms[] = { NS, NS, NS, NS };
-    int voov[] = { nv, no, no, nv };
-    int Rvoo[] = { nR, nv, no, no };
-    int RRoo[] = { nR, nR, no, no };
-    int RR[] = { nR, nR };
-    int vv[] = { nv, nv };
-    int oo[] = { no, no };
+    int voov[] = { Nv, No, No, Nv };
+    int Rvoo[] = { NR, Nv, No, No };
+    int RRoo[] = { NR, NR, No, No };
+    int RR[] = { NR, NR };
+    int vv[] = { Nv, Nv };
+    int oo[] = { No, No };
 
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
-    Tensor<> Dabij(false, *Vabij);
 
     // Define intermediates
     Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
@@ -196,7 +120,6 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
     Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
 
     // Contract Vabcd with T2 Amplitudes
-    // Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
     {
       Tensor<complex> VRS(2, RR, syms, *epsi->wrld, "VRS");
 
@@ -204,17 +127,13 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
       Tensor<> imagXRaij(4, Rvoo, syms, *epsi->wrld, "ImagXRaij");
 
       // Allocate and compute PiaR
-      int aRStart[] = {no , 0};
-      int aREnd[]   = {np ,nR};
+      int aRStart[] = {No , 0};
+      int aREnd[]   = {Np ,NR};
       Tensor<complex> PiaR(PiqR->slice(aRStart,aREnd));
 
       // Split PiaR into real and imaginary parts
-      Tensor<> realPiaR(
-        2, PiaR.lens, PiaR.sym, *PiaR.wrld, "RealPiaR"
-      );
-      Tensor<> imagPiaR(
-        2, PiaR.lens, PiaR.sym, *PiaR.wrld, "ImagPiaR"
-      );
+      Tensor<> realPiaR(2, PiaR.lens, PiaR.sym, *PiaR.wrld, "RealPiaR");
+      Tensor<> imagPiaR(2, PiaR.lens, PiaR.sym, *PiaR.wrld, "ImagPiaR");
       fromComplexTensor(PiaR, realPiaR, imagPiaR);
 
       // FIXME: Currently assuming GammaGqr = PiqR*PirR*LambdaGR
@@ -241,22 +160,64 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
       Rabij["abij"] += imagXRaij["Rbij"]  * imagPiaR["aR"];
     }
 
-    // Build Dabij
-    Dabij["abij"]  = (*epsi)["i"];
-    Dabij["abij"] += (*epsi)["j"];
-    Dabij["abij"] -= (*epsa)["a"];
-    Dabij["abij"] -= (*epsa)["b"];
-    // NOTE: ctf double counts if lhs tensor is SH,SH
-    Dabij["abij"] = Dabij["abij"];
-
-    // Divide Rabij/Dabij to get Tabij
-    Bivar_Function<> fDivide(&divide<double>);
-    // dont't use Tabij, since it actually is part of the mixer
-    // and must be modified. Rabij is, however, available
-    Rabij.contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
-
-    // pass the new amplitudes to the mixer
+    // calculate the amplitdues from the residuum
+    doublesAmplitudesFromResiduum(Rabij);
+    // and append them to the mixer
     TabijMixer->append(Rabij);
+  }
+}
+
+void DcdEnergyFromCoulombFactors::dryIterate() {
+  {
+    // TODO: the Mixer should provide a DryTensor in the future
+    // Read the DCD amplitudes Tabij
+    // DryTensor<> *Tabij(
+    getTensorArgument<double, DryTensor<double>>("DcdDoublesAmplitudes");
+    // );
+
+    // Read the Coulomb Integrals Vabij Vaibj Vijkl
+    DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
+    DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
+    DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
+
+    // Read the Coulomb Factors PiqR and LambdaGR
+    DryTensor<complex> *PiqR(getTensorArgument<complex, 
+			     DryTensor<complex>>("FactorOrbitals"));
+    DryTensor<complex> *LambdaGR(getTensorArgument<complex,
+				 DryTensor<complex>>("CoulombFactors"));
+
+    // Read the Particle/Hole Eigenenergies epsi epsa
+    DryTensor<> *epsi(getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies"));
+    DryTensor<> *epsa(getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies"));
+  
+    // Compute the No,Nv,Np,NR
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
+    int Np=No+Nv;
+    int NR(PiqR->lens[1]);
+
+    int syms[] = { NS, NS, NS, NS };
+    int voov[] = { Nv, No, No, Nv };
+    int Rvoo[] = { NR, Nv, No, No };
+    int RRoo[] = { NR, NR, No, No };
+    int RR[] = { NR, NR };
+    int vv[] = { Nv, Nv };
+    int oo[] = { No, No };
+
+    // Allocate Tensors for T2 amplitudes
+    DryTensor<> Rabij(*Vabij);
+
+    // Define intermediates
+    DryTensor<> Kac(2, vv, syms);
+    DryTensor<> Kki(2, oo, syms);
+
+    DryTensor<> Xklij(*Vijkl);
+    DryTensor<> Xakci(*Vaibj);
+    DryTensor<> Xakic(4, voov, syms);
+
+    // TODO: implment dryDoublesAmplitudesFromResiduum
+    // at the moment, assume usage of Dabij
+    DryTensor<> Dabij(*Vabij);
   }
 }
 

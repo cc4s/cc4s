@@ -28,9 +28,6 @@ ParticleHoleCoulombVertexReader::ParticleHoleCoulombVertexReader(
 ParticleHoleCoulombVertexReader::~ParticleHoleCoulombVertexReader() {
 }
 
-/**
- * \brief Reads binary Coulomb vertex file from disk.
- */
 void ParticleHoleCoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
   LOG(0) <<
@@ -94,11 +91,6 @@ void ParticleHoleCoulombVertexReader::run() {
   LOG(2) << "Np=" << Np << std::endl;
 }
 
-/**
- * \brief Performs a dry run on reading the
- * binary Coulomb vertex file from disk.
- * Only the header information is read containing size information.
- */
 void ParticleHoleCoulombVertexReader::dryRun() {
   std::string fileName(getTextArgument("file"));
   LOG(0) <<

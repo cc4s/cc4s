@@ -12,6 +12,9 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~TensorWriter();
+    /**
+     * \brief Writes the real tensor data given as Data argument to a file.
+     */
     virtual void run();
 
     static Algorithm *create(std::vector<Argument> const &argumentList) {

@@ -14,10 +14,17 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~ClusterDoublesAlgorithm();
+    /**
+     * \brief Calculates the energy of a ClusterDoubles algorithm
+     */
     virtual void run();
+    /**
+     * \brief Performs a Dry Run
+     */
     virtual void dryRun();
     /**
-     * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCD".
+     * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCD",
+     * "DCD"
      */
     virtual std::string getAbbreviation() = 0;
 

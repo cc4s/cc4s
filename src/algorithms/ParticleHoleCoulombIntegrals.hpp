@@ -12,6 +12,10 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~ParticleHoleCoulombIntegrals();
+    /**
+     * \brief Calculates Coulomb integrals from ParticleHole Coulomb Vertex
+     * GammaGai.
+     */
     virtual void run();
   };
 }
