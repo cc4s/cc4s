@@ -41,6 +41,10 @@ void CoulombVertexDecomposition::run() {
   LOG(1, "RALS") << "decompising Coulomb vertex with NG=" << NG
     << " Np=" << Np << std::endl;
 
+  writeSubIterations = getIntegerArgument(
+    "writeSubIterations", DEFAULT_WRITE_SUB_ITERATIONS
+  );
+
   // allocate factor tensors
   PiqR = new Matrix<complex>(
     Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile
@@ -74,14 +78,8 @@ void CoulombVertexDecomposition::run() {
   double regularizationFriction(
     getRealArgument("regularizationFriction", DEFAULT_REGULARIZATION_FRICTION)
   );
-  regularizationEstimatorPiqR =
-    new AlternatingLeastSquaresRegularizationEstimator(
-//    new NoRegularizationEstimator();
-      swampingThreshold, regularizationFriction, 1
-    );
   regularizationEstimatorPirR =
     new AlternatingLeastSquaresRegularizationEstimator(
-//    new NoRegularizationEstimator();
       swampingThreshold, regularizationFriction, 1
     );
   regularizationEstimatorLambdaGR =
@@ -144,36 +142,16 @@ void CoulombVertexDecomposition::dryRun() {
 void CoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
-  fitRegularizedAlternatingLeastSquaresFactor(
-    *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
-    *PiqR,'r', regularizationEstimatorPiqR
-  );
-  if (realFactorOrbitals) realizePi(*PiqR);
-  if (normalizedFactorOrbitals) normalizePi(*PiqR);
-//  (*PiqR)["qR"] = (*PirR)["qR"];
-
-  fitRegularizedAlternatingLeastSquaresFactor(
-    *GammaGqr,"Gqr", *LambdaGR,'G', *PiqR,'r',
-    *PiqR,'q', regularizationEstimatorPiqR
-  );
-  if (realFactorOrbitals) realizePi(*PiqR);
-  if (normalizedFactorOrbitals) normalizePi(*PiqR);
-//  (*PirR)["qR"] = (*PiqR)["qR"];
+  iterateQuadraticFactor(iterationsCount);
 
   fitRegularizedAlternatingLeastSquaresFactor(
     *GammaGqr,"Gqr", *PiqR,'r', *PiqR,'q',
     *LambdaGR,'G', regularizationEstimatorLambdaGR
   );
 
-  composeCanonicalPolyadicDecompositionTensors(
-    *LambdaGR, *PiqR, *PiqR, *Gamma0Gqr
-  );
-
-  (*Gamma0Gqr)["Gqr"] -= (*GammaGqr)["Gqr"];
-  Delta = frobeniusNorm(*Gamma0Gqr);
+  Delta = getDelta();
   LOG(0, "RALS") << "iteration=" << (iterationsCount+1)
     << " Delta=" << Delta << std::endl;
-  (*Gamma0Gqr)["Gqr"] += (*GammaGqr)["Gqr"];
 }
 
 void CoulombVertexDecomposition::dryFit(
@@ -217,7 +195,7 @@ void CoulombVertexDecomposition::fitConjugated(
   PiqR->sum(1.0, *PirR,"qR", 0.0,"qR", fConj);
 
   // fit \Pi^{qR}: conjugate the equation
-  conjugateFactors();
+//  conjugateFactors();
   // note that conjugation swaps Pi_{rR} and {\Pi^\ast}^{qR},
   // i.e. we actually fit PirR again but we use the PiqR
   // regularization estimator
@@ -225,7 +203,7 @@ void CoulombVertexDecomposition::fitConjugated(
     *GammaGqr,"Gqr", *LambdaGR,'G', *PiqR,'r',
     *PirR,'q', regularizationEstimatorPiqR
   );
-  conjugateFactors();
+//  conjugateFactors();
   if (realFactorOrbitals) realizePi(*PirR);
   if (normalizedFactorOrbitals) normalizePi(*PirR);
   // PiqR["qR"] = conj(PirR["qR"])
@@ -274,9 +252,47 @@ void CoulombVertexDecomposition::realizePi(
   Pi["qR"] *= 0.5;
 }
 
-void CoulombVertexDecomposition::conjugateFactors() {
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  LambdaGR->sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
-  GammaGqr->sum(1.0, *GammaGqr,"Gqr", 0.0,"Gqr", fConj);
+void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
+  double quadraticDelta(std::numeric_limits<double>::infinity());
+  int maxSubIterationsCount(getIntegerArgument("maxSubIterations", 8));
+  int minSubIterationsCount(getIntegerArgument("minSubIterations", 2));
+  int j(0);
+  while (
+    j < minSubIterationsCount ||
+    (Delta < quadraticDelta && j < maxSubIterationsCount)
+  ) {
+    fitRegularizedAlternatingLeastSquaresFactor(
+      *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
+      *PirR,'r', regularizationEstimatorPirR
+    );
+    if (writeSubIterations) {
+      quadraticDelta = getDelta();
+      LOG(1, "RALS") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
+        << "Pi^(" << (i+1) << "," << j << ")"
+        << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
+    }
+    if (realFactorOrbitals) realizePi(*PirR);
+    if (normalizedFactorOrbitals) normalizePi(*PirR);
+//    Univar_Function<complex> fConj(&cc4s::conj<complex>);
+    double alpha(getRealArgument("mixingRatio", 1.0));
+    PiqR->sum(alpha, *PirR,"qR", 1-alpha,"qR");
+    quadraticDelta = getDelta();
+    if (writeSubIterations) {
+      LOG(1, "RALS") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
+        << "Pi^(" << (i+1) << "," << (j+1) << ")"
+        << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
+    }
+    ++j;
+  }
+}
+
+double CoulombVertexDecomposition::getDelta() {
+  composeCanonicalPolyadicDecompositionTensors(
+    *LambdaGR, *PiqR, *PirR, *Gamma0Gqr
+  );
+  (*Gamma0Gqr)["Gqr"] -= (*GammaGqr)["Gqr"];
+  double Delta(frobeniusNorm(*Gamma0Gqr));
+  (*Gamma0Gqr)["Gqr"] += (*GammaGqr)["Gqr"];
+  return Delta;
 }
 

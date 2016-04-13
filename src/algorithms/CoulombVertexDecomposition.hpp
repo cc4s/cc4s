@@ -53,6 +53,14 @@ namespace cc4s {
     bool normalizedFactorOrbitals;
 
     /**
+     * \brief Whether to write Delta after each part
+     * of one RALS iteration, where Delta is the
+     * Frobenius norm of
+     * \f${\Pi^\ast}^{qR}Pi_{rR}\Lambda_{GR} - \Gamma^q_{rG}\f$.
+     */
+    bool writeSubIterations;
+
+    /**
      * \brief The full Coulomb vertex \f$\Gamma^q_{rG}\f$.
      */
     CTF::Tensor<complex> *GammaGqr;
@@ -90,6 +98,7 @@ namespace cc4s {
     static double constexpr DEFAULT_REGULARIZATION_FRICTION = 0.125;
     static bool constexpr DEFAULT_REAL_FACTOR_ORBITALS = false;
     static bool constexpr DEFAULT_NORMALIZED_FACTOR_ORBITALS = false;
+    static bool constexpr DEFAULT_WRITE_SUB_ITERATIONS = false;
 
   protected:
     /**
@@ -117,7 +126,9 @@ namespace cc4s {
      * \brief Discards the imaginary part of the given factor orbitals.
      */
     void realizePi(CTF::Matrix<complex> &Pi);
-    void conjugateFactors();
+
+    void iterateQuadraticFactor(int iterationsCount);
+    double getDelta();
   };
 }
 
