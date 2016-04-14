@@ -153,9 +153,9 @@ void DcdEnergyFromCoulombIntegrals::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
     // Read the DCD amplitudes Tabij
-//    DryTensor<> *Tabij(
-      getTensorArgument<double, DryTensor<double>>("DcdDoublesAmplitudes");
-//    );
+    //DryTensor<> *Tabij(
+    getTensorArgument<double, DryTensor<double>>("DcdDoublesAmplitudes");
+    //);
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
     // the PPPPCoulombIntegrals may not be given then slicing is required

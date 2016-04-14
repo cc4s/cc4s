@@ -1,10 +1,9 @@
 #include <algorithms/DrccdEnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
-#include <Cc4s.hpp>
 #include <ctf.hpp>
-#include <Options.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -13,54 +12,20 @@ ALGORITHM_REGISTRAR_DEFINITION(DrccdEnergyFromCoulombIntegrals);
 
 DrccdEnergyFromCoulombIntegrals::DrccdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
-): Algorithm(argumentList) {
+): ClusterDoublesAlgorithm(argumentList) {
 }
 
 DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 }
 
-/**
- * \brief Calculates MP2 energy from Coulomb integrals Vabij
- */
-void DrccdEnergyFromCoulombIntegrals::run() {
-  Tensor<> *Vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
-
-  int nv(Vabij->lens[0]);
-  int no(Vabij->lens[2]);
-  int lens[] = { nv, nv, no, no };
-  int syms[] = { NS, NS, NS, NS };
-  Tensor<> *Tabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Tabij"));
-  allocatedTensorArgument("DrccdDoublesAmplitudes", Tabij);
+void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
+  // Read the DRCCD amplitudes Tabij
+  Tensor<> *Tabij(&TabijMixer->getNext());
   
-  Scalar<> energy(*Cc4s::world);
-  double e(0), dire, exce;
-
-  LOG(0) <<
-    "Solving direct ring Coupled Cluster Doubles Amplitude Equations:" <<
-    std::endl;
- 
-  for (int i(0); i < Cc4s::options->niter; ++i) {
-    LOG(0) << "iteration: " << i << std::endl;
-    iterate();
-    energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
-    dire = energy.get_val();
-    energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
-    exce = -1.0 * energy.get_val();
-    e = dire + exce;
-    LOG(0) << "e=" << e << std::endl;
-    LOG(1) << "RPA=" << dire << std::endl;
-    LOG(1) << "SOSEX=" << exce << std::endl;
-  }
-
-  setRealArgument("DrccdEnergy", e);
-}
-
-void DrccdEnergyFromCoulombIntegrals::iterate() {
-  // get tensors
+  // Read tensors (Vabij, epsi, epsa, and intermediates)
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  Tensor<> *Vabij(getTensorArgument("ParticleHoleCoulombIntegrals"));
-  Tensor<> *Tabij(getTensorArgument("DrccdDoublesAmplitudes"));
+  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
   Tensor<> Rabij(false, *Vabij);
   Tensor<> Cabij(false, *Vabij);
   Tensor<> Dabij(false, *Vabij);
@@ -71,14 +36,37 @@ void DrccdEnergyFromCoulombIntegrals::iterate() {
   Rabij["abij"] += Cabij["abij"];
   Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
 
-  Dabij["abij"] =  (*epsi)["i"];
-  Dabij["abij"] += (*epsi)["j"];
-  Dabij["abij"] -= (*epsa)["a"];
-  Dabij["abij"] -= (*epsa)["b"];
-    // NOTE: ctf double counts if lhs tensor is SH,SH
-  Dabij["abij"] = Dabij["abij"];
+  // calculate the amplitdues from the residuum
+  doublesAmplitudesFromResiduum(Rabij);
+  // and append them to the mixer
+  TabijMixer->append(Rabij);
+}
 
-  Bivar_Function<> fDivide(&divide<double>);
-  Tabij->contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+
+void DrccdEnergyFromCoulombIntegrals::dryIterate() {
+  {
+    // TODO: the Mixer should provide a DryTensor in the future
+    // Read the DRCCD amplitudes Tabij
+    //DryTensor<> *Tabij(
+    getTensorArgument<double, DryTensor<double>>("DrccdDoublesAmplitudes");
+    //);
+
+    // Read the Coulomb Integrals Vabij
+    DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
+
+    // Read the Particle/Hole Eigenenergies epsi epsa
+    DryTensor<> *epsi(getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies"));
+    DryTensor<> *epsa(getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies"));
+  
+    // Allocate Tensors for T2 amplitudes
+    DryTensor<> Rabij(*Vabij);
+
+    // Define intermediates
+    DryTensor<> Cabij(*Vabij);
+
+    // TODO: implment dryDoublesAmplitudesFromResiduum
+    // at the moment, assume usage of Dabij
+    DryTensor<> Dabij(*Vabij);
+  }
 }
 

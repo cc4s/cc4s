@@ -95,9 +95,10 @@ void ClusterDoublesAlgorithm::run() {
 
 void ClusterDoublesAlgorithm::dryRun() {
   // Read the Coulomb Integrals Vabij required for the energy
-//  DryTensor<> *Vabij(
-    getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
-//  );
+  //DryTensor<> *Vabij(
+  getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
+  //);
+
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
   DryTensor<> *epsi(
     getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
