@@ -62,12 +62,9 @@ obj/algorithms/ComplexTensorContraction.o \
 obj/algorithms/ComplexTensorSum.o \
 obj/algorithms/ComplexTensorNorm.o \
 obj/algorithms/CoulombVertexReader.o \
-obj/algorithms/Mp2CoulombIntegrals.o \
 obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
-obj/algorithms/CcdCoulombIntegrals.o \
 obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
-obj/algorithms/CcsdCoulombIntegrals.o \
 obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcdEnergyFromCoulombFactors.o \
