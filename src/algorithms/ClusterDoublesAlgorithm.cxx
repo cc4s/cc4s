@@ -16,6 +16,7 @@ ClusterDoublesAlgorithm::ClusterDoublesAlgorithm(
 }
 
 ClusterDoublesAlgorithm::~ClusterDoublesAlgorithm() {
+  if (TabijMixer) delete TabijMixer;
 }
 
 /**

@@ -83,14 +83,12 @@ namespace cc4s {
     CTF::Matrix<complex> *LambdaGR;
 
     /**
-     * \brief Estimators for the regularization parameter during
+     * \brief Estimator for the regularization parameter during
      * the alternating least squares fits. They estimate the
      * regularization parameter \f$\lambda\f$ in each iteration from
      * the swamping factor in the previous iteration.
      */
-    AlternatingLeastSquaresRegularizationEstimator
-      *regularizationEstimatorPiqR, *regularizationEstimatorPirR,
-      *regularizationEstimatorLambdaGR;
+    AlternatingLeastSquaresRegularizationEstimator *regularizationEstimator;
 
     static int64_t constexpr DEFAULT_MAX_ITERATIONS = 32;
     static double constexpr DEFAULT_DELTA = 0.0;
@@ -116,7 +114,6 @@ namespace cc4s {
       DryTensor<complex> *LambdaGR,
       DryTensor<complex> *Gamma0Gqr
     );
-    void fitConjugated(int64_t iterationsCount);
     /**
      * \brief Normalizes the given factor orbitals, such that
      * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta_{qq}\f$.
@@ -127,6 +124,14 @@ namespace cc4s {
      */
     void realizePi(CTF::Matrix<complex> &Pi);
 
+    /**
+     * \brief Solves the quadratically occurring factor Pi iteratively
+     * similar to the Babylonian algorithm.
+     * \note{
+     *   Currently \f$\Pi_{qR}Pi_{rR}\Lambda_{GR}\f$ is solved for
+     *   instead of \f${\Pi^\ast}^{qR}Pi_{rR}\Lambda_{GR}\f$.
+     * }
+     */
     void iterateQuadraticFactor(int iterationsCount);
     double getDelta();
   };
