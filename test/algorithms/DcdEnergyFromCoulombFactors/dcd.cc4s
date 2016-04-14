@@ -12,25 +12,27 @@ CoulombVertexDecomposition [
   ComposedCoulombVertex
 ].
 
-CcdCoulombIntegrals [
-  % compute the Coulomb integratls from the composed vertex
+CoulombIntegralsFromVertex [
+  % compute the Coulomb integrals from the composed vertex
   % rather than from the original one, for comparability
   (CoulombVertex ComposedCoulombVertex)
 %  CoulombVertex
   HoleEigenEnergies ParticleEigenEnergies
 ] [
-  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals
+% PPPPCoulombIntegrals 
+  PHPHCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
 ].
 
 % compute the DcdEnergy once from the integrals using slicing
 DcdEnergyFromCoulombIntegrals [
-%  PPPPCoulombIntegrals
+% PPPPCoulombIntegrals
   (CoulombVertex ComposedCoulombVertex)
-  PHPHCoulombIntegrals PHHPCoulombIntegrals 
+  PHPHCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 2)
+% (sliceRank 12)
 ] [
   DcdEnergy DcdDoublesAmplitudes
 ].
@@ -45,12 +47,12 @@ DcdEnergyFromCoulombFactors [
   CoulombVertex
   HoleEigenEnergies ParticleEigenEnergies
   % where memory is not a concern, the integrals are used
-  PHPHCoulombIntegrals PHHPCoulombIntegrals
+  PHPHCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
   (maxIterations 2)
   % the LinearMixer is used by default
-%  (mixer "LinearMixer")
-%  (mixingRatio 1.5)
+% (mixer "LinearMixer")
+% (mixingRatio 1.5)
 ] [
   (DcdEnergy DcdEnergyFromFactors)
   (DcdDoublesAmplitudes DcdDoublesAmplitudesFromFactors)

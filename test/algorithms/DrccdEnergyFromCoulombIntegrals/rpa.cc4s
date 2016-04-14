@@ -1,4 +1,4 @@
-% RPA execution plan for smaller systems with Nv * No <= NG
+%% RPA execution plan for smaller systems with Nv * No <= NG %%
 ParticleHoleCoulombVertexReader [
   (file "../../resources/ParticleHoleCoulombVertex.bin")
 ] [
@@ -8,11 +8,28 @@ ParticleHoleCoulombVertexReader [
 ParticleHoleCoulombIntegrals [
   ParticleHoleCoulombVertex
 ] [
-  ParticleHoleCoulombIntegrals
+  PPHHCoulombIntegrals
 ].
 
+%% Uncomment next two algorithms if full CoulombVertex is used %%
+%CoulombVertexReader [
+%  (file "FTODDUMP")
+%] [
+%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%].
+
+%CoulombIntegralsFromVertex [
+%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%] [
+%  PPHHCoulombIntegrals
+%].
+
 DrccdEnergyFromCoulombIntegrals [
-  ParticleHoleCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (maxIterations 8)
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
 ].
+
+TensorWriter [(Data DrccdEnergy)] [].

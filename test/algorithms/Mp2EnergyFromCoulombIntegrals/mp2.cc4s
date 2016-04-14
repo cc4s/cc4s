@@ -1,4 +1,4 @@
-% MP2 execution plan
+%% MP2 execution plan %%
 ParticleHoleCoulombVertexReader [
   (file "../../resources/ParticleHoleCoulombVertex.bin")
 ] [
@@ -8,11 +8,24 @@ ParticleHoleCoulombVertexReader [
 ParticleHoleCoulombIntegrals [
   ParticleHoleCoulombVertex
 ] [
-  ParticleHoleCoulombIntegrals
+  PPHHCoulombIntegrals
 ].
 
+%% Uncomment next two algorithms if full CoulombVertex is used %%
+%CoulombVertexReader [
+%  (file "FTODDUMP")
+%] [
+%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%].
+
+%CoulombIntegralsFromVertex [
+%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%] [
+%  PPHHCoulombIntegrals
+%].
+
 Mp2EnergyFromCoulombIntegrals [
-  ParticleHoleCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+  PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
 ] [
   Mp2Energy
 ].

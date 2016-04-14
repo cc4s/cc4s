@@ -4,19 +4,21 @@ CoulombVertexReader [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
 
-CcsdCoulombIntegrals [
+CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ] [
-  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals
+  % if PPPPCoulombIntegrals are not given, slicing will be used
+% PPPPCoulombIntegrals 
+  PHPHCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
   HHHPCoulombIntegrals PPPHCoulombIntegrals
 ].
 
 DcsdEnergyFromCoulombIntegrals [
   % if PPPPCoulombIntegrals are not given, slicing will be used
-%  PPPPCoulombIntegrals
+% PPPPCoulombIntegrals
   CoulombVertex
-  PHPHCoulombIntegrals PHHPCoulombIntegrals
+  PHPHCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
   HHHPCoulombIntegrals PPPHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
