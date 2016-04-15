@@ -17,7 +17,6 @@ DcsdEnergyFromCoulombIntegrals::DcsdEnergyFromCoulombIntegrals(
 DcsdEnergyFromCoulombIntegrals::~DcsdEnergyFromCoulombIntegrals() {
 }
 
-
 //////////////////////////////////////////////////////////////////////
 // Hirata iteration routine for the CCSD amplitudes Tabij and Tai from
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
@@ -58,7 +57,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
     // Allocate Tensors for T1 amplitudes
     Tensor<> Rai(false, *Tai);
-    Tensor<> Dai(false, *Tai);
+    //Tensor<> Dai(false, *Tai);
 
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
