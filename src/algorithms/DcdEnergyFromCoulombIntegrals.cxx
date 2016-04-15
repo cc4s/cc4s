@@ -192,9 +192,13 @@ void DcdEnergyFromCoulombIntegrals::dryIterate() {
     DryTensor<> Xakci(*Vaibj);
     DryTensor<> Xakic(4, voov, syms);
 
+    // Read the sliceRank. If not provided use No
+    int64_t sliceRank(getIntegerArgument
+		      ("sliceRank",No));
+
     if (!Vabcd) {
       // slice if Vabcd is not specified
-      int lens[] = { No, No, Nv, Nv };
+      int lens[] = { sliceRank, sliceRank, Nv, Nv };
       int syms[] = {NS, NS, NS, NS};
       // TODO: implement drySliceCoulombIntegrals
       DryTensor<> Vxycd(4, lens, syms);
