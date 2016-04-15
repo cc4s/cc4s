@@ -15,6 +15,7 @@ ClusterSinglesDoublesAlgorithm::ClusterSinglesDoublesAlgorithm(
 }
 
 ClusterSinglesDoublesAlgorithm::~ClusterSinglesDoublesAlgorithm() {
+  if (TaiMixer) delete TaiMixer;
 }
 
 /**
