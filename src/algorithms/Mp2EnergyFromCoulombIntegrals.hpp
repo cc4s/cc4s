@@ -14,6 +14,10 @@ namespace cc4s {
      * \brief Calculates MP2 energy from Coulomb integrals Vabij
      */
     virtual void run();
+    /**
+     * \brief Dry run for the MP2 energy from Coulomb integrals Vabij
+     */
+    virtual void dryRun();
   };
 }
 

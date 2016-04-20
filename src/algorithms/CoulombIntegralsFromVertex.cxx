@@ -203,7 +203,6 @@ void CoulombIntegralsFromVertex::dryRun() {
   int nG(GammaGpq->lens[0]);
   int no(epsi->lens[0]);
   int nv(epsa->lens[0]);
-  int np = no + nv;
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   int syms[] = { NS, NS, NS, NS };

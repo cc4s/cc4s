@@ -1,5 +1,6 @@
 #include <algorithms/Mp2EnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -48,5 +49,30 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   LOG(1, "MP2") << "MP2 correlation energy = " << e << std::endl;      
 
   setRealArgument("Mp2Energy", e);
+}
+
+void Mp2EnergyFromCoulombIntegrals::dryRun() {
+  //DryTensor<> *Vabij(
+  getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
+  //);
+
+  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
+  );
+  
+  // Compute the No,Nv
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+
+  // Allocate the doubles amplitudes
+  int syms[] = { NS, NS, NS, NS };
+  int vvoo[] = { Nv, Nv, No, No };
+  DryTensor<> Tabij(4, vvoo, syms);
+
+  DryScalar<> energy();
 }
 

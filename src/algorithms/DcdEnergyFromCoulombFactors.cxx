@@ -190,10 +190,9 @@ void DcdEnergyFromCoulombFactors::dryIterate() {
     DryTensor<> *epsi(getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies"));
     DryTensor<> *epsa(getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies"));
   
-    // Compute the No,Nv,Np,NR
+    // Compute the No,Nv,NR
     int No(epsi->lens[0]);
     int Nv(epsa->lens[0]);
-    int Np=No+Nv;
     int NR(PiqR->lens[1]);
 
     int syms[] = { NS, NS, NS, NS };
@@ -202,6 +201,7 @@ void DcdEnergyFromCoulombFactors::dryIterate() {
     int RRoo[] = { NR, NR, No, No };
     int RR[] = { NR, NR };
     int vv[] = { Nv, Nv };
+    int vR[] = { Nv, NR };
     int oo[] = { No, No };
 
     // Allocate Tensors for T2 amplitudes
@@ -214,6 +214,27 @@ void DcdEnergyFromCoulombFactors::dryIterate() {
     DryTensor<> Xklij(*Vijkl);
     DryTensor<> Xakci(*Vaibj);
     DryTensor<> Xakic(4, voov, syms);
+
+    // Contract Vabcd with T2 Amplitudes
+    {
+      DryTensor<complex> VRS(2, RR, syms);
+
+      DryTensor<> realXRaij(4, Rvoo, syms);
+      DryTensor<> imagXRaij(4, Rvoo, syms);
+
+      // Allocate PiaR
+      DryTensor<complex> PiaR(2, vR, syms);
+
+      // Split PiaR into real and imaginary parts
+      DryTensor<> realPiaR(2, vR, syms);
+      DryTensor<> imagPiaR(2, vR, syms);
+
+      DryTensor<complex> XRaij(4, Rvoo, syms);
+
+      DryTensor<complex> XRSij(4, RRoo, syms);
+
+      DryTensor<complex> conjLambdaGR(*LambdaGR);
+    }
 
     // TODO: implment dryDoublesAmplitudesFromResiduum
     // at the moment, assume usage of Dabij

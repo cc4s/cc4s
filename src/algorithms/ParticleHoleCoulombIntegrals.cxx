@@ -1,6 +1,7 @@
 #include <algorithms/ParticleHoleCoulombIntegrals.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -43,3 +44,35 @@ void ParticleHoleCoulombIntegrals::run() {
   (*Vabij)["abij"] += imagGammaGai["gai"] * imagGammaGai["gbj"];
 }
 
+void ParticleHoleCoulombIntegrals::dryRun() {
+  DryTensor<complex> *GammaGai(getTensorArgument<complex, 
+			       DryTensor<complex>>
+			       ("ParticleHoleCoulombVertex"));
+
+  // Read the Particle/Hole Eigenenergies
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
+  );
+
+  // Compute the no,nv,nG,np
+  int nG(GammaGai->lens[0]);
+  int no(epsi->lens[0]);
+  int nv(epsa->lens[0]);
+
+  // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
+  int syms[] = { NS, NS, NS, NS };
+  int vvoo[] = { nv, nv, no, no };
+
+  DryTensor<> *Vabij(new DryTensor<>(4, vvoo, syms));
+
+  allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
+
+  // Allocate and realGammaGai and imagGammaGai
+  int GaiLens[]   = {nG,nv,no};
+
+  DryTensor<> realGammaGai(3, GaiLens, syms);
+  DryTensor<> imagGammaGai(3, GaiLens, syms);
+}

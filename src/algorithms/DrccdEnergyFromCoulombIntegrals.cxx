@@ -22,13 +22,10 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
   // Read the DRCCD amplitudes Tabij
   Tensor<> *Tabij(&TabijMixer->getNext());
   
-  // Read tensors (Vabij, epsi, epsa, and intermediates)
-  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  // Read tensors (Vabij and intermediates)
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
   Tensor<> Rabij(false, *Vabij);
   Tensor<> Cabij(false, *Vabij);
-  Tensor<> Dabij(false, *Vabij);
 
   Rabij["abij"] = (*Vabij)["abij"];
   Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
@@ -53,10 +50,6 @@ void DrccdEnergyFromCoulombIntegrals::dryIterate() {
 
     // Read the Coulomb Integrals Vabij
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
-
-    // Read the Particle/Hole Eigenenergies epsi epsa
-    DryTensor<> *epsi(getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies"));
-    DryTensor<> *epsa(getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies"));
   
     // Allocate Tensors for T2 amplitudes
     DryTensor<> Rabij(*Vabij);
