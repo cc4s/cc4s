@@ -123,8 +123,8 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
       // slice if Vabcd is not specified
 
       // Read the sliceRank. If not provided use No
-      int64_t sliceRank(getIntegerArgument
-			("sliceRank",No));
+      int sliceRank(getIntegerArgument
+		    ("sliceRank",No));
 
       // Slice loop starts here
       for (int b(0); b < Nv; b += sliceRank) {
@@ -192,8 +192,8 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
     DryTensor<> Xakic(4, voov, syms);
 
     // Read the sliceRank. If not provided use No
-    int64_t sliceRank(getIntegerArgument
-		      ("sliceRank",No));
+    int sliceRank(getIntegerArgument
+		  ("sliceRank",No));
 
     if (!Vabcd) {
       // slice if Vabcd is not specified
