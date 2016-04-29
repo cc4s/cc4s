@@ -145,7 +145,7 @@ void ClusterDoublesAlgorithm::dryRun() {
   // Allocate the energy e
   DryScalar<> energy();
 
-  LOG(0, abbreviation) << "Solving Doubles Amplitude Equations" << std::endl;
+  //LOG(0, abbreviation) << "Solving Doubles Amplitude Equations" << std::endl;
 
   // Iteration for determining the DCD amplitudes Tabij
   // and the Dcd energy e
