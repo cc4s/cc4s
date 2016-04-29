@@ -41,29 +41,32 @@ void CoulombVertexReader::run() {
   no = header.no;
   nv = header.nv;
   np = no + nv;
+  
+  // print nG, no, nv, np
+  LOG(1, "CoulombVertexReader") << "nG = " << nG << std::endl;
+  LOG(1, "CoulombVertexReader") << "no = " << no << std::endl;
+  LOG(1, "CoulombVertexReader") << "nv = " << nv << std::endl;
+  LOG(1, "CoulombVertexReader") << "np = " << np << std::endl;
 
   // allocate output tensors
   int vertexLens[] = { nG, np, np };
   int vertexSyms[] = { NS, NS, NS };
   Tensor<> *epsi(new Vector<>(no, *Cc4s::world, "epsi"));
   Tensor<> *epsa(new Vector<>(nv, *Cc4s::world, "epsa"));
-  Tensor<complex> *GammaGpq(
-    new Tensor<complex>(
-      3, vertexLens, vertexSyms, *Cc4s::world, "GammaGpq"
-    )
-  );
+  Tensor<complex> *GammaGpq(new Tensor<complex>
+			    (3, vertexLens, vertexSyms, 
+			     *Cc4s::world, "GammaGpq"));
+
   // enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
   allocatedTensorArgument<complex>("CoulombVertex", GammaGpq);
 
   // real and imaginary parts are read in seperately
-  Tensor<> realGammaGpq(
-    3, vertexLens, vertexSyms, *Cc4s::world, "RealGammaGpq"
-  );
-  Tensor<> imagGammaGpq(
-    3, vertexLens, vertexSyms, *Cc4s::world, "ImagGammaGpq"
-  );
+  Tensor<> realGammaGpq(3, vertexLens, vertexSyms, 
+			*Cc4s::world, "RealGammaGpq");
+  Tensor<> imagGammaGpq(3, vertexLens, vertexSyms, 
+			*Cc4s::world, "ImagGammaGpq");
 
   Chunk chunk;
   while (file.read(reinterpret_cast<char *>(&chunk), sizeof(chunk))) {
@@ -78,35 +81,9 @@ void CoulombVertexReader::run() {
     }
   }
   file.close();
+
   // combine to complex tensor
   toComplexTensor(realGammaGpq, imagGammaGpq, *GammaGpq);
-  
-  // Print Ok
-  //LOG(0, "CoulombVertexReader") << " OK" << std::endl;
-  
-  // print nG, no, nv, np
-  LOG(1, "CoulombVertexReader") << "nG = " << nG << std::endl;
-  LOG(1, "CoulombVertexReader") << "no = " << no << std::endl;
-  LOG(1, "CoulombVertexReader") << "nv = " << nv << std::endl;
-  LOG(1, "CoulombVertexReader") << "np = " << np << std::endl;
-
-  // Test print the norm of GammaGpq
-  //double result(realGammaGpq.norm2());
-  //LOG(4) << "|GammaGpq| = " << result << std::endl;
-  //print the norm of epsi and epsa
-  //result = epsi->norm2();
-  //LOG(4) << "|epsi| = " << result << std::endl;
-  //result = epsa->norm2();
-  //LOG(4) << "|epsa| = " << result << std::endl;
-
-  // Test print the norm of Vpqrs
-  //int lens[] = { np, np, np, np };
-  //int syms[] = { NS, NS, NS, NS };
-  //Tensor<> vpqrs(4, lens, syms, *Cc4s::world, "Vpqrs");
-  //vpqrs["prqs"]  = realGammaGpq["Gpq"] * realGammaGpq["Grs"];
-  //vpqrs["prqs"] += imagGammaGpq["Gpq"] * imagGammaGpq["Grs"];
-  //double error(vpqrs.norm2());
-  //LOG(4) << "|Vpqrs| = " << error << std::endl;
 }
 
 void CoulombVertexReader::dryRun() {
@@ -137,15 +114,13 @@ void CoulombVertexReader::dryRun() {
   int vertexSyms[] = { NS, NS, NS };
   DryTensor<> *epsi(new DryVector<>(no));
   DryTensor<> *epsa(new DryVector<>(nv));
-  DryTensor<complex> *GammaGpq(
-    new DryTensor<complex>(3, vertexLens, vertexSyms)
-  );
+  DryTensor<complex> *GammaGpq(new DryTensor<complex>(3, vertexLens, 
+						      vertexSyms));
   // enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
-  allocatedTensorArgument<
-    complex, DryTensor<complex>
-  >("CoulombVertex", GammaGpq);
+  allocatedTensorArgument<complex, DryTensor<complex>>("CoulombVertex", 
+						       GammaGpq);
 
   // real and imaginary parts are read in seperately
   DryTensor<> realGammaGpq(3, vertexLens, vertexSyms);
@@ -158,14 +133,14 @@ void CoulombVertexReader::dryRun() {
 void CoulombVertexReader::readGammaGpqChunkBlocked(
   std::ifstream &file, Tensor<> &GammaGpq
 ) {
-  //LOG(4) << "Reading " << GammaGpq.get_name() << std::endl;
+  LOG(1, "CoulombVertexReader") << "Reading " 
+				<< GammaGpq.get_name() << std::endl;
+
   // TODO: separate distribution from reading
   // allocate local indices and values of the GammaGpq tensors
   int64_t npPerNode(np / Cc4s::world->np);
-  int64_t npLocal(
-    Cc4s::world->rank+1 < Cc4s::world->np ?
-      npPerNode : np - Cc4s::world->rank * npPerNode
-  );
+  int64_t npLocal(Cc4s::world->rank+1 < Cc4s::world->np ? 
+		  npPerNode : np - Cc4s::world->rank * npPerNode);
   int64_t npToSkipBefore(Cc4s::world->rank * npPerNode);
   int64_t npToSkipAfter(np - (npToSkipBefore + npLocal));
   double *values(new double[npLocal*np*nG]);
@@ -177,10 +152,6 @@ void CoulombVertexReader::readGammaGpqChunkBlocked(
     indices[i] = i + npToSkipBefore*np*nG;
   }
   GammaGpq.write(npLocal*np*nG, indices, values);
-  //for (int ind=0; ind<npLocal*np*nG; ind++)
-  //{
-  //LOG(6) << values[ind] << std::endl;
-  //}
   delete[] values; delete[] indices;
 }
 
@@ -188,6 +159,9 @@ void CoulombVertexReader::readGammaGpqChunkBlocked(
 void CoulombVertexReader::readEpsChunk(
   std::ifstream &file, Tensor<> &epsi, Tensor<> &epsa
 ) {
+  LOG(1, "CoulombVertexReader") << "Reading " << epsi.get_name() << ", " 
+				<< epsa.get_name() <<  std::endl;
+
   // allocate local indices and values of eigenenergies
   double *iValues(new double[no]);
   double *aValues(new double[nv]);

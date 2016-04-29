@@ -28,120 +28,131 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
     // Read the DCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
 
-    // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
-    // the PPPPCoulombIntegrals may not be given then slicing is required
-    Tensor<> *Vabcd(
-      isArgumentGiven("PPPPCoulombIntegrals") ?
-        getTensorArgument("PPPPCoulombIntegrals") : nullptr
-    );
+    // Read the Coulomb Integrals Vabij
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-    Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
-    Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
 
-    // Read the Particle/Hole Eigenenergies epsi epsa
-    Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-    Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
-  
-    // Compute the No,Nv
-    int No(epsi->lens[0]);
-    int Nv(epsa->lens[0]);
-
-    int syms[] = { NS, NS, NS, NS };
-    int voov[] = { Nv, No, No, Nv };
-    int vv[] = { Nv, Nv };
-    int oo[] = { No, No };
-
-    std::string abbreviation(getAbbreviation());
-    std::transform(abbreviation.begin(), abbreviation.end(), 
-		   abbreviation.begin(), ::toupper);
-
-    // Allocate Tensors for T2 amplitudes
+    // Allocate Tensor for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
 
-    // Define intermediates
-    Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
-    Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
+    if (i == 0) {
+      // For first iteration compute only the MP2 amplitudes since Tabij = 0
 
-    Tensor<> Xklij(false, *Vijkl);
-    Tensor<> Xakci(false, *Vaibj);
-    Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
-
-    // Build Kac
-    Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
-    Kac["ac"] += (*Vabij)["dckl"] * (*Tabij)["adkl"];
-
-    // Build Kki
-    Kki["ki"]  = 2.0 * (*Vabij)["cdkl"] * (*Tabij)["cdil"];
-    Kki["ki"] -= (*Vabij)["dckl"] * (*Tabij)["cdil"];
-    
-    // Contract Kac with T2 Amplitudes
-    Rabij["abij"]  = 0.5 * Kac["ac"] * (*Tabij)["cbij"]; // Multiplied by 0.5 in DCD
-
-    // Contract Kki with T2 Amplitudes
-    Rabij["abij"] -= 0.5 * Kki["ki"] * (*Tabij)["abkj"]; // Multiplied by 0.5 in DCD
-
-    // Build Xakic
-    Xakic["akic"]  = (*Vabij)["acik"];
-    Xakic["akic"] -= 0.5 * (*Vabij)["dclk"] * (*Tabij)["dail"];
-    Xakic["akic"] += (*Vabij)["dclk"] * (*Tabij)["adil"];
-    //Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
-
-    // Build Xakci
-    Xakci["akci"]  = (*Vaibj)["akci"];
-    //Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
-
-    // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
-    Rabij["abij"] += 2.0 * Xakic["akic"] * (*Tabij)["cbkj"];
-    Rabij["abij"] -= Xakic["akic"] * (*Tabij)["bckj"];
-
-    Rabij["abij"] -= Xakci["akci"] * (*Tabij)["cbkj"];
-    Rabij["abij"] -= Xakci["bkci"] * (*Tabij)["ackj"];
-
-    // Symmetrize Rabij by applying permutation operator
-    // to save memory we use Xakci as intermediate for the permutation operator 
-    Xakci["aibj"]  = Rabij["abij"];
-    Rabij["abij"] += Xakci["bjai"]; 
-
-    //////////////////////////////////////////////////////////////////////
-    // Now add all terms to Rabij that do not need to be symmetrized with
-    // the permutation operator
-    //////////////////////////////////////////////////////////////////////
-
-    // Rabij are the Tabij amplitudes for the next iteration and need to be build
-    Rabij["abij"] += (*Vabij)["abij"];
-
-    // Build Xklij intermediate
-    Xklij["klij"]  = (*Vijkl)["klij"];
-    // Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in DCD
-
-    // Contract Xklij with T2 Amplitudes
-    Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
-
-    // Contract Vabcd with T2 Amplitudes
-    if (Vabcd) {
-      Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
+      // Rabij contracted with Vabij is the only non-zero term
+      Rabij["abij"] += (*Vabij)["abij"];
+      
     } else {
-      // Slice if Vabcd is not specified
+      // For the rest iterations compute the DCD amplitudes
 
-      // Read the sliceRank. If not provided use No
-      int sliceRank(getIntegerArgument
-		    ("sliceRank",No));
+      // Read the Coulomb Integrals Vabcd Vaibj Vijkl
+      // the PPPPCoulombIntegrals may not be given then slicing is required
+      Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
+		      getTensorArgument("PPPPCoulombIntegrals") : nullptr);
+      Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
+      Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
 
-      // Slice loop starts here
-      for (int b(0); b < Nv; b += sliceRank) {
-        for (int a(b); a < Nv; a += sliceRank) {
-          LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-          Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
-          int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-          int syms[] = {NS, NS, NS, NS};
-          Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);
-          Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
-          sliceIntoResiduum(Rxyij, a, b, Rabij);
-          // the integrals of this slice are not needed anymore
-          delete Vxycd;
-        }
+      // Read the Particle/Hole Eigenenergies epsi epsa
+      Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+      Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+      
+      // Compute the No,Nv
+      int No(epsi->lens[0]);
+      int Nv(epsa->lens[0]);
+
+      int syms[] = { NS, NS, NS, NS };
+      int voov[] = { Nv, No, No, Nv };
+      int vv[] = { Nv, Nv };
+      int oo[] = { No, No };
+
+      std::string abbreviation(getAbbreviation());
+      std::transform(abbreviation.begin(), abbreviation.end(), 
+		     abbreviation.begin(), ::toupper);
+
+      // Define intermediates
+      Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
+      Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
+
+      Tensor<> Xklij(false, *Vijkl);
+      Tensor<> Xakci(false, *Vaibj);
+      Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
+
+      // Build Kac
+      Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
+      Kac["ac"] += (*Vabij)["dckl"] * (*Tabij)["adkl"];
+
+      // Build Kki
+      Kki["ki"]  = 2.0 * (*Vabij)["cdkl"] * (*Tabij)["cdil"];
+      Kki["ki"] -= (*Vabij)["dckl"] * (*Tabij)["cdil"];
+    
+      // Contract Kac with T2 Amplitudes
+      Rabij["abij"]  = 0.5 * Kac["ac"] * (*Tabij)["cbij"]; // Multiplied by 0.5 in DCD
+
+      // Contract Kki with T2 Amplitudes
+      Rabij["abij"] -= 0.5 * Kki["ki"] * (*Tabij)["abkj"]; // Multiplied by 0.5 in DCD
+
+      // Build Xakic
+      Xakic["akic"]  = (*Vabij)["acik"];
+      Xakic["akic"] -= 0.5 * (*Vabij)["dclk"] * (*Tabij)["dail"];
+      Xakic["akic"] += (*Vabij)["dclk"] * (*Tabij)["adil"];
+      //Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
+
+      // Build Xakci
+      Xakci["akci"]  = (*Vaibj)["akci"];
+      //Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
+
+      // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
+      Rabij["abij"] += 2.0 * Xakic["akic"] * (*Tabij)["cbkj"];
+      Rabij["abij"] -= Xakic["akic"] * (*Tabij)["bckj"];
+
+      Rabij["abij"] -= Xakci["akci"] * (*Tabij)["cbkj"];
+      Rabij["abij"] -= Xakci["bkci"] * (*Tabij)["ackj"];
+
+      // Symmetrize Rabij by applying permutation operator
+      // to save memory we use Xakci as intermediate for the permutation operator 
+      Xakci["aibj"]  = Rabij["abij"];
+      Rabij["abij"] += Xakci["bjai"]; 
+
+      //////////////////////////////////////////////////////////////////////
+      // Now add all terms to Rabij that do not need to be symmetrized with
+      // the permutation operator
+      //////////////////////////////////////////////////////////////////////
+
+      // Rabij are the Tabij amplitudes for the next iteration and need to be build
+      Rabij["abij"] += (*Vabij)["abij"];
+
+      // Build Xklij intermediate
+      Xklij["klij"]  = (*Vijkl)["klij"];
+      // Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in DCD
+
+      // Contract Xklij with T2 Amplitudes
+      Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
+
+      // Contract Vabcd with T2 Amplitudes
+      if (Vabcd) {
+	Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
+      } else {
+	// Slice if Vabcd is not specified
+
+	// Read the sliceRank. If not provided use No
+	int sliceRank(getIntegerArgument
+		      ("sliceRank",No));
+
+	// Slice loop starts here
+	for (int b(0); b < Nv; b += sliceRank) {
+	  for (int a(b); a < Nv; a += sliceRank) {
+	    LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+	    Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
+	    int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+	    int syms[] = {NS, NS, NS, NS};
+	    Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);
+	    Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
+	    sliceIntoResiduum(Rxyij, a, b, Rabij);
+	    // the integrals of this slice are not needed anymore
+	    delete Vxycd;
+	  }
+	}
       }
     }
+
     // calculate the amplitdues from the residuum
     doublesAmplitudesFromResiduum(Rabij);
     // and append them to the mixer

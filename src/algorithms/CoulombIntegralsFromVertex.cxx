@@ -150,40 +150,6 @@ void CoulombIntegralsFromVertex::run() {
     (*Vabci)["abci"]  = realGammaGab["Gac"] * realGammaGai["Gbi"];
     (*Vabci)["abci"] += imagGammaGab["Gac"] * imagGammaGai["Gbi"];
   }
-
-  // Print okay
-  //LOG(0, "CoulombIntegrals") << " OK" << std::endl;
-
-  // Print test norm2 of GammaGai, GammaGab, GammaGij
-  // GammaGai
-  //double error(realGammaGai.norm2());
-  //LOG(4) << "|realGammaGai| = " << error << std::endl;
-  //error = imagGammaGai.norm2();
-  //LOG(4) << "|imagGammaGai| = " << error << std::endl;
-  // GammaGab
-  //error = realGammaGab.norm2();
-  //LOG(4) << "|realGammaGab| = " << error << std::endl;
-  //error = imagGammaGab.norm2();
-  //LOG(4) << "|imagGammaGab| = " << error << std::endl;
-  // GammaGij
-  //error = realGammaGij.norm2();
-  //LOG(4) << "|realGammaGij| = " << error << std::endl;
-  //error = imagGammaGij.norm2();
-  //LOG(4) << "|imagGammaGij| = " << error << std::endl;
-
-  // Print test norm2 of Vabij Vaibj Vaijb Vijkl Vabcd
-  //error = Vabcd->norm2();
-  //LOG(4) << "|Vabcd| = " << error << std::endl;
-  //error = Vabij->norm2();
-  //LOG(4) << "|Vabij| = " << error << std::endl;
-  //error = Vaibj->norm2();
-  //LOG(4) << "|Vaibj| = " << error << std::endl;
-  //error = Vijkl->norm2();
-  //LOG(4) << "|Vijkl| = " << error << std::endl;
-  //error = Vijka->norm2();
-  //LOG(4) << "|Vijka| = " << error << std::endl;
-  //error = Vabci->norm2();
-  //LOG(4) << "|Vabci| = " << error << std::endl;
 }
 
 void CoulombIntegralsFromVertex::dryRun() {
