@@ -26,10 +26,6 @@ void ClusterDoublesAlgorithm::run() {
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
-  
-  // Compute the No,Nv
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
 
   // instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
@@ -39,8 +35,11 @@ void ClusterDoublesAlgorithm::run() {
     stringStream << "Mixer not implemented: " << mixerName;
     throw new Exception(stringStream.str());
   }
+
   {
     // Allocate the doubles amplitudes and append it to the mixer
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
     Tensor<> Tabij(4, vvoo, syms, *epsi->wrld, "Tabij");
@@ -59,9 +58,9 @@ void ClusterDoublesAlgorithm::run() {
   );
   LOG(0, abbreviation) << "Solving Doubles Amplitude Equations" << std::endl;
 
-  // Iteration for determining the DCD amplitudes Tabij
-  // and the Dcd energy e
-  int64_t maxIterationsCount(
+  // Iteration for determining the doubles amplitudes Tabij
+  // and the energy e
+  int maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );
   for (int i(0); i < maxIterationsCount; ++i) {
@@ -78,10 +77,8 @@ void ClusterDoublesAlgorithm::run() {
     LOG(1, abbreviation) << "exc=" << exce << std::endl;
   }
 
-  // TODO: use "=" (without space) as soon as most postprocesing
-  // is based on TensorWriter
   LOG(1, abbreviation) <<
-    abbreviation << " correlation energy = " << e << std::endl;
+    abbreviation << " correlation energy=" << e << std::endl;
 
   std::stringstream amplitudesName;
   amplitudesName << getAbbreviation() << "DoublesAmplitudes";
@@ -107,10 +104,6 @@ void ClusterDoublesAlgorithm::dryRun() {
   DryTensor<> *epsa(
     getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
   );
-  
-  // Compute the No,Nv
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
 
   std::string abbreviation(getAbbreviation());
   std::transform(
@@ -134,8 +127,11 @@ void ClusterDoublesAlgorithm::dryRun() {
       << "Warning: dry run not implemented for " << mixerName
       << ", assuming the same memory usage." << std::endl;
   }
+
   {
     // Allocate the doubles amplitudes and append it to the mixer
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
     DryTensor<> Tabij(4, vvoo, syms);
@@ -147,9 +143,7 @@ void ClusterDoublesAlgorithm::dryRun() {
 
   //LOG(0, abbreviation) << "Solving Doubles Amplitude Equations" << std::endl;
 
-  // Iteration for determining the DCD amplitudes Tabij
-  // and the Dcd energy e
-  // int64_t maxIterationsCount(
+  // int maxIterationsCount(
   getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
   // );
 

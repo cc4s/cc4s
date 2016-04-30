@@ -18,6 +18,14 @@ namespace cc4s {
      * \brief Calculates the energy of a ClusterDoubles algorithm
      */
     virtual void run();
+
+    /** \brief The occupied orbital energies  */
+    CTF::Tensor<> *epsi;
+    /** \brief The virtual orbital energies  */
+    CTF::Tensor<> *epsa;
+    /** \brief The Coulomb integrals Vabij  */
+    CTF::Tensor<> *Vabij;
+
     /**
      * \brief Performs a Dry Run
      */
@@ -28,7 +36,7 @@ namespace cc4s {
      */
     virtual std::string getAbbreviation() = 0;
 
-    static int64_t constexpr DEFAULT_MAX_ITERATIONS = 16;
+    static int constexpr DEFAULT_MAX_ITERATIONS = 16;
 
   protected:
     /**
@@ -65,6 +73,10 @@ namespace cc4s {
      * result tensor. 
      */
     CTF::Tensor<> *sliceCoulombIntegrals(int a, int b, int sliceRank);
+
+    /** \brief The Coulomb Vertex GammaGpq  */
+    CTF::Tensor<complex> *GammaGpq;
+
     /**
      * \brief Adds the given slice of the residuum tensor Rxyij to the
      * entire residuum tensor Rabij at the respective index range.
