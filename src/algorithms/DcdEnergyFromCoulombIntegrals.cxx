@@ -58,74 +58,76 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
       int No(epsi->lens[0]);
       int Nv(epsa->lens[0]);
 
-      int syms[] = { NS, NS, NS, NS };
-      int voov[] = { Nv, No, No, Nv };
-      int vv[] = { Nv, Nv };
-      int oo[] = { No, No };
-
       std::string abbreviation(getAbbreviation());
       std::transform(abbreviation.begin(), abbreviation.end(), 
 		     abbreviation.begin(), ::toupper);
 
-      // Define intermediates
-      Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
-      Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
+      {
+	// Define intermediates
+	int syms[] = { NS, NS, NS, NS };
+	int voov[] = { Nv, No, No, Nv };
+	int vv[] = { Nv, Nv };
+	int oo[] = { No, No };
 
-      Tensor<> Xklij(false, *Vijkl);
-      Tensor<> Xakci(false, *Vaibj);
-      Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
+	Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
+	Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
 
-      // Build Kac
-      Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
-      Kac["ac"] += (*Vabij)["dckl"] * (*Tabij)["adkl"];
+	Tensor<> Xklij(false, *Vijkl);
+	Tensor<> Xakci(false, *Vaibj);
+	Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
 
-      // Build Kki
-      Kki["ki"]  = 2.0 * (*Vabij)["cdkl"] * (*Tabij)["cdil"];
-      Kki["ki"] -= (*Vabij)["dckl"] * (*Tabij)["cdil"];
-    
-      // Contract Kac with T2 Amplitudes
-      Rabij["abij"]  = 0.5 * Kac["ac"] * (*Tabij)["cbij"]; // Multiplied by 0.5 in DCD
+	// Build Kac
+	Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
+	Kac["ac"] += (*Vabij)["dckl"] * (*Tabij)["adkl"];
 
-      // Contract Kki with T2 Amplitudes
-      Rabij["abij"] -= 0.5 * Kki["ki"] * (*Tabij)["abkj"]; // Multiplied by 0.5 in DCD
+	// Build Kki
+	Kki["ki"]  = 2.0 * (*Vabij)["cdkl"] * (*Tabij)["cdil"];
+	Kki["ki"] -= (*Vabij)["dckl"] * (*Tabij)["cdil"];
 
-      // Build Xakic
-      Xakic["akic"]  = (*Vabij)["acik"];
-      Xakic["akic"] -= 0.5 * (*Vabij)["dclk"] * (*Tabij)["dail"];
-      Xakic["akic"] += (*Vabij)["dclk"] * (*Tabij)["adil"];
-      //Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
+	// Contract Kac with T2 Amplitudes
+	Rabij["abij"]  = 0.5 * Kac["ac"] * (*Tabij)["cbij"]; // Multiplied by 0.5 in DCD
 
-      // Build Xakci
-      Xakci["akci"]  = (*Vaibj)["akci"];
-      //Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
+	// Contract Kki with T2 Amplitudes
+	Rabij["abij"] -= 0.5 * Kki["ki"] * (*Tabij)["abkj"]; // Multiplied by 0.5 in DCD
 
-      // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
-      Rabij["abij"] += 2.0 * Xakic["akic"] * (*Tabij)["cbkj"];
-      Rabij["abij"] -= Xakic["akic"] * (*Tabij)["bckj"];
+	// Build Xakic
+	Xakic["akic"]  = (*Vabij)["acik"];
+	Xakic["akic"] -= 0.5 * (*Vabij)["dclk"] * (*Tabij)["dail"];
+	Xakic["akic"] += (*Vabij)["dclk"] * (*Tabij)["adil"];
+	//Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
 
-      Rabij["abij"] -= Xakci["akci"] * (*Tabij)["cbkj"];
-      Rabij["abij"] -= Xakci["bkci"] * (*Tabij)["ackj"];
+	// Build Xakci
+	Xakci["akci"]  = (*Vaibj)["akci"];
+	//Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
 
-      // Symmetrize Rabij by applying permutation operator
-      // to save memory we use Xakci as intermediate for the permutation operator 
-      Xakci["aibj"]  = Rabij["abij"];
-      Rabij["abij"] += Xakci["bjai"]; 
+	// Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
+	Rabij["abij"] += 2.0 * Xakic["akic"] * (*Tabij)["cbkj"];
+	Rabij["abij"] -= Xakic["akic"] * (*Tabij)["bckj"];
 
-      //////////////////////////////////////////////////////////////////////
-      // Now add all terms to Rabij that do not need to be symmetrized with
-      // the permutation operator
-      //////////////////////////////////////////////////////////////////////
+	Rabij["abij"] -= Xakci["akci"] * (*Tabij)["cbkj"];
+	Rabij["abij"] -= Xakci["bkci"] * (*Tabij)["ackj"];
 
-      // Rabij are the Tabij amplitudes for the next iteration and need to be build
-      Rabij["abij"] += (*Vabij)["abij"];
+	// Symmetrize Rabij by applying permutation operator
+	// to save memory we use Xakci as intermediate for the permutation operator 
+	Xakci["aibj"]  = Rabij["abij"];
+	Rabij["abij"] += Xakci["bjai"]; 
 
-      // Build Xklij intermediate
-      Xklij["klij"]  = (*Vijkl)["klij"];
-      // Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in DCD
+	//////////////////////////////////////////////////////////////////////
+	// Now add all terms to Rabij that do not need to be symmetrized with
+	// the permutation operator
+	//////////////////////////////////////////////////////////////////////
 
-      // Contract Xklij with T2 Amplitudes
-      Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
+	// Rabij are the Tabij amplitudes for the next iteration and need to be build
+	Rabij["abij"] += (*Vabij)["abij"];
 
+	// Build Xklij intermediate
+	Xklij["klij"]  = (*Vijkl)["klij"];
+	// Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in DCD
+
+	// Contract Xklij with T2 Amplitudes
+	Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
+      }
+      
       // Contract Vabcd with T2 Amplitudes
       if (Vabcd) {
 	Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
