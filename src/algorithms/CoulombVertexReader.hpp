@@ -56,6 +56,13 @@ namespace cc4s {
      */
     void readGammaGpqChunkBlocked(std::ifstream &file, CTF::Tensor<> &GammaGpq);
     /**
+     * \brief Reads a chunk from the Full Coulomb Vertex GammaGpq sequentially
+     * using one processor only.
+     * \param[in] file name of file of Coulomb Vertex
+     * \param[in,out] GammaGpq tensor to read the Coulomb vertex
+     */
+    void readGammaGpqChunkSequential(std::ifstream &file, CTF::Tensor<> &GammaGpq);
+    /**
      * \brief Reads a chunk from the orbital energies epsi, epsa
      * \param[in] file name of file of Coulomb Vertex
      * \param[in,out] epsi energies of occupied orbitals

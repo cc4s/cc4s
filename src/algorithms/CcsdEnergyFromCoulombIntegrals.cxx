@@ -75,7 +75,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
     //***********************  T2 amplitude equations  *******************************
     //********************************************************************************
 
-    LOG(1, "CCSD") << "Solving T2 CCSD Amplitude Equations  ...";
+    LOG(1, "CCSD") << "Solving T2 CCSD Amplitude Equations";
 
     // Build Kac
     Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
@@ -199,13 +199,11 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
     // and append them to the mixer
     TabijMixer->append(Rabij);
 
-    LOG(1, "CCSD") << " OK" << std::endl;
-
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
 
-    LOG(1, "CCSD") << "Solving T1 CCSD Amplitude Equations  ...";
+    LOG(1, "CCSD") << "Solving T1 CCSD Amplitude Equations";
 
     // Contract Kac and Kki with T1 amplitudes
     Rai["ai"]  = Kac["ac"] * (*Tai)["ci"];
@@ -232,7 +230,5 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
     singlesAmplitudesFromResiduum(Rai);
     TaiMixer->append(Rai);
-
-    LOG(1, "CCSD") << " OK" << std::endl;
   }
 }

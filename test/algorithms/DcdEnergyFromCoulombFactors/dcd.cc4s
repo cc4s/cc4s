@@ -2,6 +2,8 @@ CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  % Default value of readRank is No.
+% (readRank 40)
 ].
 
 CoulombVertexDecomposition [

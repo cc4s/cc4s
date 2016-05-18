@@ -2,20 +2,37 @@ CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  % Uncomment next line to set the read rank. Default value is No.
+% (readRank 40)
 ].
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ] [
-  PPPPCoulombIntegrals PHPHCoulombIntegrals
-  PPHHCoulombIntegrals HHHHCoulombIntegrals 
+  % Uncomment next line if you want PPPPIntegrals. Else slicing is used.
+% PPPPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals HHHHCoulombIntegrals
   HHHPCoulombIntegrals PPPHCoulombIntegrals
 ].
 
 CcsdEnergyFromCoulombIntegrals [
-  PPPPCoulombIntegrals PHPHCoulombIntegrals PHHPCoulombIntegrals 
-  PPHHCoulombIntegrals HHHHCoulombIntegrals HHHPCoulombIntegrals
-  PPPHCoulombIntegrals HoleEigenEnergies    ParticleEigenEnergies
+  % Uncomment next line if you want PPPPIntegrals. Else slicing is used.
+% PPPPCoulombIntegrals
+  % Comment next line if you want PPPPIntegrals. Else slicing is used.
+  CoulombVertex
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals HHHHCoulombIntegrals
+  HHHPCoulombIntegrals PPPHCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  % Sets maximum iterations. Default is 16.
+  (maxIterations 16)
+  % Uncomment next line to set the slice rank of PPPPIntegrals. Default is No.
+% (sliceRank 40)
 ] [
-  CcsdEnergy CcsdSinglesAmplitudes CcsdDoublesAmplitudes
+  (CcsdEnergy CcsdEnergy) 
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
 ].
+
+
+TensorWriter [(Data CcsdEnergy)] [].
