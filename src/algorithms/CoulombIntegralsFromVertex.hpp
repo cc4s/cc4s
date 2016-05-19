@@ -32,8 +32,6 @@ namespace cc4s {
     CTF::Tensor<> *epsa;
     /** \brief The Coulomb Vertex GammaGpq  */
     CTF::Tensor<complex> *GammaGpq;
-    /** \brief The Coulomb integrals Vabij  */
-    CTF::Tensor<> *Vabij;
 
     /**
      * \brief Dry run for calculating Coulomb integrals

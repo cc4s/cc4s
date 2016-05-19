@@ -30,7 +30,7 @@ ParticleHoleCoulombVertexReader::~ParticleHoleCoulombVertexReader() {
 
 void ParticleHoleCoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
-  LOG(0) <<
+  LOG(0, "Reader") <<
     "Reading particle hole Coulomb vertex from file " << fileName << " ...";
   std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
   if (!file.is_open()) throw new Exception("Failed to open file");
@@ -82,18 +82,18 @@ void ParticleHoleCoulombVertexReader::run() {
   file.close();
   // combine to complex tensor
   toComplexTensor(realGammaGai, imagGammaGai, *GammaGai);
-  LOG(0) << " OK" << std::endl;
+  LOG(0, "Reader") << " OK" << std::endl;
 
-  // print the number of NG's, Nv's, No's, and Np's at the level of LOG(2)
-  LOG(2) << "NG=" << NG << std::endl;
-  LOG(2) << "Nv=" << Nv << std::endl;
-  LOG(2) << "No=" << No << std::endl;
-  LOG(2) << "Np=" << Np << std::endl;
+  // print the number of NG's, Nv's, No's, and Np's at the level of LOG(1)
+  LOG(1, "Reader") << "NG=" << NG << std::endl;
+  LOG(1, "Reader") << "Nv=" << Nv << std::endl;
+  LOG(1, "Reader") << "No=" << No << std::endl;
+  LOG(1, "Reader") << "Np=" << Np << std::endl;
 }
 
 void ParticleHoleCoulombVertexReader::dryRun() {
   std::string fileName(getTextArgument("file"));
-  LOG(0) <<
+  LOG(0, "Reader") <<
     "Reading particle hole Coulomb vertex from file " << fileName << std::endl;
   std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
   if (!file.is_open()) throw new Exception("Failed to open file");
@@ -127,11 +127,11 @@ void ParticleHoleCoulombVertexReader::dryRun() {
   dryReadGammaGaiChunkBlocked(&realGammaGai);
   dryReadGammaGaiChunkBlocked(&imagGammaGai);
 
-  // print the number of NG's, Nv's, No's, and Np's at the level of LOG(2)
-  LOG(2) << "number of plane waves NG=" << NG << std::endl;
-  LOG(2) << "number of virtual orbitals Nv=" << Nv << std::endl;
-  LOG(2) << "number of occupied orbitals No=" << No << std::endl;
-  LOG(2) << "total number of orbitals Np=" << Np << std::endl;
+  // print the number of NG's, Nv's, No's, and Np's at the level of LOG(1)
+  LOG(1, "Reader") << "NG=" << NG << std::endl;
+  LOG(1, "Reader") << "Nv=" << Nv << std::endl;
+  LOG(1, "Reader") << "No=" << No << std::endl;
+  LOG(1, "Reader") << "Np=" << Np << std::endl;
 }
 
 

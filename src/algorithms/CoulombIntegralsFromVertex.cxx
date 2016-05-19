@@ -21,54 +21,44 @@ CoulombIntegralsFromVertex::~CoulombIntegralsFromVertex() {
 }
 
 void CoulombIntegralsFromVertex::run() {
-  Tensor<complex> *GammaGpq(
-    getTensorArgument<complex>("CoulombVertex")
-  );
+  // Read the Coulomb vertex GammaGpq
+  Tensor<complex> *GammaGpq( getTensorArgument<complex>("CoulombVertex"));
 
   // Read the Particle/Hole Eigenenergies
-  Tensor<> *epsi(
-    getTensorArgument<>("HoleEigenEnergies")
-  );
-  Tensor<> *epsa(
-    getTensorArgument<>("ParticleEigenEnergies")
-  );
+  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
-  LOG(0, "CoulombIntegrals") <<
-    "Reading Coulomb integrals form vertex " << GammaGpq->get_name() << " ..." << std::endl;
+  LOG(0, "Integrals") <<
+    "Reading Coulomb integrals form vertex " << GammaGpq->get_name() 
+					     << std::endl;
 
-  // Compute the no,nv,nG,np
-  int nG(GammaGpq->lens[0]);
-  int no(epsi->lens[0]);
-  int nv(epsa->lens[0]);
-  int np = no + nv;
+  // Compute the No,Nv,NG,Np
+  int NG(GammaGpq->lens[0]);
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np = No + Nv;
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   int syms[] = { NS, NS, NS, NS };
-  int vvvv[] = { nv, nv, nv, nv };
-  int vovo[] = { nv, no, nv, no };
-  int vvoo[] = { nv, nv, no, no };
-  int oooo[] = { no, no, no, no };
-  int ooov[] = { no, no, no, nv };
-  int vvvo[] = { nv, nv, nv, no };
+  int vvvv[] = { Nv, Nv, Nv, Nv };
+  int vovo[] = { Nv, No, Nv, No };
+  int vvoo[] = { Nv, Nv, No, No };
+  int oooo[] = { No, No, No, No };
+  int ooov[] = { No, No, No, Nv };
+  int vvvo[] = { Nv, Nv, Nv, No };
 
   Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
-		  new Tensor<>(4, vvvv, syms, *Cc4s::world, "Vabcd") : nullptr
-		  );
+		  new Tensor<>(4, vvvv, syms, *Cc4s::world, "Vabcd") : nullptr);
   Tensor<> *Vaibj(isArgumentGiven("PHPHCoulombIntegrals") ?
-		  new Tensor<>(4, vovo, syms, *Cc4s::world, "Vaibj") : nullptr
-		  );
+		  new Tensor<>(4, vovo, syms, *Cc4s::world, "Vaibj") : nullptr);
   Tensor<> *Vabij(isArgumentGiven("PPHHCoulombIntegrals") ?
-		  new Tensor<>(4, vvoo, syms, *Cc4s::world, "Vabij") : nullptr
-		  );
+		  new Tensor<>(4, vvoo, syms, *Cc4s::world, "Vabij") : nullptr);
   Tensor<> *Vijkl(isArgumentGiven("HHHHCoulombIntegrals") ?
-		  new Tensor<>(4, oooo, syms, *Cc4s::world, "Vijkl") : nullptr
-		  );
+		  new Tensor<>(4, oooo, syms, *Cc4s::world, "Vijkl") : nullptr);
   Tensor<> *Vijka(isArgumentGiven("HHHPCoulombIntegrals") ?
-		  new Tensor<>(4, ooov, syms, *Cc4s::world, "Vijka") : nullptr
-		  );
+		  new Tensor<>(4, ooov, syms, *Cc4s::world, "Vijka") : nullptr);
   Tensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
-		  new Tensor<>(4, vvvo, syms, *Cc4s::world, "Vabci") : nullptr
-		  );
+		  new Tensor<>(4, vvvo, syms, *Cc4s::world, "Vabci") : nullptr);
 
   if (Vabcd) {
     allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
@@ -90,113 +80,111 @@ void CoulombIntegralsFromVertex::run() {
   }
 
   // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
-  int GaiStart[] = {0 ,no, 0};
-  int GaiEnd[]   = {nG,np,no};
-  int GabStart[] = {0 ,no,no};
-  int GabEnd[]   = {nG,np,np};
+  int GaiStart[] = {0 ,No, 0};
+  int GaiEnd[]   = {NG,Np,No};
+  int GabStart[] = {0 ,No,No};
+  int GabEnd[]   = {NG,Np,Np};
   int GijStart[] = {0 , 0, 0};
-  int GijEnd[]   = {nG,no,no};
+  int GijEnd[]   = {NG,No,No};
   Tensor<complex> GammaGai(GammaGpq->slice(GaiStart,GaiEnd));
   Tensor<complex> GammaGab(GammaGpq->slice(GabStart,GabEnd));
   Tensor<complex> GammaGij(GammaGpq->slice(GijStart,GijEnd));
 
   // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
-  Tensor<> realGammaGai(
-  3, GammaGai.lens, GammaGai.sym, *GammaGai.wrld, "RealGammaGai"
-  );
-  Tensor<> imagGammaGai(
-  3, GammaGai.lens, GammaGai.sym, *GammaGai.wrld, "ImagGammaGai"
-  );
+  Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
+			*GammaGai.wrld, "RealGammaGai");
+  Tensor<> imagGammaGai(3, GammaGai.lens, GammaGai.sym, 
+			*GammaGai.wrld, "ImagGammaGai");
   fromComplexTensor(GammaGai, realGammaGai, imagGammaGai);
 
-  Tensor<> realGammaGab(
-  3, GammaGab.lens, GammaGab.sym, *GammaGab.wrld, "RealGammaGab"
-  );
-  Tensor<> imagGammaGab(
-  3, GammaGab.lens, GammaGab.sym, *GammaGab.wrld, "ImagGammaGab"
-  );
+  Tensor<> realGammaGab(3, GammaGab.lens, GammaGab.sym, 
+			*GammaGab.wrld, "RealGammaGab");
+  Tensor<> imagGammaGab(3, GammaGab.lens, GammaGab.sym, 
+			*GammaGab.wrld, "ImagGammaGab");
   fromComplexTensor(GammaGab, realGammaGab, imagGammaGab);
 
-  Tensor<> realGammaGij(
-  3, GammaGij.lens, GammaGij.sym, *GammaGij.wrld, "RealGammaGij"
-  );
-  Tensor<> imagGammaGij(
-  3, GammaGij.lens, GammaGij.sym, *GammaGij.wrld, "ImagGammaGij"
-  );
+  Tensor<> realGammaGij(3, GammaGij.lens, GammaGij.sym, 
+			*GammaGij.wrld, "RealGammaGij");
+  Tensor<> imagGammaGij(3, GammaGij.lens, GammaGij.sym, 
+			*GammaGij.wrld, "ImagGammaGij");
   fromComplexTensor(GammaGij, realGammaGij, imagGammaGij);
 
   // Compute the integrals Vabij Vaibj Vaijb Vijkl Vabcd
   if (Vabcd) {
+    LOG(1, "Integrals") << "Evaluating " 
+			       << Vabcd->get_name() << std::endl;
     (*Vabcd)["abcd"]  = realGammaGab["Gac"] * realGammaGab["Gbd"];
     (*Vabcd)["abcd"] += imagGammaGab["Gac"] * imagGammaGab["Gbd"];
   }
   if (Vaibj) {
+    LOG(1, "Integrals") << "Evaluating " 
+			       << Vaibj->get_name() << std::endl;
     (*Vaibj)["aibj"]  = realGammaGab["Gab"] * realGammaGij["Gij"];
     (*Vaibj)["aibj"] += imagGammaGab["Gab"] * imagGammaGij["Gij"];
   }
   if (Vabij) {
+    LOG(1, "Integrals") << "Evaluating " 
+			       << Vabij->get_name() << std::endl;
     (*Vabij)["abij"]  = realGammaGai["Gai"] * realGammaGai["Gbj"];
     (*Vabij)["abij"] += imagGammaGai["Gai"] * imagGammaGai["Gbj"];
   }
   if (Vijkl) {
+    LOG(1, "Integrals") << "Evaluating " 
+			       << Vijkl->get_name() << std::endl;
     (*Vijkl)["ijkl"]  = realGammaGij["Gik"] * realGammaGij["Gjl"];
     (*Vijkl)["ijkl"] += imagGammaGij["Gik"] * imagGammaGij["Gjl"];
   }
   if (Vijka) {
+    LOG(1, "Integrals") << "Evaluating " 
+			       << Vijka->get_name() << std::endl;
     (*Vijka)["ijka"]  = realGammaGij["Gik"] * realGammaGai["Gaj"];
     (*Vijka)["ijka"] += imagGammaGij["Gik"] * imagGammaGai["Gaj"];
   }
   if (Vabci) {
+    LOG(1, "Integrals") << "Evaluating " 
+			       << Vabci->get_name() << std::endl;
     (*Vabci)["abci"]  = realGammaGab["Gac"] * realGammaGai["Gbi"];
     (*Vabci)["abci"] += imagGammaGab["Gac"] * imagGammaGai["Gbi"];
   }
 }
 
 void CoulombIntegralsFromVertex::dryRun() {
-  DryTensor<complex> *GammaGpq(
-    getTensorArgument<complex, DryTensor<complex>>("CoulombVertex")
-  );
+  // Read the Coulomb vertex GammaGpq
+  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+			       DryTensor<complex>>("CoulombVertex"));
 
   // Read the Particle/Hole Eigenenergies
-  DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
-  );
-  DryTensor<> *epsa(
-    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
-  );
+  DryTensor<> *epsi(getTensorArgument
+		    <double, DryTensor<double>>("HoleEigenEnergies"));
+  DryTensor<> *epsa(getTensorArgument
+		    <double, DryTensor<double>>("ParticleEigenEnergies"));
 
-  // Compute the no,nv,nG,np
-  int nG(GammaGpq->lens[0]);
-  int no(epsi->lens[0]);
-  int nv(epsa->lens[0]);
+  // Compute the No,Nv,NG
+  int NG(GammaGpq->lens[0]);
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   int syms[] = { NS, NS, NS, NS };
-  int vvvv[] = { nv, nv, nv, nv };
-  int vovo[] = { nv, no, nv, no };
-  int vvoo[] = { nv, nv, no, no };
-  int oooo[] = { no, no, no, no };
-  int ooov[] = { no, no, no, nv };
-  int vvvo[] = { nv, nv, nv, no };
+  int vvvv[] = { Nv, Nv, Nv, Nv };
+  int vovo[] = { Nv, No, Nv, No };
+  int vvoo[] = { Nv, Nv, No, No };
+  int oooo[] = { No, No, No, No };
+  int ooov[] = { No, No, No, Nv };
+  int vvvo[] = { Nv, Nv, Nv, No };
 
-  DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
-		  new DryTensor<>(4, vvvv, syms) : nullptr
-		  );
-  DryTensor<> *Vaibj(isArgumentGiven("PHPHCoulombIntegrals") ?
-		  new DryTensor<>(4, vovo, syms) : nullptr
-		  );
+  DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") 
+		     ?new DryTensor<>(4, vvvv, syms) : nullptr);
+  DryTensor<> *Vaibj(isArgumentGiven("PHPHCoulombIntegrals") 
+		     ?new DryTensor<>(4, vovo, syms) : nullptr);
   DryTensor<> *Vabij(isArgumentGiven("PPHHCoulombIntegrals") ?
-		  new DryTensor<>(4, vvoo, syms) : nullptr
-		  );
+		     new DryTensor<>(4, vvoo, syms) : nullptr);
   DryTensor<> *Vijkl(isArgumentGiven("HHHHCoulombIntegrals") ?
-		  new DryTensor<>(4, oooo, syms) : nullptr
-		  );
+		     new DryTensor<>(4, oooo, syms) : nullptr);
   DryTensor<> *Vijka(isArgumentGiven("HHHPCoulombIntegrals") ?
-		  new DryTensor<>(4, ooov, syms) : nullptr
-		  );
+		     new DryTensor<>(4, ooov, syms) : nullptr);
   DryTensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
-		  new DryTensor<>(4, vvvo, syms) : nullptr
-		  );
+		     new DryTensor<>(4, vvvo, syms) : nullptr);
 
   if (Vabcd) {
     allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
@@ -218,9 +206,9 @@ void CoulombIntegralsFromVertex::dryRun() {
   }
 
   // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
-  int GaiLens[]   = {nG,nv,no};
-  int GabLens[]   = {nG,nv,nv};
-  int GijLens[]   = {nG,no,no};
+  int GaiLens[]   = {NG,Nv,No};
+  int GabLens[]   = {NG,Nv,Nv};
+  int GijLens[]   = {NG,No,No};
 
   DryTensor<complex> GammaGai(3, GaiLens, syms);
   DryTensor<complex> GammaGab(3, GabLens, syms);

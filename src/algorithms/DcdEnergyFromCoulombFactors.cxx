@@ -61,6 +61,12 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
 
+    std::string abbreviation(getAbbreviation());
+    std::transform(abbreviation.begin(), abbreviation.end(), 
+		   abbreviation.begin(), ::toupper);
+
+    LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
+
     // Define and contract intermediates except Coulomb factors
     {
       // Define intermediates

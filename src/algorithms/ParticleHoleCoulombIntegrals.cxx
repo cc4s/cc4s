@@ -21,15 +21,16 @@ ParticleHoleCoulombIntegrals::~ParticleHoleCoulombIntegrals() {
 }
 
 void ParticleHoleCoulombIntegrals::run() {
-  Tensor<complex> *GammaGai(
-    getTensorArgument<complex>("ParticleHoleCoulombVertex")
-  );
-  Tensor<> realGammaGai(
-    3, GammaGai->lens, GammaGai->sym, *GammaGai->wrld, "RealGammaGai"
-  );
-  Tensor<> imagGammaGai(
-    3, GammaGai->lens, GammaGai->sym, *GammaGai->wrld, "ImagGammaGai"
-  );
+  // read coulomb vertex GammaGai
+  Tensor<complex> *GammaGai(getTensorArgument<complex>
+			    ("ParticleHoleCoulombVertex"));
+
+  // allocate real and imag part of GammaGai
+  Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
+			*GammaGai->wrld, "RealGammaGai");
+  Tensor<> imagGammaGai(3, GammaGai->lens, GammaGai->sym, 
+			*GammaGai->wrld, "ImagGammaGai");
+
   // split into real and imaginary parts
   fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
 
@@ -50,28 +51,26 @@ void ParticleHoleCoulombIntegrals::dryRun() {
 			       ("ParticleHoleCoulombVertex"));
 
   // Read the Particle/Hole Eigenenergies
-  DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
-  );
-  DryTensor<> *epsa(
-    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
-  );
+  DryTensor<> *epsi(getTensorArgument<double, 
+		    DryTensor<double>>("HoleEigenEnergies"));
+  DryTensor<> *epsa(getTensorArgument<double, 
+		    DryTensor<double>>("ParticleEigenEnergies"));
 
-  // Compute the no,nv,nG,np
-  int nG(GammaGai->lens[0]);
-  int no(epsi->lens[0]);
-  int nv(epsa->lens[0]);
+  // Compute the No,Nv,NG,Np
+  int NG(GammaGai->lens[0]);
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { nv, nv, no, no };
+  int vvoo[] = { Nv, Nv, No, No };
 
   DryTensor<> *Vabij(new DryTensor<>(4, vvoo, syms));
 
   allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
 
   // Allocate and realGammaGai and imagGammaGai
-  int GaiLens[]   = {nG,nv,no};
+  int GaiLens[]   = {NG,Nv,No};
 
   DryTensor<> realGammaGai(3, GaiLens, syms);
   DryTensor<> imagGammaGai(3, GaiLens, syms);

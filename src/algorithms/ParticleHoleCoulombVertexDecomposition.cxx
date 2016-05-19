@@ -228,7 +228,7 @@ void ParticleHoleCoulombVertexDecomposition::normalizePi(
   // Pi["qR"] = Pi["qR"] / quotient["qR"]
   Pi.contract(1.0, Pi,"qR", quotient,"qR", 0.0,"qR", fDivide);
   double normalization(frobeniusNorm(quotient));
-  LOG(4, "RALS") << "|normalization quotient|=" << normalization << std::endl;
+  LOG(2, "RALS") << "|normalization quotient|=" << normalization << std::endl;
 }
 
 void ParticleHoleCoulombVertexDecomposition::realizePi(

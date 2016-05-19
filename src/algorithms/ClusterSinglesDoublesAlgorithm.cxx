@@ -66,11 +66,8 @@ void ClusterSinglesDoublesAlgorithm::run() {
   double e(0), dire, exce;
 
   std::string abbreviation(getAbbreviation());
-  std::transform(
-    abbreviation.begin(), abbreviation.end(), abbreviation.begin(),
-    ::toupper
-  );
-  LOG(0, abbreviation) << "Solving Singles and Doubles Amplitude Equations" << std::endl;
+  std::transform(abbreviation.begin(), abbreviation.end(), 
+		 abbreviation.begin(), ::toupper);
 
   // Iteration for determining the amplitudes Tai and Tabij
   // and the energy e
@@ -101,11 +98,6 @@ void ClusterSinglesDoublesAlgorithm::run() {
     LOG(1, abbreviation) << "dir=" << dire << std::endl;
     LOG(1, abbreviation) << "exc=" << exce << std::endl;
   }
-
-  // TODO: use "=" (without space) as soon as most postprocesing
-  // is based on TensorWriter
-  LOG(1, abbreviation) <<
-    abbreviation << " correlation energy = " << e << std::endl;
 
   std::stringstream doublesAmplitudesName;
   doublesAmplitudesName << getAbbreviation() << "DoublesAmplitudes";

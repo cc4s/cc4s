@@ -79,7 +79,7 @@ void TensorWriter::run() {
 
     // write the actual data
     int64_t index(0);
-    LOG(4, "TensorWriter") << "rows=" << rowElementsCount
+    LOG(1, "Writer") << "rows=" << rowElementsCount
       << ", columns=" << columnElementsCount << std::endl;
     file << std::setprecision(16);
     for (int64_t row(0); row < rowElementsCount; ++row) {

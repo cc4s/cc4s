@@ -42,6 +42,11 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     // Read the Particle/Hole Eigenenergies epsi epsa
     Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
     Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+
+    // Get abbreviation of algorithm
+    std::string abbreviation(getAbbreviation());
+    std::transform(abbreviation.begin(), abbreviation.end(), 
+		   abbreviation.begin(), ::toupper);
   
     // Compute the No,Nv
     int No(epsi->lens[0]);
@@ -60,7 +65,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     //********************************************************************************
 
     {
-    LOG(1, "DCSD") << "Solving T2 DCSD Amplitude Equations...";
+    LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
@@ -184,7 +189,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
       // Slice loop starts here
       for (int b(0); b < Nv; b += sliceRank) {
         for (int a(b); a < Nv; a += sliceRank) {
-          LOG(0, "DCSD") << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           // get the sliced integrals already coupled to the singles
           Tensor<> *Xxycd(sliceCoupledCoulombIntegrals(a, b, sliceRank));
           int lens[] = { Xxycd->lens[0], Xxycd->lens[1], No, No };
@@ -209,7 +214,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
     {
-    LOG(1, "DCSD") << "Solving T1 DCSD Amplitude Equations...";
+    LOG(1, abbreviation) << "Solving T1 Amplitude Equations" << std::endl;
 
     // Allocate Tensors for T1 amplitudes
     Tensor<> Rai(false, *Tai);

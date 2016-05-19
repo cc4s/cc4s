@@ -34,6 +34,12 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
     // Allocate Tensor for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
 
+    std::string abbreviation(getAbbreviation());
+    std::transform(abbreviation.begin(), abbreviation.end(), 
+		   abbreviation.begin(), ::toupper);
+
+    LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
+
     if (i == 0) {
       // For first iteration compute only the MP2 amplitudes since Tabij = 0
 
@@ -57,10 +63,6 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
       // Compute the No,Nv
       int No(epsi->lens[0]);
       int Nv(epsa->lens[0]);
-
-      std::string abbreviation(getAbbreviation());
-      std::transform(abbreviation.begin(), abbreviation.end(), 
-		     abbreviation.begin(), ::toupper);
 
       {
 	// Define intermediates

@@ -52,33 +52,29 @@ void ClusterDoublesAlgorithm::run() {
   double e(0), dire, exce;
 
   std::string abbreviation(getAbbreviation());
-  std::transform(
-    abbreviation.begin(), abbreviation.end(), abbreviation.begin(),
-    ::toupper
-  );
-  LOG(0, abbreviation) << "Solving Doubles Amplitude Equations" << std::endl;
+  std::transform(abbreviation.begin(), abbreviation.end(), 
+		 abbreviation.begin(), ::toupper);
 
   // Iteration for determining the doubles amplitudes Tabij
   // and the energy e
-  int maxIterationsCount(
-    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
-  );
+  int maxIterationsCount(getIntegerArgument("maxIterations", 
+					    DEFAULT_MAX_ITERATIONS));
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
     // call the iterate of the actual algorithm, which is still left open here
     iterate(i);
+    // Direct term
     energy[""] = 2.0 * TabijMixer->getNext()["abij"] * (*Vabij)["abij"];
     dire = energy.get_val();
+    // Exchange term
     energy[""] = TabijMixer->getNext()["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
+    // Total energy
     e = dire + exce;
     LOG(0, abbreviation) << "e=" << e << std::endl;
     LOG(1, abbreviation) << "dir=" << dire << std::endl;
     LOG(1, abbreviation) << "exc=" << exce << std::endl;
   }
-
-  LOG(1, abbreviation) <<
-    abbreviation << " correlation energy=" << e << std::endl;
 
   std::stringstream amplitudesName;
   amplitudesName << getAbbreviation() << "DoublesAmplitudes";

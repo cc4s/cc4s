@@ -46,8 +46,6 @@ void Mp2EnergyFromCoulombIntegrals::run() {
   LOG(1, "MP2") << "MP2d=" << dire << std::endl;
   LOG(1, "MP2") << "MP2x=" << exce << std::endl;
 
-  LOG(1, "MP2") << "MP2 correlation energy = " << e << std::endl;      
-
   setRealArgument("Mp2Energy", e);
 }
 

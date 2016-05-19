@@ -22,8 +22,17 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
   // Read the DRCCD amplitudes Tabij
   Tensor<> *Tabij(&TabijMixer->getNext());
   
-  // Read tensors (Vabij and intermediates)
+  // Read Vabij
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+
+
+  std::string abbreviation(getAbbreviation());
+  std::transform(abbreviation.begin(), abbreviation.end(), 
+		 abbreviation.begin(), ::toupper);
+
+  LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
+
+  // Construct intermediates
   Tensor<> Rabij(false, *Vabij);
   Tensor<> Cabij(false, *Vabij);
 

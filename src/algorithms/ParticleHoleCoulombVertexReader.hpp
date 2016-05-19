@@ -9,6 +9,12 @@
 #include <fstream>
 
 namespace cc4s {
+  /**
+   * \brief Reads the particle-hole Coulomb vertex \f$\Gamma_{iG}^a\f$ and
+   * the occupied and
+   * virtual orbital energies \f$\varepsilon_i, \varepsilon_a\f$ from binary
+   * data file, and stores them in the CTF Tensors GammaGai, epsi, epsa.
+   */
   class ParticleHoleCoulombVertexReader: public Algorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(ParticleHoleCoulombVertexReader);
@@ -17,7 +23,7 @@ namespace cc4s {
     );
     virtual ~ParticleHoleCoulombVertexReader();
     /**
-     * \brief Reads binary Coulomb vertex file from disk.
+     * \brief Reads the Full Coulomb Vertex \f$\Gamma_{iG}^a\f$ from FTODDUMP file.
      */
     virtual void run();
     /**

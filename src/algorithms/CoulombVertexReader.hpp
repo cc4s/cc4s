@@ -30,7 +30,7 @@ namespace cc4s {
     CTF::Tensor<> *epsi;
     /** \brief The virtual orbital energies  */
     CTF::Tensor<> *epsa;
-    /** \brief The Coulomb Vertex GammaGpq  */
+    /** \brief The Coulomb Vertex \f$\GammaGpq\f$  */
     CTF::Tensor<complex> *GammaGpq;
 
     /**
@@ -41,13 +41,13 @@ namespace cc4s {
 
   protected:
     /** \brief number of occupied orbitals */
-    int no;
+    int No;
     /** \brief number of unoccupied orbitals */
-    int nv;
+    int Nv;
     /** \brief number of occupied plus unoccupied orbitals */
-    int np;
+    int Np;
     /** \brief number of G-vectors */
-    int nG;
+    int NG;
 
     /**
      * \brief Reads a chunk from the Full Coulomb Vertex GammaGpq
@@ -75,7 +75,7 @@ namespace cc4s {
     class Header {
     public:
       char magic[8];
-      int32_t no, nv, nG, nSpins, kPoints, reserved_;
+      int32_t No, Nv, NG, NSpins, kPoints, reserved_;
       static char const *MAGIC;
     };
     class Chunk {
