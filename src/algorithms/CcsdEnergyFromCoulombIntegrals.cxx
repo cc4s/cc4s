@@ -23,16 +23,14 @@ CcsdEnergyFromCoulombIntegrals::~CcsdEnergyFromCoulombIntegrals() {
 //////////////////////////////////////////////////////////////////////
 void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
   {
-    // Read the CCSD amplitudes Tai and Tabij
+    // Read the amplitudes Tai and Tabij
     Tensor<> *Tai(&TaiMixer->getNext());
     Tensor<> *Tabij(&TabijMixer->getNext());
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vabci Vijka
     // the PPPPCoulombIntegrals may not be given then slicing is required
-    Tensor<> *Vabcd(
-      isArgumentGiven("PPPPCoulombIntegrals") ?
-        getTensorArgument("PPPPCoulombIntegrals") : nullptr
-    );
+    Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
+		    getTensorArgument("PPPPCoulombIntegrals") : nullptr);
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
     Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
@@ -48,34 +46,32 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
     int Nv(epsa->lens[0]);
 
     int syms[] = { NS, NS, NS, NS };
-    int voov[] = { Nv, No, No, Nv };
-    int vo[] = { Nv, No };
     int vv[] = { Nv, Nv };
     int oo[] = { No, No };
 
-    // Allocate Tensors for T1 amplitudes
-    Tensor<> Rai(false, *Tai);
-    //Tensor<> Dai(false, *Tai);
-
-    // Allocate Tensors for T2 amplitudes
-    Tensor<> Rabij(false, *Vabij);
-
-    // Define intermediates
-    Tensor<> Lac(2, vv, syms, *epsi->wrld, "Lac");
+    // Intermediates used both for T1 and T2 amplitudes
     Tensor<> Kac(2, vv, syms, *epsi->wrld, "Kac");
-    Tensor<> Lki(2, oo, syms, *epsi->wrld, "Lki");
     Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
-    Tensor<> Kck(2, vo, syms, *epsi->wrld, "Kck");
-
-    Tensor<> Xklij(false, *Vijkl);
-    Tensor<> Xakci(false, *Vaibj);
-    Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
 
     //********************************************************************************
     //***********************  T2 amplitude equations  *******************************
     //********************************************************************************
 
-    LOG(1, "CCSD") << "Solving T2 CCSD Amplitude Equations";
+    {
+    LOG(1, "CCSD") << "Solving T2 CCSD Amplitude Equations...";
+
+    // Allocate Tensors for T2 amplitudes
+    Tensor<> Rabij(false, *Vabij);
+
+    {
+    // Intermediates used for T2 amplitudes
+    Tensor<> Lac(2, vv, syms, *epsi->wrld, "Lac");
+    Tensor<> Lki(2, oo, syms, *epsi->wrld, "Lki");
+
+    Tensor<> Xklij(false, *Vijkl);
+    Tensor<> Xakci(false, *Vaibj);
+    int voov[] = { Nv, No, No, Nv };
+    Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
 
     // Build Kac
     Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
@@ -159,6 +155,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
     // Contract Xklij with T1 Amplitudes
     Rabij["abij"] += Xklij["klij"] * (*Tai)["ak"] * (*Tai)["bl"];
+    }
 
     if (Vabcd) {
       // Build Xabcd intermediate
@@ -198,12 +195,20 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
     doublesAmplitudesFromResiduum(Rabij);
     // and append them to the mixer
     TabijMixer->append(Rabij);
+    }
 
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
+    {
+    LOG(1, "CCSD") << "Solving T1 CCSD Amplitude Equations...";
 
-    LOG(1, "CCSD") << "Solving T1 CCSD Amplitude Equations";
+    // Allocate Tensors for T1 amplitudes
+    Tensor<> Rai(false, *Tai);
+
+    // Intermediates used for T1 amplitudes
+    int vo[] = { Nv, No };
+    Tensor<> Kck(2, vo, syms, *epsi->wrld, "Kck");
 
     // Contract Kac and Kki with T1 amplitudes
     Rai["ai"]  = Kac["ac"] * (*Tai)["ci"];
@@ -230,5 +235,6 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
     singlesAmplitudesFromResiduum(Rai);
     TaiMixer->append(Rai);
+    }
   }
 }

@@ -8,6 +8,12 @@
 #include <ctf.hpp>
 
 namespace cc4s {
+  /**
+   * \brief Contains all the necessary tools for an algorithm with
+   * singles and doubles amplitudes. It calculates the energy from the amplitudes
+   * \f$T_{a}^{i}\f$ and \f$T_{ab}^{ij}\f$ and the Coulomb integrals \f$V_{ij}^{ab}\f$. For
+   * calculating the amplitudes it calls the iteration routine of the actual algorithm.
+   */
   class ClusterSinglesDoublesAlgorithm: public ClusterDoublesAlgorithm {
   public:
     ClusterSinglesDoublesAlgorithm(

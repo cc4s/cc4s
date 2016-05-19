@@ -72,8 +72,8 @@ void ClusterSinglesDoublesAlgorithm::run() {
   );
   LOG(0, abbreviation) << "Solving Singles and Doubles Amplitude Equations" << std::endl;
 
-  // Iteration for determining the DCD amplitudes Tabij
-  // and the Dcd energy e
+  // Iteration for determining the amplitudes Tai and Tabij
+  // and the energy e
   int64_t maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );

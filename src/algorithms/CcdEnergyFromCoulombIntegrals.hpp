@@ -9,6 +9,12 @@ namespace cc4s {
   // inheriting its iteration and slicing functionality.
   // Only the abstract (left out) methods getAbbreviation and iterate have
   // to be implemented.
+  /**
+   * \brief Implements the iteration routine for the Ccd method. Calculates the
+   * amplitudes \f$T_{ab}^{ij}\f$ from the Coulomb Integrals \f$V_{ij}^{ab}, V_{bj}^{ai},
+   * V_{kl}^{ij}\f$, and \f$V_{cd}^{ab}\f$ (if given, else slicing and the Coulomb
+   * Vertex \f$\Gamma_{pG}^q\f$  is used).
+   */
   class CcdEnergyFromCoulombIntegrals: public ClusterDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(CcdEnergyFromCoulombIntegrals);

@@ -9,6 +9,13 @@ namespace cc4s {
   // inheriting its iteration and slicing functionality.
   // Only the abstract (left out) methods getAbbreviation and iterate have
   // to be implemented.
+  /**
+   * \brief Implements the iteration routine for the Ccsd method. Calculates the
+   * amplitudes \f$T_{a}^{i}\f$ and \f$T_{ab}^{ij}\f$ from the Coulomb
+   * integrals \f$V_{ij}^{ab}, V_{bj}^{ai},
+   * V_{kl}^{ij}, V_{ka}^{ij}, V_{ci}^{ab}\f$ and \f$V_{cd}^{ab}\f$ (if given, else slicing and the Coulomb
+   * Vertex \f$\Gamma_{pG}^q\f$  is used).
+   */
   class CcsdEnergyFromCoulombIntegrals: public ClusterSinglesDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(CcsdEnergyFromCoulombIntegrals);
@@ -22,6 +29,17 @@ namespace cc4s {
      * \return abbreviation of the routine
      */
     virtual std::string getAbbreviation() { return "Ccsd"; }
+
+    /** \brief The occupied orbital energies  */
+    CTF::Tensor<> *epsi;
+    /** \brief The virtual orbital energies  */
+    CTF::Tensor<> *epsa;
+    /** \brief The Coulomb integrals Vabij  */
+    CTF::Tensor<> *Vabij;
+    /** \brief The singles amplitudes Tai  */
+    CTF::Tensor<> *Tai;
+    /** \brief The doubles amplitudes Tabij  */
+    CTF::Tensor<> *Tabij;
 
   protected:
     /**
