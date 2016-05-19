@@ -31,8 +31,8 @@ CcsdEnergyFromCoulombIntegrals [
 % (sliceRank 40)
 ] [
   (CcsdEnergy CcsdEnergy) 
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
   (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
 ].
-
 
 TensorWriter [(Data CcsdEnergy)] [].
