@@ -49,6 +49,7 @@ void ClusterDoublesAlgorithm::run() {
 
   // Allocate the energy e
   Scalar<> energy(*epsi->wrld);
+  energy.set_name("energy");
   double e(0), dire, exce;
 
   std::string abbreviation(getAbbreviation());
@@ -63,11 +64,13 @@ void ClusterDoublesAlgorithm::run() {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
     // call the iterate of the actual algorithm, which is still left open here
     iterate(i);
+    Tensor<> *Tabij(&TabijMixer->getNext());
+    Tabij->set_name("Tabij");
     // Direct term
-    energy[""] = 2.0 * TabijMixer->getNext()["abij"] * (*Vabij)["abij"];
+    energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     dire = energy.get_val();
     // Exchange term
-    energy[""] = TabijMixer->getNext()["abji"] * (*Vabij)["abij"];
+    energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
     // Total energy
     e = dire + exce;
@@ -161,6 +164,7 @@ void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
 ) {
   // Build Dabij
   Tensor<> Dabij(false, Rabij);
+  Dabij.set_name("Dabij");
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
   Dabij["abij"]  = (*epsi)["i"];

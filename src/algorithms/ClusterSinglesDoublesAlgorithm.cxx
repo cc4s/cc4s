@@ -63,6 +63,7 @@ void ClusterSinglesDoublesAlgorithm::run() {
 
   // Allocate the energy e
   Scalar<> energy(*epsi->wrld);
+  energy.set_name("energy");
   double e(0), dire, exce;
 
   std::string abbreviation(getAbbreviation());
@@ -79,7 +80,9 @@ void ClusterSinglesDoublesAlgorithm::run() {
     // call the iterate of the actual algorithm, which is still left open here
     iterate(i);
     Tensor<> *Tai(&TaiMixer->getNext());
+    Tai->set_name("Tai");
     Tensor<> *Tabij(&TabijMixer->getNext());
+    Tabij->set_name("Tabij");
     // Singles direct term
     energy[""]  = 2.0 * (*Vabij)["abij"] * (*Tai)["ai"] * (*Tai)["bj"];
     // Doubles direct term
@@ -121,6 +124,7 @@ void ClusterSinglesDoublesAlgorithm::singlesAmplitudesFromResiduum(
 ) {
   // Build Dai
   Tensor<> Dai(false, Rai);
+  Dai.set_name("Dai");
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
   Dai["ai"]  = (*epsi)["i"];

@@ -26,12 +26,14 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the CCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
+    Tabij->set_name("Tabij");
 
     // Read the Coulomb Integrals Vabij
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
     // Allocate Tensor for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
+    Rabij.set_name("Rabij");
 
     std::string abbreviation(getAbbreviation());
     std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -78,7 +80,9 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
 
 	Tensor<> Xklij(false, *Vijkl);
+	Xklij.set_name("Xklij");
 	Tensor<> Xakci(false, *Vaibj);
+	Xakci.set_name("Xakci");
 	Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
 
 	// Build Kac
@@ -148,6 +152,7 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	  for (int a(b); a < Nv; a += sliceRank) {
 	    LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
 	    Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
+	    Vxycd->set_name("Vxycd");
 	    int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
 	    int syms[] = {NS, NS, NS, NS};
 	    Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);

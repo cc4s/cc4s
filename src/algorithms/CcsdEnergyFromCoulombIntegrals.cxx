@@ -25,7 +25,9 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the amplitudes Tai and Tabij
     Tensor<> *Tai(&TaiMixer->getNext());
+    Tai->set_name("Tai");
     Tensor<> *Tabij(&TabijMixer->getNext());
+    Tabij->set_name("Tabij");
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vabci Vijka
     // the PPPPCoulombIntegrals may not be given then slicing is required
@@ -67,6 +69,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
     // Allocate Tensors for T2 amplitudes
     Tensor<> Rabij(false, *Vabij);
+    Rabij.set_name("Rabij");
 
     {
     // Intermediates used for T2 amplitudes
@@ -74,7 +77,9 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Tensor<> Lki(2, oo, syms, *epsi->wrld, "Lki");
 
     Tensor<> Xklij(false, *Vijkl);
+    Xklij.set_name("Xklij");
     Tensor<> Xakci(false, *Vaibj);
+    Xakci.set_name("Xakci");
     int voov[] = { Nv, No, No, Nv };
     Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
 
@@ -184,9 +189,10 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
           LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           // get the sliced integrals already coupled to the singles
           Tensor<> *Xxycd(sliceCoupledCoulombIntegrals(a, b, sliceRank));
+	  Xxycd->set_name("Xxycd");
           int lens[] = { Xxycd->lens[0], Xxycd->lens[1], No, No };
           int syms[] = {NS, NS, NS, NS};
-          Tensor<> Rxyij(4, lens, syms, *Xxycd->wrld);
+          Tensor<> Rxyij(4, lens, syms, *Xxycd->wrld, "Rxyij");
           Rxyij["xyij"] =  (*Xxycd)["xycd"] * (*Tabij)["cdij"];
           Rxyij["xyij"] += (*Xxycd)["xycd"] * (*Tai)["ci"] * (*Tai)["dj"];
           sliceIntoResiduum(Rxyij, a, b, Rabij);
@@ -210,6 +216,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
     // Allocate Tensors for T1 amplitudes
     Tensor<> Rai(false, *Tai);
+    Rai.set_name("Rai");
 
     // Intermediates used for T1 amplitudes
     int vo[] = { Nv, No };
