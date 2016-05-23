@@ -72,9 +72,9 @@ void ClusterSinglesDoublesAlgorithm::run() {
 
   // Iteration for determining the amplitudes Tai and Tabij
   // and the energy e
-  int64_t maxIterationsCount(
-    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
-  );
+  int maxIterationsCount(getIntegerArgument("maxIterations", 
+						DEFAULT_MAX_ITERATIONS));
+
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
     // call the iterate of the actual algorithm, which is still left open here
