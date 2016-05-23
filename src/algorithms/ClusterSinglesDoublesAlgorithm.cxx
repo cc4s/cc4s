@@ -83,18 +83,25 @@ void ClusterSinglesDoublesAlgorithm::run() {
     Tai->set_name("Tai");
     Tensor<> *Tabij(&TabijMixer->getNext());
     Tabij->set_name("Tabij");
+    //{
+    //Tensor<> Yai(false, *Tai);
     // Singles direct term
-    energy[""]  = 2.0 * (*Vabij)["abij"] * (*Tai)["ai"] * (*Tai)["bj"];
+    //Yai["bj"]   = (*Vabij)["abij"] * (*Tai)["ai"];
+    //energy[""]  = 2.0 * Yai["bj"]  * (*Tai)["bj"];
+    energy[""]  = 2.0 * (*Tai)["bj"] * (*Vabij)["abij"] * (*Tai)["ai"];
     // Doubles direct term
     energy[""] += 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     // Compute direct energy
     dire = energy.get_val();
     // Singles exchange term
-    energy[""]  = (*Vabij)["baij"] * (*Tai)["ai"] * (*Tai)["bj"];
+    //Yai["bj"]   = (*Vabij)["baij"] * (*Tai)["ai"];
+    //energy[""]  = Yai["bj"]  * (*Tai)["bj"];
+    energy[""]  =  (*Tai)["bj"] * (*Vabij)["baij"] * (*Tai)["ai"];
     // Doubles exchange term
     energy[""] += (*Tabij)["abji"] * (*Vabij)["abij"];
     // Compute exchange energy
     exce = -1.0 * energy.get_val();
+    //}
     // Compute total energy
     e = dire + exce;
     LOG(0, abbreviation) << "e=" << e << std::endl;

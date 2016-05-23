@@ -91,24 +91,24 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     // Build Lac
     Lac["ac"]  = -1.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"]; // Multiplied by 0.5 in DCSD
     Lac["ac"] +=  0.5 * (*Vabij)["dckl"] * (*Tabij)["adkl"]; // Multiplied by 0.5 in DCSD
-    Yai["ck"]  =  (*Vabij)["cdkl"] * (*Tai)["dl"];
-    Lac["ac"] -=  2.0 * Yai["ck"] * (*Tai)["ak"];
-    //Lac["ac"] -=  2.0 * (*Vabij)["cdkl"] * (*Tai)["ak"] * (*Tai)["dl"];
-    Yai["ck"]  =  (*Vabij)["dckl"] * (*Tai)["dl"];
-    Lac["ac"] +=  Yai["ck"] * (*Tai)["ak"];
-    //Lac["ac"] +=  1.0 * (*Vabij)["dckl"] * (*Tai)["ak"] * (*Tai)["dl"];
+    //Yai["ck"]  =  (*Vabij)["cdkl"] * (*Tai)["dl"];
+    //Lac["ac"] -=  2.0 * Yai["ck"] * (*Tai)["ak"];
+    Lac["ac"] -=  2.0 * (*Tai)["ak"] * (*Vabij)["cdkl"] * (*Tai)["dl"];
+    //Yai["ck"]  =  (*Vabij)["dckl"] * (*Tai)["dl"];
+    //Lac["ac"] +=  Yai["ck"] * (*Tai)["ak"];
+    Lac["ac"] +=  (*Tai)["ak"] * (*Vabij)["dckl"] * (*Tai)["dl"];
     Lac["ac"] +=  2.0 * (*Vabci)["cdak"] * (*Tai)["dk"];
     Lac["ac"] -=  (*Vabci)["dcak"] * (*Tai)["dk"];
 
     // Build Lki
     Lki["ki"]  = 1.0 * (*Vabij)["cdkl"] * (*Tabij)["cdil"]; // Multiplied by 0.5 in DCSD
     Lki["ki"] -= 0.5 * (*Vabij)["dckl"] * (*Tabij)["cdil"]; // Multiplied by 0.5 in DCSD
-    Yai["ck"]  = (*Vabij)["cdkl"] * (*Tai)["dl"];
-    Lki["ki"] += 2.0 * Yai["ck"] * (*Tai)["ci"];
-    //Lki["ki"] += 2.0 * (*Vabij)["cdkl"] * (*Tai)["ci"] * (*Tai)["dl"];
-    Yai["ck"]  = (*Vabij)["dckl"] * (*Tai)["dl"];
-    Lki["ki"] -= Yai["ck"] * (*Tai)["ci"];
-    //Lki["ki"] -= 1.0 * (*Vabij)["dckl"] * (*Tai)["ci"] * (*Tai)["dl"];
+    //Yai["ck"]  = (*Vabij)["cdkl"] * (*Tai)["dl"];
+    //Lki["ki"] += 2.0 * Yai["ck"] * (*Tai)["ci"];
+    Lki["ki"] += 2.0 * (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dl"];
+    //Yai["ck"]  = (*Vabij)["dckl"] * (*Tai)["dl"];
+    //Lki["ki"] -= Yai["ck"] * (*Tai)["ci"];
+    Lki["ki"] -=  (*Tai)["ci"] * (*Vabij)["dckl"] * (*Tai)["dl"];
     Lki["ki"] += 2.0 * (*Vijka)["klic"] * (*Tai)["cl"];
     Lki["ki"] -= (*Vijka)["lkic"] * (*Tai)["cl"];
     
@@ -120,22 +120,22 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
     // Contract Coulomb integrals with T2 amplitudes
     Rabij["abij"] += (*Vabci)["baci"] * (*Tai)["cj"];
-    Yijka["kjib"]  = (*Vaibj)["bkci"] * (*Tai)["cj"];
-    Rabij["abij"] -= Yijka["kjib"] * (*Tai)["ak"];
-    //Rabij["abij"] -= (*Vaibj)["bkci"] * (*Tai)["ak"] * (*Tai)["cj"];
+    //Yijka["kjib"]  = (*Vaibj)["bkci"] * (*Tai)["cj"];
+    //Rabij["abij"] -= Yijka["kjib"] * (*Tai)["ak"];
+    Rabij["abij"] -= (*Tai)["ak"] * (*Vaibj)["bkci"] * (*Tai)["cj"];
     Rabij["abij"] -= (*Vijka)["jika"] * (*Tai)["bk"];
-    Yijka["jika"]  = (*Vabij)["acik"] * (*Tai)["cj"];
-    Rabij["abij"] += Yijka["jika"] * (*Tai)["bk"];
-    //Rabij["abij"] += (*Vabij)["acik"] * (*Tai)["cj"] * (*Tai)["bk"];
+    //Yijka["jika"]  = (*Vabij)["acik"] * (*Tai)["cj"];
+    //Rabij["abij"] += Yijka["jika"] * (*Tai)["bk"];
+    Rabij["abij"] +=  (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
 
     // Build Xakic
     Xakic["akic"]  = (*Vabij)["acik"];
     Xakic["akic"] -= (*Vijka)["lkic"] * (*Tai)["al"];
     Xakic["akic"] += (*Vabci)["acdk"] * (*Tai)["di"];
     Xakic["akic"] -= 0.5 * (*Vabij)["dclk"] * (*Tabij)["dail"];
-    Yijka["iklc"]  = (*Vabij)["dclk"] * (*Tai)["di"];
-    Xakic["akic"] -= Yijka["iklc"] * (*Tai)["al"];
-    //Xakic["akic"] -= (*Vabij)["dclk"] * (*Tai)["di"] * (*Tai)["al"];
+    //Yijka["iklc"]  = (*Vabij)["dclk"] * (*Tai)["di"];
+    //Xakic["akic"] -= Yijka["iklc"] * (*Tai)["al"];
+    Xakic["akic"] -=  (*Tai)["al"] * (*Vabij)["dclk"] * (*Tai)["di"];
     Xakic["akic"] += (*Vabij)["dclk"] * (*Tabij)["adil"];
     //Xakic["akic"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCSD
 
@@ -144,9 +144,9 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Xakci["akci"] -= (*Vijka)["klic"] * (*Tai)["al"];
     Xakci["akci"] += (*Vabci)["adck"] * (*Tai)["di"];
     //Xakci["akci"] -= 0.5 * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCSD
-    Yijka["ilkc"]  = (*Vabij)["cdlk"] * (*Tai)["di"];
-    Xakci["akci"] -= Yijka["ilkc"] * (*Tai)["al"];
-    //Xakci["akci"] -= (*Vabij)["cdlk"] * (*Tai)["di"] * (*Tai)["al"];
+    //Yijka["ilkc"]  = (*Vabij)["cdlk"] * (*Tai)["di"];
+    //Xakci["akci"] -= Yijka["ilkc"] * (*Tai)["al"];
+    Xakci["akci"] -=  (*Tai)["al"] * (*Vabij)["cdlk"] * (*Tai)["di"];
 
     // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
     Rabij["abij"] += 2.0 * Xakic["akic"] * (*Tabij)["cbkj"];
@@ -172,18 +172,18 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Xklij["klij"]  = (*Vijkl)["klij"];
     Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
     Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
-    Yijka["jklc"]  = (*Vabij)["cdkl"] * (*Tai)["dj"]; 
-    Xklij["klij"] += Yijka["jklc"] * (*Tai)["ci"];
-    //Xklij["klij"] += (*Vabij)["cdkl"] * (*Tai)["ci"] * (*Tai)["dj"]; 
+    //Yijka["jklc"]  = (*Vabij)["cdkl"] * (*Tai)["dj"]; 
+    //Xklij["klij"] += Yijka["jklc"] * (*Tai)["ci"];
+    Xklij["klij"] += (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dj"]; 
 
     // Contract Xklij with T2 Amplitudes
     Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
 
     // Contract Xklij with T1 Amplitudes
     Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in Dcsd from T2 Amplitudes
-    Yijka["lija"]  = Xklij["klij"] * (*Tai)["ak"];
-    Rabij["abij"] += Yijka["lija"] * (*Tai)["bl"];
-    //Rabij["abij"] += Xklij["klij"] * (*Tai)["ak"] * (*Tai)["bl"];
+    //Yijka["lija"]  = Xklij["klij"] * (*Tai)["ak"];
+    //Rabij["abij"] += Yijka["lija"] * (*Tai)["bl"];
+    Rabij["abij"] += (*Tai)["bl"] * Xklij["klij"] * (*Tai)["ak"];
     }
 
     if (Vabcd) {
@@ -265,22 +265,22 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     // Build Kac
     Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
     Kac["ac"] += (*Vabij)["dckl"] * (*Tabij)["adkl"];
-    Yai["ck"]  = (*Vabij)["cdkl"] * (*Tai)["dl"];
-    Kac["ac"] -= 2.0 * Yai["ck"] * (*Tai)["ak"];
-    //Kac["ac"] -= 2.0 * (*Vabij)["cdkl"] * (*Tai)["ak"] * (*Tai)["dl"];
-    Yai["ck"]  = (*Vabij)["dckl"] * (*Tai)["dl"];
-    Kac["ac"] += Yai["ck"] * (*Tai)["ak"];
-    //Kac["ac"] += (*Vabij)["dckl"] * (*Tai)["ak"] * (*Tai)["dl"];
+    //Yai["ck"]  = (*Vabij)["cdkl"] * (*Tai)["dl"];
+    //Kac["ac"] -= 2.0 * Yai["ck"] * (*Tai)["ak"];
+    Kac["ac"] -= 2.0 * (*Tai)["ak"] * (*Vabij)["cdkl"] * (*Tai)["dl"];
+    //Yai["ck"]  = (*Vabij)["dckl"] * (*Tai)["dl"];
+    //Kac["ac"] += Yai["ck"] * (*Tai)["ak"];
+    Kac["ac"] += (*Tai)["ak"] * (*Vabij)["dckl"] * (*Tai)["dl"];
 
     // Build Kki
     Kki["ki"]  = 2.0 * (*Vabij)["cdkl"] * (*Tabij)["cdil"];
     Kki["ki"] -= (*Vabij)["dckl"] * (*Tabij)["cdil"];
-    Yai["ck"]  = (*Vabij)["cdkl"] * (*Tai)["dl"];
-    Kki["ki"] += 2.0 * Yai["ck"] * (*Tai)["ci"];
-    //Kki["ki"] += 2.0 * (*Vabij)["cdkl"] * (*Tai)["ci"] * (*Tai)["dl"];
-    Yai["ck"]  = (*Vabij)["dckl"] * (*Tai)["dl"];
-    Kki["ki"] -= Yai["ck"] * (*Tai)["ci"];
-    //Kki["ki"] -= (*Vabij)["dckl"] * (*Tai)["ci"] * (*Tai)["dl"];
+    //Yai["ck"]  = (*Vabij)["cdkl"] * (*Tai)["dl"];
+    //Kki["ki"] += 2.0 * Yai["ck"] * (*Tai)["ci"];
+    Kki["ki"] += 2.0 * (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dl"];
+    //Yai["ck"]  = (*Vabij)["dckl"] * (*Tai)["dl"];
+    //Kki["ki"] -= Yai["ck"] * (*Tai)["ci"];
+    Kki["ki"] -= (*Tai)["ci"] * (*Vabij)["dckl"] * (*Tai)["dl"];
 
     // Contract Kac and Kki with T1 amplitudes
     Rai["ai"]  = Kac["ac"] * (*Tai)["ci"];
@@ -293,27 +293,27 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     // Contract all the rest terms with T1 and T2 amplitudes
     Rai["ai"] += 2.0 * Kck["ck"] * (*Tabij)["caki"];
     Rai["ai"] -= Kck["ck"] * (*Tabij)["caik"];
-    Yij["ik"]  = Kck["ck"] * (*Tai)["ci"];
-    Rai["ai"] += Yij["ik"] * (*Tai)["ak"];
-    //Rai["ai"] += Kck["ck"] * (*Tai)["ci"] * (*Tai)["ak"];
+    //Yij["ik"]  = Kck["ck"] * (*Tai)["ci"];
+    //Rai["ai"] += Yij["ik"] * (*Tai)["ak"];
+    Rai["ai"] +=  (*Tai)["ak"] * Kck["ck"] * (*Tai)["ci"];
     Rai["ai"] += 2.0 * (*Vabij)["acik"] * (*Tai)["ck"];
     Rai["ai"] -= (*Vaibj)["akci"] * (*Tai)["ck"];
     Rai["ai"] += 2.0 * (*Vabci)["cdak"] * (*Tabij)["cdik"];
     Rai["ai"] -= (*Vabci)["dcak"] * (*Tabij)["cdik"];
-    Kac["ac"]  = (*Vabci)["cdak"] * (*Tai)["dk"];     // use Kac to save memory
-    Rai["ai"] += 2.0 * Kac["ac"] * (*Tai)["ci"];      // use Kac to save memory
-    //Rai["ai"] += 2.0 * (*Vabci)["cdak"] * (*Tai)["ci"] * (*Tai)["dk"];
-    Kac["ac"]  = (*Vabci)["dcak"] * (*Tai)["dk"];     // use Kac to save memory
-    Rai["ai"] -= Kac["ac"] * (*Tai)["ci"];            // use Kac to save memory
-    //Rai["ai"] -= (*Vabci)["dcak"] * (*Tai)["ci"] * (*Tai)["dk"];
+    //Kac["ac"]  = (*Vabci)["cdak"] * (*Tai)["dk"];     // use Kac to save memory
+    //Rai["ai"] += 2.0 * Kac["ac"] * (*Tai)["ci"];      // use Kac to save memory
+    Rai["ai"] += 2.0 * (*Tai)["ci"] * (*Vabci)["cdak"] * (*Tai)["dk"];
+    //Kac["ac"]  = (*Vabci)["dcak"] * (*Tai)["dk"];     // use Kac to save memory
+    //Rai["ai"] -= Kac["ac"] * (*Tai)["ci"];            // use Kac to save memory
+    Rai["ai"] -= (*Tai)["ci"] * (*Vabci)["dcak"] * (*Tai)["dk"];
     Rai["ai"] -= 2.0 * (*Vijka)["klic"] * (*Tabij)["ackl"];
     Rai["ai"] += (*Vijka)["lkic"] * (*Tabij)["ackl"];
-    Yij["ki"]  = (*Vijka)["klic"] * (*Tai)["cl"];
-    Rai["ai"] -= 2.0 * Yij["ki"] * (*Tai)["ak"];
-    //Rai["ai"] -= 2.0 * (*Vijka)["klic"] * (*Tai)["ak"] * (*Tai)["cl"];
-    Yij["ki"]  = (*Vijka)["lkic"] * (*Tai)["cl"];
-    Rai["ai"] += Yij["ki"] * (*Tai)["ak"];
-    //Rai["ai"] += (*Vijka)["lkic"] * (*Tai)["ak"] * (*Tai)["cl"];
+    //Yij["ki"]  = (*Vijka)["klic"] * (*Tai)["cl"];
+    //Rai["ai"] -= 2.0 * Yij["ki"] * (*Tai)["ak"];
+    Rai["ai"] -= 2.0 * (*Tai)["ak"] * (*Vijka)["klic"] * (*Tai)["cl"];
+    //Yij["ki"]  = (*Vijka)["lkic"] * (*Tai)["cl"];
+    //Rai["ai"] += Yij["ki"] * (*Tai)["ak"];
+    Rai["ai"] += (*Tai)["ak"] * (*Vijka)["lkic"] * (*Tai)["cl"];
 
     singlesAmplitudesFromResiduum(Rai);
     TaiMixer->append(Rai);
