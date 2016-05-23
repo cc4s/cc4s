@@ -1,6 +1,7 @@
 #include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
@@ -124,6 +125,68 @@ void ClusterSinglesDoublesAlgorithm::run() {
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";
   setRealArgument(energyName.str(), e);
+}
+
+void ClusterSinglesDoublesAlgorithm::dryRun() {
+  // Read the Coulomb Integrals Vabij required for the energy
+  getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
+
+  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
+  DryTensor<> *epsi(getTensorArgument<double, 
+		    DryTensor<double>>("HoleEigenEnergies"));
+  DryTensor<> *epsa(getTensorArgument<double, 
+		    DryTensor<double>>("ParticleEigenEnergies"));
+
+  std::string abbreviation(getAbbreviation());
+  std::transform(abbreviation.begin(), abbreviation.end(), 
+		 abbreviation.begin(), ::toupper);
+
+  // instantiate mixer for the doubles amplitudes, by default use the linear one
+  std::string mixerName(getTextArgument("mixer", "LinearMixer"));
+  TabijMixer = MixerFactory<double>::create(mixerName, this);
+  if (!TabijMixer) {
+    std::stringstream stringStream;
+    stringStream << "Mixer not implemented: " << mixerName;
+    throw new Exception(stringStream.str());
+  }
+  // TODO: implement DryTensor in mixers
+  if (mixerName != "LinearMixer") {
+    LOG(0, abbreviation)
+      << "Warning: dry run not implemented for " << mixerName
+      << ", assuming the same memory usage." << std::endl;
+  }
+
+  {
+    // Allocate the doubles amplitudes and append it to the mixer
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
+    int syms[] = { NS, NS, NS, NS };
+    int vvoo[] = { Nv, Nv, No, No };
+    int vo[] = { Nv, No };
+    std::stringstream doublesAmplitudesName;
+    doublesAmplitudesName << getAbbreviation() << "DoublesAmplitudes";
+    DryTensor<> Tabij(4, vvoo, syms);
+    allocatedTensorArgument(doublesAmplitudesName.str(), 
+			    new DryTensor<>(Tabij));
+
+    std::stringstream singlesAmplitudesName;
+    singlesAmplitudesName << getAbbreviation() << "SinglesAmplitudes";
+    DryTensor<> Tai(2, vo, syms);
+    allocatedTensorArgument(singlesAmplitudesName.str(), 
+			    new DryTensor<>(Tai));
+  }
+
+  // Allocate the energy e
+  DryScalar<> energy();
+
+  getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
+
+  // call the dry iterate of the actual algorithm, which is left open here
+  dryIterate();
+
+  std::stringstream energyName;
+  energyName << getAbbreviation() << "Energy";
+  setRealArgument(energyName.str(), 0.0);
 }
 
 void ClusterSinglesDoublesAlgorithm::singlesAmplitudesFromResiduum(

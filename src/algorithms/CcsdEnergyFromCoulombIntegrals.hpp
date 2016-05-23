@@ -48,6 +48,10 @@ namespace cc4s {
      * \param[in] i Iteration number
      */
     virtual void iterate(int i);
+    /**
+     * \brief Implements the dry iterate method with the CCSD iteration.
+     */
+    virtual void dryIterate();
   };
 }
 

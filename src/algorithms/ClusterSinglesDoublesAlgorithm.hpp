@@ -25,6 +25,10 @@ namespace cc4s {
      * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCSD".
      */
     virtual std::string getAbbreviation() = 0;
+    /**
+     * \brief Performs a Dry Run
+     */
+    virtual void dryRun();
 
   protected:
     /**
