@@ -41,12 +41,6 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
     Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
 
-    /*
-    // Read the Particle/Hole Eigenenergies epsi epsa
-    Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-    Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
-    */
-
     // Get abbreviation of algorithm
     std::string abbreviation(getAbbreviation());
     std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -90,6 +84,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  Xakci.set_name("Xakci");
 	  int voov[] = { Nv, No, No, Nv };
 	  Tensor<> Xakic(4, voov, syms, *Vabij->wrld, "Xakic");
+
 	  /*
 	  // Intermediates for quadratic T1 amplitudes contraction
 	  int vo[] = { Nv, No };
