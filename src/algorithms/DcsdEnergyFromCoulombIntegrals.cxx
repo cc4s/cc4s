@@ -68,7 +68,17 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Tensor<> Rabij(false, *Vabij);
     Rabij.set_name("Rabij");
 
-    {
+    if (i == 0) {
+      // For first iteration compute only the MP2 amplitudes since Tabij = 0
+
+      // Rabij contracted with Vabij is the only non-zero term
+      Rabij["abij"] = (*Vabij)["abij"];
+      
+    } 
+    else {
+    // For the rest iterations compute the DCSD amplitudes
+
+    //{
     // Intermediates used for T2 amplitudes
     int vv[] = { Nv, Nv };
     Tensor<> Lac(2, vv, syms, *epsi->wrld, "Lac");
@@ -81,12 +91,13 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Xakci.set_name("Xakci");
     int voov[] = { Nv, No, No, Nv };
     Tensor<> Xakic(4, voov, syms, *epsi->wrld, "Xakic");
-
+    /*
     // Intermediates for quadratic T1 amplitudes contraction
     int vo[] = { Nv, No };
     Tensor<> Yai(2, vo, syms, *epsi->wrld, "Yai");
     Tensor<> Yijka(false, *Vijka);
     Yijka.set_name("Yijka");
+    */
 
     // Build Lac
     Lac["ac"]  = -1.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"]; // Multiplied by 0.5 in DCSD
@@ -258,9 +269,11 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     int oo[] = { No, No };
     Tensor<> Kki(2, oo, syms, *epsi->wrld, "Kki");
 
+    /*
     // Intermediate for quadratic T1 contractions
     Tensor<> Yij(2, oo, syms, *epsi->wrld, "Yij");
     Tensor<> Yai(2, vo, syms, *epsi->wrld, "Yai");
+    */
 
     // Build Kac
     Kac["ac"]  = -2.0 * (*Vabij)["cdkl"] * (*Tabij)["adkl"];
