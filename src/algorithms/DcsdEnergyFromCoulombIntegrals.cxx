@@ -228,7 +228,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	      int syms[] = {NS, NS, NS, NS};
 	      Tensor<> Rxyij(4, lens, syms, *Xxycd->wrld, "Rxyij");
 	      Rxyij["xyij"] =  (*Xxycd)["xycd"] * (*Tabij)["cdij"];
-	      Rxyij["xyij"] += (*Xxycd)["xycd"] * (*Tai)["ci"] * (*Tai)["dj"];
+	      Rxyij["xyij"] += (*Tai)["ci"] * (*Xxycd)["xycd"] * (*Tai)["dj"];
 	      sliceIntoResiduum(Rxyij, a, b, Rabij);
 	      // the integrals of this slice are not needed anymore
 	      delete Xxycd;
