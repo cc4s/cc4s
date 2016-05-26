@@ -204,8 +204,18 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	      int lens[] = { Xxycd->lens[0], Xxycd->lens[1], No, No };
 	      int syms[] = {NS, NS, NS, NS};
 	      Tensor<> Rxyij(4, lens, syms, *Xxycd->wrld, "Rxyij");
-	      Rxyij["xyij"] =  (*Xxycd)["xycd"] * (*Tabij)["cdij"];
-	      Rxyij["xyij"] += (*Tai)["ci"] * (*Xxycd)["xycd"] * (*Tai)["dj"];
+
+	      // Construct intermediate tensor
+	      Tensor<> Xabij(Tabij);
+	      Xabij.set_name("Xabij");
+	      Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+
+	      // Contract Xabcd with T2 and T1 Amplitudes using Xabij
+	      Rxyij["xyij"] = (*Xxycd)["xycd"] * Xabij["cdij"];
+
+	      //Rxyij["xyij"] =  (*Xxycd)["xycd"] * (*Tabij)["cdij"];
+	      //Rxyij["xyij"] += (*Tai)["ci"] * (*Xxycd)["xycd"] * (*Tai)["dj"];
+
 	      sliceIntoResiduum(Rxyij, a, b, Rabij);
 	      // the integrals of this slice are not needed anymore
 	      delete Xxycd;
@@ -332,6 +342,8 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
       // TODO: implement drySliceCoulombIntegrals
       DryTensor<> Vxycd(4, lens, syms);
       DryTensor<> Rxyij(*Vijkl);
+      // Construct intermediate tensor
+      DryTensor<> Xabij(*Vabij);
     }
     // TODO: implment dryDoublesAmplitudesFromResiduum
     // at the moment, assume usage of Dabij
@@ -340,9 +352,9 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
     {
       // Allocate Tensors for T1 amplitudes
       DryTensor<> Rai(*Tai);
-      // TODO: implment dryDoublesAmplitudesFromResiduum
-      // at the moment, assume usage of Dabij
-      DryTensor<> Dai(*Tai);
     }
+    // TODO: implment dryDoublesAmplitudesFromResiduum
+    // at the moment, assume usage of Dabij
+    DryTensor<> Dai(*Tai);
   }
 }

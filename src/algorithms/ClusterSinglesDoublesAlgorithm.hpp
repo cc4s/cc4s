@@ -22,7 +22,8 @@ namespace cc4s {
     virtual ~ClusterSinglesDoublesAlgorithm();
     virtual void run();
     /**
-     * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCSD".
+     * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCSD",
+     * "DCSD"
      */
     virtual std::string getAbbreviation() = 0;
     /**

@@ -85,18 +85,18 @@ void ClusterSinglesDoublesAlgorithm::run() {
     Tensor<> *Tabij(&TabijMixer->getNext());
     Tabij->set_name("Tabij");
     //{
-    //Tensor<> Yai(false, *Tai);
+    //Tensor<> Yai(false, *Tai); // intermediate tensor for contraction
     // Singles direct term
-    //Yai["bj"]   = (*Vabij)["abij"] * (*Tai)["ai"];
-    //energy[""]  = 2.0 * Yai["bj"]  * (*Tai)["bj"];
+    //Yai["bj"]   = (*Vabij)["abij"] * (*Tai)["ai"]; // contraction via intermediate
+    //energy[""]  = 2.0 * Yai["bj"]  * (*Tai)["bj"]; // contraction via intermediate
     energy[""]  = 2.0 * (*Tai)["bj"] * (*Vabij)["abij"] * (*Tai)["ai"];
     // Doubles direct term
     energy[""] += 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     // Compute direct energy
     dire = energy.get_val();
     // Singles exchange term
-    //Yai["bj"]   = (*Vabij)["baij"] * (*Tai)["ai"];
-    //energy[""]  = Yai["bj"]  * (*Tai)["bj"];
+    //Yai["bj"]   = (*Vabij)["baij"] * (*Tai)["ai"]; // contraction via intermediate
+    //energy[""]  = Yai["bj"]  * (*Tai)["bj"]; // contraction via intermediate
     energy[""]  =  (*Tai)["bj"] * (*Vabij)["baij"] * (*Tai)["ai"];
     // Doubles exchange term
     energy[""] += (*Tabij)["abji"] * (*Vabij)["abij"];
@@ -222,14 +222,14 @@ Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int Ny(Xxycd->lens[1]);
   int No(Tai->lens[1]);
   int Nv(Tai->lens[0]);
+
   // calculate Xxycd["xycd"] -= (*Vabci)["cdxk"] * (*Tai)["yk"];                                                                                                                             
- 
   int VStart[] = { 0, 0, a, 0 }; int VEnd[] = { Nv, Nv, a+Nx, No };
   int TStart[] = { b, 0 }; int TEnd[] = { b+Ny, No };
   (*Xxycd)["xycd"] -=
     Vabci->slice(VStart,VEnd)["cdxk"] * Tai->slice(TStart,TEnd)["yk"];
+
   // calculate Xxycd["xycd"] -= (*Vabyi)["dcyk"] * (*Txi)["xk"];                                                                                                                             
- 
   VStart[2] = b; VEnd[2] = b+Ny;
   TStart[0] = a; TEnd[0] = a+Nx;
   (*Xxycd)["xycd"] -=
