@@ -19,9 +19,6 @@ ClusterSinglesDoublesAlgorithm::~ClusterSinglesDoublesAlgorithm() {
   if (TaiMixer) delete TaiMixer;
 }
 
-/**
- * \brief Calculates the energy of a ClusterSinglesDoubles algorithm
- */
 void ClusterSinglesDoublesAlgorithm::run() {
   // Read the Coulomb Integrals Vabij required for the energy
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -59,7 +56,7 @@ void ClusterSinglesDoublesAlgorithm::run() {
     int vvoo[] = { Nv, Nv, No, No };
     Tensor<> Tabij(4, vvoo, syms, *epsi->wrld, "Tabij");
     TabijMixer->append(Tabij);
-    // the amplitudes will from now on be managed by the mixer
+    // The amplitudes will from now on be managed by the mixer
   }
 
   // Allocate the energy e
@@ -78,31 +75,24 @@ void ClusterSinglesDoublesAlgorithm::run() {
 
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
-    // call the iterate of the actual algorithm, which is still left open here
+    // Call the iterate of the actual algorithm, which is still left open here
     iterate(i);
     Tensor<> *Tai(&TaiMixer->getNext());
     Tai->set_name("Tai");
     Tensor<> *Tabij(&TabijMixer->getNext());
     Tabij->set_name("Tabij");
-    //{
-    //Tensor<> Yai(false, *Tai); // intermediate tensor for contraction
     // Singles direct term
-    //Yai["bj"]   = (*Vabij)["abij"] * (*Tai)["ai"]; // contraction via intermediate
-    //energy[""]  = 2.0 * Yai["bj"]  * (*Tai)["bj"]; // contraction via intermediate
     energy[""]  = 2.0 * (*Tai)["bj"] * (*Vabij)["abij"] * (*Tai)["ai"];
     // Doubles direct term
     energy[""] += 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
     // Compute direct energy
     dire = energy.get_val();
     // Singles exchange term
-    //Yai["bj"]   = (*Vabij)["baij"] * (*Tai)["ai"]; // contraction via intermediate
-    //energy[""]  = Yai["bj"]  * (*Tai)["bj"]; // contraction via intermediate
     energy[""]  =  (*Tai)["bj"] * (*Vabij)["baij"] * (*Tai)["ai"];
     // Doubles exchange term
     energy[""] += (*Tabij)["abji"] * (*Vabij)["abij"];
     // Compute exchange energy
     exce = -1.0 * energy.get_val();
-    //}
     // Compute total energy
     e = dire + exce;
     LOG(0, abbreviation) << "e=" << e << std::endl;
@@ -141,7 +131,7 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
   std::transform(abbreviation.begin(), abbreviation.end(), 
 		 abbreviation.begin(), ::toupper);
 
-  // instantiate mixer for the doubles amplitudes, by default use the linear one
+  // Instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
   TabijMixer = MixerFactory<double>::create(mixerName, this);
   if (!TabijMixer) {
@@ -181,7 +171,7 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
 
   getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
 
-  // call the dry iterate of the actual algorithm, which is left open here
+  // Call the dry iterate of the actual algorithm, which is left open here
   dryIterate();
 
   std::stringstream energyName;
@@ -211,11 +201,11 @@ void ClusterSinglesDoublesAlgorithm::singlesAmplitudesFromResiduum(
 Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int a, int b, int sliceRank) 
 {
-  // get the sliced Coulomb integrals Vxycd                                                                                                                                                   
+  // Get the sliced Coulomb integrals Vxycd 
   Tensor<> *Xxycd(sliceCoulombIntegrals(a, b, sliceRank));
+  Xxycd->set_name("Xxycd");
 
-  // couple to singles                                                                                                                                                                       
- 
+  // Couple to singles
   Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
   Tensor<> *Tai(&TaiMixer->getNext());
   int Nx(Xxycd->lens[0]);
@@ -223,13 +213,13 @@ Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int No(Tai->lens[1]);
   int Nv(Tai->lens[0]);
 
-  // calculate Xxycd["xycd"] -= (*Vabci)["cdxk"] * (*Tai)["yk"];                                                                                                                             
+  // Calculate Xxycd["xycd"] -= (*Vabci)["cdxk"] * (*Tai)["yk"];
   int VStart[] = { 0, 0, a, 0 }; int VEnd[] = { Nv, Nv, a+Nx, No };
   int TStart[] = { b, 0 }; int TEnd[] = { b+Ny, No };
   (*Xxycd)["xycd"] -=
     Vabci->slice(VStart,VEnd)["cdxk"] * Tai->slice(TStart,TEnd)["yk"];
 
-  // calculate Xxycd["xycd"] -= (*Vabyi)["dcyk"] * (*Txi)["xk"];                                                                                                                             
+  // Calculate Xxycd["xycd"] -= (*Vabyi)["dcyk"] * (*Txi)["xk"];
   VStart[2] = b; VEnd[2] = b+Ny;
   TStart[0] = a; TEnd[0] = a+Nx;
   (*Xxycd)["xycd"] -=

@@ -27,7 +27,7 @@ void ClusterDoublesAlgorithm::run() {
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
-  // instantiate mixer for the doubles amplitudes, by default use the linear one
+  // Instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
   TabijMixer = MixerFactory<double>::create(mixerName, this);
   if (!TabijMixer) {
@@ -44,7 +44,7 @@ void ClusterDoublesAlgorithm::run() {
     int vvoo[] = { Nv, Nv, No, No };
     Tensor<> Tabij(4, vvoo, syms, *epsi->wrld, "Tabij");
     TabijMixer->append(Tabij);
-    // the amplitudes will from now on be managed by the mixer
+    // The amplitudes will from now on be managed by the mixer
   }
 
   // Allocate the energy e
@@ -92,17 +92,13 @@ void ClusterDoublesAlgorithm::run() {
 
 void ClusterDoublesAlgorithm::dryRun() {
   // Read the Coulomb Integrals Vabij required for the energy
-  //DryTensor<> *Vabij(
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
-  //);
 
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
-  );
-  DryTensor<> *epsa(
-    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
-  );
+  DryTensor<> *epsi(getTensorArgument<double, 
+		    DryTensor<double>>("HoleEigenEnergies"));
+  DryTensor<> *epsa(getTensorArgument<double, 
+		    DryTensor<double>>("ParticleEigenEnergies"));
 
   std::string abbreviation(getAbbreviation());
   std::transform(
@@ -112,7 +108,7 @@ void ClusterDoublesAlgorithm::dryRun() {
   std::stringstream amplitudesName;
   amplitudesName << getAbbreviation() << "DoublesAmplitudes";
 
-  // instantiate mixer for the doubles amplitudes, by default use the linear one
+  // Instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
   TabijMixer = MixerFactory<double>::create(mixerName, this);
   if (!TabijMixer) {
@@ -140,13 +136,9 @@ void ClusterDoublesAlgorithm::dryRun() {
   // Allocate the energy e
   DryScalar<> energy();
 
-  //LOG(0, abbreviation) << "Solving Doubles Amplitude Equations" << std::endl;
-
-  // int maxIterationsCount(
   getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
-  // );
 
-  // call the dry iterate of the actual algorithm, which is left open here
+  // Call the dry iterate of the actual algorithm, which is left open here
   dryIterate();
 
   std::stringstream energyName;
@@ -190,29 +182,29 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int slice
   int Np(No+Nv);
   int NG(GammaGqr->lens[0]);
   
-  // slice the respective parts from the Coulomb vertex
+  // Slice the respective parts from the Coulomb vertex
   int leftGammaStart[] = { 0, No+a, No };
   int leftGammaEnd[] = { NG, std::min(No+a+sliceRank, Np), Np };
   int rightGammaStart[] = { 0, No+b, No };
   int rightGammaEnd[] = { NG, std::min(No+b+sliceRank, Np), Np };
   Tensor<complex> leftGamma(GammaGqr->slice(leftGammaStart, leftGammaEnd));
   Tensor<complex> rightGamma(GammaGqr->slice(rightGammaStart, rightGammaEnd));
-  // split into real and imaginary parts
-  Tensor<> realLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld);
-  Tensor<> imagLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld);
+  // Split into real and imaginary parts
+  Tensor<> realLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld, "realLeftGamma");
+  Tensor<> imagLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld, "imagLeftGamma");
   fromComplexTensor(leftGamma, realLeftGamma, imagLeftGamma);
-  Tensor<> realRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld);
-  Tensor<> imagRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld);
+  Tensor<> realRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld, "realRightGamma");
+  Tensor<> imagRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld, "imagRightGamma");
   fromComplexTensor(rightGamma, realRightGamma, imagRightGamma);
 
-  // allocate sliced Coulomb integrals
+  // Allocate sliced Coulomb integrals
   int lens[] = {
     leftGamma.lens[1], rightGamma.lens[1], leftGamma.lens[2], rightGamma.lens[2]
   };
   int syms[] = { NS, NS, NS, NS };
-  Tensor<> *Vxycd(new Tensor<>(4, lens, syms, *GammaGqr->wrld));
+  Tensor<> *Vxycd(new Tensor<>(4, lens, syms, *GammaGqr->wrld, "Vxycd"));
 
-  // contract left and right slices of the Coulomb vertices
+  // Contract left and right slices of the Coulomb vertices
   (*Vxycd)["xycd"] =  realLeftGamma["Gxc"] * realRightGamma["Gyd"];
   (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
   return Vxycd;
@@ -231,14 +223,14 @@ void ClusterDoublesAlgorithm::sliceIntoResiduum(
   // R["abij"] += R["xyij"] at current x,y
   Rabij.slice(dstStart,dstEnd,1.0, Rxyij,srcStart,srcEnd,1.0);
   if (a>b) {
-    // add the same slice at (b,a,j,i):
+    // Add the same slice at (b,a,j,i):
     dstStart[0] = b; dstStart[1] = a;
     dstEnd[0] = b+Ny; dstEnd[1] = a+Nx;
     srcEnd[0] = Ny; srcEnd[1] = Nx;
-    // swap xy and ij simultaneously
+    // Swap xy and ij simultaneously
     Tensor<> Ryxji(4, srcEnd, Rxyij.sym, *Rxyij.wrld);
     Ryxji["yxji"] = Rxyij["xyij"];
-    // and add it
+    // Add Ryxij to Rabij
     Rabij.slice(dstStart,dstEnd,1.0, Ryxji,srcStart,srcEnd,1.0);
   }
 }

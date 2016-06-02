@@ -20,6 +20,9 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~ClusterSinglesDoublesAlgorithm();
+    /**
+     * \brief Calculates the energy of a ClusterSinglesDoubles algorithm
+     */
     virtual void run();
     /**
      * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCSD",
