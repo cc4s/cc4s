@@ -11,23 +11,27 @@ CoulombIntegralsFromVertex [
 ] [
   % Uncomment next line if you want PPPPIntegrals. Else slicing is used.
 % PPPPCoulombIntegrals
+  % Uncomment next line if you want PPPHIntegrals. Else a coupled slicing is
+  % used via a dressed Coulomb vertex.
+% PPPHCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
-  HHHPCoulombIntegrals PPPHCoulombIntegrals
+  HHHPCoulombIntegrals
 ].
 
 DcsdEnergyFromCoulombIntegrals [
-  % Uncomment next line if you want PPPPIntegrals. Else slicing is used.
+  % Uncomment next line if you want PPPP and PPPH Integrals. Else slicing is used.
 % PPPPCoulombIntegrals
-  % Comment next line if you want PPPPIntegrals. Else slicing is used.
+% PPPHCoulombIntegrals
+  % CoulombVertex is needed independent of slicing or not.
   CoulombVertex
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals HHHHCoulombIntegrals
-  HHHPCoulombIntegrals PPPHCoulombIntegrals
+  HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
   (maxIterations 16)
-  % Uncomment next line to set the slice rank of PPPPIntegrals. Default is No.
+  % Uncomment next line to set the slice rank of PPPP and PPPH Integrals. Default is No.
 % (sliceRank 40)
 ] [
   (DcsdEnergy DcsdEnergy) 
