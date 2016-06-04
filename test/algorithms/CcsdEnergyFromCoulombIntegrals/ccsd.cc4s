@@ -22,6 +22,8 @@ CoulombIntegralsFromVertex [
 CcsdEnergyFromCoulombIntegrals [
   % Uncomment next line if you want PPPP and PPPH Integrals. Else slicing is used.
 % PPPPCoulombIntegrals
+  % Uncomment next line if you want PPPHIntegrals. Else a coupled slicing is
+  % used via a dressed Coulomb vertex.
 % PPPHCoulombIntegrals
   % CoulombVertex is needed independent of slicing or not.
   CoulombVertex

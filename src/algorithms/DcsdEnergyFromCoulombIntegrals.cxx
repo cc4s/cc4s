@@ -216,10 +216,15 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	    Xklij["klij"]  = (*Vijkl)["klij"];
 	    Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
 	    Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
-	    Xklij["klij"] += (*Vabij)["cdkl"] * Xabij["cdij"];
+	    Xklij["klij"] += (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dj"]; // Added in DCSD
+	    //	    Xklij["klij"] += (*Vabij)["cdkl"] * Xabij["cdij"]; // Removed in DCSD
 
 	    // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
 	    Rabij["abij"] += Xklij["klij"] * Xabij["abkl"];
+
+	    // Contract Xklij with T1 Amplitudes
+	    Xklij["klij"]  = (*Vabij)["cdkl"] * (*Tabij)["cdij"]; // Removed in DCSD from T2 Amplitudes
+	    Rabij["abij"] += (*Tai)["bl"] * Xklij["klij"] * (*Tai)["ak"];
 	  }
 	  else {
 	    // Build Xklij intermediate
@@ -231,7 +236,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	    Rabij["abij"] +=  Xklij["klij"] * Xabij["abkl"];
 
 	    // Construct last term
-	    Xklij["klij"]  = (*Vabij)["cdkl"] * Xabij["cdij"];
+	    Xklij["klij"]  =  (*Tai)["dj"] * (*Vabij)["cdkl"] * (*Tai)["ci"];
 
 	    // Add last term contracted only with the doubles
 	    // The singles term is computed in the slicing
