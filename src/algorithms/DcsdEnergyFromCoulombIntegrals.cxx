@@ -35,14 +35,15 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Tabij->set_name("Tabij");
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vabci Vijka
-    // the PPPPCoulombIntegrals may not be given then slicing is required
+    // The Vabcd and Vabci may not be given then slicing is required
     Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
 		    getTensorArgument("PPPPCoulombIntegrals") : nullptr);
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
     Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
     Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
-    Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
+    Tensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
+		    getTensorArgument("PPPHCoulombIntegrals") : nullptr);
   
     // Compute the No,Nv
     int No(Vabij->lens[2]);
@@ -53,7 +54,6 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     std::transform(abbreviation.begin(), abbreviation.end(), 
 		   abbreviation.begin(), ::toupper);
 
-    /*
     // Read the Coulomb vertex GammaGpq
     Tensor<complex> *GammaGpq( getTensorArgument<complex>("CoulombVertex"));
     int NG(GammaGpq->lens[0]);
@@ -79,9 +79,8 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Tensor<> imagGammaGab(3, GammaGab.lens, GammaGab.sym, 
 			  *GammaGab.wrld, "ImagGammaGab");
     fromComplexTensor(GammaGab, realGammaGab, imagGammaGab);
-    */
 
-    // Set symmetries for defining tensors
+    // Symmetries used by intermediates
     int syms[] = { NS, NS, NS, NS };
 
     //********************************************************************************
@@ -103,7 +102,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
       else {
 	// For the rest iterations compute the DCSD amplitudes
 
-	// Construct intermediate tensor Xabij=T2+T1*T1
+	// Intermediate tensor Xabij=T2+T1*T1
 	Tensor<> Xabij(Tabij);
 	Xabij.set_name("Xabij");
 	Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
@@ -127,8 +126,16 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  Lac["ac"] += ( 0.5) * (*Vabij)["dckl"] * (*Tabij)["adkl"]; // Multiplied by 0.5 in DCSD
 	  Lac["ac"] += (-2.0) * (*Tai)["ak"] * (*Vabij)["cdkl"] * (*Tai)["dl"];
 	  Lac["ac"] += ( 1.0) * (*Tai)["ak"] * (*Vabij)["dckl"] * (*Tai)["dl"];
-	  Lac["ac"] += ( 2.0) * (*Vabci)["cdak"] * (*Tai)["dk"];
-	  Lac["ac"] += (-1.0) * (*Vabci)["dcak"] * (*Tai)["dk"];
+	  if (Vabci) {
+	    Lac["ac"] += ( 2.0) * (*Vabci)["cdak"] * (*Tai)["dk"];
+	    Lac["ac"] += (-1.0) * (*Vabci)["dcak"] * (*Tai)["dk"];
+	  }
+	  else {
+	    Lac["ac"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * (*Tai)["dk"];
+	    Lac["ac"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * (*Tai)["dk"];
+	    Lac["ac"] += (-1.0) * realGammaGai["Gck"] * realGammaGab["Gda"] * (*Tai)["dk"];
+	    Lac["ac"] += (-1.0) * imagGammaGai["Gck"] * imagGammaGab["Gda"] * (*Tai)["dk"];
+	  }
 
 	  // Build Lki
 	  Lki["ki"]  = ( 1.0) * (*Vabij)["cdkl"] * (*Tabij)["cdil"]; // Multiplied by 0.5 in DCSD
@@ -140,11 +147,18 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     
 	  // Contract Lac with T2 Amplitudes
 	  Rabij["abij"]  = ( 1.0) * Lac["ac"] * (*Tabij)["cbij"];
+
 	  // Contract Lki with T2 Amplitudes
 	  Rabij["abij"] += (-1.0) * Lki["ki"] * (*Tabij)["abkj"];
 
 	  // Contract Coulomb integrals with T2 amplitudes
-	  Rabij["abij"] += ( 1.0) * (*Vabci)["baci"] * (*Tai)["cj"];
+	  if (Vabci) {
+	    Rabij["abij"] += ( 1.0) * (*Vabci)["baci"] * (*Tai)["cj"];
+	  }
+	  else {
+	    Rabij["abij"] += ( 1.0) * realGammaGai["Gai"] * realGammaGab["Gbc"] * (*Tai)["cj"];
+	    Rabij["abij"] += ( 1.0) * imagGammaGai["Gai"] * imagGammaGab["Gbc"] * (*Tai)["cj"];
+	  }
 	  Rabij["abij"] += (-1.0) * (*Tai)["ak"] * (*Vaibj)["bkci"] * (*Tai)["cj"];
 	  Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
 	  Rabij["abij"] += ( 1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
@@ -152,7 +166,13 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  // Build Xakic
 	  Xakic["akic"]  = ( 1.0) * (*Vabij)["acik"];
 	  Xakic["akic"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["al"];
-	  Xakic["akic"] += ( 1.0) * (*Vabci)["dcak"] * (*Tai)["di"];
+	  if (Vabci) {
+	    Xakic["akic"] += ( 1.0) * (*Vabci)["dcak"] * (*Tai)["di"];
+	  }
+	  else {
+	    Xakic["akic"] += ( 1.0) * realGammaGai["Gck"] * realGammaGab["Gda"] * (*Tai)["di"];
+	    Xakic["akic"] += ( 1.0) * imagGammaGai["Gck"] * imagGammaGab["Gda"] * (*Tai)["di"];
+	  }
 	  Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] * (*Tabij)["dail"];
 	  Xakic["akic"] += (-1.0) * (*Tai)["al"] * (*Vabij)["dclk"] * (*Tai)["di"];
 	  Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
@@ -161,7 +181,13 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  // Build Xakci
 	  Xakci["akci"]  = ( 1.0) * (*Vaibj)["akci"];
 	  Xakci["akci"] += (-1.0) * (*Vijka)["klic"] * (*Tai)["al"];
-	  Xakci["akci"] += ( 1.0) * (*Vabci)["cdak"] * (*Tai)["di"];
+	  if (Vabci) {
+	    Xakci["akci"] += ( 1.0) * (*Vabci)["cdak"] * (*Tai)["di"];
+	  }
+	  else {
+	    Xakci["akci"] += ( 1.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * (*Tai)["di"];
+	    Xakci["akci"] += ( 1.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * (*Tai)["di"];
+	  }
 	  Xakci["akci"] += (-1.0) * (*Tai)["al"] * (*Vabij)["cdlk"] * (*Tai)["di"];
 	  //	  Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCSD
 
@@ -185,14 +211,33 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  // Add Vabij to Rabij (MP2 term)
 	  Rabij["abij"] += (*Vabij)["abij"];
 
-	  // Build Xklij intermediate
-	  Xklij["klij"]  = (*Vijkl)["klij"];
-	  Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
-	  Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
-	  Xklij["klij"] += (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dj"]; 
+	  if (Vabci) {
+	    // Build Xklij intermediate
+	    Xklij["klij"]  = (*Vijkl)["klij"];
+	    Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
+	    Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
+	    Xklij["klij"] += (*Vabij)["cdkl"] * Xabij["cdij"];
 
-	  // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
-	  Rabij["abij"] += Xklij["klij"] * Xabij["abkl"];
+	    // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
+	    Rabij["abij"] += Xklij["klij"] * Xabij["abkl"];
+	  }
+	  else {
+	    // Build Xklij intermediate
+	    Xklij["klij"]  = (*Vijkl)["klij"];
+	    Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
+	    Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
+
+	    // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
+	    Rabij["abij"] +=  Xklij["klij"] * Xabij["abkl"];
+
+	    // Construct last term
+	    Xklij["klij"]  = (*Vabij)["cdkl"] * Xabij["cdij"];
+
+	    // Add last term contracted only with the doubles
+	    // The singles term is computed in the slicing
+	    Rabij["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
+	  }
+
 	}
 
 	if (Vabcd) {
@@ -260,9 +305,9 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  }
 	}
       }
-      // calculate the amplitdues from the residuum
+      // Calculate the amplitudes from the residuum
       doublesAmplitudesFromResiduum(Rabij);
-      // and append them to the mixer
+      // Append amplitudes to the mixer
       TabijMixer->append(Rabij);
     }
 
@@ -313,8 +358,16 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
       Rai["ai"] += ( 1.0) * (*Tai)["ak"] * Kck["ck"] * (*Tai)["ci"];
       Rai["ai"] += ( 2.0) * (*Vabij)["acik"] * (*Tai)["ck"];
       Rai["ai"] += (-1.0) * (*Vaibj)["ciak"] * (*Tai)["ck"];
-      Rai["ai"] += ( 2.0) * (*Vabci)["cdak"] * Xabij["cdik"];
-      Rai["ai"] += (-1.0) * (*Vabci)["dcak"] * Xabij["cdik"];
+      if (Vabci) {
+      	Rai["ai"] += ( 2.0) * (*Vabci)["cdak"] * Xabij["cdik"];
+      	Rai["ai"] += (-1.0) * (*Vabci)["dcak"] * Xabij["cdik"];
+      }
+      else {
+	Rai["ai"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * Xabij["cdik"];
+	Rai["ai"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * Xabij["cdik"];
+	Rai["ai"] += (-1.0) * realGammaGab["Gda"] * realGammaGai["Gck"] * Xabij["cdik"];
+	Rai["ai"] += (-1.0) * imagGammaGab["Gda"] * imagGammaGai["Gck"] * Xabij["cdik"];
+      }
       Rai["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
       Rai["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
 
@@ -334,8 +387,8 @@ void DcsdEnergyFromCoulombIntegrals::dryIterate() {
     DryTensor<> *Tabij(getTensorArgument<double, 
 		       DryTensor<double>>("DcsdDoublesAmplitudes"));
 
-    // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
-    // the PPPPCoulombIntegrals may not be given then slicing is required
+    // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vijka Vabci
+    // the Vabcd and Vabci may not be given then slicing is required
     DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ? getTensorArgument<double, 
 		       DryTensor<double>>("PPPPCoulombIntegrals") : nullptr);
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
@@ -355,7 +408,6 @@ void DcsdEnergyFromCoulombIntegrals::dryIterate() {
     // Symmetries used by intermediates
     int syms[] = { NS, NS, NS, NS };
 
-    /*
     // Read the Coulomb vertex GammaGpq
     DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
 				 DryTensor<complex>>("CoulombVertex"));
@@ -376,7 +428,6 @@ void DcsdEnergyFromCoulombIntegrals::dryIterate() {
 
     DryTensor<> realGammaGab(3, GabLens, syms);
     DryTensor<> imagGammaGab(3, GabLens, syms);
-    */
 
     // Intermediates used both by T1 and T2
     int vv[] = { Nv, Nv };
@@ -384,7 +435,7 @@ void DcsdEnergyFromCoulombIntegrals::dryIterate() {
     int oo[] = { No, No };
     DryTensor<> Kki(2, oo, syms);
 
-    // Construct intermediate tensor
+    // Construct intermediate tensor X=T2+T1*T1
     DryTensor<> Xabij(*Vabij);
 
     {

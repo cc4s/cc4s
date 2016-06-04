@@ -95,11 +95,11 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
 	Xakic["akic"]  = ( 1.0) * (*Vabij)["acik"];
 	Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] * (*Tabij)["dail"];
 	Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
-	//Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
+	//	Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
 
 	// Build Xakci
 	Xakci["akci"]  = ( 1.0) * (*Vaibj)["akci"];
-	//Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
+	//	Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
 
 	// Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
 	Rabij["abij"] += ( 2.0) * Xakic["akic"] * (*Tabij)["cbkj"];
@@ -123,7 +123,7 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
 
 	// Build Xklij intermediate
 	Xklij["klij"]  = (*Vijkl)["klij"];
-	//Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in DCD
+	//	Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in DCD
 
 	// Contract Xklij with T2 Amplitudes
 	Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
@@ -151,7 +151,7 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
 	    Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
 	    Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
 	    sliceIntoResiduum(Rxyij, a, b, Rabij);
-	    // the integrals of this slice are not needed anymore
+	    // The integrals of this slice are not needed anymore
 	    delete Vxycd;
 	  }
 	}
@@ -160,9 +160,9 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
 
     }
 
-    // calculate the amplitdues from the residuum
+    // Calculate the amplitdues from the residuum
     doublesAmplitudesFromResiduum(Rabij);
-    // and append them to the mixer
+    // And append them to the mixer
     TabijMixer->append(Rabij);
   }
 }
@@ -181,7 +181,7 @@ void DcdEnergyFromCoulombIntegrals::dryIterate() {
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
     DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
   
-    // Compute the no,nv,np
+    // Compute the No,Nv,Np
     int No(Vabij->lens[2]);
     int Nv(Vabij->lens[0]);
 
@@ -268,9 +268,9 @@ void DcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
 	// Create linear terms with T2 Amplitudes that need permutation
 	//////////////////////////////////////////////////////////////////////
 
-	// Contract Vabcd with T2 Amplitudes (3rd term first line)
+	// Contract Vabcd with T2 Amplitudes (4th term first line)
 	if (Vabcd) {
-	  Rabij["abij"]  = ( 0.5) * (*Vabcd)["abcd"] * (*Tabij)["cdij"];
+	  Rabij["abij"]  = ( 0.5) * (*Vabcd)["abef"] * (*Tabij)["efij"];
 	} 
 	else {
 	  // Slice if Vabcd is not specified
@@ -283,70 +283,70 @@ void DcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
 	  for (int b(0); b < Nv; b += sliceRank) {
 	    for (int a(b); a < Nv; a += sliceRank) {
 	      LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	      Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
-	      int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+	      Tensor<> *Vxyef(sliceCoulombIntegrals(a, b, sliceRank));
+	      int lens[] = { Vxyef->lens[0], Vxyef->lens[1], No, No };
 	      int syms[] = {NS, NS, NS, NS};
-	      Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
-	      Rxyij["xyij"] = ( 0.5) * (*Vxycd)["xycd"] * (*Tabij)["cdij"];
+	      Tensor<> Rxyij(4, lens, syms, *Vxyef->wrld, "Rxyij");
+	      Rxyij["xyij"] = ( 0.5) * (*Vxyef)["xyef"] * (*Tabij)["efij"];
 	      sliceIntoResiduum(Rxyij, a, b, Rabij);
 	      // The integrals of this slice are not needed anymore
-	      delete Vxycd;
+	      delete Vxyef;
 	    }
 	  }
 
 	}
 
-	// Contract Vijkl with T2 Amplitudes (4th term first line)
-	Rabij["abij"] += ( 0.5) * (*Vijkl)["klij"] * (*Tabij)["abkl"];
+	// Contract Vijkl with T2 Amplitudes (5th term first line)
+	Rabij["abij"] += ( 0.5) * (*Vijkl)["mnij"] * (*Tabij)["abmn"];
 
 	// Contract Vabij with T2 Amplitudes (1st term second line)
-	Rabij["abij"] += ( 2.0) * (*Vabij)["cbkj"] * (*Tabij)["acik"];
+	Rabij["abij"] += ( 2.0) * (*Vabij)["ebmj"] * (*Tabij)["aeim"];
 
 	// Contract Vabij with T2 Amplitudes (2nd term second line)
-	Rabij["abij"] += (-1.0) * (*Vabij)["cbkj"] * (*Tabij)["caik"];
+	Rabij["abij"] += (-1.0) * (*Vabij)["ebmj"] * (*Tabij)["eaim"];
 
 	// Contract Vaibj with T2 Amplitudes (3rd term second line)
-	Rabij["abij"] += (-1.0) * (*Vaibj)["cibk"] * (*Tabij)["ackj"];
+	Rabij["abij"] += (-1.0) * (*Vaibj)["eibm"] * (*Tabij)["aemj"];
 
 	// Contract Vaibj with T2 Amplitudes (4th term second line)
-	Rabij["abij"] += (-1.0) * (*Vaibj)["cjbk"] * (*Tabij)["acik"];
+	Rabij["abij"] += (-1.0) * (*Vaibj)["ejbm"] * (*Tabij)["aeim"];
 
 	//////////////////////////////////////////////////////////////////////
 	// Create quadratic terms with T2 Amplitudes that need permutation
 	//////////////////////////////////////////////////////////////////////
 
 	// 1st term third line
-	Rabij["abij"] += ( 2.0) * (*Tabij)["adil"] * (*Vabij)["dclk"] * (*Tabij)["cbkj"];
+	Rabij["abij"] += ( 2.0) * (*Tabij)["aeim"] * (*Vabij)["efmn"] * (*Tabij)["fbnj"];
 
 	// 2nd term third line
-	Rabij["abij"] += (-2.0) * (*Tabij)["adil"] * (*Vabij)["dclk"] * (*Tabij)["cbjk"];
+	Rabij["abij"] += (-2.0) * (*Tabij)["aeim"] * (*Vabij)["efmn"] * (*Tabij)["fbjn"];
 
 	// 3rd term third line
-	Rabij["abij"] += ( 0.5) * (*Tabij)["dail"] * (*Vabij)["dclk"] * (*Tabij)["cbjk"];
+	Rabij["abij"] += ( 0.5) * (*Tabij)["eaim"] * (*Vabij)["efmn"] * (*Tabij)["fbjn"];
 
 	// 1st term fourth line
-	//Rabij["abij"] += (-1.0) * (*Tabij)["adil"] * (*Vabij)["cdlk"] * (*Tabij)["cbkj"]; // Removed in DCD
+	//	Rabij["abij"] += (-1.0) * (*Tabij)["aeim"] * (*Vabij)["femn"] * (*Tabij)["fbnj"]; // Removed in DCD
 
 	// 2nd term fourth line
-	//Rabij["abij"] += ( 1.0) * (*Tabij)["adli"] * (*Vabij)["cdlk"] * (*Tabij)["cbkj"]; // Removed in DCD
+	//	Rabij["abij"] += ( 1.0) * (*Tabij)["aemi"] * (*Vabij)["femn"] * (*Tabij)["fbnj"]; // Removed in DCD
 
 	// 3rd term fourth line
-	//Rabij["abij"] += ( 0.5) * (*Tabij)["adlj"] * (*Vabij)["cdlk"] * (*Tabij)["cbik"]; // Removed in DCD
+	//	Rabij["abij"] += ( 0.5) * (*Tabij)["aemj"] * (*Vabij)["femn"] * (*Tabij)["fbin"]; // Removed in DCD
 
 	// 1st term fifth line
-	//Rabij["abij"] += ( 0.5) * (*Tabij)["ablk"] * (*Vabij)["cdlk"] * (*Tabij)["cdij"]; // Removed in DCD
+	//	Rabij["abij"] += ( 0.5) * (*Tabij)["abmn"] * (*Vabij)["efmn"] * (*Tabij)["efij"]; // Removed in DCD
 
 	// 2nd term fifth line (Multiplied by *0.5 in DCD)
-	Rabij["abij"] += (-1.0) * (*Tabij)["ablj"] * (*Vabij)["cdkl"] * (*Tabij)["cdki"];
+	Rabij["abij"] += (-1.0) * (*Tabij)["abnj"] * (*Vabij)["efmn"] * (*Tabij)["efmi"];
 
 	// 3rd term fifth line (Multiplied by *0.5 in DCD)
-	Rabij["abij"] += ( 0.5) * (*Tabij)["ablj"] * (*Vabij)["cdkl"] * (*Tabij)["cdik"];
+	Rabij["abij"] += ( 0.5) * (*Tabij)["abnj"] * (*Vabij)["efmn"] * (*Tabij)["efim"];
 
 	// 1st term sixth line (Multiplied by *0.5 in DCD)
-	Rabij["abij"] += (-1.0) * (*Tabij)["dbij"] * (*Vabij)["cdkl"] * (*Tabij)["cakl"];
+	Rabij["abij"] += (-1.0) * (*Tabij)["fbij"] * (*Vabij)["efmn"] * (*Tabij)["eamn"];
 
 	// 2nd term sixth line (Multiplied by *0.5 in DCD)
-	Rabij["abij"] += ( 0.5) * (*Tabij)["dbij"] * (*Vabij)["cdkl"] * (*Tabij)["ackl"];
+	Rabij["abij"] += ( 0.5) * (*Tabij)["fbij"] * (*Vabij)["efmn"] * (*Tabij)["aemn"];
       }
 
       //////////////////////////////////////////////////////////////////////
@@ -373,5 +373,4 @@ void DcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
     // and append them to the mixer
     TabijMixer->append(Rabij);
   }
-
 }

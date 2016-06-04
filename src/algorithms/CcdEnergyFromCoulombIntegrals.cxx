@@ -150,7 +150,7 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	    Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);
 	    Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
 	    sliceIntoResiduum(Rxyij, a, b, Rabij);
-	    // the integrals of this slice are not needed anymore
+	    // The integrals of this slice are not needed anymore
 	    delete Vxycd;
 	  }
 	}
@@ -159,9 +159,9 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 
     }
 
-    // calculate the amplitdues from the residuum
+    // Calculate the amplitdues from the residuum
     doublesAmplitudesFromResiduum(Rabij);
-    // and append them to the mixer
+    // And append them to the mixer
     TabijMixer->append(Rabij);
   }
 }
@@ -180,7 +180,7 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
     DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
   
-    // Compute the no,nv,np
+    // Compute the No,Nv,Np
     int No(Vabij->lens[2]);
     int Nv(Vabij->lens[0]);
 
@@ -265,9 +265,9 @@ void CcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
 	// Create linear terms with T2 Amplitudes that need permutation
 	//////////////////////////////////////////////////////////////////////
 
-	// Contract Vabcd with T2 Amplitudes (3rd term first line)
+	// Contract Vabcd with T2 Amplitudes (4th term first line)
 	if (Vabcd) {
-	  Rabij["abij"]  = ( 0.5) * (*Vabcd)["abcd"] * (*Tabij)["cdij"];
+	  Rabij["abij"]  = ( 0.5) * (*Vabcd)["abef"] * (*Tabij)["efij"];
 	} 
 	else {
 	  // Slice if Vabcd is not specified
@@ -280,92 +280,70 @@ void CcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
 	  for (int b(0); b < Nv; b += sliceRank) {
 	    for (int a(b); a < Nv; a += sliceRank) {
 	      LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	      Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
-	      int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+	      Tensor<> *Vxyef(sliceCoulombIntegrals(a, b, sliceRank));
+	      int lens[] = { Vxyef->lens[0], Vxyef->lens[1], No, No };
 	      int syms[] = {NS, NS, NS, NS};
-	      Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
-	      Rxyij["xyij"] = ( 0.5) * (*Vxycd)["xycd"] * (*Tabij)["cdij"];
+	      Tensor<> Rxyij(4, lens, syms, *Vxyef->wrld, "Rxyij");
+	      Rxyij["xyij"] = ( 0.5) * (*Vxyef)["xyef"] * (*Tabij)["efij"];
 	      sliceIntoResiduum(Rxyij, a, b, Rabij);
 	      // The integrals of this slice are not needed anymore
-	      delete Vxycd;
+	      delete Vxyef;
 	    }
 	  }
 
 	}
 
-	// Contract Vijkl with T2 Amplitudes (4th term first line)
-	Rabij["abij"] += ( 0.5) * (*Vijkl)["klij"] * (*Tabij)["abkl"];
+	// Contract Vijkl with T2 Amplitudes (5th term first line)
+	Rabij["abij"] += ( 0.5) * (*Vijkl)["mnij"] * (*Tabij)["abmn"];
 
 	// Contract Vabij with T2 Amplitudes (1st term second line)
-	Rabij["abij"] += ( 2.0) * (*Vabij)["cbkj"] * (*Tabij)["acik"];
+	Rabij["abij"] += ( 2.0) * (*Vabij)["ebmj"] * (*Tabij)["aeim"];
 
 	// Contract Vabij with T2 Amplitudes (2nd term second line)
-	Rabij["abij"] += (-1.0) * (*Vabij)["cbkj"] * (*Tabij)["caik"];
+	Rabij["abij"] += (-1.0) * (*Vabij)["ebmj"] * (*Tabij)["eaim"];
 
 	// Contract Vaibj with T2 Amplitudes (3rd term second line)
-	Rabij["abij"] += (-1.0) * (*Vaibj)["cibk"] * (*Tabij)["ackj"];
+	Rabij["abij"] += (-1.0) * (*Vaibj)["eibm"] * (*Tabij)["aemj"];
 
 	// Contract Vaibj with T2 Amplitudes (4th term second line)
-	Rabij["abij"] += (-1.0) * (*Vaibj)["cjbk"] * (*Tabij)["acik"];
+	Rabij["abij"] += (-1.0) * (*Vaibj)["ejbm"] * (*Tabij)["aeim"];
 
 	//////////////////////////////////////////////////////////////////////
 	// Create quadratic terms with T2 Amplitudes that need permutation
 	//////////////////////////////////////////////////////////////////////
 
 	// 1st term third line
-	//Cabij["dblj"]  = 1.0*(*Vabij)["dclk"] * (*Tabij)["cbkj"];
-	//Rabij["abij"] += 2.0*   Cabij["cbkj"] * (*Tabij)["acik"];
-	Rabij["abij"] += ( 2.0) * (*Tabij)["adil"] * (*Vabij)["dclk"] * (*Tabij)["cbkj"];
+	Rabij["abij"] += ( 2.0) * (*Tabij)["aeim"] * (*Vabij)["efmn"] * (*Tabij)["fbnj"];
 
 	// 2nd term third line
-	//Cabij["dblj"]  = 1.0*(*Vabij)["dclk"] * (*Tabij)["cbjk"];
-	//Rabij["abij"] += (-2.0) * Cabij["cbkj"] * (*Tabij)["acik"];
-	Rabij["abij"] += (-2.0) * (*Tabij)["adil"] * (*Vabij)["dclk"] * (*Tabij)["cbjk"];
+	Rabij["abij"] += (-2.0) * (*Tabij)["aeim"] * (*Vabij)["efmn"] * (*Tabij)["fbjn"];
 
 	// 3rd term third line
-	//Cabij["dblj"]  = 1.0*(*Vabij)["dclk"] * (*Tabij)["cbjk"];
-	//Rabij["abij"] += 0.5*   Cabij["cbkj"] * (*Tabij)["caik"];
-	Rabij["abij"] += ( 0.5) * (*Tabij)["dail"] * (*Vabij)["dclk"] * (*Tabij)["cbjk"];
+	Rabij["abij"] += ( 0.5) * (*Tabij)["eaim"] * (*Vabij)["efmn"] * (*Tabij)["fbjn"];
 
 	// 1st term fourth line
-	//Cabij["dblj"]  = 1.0*(*Vabij)["cdlk"] * (*Tabij)["cbkj"];
-	//Rabij["abij"] += (-1.0) * Cabij["dblj"] * (*Tabij)["adil"];
-	Rabij["abij"] += (-1.0) * (*Tabij)["adil"] * (*Vabij)["cdlk"] * (*Tabij)["cbkj"];
+	Rabij["abij"] += (-1.0) * (*Tabij)["aeim"] * (*Vabij)["femn"] * (*Tabij)["fbnj"];
 
 	// 2nd term fourth line
-	//Cabij["dblj"]  = 1.0*(*Vabij)["cdlk"] * (*Tabij)["cbkj"];
-	//Rabij["abij"] += 1.0*   Cabij["dblj"] * (*Tabij)["adli"];
-	Rabij["abij"] += ( 1.0) * (*Tabij)["adli"] * (*Vabij)["cdlk"] * (*Tabij)["cbkj"];
+	Rabij["abij"] += ( 1.0) * (*Tabij)["aemi"] * (*Vabij)["femn"] * (*Tabij)["fbnj"];
 
 	// 3rd term fourth line
-	//Cabij["dbli"]  = 1.0*(*Vabij)["cdlk"] * (*Tabij)["cbik"];
-	//Rabij["abij"] += 0.5*   Cabij["dbli"] * (*Tabij)["adlj"];
-	Rabij["abij"] += ( 0.5) * (*Tabij)["adlj"] * (*Vabij)["cdlk"] * (*Tabij)["cbik"];
+	Rabij["abij"] += ( 0.5) * (*Tabij)["aemj"] * (*Vabij)["femn"] * (*Tabij)["fbin"];
 
 	// 1st term fifth line
-	//Cabcd["cdab"]  = 1.0*(*Vabij)["cdlk"] * (*Tabij)["ablk"];
-	//Rabij["abij"] += 0.5*   Cabcd["cdab"] * (*Tabij)["cdij"];
-	Rabij["abij"] += ( 0.5) * (*Tabij)["ablk"] * (*Vabij)["cdlk"] * (*Tabij)["cdij"];
+	Rabij["abij"] += ( 0.5) * (*Tabij)["abmn"] * (*Vabij)["efmn"] * (*Tabij)["efij"];
 
 	// 2nd term fifth line
-	//Cij["li"]      = 1.0*(*Vabij)["cdkl"] * (*Tabij)["cdki"];
-	//Rabij["abij"] += (-2.0) * Cij["li"] * (*Tabij)["ablj"];
-	Rabij["abij"] += (-2.0) * (*Tabij)["ablj"] * (*Vabij)["cdkl"] * (*Tabij)["cdki"];
+	Rabij["abij"] += (-2.0) * (*Tabij)["abnj"] * (*Vabij)["efmn"] * (*Tabij)["efmi"];
 
 	// 3rd term fifth line
-	//Cij["li"]      = 1.0*(*Vabij)["cdkl"] * (*Tabij)["cdik"];
-	//Rabij["abij"] += 1.0*       Cij["li"] * (*Tabij)["ablj"];
-	Rabij["abij"] += ( 1.0) * (*Tabij)["ablj"] * (*Vabij)["cdkl"] * (*Tabij)["cdik"];
+	Rabij["abij"] += ( 1.0) * (*Tabij)["abnj"] * (*Vabij)["efmn"] * (*Tabij)["efim"];
 
 	// 1st term sixth line
-	//Cab["da"]      = 1.0*(*Vabij)["cdkl"] * (*Tabij)["cakl"];
-	//Rabij["abij"] += (-2.0) * Cab["da"] * (*Tabij)["dbij"];
-	Rabij["abij"] += (-2.0) * (*Tabij)["dbij"] * (*Vabij)["cdkl"] * (*Tabij)["cakl"];
+	Rabij["abij"] += (-2.0) * (*Tabij)["fbij"] * (*Vabij)["efmn"] * (*Tabij)["eamn"];
 
 	// 2nd term sixth line
-	//Cab["da"]      = 1.0*(*Vabij)["cdkl"] * (*Tabij)["ackl"];
-	//Rabij["abij"] += 1.0*       Cab["da"] * (*Tabij)["dbij"];
-	Rabij["abij"] += ( 1.0) * (*Tabij)["dbij"] * (*Vabij)["cdkl"] * (*Tabij)["ackl"];
+	Rabij["abij"] += ( 1.0) * (*Tabij)["fbij"] * (*Vabij)["efmn"] * (*Tabij)["aemn"];
       }
 
       //////////////////////////////////////////////////////////////////////

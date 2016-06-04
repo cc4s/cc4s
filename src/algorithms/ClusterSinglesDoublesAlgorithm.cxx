@@ -198,33 +198,77 @@ void ClusterSinglesDoublesAlgorithm::singlesAmplitudesFromResiduum(
   Rai.contract(1.0, Rai,"ai", Dai,"ai", 0.0,"ai", fDivide);
 }
 
-Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
-  int a, int b, int sliceRank) 
+Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a, 
+								       int b, 
+								       int sliceRank)
 {
-  // Get the sliced Coulomb integrals Vxycd 
-  Tensor<> *Xxycd(sliceCoulombIntegrals(a, b, sliceRank));
-  Xxycd->set_name("Xxycd");
-
-  // Couple to singles
-  Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
+  // Read the amplitudes Tai
   Tensor<> *Tai(&TaiMixer->getNext());
-  int Nx(Xxycd->lens[0]);
-  int Ny(Xxycd->lens[1]);
+  Tai->set_name("Tai");
+
+  // Read the Coulomb vertex GammaGpq
+  Tensor<complex> *GammaGpq( getTensorArgument<complex>("CoulombVertex"));
+  GammaGpq->set_name("GammaGpq");
+
+  // Compute No,Nv,NG,Np
   int No(Tai->lens[1]);
   int Nv(Tai->lens[0]);
+  int NG(GammaGpq->lens[0]);
+  int Np = No + Nv;
 
-  // Calculate Xxycd["xycd"] -= (*Vabci)["cdxk"] * (*Tai)["yk"];
-  int VStart[] = { 0, 0, a, 0 }; int VEnd[] = { Nv, Nv, a+Nx, No };
-  int TStart[] = { b, 0 }; int TEnd[] = { b+Ny, No };
-  (*Xxycd)["xycd"] -=
-    Vabci->slice(VStart,VEnd)["cdxk"] * Tai->slice(TStart,TEnd)["yk"];
+  // Allocate and compute GammaGab,GammaGai from GammaGpq
+  int GaiStart[] = {0 ,No, 0};
+  int GaiEnd[]   = {NG,Np,No};
+  int GabStart[] = {0 ,No,No};
+  int GabEnd[]   = {NG,Np,Np};
+  Tensor<complex> GammaGai(GammaGpq->slice(GaiStart,GaiEnd));
+  Tensor<complex> GammaGab(GammaGpq->slice(GabStart,GabEnd));
 
-  // Calculate Xxycd["xycd"] -= (*Vabyi)["dcyk"] * (*Txi)["xk"];
-  VStart[2] = b; VEnd[2] = b+Ny;
-  TStart[0] = a; TEnd[0] = a+Nx;
-  (*Xxycd)["xycd"] -=
-    Vabci->slice(VStart,VEnd)["dcyk"] * Tai->slice(TStart,TEnd)["xk"];
+  // Split GammaGab,GammaGai into real and imaginary parts
+  Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
+			*GammaGai.wrld, "RealGammaGai");
+  Tensor<> imagGammaGai(3, GammaGai.lens, GammaGai.sym, 
+			*GammaGai.wrld, "ImagGammaGai");
+  fromComplexTensor(GammaGai, realGammaGai, imagGammaGai);
 
-  return Xxycd;
+  Tensor<> realGammaGab(3, GammaGab.lens, GammaGab.sym, 
+			*GammaGab.wrld, "RealGammaGab");
+  Tensor<> imagGammaGab(3, GammaGab.lens, GammaGab.sym, 
+			*GammaGab.wrld, "ImagGammaGab");
+  fromComplexTensor(GammaGab, realGammaGab, imagGammaGab);
+
+  // Construct dressed Coulomb vertex GammaGab
+  realGammaGab["Gab"] += (-1.0) * realGammaGai["Gbk"] * (*Tai)["ak"];
+  imagGammaGab["Gab"] += (-1.0) * imagGammaGai["Gbk"] * (*Tai)["ak"];
+  toComplexTensor(realGammaGab, imagGammaGab, GammaGab);
+  
+  // Slice the respective parts from the dressed Coulomb vertex GammaGab
+  int leftGammaStart[] = { 0, a, 0 };
+  int leftGammaEnd[] = { NG, std::min(a+sliceRank, Nv), Nv };
+  int rightGammaStart[] = { 0, b, 0 };
+  int rightGammaEnd[] = { NG, std::min(b+sliceRank, Nv), Nv };
+  
+  Tensor<complex> leftGamma(GammaGab.slice(leftGammaStart, leftGammaEnd));
+  Tensor<complex> rightGamma(GammaGab.slice(rightGammaStart, rightGammaEnd));
+
+  // Split into real and imaginary parts
+  Tensor<> realLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGpq->wrld, "realLeftGamma");
+  Tensor<> imagLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGpq->wrld, "imagLeftGamma");
+  fromComplexTensor(leftGamma, realLeftGamma, imagLeftGamma);
+  Tensor<> realRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGpq->wrld, "realRightGamma");
+  Tensor<> imagRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGpq->wrld, "imagRightGamma");
+  fromComplexTensor(rightGamma, realRightGamma, imagRightGamma);
+  
+  // Allocate sliced Coulomb integrals
+  int lens[] = {
+    leftGamma.lens[1], rightGamma.lens[1], leftGamma.lens[2], rightGamma.lens[2]
+  };
+  int syms[] = { NS, NS, NS, NS };
+  Tensor<> *Vxycd(new Tensor<>(4, lens, syms, *GammaGpq->wrld, "Vxycd"));
+
+  // Contract left and right slices of the dressed Coulomb vertices
+  (*Vxycd)["xycd"]  = realLeftGamma["Gxc"] * realRightGamma["Gyd"];
+  (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
+  return Vxycd;
 }
 
