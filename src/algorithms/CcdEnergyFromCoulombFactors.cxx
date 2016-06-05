@@ -23,7 +23,6 @@ CcdEnergyFromCoulombFactors::~CcdEnergyFromCoulombFactors() {
 //////////////////////////////////////////////////////////////////////
 // Hiarata iteration routine for the CCD amplitudes Tabij (Table. 1)
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
-// Modified according to D. Kats, J. Chem. Phys. 139, 021102 (2013)
 //////////////////////////////////////////////////////////////////////
 void CcdEnergyFromCoulombFactors::iterate(int i) {
   {
