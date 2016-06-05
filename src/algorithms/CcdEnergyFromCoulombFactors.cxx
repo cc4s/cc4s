@@ -1,4 +1,4 @@
-#include <algorithms/DcdEnergyFromCoulombFactors.hpp>
+#include <algorithms/CcdEnergyFromCoulombFactors.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/DryTensor.hpp>
 #include <math/Complex.hpp>
@@ -10,25 +10,25 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(DcdEnergyFromCoulombFactors);
+ALGORITHM_REGISTRAR_DEFINITION(CcdEnergyFromCoulombFactors);
 
-DcdEnergyFromCoulombFactors::DcdEnergyFromCoulombFactors(
+CcdEnergyFromCoulombFactors::CcdEnergyFromCoulombFactors(
   std::vector<Argument> const &argumentList
 ): ClusterDoublesAlgorithm(argumentList) {
 }
 
-DcdEnergyFromCoulombFactors::~DcdEnergyFromCoulombFactors() {
+CcdEnergyFromCoulombFactors::~CcdEnergyFromCoulombFactors() {
 }
 
 //////////////////////////////////////////////////////////////////////
-// Hiarata iteration routine for the DCD amplitudes Tabij (Table. 1)
+// Hiarata iteration routine for the CCD amplitudes Tabij (Table. 1)
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 // Modified according to D. Kats, J. Chem. Phys. 139, 021102 (2013)
 //////////////////////////////////////////////////////////////////////
-void DcdEnergyFromCoulombFactors::iterate(int i) {
+void CcdEnergyFromCoulombFactors::iterate(int i) {
   {
 
-    // Read the DCD amplitudes Tabij
+    // Read the CCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
     Tabij->set_name("Tabij");
 
@@ -51,7 +51,7 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
       Rabij["abij"] += (*Vabij)["abij"];
     } 
     else {
-      // For the rest iterations compute the DCD amplitudes
+      // For the rest iterations compute the CCD amplitudes
 
       // Read the Coulomb Integrals Vaibj Vijkl
       Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
@@ -73,8 +73,8 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
 	Tensor<> Kac(2, vv, syms, *Vabij->wrld, "Kac");
 	Tensor<> Kki(2, oo, syms, *Vabij->wrld, "Kki");
 
-	//	Tensor<> Xklij(false, *Vijkl); // Removed in DCD
-	//	Xklij.set_name("Xklij");       // Removed in DCD
+	Tensor<> Xklij(false, *Vijkl);
+	Xklij.set_name("Xklij");
 	Tensor<> Xakci(false, *Vaibj);
 	Xakci.set_name("Xakci");
 	Tensor<> Xakic(4, voov, syms, *Vabij->wrld, "Xakic");
@@ -86,22 +86,22 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
 	// Build Kki
 	Kki["ki"]  = ( 2.0) * (*Vabij)["cdkl"] * (*Tabij)["cdil"];
 	Kki["ki"] += (-1.0) * (*Vabij)["dckl"] * (*Tabij)["cdil"];
-    
+
 	// Contract Kac with T2 Amplitudes
-	Rabij["abij"]  = ( 0.5) * Kac["ac"] * (*Tabij)["cbij"]; // Multiplied by 0.5 in DCD
+	Rabij["abij"]  = ( 1.0) * Kac["ac"] * (*Tabij)["cbij"];
 
 	// Contract Kki with T2 Amplitudes
-	Rabij["abij"] += (-0.5) * Kki["ki"] * (*Tabij)["abkj"]; // Multiplied by 0.5 in DCD
+	Rabij["abij"] += (-1.0) * Kki["ki"] * (*Tabij)["abkj"];
 
 	// Build Xakic
 	Xakic["akic"]  = ( 1.0) * (*Vabij)["acik"];
 	Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] * (*Tabij)["dail"];
 	Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
-	//	Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCD
+	Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"];
 
 	// Build Xakci
 	Xakci["akci"]  = ( 1.0) * (*Vaibj)["akci"];
-	//	Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCD
+	Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"];
 
 	// Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
 	Rabij["abij"] += ( 2.0) * Xakic["akic"] * (*Tabij)["cbkj"];
@@ -124,11 +124,11 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
 	Rabij["abij"] += (*Vabij)["abij"];
 
 	// Build Xklij intermediate
-	//	Xklij["klij"]  = (*Vijkl)["klij"]; // Removed in DCD
-	//	Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; // Removed in DCD
+	Xklij["klij"]  = (*Vijkl)["klij"];
+	Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"];
 
 	// Contract Xklij with T2 Amplitudes
-	Rabij["abij"] += (*Vijkl)["klij"] * (*Tabij)["abkl"]; // Xklij replaced by Vklij in DCD
+	Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
       }
       
       {
@@ -179,7 +179,7 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
 	conjLambdaGR.sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
 	VRS["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
 
-	XRSij["RSij"] = XRSij["RSij"]  * VRS["RS"];
+	XRSij["RSij"] = XRSij["RSij"] * VRS["RS"];
 	XRaij["Rbij"] = XRSij["RSij"]  * PiaR["bS"];
 
 	fromComplexTensor(XRaij, realXRaij, imagXRaij);
@@ -196,12 +196,12 @@ void DcdEnergyFromCoulombFactors::iterate(int i) {
   }
 }
 
-void DcdEnergyFromCoulombFactors::dryIterate() {
+void CcdEnergyFromCoulombFactors::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
-    // Read the DCD amplitudes Tabij
+    // Read the CCD amplitudes Tabij
     // DryTensor<> *Tabij(
-    getTensorArgument<double, DryTensor<double>>("DcdDoublesAmplitudes");
+    getTensorArgument<double, DryTensor<double>>("CcdDoublesAmplitudes");
     // );
 
     // Read the Coulomb Integrals Vabij Vaibj Vijkl

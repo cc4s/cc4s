@@ -27,8 +27,8 @@ CoulombIntegralsFromVertex [
   PPHHCoulombIntegrals HHHHCoulombIntegrals
 ].
 
-% Compute the DcdEnergy from the integrals using slicing
-DcdEnergyFromCoulombIntegrals [
+% Compute the CcdEnergy from the integrals using slicing
+CcdEnergyFromCoulombIntegrals [
   % PPPPCoulombIntegrals are not needed.
 % PPPPCoulombIntegrals
   % For slicing use the composed vertex
@@ -43,14 +43,14 @@ DcdEnergyFromCoulombIntegrals [
   % Uncomment next line to set the slice rank of PPPPCoulombIntegrals. Default is No.
 % (sliceRank 40)
 ] [
-  (DcdEnergy DcdEnergy) 
-  (DcdDoublesAmplitudes DcdDoublesAmplitudes)
+  (CcdEnergy CcdEnergy) 
+  (CcdDoublesAmplitudes CcdDoublesAmplitudes)
 ].
 
-TensorWriter [(Data DcdEnergy)] [].
+TensorWriter [(Data CcdEnergy)] [].
 
-% Compute the DcdEnergy from the Coulomb factors
-DcdEnergyFromCoulombIntegrals [
+% Compute the CcdEnergy from the Coulomb factors
+CcdEnergyFromCoulombIntegrals [
   % PPPPCoulombIntegrals are not needed.
 % PPPPCoulombIntegrals
   % Coulomb factors are used when necessary for low memory and O(N^5)
@@ -64,8 +64,8 @@ DcdEnergyFromCoulombIntegrals [
 % (mixer "LinearMixer")
 % (mixingRatio 1.5)
 ] [
-  (DcdEnergy DcdEnergyFactors)
-  (DcdDoublesAmplitudes DcdDoublesAmplitudesFactors)
+  (CcdEnergy CcdEnergyFactors)
+  (CcdDoublesAmplitudes CcdDoublesAmplitudesFactors)
 ].
 
-TensorWriter [(Data DcdEnergyFactors)] [].
+TensorWriter [(Data CcdEnergyFactors)] [].

@@ -71,8 +71,8 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
 	Tensor<> Kac(2, vv, syms, *Vabij->wrld, "Kac");
 	Tensor<> Kki(2, oo, syms, *Vabij->wrld, "Kki");
 
-	Tensor<> Xklij(false, *Vijkl);
-	Xklij.set_name("Xklij");
+	//	Tensor<> Xklij(false, *Vijkl); // Removed in DCD
+	//	Xklij.set_name("Xklij");       // Removed in DCD
 	Tensor<> Xakci(false, *Vaibj);
 	Xakci.set_name("Xakci");
 	Tensor<> Xakic(4, voov, syms, *Vabij->wrld, "Xakic");
@@ -122,11 +122,11 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
 	Rabij["abij"] += (*Vabij)["abij"];
 
 	// Build Xklij intermediate
-	Xklij["klij"]  = (*Vijkl)["klij"];
-	//	Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; //Removed in DCD
+	//	Xklij["klij"]  = (*Vijkl)["klij"]; // Removed in DCD
+	//	Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"]; // Removed in DCD
 
 	// Contract Xklij with T2 Amplitudes
-	Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
+	Rabij["abij"] += (*Vijkl)["klij"] * (*Tabij)["abkl"]; // Xklij replaced by Vklij in DCD
       }
       
       // Contract Vabcd with T2 Amplitudes

@@ -228,7 +228,7 @@ void ClusterDoublesAlgorithm::sliceIntoResiduum(
     dstEnd[0] = b+Ny; dstEnd[1] = a+Nx;
     srcEnd[0] = Ny; srcEnd[1] = Nx;
     // Swap xy and ij simultaneously
-    Tensor<> Ryxji(4, srcEnd, Rxyij.sym, *Rxyij.wrld);
+    Tensor<> Ryxji(4, srcEnd, Rxyij.sym, *Rxyij.wrld, "Ryxji");
     Ryxji["yxji"] = Rxyij["xyij"];
     // Add Ryxij to Rabij
     Rabij.slice(dstStart,dstEnd,1.0, Ryxji,srcStart,srcEnd,1.0);
