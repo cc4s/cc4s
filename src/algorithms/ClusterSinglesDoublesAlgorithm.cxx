@@ -71,7 +71,7 @@ void ClusterSinglesDoublesAlgorithm::run() {
   // Iteration for determining the amplitudes Tai and Tabij
   // and the energy e
   int maxIterationsCount(getIntegerArgument("maxIterations", 
-						DEFAULT_MAX_ITERATIONS));
+					    DEFAULT_MAX_ITERATIONS));
 
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
@@ -81,16 +81,18 @@ void ClusterSinglesDoublesAlgorithm::run() {
     Tai->set_name("Tai");
     Tensor<> *Tabij(&TabijMixer->getNext());
     Tabij->set_name("Tabij");
-    // Singles direct term
-    energy[""]  = 2.0 * (*Tai)["bj"] * (*Vabij)["abij"] * (*Tai)["ai"];
-    // Doubles direct term
-    energy[""] += 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
+
+    // Intermediate tensor Xabij=T2+T1*T1
+    Tensor<> Xabij(Tabij);
+    Xabij.set_name("Xabij");
+    Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+
+    // Direct term
+    energy[""] = 2.0 * Xabij["abij"] * (*Vabij)["abij"];
     // Compute direct energy
     dire = energy.get_val();
-    // Singles exchange term
-    energy[""]  =  (*Tai)["bj"] * (*Vabij)["baij"] * (*Tai)["ai"];
     // Doubles exchange term
-    energy[""] += (*Tabij)["abji"] * (*Vabij)["abij"];
+    energy[""] = Xabij["abij"] * (*Vabij)["baij"];
     // Compute exchange energy
     exce = -1.0 * energy.get_val();
     // Compute total energy
