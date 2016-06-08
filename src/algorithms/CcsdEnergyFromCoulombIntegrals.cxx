@@ -137,7 +137,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  Kac["ac"] += ( 1.0) * (*Vabij)["dckl"] * Xabij["adkl"];
 
 	  // Build Lac
-	  Lac["ac"]  = Kac["ac"];
+	  Lac["ac"] = Kac["ac"];
 	  if (Vabci) {
 	    Lac["ac"] += ( 2.0) * (*Vabci)["cdak"] * (*Tai)["dk"];
 	    Lac["ac"] += (-1.0) * (*Vabci)["dcak"] * (*Tai)["dk"];
@@ -154,7 +154,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  Kki["ki"] += (-1.0) * (*Vabij)["dckl"] * Xabij["cdil"];
 
 	  // Build Lki
-	  Lki["ki"]  = ( 1.0) * Kki["ki"];
+	  Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
 	  Lki["ki"] += ( 2.0) * (*Vijka)["klic"] * (*Tai)["cl"];
 	  Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
     
@@ -166,7 +166,8 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
 	  // Contract Coulomb integrals with T2 amplitudes
 	  if (Vabci) {
-	    Rabij["abij"] += ( 1.0) * (*Vabci)["baci"] * (*Tai)["cj"];
+	    Rabij["abij"] += ( 1.0) * (*Vabci)["baci"] * (*Tai)  ["cj"];
+	    Rabij["abij"] += (-1.0) * (*Tai)  ["ak"]   * (*Vaibj)["bkci"] * (*Tai)["cj"];
 	  }
 	  else {
 	    Tensor<> realDressedGammaGai(realGammaGai);
@@ -180,6 +181,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	    Rabij["abij"] += ( 1.0) * realDressedGammaGai["Gai"] * realGammaGab["Gbc"] * (*Tai)["cj"];
 	    Rabij["abij"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGab["Gbc"] * (*Tai)["cj"];
 	  }
+
 	  Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
 	  Rabij["abij"] += ( 1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
 	  

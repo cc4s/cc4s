@@ -165,6 +165,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	  // Contract Coulomb integrals with T2 amplitudes
 	  if (Vabci) {
 	    Rabij["abij"] += ( 1.0) * (*Vabci)["baci"] * (*Tai)["cj"];
+	    Rabij["abij"] += (-1.0) * (*Tai)  ["ak"]   * (*Vaibj)["bkci"] * (*Tai)["cj"];
 	  }
 	  else {
 	    Tensor<> realDressedGammaGai(realGammaGai);
