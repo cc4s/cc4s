@@ -1,12 +1,38 @@
 % RPA execution plan for large systems with Nv * No > NG
+% N**5 implementation
 ParticleHoleCoulombVertexReader [
   (file "../../resources/ParticleHoleCoulombVertex.bin")
 ] [
   ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
 
-DrccdEnergyFromCoulombVertex [
-  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+  PPHHCoulombIntegrals
+].
+
+% Compute once RPA energy from PPHHCoulombIntegrals
+DrccdEnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  % Default value is 16.
+  (maxIterations 16)
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
+].
+
+% Compute once RPA energy directly from Vertex
+DrccdEnergyFromCoulombVertex [
+  % PPHHCoulombIntegrals still needed for the calculation of the energy
+  PPHHCoulombIntegrals
+  % For RPA amplitudes only the ParticleHoleCoulombVertex is used
+  % Careful: Does not work with CoulombVertex
+  ParticleHoleCoulombVertex
+  HoleEigenEnergies ParticleEigenEnergies
+  % Default value is 16.
+  (maxIterations 16)
+] [
+  (DrccdEnergy DrccdEnergyVertex) 
+  (DrccdDoublesAmplitudes DrccdDoublesAmplitudesVertex)
 ].

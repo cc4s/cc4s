@@ -21,11 +21,7 @@ ClusterDoublesAlgorithm::~ClusterDoublesAlgorithm() {
 
 void ClusterDoublesAlgorithm::run() {
   // Read the Coulomb Integrals Vabij required for the energy
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+  Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
 
   // Instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
@@ -38,17 +34,17 @@ void ClusterDoublesAlgorithm::run() {
 
   {
     // Allocate the doubles amplitudes and append it to the mixer
-    int No(epsi->lens[0]);
-    int Nv(epsa->lens[0]);
+    int No(Vabij->lens[2]);
+    int Nv(Vabij->lens[0]);
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
-    Tensor<> Tabij(4, vvoo, syms, *epsi->wrld, "Tabij");
+    Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
     TabijMixer->append(Tabij);
     // The amplitudes will from now on be managed by the mixer
   }
 
   // Allocate the energy e
-  Scalar<> energy(*epsi->wrld);
+  Scalar<> energy(*Vabij->wrld);
   energy.set_name("energy");
   double e(0), dire, exce;
 

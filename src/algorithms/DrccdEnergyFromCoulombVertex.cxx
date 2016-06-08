@@ -1,11 +1,11 @@
 #include <algorithms/DrccdEnergyFromCoulombVertex.hpp>
 #include <math/MathFunctions.hpp>
+#include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
+#include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
-#include <Cc4s.hpp>
 #include <ctf.hpp>
-#include <Options.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -14,118 +14,90 @@ ALGORITHM_REGISTRAR_DEFINITION(DrccdEnergyFromCoulombVertex);
 
 DrccdEnergyFromCoulombVertex::DrccdEnergyFromCoulombVertex(
   std::vector<Argument> const &argumentList
-): Algorithm(argumentList) {
+): ClusterDoublesAlgorithm(argumentList) {
 }
 
 DrccdEnergyFromCoulombVertex::~DrccdEnergyFromCoulombVertex() {
 }
 
-/**
- * \brief Calculates Drccd energy from Coulomb vertex gammaGai
- */
-void DrccdEnergyFromCoulombVertex::run() {
-  Tensor<complex> *gammaGai(
-    getTensorArgument<complex>("ParticleHoleCoulombVertex")
-  );
-  realGammaGai = new Tensor<>(
-    3, gammaGai->lens, gammaGai->sym, *Cc4s::world, "realGammaGai"
-  );
-  imagGammaGai = new Tensor<>(
-    3, gammaGai->lens, gammaGai->sym, *Cc4s::world, "imagGammaGai"
-  );
-  fromComplexTensor(*gammaGai, *realGammaGai, *imagGammaGai);
+void DrccdEnergyFromCoulombVertex::iterate(int i) {
+  // Read the DRCCD amplitudes Tabij
+  Tensor<> *Tabij(&TabijMixer->getNext());
 
-  int nv(gammaGai->lens[1]);
-  int no(gammaGai->lens[2]);
-  int lens[] = { nv, nv, no, no };
-  int syms[] = { NS, NS, NS, NS };
-  Tensor<> *tabij(new Tensor<>(4, lens, syms, *Cc4s::world, "Tabij"));
-  allocatedTensorArgument("DrccdDoublesAmplitudes", tabij);
-  vabij = new Tensor<>(4, tabij->lens, tabij->sym, *Cc4s::world, "Vabij");
+  // Read coulomb vertex GammaGai
+  Tensor<complex> *GammaGai(getTensorArgument<complex>
+			    ("ParticleHoleCoulombVertex"));
 
-  (*vabij)["abij"] =  (*realGammaGai)["Gai"] * (*realGammaGai)["Gbj"];
-  (*vabij)["abij"] += (*imagGammaGai)["Gai"] * (*imagGammaGai)["Gbj"];
+  // Allocate real and imag part of GammaGai
+  Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
+			*GammaGai->wrld, "RealGammaGai");
+  Tensor<> imagGammaGai(3, GammaGai->lens, GammaGai->sym, 
+			*GammaGai->wrld, "ImagGammaGai");
 
-  // NOTE: for debugging:
-  //Tensor<> imagVabij(false, *tabij);
-  //imagVabij["abij"] =  (*realGammaGai)["Gai"] * (*imagGammaGai)["Gbj"];
-  //imagVabij["abij"] -= (*imagGammaGai)["Gai"] * (*realGammaGai)["Gbj"];
-  //double error(imagVabij.norm2());
-  //LOG(4) << "|imag(Vabij)| = " << error << std::endl;
+  // Split into real and imaginary parts
+  fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
 
-  // allocate intermediate tensors
-  Rabij = new Tensor<>(false, *tabij);
-  Dabij = new Tensor<>(false, *tabij);
-  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  (*Dabij)["abij"] =  (*epsi)["i"];
-  (*Dabij)["abij"] += (*epsi)["j"];
-  (*Dabij)["abij"] -= (*epsa)["a"];
-  (*Dabij)["abij"] -= (*epsa)["b"];
-  realLGai = new Tensor<>(false, *realGammaGai);
-  imagLGai = new Tensor<>(false, *imagGammaGai);
-  realRGai = new Tensor<>(false, *realGammaGai);
-  imagRGai = new Tensor<>(false, *imagGammaGai);
+  std::string abbreviation(getAbbreviation());
+  std::transform(abbreviation.begin(), abbreviation.end(), 
+		 abbreviation.begin(), ::toupper);
 
-  Scalar<> energy(*Cc4s::world);
-  double e(0), dire, exce;
+  LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
-  LOG(0, "RPA") <<
-    "Solving direct ring Coupled Cluster Doubles Amplitude Equations:" <<
-    std::endl;
- 
-  for (int i(0); i < Cc4s::options->niter; ++i) {
-    LOG(0, "RPA") << "iteration: " << i << std::endl;
-    iterate();
-    energy[""] = 2.0 * (*tabij)["abij"] * (*vabij)["abij"];
-    dire = energy.get_val();
-    energy[""] = -1.0 * (*tabij)["abji"] * (*vabij)["abij"];
-    exce = energy.get_val();
-    e = dire + exce;
-    LOG(0, "RPA") << "e=" << e << std::endl;
-    LOG(1, "RPA") << "RPA=" << dire << std::endl;
-    LOG(1, "RPA") << "SOSEX=" << exce << std::endl;
-  }
+  // Construct intermediate Amplitudes
+  Tensor<> Rabij(false, *Tabij);
 
-  setRealArgument("DrccdEnergy", e);
+  // Construct left and right dressed Coulomb vertices GammaGai
+  Tensor<> leftRealGammaGai (realGammaGai);
+  Tensor<> leftImagGammaGai (imagGammaGai);
+  Tensor<> rightRealGammaGai(realGammaGai);
+  Tensor<> rightImagGammaGai(imagGammaGai);
+  leftRealGammaGai ["Gai"] += 2.0 * realGammaGai["Gbk"] * (*Tabij)["abik"];
+  leftImagGammaGai ["Gai"] += 2.0 * imagGammaGai["Gbk"] * (*Tabij)["abik"];
+  rightRealGammaGai["Gai"] += 2.0 * realGammaGai["Gbk"] * (*Tabij)["baki"];
+  rightImagGammaGai["Gai"] += 2.0 * imagGammaGai["Gbk"] * (*Tabij)["baki"];
 
-  // deallocate intermediate tensors
-  delete Rabij; delete Dabij;
-  delete realLGai; delete imagLGai;
-  delete realRGai; delete imagRGai;
-  delete realGammaGai; delete imagGammaGai;
+  // Construct T2 amplitudes
+  Rabij["abij"]  = leftRealGammaGai["Gai"] * rightRealGammaGai["Gbj"];
+  Rabij["abij"] += leftImagGammaGai["Gai"] * rightImagGammaGai["Gbj"];
+
+  // Calculate the amplitdues from the residuum
+  doublesAmplitudesFromResiduum(Rabij);
+  // And append them to the mixer
+  TabijMixer->append(Rabij);
 }
 
-void DrccdEnergyFromCoulombVertex::iterate() {
-  // get tensors
-  Tensor<> *tabij(getTensorArgument("DrccdDoublesAmplitudes"));
 
-  // Coulomb term
-  (*Rabij)["abij"] = (*vabij)["abij"];
+void DrccdEnergyFromCoulombVertex::dryIterate() {
+  {
 
-  // Bubble on the right
-  // LGai["Gai"] = 2.0 * tabij["acik"] * conj(gammaGai["Gck"]);
-  (*realLGai)["Gai"] = +2.0 * (*tabij)["acik"] * (*realGammaGai)["Gck"];
-  (*imagLGai)["Gai"] = -2.0 * (*tabij)["acik"] * (*imagGammaGai)["Gck"];
-  // Rabij["abij"] += real( LGai["Gai"] * (*gammaGai)["Gbj"] );
-  (*Rabij)["abij"] += (*realLGai)["Gai"] * (*realGammaGai)["Gbj"];
-  (*Rabij)["abij"] -= (*imagLGai)["Gai"] * (*imagGammaGai)["Gbj"];
+    // TODO: the Mixer should provide a DryTensor in the future
+    // Read the DRCCD amplitudes Tabij
+    DryTensor<> *Tabij(getTensorArgument<double, DryTensor<double>>
+		     ("DrccdDoublesAmplitudes"));
 
-  // Bubble on the left
-  // RGai["Gbj"] = 2.0 * (*gammaGai)["Gck"] * tabij["cbkj"];
-  (*realRGai)["Gbj"] = +2.0 * (*realGammaGai)["Gck"] * (*tabij)["cbkj"];
-  (*imagRGai)["Gbj"] = +2.0 * (*imagGammaGai)["Gck"] * (*tabij)["cbkj"];
-  // Rabij["abij"] += real( conj(gammaGai["Gai"]) * RGai["Gbj"] );
-  (*Rabij)["abij"] += (*realGammaGai)["Gai"] * (*realRGai)["Gbj"];
-  (*Rabij)["abij"] += (*imagGammaGai)["Gai"] * (*imagRGai)["Gbj"];
+    // Read the Coulomb Vertex GammaGai
+    DryTensor<complex> *GammaGai(getTensorArgument<complex, 
+				 DryTensor<complex>>
+				 ("ParticleHoleCoulombVertex"));
 
-  // Bubbles on both sides
-  // Rabij["abij"] += real( LGai["Gai"] * RGai["Gbj"] );
-  (*Rabij)["abij"] += (*realLGai)["Gai"] * (*realRGai)["Gbj"];
-  (*Rabij)["abij"] -= (*imagLGai)["Gai"] * (*imagRGai)["Gbj"];
+    // Compute the No,Nv,NG,Np
+    int NG(GammaGai->lens[0]);
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
+    int syms[] = { NS, NS, NS, };
 
-  // This is what we fixed last time...
-  Bivar_Function<> fDivide(&divide<double>);
-  tabij->contract(1.0, *Rabij,"abij", *Dabij,"abij", 0.0,"abij", fDivide);
+    // Allocate and realGammaGai and imagGammaGai
+    int GaiLens[] = {NG,Nv,No};
+
+    DryTensor<> realGammaGai(3, GaiLens, syms);
+    DryTensor<> imagGammaGai(3, GaiLens, syms);
+  
+    // Allocate Tensors for T2 amplitudes
+    DryTensor<> Rabij(*Tabij);
+
+    // TODO: implment dryDoublesAmplitudesFromResiduum
+    // at the moment, assume usage of Dabij
+    DryTensor<> Dabij(*Tabij);
+  }
 }
 

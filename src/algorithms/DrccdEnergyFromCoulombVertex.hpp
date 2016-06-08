@@ -2,28 +2,36 @@
 #ifndef DRCCD_ENERGY_FROM_COULOMB_VERTEX_DEFINED 
 #define DRCCD_ENERGY_FROM_COULOMB_VERTEX_DEFINED
 
-#include <algorithms/Algorithm.hpp>
+#include <algorithms/ClusterDoublesAlgorithm.hpp>
 
 namespace cc4s {
-  class DrccdEnergyFromCoulombVertex: public Algorithm {
+  // this algorithm is now based on the ClusterDoublesAlgorithm
+  // inheriting its iteration and slicing functionality.
+  // Only the abstract (left out) methods getAbbreviation and iterate have
+  // to be implemented.
+  class DrccdEnergyFromCoulombVertex: public ClusterDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(DrccdEnergyFromCoulombVertex);
     DrccdEnergyFromCoulombVertex(
       std::vector<Argument> const &argumentList
     );
     virtual ~DrccdEnergyFromCoulombVertex();
-    virtual void run();
-
-    static Algorithm *create(std::vector<Argument> const &argumentList) {
-      return new DrccdEnergyFromCoulombVertex(argumentList);
-    }
+    /**
+     * \brief Returns the abbreviation of the routine (DRCCD).
+     * \return abbreviation of the routine
+     */
+    virtual std::string getAbbreviation() { return "Drccd"; }
 
   protected:
-    void iterate();
-
-    CTF::Tensor<> *vabij, *Rabij, *Dabij,
-      *realGammaGai, *imagGammaGai,
-      *realLGai, *imagLGai, *realRGai, *imagRGai;
+    /**
+     * \brief Implements the iterate method with the DRCCD iteration.
+     * \param[in] i Iteration number
+     */
+    virtual void iterate(int i);
+    /**
+     * \brief Implements the dry iterate method with the DRCCD iteration.
+     */
+    virtual void dryIterate();
   };
 }
 
