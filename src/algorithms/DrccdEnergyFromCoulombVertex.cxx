@@ -24,18 +24,8 @@ void DrccdEnergyFromCoulombVertex::iterate(int i) {
   // Read the DRCCD amplitudes Tabij
   Tensor<> *Tabij(&TabijMixer->getNext());
 
-  // Read coulomb vertex GammaGai
-  Tensor<complex> *GammaGai(getTensorArgument<complex>
-			    ("ParticleHoleCoulombVertex"));
-
-  // Allocate real and imag part of GammaGai
-  Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
-			*GammaGai->wrld, "RealGammaGai");
-  Tensor<> imagGammaGai(3, GammaGai->lens, GammaGai->sym, 
-			*GammaGai->wrld, "ImagGammaGai");
-
-  // Split into real and imaginary parts
-  fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
+  // Construct intermediate Amplitudes
+  Tensor<> Rabij(false, *Tabij);
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -43,27 +33,50 @@ void DrccdEnergyFromCoulombVertex::iterate(int i) {
 
   LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
-  // Construct intermediate Amplitudes
-  Tensor<> Rabij(false, *Tabij);
+    if (i == 0) {
+      // For first iteration compute only the MP2 amplitudes 
+      // Since Tabij = 0, Vabij is the only non-zero term
 
-  // Construct left and right dressed Coulomb vertices GammaGai
-  Tensor<> leftRealGammaGai (realGammaGai);
-  Tensor<> leftImagGammaGai (imagGammaGai);
-  Tensor<> rightRealGammaGai(realGammaGai);
-  Tensor<> rightImagGammaGai(imagGammaGai);
-  leftRealGammaGai ["Gai"] += 2.0 * realGammaGai["Gbk"] * (*Tabij)["abik"];
-  leftImagGammaGai ["Gai"] += 2.0 * imagGammaGai["Gbk"] * (*Tabij)["abik"];
-  rightRealGammaGai["Gai"] += 2.0 * realGammaGai["Gbk"] * (*Tabij)["baki"];
-  rightImagGammaGai["Gai"] += 2.0 * imagGammaGai["Gbk"] * (*Tabij)["baki"];
+      // Read Vabij
+      Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
-  // Construct T2 amplitudes
-  Rabij["abij"]  = leftRealGammaGai["Gai"] * rightRealGammaGai["Gbj"];
-  Rabij["abij"] += leftImagGammaGai["Gai"] * rightImagGammaGai["Gbj"];
+      Rabij["abij"] += (*Vabij)["abij"];
+    } 
+    else {
+      // For the rest iterations compute the DRCCD amplitudes
 
-  // Calculate the amplitudes from the residuum
-  doublesAmplitudesFromResiduum(Rabij);
-  // And append them to the mixer
-  TabijMixer->append(Rabij);
+      // Read coulomb vertex GammaGai
+      Tensor<complex> *GammaGai(getTensorArgument<complex>
+				("ParticleHoleCoulombVertex"));
+
+      // Allocate real and imag part of GammaGai
+      Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
+			    *GammaGai->wrld, "RealGammaGai");
+      Tensor<> imagGammaGai(3, GammaGai->lens, GammaGai->sym, 
+			    *GammaGai->wrld, "ImagGammaGai");
+
+      // Split into real and imaginary parts
+      fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
+
+      // Construct left and right dressed Coulomb vertices GammaGai
+      Tensor<> leftRealGammaGai (realGammaGai);
+      Tensor<> leftImagGammaGai (imagGammaGai);
+      Tensor<> rightRealGammaGai(realGammaGai);
+      Tensor<> rightImagGammaGai(imagGammaGai);
+      leftRealGammaGai ["Gai"] += 2.0 * realGammaGai["Gbk"] * (*Tabij)["abik"];
+      leftImagGammaGai ["Gai"] += 2.0 * imagGammaGai["Gbk"] * (*Tabij)["abik"];
+      rightRealGammaGai["Gai"] += 2.0 * realGammaGai["Gbk"] * (*Tabij)["baki"];
+      rightImagGammaGai["Gai"] += 2.0 * imagGammaGai["Gbk"] * (*Tabij)["baki"];
+
+      // Construct T2 amplitudes
+      Rabij["abij"]  = leftRealGammaGai["Gai"] * rightRealGammaGai["Gbj"];
+      Rabij["abij"] += leftImagGammaGai["Gai"] * rightImagGammaGai["Gbj"];
+
+      // Calculate the amplitudes from the residuum
+      doublesAmplitudesFromResiduum(Rabij);
+      // And append them to the mixer
+      TabijMixer->append(Rabij);
+    }
 }
 
 

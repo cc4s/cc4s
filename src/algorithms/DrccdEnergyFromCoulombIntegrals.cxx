@@ -25,6 +25,8 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
   // Read Vabij
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
+  // Construct intermediate Amplitudes
+  Tensor<> Rabij(false, *Tabij);
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -32,20 +34,32 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
 
   LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
-  // Construct intermediates
-  Tensor<> Rabij(false, *Vabij);
-  Tensor<> Cabij(false, *Vabij);
+    if (i == 0) {
+      // For first iteration compute only the MP2 amplitudes 
+      // Since Tabij = 0, Vabij is the only non-zero term
 
-  Rabij["abij"] = (*Vabij)["abij"];
-  Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
-  Cabij["abij"] =  2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
-  Rabij["abij"] += Cabij["abij"];
-  Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
+      // Read Vabij
+      Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
-  // calculate the amplitdues from the residuum
-  doublesAmplitudesFromResiduum(Rabij);
-  // and append them to the mixer
-  TabijMixer->append(Rabij);
+      Rabij["abij"] += (*Vabij)["abij"];
+    } 
+    else {
+      // For the rest iterations compute the DRCCD amplitudes
+
+      // Construct intermediates
+      Tensor<> Cabij(false, *Vabij);
+
+      Rabij["abij"] = (*Vabij)["abij"];
+      Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
+      Cabij["abij"] =  2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
+      Rabij["abij"] += Cabij["abij"];
+      Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
+
+      // Calculate the amplitdues from the residuum
+      doublesAmplitudesFromResiduum(Rabij);
+      // And append them to the mixer
+      TabijMixer->append(Rabij);
+    }
 }
 
 
