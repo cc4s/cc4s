@@ -60,7 +60,7 @@ void DrccdEnergyFromCoulombVertex::iterate(int i) {
   Rabij["abij"]  = leftRealGammaGai["Gai"] * rightRealGammaGai["Gbj"];
   Rabij["abij"] += leftImagGammaGai["Gai"] * rightImagGammaGai["Gbj"];
 
-  // Calculate the amplitdues from the residuum
+  // Calculate the amplitudes from the residuum
   doublesAmplitudesFromResiduum(Rabij);
   // And append them to the mixer
   TabijMixer->append(Rabij);

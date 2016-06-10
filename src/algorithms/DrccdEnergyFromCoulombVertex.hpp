@@ -9,6 +9,11 @@ namespace cc4s {
   // inheriting its iteration and slicing functionality.
   // Only the abstract (left out) methods getAbbreviation and iterate have
   // to be implemented.
+  /**
+   * \brief Implements the iteration routine for the Drccd method. Calculates the
+   * amplitudes \f$T_{ab}^{ij}\f$ from the Coulomb vertex \f$ \Gamma^{a}_{iG} \f$
+   * in a \f$ \mathcal{O}(N^{5}) \f$ implementation.
+   */
   class DrccdEnergyFromCoulombVertex: public ClusterDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(DrccdEnergyFromCoulombVertex);
@@ -25,6 +30,8 @@ namespace cc4s {
   protected:
     /**
      * \brief Implements the iterate method with the DRCCD iteration.
+     * in a \f$ \mathcal{O}(N^{5}) \f$ implementation, using only the Coulomb
+     * vertex \f$ \Gamma^{a}_{iG} \f$.
      * \param[in] i Iteration number
      */
     virtual void iterate(int i);

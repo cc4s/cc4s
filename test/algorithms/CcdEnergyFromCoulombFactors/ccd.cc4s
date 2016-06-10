@@ -50,7 +50,7 @@ CcdEnergyFromCoulombIntegrals [
 TensorWriter [(Data CcdEnergy)] [].
 
 % Compute the CcdEnergy from the Coulomb factors
-CcdEnergyFromCoulombIntegrals [
+CcdEnergyFromCoulombFactors [
   % PPPPCoulombIntegrals are not needed.
 % PPPPCoulombIntegrals
   % Coulomb factors are used when necessary for low memory and O(N^5)
