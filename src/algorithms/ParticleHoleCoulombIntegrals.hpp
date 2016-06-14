@@ -23,10 +23,6 @@ namespace cc4s {
      */
     virtual void run();
 
-    /** \brief The occupied orbital energies  */
-    CTF::Tensor<> *epsi;
-    /** \brief The virtual orbital energies  */
-    CTF::Tensor<> *epsa;
     /** \brief The Coulomb Vertex GammaGai  */
     CTF::Tensor<complex> *GammaGai;
     /** \brief The Coulomb integrals Vabij  */

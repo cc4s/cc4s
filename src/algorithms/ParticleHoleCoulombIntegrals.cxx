@@ -50,16 +50,10 @@ void ParticleHoleCoulombIntegrals::dryRun() {
 			       DryTensor<complex>>
 			       ("ParticleHoleCoulombVertex"));
 
-  // Read the Particle/Hole Eigenenergies
-  DryTensor<> *epsi(getTensorArgument<double, 
-		    DryTensor<double>>("HoleEigenEnergies"));
-  DryTensor<> *epsa(getTensorArgument<double, 
-		    DryTensor<double>>("ParticleEigenEnergies"));
-
   // Compute the No,Nv,NG,Np
   int NG(GammaGai->lens[0]);
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
+  int No(GammaGai->lens[2]);
+  int Nv(GammaGai->lens[1]);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   int syms[] = { NS, NS, NS, NS };
