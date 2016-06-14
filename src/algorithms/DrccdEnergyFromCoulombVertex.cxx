@@ -95,8 +95,8 @@ void DrccdEnergyFromCoulombVertex::dryIterate() {
 
     // Compute the No,Nv,NG,Np
     int NG(GammaGai->lens[0]);
-    int No(epsi->lens[0]);
-    int Nv(epsa->lens[0]);
+    int No(GammaGai->lens[2]);
+    int Nv(GammaGai->lens[1]);
     int syms[] = { NS, NS, NS, };
 
     // Allocate and realGammaGai and imagGammaGai
