@@ -1,0 +1,40 @@
+%% MP2 execution plan %%
+ParticleHoleCoulombVertexReader [
+  (file "../../resources/ParticleHoleCoulombVertex.bin")
+] [
+  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+  PPHHCoulombIntegrals
+].
+
+%% Uncomment next two algorithms if full CoulombVertex is used %%
+%CoulombVertexReader [
+%  (file "FTODDUMP")
+%] [
+%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%  % Uncomment next line to set the read rank. Default value is No.
+%% (readRank 40)
+%].
+
+%CoulombIntegralsFromVertex [
+%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%] [
+%  PPHHCoulombIntegrals
+%].
+
+Mp2EnergyMatrixFromCoulombIntegrals [
+  PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+  ParticleHoleCoulombVertex
+] [
+  Mp2EnergyMatrix
+].
+
+ComplexTensorWriter [
+  (Data Mp2EnergyMatrix)
+%  (rowIndexOrder "G") (columnIndexOrder "H")
+] [
+].

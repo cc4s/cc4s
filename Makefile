@@ -7,7 +7,7 @@ COMPILER_VERSION:=$(shell ${CXX} --version | head -n 1)
 # location of the Cyclops Tensor Framework library
 CTF=../ctf
 OPTIMIZE=${CXXOPTIMIZE} -O3
-COPTIONS=${CXXOPTIONS} -std=c++0x -Wall -fmax-errors=3 \
+COPTIONS=${CXXOPTIONS} -std=c++0x -Wall -fmax-errors=3 -g \
 -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
 "-DCC4S_DATE=\"${DATE}\"" \
@@ -58,6 +58,7 @@ obj/algorithms/TensorWriter.o \
 obj/algorithms/TensorContraction.o \
 obj/algorithms/TensorSum.o \
 obj/algorithms/TensorNorm.o \
+obj/algorithms/ComplexTensorWriter.o \
 obj/algorithms/ComplexTensorContraction.o \
 obj/algorithms/ComplexTensorSum.o \
 obj/algorithms/ComplexTensorNorm.o \
@@ -70,6 +71,7 @@ obj/algorithms/CcdEnergyFromCoulombFactors.o \
 obj/algorithms/DcdEnergyFromCoulombFactors.o \
 obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
+obj/algorithms/Mp2EnergyMatrixFromCoulombIntegrals.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 
