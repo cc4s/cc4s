@@ -2,6 +2,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
 #include <util/DryTensor.hpp>
+#include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
@@ -19,41 +20,85 @@ ReduceParticleHoleCoulombVertex::ReduceParticleHoleCoulombVertex(
 ReduceParticleHoleCoulombVertex::~ReduceParticleHoleCoulombVertex() {
 }
 
+// FIXME: properly interface with distributed versions of LAPACK
+extern "C" {
+  void zheev_(
+    const char *job, const char *uplo, int *n, complex *a, int *lda,
+    double *w, complex *work, int *workCount, double *realWork, int *info
+  );
+};
+
 void ReduceParticleHoleCoulombVertex::run() {
   Tensor<complex> *EGH(getTensorArgument<complex>("EnergyMatrix"));
 
-  // TODO: read_all (on all)
-  // TODO: on root: call
-  /*
-        int n = N, lda = LDA, info, lwork;
-        complex wkopt;
-        complex* work;
-        double w[N], rwork[3*N-2];
-        complex a[LDA*N] = {
-           { 9.14,  0.00}, {-4.37,  9.22}, {-1.98,  1.72}, {-8.96,  9.50},
-           { 0.00,  0.00}, {-3.35,  0.00}, { 2.25,  9.51}, { 2.57, -2.40},
-           { 0.00,  0.00}, { 0.00,  0.00}, {-4.82,  0.00}, {-3.24, -2.04},
-           { 0.00,  0.00}, { 0.00,  0.00}, { 0.00,  0.00}, { 8.44,  0.00}
-        };
-        lwork = -1;
-        zheev( "Vectors", "Lower", &n, a, &lda, w, &wkopt, &lwork, rwork, &info );
-        lwork = (int)wkopt.re;
-        work = (complex*)malloc( lwork*sizeof(complex) );
-        // Solve eigenproblem
-        zheev( "Vectors", "Lower", &n, a, &lda, w, work, &lwork, rwork, &info );
-        // Check for convergence
-        if( info > 0 ) {
-                printf( "The algorithm failed to compute eigenvalues.\n" );
-                exit( 1 );
-        }
-        print_rmatrix( "Eigenvalues", 1, n, w, 1 );
-        print_matrix( "Eigenvectors (stored columnwise)", n, n, a, lda );
-        free( (void*)work );
-*/
-  // TODO: determine largest eigenvalues in magnitude from negative and positive
-  //       end, is there a negative energy scale?
-  // TODO: build truncated U
+  // read all elements on root
+  int64_t elementsCount;
+  int64_t *indices;
+  complex *elements;
+  if (EGH->wrld->rank == 0) {
+    elementsCount = EGH->lens[0] * EGH->lens[1];
+    indices = new int64_t[elementsCount];
+    for (int64_t index(0); index < elementsCount; ++index) {
+      indices[index] = index;
+    }
+    elements = new complex[elementsCount];
+  } else {
+    elementsCount = 0;
+    indices = new int64_t[0];
+    elements = new complex[0];
+  }
+  EGH->read(elementsCount, indices, elements);
+
+  LOG(1, "GREDUCE") << "diagonalizing " <<
+    EGH->lens[0] << "x" << EGH->lens[0] << " energy matrix..." << std::endl;
+
+  // call LAPACK diagonalization routine
+  if (EGH->wrld->rank == 0) {
+    int n(EGH->lens[0]), lda(n), info;
+    double *eigenValues(new double[n]);
+    int workCount;
+    complex *work;
+    double *realWork(new double[std::max(1, 3*n-2)]);  
+    {
+      complex optimalWorkCount;
+      workCount = -1;
+      zheev_(
+        "V", "L", &n, elements, &lda,
+        eigenValues, &optimalWorkCount, &workCount, realWork, &info
+      );
+      workCount = static_cast<int>(optimalWorkCount.real());
+      work = new complex[workCount];
+    }
+    // Solve eigenproblem
+    zheev_(
+      "V", "L", &n, elements, &lda,
+      eigenValues, work, &workCount, realWork, &info
+    );
+    // Check for convergence
+    if (info > 0) throw new Exception("Failed to converge eigenvectors of energy matrix");
+    delete[] work;
+    delete[] realWork;
+
+    double e(0.0);
+    for (int i(0); i < n; ++i) {
+      LOG(2, "GREDUCE") <<
+        "eigenvalue[" << i << "]=" << eigenValues[i] << std::endl;
+      e += eigenValues[i];
+    }
+    LOG(1, "GREDUCE") << "sum of eigenvalues=" << e << std::endl;
+
+    // TODO: determine largest eigenvalues in magnitude from negative and positive
+    //       end, is there a negative energy scale?
+    // TODO: build truncated U
+    // TODO: maybe synchronize with barrier
+    delete[] eigenValues;
+  }
+
   // TODO: write U to ctf
+
+  delete[] elements;
+  delete[] indices;
+
   // TODO: calculate reduced Gamma
 
   Tensor<complex> *GammaGai(

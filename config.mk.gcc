@@ -1,4 +1,4 @@
 CXX=mpicxx
 CXXOPTIONS=-fopenmp
 CXXOPTIMIZE=
-LIBS=-lblas -lgfortran
+LIBS=-llapack -lblas
