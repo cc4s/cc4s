@@ -12,32 +12,59 @@ ParticleHoleCoulombIntegrals [
   PPHHCoulombIntegrals
 ].
 
+Mp2EnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+] [
+  Mp2Energy 
+].
 % Compute RPA energy directly from Vertex
 DrccdEnergyFromCoulombVertex [
   PPHHCoulombIntegrals
   ParticleHoleCoulombVertex
   HoleEigenEnergies ParticleEigenEnergies
-  % just calculate MP2
+  % just calculate direct MP2
   (maxIterations 1)
 ] [
-  DrccdEnergy 
+  DrccdEnergy
   DrccdDoublesAmplitudes
 ].
 
 EnergyMatrixFromDoublesAmplitudes [
   ParticleHoleCoulombVertex
-  % FIXME: for testing
-  PPHHCoulombIntegrals
-  HoleEigenEnergies ParticleEigenEnergies
   (DoublesAmplitudes DrccdDoublesAmplitudes)
 ] [
   EnergyMatrix
 ].
 
+%Mp2EnergyMatrixFromCoulombIntegrals [
+%  ParticleHoleCoulombVertex
+%  PPHHCoulombIntegrals
+%  HoleEigenEnergies ParticleEigenEnergies
+%] [
+%  (Mp2EnergyMatrix EnergyMatrix)
+%].
+
 ReduceParticleHoleCoulombVertex [
   ParticleHoleCoulombVertex
   EnergyMatrix
+  (accuracy 0.001)
 ] [
   ReducedParticleHoleCoulombVertex
 ].
 
+ParticleHoleCoulombIntegrals [
+  (ParticleHoleCoulombVertex ReducedParticleHoleCoulombVertex)
+] [
+  (PPHHCoulombIntegrals ReducedPPHHCoulombIntegrals)
+].
+
+Mp2EnergyFromCoulombIntegrals [
+  (PPHHCoulombIntegrals ReducedPPHHCoulombIntegrals)
+  HoleEigenEnergies ParticleEigenEnergies
+] [
+  (Mp2Energy ReducedMp2Energy)
+].
+
+TensorWriter [(Data Mp2Energy)] [].
+TensorWriter [(Data ReducedMp2Energy)] [].

@@ -3,6 +3,7 @@
 #define REDUCE_PARTICLE_HOLE_COULOMB_VERTEX_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <ctf.hpp>
 
 namespace cc4s {
   class ReduceParticleHoleCoulombVertex: public Algorithm {
@@ -26,6 +27,23 @@ namespace cc4s {
     virtual void dryRun();
 
     static double constexpr DEFAULT_ACCURACY = 0.001;
+
+  protected:
+    void readEnergyMatrix();
+    void diagonalizeEnergyMatrix();
+    void truncateUnitaryTransform();
+    void writeUnitaryTransform();
+    void reduceVertex();
+
+    CTF::Tensor<complex> *EGH, *UGH;
+    int nG;
+    int64_t elementsCount;
+    int64_t *indices;
+    complex *elements;
+    double *eigenValues;
+
+    int ng;
+    complex *transformElements;
   };
 }
 
