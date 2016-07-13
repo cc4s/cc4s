@@ -12,14 +12,9 @@ namespace cc4s {
     ReduceParticleHoleCoulombVertex(std::vector<Argument> const &argumentList);
     virtual ~ReduceParticleHoleCoulombVertex();
     /**
-     * \brief calculates the eigenvalue decomposition of the given
-     * energy matrix \f$E_G^{G'}=U_G^H \lambda_H {U^\ast}_H^{G'}\f$,
-     * truncates \f$H\f$ to a minimal set of indices to reproduce the
-     * the energy \f${\rm Tr}\{E\}\approx\sum_H\lambda_H\f$ within
-     * the required accuracy specified.
-     * Reduces the particle hole Coulomb vertex by applying the
+     * \brief Reduces the particle hole Coulomb vertex by applying the
      * energy matrix reduction transform:
-     * \f$\Gamma^{qg}_r = \Gamma^{qG}_r U_G^g\f$.
+     * \f$\Gamma^{ag}_i = \Gamma^{aG}_i U_G^g\f$.
      */
     virtual void run();
     /**

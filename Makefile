@@ -49,6 +49,7 @@ obj/algorithms/ParticleHoleCoulombIntegrals.o \
 obj/algorithms/ParticleHoleCoulombVertexReader.o \
 obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
 obj/algorithms/DrccdEnergyFromCoulombVertex.o \
+obj/algorithms/SliceCoulombVertex.o \
 obj/algorithms/CoulombVertexDecomposition.o \
 obj/algorithms/ParticleHoleCoulombVertexDecomposition.o \
 obj/algorithms/GenerateRandomMatrix.o \
@@ -74,6 +75,7 @@ obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 obj/algorithms/Mp2EnergyMatrixFromCoulombIntegrals.o \
 obj/algorithms/EnergyMatrixFromDoublesAmplitudes.o \
 obj/algorithms/ReduceEnergyMatrix.o \
+obj/algorithms/ReduceCoulombVertex.o \
 obj/algorithms/ReduceParticleHoleCoulombVertex.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
