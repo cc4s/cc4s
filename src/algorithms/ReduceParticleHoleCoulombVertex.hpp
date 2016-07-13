@@ -26,7 +26,7 @@ namespace cc4s {
      */
     virtual void dryRun();
 
-    static double constexpr DEFAULT_ACCURACY = 0.001;
+    static double constexpr DEFAULT_REDUCTION = 0.5;
 
   protected:
     void readEnergyMatrix();

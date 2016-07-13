@@ -48,7 +48,7 @@ EnergyMatrixFromDoublesAmplitudes [
 ReduceParticleHoleCoulombVertex [
   ParticleHoleCoulombVertex
   EnergyMatrix
-  (accuracy 0.001)
+  (reduction 0.15)
 ] [
   ReducedParticleHoleCoulombVertex
 ].

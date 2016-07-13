@@ -113,8 +113,8 @@ void ReduceParticleHoleCoulombVertex::truncateUnitaryTransform() {
     int bottom(0), top(nG-1), column;
     // approximated energy by truncation
     double e(0);
-    double accuracy(getRealArgument("accuracy", DEFAULT_ACCURACY));
-    while (bottom < top && std::abs(e-energy) > std::abs(energy) * accuracy) {
+    double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
+    while (bottom < top && ng < nG * reduction) {
       if (std::abs(eigenValues[bottom]) > std::abs(eigenValues[top])) {
         // bottom value is larger in magnitude, take bottom
         column = bottom++;
@@ -133,7 +133,7 @@ void ReduceParticleHoleCoulombVertex::truncateUnitaryTransform() {
       ng++;
     }
     LOG(1, "GREDUCE") <<
-      "taking " << ng << " of " << nG << " for accuracy of " <<
+      "taking " << ng << " of " << nG << " for a maximum accuracy of " <<
       std::abs(e-energy)/energy << std::endl;
   } else {
     transformElements = new complex[0];
