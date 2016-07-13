@@ -18,7 +18,9 @@ Mp2EnergyFromCoulombIntegrals [
 ] [
   Mp2Energy 
 ].
-% Compute RPA energy directly from Vertex
+
+%%%%%%%%%%%%%%%
+% compute EnergyMatrix from direct term only (only negative eigenvalues)
 DrccdEnergyFromCoulombVertex [
   PPHHCoulombIntegrals
   ParticleHoleCoulombVertex
@@ -36,7 +38,10 @@ EnergyMatrixFromDoublesAmplitudes [
 ] [
   EnergyMatrix
 ].
+%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%
+% compute EnergyMatrix from direct & exchange term (also positive eigenvalues)
 %Mp2EnergyMatrixFromCoulombIntegrals [
 %  ParticleHoleCoulombVertex
 %  PPHHCoulombIntegrals
@@ -44,11 +49,18 @@ EnergyMatrixFromDoublesAmplitudes [
 %] [
 %  (Mp2EnergyMatrix EnergyMatrix)
 %].
+%%%%%%%%%%%%%%%
+
+ReduceEnergyMatrix [
+  EnergyMatrix
+  (reduction 0.15)
+] [
+  EnergyMatrixTransform
+].
 
 ReduceParticleHoleCoulombVertex [
   ParticleHoleCoulombVertex
-  EnergyMatrix
-  (reduction 0.15)
+  EnergyMatrixTransform
 ] [
   ReducedParticleHoleCoulombVertex
 ].

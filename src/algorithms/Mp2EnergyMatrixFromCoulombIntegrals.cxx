@@ -80,6 +80,15 @@ void Mp2EnergyMatrixFromCoulombIntegrals::dryRun() {
   int vvoo[] = { Nv, Nv, No, No };
   DryTensor<> Tabij(4, vvoo, syms);
 
-  DryScalar<> energy();
+  DryTensor<complex> *GammaGai(
+    getTensorArgument<complex, DryTensor<complex>>("ParticleHoleCoulombVertex")
+  );
+
+  DryMatrix<complex> *energyMatrix = new DryMatrix<complex>(
+    GammaGai->lens[0], GammaGai->lens[0], NS
+  );
+  allocatedTensorArgument<complex, DryTensor<complex>>(
+    "Mp2EnergyMatrix", energyMatrix
+  );
 }
 

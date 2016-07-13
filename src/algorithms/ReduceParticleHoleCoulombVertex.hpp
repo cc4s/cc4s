@@ -17,33 +17,15 @@ namespace cc4s {
      * truncates \f$H\f$ to a minimal set of indices to reproduce the
      * the energy \f${\rm Tr}\{E\}\approx\sum_H\lambda_H\f$ within
      * the required accuracy specified.
-     * Subsequently, the particle hole Coulomb vertex is reduced by
-     * \f$\Gamma^{qH}_r = \Gamma^{qG}_r U_G^H\f$.
+     * Reduces the particle hole Coulomb vertex by applying the
+     * energy matrix reduction transform:
+     * \f$\Gamma^{qg}_r = \Gamma^{qG}_r U_G^g\f$.
      */
     virtual void run();
     /**
      * \brief Dry run of reducing the Coulomb vertex.
      */
     virtual void dryRun();
-
-    static double constexpr DEFAULT_REDUCTION = 0.5;
-
-  protected:
-    void readEnergyMatrix();
-    void diagonalizeEnergyMatrix();
-    void truncateUnitaryTransform();
-    void writeUnitaryTransform();
-    void reduceVertex();
-
-    CTF::Tensor<complex> *EGH, *UGH;
-    int nG;
-    int64_t elementsCount;
-    int64_t *indices;
-    complex *elements;
-    double *eigenValues;
-
-    int ng;
-    complex *transformElements;
   };
 }
 
