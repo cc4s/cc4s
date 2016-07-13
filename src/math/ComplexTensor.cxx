@@ -30,107 +30,54 @@
 }
 
 void cc4s::fromComplexTensor(
-  CTF::Tensor<complex> const &c,
+  CTF::Tensor<complex> &c,
   CTF::Tensor<double> &r, CTF::Tensor<double> &i
 ) {
   AssertCompatibleTensorShapes(c,r,i);
-  int64_t indicesCount, *indices;
-  complex *values;
-  c.read_local(&indicesCount, &indices, &values);
-  double *reals(new double[indicesCount]), *imags(new double[indicesCount]);
-  for (int64_t i(0); i < indicesCount; ++i) {
-    reals[i] = std::real(values[i]);
-    imags[i] = std::imag(values[i]);
-  }
-  free(values);
-  r.write(indicesCount, indices, reals);
-  i.write(indicesCount, indices, imags);
-  free(indices);
-  delete[] reals; delete[] imags;
+  char inds[c.order];
+  for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
+  r[inds] = CTF::Function<complex, double>([](complex c){ return c.real(); }) (
+    c[inds]
+  );
+  i[inds] = CTF::Function<complex, double>([](complex c){ return c.imag(); }) (
+    c[inds]
+  );
 }
 
 void cc4s::fromComplexTensor(
-  CTF::Tensor<complex> const &c,
+  CTF::Tensor<complex> &c,
   CTF::Tensor<double> &r
 ) {
-  AssertCompatibleTensorShape(c,r);
-  int64_t indicesCount, *indices;
-  complex *values;
-  c.read_local(&indicesCount, &indices, &values);
-  double *reals(new double[indicesCount]);
-  for (int64_t i(0); i < indicesCount; ++i) {
-    reals[i] = std::real(values[i]);
-  }
-  free(values);
-  r.write(indicesCount, indices, reals);
-  free(indices);
-  delete[] reals;
-}
-
-
-void cc4s::toComplexTensor(
-  CTF::Tensor<double> const &r, CTF::Tensor<double> &i,
-  CTF::Tensor<complex> &c
-) {
-  AssertCompatibleTensorShapes(c,r,i);
-  int64_t indicesCount, *indices;
-  double *reals;
-  r.read_local(&indicesCount, &indices, &reals);
-  double *imags(new double[indicesCount]);
-  i.read(indicesCount, indices, imags);
-  complex *values(new complex[indicesCount]);
-  for (int64_t i(0); i < indicesCount; ++i) {
-#ifdef INTEL_COMPILER
-    values[i].real() = reals[i];
-    values[i].imag() = imags[i];
-#else
-    values[i].real(reals[i]);
-    values[i].imag(imags[i]);
-#endif
-  }
-  free(reals); delete[] imags;
-  c.write(indicesCount, indices, values);
-  free(indices);
-  delete[] values;
+  AssertCompatibleTensorShapes(c,r,r);
+  char inds[c.order];
+  for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
+  r[inds] = CTF::Function<complex, double>([](complex c){ return c.real(); }) (
+    c[inds]
+  );
 }
 
 void cc4s::toComplexTensor(
-  CTF::Tensor<double> const &r, CTF::Tensor<double> const &i,
+  CTF::Tensor<double> &r, CTF::Tensor<double> &i,
   CTF::Tensor<complex> &c
 ) {
   AssertCompatibleTensorShapes(c,r,i);
-  int64_t indicesCount, *indices;
-  double *components;
-  r.read_local(&indicesCount, &indices, &components);
-  complex *values(new complex[indicesCount]);
-  for (int64_t i(0); i < indicesCount; ++i) {
-#ifdef INTEL_COMPILER
-    values[i].real() = components[i];
-#else
-    values[i].real(components[i]);
-#endif
-  }
-  free(components);
-  c.write(indicesCount, indices, values);
-  free(indices);
-  delete[] values;
+  char inds[c.order];
+  for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
+  toComplexTensor(r, c);
+  CTF::Transform<double, complex>([](double d, complex & c){ 
+    c.imag(d); 
+  })(i[inds], c[inds]);
+}
 
-  i.read_local(&indicesCount, &indices, &components);
-  values = new complex[indicesCount];
-  // read complex values that already contain the real part in the
-  // index order of the imaginary part. This may redistribute the complex
-  // tensor.
-  c.read(indicesCount, indices, values);
-  for (int64_t i(0); i < indicesCount; ++i) {
-#ifdef INTEL_COMPILER
-    values[i].imag() = components[i];
-#else
-    values[i].imag(components[i]);
-#endif
-  }
-  free(components);
-  c.write(indicesCount, indices, values);
-  free(indices);
-  delete[] values;
+void cc4s::toComplexTensor(
+  CTF::Tensor<double> &r,
+  CTF::Tensor<complex> &c
+) {
+  AssertCompatibleTensorShapes(c,r,r);
+    char inds[c.order];
+  for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
+  CTF::Transform<double, complex>([](double d, complex & c){ 
+    c.real(d); 
+  })(r[inds], c[inds]);
 }
 

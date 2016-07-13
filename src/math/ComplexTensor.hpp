@@ -11,7 +11,7 @@ namespace cc4s {
    * respectively.
    */
   void fromComplexTensor(
-    CTF::Tensor<complex> const &c,
+    CTF::Tensor<complex> &c,
     CTF::Tensor<double> &r, CTF::Tensor<double> &i
   );
 
@@ -19,7 +19,7 @@ namespace cc4s {
    * \brief Discards the real part of a complex tensor.
    */
   void fromComplexTensor(
-    CTF::Tensor<complex> const &c,
+    CTF::Tensor<complex> &c,
     CTF::Tensor<double> &r
   );
 
@@ -30,18 +30,12 @@ namespace cc4s {
    * during reading.
    */
   void toComplexTensor(
-    CTF::Tensor<double> const &r, CTF::Tensor<double> &i,
+    CTF::Tensor<double> &r, CTF::Tensor<double> &i,
     CTF::Tensor<complex> &c
   );
 
-  /**
-   * \brief Composes a tensor of complex elements
-   * containing of the given tensors of real and imaginary parts.
-   * Note this may redistribute the tensor c during writing
-   * if the distributions of r and i differ.
-   */
   void toComplexTensor(
-    CTF::Tensor<double> const &r, CTF::Tensor<double> const &i,
+    CTF::Tensor<double> &r,
     CTF::Tensor<complex> &c
   );
 }

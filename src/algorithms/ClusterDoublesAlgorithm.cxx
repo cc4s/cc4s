@@ -183,6 +183,7 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int slice
   int leftGammaEnd[] = { NG, std::min(No+a+sliceRank, Np), Np };
   int rightGammaStart[] = { 0, No+b, No };
   int rightGammaEnd[] = { NG, std::min(No+b+sliceRank, Np), Np };
+  // FIXME: replace copy constructor calls by allocation then T.slice(...) call
   Tensor<complex> leftGamma(GammaGqr->slice(leftGammaStart, leftGammaEnd));
   Tensor<complex> rightGamma(GammaGqr->slice(rightGammaStart, rightGammaEnd));
   // Split into real and imaginary parts
