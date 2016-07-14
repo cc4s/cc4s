@@ -80,7 +80,8 @@ void CoulombVertexReader::run() {
   Chunk chunk;
   while (offset < fileSize) {
     MPI_File_read_at(file, offset, &chunk, sizeof(chunk), MPI_BYTE, &status);
-    LOG(1, "Reader") << "reading chunk at " << std::hex << offset << std::endl;
+    LOG(1, "Reader") << "reading chunk at " <<
+      std::hex << offset << std::dec << std::endl;
     if (strncmp(chunk.magic, Chunk::REALS_MAGIC, sizeof(chunk.magic)) == 0) {
       realGammaGpq.read_dense_from_file(file, offset+sizeof(chunk));
     } else

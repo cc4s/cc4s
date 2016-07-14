@@ -117,7 +117,7 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
     }
     LOG(1, "GREDUCE") << "sum of eigenvalues=" << energy << std::endl;
 
-    int bottom(0), top(nG-1), column;
+    int bottom(0), top(nG-1), column(0);
     // approximated energy by truncation
     double e(0);
     double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
@@ -142,6 +142,9 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
     LOG(1, "GREDUCE") <<
       "taking " << ng << " of " << nG << " for a maximum accuracy of " <<
       std::abs(e-energy)/energy << std::endl;
+    LOG(1, "GREDUCE") <<
+      "|smallest/largest eigenvalue|=" <<
+      std::abs(eigenValues[column] / eigenValues[0]) << std::endl;
   } else {
     transformElements = new complex[0];
     ng = 0;
