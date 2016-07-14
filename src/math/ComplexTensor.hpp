@@ -38,6 +38,10 @@ namespace cc4s {
     CTF::Tensor<double> &r,
     CTF::Tensor<complex> &c
   );
+
+  void conjugate(
+    CTF::Tensor<complex> &c
+  );
 }
 
 #endif

@@ -7,6 +7,24 @@ CoulombVertexReader [
 % (readRank 40)
 ].
 
+SliceCoulombVertex[
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  ParticleHoleCoulombVertex
+].
+
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+  PPHHCoulombIntegrals
+].
+
+Mp2EnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+] [
+  Mp2Energy
+].
+
 CoulombVertexDecomposition [
   CoulombVertex
   (rank 150) (maxIterations 32)

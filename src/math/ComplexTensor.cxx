@@ -73,11 +73,21 @@ void cc4s::toComplexTensor(
   CTF::Tensor<double> &r,
   CTF::Tensor<complex> &c
 ) {
-  AssertCompatibleTensorShapes(c,r,r);
+  AssertCompatibleTensorShape(c,r);
     char inds[c.order];
   for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
   CTF::Transform<double, complex>([](double d, complex & c){ 
     c.real(d); 
   })(r[inds], c[inds]);
+}
+
+void cc4s::conjugate(
+  CTF::Tensor<complex> &C
+) {
+  char inds[C.order];
+  for (int i=0; i<C.order; i++){ inds[i] = 'a'+i; }
+  CTF::Transform<complex>([](complex &c){ 
+    c = std::conj(c);
+  })(C[inds]);
 }
 

@@ -19,6 +19,33 @@ TensorWriter::~TensorWriter() {
 }
 
 void TensorWriter::run() {
+  std::string mode(getTextArgument("mode", "text"));
+
+  if (mode == "binary") writeBinary();
+  else writeText();
+}
+
+void TensorWriter::writeBinary() {
+  Tensor<> *A(getTensorArgument<>("Data"));
+  std::string dataName(getArgumentData("Data")->getName());
+  // by default the file is named after the written data
+  std::string fileName(getTextArgument("file", dataName + ".bin"));
+
+  MPI_File file;
+  MPI_Status status;
+  MPI_File_open(
+    A->wrld->comm, fileName.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY,
+    MPI_INFO_NULL, &file
+  );
+  MPI_File_set_size(file, 0);
+  BinaryHeader header(A->order, A->lens);
+  MPI_File_write(file, &header, sizeof(header), MPI_BYTE, &status);
+  // FIXME: status checking
+  A->write_dense_to_file(file, sizeof(header));
+  MPI_File_close(&file);
+}
+
+void TensorWriter::writeText() {
   Tensor<> *A(getTensorArgument<>("Data"));
   char defaultIndexOrder[A->order + 1];
   for (int dim(0); dim < A->order; ++dim) defaultIndexOrder[dim] = 'i' + dim;

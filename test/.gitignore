@@ -1,6 +1,7 @@
 test.*
 *.log
 *.dat
+*.bin
 launch.sh
 core
 FTODDUMP.bak

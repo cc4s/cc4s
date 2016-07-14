@@ -29,11 +29,18 @@ void CoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
   LOG(0, "Reader") <<
     "Reading Coulomb vertex from file " << fileName << std::endl;
-  std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
-  if (!file.is_open()) throw new Exception("Failed to open file");
+  MPI_File file;
+  int mpiError(
+    MPI_File_open(
+      Cc4s::world->comm, fileName.c_str(), MPI_MODE_RDONLY,
+      MPI_INFO_NULL, &file
+    )
+  );
+  if (mpiError) throw new Exception("Failed to open file");
   // Read header: obtain NG,No,Nv,Np
   Header header;
-  file.read(reinterpret_cast<char *>(&header), sizeof(header));
+  MPI_Status status;
+  MPI_File_read(file, &header, sizeof(header), MPI_BYTE, &status);
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
     throw new Exception("Invalid file format");
   NG = header.NG;
@@ -67,31 +74,26 @@ void CoulombVertexReader::run() {
   Tensor<> imagGammaGpq(3, vertexLens, vertexSyms, 
 			*Cc4s::world, "ImagGammaGpq");
 
+  int64_t offset(sizeof(header));
+  MPI_Offset fileSize;
+  MPI_File_get_size(file, &fileSize);
   Chunk chunk;
-  while (file.read(reinterpret_cast<char *>(&chunk), sizeof(chunk))) {
+  while (offset < fileSize) {
+    MPI_File_read_at(file, offset, &chunk, sizeof(chunk), MPI_BYTE, &status);
+    LOG(1, "Reader") << "reading chunk at " << std::hex << offset << std::endl;
     if (strncmp(chunk.magic, Chunk::REALS_MAGIC, sizeof(chunk.magic)) == 0) {
-
-      // Choose reading algorithm
-      readGammaGpqChunkSequential(file, realGammaGpq);
-      // TODO: find out why Blocked routine produces incorrect numbers with
-      // different number of processors.
-      //      readGammaGpqChunkBlocked(file, realGammaGpq);
-
+      realGammaGpq.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::IMAGS_MAGIC, sizeof(chunk.magic)) == 0) {
-
-      // Choose reading algorithm
-      readGammaGpqChunkSequential(file, imagGammaGpq);
-      // TODO: find out why Blocked routine produces incorrect numbers with
-      // different number of processors.
-      //      readGammaGpqChunkBlocked(file, imagGammaGpq);
-
+      imagGammaGpq.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
-      readEpsChunk(file, *epsi, *epsa);
+      epsi->read_dense_from_file(file, offset+sizeof(chunk));
+      epsa->read_dense_from_file(file, offset+sizeof(chunk)+No*sizeof(double));
     }
+    offset += chunk.size;
   }
-  file.close();
+  MPI_File_close(&file);
 
   // Combine to complex tensor
   toComplexTensor(realGammaGpq, imagGammaGpq, *GammaGpq);
@@ -137,98 +139,5 @@ void CoulombVertexReader::dryRun() {
   DryTensor<> realGammaGpq(3, vertexLens, vertexSyms);
   DryTensor<> imagGammaGpq(3, vertexLens, vertexSyms);
   //  realGammaGpq.use();
-}
-
-
-// TODO: use several write calls instead of one big to reduce int64 requirement
-void CoulombVertexReader::readGammaGpqChunkBlocked(std::ifstream &file, 
-						   Tensor<> &GammaGpq)
-{
-  LOG(1, "Reader") << "Reading " 
-		   << GammaGpq.get_name() << std::endl;
-
-  // TODO: separate distribution from reading
-  // allocate local indices and values of the GammaGpq tensors
-  int64_t NpPerNode(Np / Cc4s::world->np);
-  int64_t NpLocal(Cc4s::world->rank+1 < Cc4s::world->np ? 
-		  NpPerNode : Np - Cc4s::world->rank * NpPerNode);
-  int64_t NpToSkipBefore(Cc4s::world->rank * NpPerNode);
-  int64_t NpToSkipAfter(Np - (NpToSkipBefore + NpLocal));
-  double *values(new double[NpLocal*Np*NG]);
-  int64_t *indices(new int64_t[NpLocal*Np*NG]);
-  file.seekg(sizeof(double)*NpToSkipBefore*Np*NG, file.cur);
-  file.read(reinterpret_cast<char *>(values), sizeof(double)*NpLocal*Np*NG);
-  file.seekg(sizeof(double)*NpToSkipAfter*Np*NG, file.cur);
-  for (int64_t i(0); i < NpLocal*Np*NG; ++i) {
-    indices[i] = i + NpToSkipBefore*Np*NG;
-  }
-  GammaGpq.write(NpLocal*Np*NG, indices, values);
-  delete[] values; delete[] indices;
-}
-
-
-// Sequential reading routine with only the master process
-void CoulombVertexReader::readGammaGpqChunkSequential(std::ifstream &file, 
-						      Tensor<> &GammaGpq) 
-{
-  int64_t index(0);
-
-  int readRank(getIntegerArgument("readRank",No));
-  
-  for (int p(1); p <= Np; p+=readRank) {
-    LOG(1, "Reader") << "Reading " << GammaGpq.get_name()
-		     << " at p=" << p << std::endl;
-
-    double  *values (new double [std::min(readRank,Np-p)*Np*NG]);
-    int64_t *indices(new int64_t[std::min(readRank,Np-p)*Np*NG]);
-
-    if (Cc4s::world->rank == 0) {
-      // Master processor reads the file
-      file.read(reinterpret_cast<char *>(values), 
-		std::min(readRank,Np-p)*Np*NG*sizeof(double));
-      for (int i(0); i < std::min(readRank,Np-p)*Np*NG; ++i) {
-        indices[i] = index;
-        index++;
-      }
-    }
-    else {
-      // Skip the data otherwise
-      file.seekg(sizeof(double)*std::min(readRank,Np-p)*Np*NG, file.cur);
-    }
-
-    int64_t valuesCount(Cc4s::world->rank == 0 ? 
-			std::min(readRank,Np-p)*Np*NG : 0);
-    GammaGpq.write(valuesCount, indices, values);
-    delete[] values; delete[] indices;
-  }
-}
-
-
-void CoulombVertexReader::readEpsChunk(
-  std::ifstream &file, Tensor<> &epsi, Tensor<> &epsa
-) {
-  LOG(1, "Reader") << "Reading " << epsi.get_name() << ", " 
-				<< epsa.get_name() <<  std::endl;
-
-  // Allocate local indices and values of eigenenergies
-  double *iValues(new double[No]);
-  double *aValues(new double[Nv]);
-  int64_t *iIndices(new int64_t[No]);
-  int64_t *aIndices(new int64_t[Nv]);
-
-  if (Cc4s::world->rank == 0) {
-    file.read(reinterpret_cast<char *>(iValues), No*sizeof(double));
-    for (int i(0); i < No; ++i) iIndices[i] = i;
-    file.read(reinterpret_cast<char *>(aValues), Nv*sizeof(double));
-    for (int a(0); a < Nv; ++a) aIndices[a] = a;
-  } else {
-    // Skip the data otherwise
-    file.seekg(sizeof(double)*Np, file.cur);
-  }
-  int64_t iValuesCount(Cc4s::world->rank == 0 ? No : 0);
-  int64_t aValuesCount(Cc4s::world->rank == 0 ? Nv : 0);
-  epsi.write(iValuesCount, iIndices, iValues);
-  epsa.write(aValuesCount, aIndices, aValues);
-  delete[] iValues; delete[] aValues;
 }
 

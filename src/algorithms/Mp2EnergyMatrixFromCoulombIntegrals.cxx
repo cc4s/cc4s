@@ -46,9 +46,8 @@ void Mp2EnergyMatrixFromCoulombIntegrals::run() {
 
   Tensor<complex> *GammaGai(getTensorArgument<complex>("ParticleHoleCoulombVertex"));
   // calculate conjugate of GammaGai
-  Tensor<complex> conjGammaGai(false, *GammaGai);
-  Univar_Function<complex> fConj(&conj<complex>);
-  conjGammaGai.sum(1.0, *GammaGai,"Gai", 0.0,"Gai", fConj);
+  Tensor<complex> conjGammaGai(*GammaGai);
+  conjugate(conjGammaGai);
 
   Matrix<complex> *energyMatrix = new Matrix<complex>(
     GammaGai->lens[0], GammaGai->lens[0], *Vabij->wrld
