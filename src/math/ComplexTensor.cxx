@@ -30,55 +30,77 @@
 }
 
 void cc4s::fromComplexTensor(
-  CTF::Tensor<complex> &c,
-  CTF::Tensor<double> &r, CTF::Tensor<double> &i
+  CTF::Tensor<complex> &C,
+  CTF::Tensor<double> &R, CTF::Tensor<double> &I
 ) {
-  AssertCompatibleTensorShapes(c,r,i);
-  char inds[c.order];
-  for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
-  r[inds] = CTF::Function<complex, double>([](complex c){ return c.real(); }) (
-    c[inds]
-  );
-  i[inds] = CTF::Function<complex, double>([](complex c){ return c.imag(); }) (
-    c[inds]
+  AssertCompatibleTensorShapes(C,R,I);
+  char inds[C.order];
+  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  fromComplexTensor(C, R);
+  I[inds] = CTF::Function<complex, double>(
+    std::function<double(complex)>([](complex c){ return c.imag(); })
+  ) (
+    C[inds]
   );
 }
 
 void cc4s::fromComplexTensor(
-  CTF::Tensor<complex> &c,
-  CTF::Tensor<double> &r
+  CTF::Tensor<complex> &C,
+  CTF::Tensor<double> &R
 ) {
-  AssertCompatibleTensorShapes(c,r,r);
-  char inds[c.order];
-  for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
-  r[inds] = CTF::Function<complex, double>([](complex c){ return c.real(); }) (
-    c[inds]
+  AssertCompatibleTensorShape(C,R);
+  char inds[C.order];
+  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  R[inds] = CTF::Function<complex, double>(
+    std::function<double(complex)>([](complex c){ return c.real(); })
+  ) (
+    C[inds]
   );
 }
 
 void cc4s::toComplexTensor(
-  CTF::Tensor<double> &r, CTF::Tensor<double> &i,
-  CTF::Tensor<complex> &c
+  CTF::Tensor<double> &R, CTF::Tensor<double> &I,
+  CTF::Tensor<complex> &C
 ) {
-  AssertCompatibleTensorShapes(c,r,i);
-  char inds[c.order];
-  for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
-  toComplexTensor(r, c);
-  CTF::Transform<double, complex>([](double d, complex & c){ 
-    c.imag(d); 
-  })(i[inds], c[inds]);
+  AssertCompatibleTensorShapes(C,R,I);
+  char inds[C.order];
+  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  toComplexTensor(R, C);
+  CTF::Transform<double, complex>(
+    std::function<void(double, complex &)>(
+      [](double i, complex & c) {
+#ifdef INTEL_COMPILER
+        c.imag() = i;
+#else
+        c.imag(i);
+#endif
+      }
+    )
+  ) (
+    I[inds], C[inds]
+  );
 }
 
 void cc4s::toComplexTensor(
-  CTF::Tensor<double> &r,
-  CTF::Tensor<complex> &c
+  CTF::Tensor<double> &R,
+  CTF::Tensor<complex> &C
 ) {
-  AssertCompatibleTensorShape(c,r);
-    char inds[c.order];
-  for (int i=0; i<c.order; i++){ inds[i] = 'a'+i; }
-  CTF::Transform<double, complex>([](double d, complex & c){ 
-    c.real(d); 
-  })(r[inds], c[inds]);
+  AssertCompatibleTensorShape(C,R);
+  char inds[C.order];
+  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  CTF::Transform<double, complex>(
+    std::function<void(double, complex &)>(
+      [](double r, complex & c) {
+#ifdef INTEL_COMPILER
+        c.real() = r;
+#else
+        c.real(r);
+#endif
+      }
+    )
+  ) (
+    R[inds], C[inds]
+  );
 }
 
 void cc4s::conjugate(
@@ -86,8 +108,12 @@ void cc4s::conjugate(
 ) {
   char inds[C.order];
   for (int i=0; i<C.order; i++){ inds[i] = 'a'+i; }
-  CTF::Transform<complex>([](complex &c){ 
-    c = std::conj(c);
-  })(C[inds]);
+  CTF::Transform<complex>(
+    std::function<void(complex &)> (
+      [](complex &c){ c = std::conj(c); }
+    )
+  ) (
+    C[inds]
+  );
 }
 
