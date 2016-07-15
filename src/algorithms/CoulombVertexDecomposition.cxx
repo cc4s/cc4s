@@ -45,7 +45,7 @@ void CoulombVertexDecomposition::run() {
   LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank
     << ", realFactorOrbitals=" << realFactorOrbitals
     << ", normalizedFactorOrbitals=" << normalizedFactorOrbitals << std::endl;
-  LOG(1, "RALS") << "decompising Coulomb vertex with NG=" << NG
+  LOG(1, "RALS") << "decomposing Coulomb vertex with NG=" << NG
     << " Np=" << Np << std::endl;
 
   writeSubIterations = getIntegerArgument(
@@ -118,7 +118,7 @@ void CoulombVertexDecomposition::dryRun() {
   LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank
     << ", realFactorOrbitals=" << realFactorOrbitals
     << ", normalizedFactorOrbitals=" << normalizedFactorOrbitals << std::endl;
-  LOG(1, "RALS") << "decompising Coulomb vertex with NG=" << NG
+  LOG(1, "RALS") << "decomposing Coulomb vertex with NG=" << NG
     << " Np=" << Np << std::endl;
 
   // allocate factor tensors
