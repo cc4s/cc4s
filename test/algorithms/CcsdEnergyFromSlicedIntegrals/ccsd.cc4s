@@ -7,24 +7,28 @@ CoulombVertexReader [
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ] [
-  PPPPCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
 ].
 
-CcdEnergyFromCoulombIntegrals [
-  PPPPCoulombIntegrals
+CcsdEnergyFromSlicedIntegrals [
+  CoulombVertex
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
   (maxIterations 16)
+  % Uncomment next line to set the slice rank of PPPPIntegrals. Default is No.
+% (sliceRank 40)
 ] [
-  (CcdEnergy CcdEnergy) 
-  (CcdDoublesAmplitudes CcdDoublesAmplitudes)
+  (CcsdEnergy CcsdEnergy) 
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
 ].
 
 
-TensorWriter [(Data CcdEnergy)] [].
+TensorWriter [(Data CcsdEnergy)] [].

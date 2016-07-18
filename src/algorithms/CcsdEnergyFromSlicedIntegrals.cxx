@@ -1,4 +1,4 @@
-#include <algorithms/DcsdEnergyFromCoulombFactors.hpp>
+#include <algorithms/CcsdEnergyFromSlicedIntegrals.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
 #include <math/MathFunctions.hpp>
@@ -10,23 +10,21 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(DcsdEnergyFromCoulombFactors);
+ALGORITHM_REGISTRAR_DEFINITION(CcsdEnergyFromSlicedIntegrals);
 
-DcsdEnergyFromCoulombFactors::DcsdEnergyFromCoulombFactors(
+CcsdEnergyFromSlicedIntegrals::CcsdEnergyFromSlicedIntegrals(
   std::vector<Argument> const &argumentList
 ): ClusterSinglesDoublesAlgorithm(argumentList) {
 }
 
-DcsdEnergyFromCoulombFactors::~DcsdEnergyFromCoulombFactors() {
+CcsdEnergyFromSlicedIntegrals::~CcsdEnergyFromSlicedIntegrals() {
 }
 
 //////////////////////////////////////////////////////////////////////
-// Hirata iteration routine for the DCSD amplitudes Tabij and Tai from
+// Hirata iteration routine for the CCSD amplitudes Tabij and Tai from
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
-// modified to give DCSD amplitudes according to
-// D. Kats, et. al., J. Chem. Phys. 142, 064111 (2015)
 //////////////////////////////////////////////////////////////////////
-void DcsdEnergyFromCoulombFactors::iterate(int i) {
+void CcsdEnergyFromSlicedIntegrals::iterate(int i) {
   {
     // Read the amplitudes Tai and Tabij
     Tensor<> *Tai(&TaiMixer->getNext());
@@ -35,7 +33,6 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
     Tabij->set_name("Tabij");
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vabci Vijka
-    // The Vabcd and Vabci may not be given then slicing is required
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
     Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
@@ -88,6 +85,12 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
     // Symmetries used by intermediates
     int syms[] = { NS, NS, NS, NS };
 
+    // Intermediates used both by T1 and T2
+    int vv[] = { Nv, Nv };
+    Tensor<> Kac(2, vv, syms, *Vabij->wrld, "Kac");
+    int oo[] = { No, No };
+    Tensor<> Kki(2, oo, syms, *Vabij->wrld, "Kki");
+
     //********************************************************************************
     //***********************  T2 amplitude equations  *******************************
     //********************************************************************************
@@ -105,7 +108,7 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 	Rabij["abij"] = (*Vabij)["abij"];
       } 
       else {
-	// For the rest iterations compute the DCSD amplitudes
+	// For the rest iterations compute the CCSD amplitudes
 
 	// Intermediate tensor Xabij=T2+T1*T1
 	Tensor<> Xabij(Tabij);
@@ -114,9 +117,7 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 
 	{
 	  // Intermediates used for T2 amplitudes
-	  int vv[] = { Nv, Nv };
 	  Tensor<> Lac(2, vv, syms, *Vabij->wrld, "Lac");
-	  int oo[] = { No, No };
 	  Tensor<> Lki(2, oo, syms, *Vabij->wrld, "Lki");
 
 	  Tensor<> Xklij(false, *Vijkl);
@@ -126,22 +127,23 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 	  int voov[] = { Nv, No, No, Nv };
 	  Tensor<> Xakic(4, voov, syms, *Vabij->wrld, "Xakic");
 
-	  // Intermediate tensor Yabij=T2-2*T1*T1
-	  Tensor<> Yabij(Tabij);
-	  Yabij.set_name("Yabij");
-	  Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
+	  // Build Kac
+	  Kac["ac"]  = (-2.0) * (*Vabij)["cdkl"] * Xabij["adkl"];
+	  Kac["ac"] += ( 1.0) * (*Vabij)["dckl"] * Xabij["adkl"];
 
 	  // Build Lac
-	  Lac["ac"]  = (-1.0) * (*Vabij)["cdkl"] * Yabij["adkl"]; // Use Yabij in DCSD
-	  Lac["ac"] += ( 0.5) * (*Vabij)["dckl"] * Yabij["adkl"]; // Use Yabij in DCSD
+	  Lac["ac"] = Kac["ac"];
 	  Lac["ac"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * (*Tai)["dk"];
 	  Lac["ac"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * (*Tai)["dk"];
 	  Lac["ac"] += (-1.0) * realGammaGai["Gck"] * realGammaGab["Gda"] * (*Tai)["dk"];
 	  Lac["ac"] += (-1.0) * imagGammaGai["Gck"] * imagGammaGab["Gda"] * (*Tai)["dk"];
 
+	  // Build Kki
+	  Kki["ki"]  = ( 2.0) * (*Vabij)["cdkl"] * Xabij["cdil"];
+	  Kki["ki"] += (-1.0) * (*Vabij)["dckl"] * Xabij["cdil"];
+
 	  // Build Lki
-	  Lki["ki"]  = ( 1.0) * (*Vabij)["cdkl"] * Yabij["cdil"]; // Use Yabij in DCSD
-	  Lki["ki"] += (-0.5) * (*Vabij)["dckl"] * Yabij["cdil"]; // Use Yabij in DCSD
+	  Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
 	  Lki["ki"] += ( 2.0) * (*Vijka)["klic"] * (*Tai)["cl"];
 	  Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
     
@@ -163,11 +165,11 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 
 	    Rabij["abij"] += ( 1.0) * realDressedGammaGai["Gai"] * realGammaGab["Gbc"] * (*Tai)["cj"];
 	    Rabij["abij"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGab["Gbc"] * (*Tai)["cj"];
-	  
-	    Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
-	    Rabij["abij"] += ( 1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
 	  }
 
+	  Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
+	  Rabij["abij"] += ( 1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
+	  
 	  // Build Xakic
 	  {
 	    Tensor<> realDressedGammaGai(realGammaGai);
@@ -184,9 +186,14 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 	    Xakic["akic"]  = ( 1.0) * realDressedGammaGai["Gai"] * realGammaGai["Gck"];
 	    Xakic["akic"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGai["Gck"];
 
-	    Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] *   Yabij ["dail"]; // Use Yabij in DCSD
+	    // Intermediate tensor Yabij=T2-2*T1*T1
+	    Tensor<> Yabij(Tabij);
+	    Yabij.set_name("Yabij");
+	    Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
+
+	    Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] *   Yabij ["dail"];
 	    Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
-	    //	    Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCSD
+	    Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"];
 	  }
 
 	  // Build Xakci
@@ -213,7 +220,7 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 	    Xakci["akci"] += ( 1.0) * imagDressedGammaGab["Gac"] * imagDressedGammaGij["Gki"];
 
 	    // Xakci = 0.5 * Vcdlk * Tdail
-	    //	    Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCSD
+	    Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"];
 	  }
 
 	  // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
@@ -246,7 +253,7 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 	    Rabij["abij"] +=  Xklij["klij"] * Xabij["abkl"];
 
 	    // Construct last term
-	    Xklij["klij"]  =  (*Tai)["dj"] * (*Vabij)["cdkl"] * (*Tai)["ci"];
+	    Xklij["klij"]  = (*Vabij)["cdkl"] * Xabij["cdij"];
 
 	    // Add last term contracted only with the doubles
 	    // The singles term is computed in the slicing
@@ -256,88 +263,31 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 	}
 
 	{
-	  // Read the Coulomb Factors PiqR and LambdaGR
-	  Tensor<complex> *PiqR(getTensorArgument<complex>("FactorOrbitals"));
-	  PiqR->set_name("PiqR");
-	  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
-	  LambdaGR->set_name("LambdaGR");
+	    // Read the sliceRank. If not provided use No
+	    int sliceRank(getIntegerArgument
+			  ("sliceRank",No));
 
-	  int Np=No+Nv;
-	  int NR(PiqR->lens[1]);
-	  int Rvoo[] = { NR, Nv, No, No };
-	  int RRoo[] = { NR, NR, No, No };
-	  int RR[] = { NR, NR };
+	    // Slice loop starts here
+	    for (int b(0); b < Nv; b += sliceRank) {
+	      for (int a(b); a < Nv; a += sliceRank) {
+		LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+		Tensor<> *Vxycd(sliceCoupledCoulombIntegrals(a, b, sliceRank));
+		Vxycd->set_name("Vxycd");
+		int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+		int syms[] = {NS, NS, NS, NS};
+		Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
 
-	  Tensor<complex> VRS(2, RR, syms, *Vabij->wrld, "VRS");
+		// Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
+		Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
 
-	  Tensor<> realXRaij(4, Rvoo, syms, *Vabij->wrld, "RealXRaij");
-	  Tensor<> imagXRaij(4, Rvoo, syms, *Vabij->wrld, "ImagXRaij");
-
-	  // Allocate and compute PiaR
-	  int aRStart[] = {No , 0};
-	  int aREnd[]   = {Np ,NR};
-	  Tensor<complex> PiaR(PiqR->slice(aRStart,aREnd));
-	  PiaR.set_name("PiaR");
-
-	  // Split PiaR into real and imaginary parts
-	  Tensor<> realPiaR(2, PiaR.lens, PiaR.sym, *PiaR.wrld, "RealPiaR");
-	  Tensor<> imagPiaR(2, PiaR.lens, PiaR.sym, *PiaR.wrld, "ImagPiaR");
-	  fromComplexTensor(PiaR, realPiaR, imagPiaR);
-
-	  // FIXME: Currently assuming GammaGqr = PiqR*PirR*LambdaGR
-	  //        First Pi not conjugated.
-	  realXRaij["Rdij"] = +1.0 * Xabij["cdij"] * realPiaR["cR"];
-	  imagXRaij["Rdij"] = -1.0 * Xabij["cdij"] * imagPiaR["cR"];
-	  Tensor<complex> XRaij(4, Rvoo, syms, *Vabij->wrld, "XRaij");
-	  toComplexTensor(realXRaij, imagXRaij, XRaij);
-
-	  Tensor<complex> XRSij(4, RRoo, syms, *Vabij->wrld, "XRSij");
-	  XRSij["RSij"] = XRaij["Rdij"] * PiaR["dS"];
-
-	  Univar_Function<complex> fConj(&cc4s::conj<complex>);
-	  Tensor<complex> conjLambdaGR(false, *LambdaGR);
-	  // conjLambdaGR["GR"] = conj(LambdaGR["GR"])
-	  conjLambdaGR.set_name("ConjLambdaGR");
-	  conjLambdaGR.sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
-	  VRS["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
-
-	  XRSij["RSij"] = XRSij["RSij"] * VRS["RS"];
-
-	  // Allocate and compute PiiR
-	  int iRStart[] = {0 , 0};
-	  int iREnd[]   = {No ,NR};
-	  Tensor<complex> PiiR(PiqR->slice(iRStart,iREnd));
-	  PiiR.set_name("PiiR");
-
-	  // Split PiiR into real and imaginary parts
-	  Tensor<> realPiiR(2, PiiR.lens, PiiR.sym, *PiiR.wrld, "RealPiiR");
-	  Tensor<> imagPiiR(2, PiiR.lens, PiiR.sym, *PiiR.wrld, "ImagPiiR");
-	  fromComplexTensor(PiiR, realPiiR, imagPiiR);
-
-	  // Initialize dressedPiaR
-	  Tensor<complex> dressedPiaR(PiaR);
-	  dressedPiaR.set_name("dressedPiaR");
-
-	  // Split dressedPiaR into real and imaginary parts
-	  Tensor<> realDressedPiaR(2, dressedPiaR.lens, dressedPiaR.sym, *dressedPiaR.wrld, "RealDressedPiaR");
-	  Tensor<> imagDressedPiaR(2, dressedPiaR.lens, dressedPiaR.sym, *dressedPiaR.wrld, "ImagDressedPiaR");
-	  fromComplexTensor(dressedPiaR, realDressedPiaR, imagDressedPiaR);
-
-	  // Construct dressedPiaR
-	  realDressedPiaR["aR"] += (-1.0) * realPiiR["kR"] * (*Tai)["ak"];
-	  imagDressedPiaR["aR"] += (-1.0) * imagPiiR["kR"] * (*Tai)["ak"];
-	  toComplexTensor(realDressedPiaR, imagDressedPiaR, dressedPiaR);
-
-	  // Contract dressedPiaR with XRSij
-	  XRaij["Rbij"] = XRSij["RSij"]  * dressedPiaR["bS"];
-	  fromComplexTensor(XRaij, realXRaij, imagXRaij);
-
-	  Rabij["abij"] += realXRaij["Rbij"]  * realDressedPiaR["aR"];
-	  Rabij["abij"] += imagXRaij["Rbij"]  * imagDressedPiaR["aR"];
-
+		sliceIntoResiduum(Rxyij, a, b, Rabij);
+		// The integrals of this slice are not needed anymore
+		delete Vxycd;
+	      }
+	    }
 	}
-
       }
+
       // Calculate the amplitudes from the residuum
       doublesAmplitudesFromResiduum(Rabij);
       // Append amplitudes to the mixer
@@ -349,7 +299,7 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
     //********************************************************************************
     {
       LOG(1, abbreviation) << "Solving T1 Amplitude Equations" << std::endl;
-
+      
       // Allocate Tensors for T1 amplitudes
       Tensor<> Rai(false, *Tai);
       Rai.set_name("Rai");
@@ -358,24 +308,10 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
       int vo[] = { Nv, No };
       Tensor<> Kck(2, vo, syms, *Vabij->wrld, "Kck");
 
-      // Intermediates used for T1 amplitudes
-      int vv[] = { Nv, Nv };
-      Tensor<> Kac(2, vv, syms, *Vabij->wrld, "Kac");
-      int oo[] = { No, No };
-      Tensor<> Kki(2, oo, syms, *Vabij->wrld, "Kki");
-
       // Intermediate tensor Xabij=T2+T1*T1
       Tensor<> Xabij(Tabij);
       Xabij.set_name("Xabij");
       Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
-
-      // Build Kac
-      Kac["ac"]  = (-2.0) * (*Vabij)["cdkl"] * Xabij["adkl"];
-      Kac["ac"] += ( 1.0) * (*Vabij)["dckl"] * Xabij["adkl"];
-
-      // Build Kki
-      Kki["ki"]  = ( 2.0) * (*Vabij)["cdkl"] * Xabij["cdil"];
-      Kki["ki"] += (-1.0) * (*Vabij)["dckl"] * Xabij["cdil"];
 
       // Contract Kac and Kki with T1 amplitudes
       Rai["ai"]  = ( 1.0) * Kac["ac"] * (*Tai)["ci"];
@@ -405,17 +341,16 @@ void DcsdEnergyFromCoulombFactors::iterate(int i) {
 }
 
 
-void DcsdEnergyFromCoulombFactors::dryIterate() {
+void CcsdEnergyFromSlicedIntegrals::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
-    // Read the DCSD amplitudes Tai and Tabij
+    // Read the CCSD amplitudes Tai and Tabij
     DryTensor<> *Tai(getTensorArgument<double, 
-    		     DryTensor<double>>("DcsdSinglesAmplitudes"));
+    		     DryTensor<double>>("CcsdSinglesAmplitudes"));
     DryTensor<> *Tabij(getTensorArgument<double, 
-		       DryTensor<double>>("DcsdDoublesAmplitudes"));
+		       DryTensor<double>>("CcsdDoublesAmplitudes"));
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vijka Vabci
-    // the Vabcd and Vabci may not be given then slicing is required
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
     DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
@@ -459,12 +394,12 @@ void DcsdEnergyFromCoulombFactors::dryIterate() {
     int oo[] = { No, No };
     DryTensor<> Kki(2, oo, syms);
 
-    // Construct intermediate tensor X=T2+T1*T1
-    DryTensor<> Xabij(*Vabij);
-
     {
       // Allocate Tensors for T2 amplitudes
       DryTensor<> Rabij(*Tabij);
+
+      // Construct intermediate tensor X=T2+T1*T1
+      DryTensor<> Xabij(*Vabij);
 
       {
 	// Intermediates used for T2 amplitudes
@@ -478,64 +413,27 @@ void DcsdEnergyFromCoulombFactors::dryIterate() {
       }
 
       {
+	// Read the sliceRank. If not provided use No
+	int sliceRank(getIntegerArgument
+		      ("sliceRank",No));
 
-	// Read the Coulomb Factors PiqR and LambdaGR
-	DryTensor<complex> *PiqR(getTensorArgument<complex, 
-				 DryTensor<complex>>("FactorOrbitals"));
-	DryTensor<complex> *LambdaGR(getTensorArgument<complex,
-				     DryTensor<complex>>("CoulombFactors"));
-
-	// Compute dimensions
-	int NR(PiqR->lens[1]);
-	int Rvoo[] = { NR, Nv, No, No };
-	int RRoo[] = { NR, NR, No, No };
-	int RR[] = { NR, NR };
-	int vR[] = { Nv, NR };
-	int oR[] = { No, NR };
-
-	// Construct dryTensors
-	DryTensor<complex> VRS(2, RR, syms);
-
-	DryTensor<> realXRaij(4, Rvoo, syms);
-	DryTensor<> imagXRaij(4, Rvoo, syms);
-
-	// Allocate PiaR
-	DryTensor<complex> PiaR(2, vR, syms);
-
-	// Split PiaR into real and imaginary parts
-	DryTensor<> realPiaR(2, vR, syms);
-	DryTensor<> imagPiaR(2, vR, syms);
-      
-	// Allocate PiiR
-	DryTensor<complex> PiiR(2, oR, syms);
-	
-	// Split PiiR into real and imaginary parts
-	DryTensor<> realPiiR(2, oR, syms);
-	DryTensor<> imagPiiR(2, oR, syms);
-
-	// Allocate dressedPiaR
-	DryTensor<complex> dressedPiaR(2, vR, syms);
-
-	// Split dressedPiaR into real and imaginary parts
-	DryTensor<> dressedRealPiaR(2, vR, syms);
-	DryTensor<> dressedImagPiaR(2, vR, syms);
-
-	// Construct rest intermediates
-	DryTensor<complex> XRaij(4, Rvoo, syms);
-
-	DryTensor<complex> XRSij(4, RRoo, syms);
-
-	DryTensor<complex> conjLambdaGR(*LambdaGR);
+	DryTensor<> *Vxycd(drySliceCoupledCoulombIntegrals(sliceRank));
+	int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+	int syms[] = {NS, NS, NS, NS};
+	DryTensor<> Rxyij(4, lens, syms);
       }
 
       dryDoublesAmplitudesFromResiduum(Rabij);
     }
 
     {
+      // Construct intermediate tensor X=T2+T1*T1
+      DryTensor<> Xabij(*Vabij);
+
       // Allocate Tensors for T1 amplitudes
       DryTensor<> Rai(*Tai);
+
       drySinglesAmplitudesFromResiduum(Rai);
     }
-
   }
 }

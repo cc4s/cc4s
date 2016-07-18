@@ -6,6 +6,7 @@
 #include <mixers/Mixer.hpp>
 #include <string>
 #include <ctf.hpp>
+#include <util/DryTensor.hpp>
 
 namespace cc4s {
   /**
@@ -79,6 +80,12 @@ namespace cc4s {
     void doublesAmplitudesFromResiduum(CTF::Tensor<> &Rabij);
 
     /**
+     * \brief Dry run for doublesAmplitudesFromResiduum.
+     * \param[in] Rabij Residuum Tensor.
+     */
+    void dryDoublesAmplitudesFromResiduum(cc4s::DryTensor<> &Rabij);
+
+    /**
      * \brief Calculates and returns one slice Vxycd of the Coulomb integrals
      * from the Coulomb vertex. The indices x and y are restricted to the
      * range {No+a, ..., No+a+No-1} and {No+b, ..., No+b+No-1}, respectively.
@@ -90,6 +97,15 @@ namespace cc4s {
      * \param[out] Vxycd sliced Coulomb integrals Vabcd
      */
     CTF::Tensor<> *sliceCoulombIntegrals(int a, int b, int sliceRank);
+
+    /**
+     * \brief Dry run for sliceCoulombIntegrals.
+     * \param[in] a 1st sliced dimension (x).
+     * \param[in] b 2nd sliced dimension (y).
+     * \param[in] sliceRank slicing rank.
+     * \param[out] Vxycd sliced Coulomb integrals Vabcd
+     */
+    cc4s::DryTensor<> *drySliceCoulombIntegrals(int sliceRank);
 
     /**
      * \brief Adds the given slice of the residuum tensor Rxyij to the

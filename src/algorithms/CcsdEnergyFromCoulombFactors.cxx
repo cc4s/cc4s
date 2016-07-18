@@ -453,78 +453,75 @@ void CcsdEnergyFromCoulombFactors::dryIterate() {
       // Allocate Tensors for T2 amplitudes
       DryTensor<> Rabij(*Tabij);
 
-      // Intermediates used for T2 amplitudes
-      DryTensor<> Lac(2, vv, syms);
-      DryTensor<> Lki(2, oo, syms);
+      {
+	// Intermediates used for T2 amplitudes
+	DryTensor<> Lac(2, vv, syms);
+	DryTensor<> Lki(2, oo, syms);
 
-      DryTensor<> Xklij(*Vijkl);
-      DryTensor<> Xakci(*Vaibj);
-      int voov[] = { Nv, No, No, Nv };
-      DryTensor<> Xakic(4, voov, syms);
+	DryTensor<> Xklij(*Vijkl);
+	DryTensor<> Xakci(*Vaibj);
+	int voov[] = { Nv, No, No, Nv };
+	DryTensor<> Xakic(4, voov, syms);
+      }
+
+      {
+	// Read the Coulomb Factors PiqR and LambdaGR
+	DryTensor<complex> *PiqR(getTensorArgument<complex, 
+				 DryTensor<complex>>("FactorOrbitals"));
+	DryTensor<complex> *LambdaGR(getTensorArgument<complex,
+				     DryTensor<complex>>("CoulombFactors"));
+
+	// Compute dimensions
+	int NR(PiqR->lens[1]);
+	int Rvoo[] = { NR, Nv, No, No };
+	int RRoo[] = { NR, NR, No, No };
+	int RR[] = { NR, NR };
+	int vR[] = { Nv, NR };
+	int oR[] = { No, NR };
+
+	// Construct dryTensors
+	DryTensor<complex> VRS(2, RR, syms);
+	
+	DryTensor<> realXRaij(4, Rvoo, syms);
+	DryTensor<> imagXRaij(4, Rvoo, syms);
+
+	// Allocate PiaR
+	DryTensor<complex> PiaR(2, vR, syms);
+
+	// Split PiaR into real and imaginary parts
+	DryTensor<> realPiaR(2, vR, syms);
+	DryTensor<> imagPiaR(2, vR, syms);
+
+	// Allocate PiiR
+	DryTensor<complex> PiiR(2, oR, syms);
+
+	// Split PiiR into real and imaginary parts
+	DryTensor<> realPiiR(2, oR, syms);
+	DryTensor<> imagPiiR(2, oR, syms);
+
+	// Allocate dressedPiaR
+	DryTensor<complex> dressedPiaR(2, vR, syms);
+
+	// Split dressedPiaR into real and imaginary parts
+	DryTensor<> dressedRealPiaR(2, vR, syms);
+	DryTensor<> dressedImagPiaR(2, vR, syms);
+
+	// Construct rest intermediates
+	DryTensor<complex> XRaij(4, Rvoo, syms);
+	
+	DryTensor<complex> XRSij(4, RRoo, syms);
+
+	DryTensor<complex> conjLambdaGR(*LambdaGR);
+      }
+
+      dryDoublesAmplitudesFromResiduum(Rabij);
     }
-
-    {
-
-      // Read the Coulomb Factors PiqR and LambdaGR
-      DryTensor<complex> *PiqR(getTensorArgument<complex, 
-			       DryTensor<complex>>("FactorOrbitals"));
-      DryTensor<complex> *LambdaGR(getTensorArgument<complex,
-				   DryTensor<complex>>("CoulombFactors"));
-
-      // Compute dimensions
-      int NR(PiqR->lens[1]);
-      int Rvoo[] = { NR, Nv, No, No };
-      int RRoo[] = { NR, NR, No, No };
-      int RR[] = { NR, NR };
-      int vR[] = { Nv, NR };
-      int oR[] = { No, NR };
-
-      // Construct dryTensors
-      DryTensor<complex> VRS(2, RR, syms);
-
-      DryTensor<> realXRaij(4, Rvoo, syms);
-      DryTensor<> imagXRaij(4, Rvoo, syms);
-
-      // Allocate PiaR
-      DryTensor<complex> PiaR(2, vR, syms);
-
-      // Split PiaR into real and imaginary parts
-      DryTensor<> realPiaR(2, vR, syms);
-      DryTensor<> imagPiaR(2, vR, syms);
-
-      // Allocate PiiR
-      DryTensor<complex> PiiR(2, oR, syms);
-
-      // Split PiiR into real and imaginary parts
-      DryTensor<> realPiiR(2, oR, syms);
-      DryTensor<> imagPiiR(2, oR, syms);
-
-      // Allocate dressedPiaR
-      DryTensor<complex> dressedPiaR(2, vR, syms);
-
-      // Split dressedPiaR into real and imaginary parts
-      DryTensor<> dressedRealPiaR(2, vR, syms);
-      DryTensor<> dressedImagPiaR(2, vR, syms);
-
-      // Construct rest intermediates
-      DryTensor<complex> XRaij(4, Rvoo, syms);
-
-      DryTensor<complex> XRSij(4, RRoo, syms);
-
-      DryTensor<complex> conjLambdaGR(*LambdaGR);
-    }
-
-    // TODO: implment dryDoublesAmplitudesFromResiduum
-    // at the moment, assume usage of Dabij
-    DryTensor<> Dabij(*Vabij);
 
     {
       // Allocate Tensors for T1 amplitudes
       DryTensor<> Rai(*Tai);
+      drySinglesAmplitudesFromResiduum(Rai);
     }
 
-    // TODO: implment dryDoublesAmplitudesFromResiduum
-    // at the moment, assume usage of Dabij
-    DryTensor<> Dai(*Tai);
   }
 }

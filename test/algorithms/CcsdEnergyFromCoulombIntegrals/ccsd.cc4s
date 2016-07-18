@@ -2,39 +2,29 @@ CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-  % Uncomment next line to set the read rank. Default value is No.
-% (readRank 40)
 ].
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ] [
-  % Uncomment next line if you want PPPPIntegrals. Else slicing is used.
-% PPPPCoulombIntegrals
-  % Uncomment next line if you want PPPHIntegrals. Else a coupled slicing is
-  % used via a dressed Coulomb vertex.
-% PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
   PHPHCoulombIntegrals
-  PPHHCoulombIntegrals HHHHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
   HHHPCoulombIntegrals
 ].
 
 CcsdEnergyFromCoulombIntegrals [
-  % Uncomment next line if you want PPPP and PPPH Integrals. Else slicing is used.
-% PPPPCoulombIntegrals
-  % Uncomment next line if you want PPPHIntegrals. Else a coupled slicing is
-  % used via a dressed Coulomb vertex.
-% PPPHCoulombIntegrals
-  % CoulombVertex is needed independent of slicing or not.
-  CoulombVertex
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
   PHPHCoulombIntegrals
-  PPHHCoulombIntegrals HHHHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
   (maxIterations 16)
-  % Uncomment next line to set the slice rank of PPPP and PPPH Integrals. Default is No.
-% (sliceRank 40)
 ] [
   (CcsdEnergy CcsdEnergy) 
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)

@@ -491,42 +491,40 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
       // Allocate Tensors for T2 amplitudes
       DryTensor<> Rabij(*Tabij);
 
-      // Intermediates used for T2 amplitudes
-      DryTensor<> Lac(2, vv, syms);
-      DryTensor<> Lki(2, oo, syms);
+      {
+	// Intermediates used for T2 amplitudes
+	DryTensor<> Lac(2, vv, syms);
+	DryTensor<> Lki(2, oo, syms);
 
-      DryTensor<> Xklij(*Vijkl);
-      DryTensor<> Xakci(*Vaibj);
-      int voov[] = { Nv, No, No, Nv };
-      DryTensor<> Xakic(4, voov, syms);
+	DryTensor<> Xklij(*Vijkl);
+	DryTensor<> Xakci(*Vaibj);
+	int voov[] = { Nv, No, No, Nv };
+	DryTensor<> Xakic(4, voov, syms);
+      }
+
+      if (!Vabcd) {
+	// Slice if Vabcd is not specified
+
+	// Read the sliceRank. If not provided use No
+	int sliceRank(getIntegerArgument
+		      ("sliceRank",No));
+
+	int ssvv[] = { sliceRank, sliceRank, Nv, Nv };
+	// TODO: implement drySliceCoulombIntegrals
+	DryTensor<> Vxycd(4, ssvv, syms);
+
+	int ssoo[] = { sliceRank, sliceRank, No, No };
+	DryTensor<> Rxyij(4, ssoo, syms);
+      }
+
+      dryDoublesAmplitudesFromResiduum(Rabij);
     }
-
-    if (!Vabcd) {
-      // Slice if Vabcd is not specified
-
-      // Read the sliceRank. If not provided use No
-      int sliceRank(getIntegerArgument
-		    ("sliceRank",No));
-
-      int ssvv[] = { sliceRank, sliceRank, Nv, Nv };
-      // TODO: implement drySliceCoulombIntegrals
-      DryTensor<> Vxycd(4, ssvv, syms);
-
-      int ssoo[] = { sliceRank, sliceRank, No, No };
-      DryTensor<> Rxyij(4, ssoo, syms);
-    }
-
-    // TODO: implment dryDoublesAmplitudesFromResiduum
-    // at the moment, assume usage of Dabij
-    DryTensor<> Dabij(*Vabij);
 
     {
       // Allocate Tensors for T1 amplitudes
       DryTensor<> Rai(*Tai);
+      dryDoublesAmplitudesFromResiduum(Rai);
     }
 
-    // TODO: implment dryDoublesAmplitudesFromResiduum
-    // at the moment, assume usage of Dabij
-    DryTensor<> Dai(*Tai);
   }
 }

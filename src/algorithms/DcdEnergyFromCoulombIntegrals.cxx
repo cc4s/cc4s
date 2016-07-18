@@ -214,9 +214,7 @@ void DcdEnergyFromCoulombIntegrals::dryIterate() {
       DryTensor<> Rxyij(*Vijkl);
     }
 
-    // TODO: implment dryDoublesAmplitudesFromResiduum, 
-    // at the moment, assume usage of Dabij
-    DryTensor<> Dabij(*Vabij);
+    dryDoublesAmplitudesFromResiduum(Rabij);
   }
 }
 

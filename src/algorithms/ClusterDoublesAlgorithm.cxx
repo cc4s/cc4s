@@ -168,6 +168,13 @@ void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   Rabij.contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 }
 
+void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
+  cc4s::DryTensor<> &Rabij
+) {
+  // Build Dabij
+  DryTensor<> Dabij(Rabij);
+}
+
 
 Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int sliceRank) {
   Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
@@ -204,6 +211,40 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int slice
   // Contract left and right slices of the Coulomb vertices
   (*Vxycd)["xycd"] =  realLeftGamma["Gxc"] * realRightGamma["Gyd"];
   (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
+  return Vxycd;
+}
+
+DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int sliceRank) {
+  // Read the Coulomb vertex GammaGpq
+  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+			       DryTensor<complex>>("CoulombVertex"));
+  
+  // Read the Particle/Hole Eigenenergies
+  DryTensor<> *epsa(getTensorArgument
+		    <double, DryTensor<double>>("ParticleEigenEnergies"));
+
+  int Nv(epsa->lens[0]);
+  int NG(GammaGpq->lens[0]);
+  
+  // Slice the respective parts from the Coulomb vertex
+  int syms[] = { NS, NS, NS, NS };
+  int leftGammaLens[]  = { NG, sliceRank, Nv };
+  int rightGammaLens[] = { NG, sliceRank, Nv };
+  DryTensor<complex> leftGamma (3, leftGammaLens , syms);
+  DryTensor<complex> rightGamma(3, rightGammaLens, syms);
+
+  // Split into real and imaginary parts
+  DryTensor<> realLeftGamma(3, leftGammaLens, syms);
+  DryTensor<> imagLeftGamma(3, leftGammaLens, syms);
+
+  DryTensor<> realRightGamma(3, rightGammaLens, syms);
+  DryTensor<> imagRightGamma(3, rightGammaLens, syms);
+
+  // Allocate sliced Coulomb integrals
+  int lens[] = {leftGamma.lens[1], rightGamma.lens[1], 
+		leftGamma.lens[2], rightGamma.lens[2]};
+  DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms));
+
   return Vxycd;
 }
 

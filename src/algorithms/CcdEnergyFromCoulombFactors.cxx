@@ -264,9 +264,7 @@ void CcdEnergyFromCoulombFactors::dryIterate() {
       DryTensor<complex> conjLambdaGR(*LambdaGR);
     }
 
-    // TODO: implment dryDoublesAmplitudesFromResiduum
-    // at the moment, assume usage of Dabij
-    DryTensor<> Dabij(*Vabij);
+    dryDoublesAmplitudesFromResiduum(Rabij);
   }
 }
 
