@@ -118,6 +118,17 @@ namespace cc4s {
     void sliceIntoResiduum(
       CTF::Tensor<> &Rxyij, int a0, int b0, CTF::Tensor<> &Rabij
     );
+
+    /**
+     * \brief Prints the energy from the residuum.
+     * \param[in] Rabij the residuum.
+     * \param[in] previousEnergy double that holds the previous energy.
+     * \param[in] contraction string with the name of the contraction.
+     */
+    void printEnergyFromResiduum(CTF::Tensor<> &Rabij,
+				 double &previousEnergy,
+				 std::string contraction);
+
   };
 }
 

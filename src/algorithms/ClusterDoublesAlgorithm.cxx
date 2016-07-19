@@ -273,3 +273,35 @@ void ClusterDoublesAlgorithm::sliceIntoResiduum(
   }
 }
 
+void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij, 
+						      double &previousEnergy,
+						      std::string contraction) 
+{
+  // Read the Coulomb Integrals Vabij required for the energy
+  Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
+
+  Tensor<> Eabij(Rabij);
+  Eabij.set_name("Eabij");
+
+  doublesAmplitudesFromResiduum(Eabij);
+
+  // Allocate the energy e
+  Scalar<> energy(*Vabij->wrld);
+  energy.set_name("energy");
+  double e(0), dire, exce;
+
+  std::string abbreviation(getAbbreviation());
+  std::transform(abbreviation.begin(), abbreviation.end(), 
+		 abbreviation.begin(), ::toupper);
+
+  // Direct term
+  energy[""] = 2.0 * Eabij["abij"] * (*Vabij)["abij"];
+  dire  = energy.get_val();
+  // Exchange term
+  energy[""] = Eabij["abji"] * (*Vabij)["abij"];
+  exce  = -1.0 * energy.get_val();
+  // Total energy
+  e = dire + exce - previousEnergy;
+  previousEnergy += e;
+  LOG(2, abbreviation) << contraction << "=" << e << std::endl;
+}

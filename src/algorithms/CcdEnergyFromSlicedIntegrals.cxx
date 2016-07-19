@@ -41,6 +41,9 @@ void CcdEnergyFromSlicedIntegrals::iterate(int i) {
 
     LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
+    double previousEnergy(0);
+    std::string contraction;
+
     if (i == 0) {
       // For first iteration compute only the MP2 amplitudes 
       // Since Tabij = 0, Vabij is the only non-zero term
@@ -84,8 +87,18 @@ void CcdEnergyFromSlicedIntegrals::iterate(int i) {
 	// Contract Kac with T2 Amplitudes
 	Rabij["abij"]  = ( 1.0) * Kac["ac"] * (*Tabij)["cbij"];
 
+	contraction  = Kac.get_name();
+	contraction += "*";
+	contraction += Tabij->get_name();
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
+
 	// Contract Kki with T2 Amplitudes
 	Rabij["abij"] += (-1.0) * Kki["ki"] * (*Tabij)["abkj"];
+
+	contraction  = Kki.get_name();
+	contraction += "*";
+	contraction += Tabij->get_name();
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
 
 	// Build Xakic
 	Xakic["akic"]  = ( 1.0) * (*Vabij)["acik"];
@@ -101,13 +114,26 @@ void CcdEnergyFromSlicedIntegrals::iterate(int i) {
 	Rabij["abij"] += ( 2.0) * Xakic["akic"] * (*Tabij)["cbkj"];
 	Rabij["abij"] += (-1.0) * Xakic["akic"] * (*Tabij)["bckj"];
 
+	contraction  = Xakic.get_name();
+	contraction += "*";
+	contraction += Tabij->get_name();
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
+
 	Rabij["abij"] += (-1.0) * Xakci["akci"] * (*Tabij)["cbkj"];
 	Rabij["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
+
+	contraction  = Xakci.get_name();
+	contraction += "*";
+	contraction += Tabij->get_name();
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
 
 	// Symmetrize Rabij by applying permutation operator
 	// to save memory we use Xakci as intermediate for the permutation operator 
 	Xakci["aibj"]  = Rabij["abij"];
 	Rabij["abij"] += Xakci["bjai"]; 
+
+	contraction  = "Permuation";
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now add all terms to Rabij that do not need to be symmetrized with
@@ -117,12 +143,21 @@ void CcdEnergyFromSlicedIntegrals::iterate(int i) {
 	// Rabij are the Tabij amplitudes for the next iteration and need to be build
 	Rabij["abij"] += (*Vabij)["abij"];
 
+	contraction  = Vabij->get_name();
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
+
 	// Build Xklij intermediate
 	Xklij["klij"]  = (*Vijkl)["klij"];
 	Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"];
 
 	// Contract Xklij with T2 Amplitudes
 	Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
+
+	contraction  = Xklij.get_name();
+	contraction += "*";
+	contraction += Tabij->get_name();
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
+
       }
       
       {
@@ -147,6 +182,11 @@ void CcdEnergyFromSlicedIntegrals::iterate(int i) {
 	    delete Vxycd;
 	  }
 	}
+
+	contraction   = "Vabcd";
+	contraction  += "*";
+	contraction  += Tabij->get_name();
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
 
       }
 
