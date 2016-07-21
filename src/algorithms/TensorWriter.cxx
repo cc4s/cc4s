@@ -1,5 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <algorithms/TensorWriter.hpp>
+#include <util/BinaryTensorFormat.hpp>
 #include <util/Log.hpp>
 #include <fstream> 
 #include <iomanip>
@@ -38,7 +39,7 @@ void TensorWriter::writeBinary() {
     MPI_INFO_NULL, &file
   );
   MPI_File_set_size(file, 0);
-  BinaryHeader header(A->order, A->lens);
+  BinaryTensorHeader header(*A);
   MPI_File_write(file, &header, sizeof(header), MPI_BYTE, &status);
   // FIXME: status checking
   A->write_dense_to_file(file, sizeof(header));
