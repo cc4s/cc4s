@@ -31,6 +31,7 @@ void ReduceEnergyMatrix::run() {
   diagonalizeEnergyMatrix();
   truncateUnitaryTransform();
   writeUnitaryTransform();
+  if (isArgumentGiven("EnergySpectrum")) writeEnergySpectrum();
 }
 
 void ReduceEnergyMatrix::dryRun() {
@@ -125,11 +126,9 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
       if (std::abs(eigenValues[bottom]) > std::abs(eigenValues[top])) {
         // bottom value is larger in magnitude, take bottom
         column = bottom++;
-        LOG(3, "GREDUCE") << "taking from bottom=" << column << std::endl;
       } else {
         // otherwise, take top
         column = top--;
-        LOG(3, "GREDUCE") << "taking from top=" << column << std::endl;
       }
       // add selected eigenvalue to approximation
       e += eigenValues[column];
@@ -140,7 +139,7 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
       ng++;
     }
     LOG(1, "GREDUCE") <<
-      "taking " << ng << " of " << nG << " for a maximum accuracy of " <<
+      "taking " << ng << " of " << nG << " eigenvectors for a fit accuracy of " <<
       std::abs(e-energy)/energy << std::endl;
   } else {
     transformElements = new complex[0];
@@ -149,12 +148,11 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
   // broadcast ng to all ranks
   MPI_Bcast(&ng, 1, MPI_INT, 0, EGH->wrld->comm);
 
-  delete[] eigenValues;
   delete[] elements;
 }
 
 void ReduceEnergyMatrix::writeUnitaryTransform() {
-  Matrix<complex> *UGg(new Matrix<complex>(nG, ng, *EGH->wrld));
+  Matrix<complex> *UGg(new Matrix<complex>(nG, ng, *EGH->wrld, "UGg"));
   int localNg(UGg->wrld->rank == 0 ? ng : 0);
   UGg->write(localNg*nG, indices, transformElements);
   allocatedTensorArgument<complex>(
@@ -162,5 +160,20 @@ void ReduceEnergyMatrix::writeUnitaryTransform() {
   );
   delete[] transformElements;
   delete[] indices;
+}
+
+// TODO: maybe also write the reduced energy spectrum
+// or sort them accordingly 
+void ReduceEnergyMatrix::writeEnergySpectrum() {
+  Vector<> *EG(new Vector<>(nG, *EGH->wrld, "EG"));
+  int localNG(EGH->wrld->rank == 0 ? nG : 0);
+  int64_t *eigenValueIndices(new int64_t[localNG]);
+  for (int i(0); i < localNG; ++i) {
+    eigenValueIndices[i] = i;
+  }
+  EG->write(localNG, eigenValueIndices, eigenValues);
+  allocatedTensorArgument<>("EnergySpectrum", EG);
+  delete[] eigenValueIndices;
+  delete[] eigenValues;
 }
 

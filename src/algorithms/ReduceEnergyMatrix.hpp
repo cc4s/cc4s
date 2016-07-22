@@ -33,6 +33,7 @@ namespace cc4s {
     void diagonalizeEnergyMatrix();
     void truncateUnitaryTransform();
     void writeUnitaryTransform();
+    void writeEnergySpectrum();
 
     CTF::Tensor<complex> *EGH;
     int nG;
