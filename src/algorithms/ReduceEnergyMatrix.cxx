@@ -112,8 +112,6 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
 
     double energy(0.0);
     for (int i(0); i < nG; ++i) {
-      LOG(2, "GREDUCE") <<
-        "eigenvalue[" << i << "]=" << eigenValues[i] << std::endl;
       energy += eigenValues[i];
     }
     LOG(1, "GREDUCE") << "sum of eigenvalues=" << energy << std::endl;
