@@ -80,14 +80,19 @@ void CoulombVertexReader::run() {
   Chunk chunk;
   while (offset < fileSize) {
     MPI_File_read_at(file, offset, &chunk, sizeof(chunk), MPI_BYTE, &status);
-    LOG(1, "Reader") << "reading chunk at " << std::hex << offset << std::endl;
+    //    LOG(1, "Reader") << "reading chunk at " <<
+    //      std::hex << offset << std::dec << std::endl;
     if (strncmp(chunk.magic, Chunk::REALS_MAGIC, sizeof(chunk.magic)) == 0) {
+      LOG(1, "Reader") << "reading " << realGammaGpq.get_name() << std::endl;
       realGammaGpq.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::IMAGS_MAGIC, sizeof(chunk.magic)) == 0) {
+      LOG(1, "Reader") << "reading " << imagGammaGpq.get_name() << std::endl;
       imagGammaGpq.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
+      LOG(1, "Reader") << "reading " << epsi->get_name() << ", " 
+		       << epsa->get_name() << std::endl;
       epsi->read_dense_from_file(file, offset+sizeof(chunk));
       epsa->read_dense_from_file(file, offset+sizeof(chunk)+No*sizeof(double));
     }

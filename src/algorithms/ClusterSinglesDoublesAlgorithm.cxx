@@ -196,6 +196,13 @@ void ClusterSinglesDoublesAlgorithm::singlesAmplitudesFromResiduum(
   Rai.contract(1.0, Rai,"ai", Dai,"ai", 0.0,"ai", fDivide);
 }
 
+void ClusterSinglesDoublesAlgorithm::drySinglesAmplitudesFromResiduum(
+  cc4s::DryTensor<> &Rai
+) {
+  // Build Dai
+  DryTensor<> Dai(Rai);
+}
+
 Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a, 
 								       int b, 
 								       int sliceRank)
@@ -267,6 +274,64 @@ Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a,
   // Contract left and right slices of the dressed Coulomb vertices
   (*Vxycd)["xycd"]  = realLeftGamma["Gxc"] * realRightGamma["Gyd"];
   (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
+  return Vxycd;
+}
+
+DryTensor<> *ClusterSinglesDoublesAlgorithm::drySliceCoupledCoulombIntegrals(int sliceRank)
+{
+  // Read the Coulomb vertex GammaGpq
+  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+			       DryTensor<complex>>("CoulombVertex"));
+  
+  // Read the Particle/Hole Eigenenergies
+  DryTensor<> *epsi(getTensorArgument
+		    <double, DryTensor<double>>("HoleEigenEnergies"));
+  DryTensor<> *epsa(getTensorArgument
+		    <double, DryTensor<double>>("ParticleEigenEnergies"));
+
+  // Compute No,Nv,NG,Np
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int NG(GammaGpq->lens[0]);
+  int syms[] = { NS, NS, NS, NS };
+
+  // Allocate and compute GammaGab,GammaGai from GammaGpq
+  int GaiLens[]   = {NG,Nv,No};
+  int GabLens[]   = {NG,Nv,Nv};
+  int GijLens[]   = {NG,No,No};
+
+  DryTensor<complex> GammaGai(3, GaiLens, syms);
+  DryTensor<complex> GammaGab(3, GabLens, syms);
+  DryTensor<complex> GammaGij(3, GijLens, syms);
+
+  // Split GammaGab,GammaGai into real and imaginary parts
+  DryTensor<> realGammaGai(3, GaiLens, syms);
+  DryTensor<> imagGammaGai(3, GaiLens, syms);
+
+  DryTensor<> realGammaGab(3, GabLens, syms);
+  DryTensor<> imagGammaGab(3, GabLens, syms);
+
+  DryTensor<> realGammaGij(3, GijLens, syms);
+  DryTensor<> imagGammaGij(3, GijLens, syms);
+  
+  // Slice the respective parts from the Coulomb vertex
+  int leftGammaLens[]  = { NG, sliceRank, Nv };
+  int rightGammaLens[] = { NG, sliceRank, Nv };
+  DryTensor<complex> leftGamma (3, leftGammaLens , syms);
+  DryTensor<complex> rightGamma(3, rightGammaLens, syms);
+
+  // Split into real and imaginary parts
+  DryTensor<> realLeftGamma(3, leftGammaLens, syms);
+  DryTensor<> imagLeftGamma(3, leftGammaLens, syms);
+
+  DryTensor<> realRightGamma(3, rightGammaLens, syms);
+  DryTensor<> imagRightGamma(3, rightGammaLens, syms);
+
+  // Allocate sliced Coulomb integrals
+  int lens[] = {leftGamma.lens[1], rightGamma.lens[1], 
+		leftGamma.lens[2], rightGamma.lens[2]};
+  DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms));
+
   return Vxycd;
 }
 

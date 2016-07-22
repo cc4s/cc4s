@@ -77,6 +77,12 @@ obj/algorithms/EnergyMatrixFromDoublesAmplitudes.o \
 obj/algorithms/ReduceEnergyMatrix.o \
 obj/algorithms/ReduceCoulombVertex.o \
 obj/algorithms/ReduceParticleHoleCoulombVertex.o \
+obj/algorithms/CcsdEnergyFromCoulombFactors.o \
+obj/algorithms/DcsdEnergyFromCoulombFactors.o \
+obj/algorithms/CcdEnergyFromSlicedIntegrals.o \
+obj/algorithms/DcdEnergyFromSlicedIntegrals.o \
+obj/algorithms/CcsdEnergyFromSlicedIntegrals.o \
+obj/algorithms/DcsdEnergyFromSlicedIntegrals.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 

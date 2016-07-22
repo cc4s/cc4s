@@ -42,7 +42,7 @@ namespace cc4s {
     DryTensor(DryTensor const &A): order(A.order), lens(A.lens), syms(A.syms) {
       allocate();
     }
-    ~DryTensor() {
+    virtual ~DryTensor() {
       free();
     }
     virtual void use() {}

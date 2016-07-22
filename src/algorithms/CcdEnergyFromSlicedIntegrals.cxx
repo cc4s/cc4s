@@ -1,4 +1,4 @@
-#include <algorithms/CcdEnergyFromCoulombIntegrals.hpp>
+#include <algorithms/CcdEnergyFromSlicedIntegrals.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/DryTensor.hpp>
 #include <util/Log.hpp>
@@ -8,21 +8,21 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CcdEnergyFromCoulombIntegrals);
+ALGORITHM_REGISTRAR_DEFINITION(CcdEnergyFromSlicedIntegrals);
 
-CcdEnergyFromCoulombIntegrals::CcdEnergyFromCoulombIntegrals(
+CcdEnergyFromSlicedIntegrals::CcdEnergyFromSlicedIntegrals(
   std::vector<Argument> const &argumentList
 ): ClusterDoublesAlgorithm(argumentList) {
 }
 
-CcdEnergyFromCoulombIntegrals::~CcdEnergyFromCoulombIntegrals() {
+CcdEnergyFromSlicedIntegrals::~CcdEnergyFromSlicedIntegrals() {
 }
 
 //////////////////////////////////////////////////////////////////////
 // Hiarata iteration routine for the CCD amplitudes Tabij (Table. 1)
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 //////////////////////////////////////////////////////////////////////
-void CcdEnergyFromCoulombIntegrals::iterate(int i) {
+void CcdEnergyFromSlicedIntegrals::iterate(int i) {
   {
     // Read the CCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
@@ -52,10 +52,7 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
     else {
       // For the rest iterations compute the CCD amplitudes
 
-      // Read the Coulomb Integrals Vabcd Vaibj Vijkl
-      // the PPPPCoulombIntegrals may not be given then slicing is required
-      Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
-		      getTensorArgument("PPPPCoulombIntegrals") : nullptr);
+      // Read the Coulomb Integrals Vaibj Vijkl
       Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
       Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
   
@@ -135,6 +132,9 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	Xakci["aibj"]  = Rabij["abij"];
 	Rabij["abij"] += Xakci["bjai"]; 
 
+	contraction  = "Permuation";
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
+
 	//////////////////////////////////////////////////////////////////////
 	// Now add all terms to Rabij that do not need to be symmetrized with
 	// the permutation operator
@@ -157,14 +157,11 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	contraction += "*";
 	contraction += Tabij->get_name();
 	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
+
       }
       
-      // Contract Vabcd with T2 Amplitudes
-      if (Vabcd) {
-	Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
-      } 
-      else {
-	// slice if Vabcd is not specified
+      {
+	// Contract Vabcd with T2 Amplitudes via slicing
 
 	// Read the sliceRank. If not provided use No
 	int sliceRank(getIntegerArgument
@@ -186,12 +183,13 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	  }
 	}
 
+	contraction   = "Vabcd";
+	contraction  += "*";
+	contraction  += Tabij->get_name();
+	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
+
       }
 
-      contraction   = "Vabcd";
-      contraction  += "*";
-      contraction  += Tabij->get_name();
-      printEnergyFromResiduum(Rabij, previousEnergy, contraction);
     }
 
     // Calculate the amplitdues from the residuum
@@ -201,16 +199,13 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
   }
 }
 
-void CcdEnergyFromCoulombIntegrals::dryIterate() {
+void CcdEnergyFromSlicedIntegrals::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
     // Read the CCD amplitudes Tabij
     getTensorArgument<double, DryTensor<double>>("CcdDoublesAmplitudes");
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
-    // the PPPPCoulombIntegrals may not be given then slicing is required
-    DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ? 
-		       getTensorArgument<double, DryTensor<double>>("PPPPCoulombIntegrals") : nullptr);
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
     DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
@@ -235,17 +230,15 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
     DryTensor<> Xakci(*Vaibj);
     DryTensor<> Xakic(4, voov, syms);
 
-    // Read the sliceRank. If not provided use No
-    int sliceRank(getIntegerArgument
-		  ("sliceRank",No));
+    {
+      // Read the sliceRank. If not provided use No
+      int sliceRank(getIntegerArgument
+		    ("sliceRank",No));
 
-    if (!Vabcd) {
-      // Slice if Vabcd is not specified
-      int lens[] = { sliceRank, sliceRank, Nv, Nv };
+      DryTensor<> *Vxycd(drySliceCoulombIntegrals(sliceRank));
+      int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
       int syms[] = {NS, NS, NS, NS};
-      // TODO: implement drySliceCoulombIntegrals
-      DryTensor<> Vxycd(4, lens, syms);
-      DryTensor<> Rxyij(*Vijkl);
+      DryTensor<> Rxyij(4, lens, syms);
     }
 
     dryDoublesAmplitudesFromResiduum(Rabij);
@@ -256,7 +249,7 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
 // Bartlett iteration routine for the CCD amplitudes Tabij 
 // Rev. Mod. Phys. 79, 291  Page 305, Figure 8. -> CCD
 //////////////////////////////////////////////////////////////////////
-void CcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
+void CcdEnergyFromSlicedIntegrals::iterateBartlett(int i) {
   {
     // Read the CCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
@@ -286,7 +279,6 @@ void CcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
       // For the rest iterations compute the CCD amplitudes
 
       // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
-      Tensor<> *Vabcd(getTensorArgument("PPPPCoulombIntegrals"));
       Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
       Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
 
@@ -300,12 +292,8 @@ void CcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
 	//////////////////////////////////////////////////////////////////////
 
 	// Contract Vabcd with T2 Amplitudes (4th term first line)
-	if (Vabcd) {
-	  Rabij["abij"]  = ( 0.5) * (*Vabcd)["abef"] * (*Tabij)["efij"];
-	} 
-	else {
-	  // Slice if Vabcd is not specified
-
+	{
+	  // Slice Vabcd
 	  // Read the sliceRank. If not provided use No
 	  int64_t sliceRank(getIntegerArgument
 			    ("sliceRank",No));

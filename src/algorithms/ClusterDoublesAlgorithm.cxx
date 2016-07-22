@@ -168,6 +168,13 @@ void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   Rabij.contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 }
 
+void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
+  cc4s::DryTensor<> &Rabij
+) {
+  // Build Dabij
+  DryTensor<> Dabij(Rabij);
+}
+
 
 Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int sliceRank) {
   Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
@@ -207,6 +214,40 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int slice
   return Vxycd;
 }
 
+DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int sliceRank) {
+  // Read the Coulomb vertex GammaGpq
+  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+			       DryTensor<complex>>("CoulombVertex"));
+  
+  // Read the Particle/Hole Eigenenergies
+  DryTensor<> *epsa(getTensorArgument
+		    <double, DryTensor<double>>("ParticleEigenEnergies"));
+
+  int Nv(epsa->lens[0]);
+  int NG(GammaGpq->lens[0]);
+  
+  // Slice the respective parts from the Coulomb vertex
+  int syms[] = { NS, NS, NS, NS };
+  int leftGammaLens[]  = { NG, sliceRank, Nv };
+  int rightGammaLens[] = { NG, sliceRank, Nv };
+  DryTensor<complex> leftGamma (3, leftGammaLens , syms);
+  DryTensor<complex> rightGamma(3, rightGammaLens, syms);
+
+  // Split into real and imaginary parts
+  DryTensor<> realLeftGamma(3, leftGammaLens, syms);
+  DryTensor<> imagLeftGamma(3, leftGammaLens, syms);
+
+  DryTensor<> realRightGamma(3, rightGammaLens, syms);
+  DryTensor<> imagRightGamma(3, rightGammaLens, syms);
+
+  // Allocate sliced Coulomb integrals
+  int lens[] = {leftGamma.lens[1], rightGamma.lens[1], 
+		leftGamma.lens[2], rightGamma.lens[2]};
+  DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms));
+
+  return Vxycd;
+}
+
 void ClusterDoublesAlgorithm::sliceIntoResiduum(
   Tensor<> &Rxyij, int a, int b, Tensor<> &Rabij
 ) {
@@ -232,3 +273,35 @@ void ClusterDoublesAlgorithm::sliceIntoResiduum(
   }
 }
 
+void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij, 
+						      double &previousEnergy,
+						      std::string contraction) 
+{
+  // Read the Coulomb Integrals Vabij required for the energy
+  Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
+
+  Tensor<> Eabij(Rabij);
+  Eabij.set_name("Eabij");
+
+  doublesAmplitudesFromResiduum(Eabij);
+
+  // Allocate the energy e
+  Scalar<> energy(*Vabij->wrld);
+  energy.set_name("energy");
+  double e(0), dire, exce;
+
+  std::string abbreviation(getAbbreviation());
+  std::transform(abbreviation.begin(), abbreviation.end(), 
+		 abbreviation.begin(), ::toupper);
+
+  // Direct term
+  energy[""] = 2.0 * Eabij["abij"] * (*Vabij)["abij"];
+  dire  = energy.get_val();
+  // Exchange term
+  energy[""] = Eabij["abji"] * (*Vabij)["abij"];
+  exce  = -1.0 * energy.get_val();
+  // Total energy
+  e = dire + exce - previousEnergy;
+  previousEnergy += e;
+  LOG(2, abbreviation) << contraction << "=" << e << std::endl;
+}

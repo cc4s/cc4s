@@ -6,6 +6,7 @@
 #include <mixers/Mixer.hpp>
 #include <string>
 #include <ctf.hpp>
+#include <util/DryTensor.hpp>
 
 namespace cc4s {
   /**
@@ -48,6 +49,8 @@ namespace cc4s {
 
     void singlesAmplitudesFromResiduum(CTF::Tensor<> &Rai);
 
+    void drySinglesAmplitudesFromResiduum(cc4s::DryTensor<> &Rai);
+
     /**
      * \brief Calculates and returns one slice Xxycd of the Coulomb integrals
      * coupled to the singles amplitudes.
@@ -57,6 +60,11 @@ namespace cc4s {
      * result tensor. 
      */
     CTF::Tensor<> *sliceCoupledCoulombIntegrals(int a, int b, int sliceRank);
+
+    /**
+     * \brief Dry run for sliceCoupledCoulombIntegrals. 
+     */
+    cc4s::DryTensor<> *drySliceCoupledCoulombIntegrals(int sliceRank);
   };
 }
 

@@ -2,6 +2,7 @@
 #ifndef DATA_DEFINED
 #define DATA_DEFINED
 
+#include <util/Log.hpp>
 #include <math/Complex.hpp>
 #include <string>
 #include <map>
@@ -70,7 +71,9 @@ namespace cc4s {
         if (mentionedData->getStage() == MENTIONED) {
           delete mentionedData;
         } else {
-          throw new Exception("Trying to overwrite existing data");
+          LOG(0,"DATA") << "WARNING (hear your master's voice): overwriting existing data " << name_ << std::endl;
+          delete mentionedData;
+	  //          throw new Exception("Trying to overwrite existing data");
         }
       }
       dataMap[name_] = this;
@@ -168,6 +171,9 @@ namespace cc4s {
     ):
       NumericData(name_, "tensor of " + TypeTraits<F>::getName()), value(value_)
     {
+    }
+    virtual ~TensorData() {
+      if (value) delete value;
     }
     T *value;
   };

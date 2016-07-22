@@ -27,10 +27,11 @@ CoulombIntegralsFromVertex [
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
 ].
 
-% Compute the DcdEnergy from the integrals using slicing
-DcdEnergyFromSlicedIntegrals [
+% Compute the DcsdEnergy from the integrals using slicing
+DcsdEnergyFromSlicedIntegrals [
   % For slicing use the composed vertex
   % rather than from the original one, for comparability
   (CoulombVertex ComposedCoulombVertex)
@@ -38,25 +39,28 @@ DcdEnergyFromSlicedIntegrals [
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
   (maxIterations 16)
   % Uncomment next line to set the slice rank of PPPPCoulombIntegrals. Default is No.
 % (sliceRank 40)
 ] [
-  (DcdEnergy DcdEnergy) 
-  (DcdDoublesAmplitudes DcdDoublesAmplitudes)
+  (DcsdEnergy DcsdEnergy) 
+  (DcsdSinglesAmplitudes DcsdSinglesAmplitudes)
+  (DcsdDoublesAmplitudes DcsdDoublesAmplitudes)
 ].
 
-TensorWriter [(Data DcdEnergy)] [].
+TensorWriter [(Data DcsdEnergy)] [].
 
-% Compute the DcdEnergy from the Coulomb factors
-DcdEnergyFromCoulombFactors [
+% Compute the DcsdEnergy from the Coulomb factors
+DcsdEnergyFromCoulombFactors [
   % Coulomb factors are used when necessary for low memory and O(N^5)
   FactorOrbitals CoulombFactors
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
   (maxIterations 16)
@@ -64,8 +68,9 @@ DcdEnergyFromCoulombFactors [
 % (mixer "LinearMixer")
 % (mixingRatio 1.5)
 ] [
-  (DcdEnergy DcdEnergyFactors)
-  (DcdDoublesAmplitudes DcdDoublesAmplitudesFactors)
+  (DcsdEnergy DcsdEnergyFactors)
+  (DcsdSinglesAmplitudes DcsdSinglesAmplitudesFactors)
+  (DcsdDoublesAmplitudes DcsdDoublesAmplitudesFactors)
 ].
 
-TensorWriter [(Data DcdEnergyFactors)] [].
+TensorWriter [(Data DcsdEnergyFactors)] [].
