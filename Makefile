@@ -55,6 +55,7 @@ obj/algorithms/ParticleHoleCoulombVertexDecomposition.o \
 obj/algorithms/GenerateRandomMatrix.o \
 obj/algorithms/GenerateRandomComplexMatrix.o \
 obj/algorithms/GenerateRandomTensor.o \
+obj/algorithms/TensorReader.o \
 obj/algorithms/TensorWriter.o \
 obj/algorithms/TensorContraction.o \
 obj/algorithms/TensorSum.o \

@@ -102,8 +102,7 @@ void TensorWriter::writeText() {
       file << delimiter << A->lens[i];
     }
     file << std::endl;
-    file << "\"" << rowIndexOrder << "\"" << delimiter
-      << "\"" << columnIndexOrder << "\"" << std::endl;
+    file << rowIndexOrder << delimiter << columnIndexOrder << std::endl;
 
     // write the actual data
     int64_t index(0);

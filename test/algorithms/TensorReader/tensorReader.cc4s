@@ -1,0 +1,14 @@
+GenerateRandomMatrix [(m 100) (n 100)] [(Result A)].
+TensorWriter [(Data A) (rowIndexOrder "i") (columnIndexOrder "j")] [].
+
+TensorReader [(file "A.dat")] [(Data B)].
+
+GenerateRandomMatrix [(m 100) (n 100)] [Result].
+TensorSum [
+  A (AFactor  1.0) (AIndex "ij")
+  B (BFactor -1.0) (BIndex "ij")
+] [
+  Result (ResultIndex "ij")
+].
+TensorNorm [(A Result)] [Norm].
+% assert Norm == 0
