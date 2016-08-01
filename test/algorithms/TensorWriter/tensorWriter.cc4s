@@ -1,6 +1,7 @@
 GenerateRandomMatrix [(m 2) (n 3)] [(Result A)].
 GenerateRandomMatrix [(m 3) (n 3)] [(Result B)].
 GenerateRandomMatrix [(m 2) (n 3)] [(Result C)].
+TensorWriter [(Data B) (file "C.bin") (mode "binary")] [].
 TensorContraction [
   A (AIndex "ik")
   B (BIndex "kj")
@@ -13,3 +14,6 @@ TensorNorm [(A C)] [Norm].
 TensorWriter [(Data C) (file "CColumnMajor.dat")] [].
 TensorWriter [(Data C) (rowIndexOrder "i") (columnIndexOrder "j")] [].
 TensorWriter [(Data C) (rowIndexOrder "ji") (file "CRowMajor.dat")] [].
+
+GenerateRandomMatrix [(m 4) (n 4)] [(Result AA)].
+TensorWriter [(Data AA) (file "AA.bin") (mode "binary")] [].
