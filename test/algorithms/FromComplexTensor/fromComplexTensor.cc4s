@@ -1,0 +1,31 @@
+GenerateRandomComplexMatrix [(m 1) (n 1)] [(Result A)].
+FromComplexTensor [A] [RealA (imagA ImagA)].
+
+TensorContraction [
+  (A RealA) (AIndex "ij")
+  (B RealA) (BIndex "ij")
+  (ResultIndex "ij")
+] [
+  (Result RealA)
+].
+
+TensorContraction [
+  (A ImagA) (AIndex "ij")
+  (B ImagA) (BIndex "ij")
+  (ResultIndex "ij")
+] [
+  (Result ImagA)
+].
+
+TensorSum [
+  (A RealA) (AFactor  1.0) (AIndex "ij")
+  (B ImagA) (BFactor  1.0) (BIndex "ij")
+  (ResultIndex "ij")
+] [
+  (Result RealA)
+].
+TensorNorm [(A RealA)] [Norm].
+ComplexTensorNorm [A] [ComplexNorm].
+% assert Norm == ComplexNorm
+
+
