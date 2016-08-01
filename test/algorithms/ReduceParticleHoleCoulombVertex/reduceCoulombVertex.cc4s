@@ -56,7 +56,10 @@ ReduceEnergyMatrix [
   (reduction 0.15)
 ] [
   EnergyMatrixTransform
+  EnergySpectrum
 ].
+
+TensorWriter [(Data EnergySpectrum)] [].
 
 ReduceParticleHoleCoulombVertex [
   ParticleHoleCoulombVertex

@@ -65,6 +65,7 @@ obj/algorithms/ComplexTensorContraction.o \
 obj/algorithms/ComplexTensorSum.o \
 obj/algorithms/ComplexTensorNorm.o \
 obj/algorithms/FromComplexTensor.o \
+obj/algorithms/PartitionTensor.o \
 obj/algorithms/CoulombVertexReader.o \
 obj/algorithms/CoulombIntegralsFromVertex.o \
 obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
