@@ -55,7 +55,7 @@ void TensorReader::readText() {
   int *lens;
   int *syms;
 
-  // open the file and read header on all ranks
+  // open the file and read header on all processes
   std::string dataName(getArgumentData("Data")->getName());
   // by default the file is named after the written data
   std::ifstream file(getTextArgument("file", dataName + ".dat").c_str());
@@ -91,30 +91,42 @@ void TensorReader::readText() {
     ++storedIndex;
   }
 
-  Tensor<> B(order, storedLens, syms, *Cc4s::world, "B");
-  if (B.wrld->rank > 0) indexCount = 0;
-  int64_t *indices(new int64_t[indexCount]);
-  double *values(new double[indexCount]);
+  Tensor<> *B(new Tensor<> (order, storedLens, syms, *Cc4s::world, "B"));
+  int64_t bufferSize(getIntegerArgument("bufferSize", 128l*1024*1024));
+  int64_t localBufferSize(B->wrld->rank == 0 ? bufferSize : 0);
+  int64_t *indices(new int64_t[localBufferSize]);
+  double *values(new double[localBufferSize]);
   // read the values only on root
-  for (int64_t i(0); i < indexCount; ++i) {
-    // FIXME: this algorithm uses a lot of memory: better to read in blocks
-    indices[i] = i;
-    file >> values[i];
+  int64_t index(0);
+  while (index < indexCount) {
+    int64_t elementsCount(std::min(bufferSize, indexCount-index));
+    int64_t localElementsCount(B->wrld->rank == 0 ? elementsCount : 0);
+    for (int64_t i(0); i < localElementsCount; ++i) {
+      indices[i] = index+i;
+      file >> values[i];
+    }
+    // wait until all processes finished reading this buffer
+    MPI_Barrier(Cc4s::world->comm);
+    B->write(localElementsCount, indices, values);
+    index += elementsCount;
   }
-  // wait until all processes finished reading
-  MPI_Barrier(Cc4s::world->comm);
-  B.write(indexCount, indices, values);
-  LOG(1, "TensorReader") << "Last value=" << values[indexCount-1] << std::endl;
   delete[] indices;
   delete[] values;
 
-  Tensor<> *A(new Tensor<>(order, lens, syms, *B.wrld, name.c_str()));
-  char indexOrder[A->order + 1];
-  for (int dim(0); dim < A->order; ++dim) {
+  char indexOrder[order + 1];
+  for (int dim(0); dim < order; ++dim) {
     indexOrder[dim] = 'i' + dim;
   }
-  indexOrder[A->order] = 0;
-  (*A)[indexOrder] = B[(columnIndexOrder + rowIndexOrder).c_str()];
-  allocatedTensorArgument("Data", A);
+  indexOrder[order] = 0;
+  std::string storedIndexOrder(columnIndexOrder + rowIndexOrder);
+  if (std::string(indexOrder) != storedIndexOrder) {
+    Tensor<> *A(new Tensor<>(order, lens, syms, *B->wrld, name.c_str()));
+    (*A)[indexOrder] = (*B)[storedIndexOrder.c_str()];
+    allocatedTensorArgument("Data", A);
+    delete B;
+  } else {
+    B->set_name(name.c_str());
+    allocatedTensorArgument("Data", B);
+  }
 }
 
