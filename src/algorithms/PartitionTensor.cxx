@@ -68,13 +68,14 @@ void PartitionTensor::partitionLastDimension() {
   double *values(new double[stride]);
   std::string prefix(getTextArgument("prefix", A->get_name()));
   for (int i(0); i < A->lens[A->order-1]; ++i) {
-      LOG(1, "PartitionTensor") << "Directrly slicing part " << i << std::endl;
+    LOG(1, "PartitionTensor") << "Directrly slicing part " << i << std::endl;
     std::stringstream sliceName;
     sliceName << prefix << i;
     for (int64_t j(0); j < stride; ++j) {
       indices[j] = offset + j;
     }
     A->read(stride, indices, values);
+    LOG(1, "PartitionTensor") << "Last value=" << values[stride-1] << std::endl;
     for (int64_t j(0); j < stride; ++j) {
       indices[j] = j;
     }

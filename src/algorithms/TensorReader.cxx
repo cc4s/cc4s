@@ -102,6 +102,7 @@ void TensorReader::readText() {
     file >> values[i];
   }
   B.write(indexCount, indices, values);
+  LOG(1, "TensorReader") << "Last value=" << values[indexCount-1] << std::endl;
   delete[] indices;
   delete[] values;
 
