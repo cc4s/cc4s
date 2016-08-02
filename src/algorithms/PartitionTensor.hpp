@@ -13,6 +13,8 @@ namespace cc4s {
     );
     virtual ~PartitionTensor();
     virtual void run();
+  protected:
+    void partitionLastDimension();
   };
 }
 
