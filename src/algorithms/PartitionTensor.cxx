@@ -48,6 +48,8 @@ void PartitionTensor::run() {
       ASlice->slice(sliceStart, sliceLens, 0.0, *A, start, end, 1.0);
       allocatedTensorArgument(sliceName.str(), ASlice);
     }
+    delete[] start; delete[] end;
+    delete[] sliceStart; delete[] sliceLens;
   }
   if (getIntegerArgument("discardSource", 0) == 1) {
     LOG(0, "PartitionTensor") << "Discarding source tensor" << std::endl;
@@ -64,27 +66,32 @@ void PartitionTensor::partitionLastDimension() {
   }
   sliceLens[A->order-1] = 1;
   int64_t offset(0);
-  int64_t *indices(new int64_t[stride]);
-  double *values(new double[stride]);
+  int64_t indexCount(A->wrld->rank == 0 ? stride : 0);
+  int64_t *indices(new int64_t[indexCount]);
+  double *values(new double[indexCount]);
   std::string prefix(getTextArgument("prefix", A->get_name()));
   for (int i(0); i < A->lens[A->order-1]; ++i) {
     LOG(1, "PartitionTensor") << "Directrly slicing part " << i << std::endl;
     std::stringstream sliceName;
     sliceName << prefix << i;
-    for (int64_t j(0); j < stride; ++j) {
+    for (int64_t j(0); j < indexCount; ++j) {
       indices[j] = offset + j;
     }
-    A->read(stride, indices, values);
-    LOG(1, "PartitionTensor") << "Last value=" << values[stride-1] << std::endl;
-    for (int64_t j(0); j < stride; ++j) {
+    A->read(indexCount, indices, values);
+    double lastValue(A->wrld->rank == 0 ? values[indexCount-1] : 0.0);
+    LOG(1, "PartitionTensor") << "Last value=" << lastValue << std::endl;
+    for (int64_t j(0); j < indexCount; ++j) {
       indices[j] = j;
     }
     Tensor<> *ASlice(
       new Tensor<>(A->order, sliceLens, A->sym, *A->wrld, sliceName.str().c_str())
     );
-    ASlice->write(stride, indices, values);
+    ASlice->write(indexCount, indices, values);
     allocatedTensorArgument(sliceName.str(), ASlice);
     offset += stride;
   }
+  delete[] indices;
+  delete[] values;
+  delete[] sliceLens;
 }
 
