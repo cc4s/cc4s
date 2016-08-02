@@ -101,6 +101,8 @@ void TensorReader::readText() {
     indices[i] = i;
     file >> values[i];
   }
+  // wait until all processes finished reading
+  MPI_Barrier(Cc4s::world->comm);
   B.write(indexCount, indices, values);
   LOG(1, "TensorReader") << "Last value=" << values[indexCount-1] << std::endl;
   delete[] indices;
