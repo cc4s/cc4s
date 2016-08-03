@@ -1,8 +1,9 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef SCANNER_DEFINED
 #define SCANNER_DEFINED
 
 #include <util/LineNumberStream.hpp>
+#include <util/Exception.hpp>
 #include <sstream>
 #include <ctf.hpp>
 
@@ -33,7 +34,7 @@ namespace cc4s {
     ): stream(stream_) {
     }
 
-    std::stringstream nextLine(char const delimiter = '\n') {
+    std::string nextLine(char const delimiter = '\n') {
       std::stringstream lineStream;
       bool terminated(false);
       do {
@@ -48,7 +49,7 @@ namespace cc4s {
           break;
         }
       } while (!terminated);
-      return lineStream;
+      return lineStream.str();
     }
 
     double nextReal() {

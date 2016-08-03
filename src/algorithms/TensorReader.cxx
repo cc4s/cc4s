@@ -61,9 +61,9 @@ void TensorReader::readText() {
   std::string dataName(getArgumentData("Data")->getName());
   // by default the file is named after the written data
   std::string fileName(getTextArgument("file", dataName + ".dat").c_str());
-  LineNumberStream stream(new std::ifstream(fileName), fileName);
+  LineNumberStream stream(new std::ifstream(fileName.c_str()), fileName);
   Scanner scanner(&stream);
-  std::string name(scanner.nextLine(' ').str());
+  std::string name(scanner.nextLine(' '));
   std::stringstream lineStream(scanner.nextLine());
   lineStream >> order;
   lens = new int[order];
@@ -74,8 +74,8 @@ void TensorReader::readText() {
     syms[dim] = NS;
     indexCount *= lens[dim];
   }
-  std::string rowIndexOrder(scanner.nextLine(' ').str());
-  std::string columnIndexOrder(scanner.nextLine().str());
+  std::string rowIndexOrder(scanner.nextLine(' '));
+  std::string columnIndexOrder(scanner.nextLine());
 
   int *storedLens(new int[order]);
   int storedIndex(0);
