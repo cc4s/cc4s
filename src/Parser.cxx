@@ -169,6 +169,7 @@ RealData *Parser::parseReal(int64_t const sign, int64_t const integerPart){
     numerator *= 10; denominator *= 10;
     numerator += stream.get() - '0';
   }
+  // TODO: parse scientific notatoin e-1
   return new RealData(sign * (integerPart + double(numerator) / denominator));
 }
 

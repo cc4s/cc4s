@@ -1,9 +1,11 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <algorithms/TensorReader.hpp>
 #include <util/BinaryTensorFormat.hpp>
+#include <util/LineNumberStream.hpp>
+#include <util/Scanner.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
-#include <fstream> 
+#include <fstream>
 #include <ctf.hpp>
 
 using namespace CTF;
@@ -58,13 +60,11 @@ void TensorReader::readText() {
   // open the file and read header on all processes
   std::string dataName(getArgumentData("Data")->getName());
   // by default the file is named after the written data
-  std::ifstream file(getTextArgument("file", dataName + ".dat").c_str());
-  // FIXME: space assumed as delimiter
-  char line[1024];
-  file.getline(line, sizeof(line), ' ');
-  std::string name(line);
-  file.getline(line, sizeof(line));
-  std::stringstream lineStream(line);
+  std::string fileName(getTextArgument("file", dataName + ".dat").c_str());
+  LineNumberStream stream(new std::ifstream(fileName), fileName);
+  Scanner scanner(&stream);
+  std::string name(scanner.nextLine(' ').str());
+  std::stringstream lineStream(scanner.nextLine());
   lineStream >> order;
   lens = new int[order];
   syms = new int[order];
@@ -74,10 +74,8 @@ void TensorReader::readText() {
     syms[dim] = NS;
     indexCount *= lens[dim];
   }
-  file.getline(line, sizeof(line), ' ');
-  std::string rowIndexOrder(line);
-  file.getline(line, sizeof(line));
-  std::string columnIndexOrder(line);
+  std::string rowIndexOrder(scanner.nextLine(' ').str());
+  std::string columnIndexOrder(scanner.nextLine().str());
 
   int *storedLens(new int[order]);
   int storedIndex(0);
@@ -98,12 +96,13 @@ void TensorReader::readText() {
   double *values(new double[localBufferSize]);
   // read the values only on root
   int64_t index(0);
+  LOG(1, "TensorReader") << "indexCount=" << indexCount << std::endl;
   while (index < indexCount) {
     int64_t elementsCount(std::min(bufferSize, indexCount-index));
     int64_t localElementsCount(B->wrld->rank == 0 ? elementsCount : 0);
     for (int64_t i(0); i < localElementsCount; ++i) {
       indices[i] = index+i;
-      file >> values[i];
+      values[i] = scanner.nextReal();
     }
     // wait until all processes finished reading this buffer
     MPI_Barrier(Cc4s::world->comm);
