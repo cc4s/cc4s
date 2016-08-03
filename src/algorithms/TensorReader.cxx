@@ -61,7 +61,7 @@ void TensorReader::readText() {
   std::string dataName(getArgumentData("Data")->getName());
   // by default the file is named after the written data
   std::string fileName(getTextArgument("file", dataName + ".dat").c_str());
-  LineNumberStream stream(new std::ifstream(fileName.c_str()), fileName);
+  std::ifstream stream(fileName.c_str());
   Scanner scanner(&stream);
   std::string name(scanner.nextLine(' '));
   std::stringstream lineStream(scanner.nextLine());
