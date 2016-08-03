@@ -106,6 +106,7 @@ void TensorReader::readText() {
     }
     // wait until all processes finished reading this buffer
     MPI_Barrier(Cc4s::world->comm);
+    LOG(1, "TensorReader") << "writing " << elementsCount << " values to tensor..." << std::endl;
     B->write(localElementsCount, indices, values);
     index += elementsCount;
   }
