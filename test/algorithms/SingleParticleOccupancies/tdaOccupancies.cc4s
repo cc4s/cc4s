@@ -16,6 +16,7 @@ DrccdEnergyFromCoulombIntegrals [
   HoleEigenEnergies ParticleEigenEnergies
   (linearized 1)   % TDA is linearized drCCD
   (maxIterations 12)
+  (mixingRatio 0.83)
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
 ].

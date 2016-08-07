@@ -31,7 +31,7 @@ void SingleParticleOccupancies::run() {
   TT[""] = (*Tabij)["abij"] * (*Tabij)["abij"];
 
   // calculate <Psi|Na|Psi>
-  (*Na)["a"] = (*Tabij)["abij"] * (*Tabij)["abij"];
+  (*Na)["a"] = +2.0 * (*Tabij)["abij"] * (*Tabij)["abij"];
   // calculate <Psi|Na|Psi> / <Psi|Psi>
   Bivar_Function<> fDivide(&divide<double>);
   Tensor<> Da(false, *Na);
@@ -39,7 +39,7 @@ void SingleParticleOccupancies::run() {
   Na->contract(1.0, *Na,"a", Da,"a", 0.0,"a", fDivide);
 
   // calculate <Psi|Ni|Psi>
-  (*Ni)["i"] = -1.0 * (*Tabij)["abij"] * (*Tabij)["abij"];
+  (*Ni)["i"] = -2.0 * (*Tabij)["abij"] * (*Tabij)["abij"];
   // calculate <Psi|Na|Psi> / <Psi|Psi>
   Tensor<> Di(false, *Ni);
   Di["i"] = TT[""];
