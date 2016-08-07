@@ -1,0 +1,31 @@
+%% Single particle occupancies in the Tamn-Dancoff approximation
+ParticleHoleCoulombVertexReader [
+  (file "../../resources/ParticleHoleCoulombVertex.bin")
+] [
+  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+  PPHHCoulombIntegrals
+].
+
+DrccdEnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (linearized 1)   % TDA is linearized drCCD
+  (maxIterations 12)
+] [
+  DrccdEnergy DrccdDoublesAmplitudes
+].
+
+SingleParticleOccupancies [
+  (DoublesAmplitudes DrccdDoublesAmplitudes)
+] [
+  HoleOccupancies ParticleOccupancies
+].
+
+TensorWriter [(Data HoleOccupancies)] [].
+TensorWriter [(Data ParticleOccupancies)] [].
+

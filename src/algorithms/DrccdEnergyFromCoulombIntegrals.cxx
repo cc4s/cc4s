@@ -32,34 +32,41 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
   std::transform(abbreviation.begin(), abbreviation.end(), 
 		 abbreviation.begin(), ::toupper);
 
-  LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
+  int linearized(getIntegerArgument("linearized", 0));
+  if (linearized) {
+    LOG(1, abbreviation) << "Solving linearized T2 Amplitude Equations" << std::endl;
+  } else {
+    LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
+  }
 
-    if (i == 0) {
-      // For first iteration compute only the MP2 amplitudes 
-      // Since Tabij = 0, Vabij is the only non-zero term
+  if (i == 0) {
+    // For first iteration compute only the MP2 amplitudes 
+    // Since Tabij = 0, Vabij is the only non-zero term
 
-      // Read Vabij
-      Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+    // Read Vabij
+    Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
-      Rabij["abij"] += (*Vabij)["abij"];
-    } 
-    else {
-      // For the rest iterations compute the DRCCD amplitudes
-
+    Rabij["abij"] += (*Vabij)["abij"];
+  } 
+  else {
+    // For the rest iterations compute the DRCCD amplitudes
+    Rabij["abij"] = (*Vabij)["abij"];
+    Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
+    if (linearized) {
+      Rabij["abij"] += 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
+    } else {
       // Construct intermediates
       Tensor<> Cabij(false, *Vabij);
-
-      Rabij["abij"] = (*Vabij)["abij"];
-      Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
       Cabij["abij"] =  2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
       Rabij["abij"] += Cabij["abij"];
       Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
-
-      // Calculate the amplitdues from the residuum
-      doublesAmplitudesFromResiduum(Rabij);
-      // And append them to the mixer
-      TabijMixer->append(Rabij);
     }
+
+    // Calculate the amplitdues from the residuum
+    doublesAmplitudesFromResiduum(Rabij);
+    // And append them to the mixer
+    TabijMixer->append(Rabij);
+  }
 }
 
 
