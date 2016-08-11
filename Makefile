@@ -87,6 +87,7 @@ obj/algorithms/DcdEnergyFromSlicedIntegrals.o \
 obj/algorithms/CcsdEnergyFromSlicedIntegrals.o \
 obj/algorithms/DcsdEnergyFromSlicedIntegrals.o \
 obj/algorithms/SingleParticleOccupancies.o \
+obj/algorithms/PolarizabilityFromCoulombVertex.o \
 # dependencies
 obj/${TARGET}.o: ${OBJECTS}
 
