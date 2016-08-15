@@ -1,5 +1,3 @@
 *~
-config.mk
-bin/*
-obj/*
+build/*
 docs/*

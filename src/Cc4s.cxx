@@ -129,9 +129,6 @@ void Cc4s::printStatistics(
 
 World *Cc4s::world;
 Options *Cc4s::options;
-Chi *Cc4s::chiReal, *Cc4s::chiImag;
-CoulombIntegrals *Cc4s::V;
-Amplitudes *Cc4s::T;
 
 
 int main(int argumentCount, char **arguments) {

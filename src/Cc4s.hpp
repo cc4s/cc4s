@@ -4,9 +4,6 @@
 
 #include <ctf.hpp>
 #include <Options.hpp>
-#include <Chi.hpp>
-#include <CoulombIntegrals.hpp>
-#include <Amplitudes.hpp>
 
 namespace cc4s {
   class Cc4s {
@@ -19,9 +16,6 @@ namespace cc4s {
     // static properties, accessible from everywhere
     static CTF::World *world;
     static Options *options;
-    static Chi *chiReal, *chiImag;
-    static CoulombIntegrals *V;
-    static Amplitudes *T;
 
   protected:
     void printBanner();

@@ -1,4 +1,0 @@
-CXX=mpicxx
-CXXOPTIONS=-fopenmp
-CXXOPTIMIZE=
-LIBS=-llapack -lblas
