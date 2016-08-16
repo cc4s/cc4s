@@ -17,6 +17,19 @@ To build ctf
 
 where ''mpixxx'' is the employed mpi compiler.
 
+==== Update to newer module versions ====
+
+If any of the submodules are updated by their respective maintainer, you
+incorporate the latest version into cc4s.  Note that this may lead to
+incompatibilities.  Run all tests before you commit the changes.
+
+The modules can be updated by running:
+
+  git submodule foreach git pull origin master
+  # RUN TESTS
+  git commit -m "Updated submodules to latest version"
+  git push origin master
+
 ===== Building =====
   * Setup the ''config.mk'' file for your build environment.
   * ''config.mk.gcc'' and ''config.mk.icc'' contain templates for gcc and icc, respectively.
