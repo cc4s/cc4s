@@ -1,5 +1,22 @@
 ====== Coupled Cluster for Solids ======
 
+===== Module dependencies =====
+
+To initialize the modules just run
+  git submodule init
+  git submodule update
+
+Then compile each module
+
+==== CTF ====
+
+To build ctf
+  cd modules/ctf/
+  ./configure CXX=mpixxx
+  make -j 8
+
+where ''mpixxx'' is the employed mpi compiler.
+
 ===== Building =====
   * Setup the ''config.mk'' file for your build environment.
   * ''config.mk.gcc'' and ''config.mk.icc'' contain templates for gcc and icc, respectively.

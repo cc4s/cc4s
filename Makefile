@@ -5,7 +5,7 @@ VERSION:=$(shell git describe --all --dirty --long)
 DATE:=$(shell git log -1 --format="%cd")
 COMPILER_VERSION:=$(shell ${CXX} --version | head -n 1)
 # location of the Cyclops Tensor Framework library
-CTF=../ctf
+CTF=modules/ctf/
 OPTIMIZE=${CXXOPTIMIZE} -O3
 COPTIONS=${CXXOPTIONS} -std=c++0x -Wall -fmax-errors=3 -g \
 -D_POSIX_C_SOURCE=200112L \

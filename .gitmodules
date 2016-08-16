@@ -1,0 +1,3 @@
+[submodule "modules/ctf"]
+	path = modules/ctf
+	url = https://github.com/solomonik/ctf.git
