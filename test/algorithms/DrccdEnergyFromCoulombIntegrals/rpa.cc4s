@@ -1,33 +1,33 @@
 %% RPA execution plan for smaller systems with Nv * No <= NG %%
-ParticleHoleCoulombVertexReader [
-  (file "../../resources/ParticleHoleCoulombVertex.bin")
-] [
-  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
-].
-
-ParticleHoleCoulombIntegrals [
-  ParticleHoleCoulombVertex
-] [
-  PPHHCoulombIntegrals
-].
-
-%% Uncomment next two algorithms if full CoulombVertex is used %%
-%CoulombVertexReader [
-%  (file "FTODDUMP")
+%ParticleHoleCoulombVertexReader [
+%  (file "../../resources/ParticleHoleCoulombVertex.bin")
 %] [
-%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
 %].
-
-%CoulombIntegralsFromVertex [
-%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%
+%ParticleHoleCoulombIntegrals [
+%  ParticleHoleCoulombVertex
 %] [
 %  PPHHCoulombIntegrals
 %].
 
+% Uncomment next two algorithms if full CoulombVertex is used %%
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
 DrccdEnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
-  (maxIterations 8)
+  (maxIterations 64)
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
 ].
