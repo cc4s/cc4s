@@ -1,9 +1,42 @@
 ====== Coupled Cluster for Solids ======
 
+===== Module dependencies =====
+
+To initialize the modules just run
+  git submodule init
+  git submodule update
+
+Then compile each module
+
+==== CTF ====
+
+To build ctf for a specific configuration ''xxx'' (see below)
+  cd modules/ctf/
+  mkdir build/xxx -p
+  cd build/xxx
+  ../../configure CXX=mpixxx
+  make -j 8
+
+where ''mpixxx'' is the employed mpi compiler.
+
+==== Update to newer module versions ====
+
+If any of the submodules are updated by their respective maintainer, you
+incorporate the latest version into cc4s.  Note that this may lead to
+incompatibilities.  Run all tests before you commit the changes.
+
+The modules can be updated by running:
+
+  git submodule foreach git pull origin master
+  # RUN TESTS
+  git commit -m "Updated submodules to latest version"
+  git push origin master
+
 ===== Building =====
   * Write a ''config.xxx'' file for your build environment ''xxx''.
-  * The configuration files ''config.gcc'' and ''config.icc'' contain predifined retail environments for gcc and icc, respectively, using full optimization and without debugging info.
+  * The configuration files ''config.gxx'' and ''config.icc'' contain predifined retail environments for gxx and icc, respectively, using full optimization and without debugging info.
   * Note that the location of the CTF library may differ from environment to environment.
+  * make sure, ctf is built for your configuration
   * run ''make -j 8 CONFIG=xxx'' to build for the environment ''xxx'', by default for ''icc''. The ''-j'' option issues a parallel make on 8 processes.
   * run ''make install CONFIG=xxx'' to copy the executable to the specified target directory. The default is ''~/bin/xxx/cc4s''.
   * The intermediate build files for each build environment can be found in the directory ''build/xxx/''
