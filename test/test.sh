@@ -51,9 +51,15 @@ do
 
   v|version  )  echo "$__SCRIPT_NAME -- Version $__SCRIPT_VERSION"; exit 0   ;;
 
-  r  )  RUN_COMMAND=${OPTARG} ;;
+  r  )
+    RUN_COMMAND=${OPTARG} 
+    arrow "Using RUN_COMMAND = ${RUN_COMMAND}"
+    ;;
 
-  c  )  TEST_CLASS=${OPTARG} ;;
+  c  )
+    TEST_CLASS=${OPTARG}
+    arrow "Using TEST_CLASS = ${TEST_CLASS}"
+    ;;
 
   * )  echo -e "\n  Option does not exist : $OPTARG\n"
       usage_head; exit 1   ;;
