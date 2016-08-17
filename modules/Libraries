@@ -1,0 +1,14 @@
+# libraries needed by cc4s
+LIBRARIES=build/${CONFIG}/ctf/lib/libctf.a
+
+###### ctf ######
+src/ctf/configure:
+	git submodule init
+	git submodule update
+
+build/${CONFIG}/ctf/Makefile: src/ctf/configure
+	mkdir -p build/${CONFIG}/ctf
+	cd build/${CONFIG}/ctf && ../../../src/ctf/configure ${CTF_CONFIG}
+
+build/${CONFIG}/ctf/lib/libctf.a: build/${CONFIG}/ctf/Makefile
+	$(MAKE) -C build/${CONFIG}/ctf

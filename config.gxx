@@ -11,7 +11,7 @@ OPTIONS=-fopenmp -std=c++0x -Wall -fmax-errors=3
 OPTIMIZE=-O3
 
 # location of the Cyclops Tensor Framework library depends on the configuration
-CTF=modules/ctf/build/${CONFIG}
+CTF=modules/build/${CONFIG}/ctf
 
 # additional include directories for header files
 INCLUDE=-I${CTF}/include
