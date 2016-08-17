@@ -1,46 +1,47 @@
 ====== Coupled Cluster for Solids ======
 
 ===== Module dependencies =====
-
-To initialize the modules just run
-  git submodule init
-  git submodule update
-
-Then compile each module
-
-==== CTF ====
-
-To build ctf for a specific configuration ''xxx'' (see below)
-  cd modules/ctf/
-  mkdir build/xxx -p
-  cd build/xxx
-  ../../configure CXX=mpixxx
-  make -j 8
-
-where ''mpixxx'' is the employed mpi compiler.
-
-==== Update to newer module versions ====
-
-If any of the submodules are updated by their respective maintainer, you
-incorporate the latest version into cc4s.  Note that this may lead to
-incompatibilities.  Run all tests before you commit the changes.
-
-The modules can be updated by running:
-
-  git submodule foreach git pull origin master
-  # RUN TESTS
-  git commit -m "Updated submodules to latest version"
-  git push origin master
+  * go to the modules subdirectory and execute:
+  make [CONFIG=<config>] [Options]
+  * this should automatically fetch the submodules' source from the respective maintainers, configure the modules for the given configuration (See below) and build the modules for that configuration.
+  * by default the configuration ''icc'' is used.
 
 ===== Building =====
-  * Write a ''config.xxx'' file for your build environment ''xxx''.
-  * The configuration files ''config.gxx'' and ''config.icc'' contain predifined retail environments for gxx and icc, respectively, using full optimization and without debugging info.
-  * Note that the location of the CTF library may differ from environment to environment.
+  * write or edit a ''config.<config>'' file for your build environment.
+  * the configuration files ''config.gxx'' and ''config.icc'' contain predifined retail environments for ''gxx'' and ''icc'', respectively, using full optimization and without debugging info.
   * make sure, ctf is built for your configuration
-  * run ''make -j 8 CONFIG=xxx'' to build for the environment ''xxx'', by default for ''icc''. The ''-j'' option issues a parallel make on 8 processes.
-  * run ''make install CONFIG=xxx'' to copy the executable to the specified target directory. The default is ''~/bin/xxx/cc4s''.
-  * The intermediate build files for each build environment can be found in the directory ''build/xxx/''
+  * run ''make -j 8 [CONFIG=<config]>'' to build for the desired environment, by default for ''icc''. The ''-j'' option issues a parallel make on 8 processes.
+  * run ''make install [CONFIG=<config>]'' to copy the executable to the specified target directory. The default is ''~/bin/cc4s/<config>''.
+  * the intermediate build files for each build environment can be found in the directory ''build/<config>/''
 
 ===== Running =====
-  * operation file, e.g. ''mp2.cc4s'', can be run with ''~/bin/cc4s/Cc4s -file mp2.cc4s -logLevel 2''.
+  * a ''cc4s'' operation file, e.g. ''mp2.cc4s'', can be run with ''~/bin/cc4s/icc/Cc4s -file mp2.cc4s''.
+
+===== Testing =====
+  * run the test suite in the test directory:
+  ./test.sh [-c <config>] [-t <type>] [...]
+  * this issues all tests of the given type for local build binary of the given build environment.
+  * by default the ''essential'' tests are conducted for the ''icc'' build binary.
+  * note that installed executables are not tested unless you explicitly specify their location, e.g. by:
+  ./test.sh -x ~/bin/cc4s/gxx/Cc4s
+
+
+===== Update to newer module versions =====
+
+If any of the submodules are updated by their respective maintainer, you
+can incorporate the latest version into cc4s. Note that this
+may lead to incompatabilities and it must therefore be done with good care.
+  * if you intent to update the master, create a branch from the master. In case anything goes wrong the damage is controlled
+  * update the modules at the top level of the cc4s directory structure:
+  git submodule foreach git pull origin master
+  * build the updated modules for all configurations supported as described above.
+  * build ''cc4s'' for all configurations supported
+  * run the ''cc4s'' ''essental'' tests for all configurations supported
+  * fix all bugs that emerged from advancing to the new version in ''cc4s'' or let them be fixed in the modules.
+
+If all tests pass, ''cc4s'' may be advanced to the new modules' versions  by
+  git commit -m "Updated submodules to latest version"
+  * if you want to advance the master branch, merge your branch into it.
+
+Note that you may commit changes to the your branch even if things do not work. However, each commit will be visible in the history.
 
