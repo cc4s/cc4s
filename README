@@ -18,12 +18,46 @@
   * a ''cc4s'' operation file, e.g. ''mp2.cc4s'', can be run with ''~/bin/cc4s/icc/Cc4s -file mp2.cc4s''.
 
 ===== Testing =====
+
+==== Running tests ====
+
   * run the test suite in the test directory:
-  ./test.sh [-c <config>] [-t <type>] [...]
+    ./test.sh [-c <config>] [-t <type>] [...]
+    You can run
+    ./test.sh -h
+    to see all the available options.
   * this issues all tests of the given type for local build binary of the given build environment.
   * by default the ''essential'' tests are conducted for the ''icc'' build binary.
   * note that installed executables are not tested unless you explicitly specify their location, e.g. by:
   ./test.sh -x ~/bin/cc4s/gxx/Cc4s
+
+==== Writing tests ====
+
+  * To write a test you need to write a bash script with the name "doTest.sh"
+    in a suitable location. There is no restriction in the location as long
+    it is in the folder "test".
+  * To define different groups of tests a CLASS attribute is provided.
+    All tests are by default in the class "all", and all important tests should
+    be in the class "essential". The class of the test is defined by writing
+    in the header of the test file the line:
+    # @CLASS=essential,example_class1,....
+  * To every test script global variables are made available by the test suite
+    script "test.sh". These are "RUN_COMMAN" and "CC4S_PATH".  RUN_COMMAND is
+    meant to be either empty or a form of mpi runner (e.g. mpirun).  CC4S_PATH
+    is the path of the cc4s executable. You can run the test
+    calculation by writing for example in the test script:
+    ${RUN_COMMAND} ${CC4S_PATH} -file test.cc4s
+  * The main task of the test script is to set a variable upon termination to communicate
+    if the test was succesful or not. This varible is TEST_RESULT. A value of 0 means
+    that the test was succesful. Otherwise the test suite will consider the
+    test as failed.    You can write other programs or scripts in order to
+    decide if the test was successful or not, but the result must be
+    communicated by setting these variables in the doTest.sh script.
+  * In order to print debug information during the implementation of the test,
+    you can write to stderr since stdout is being overriden by the test suite
+    runner. You can do this like so
+    echo "Debug message" >&2
+
 
 
 ===== Update to newer module versions =====
