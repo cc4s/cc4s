@@ -61,7 +61,7 @@ do
     arrow "Using CONFIG = ${CONFIG}"
     ;;
 
-  c  )
+  x  )
     CC4S_PATH=${OPTARG}
     arrow "Using CC4S_PATH = ${CC4S_PATH}"
     ;;
