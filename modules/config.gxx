@@ -1,1 +1,1 @@
-CTF_CONFIG='CXX=mpigxx'
+CTF_CONFIG='CXX=mpicxx'
