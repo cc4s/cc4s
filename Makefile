@@ -7,9 +7,11 @@ include Objects
 
 # goals:
 .DEFAULT_GOAL := all
+# define IS_CLEANING when clean triggered
+clean: IS_CLEANING=TRUE
 clean:
-	rm -rf build/${CONFIG}/bin/*
-	rm -rf build/${CONFIG}/obj/*
+	rm -rf build/$(CONFIG)/bin/
+	rm -rf build/${CONFIG}/obj/
 
 # primary target
 all: build/${CONFIG}/bin/${TARGET}
@@ -50,10 +52,12 @@ build/${CONFIG}/obj/%.d: src/%.cxx
 # keep dependency files
 .PRECIOUS: build/${CONFIG}/obj/%.o ${OBJECTS}
 
-# include created dependencies
--include ${OBJECTS:.o=.d}
--include build/${CONFIG}/obj/${TARGET}.d
-
+ifneq ($(IS_CLEANING),TRUE)
+	# include created dependencies
+	# if the makefile is compiling
+	-include ${OBJECTS:.o=.d}
+	-include build/${CONFIG}/obj/${TARGET}.d
+endif
 
 # compile a object file
 build/${CONFIG}/obj/%.o: build/${CONFIG}/obj/%.d
