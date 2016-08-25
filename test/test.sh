@@ -5,20 +5,52 @@ function success()  { echo -e " \033[1;32m==>\033[0m  $@"; }
 function error()    { echo -e " \033[1;31mX\033[0m  $@"; }
 function arrow()    { echo -e " \033[1;34m==>\033[0m  $@"; }
 
-TEST_NAME=doTest.sh
-GLOBALS_FILE=globals.conf
+declare -r TEST_OUT_FILE=test.out
+declare -r TEST_NAME=doTest.sh
+declare -r MAIN_TEST_FOLDER=$(dirname $(readlink -f $0))
+declare -r GLOBALS_FILE=${MAIN_TEST_FOLDER}/globals.conf
+declare -r CLASS_MAGIC_WORD="@CLASS"
+declare -r ALL_CLASS=all
 
 #DEFAULT VALUES
 RUN_COMMAND=mpirun
-TEST_CLASS=essential
+TEST_CLASS=${ALL_CLASS}
 CONFIG=icc
 CC4S_PATH=
 
+declare -r __SCRIPT_VERSION="0.2"
+declare -r __SCRIPT_NAME=$( basename $0 )
+declare -r __DESCRIPTION="Test suite for cc4s"
+declare -r __OPTIONS=":hvt:r:c:x:l"
 
-__SCRIPT_VERSION="0.1"
-__SCRIPT_NAME=$( basename $0 )
-__DESCRIPTION="Test suite for cc4s"
-__OPTIONS=":hvt:r:c:x:"
+function check_class() {
+  local testScript=$1
+  for className in $(get_classes ${testScript} | tr "," "\n"); do
+    if [[ ${className} = ${TEST_CLASS} ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+function get_classes() {
+  local testScript=$1
+  echo ${ALL_CLASS},$(grep "${CLASS_MAGIC_WORD}" ${testScript} | sed "s/.*${CLASS_MAGIC_WORD}=//")
+}
+
+function list_tests() {
+local testScript
+local testClasses
+local testDescription
+for testScript in $(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}); do
+  header ${testScript#$MAIN_TEST_FOLDER}
+  testClasses=$(get_classes ${testScript})
+  testDescription=$(grep "TEST_DESCRIPTION" ${testScript} | sed "s/.*TEST_DESCRIPTION=//" | tr -d "\"")
+  [[ -n ${testDescription} ]] && arrow "Description: ${testDescription}" || error "Description: No description available..."
+  arrow "Classes:  ${testClasses}"
+done
+}
+
 
 function usage_head() { echo "Usage :  $__SCRIPT_NAME [-h|-help] [-v|-version] [-c CLASS_NAME] [-r RUN_COMMAND]"; }
 function usage ()
@@ -29,19 +61,32 @@ $(usage_head)
     $__DESCRIPTION
 
     Options:
-    -h|help       Display this message
-    -v|version    Display script version
-    -r            Run command
-                  (e.g. "mpirun", "mpiexec.hydra -bootstrap ll" ...)
-                  Default: ${RUN_COMMAND}
-    -t            Test class (e.g. all essential extended)
-                  Default: ${TEST_CLASS}
-    -c            Compiled configuration for the cc4s binary
-                  Default: ${CONFIG}
-    -x            Path to cc4s executable, this overrides -c flag
+      -h|help       Display this message
+      -v|version    Display script version
+      -l            List available test scripts
+      -r            Run command
+                    (e.g. "mpirun", "mpiexec.hydra -bootstrap ll" ...)
+                    Default: ${RUN_COMMAND}
+      -t            Test class (e.g. all essential extended)
+                    Default: ${TEST_CLASS}
+      -c            Compiled configuration for the cc4s binary
+                    Default: ${CONFIG}
+      -x            Path to cc4s executable, this overrides -c flag
+
+    Examples:
+
+      List test scripts:
+        ./${__SCRIPT_NAME} -l
+
+      Run tests with class "silicon" using gxx configuration
+        ./${__SCRIPT_NAME} -t silicon -c gxx
+
+      Run essential tests with some custom cc4s path
+        ./${__SCRIPT_NAME} -t essential -x /path/to/cc4s
 
 EOF
 }    # ----------  end of function usage  ----------
+#vim-run: bash % -h -c gxx -t essential
 
 while getopts $__OPTIONS opt
 do
@@ -51,25 +96,15 @@ do
 
   v|version  )  echo "$__SCRIPT_NAME -- Version $__SCRIPT_VERSION"; exit 0   ;;
 
-  r  )
-    RUN_COMMAND=${OPTARG} 
-    arrow "Using RUN_COMMAND = ${RUN_COMMAND}"
-    ;;
+  l  )  list_tests; exit 0   ;;
 
-  c  )
-    CONFIG=${OPTARG}
-    arrow "Using CONFIG = ${CONFIG}"
-    ;;
+  r  ) RUN_COMMAND=${OPTARG} ;;
 
-  x  )
-    CC4S_PATH=${OPTARG}
-    arrow "Using CC4S_PATH = ${CC4S_PATH}"
-    ;;
+  c  ) CONFIG=${OPTARG} ;;
 
-  t  )
-    TEST_CLASS=${OPTARG}
-    arrow "Using TEST_CLASS = ${TEST_CLASS}"
-    ;;
+  x  ) CC4S_PATH=${OPTARG} ;;
+
+  t  ) TEST_CLASS=${OPTARG} ;;
 
   * )  echo -e "\n  Option does not exist : $OPTARG\n"
       usage_head; exit 1   ;;
@@ -80,9 +115,17 @@ shift $(($OPTIND-1))
 
 # Check if cc4s path was overriden
 if [[ -z ${CC4S_PATH} ]] ; then
-  CC4S_PATH=$(readlink -f "../build/${CONFIG}/bin/Cc4s")
-  arrow "Using CC4S_PATH = ${CC4S_PATH}"
+  CC4S_PATH=$(readlink -f "${MAIN_TEST_FOLDER}/../build/${CONFIG}/bin/Cc4s")
 fi
+
+#Title
+header "${__DESCRIPTION} version ${__SCRIPT_VERSION}"
+# Print out all relevant configuration
+arrow "CONFIG      = ${CONFIG}"
+arrow "CC4S_PATH   = ${CC4S_PATH}"
+arrow "TEST_CLASS  = ${TEST_CLASS}"
+arrow "RUN_COMMAND = ${RUN_COMMAND}"
+
 
 # Check for cc4s executable
 if [[ ! -x ${CC4S_PATH} ]] ; then
@@ -90,31 +133,26 @@ if [[ ! -x ${CC4S_PATH} ]] ; then
   exit 1
 fi
 
-#if the class is all, then all test cases should
-#match
-if [[ ${TEST_CLASS} = "all" ]]; then
-  TEST_CLASS="@CLASS"
-fi
 
 arrow "Sourcing ${GLOBALS_FILE} file"
 source ${GLOBALS_FILE}
 
-MAIN_TEST_FOLDER=$(pwd)
-TEST_OUT_FILE=test.out
 FAILED_TEST_COUNT=0
 TEST_COUNT=0
 
-for TEST_SCRIPT in $(find . -name ${TEST_NAME}); do
-  if grep "@CLASS" ${TEST_SCRIPT} | grep ${TEST_CLASS} &> /dev/null; then
+for TEST_SCRIPT in $(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}); do
+  if check_class ${TEST_SCRIPT}; then
     let TEST_COUNT+=1
   else
     continue
   fi
   TEST_RESULT=1
-  header "Testing ${TEST_SCRIPT} ... "
+  TEST_DESCRIPTION=
+  header "Testing ${TEST_SCRIPT#${MAIN_TEST_FOLDER}} ... "
   TEST_FOLDER=$(dirname ${TEST_SCRIPT})
   cd ${TEST_FOLDER}
   source ${TEST_NAME} > ${TEST_OUT_FILE}
+  arrow "${TEST_DESCRIPTION}"
   if [[ ${TEST_RESULT} = 0 ]]; then
     success "Sucess"
   else
