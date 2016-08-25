@@ -41,6 +41,10 @@
     be in the class "essential". The class of the test is defined by writing
     in the header of the test file the line:
     # @CLASS=essential,example_class1,....
+  * A convention to follow is that the essential corresponds to the test file
+    in the main parent directory of every test case. Subdirectories can
+    allways be created containing also test files, which should typically
+    marked as non-essential.
   * To every test script global variables are made available by the test suite
     script "test.sh". These are "RUN_COMMAN" and "CC4S_PATH".  RUN_COMMAND is
     meant to be either empty or a form of mpi runner (e.g. mpirun).  CC4S_PATH

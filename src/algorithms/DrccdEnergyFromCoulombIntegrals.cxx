@@ -43,9 +43,6 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
     // For first iteration compute only the MP2 amplitudes 
     // Since Tabij = 0, Vabij is the only non-zero term
 
-    // Read Vabij
-    Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-
     Rabij["abij"] += (*Vabij)["abij"];
   } 
   else {
@@ -61,12 +58,12 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
       Rabij["abij"] += Cabij["abij"];
       Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
     }
-
-    // Calculate the amplitdues from the residuum
-    doublesAmplitudesFromResiduum(Rabij);
-    // And append them to the mixer
-    TabijMixer->append(Rabij);
   }
+
+  // Calculate the amplitdues from the residuum
+  doublesAmplitudesFromResiduum(Rabij);
+  // And append them to the mixer
+  TabijMixer->append(Rabij);
 }
 
 

@@ -1,5 +1,5 @@
 CoulombVertexReader [
-  (file "../../resources/CoulombVertex.bin")
+  (file "../../../resources/CoulombVertexH2.bin")
 ] [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
@@ -20,9 +20,9 @@ CcdEnergyFromCoulombIntegrals [
   HHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
-  (maxIterations 64)
+  (maxIterations 16)
 ] [
-  (CcdEnergy CcdEnergy) 
+  (CcdEnergy CcdEnergy)
   (CcdDoublesAmplitudes CcdDoublesAmplitudes)
 ].
 
