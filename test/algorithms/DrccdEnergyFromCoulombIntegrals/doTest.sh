@@ -1,5 +1,6 @@
 # Here the class of this test case is defined
 # @CLASS=essential,ccd
+TEST_DESCRIPTION="It should check if energy is within tolerance"
 
 
 # RUN_COMMAND and CC4S_PATH path are globally

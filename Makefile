@@ -16,6 +16,10 @@ clean:
 # primary target
 all: build/${CONFIG}/bin/${TARGET}
 
+.PHONY: test
+test:
+	bash test/test.sh -c $(CONFIG)
+
 # generate documentation
 doc:
 	doxygen
