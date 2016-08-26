@@ -7,11 +7,12 @@
 %  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
 %].
 
-ParticleHoleCoulombIntegrals [
-  ParticleHoleCoulombVertex
-] [
-  PPHHCoulombIntegrals
-].
+%ParticleHoleCoulombIntegrals [
+%  ParticleHoleCoulombVertex
+%] [
+%  PPHHCoulombIntegrals
+%].
+%
 
 % Uncomment next two algorithms if full CoulombVertex is used %%
 CoulombVertexReader [
