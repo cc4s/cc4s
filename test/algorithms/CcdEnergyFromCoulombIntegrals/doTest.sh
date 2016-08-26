@@ -23,3 +23,4 @@ python -c "print(0 if (abs(${ENERGY} - ${COMPARE_ENERGY})<${TOLERANCE}) else 1)"
 
 
 
+

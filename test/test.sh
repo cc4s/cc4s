@@ -5,6 +5,7 @@ function success()  { echo -e " \033[1;32m==>\033[0m  $@"; }
 function error()    { echo -e " \033[1;31mX\033[0m  $@"; }
 function arrow()    { echo -e " \033[1;34m==>\033[0m  $@"; }
 
+# READONLY PARAMETERS
 declare -r TEST_OUT_FILE=test.out
 declare -r TEST_NAME=doTest.sh
 declare -r MAIN_TEST_FOLDER=$(dirname $(readlink -f $0))
@@ -12,14 +13,15 @@ declare -r GLOBALS_FILE=${MAIN_TEST_FOLDER}/globals.conf
 declare -r CLASS_MAGIC_WORD="@CLASS"
 declare -r ALL_CLASS=all
 
-#DEFAULT VALUES
+# DEFAULT FLAG VALUES
 RUN_COMMAND=mpirun
 TEST_CLASS=essential
 CONFIG=icc
 CC4S_PATH=
 TEST_DEBUG=
 
-declare -r __SCRIPT_VERSION="0.2"
+# SCRIPT PARAMETERS
+declare -r __SCRIPT_VERSION="0.3"
 declare -r __SCRIPT_NAME=$( basename $0 )
 declare -r __DESCRIPTION="Test suite for cc4s"
 declare -r __OPTIONS=":hvt:r:c:x:ld"
@@ -39,6 +41,11 @@ function get_classes() {
   echo ${ALL_CLASS},$(grep "${CLASS_MAGIC_WORD}" ${testScript} | sed "s/.*${CLASS_MAGIC_WORD}=//")
 }
 
+function get_description() {
+  local testScript=$1
+  grep "TEST_DESCRIPTION" ${testScript} | sed "s/.*TEST_DESCRIPTION=//" | tr -d "\""
+}
+
 function list_tests() {
 local testScript
 local testClasses
@@ -46,14 +53,39 @@ local testDescription
 for testScript in $(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}); do
   header ${testScript#$MAIN_TEST_FOLDER}
   testClasses=$(get_classes ${testScript})
-  testDescription=$(grep "TEST_DESCRIPTION" ${testScript} | sed "s/.*TEST_DESCRIPTION=//" | tr -d "\"")
+  testDescription=$(get_description ${testScript})
   [[ -n ${testDescription} ]] && arrow "Description: ${testDescription}" || error "Description: No description available..."
   arrow "Classes:  ${testClasses}"
 done
 }
 
+function run_testScript() {
+  local testScript
+  local testFolder
+  testScript=$1
+  if check_class ${testScript}; then
+    let TEST_COUNT+=1
+  else
+    continue
+  fi
+  TEST_RESULT=1
+  TEST_DESCRIPTION=$(get_description ${testScript})
+  header "Testing ${testScript#${MAIN_TEST_FOLDER}} ... "
+  arrow "${TEST_DESCRIPTION}"
+  testFolder=$(dirname ${testScript})
+  cd ${testFolder}
+  source ${TEST_NAME} > ${TEST_OUT_FILE}
+  if [[ ${TEST_RESULT} = 0 ]]; then
+    success "Sucess"
+  else
+    error "Test FAILED"
+    let FAILED_TEST_COUNT=+1
+  fi
+  cd ${MAIN_TEST_FOLDER}
+}
 
-function usage_head() { echo "Usage :  $__SCRIPT_NAME [-h|-help] [-v|-version] [-c CLASS_NAME] [-r RUN_COMMAND] ..."; }
+
+function usage_head() { echo "Usage :  $__SCRIPT_NAME [-h|-help] [-v|-version] [-c CLASS_NAME] [-r RUN_COMMAND] ... <test files>"; }
 function usage ()
 {
 cat <<EOF
@@ -86,6 +118,9 @@ $(usage_head)
       Run essential tests with some custom cc4s path
         ./${__SCRIPT_NAME} -t essential -x /path/to/cc4s
 
+      Run test files given by path using icc configuration
+        ./${__SCRIPT_NAME} -c icc path/to/custom/testScript.sh path/to/other/doTest.sh
+
 EOF
 }    # ----------  end of function usage  ----------
 
@@ -116,6 +151,14 @@ do
 done
 shift $(($OPTIND-1))
 
+# Check if some input was given after flag parsing
+# if so, consider them to be the scripts to be run
+if [[ -n $@ ]]; then
+  ALL_SCRIPTS=($@)
+else
+  ALL_SCRIPTS=($(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}))
+fi
+
 # Check if cc4s path was overriden
 if [[ -z ${CC4S_PATH} ]] ; then
   CC4S_PATH=$(readlink -f "${MAIN_TEST_FOLDER}/../build/${CONFIG}/bin/Cc4s")
@@ -142,27 +185,8 @@ source ${GLOBALS_FILE}
 
 FAILED_TEST_COUNT=0
 TEST_COUNT=0
-
-for TEST_SCRIPT in $(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}); do
-  if check_class ${TEST_SCRIPT}; then
-    let TEST_COUNT+=1
-  else
-    continue
-  fi
-  TEST_RESULT=1
-  TEST_DESCRIPTION=
-  header "Testing ${TEST_SCRIPT#${MAIN_TEST_FOLDER}} ... "
-  TEST_FOLDER=$(dirname ${TEST_SCRIPT})
-  cd ${TEST_FOLDER}
-  source ${TEST_NAME} > ${TEST_OUT_FILE}
-  arrow "${TEST_DESCRIPTION}"
-  if [[ ${TEST_RESULT} = 0 ]]; then
-    success "Sucess"
-  else
-    error "Test FAILED"
-    let FAILED_TEST_COUNT=+1
-  fi
-  cd ${MAIN_TEST_FOLDER}
+for TEST_SCRIPT in ${ALL_SCRIPTS[@]}; do
+  run_testScript ${TEST_SCRIPT}
 done
 
 header "${TEST_COUNT} tests DONE for class '${TEST_CLASS}'"
@@ -179,6 +203,5 @@ if [[ ${FAILED_TEST_COUNT} != 0 && ${TEST_CLASS} == "essential" ]]; then
 
 EOF
 fi
-
 
 
