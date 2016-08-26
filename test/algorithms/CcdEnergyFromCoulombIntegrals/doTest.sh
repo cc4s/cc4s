@@ -22,10 +22,4 @@ TEST_RESULT=$(
 python -c "print(0 if (abs(${ENERGY} - ${COMPARE_ENERGY})<${TOLERANCE}) else 1)"
 )
 
-<<<<<<< HEAD
 echoDebug Energy from Integrals: $ENERGY
-=======
-
-
-
->>>>>>> 86d6016f66cd9ac083686ab61d2de06f99369654
