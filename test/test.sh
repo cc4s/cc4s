@@ -66,7 +66,7 @@ function run_testScript() {
   if check_class ${testScript}; then
     let TEST_COUNT+=1
   else
-    continue
+    return 0
   fi
   TEST_RESULT=1
   TEST_DESCRIPTION=$(get_description ${testScript})
@@ -80,7 +80,7 @@ function run_testScript() {
   else
     error "Test FAILED"
     FAILED_TEST_LIST[${FAILED_TEST_COUNT}]=${testScript}
-    let FAILED_TEST_COUNT=+1
+    let FAILED_TEST_COUNT+=1
   fi
   cd ${MAIN_TEST_FOLDER}
 }
