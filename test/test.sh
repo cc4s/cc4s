@@ -14,7 +14,7 @@ declare -r ALL_CLASS=all
 
 #DEFAULT VALUES
 RUN_COMMAND=mpirun
-TEST_CLASS=${ALL_CLASS}
+TEST_CLASS=essential
 CONFIG=icc
 CC4S_PATH=
 
