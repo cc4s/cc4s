@@ -51,7 +51,7 @@ local testScript
 local testClasses
 local testDescription
 for testScript in $(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}); do
-  header ${testScript#$MAIN_TEST_FOLDER}
+  header ${testScript#$MAIN_TEST_FOLDER/}
   testClasses=$(get_classes ${testScript})
   testDescription=$(get_description ${testScript})
   [[ -n ${testDescription} ]] && arrow "Description: ${testDescription}" || error "Description: No description available..."
@@ -70,7 +70,7 @@ function run_testScript() {
   fi
   TEST_RESULT=1
   TEST_DESCRIPTION=$(get_description ${testScript})
-  header "Testing ${testScript#${MAIN_TEST_FOLDER}} ... "
+  header "Testing ${testScript#${MAIN_TEST_FOLDER}/} ... "
   arrow "${TEST_DESCRIPTION}"
   testFolder=$(dirname ${testScript})
   cd ${testFolder}
@@ -79,6 +79,7 @@ function run_testScript() {
     success "Sucess"
   else
     error "Test FAILED"
+    FAILED_TEST_LIST[${FAILED_TEST_COUNT}]=${testScript}
     let FAILED_TEST_COUNT=+1
   fi
   cd ${MAIN_TEST_FOLDER}
@@ -184,6 +185,7 @@ arrow "Sourcing ${GLOBALS_FILE} file"
 source ${GLOBALS_FILE}
 
 FAILED_TEST_COUNT=0
+FAILED_TEST_LIST=()
 TEST_COUNT=0
 for TEST_SCRIPT in ${ALL_SCRIPTS[@]}; do
   run_testScript ${TEST_SCRIPT}
@@ -191,6 +193,16 @@ done
 
 header "${TEST_COUNT} tests DONE for class '${TEST_CLASS}'"
 header "${FAILED_TEST_COUNT} tests FAILED for class '${TEST_CLASS}'"
+
+#Print out the tests that failed, if any
+if [[ ! ${#FAILED_TEST_LIST} = 0 ]]; then
+  error "Tests failed:"
+  for TEST_SCRIPT in ${FAILED_TEST_LIST[@]} ; do
+    echo -e "\t${TEST_SCRIPT}"
+  done
+else
+  success "All tests passed!"
+fi
 
 if [[ ${FAILED_TEST_COUNT} != 0 && ${TEST_CLASS} == "essential" ]]; then
   cat <<EOF
