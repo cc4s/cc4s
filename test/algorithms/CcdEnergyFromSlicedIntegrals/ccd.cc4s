@@ -18,14 +18,11 @@ CcdEnergyFromSlicedIntegrals [
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
-  % Sets maximum iterations. Default is 16.
-  (maxIterations 16)
-  % Uncomment next line to set the slice rank of PPPPIntegrals. Default is No.
-% (sliceRank 40)
+  (maxIterations 64)
+  (sliceRank 13)
 ] [
   (CcdEnergy CcdEnergy) 
   (CcdDoublesAmplitudes CcdDoublesAmplitudes)
 ].
-
 
 TensorWriter [(Data CcdEnergy)] [].

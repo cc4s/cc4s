@@ -1,6 +1,6 @@
 # Here the class of this test case is defined
-# @CLASS=essential,ccd
-TEST_DESCRIPTION="It should check if energy is within tolerance"
+# @CLASS=essential,ccd,rpa
+TEST_DESCRIPTION="DRCCD (RPA+SOSEX) energy from Integrals: check if the energy is within tolerance"
 
 
 # RUN_COMMAND and CC4S_PATH path are globally
@@ -22,5 +22,4 @@ TEST_RESULT=$(
 python -c "print(0 if (abs(${ENERGY} - ${COMPARE_ENERGY})<${TOLERANCE}) else 1)"
 )
 
-
-
+echoDebug Energy from Integrals: $ENERGY

@@ -1,15 +1,15 @@
 # Here the class of this test case is defined
-# @CLASS=essential,ccd
-TEST_DESCRIPTION="CCD energy from Integrals: check if the energy is within tolerance"
+# @CLASS=essential,ccd,dcd
+TEST_DESCRIPTION="DCD energy from Integrals: check if the energy is within tolerance"
 
 
 # RUN_COMMAND and CC4S_PATH path are globally
 # defined in the main test.sh script
-${RUN_COMMAND} ${CC4S_PATH} -file ccd.cc4s
+${RUN_COMMAND} ${CC4S_PATH} -file dcd.cc4s
 
 
-ENERGY=$(readScalar CcdEnergy.dat)
-COMPARE_ENERGY=$COULOMBVERTEX_CCD
+ENERGY=$(readScalar DcdEnergy.dat)
+COMPARE_ENERGY=$COULOMBVERTEX_DCD
 TOLERANCE=1e-11
 
 #echo ${ENERGY} >&2
