@@ -17,11 +17,12 @@ RUN_COMMAND=mpirun
 TEST_CLASS=${ALL_CLASS}
 CONFIG=icc
 CC4S_PATH=
+TEST_DEBUG=
 
 declare -r __SCRIPT_VERSION="0.2"
 declare -r __SCRIPT_NAME=$( basename $0 )
 declare -r __DESCRIPTION="Test suite for cc4s"
-declare -r __OPTIONS=":hvt:r:c:x:l"
+declare -r __OPTIONS=":hvt:r:c:x:ld"
 
 function check_class() {
   local testScript=$1
@@ -52,7 +53,7 @@ done
 }
 
 
-function usage_head() { echo "Usage :  $__SCRIPT_NAME [-h|-help] [-v|-version] [-c CLASS_NAME] [-r RUN_COMMAND]"; }
+function usage_head() { echo "Usage :  $__SCRIPT_NAME [-h|-help] [-v|-version] [-c CLASS_NAME] [-r RUN_COMMAND] ..."; }
 function usage ()
 {
 cat <<EOF
@@ -64,6 +65,7 @@ $(usage_head)
       -h|help       Display this message
       -v|version    Display script version
       -l            List available test scripts
+      -d            Enable debug messages
       -r            Run command
                     (e.g. "mpirun", "mpiexec.hydra -bootstrap ll" ...)
                     Default: ${RUN_COMMAND}
@@ -86,7 +88,6 @@ $(usage_head)
 
 EOF
 }    # ----------  end of function usage  ----------
-#vim-run: bash % -h -c gxx -t essential
 
 while getopts $__OPTIONS opt
 do
@@ -99,6 +100,8 @@ do
   l  )  list_tests; exit 0   ;;
 
   r  ) RUN_COMMAND=${OPTARG} ;;
+
+  d  ) TEST_DEBUG=TRUE ;;
 
   c  ) CONFIG=${OPTARG} ;;
 
@@ -169,7 +172,9 @@ if [[ ${FAILED_TEST_COUNT} != 0 && ${TEST_CLASS} == "essential" ]]; then
   cat <<EOF
 
 ############################################
+#                                          #
 #  DO NOT COMMIT TO MASTER BRANCH, PLEASE  #
+#                                          #
 ############################################
 
 EOF
