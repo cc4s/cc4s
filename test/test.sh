@@ -21,7 +21,7 @@ CC4S_PATH=
 TEST_DEBUG=
 
 # SCRIPT PARAMETERS
-declare -r __SCRIPT_VERSION="0.4"
+declare -r __SCRIPT_VERSION="0.5"
 declare -r __SCRIPT_NAME=$( basename $0 )
 declare -r __DESCRIPTION="Test suite for cc4s"
 declare -r __OPTIONS=":hvt:r:c:x:ld"
@@ -43,7 +43,16 @@ function get_classes() {
 
 function get_description() {
   local testScript=$1
-  grep "TEST_DESCRIPTION" ${testScript} | sed "s/.*TEST_DESCRIPTION=//" | tr -d "\""
+  grep "TEST_DESCRIPTION=" ${testScript} | sed "s/.*TEST_DESCRIPTION=//" | tr -d "\""
+}
+
+function print_long_description() {
+  local testScript=$1
+  if grep LONG_TEST_DESCRIPTION ${testScript} 1>&2 > /dev/null; then
+    echo ""
+    sed -n "/cat.*LONG_TEST_DESCRIPTION/,/^LONG_TEST_DESCRIPTION/ { /LONG_TEST_DESCRIPTION/!p } " ${testScript}
+    echo ""
+  fi
 }
 
 function filter_scripts() {
@@ -66,9 +75,11 @@ for testScript in ${ALL_SCRIPTS[@]} ; do
   testClasses=$(get_classes ${testScript})
   testDescription=$(get_description ${testScript})
   [[ -n ${testDescription} ]] && arrow "Description: ${testDescription}" || error "Description: No description available..."
+  print_long_description ${testScript}
   arrow "Classes:  ${testClasses}"
 done
 }
+#vim-run: bash % -l -t all
 
 function run_testScript() {
   local testScript
@@ -78,6 +89,7 @@ function run_testScript() {
   TEST_DESCRIPTION=$(get_description ${testScript})
   header "Testing ${testScript#${MAIN_TEST_FOLDER}/} ... "
   arrow "${TEST_DESCRIPTION}"
+  print_long_description ${testScript}
   testFolder=$(dirname ${testScript})
   cd ${testFolder}
   source ${TEST_NAME} > ${TEST_OUT_FILE}

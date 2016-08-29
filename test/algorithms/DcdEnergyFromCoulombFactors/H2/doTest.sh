@@ -1,7 +1,18 @@
  # Here the class of this test case is defined
 # @CLASS=H2,ccd,dcd,trd
-TEST_DESCRIPTION="Testing system: H2 \n      10x10x10 Angstrom supercell \n      Ecut=300eV, EcutGW=150eV \n      AVTZ: NG=2070 No=1 Nv=46 \n      G-vector reduction: Ng=0.5*NG=1035 \n      TRD: NR=2*Ng=2070 \n      DCD correlation energy from reducted G-vector and decomposed Coulomb vertex: check if the energy is within tolerance"
 
+TEST_DESCRIPTION="Testing system: H2"
+
+cat <<LONG_TEST_DESCRIPTION
+      10x10x10 Angstrom supercell 
+      Ecut=300eV EcutGW=150eV 
+      AVTZ: NG=2070 No=1 Nv=46 
+      G-vector reduction: Ng=0.5*NG=1035 
+      TRD: NR=2*Ng=2070 
+
+      DCD correlation energy from reducted G-vector and decomposed Coulomb
+      vertex: check if the energy is within tolerance
+LONG_TEST_DESCRIPTION
 
 # RUN_COMMAND and CC4S_PATH path are globally
 # defined in the main test.sh script
