@@ -40,10 +40,12 @@ else:
 EOF
 )
 
-echoDebug Energy from Integrals: $ENERGY
-echoDebug Energy from sliced Integrals: $ENERGYSLICE
-echoDebug Energy from Integrals: Reduced G-vector: $ENERGYREDUCE
-echoDebug Energy from sliced Integrals: Reduced G-vector: $ENERGYSLICEREDUCE
-echoDebug Energy from Integrals: Reduced G-vector - TRD: $ENERGYREDUCETRD
-echoDebug Energy from sliced Integrals: Reduced G-vector - TRD: $ENERGYSLICEREDUCETRD
-echoDebug Energy from Coulomb Factors: Reduced G-vector - TRD: $ENERGYFACTORSREDUCETRD
+echoDebug <<EOF
+Energy from Integrals: $ENERGY
+Energy from sliced Integrals: $ENERGYSLICE
+Energy from Integrals: Reduced G-vector: $ENERGYREDUCE
+Energy from sliced Integrals: Reduced G-vector: $ENERGYSLICEREDUCE
+Energy from Integrals: Reduced G-vector - TRD: $ENERGYREDUCETRD
+Energy from sliced Integrals: Reduced G-vector - TRD: $ENERGYSLICEREDUCETRD
+Energy from Coulomb Factors: Reduced G-vector - TRD: $ENERGYFACTORSREDUCETRD
+EOF
