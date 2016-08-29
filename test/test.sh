@@ -21,7 +21,7 @@ CC4S_PATH=
 TEST_DEBUG=
 
 # SCRIPT PARAMETERS
-declare -r __SCRIPT_VERSION="0.3"
+declare -r __SCRIPT_VERSION="0.4"
 declare -r __SCRIPT_NAME=$( basename $0 )
 declare -r __DESCRIPTION="Test suite for cc4s"
 declare -r __OPTIONS=":hvt:r:c:x:ld"
@@ -46,11 +46,22 @@ function get_description() {
   grep "TEST_DESCRIPTION" ${testScript} | sed "s/.*TEST_DESCRIPTION=//" | tr -d "\""
 }
 
+function filter_scripts() {
+  local filteredScripts=()
+  local testScript
+  for testScript in ${ALL_SCRIPTS[@]} ; do
+    if check_class ${testScript}; then
+      filteredScripts=(${filteredScripts[@]} ${testScript})
+    fi
+  done
+  ALL_SCRIPTS=(${filteredScripts[@]})
+}
+
 function list_tests() {
 local testScript
 local testClasses
 local testDescription
-for testScript in $(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}); do
+for testScript in ${ALL_SCRIPTS[@]} ; do
   header ${testScript#$MAIN_TEST_FOLDER/}
   testClasses=$(get_classes ${testScript})
   testDescription=$(get_description ${testScript})
@@ -63,11 +74,6 @@ function run_testScript() {
   local testScript
   local testFolder
   testScript=$1
-  if check_class ${testScript}; then
-    let TEST_COUNT+=1
-  else
-    return 0
-  fi
   TEST_RESULT=1
   TEST_DESCRIPTION=$(get_description ${testScript})
   header "Testing ${testScript#${MAIN_TEST_FOLDER}/} ... "
@@ -97,7 +103,7 @@ $(usage_head)
     Options:
       -h|help       Display this message
       -v|version    Display script version
-      -l            List available test scripts
+      -l            List available test scripts for a given test class.
       -d            Enable debug messages
       -r            Run command
                     (e.g. "mpirun", "mpiexec.hydra -bootstrap ll" ...)
@@ -110,7 +116,10 @@ $(usage_head)
 
     Examples:
 
-      List test scripts:
+      List all tests:
+        ./${__SCRIPT_NAME} -l -t all
+
+      List default tests (${TEST_CLASS}):
         ./${__SCRIPT_NAME} -l
 
       Run tests with class "silicon" using gxx configuration
@@ -133,7 +142,7 @@ do
 
   v|version  )  echo "$__SCRIPT_NAME -- Version $__SCRIPT_VERSION"; exit 0   ;;
 
-  l  )  list_tests; exit 0   ;;
+  l  ) LIST_TESTS=TRUE  ;;
 
   r  ) RUN_COMMAND=${OPTARG} ;;
 
@@ -158,6 +167,16 @@ if [[ -n $@ ]]; then
   ALL_SCRIPTS=($@)
 else
   ALL_SCRIPTS=($(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}))
+fi
+
+# Filter scripts by classes
+filter_scripts
+
+# list scripts
+if [[ ${LIST_TESTS} = TRUE ]]; then
+  header "${#ALL_SCRIPTS[@]} tests with class ${TEST_CLASS}"
+  list_tests
+  exit 0
 fi
 
 # Check if cc4s path was overriden
@@ -186,16 +205,15 @@ source ${GLOBALS_FILE}
 
 FAILED_TEST_COUNT=0
 FAILED_TEST_LIST=()
-TEST_COUNT=0
 for TEST_SCRIPT in ${ALL_SCRIPTS[@]}; do
   run_testScript ${TEST_SCRIPT}
 done
 
-header "${TEST_COUNT} tests DONE for class '${TEST_CLASS}'"
+header "${#ALL_SCRIPTS[@]} tests DONE for class '${TEST_CLASS}'"
 header "${FAILED_TEST_COUNT} tests FAILED for class '${TEST_CLASS}'"
 
 #Print out the tests that failed, if any
-if [[ ! ${#FAILED_TEST_LIST} = 0 ]]; then
+if [[ ! ${#FAILED_TEST_LIST[@]} = 0 ]]; then
   error "Tests failed:"
   for TEST_SCRIPT in ${FAILED_TEST_LIST[@]} ; do
     echo -e "\t${TEST_SCRIPT}"
