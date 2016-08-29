@@ -13,6 +13,12 @@ declare -r GLOBALS_FILE=${MAIN_TEST_FOLDER}/globals.conf
 declare -r CLASS_MAGIC_WORD="@CLASS"
 declare -r ALL_CLASS=all
 
+# GLOBAL VARIABLES
+TEST_RESULT=1
+FAILED_TEST_COUNT=0
+FAILED_TEST_LIST=()
+ALL_SCRIPTS=()
+
 # DEFAULT FLAG VALUES
 RUN_COMMAND=mpirun
 TEST_CLASS=essential
@@ -67,30 +73,30 @@ function filter_scripts() {
 }
 
 function list_tests() {
-local testScript
-local testClasses
-local testDescription
-for testScript in ${ALL_SCRIPTS[@]} ; do
-  header ${testScript#$MAIN_TEST_FOLDER/}
-  testClasses=$(get_classes ${testScript})
-  testDescription=$(get_description ${testScript})
-  [[ -n ${testDescription} ]] && arrow "Description: ${testDescription}" || error "Description: No description available..."
-  print_long_description ${testScript}
-  arrow "Classes:  ${testClasses}"
-done
+  local testScript
+  local testClasses
+  local testDescription
+  for testScript in ${ALL_SCRIPTS[@]} ; do
+    header ${testScript#$MAIN_TEST_FOLDER/}
+    testClasses=$(get_classes ${testScript})
+    testDescription=$(get_description ${testScript})
+    [[ -n ${testDescription} ]] && arrow "Description: ${testDescription}" || error "Description: No description available..."
+    print_long_description ${testScript}
+    arrow "Classes:  ${testClasses}"
+  done
 }
-#vim-run: bash % -l -t all
 
 function run_testScript() {
   local testScript
   local testFolder
+  local testDescription
   testScript=$1
-  TEST_RESULT=1
-  TEST_DESCRIPTION=$(get_description ${testScript})
-  header "Testing ${testScript#${MAIN_TEST_FOLDER}/} ... "
-  arrow "${TEST_DESCRIPTION}"
-  print_long_description ${testScript}
   testFolder=$(dirname ${testScript})
+  testDescription=$(get_description ${testScript})
+  TEST_RESULT=1
+  header "Testing ${testScript#${MAIN_TEST_FOLDER}/} ... "
+  arrow "${testDescription}"
+  print_long_description ${testScript}
   cd ${testFolder}
   source ${TEST_NAME} > ${TEST_OUT_FILE}
   if [[ ${TEST_RESULT} = 0 ]]; then
@@ -179,10 +185,9 @@ if [[ -n $@ ]]; then
   ALL_SCRIPTS=($@)
 else
   ALL_SCRIPTS=($(find ${MAIN_TEST_FOLDER} -name ${TEST_NAME}))
+  # Filter scripts by classes
+  filter_scripts
 fi
-
-# Filter scripts by classes
-filter_scripts
 
 # list scripts
 if [[ ${LIST_TESTS} = TRUE ]]; then
@@ -211,12 +216,10 @@ if [[ ! -x ${CC4S_PATH} ]] ; then
   exit 1
 fi
 
-
 arrow "Sourcing ${GLOBALS_FILE} file"
 source ${GLOBALS_FILE}
 
-FAILED_TEST_COUNT=0
-FAILED_TEST_LIST=()
+# run the tests
 for TEST_SCRIPT in ${ALL_SCRIPTS[@]}; do
   run_testScript ${TEST_SCRIPT}
 done
