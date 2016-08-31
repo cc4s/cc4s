@@ -16,6 +16,7 @@ CoulombIntegralsFromVertex [
 ].
 
 DcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
   PPPPCoulombIntegrals
   PPPHCoulombIntegrals
   PHPHCoulombIntegrals
@@ -24,7 +25,7 @@ DcsdEnergyFromCoulombIntegrals [
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
-  (maxIterations 16)
+  (maxIterations 64)
 ] [
   (DcsdEnergy DcsdEnergy) 
   (DcsdSinglesAmplitudes DcsdSinglesAmplitudes)

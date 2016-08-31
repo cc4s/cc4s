@@ -1,30 +1,31 @@
 %% MP2 execution plan %%
-ParticleHoleCoulombVertexReader [
-  (file "../../resources/ParticleHoleCoulombVertex.bin")
-] [
-  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
-].
 
-ParticleHoleCoulombIntegrals [
-  ParticleHoleCoulombVertex
-] [
-  PPHHCoulombIntegrals
-].
-
-%% Uncomment next two algorithms if full CoulombVertex is used %%
-%CoulombVertexReader [
-%  (file "FTODDUMP")
+% Uncomment next two algorithms if the ParticleHoleCoulombVertex is used %%
+%ParticleHoleCoulombVertexReader [
+%  (file "../../resources/ParticleHoleCoulombVertex.bin")
 %] [
-%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-%  % Uncomment next line to set the read rank. Default value is No.
-%% (readRank 40)
+%  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
 %].
 
-%CoulombIntegralsFromVertex [
-%  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%ParticleHoleCoulombIntegrals [
+%  ParticleHoleCoulombVertex
 %] [
 %  PPHHCoulombIntegrals
 %].
+%
+
+% Uncomment next two algorithms if full CoulombVertex is used %%
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
 
 Mp2EnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies

@@ -71,7 +71,7 @@ namespace cc4s {
         if (mentionedData->getStage() == MENTIONED) {
           delete mentionedData;
         } else {
-          LOG(0,"DATA") << "WARNING (hear your master's voice): overwriting existing data " << name_ << std::endl;
+          LOG(1,"Data") << "overwriting existing data: " << name_ << std::endl;
           delete mentionedData;
 	  //          throw new Exception("Trying to overwrite existing data");
         }

@@ -56,12 +56,12 @@ void PolarizabilityFromCoulombVertex::run() {
 }
 
 void PolarizabilityFromCoulombVertex::dryRun() {
-  DryTensor<> *epsa(
-    getTensorArgument<double, DryTensor<>>("ParticleEigenEnergies")
-  );
-  DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<>>("HoleEigenEnergies")
-  );
+  //  DryTensor<> *epsa(
+  getTensorArgument<double, DryTensor<>>("ParticleEigenEnergies");
+  //  );
+  //  DryTensor<> *epsi(
+  getTensorArgument<double, DryTensor<>>("HoleEigenEnergies");
+  //  );
  
   DryTensor<complex> *GammaGai(
     getTensorArgument<complex, DryTensor<complex>>("ParticleHoleCoulombVertex")

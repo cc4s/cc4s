@@ -1,11 +1,11 @@
 # Here the class of this test case is defined
 # @CLASS=essential,ccd,rpa
-TEST_DESCRIPTION="DRCCD (RPA+SOSEX) energy from Integrals: check if the energy is within tolerance"
+TEST_DESCRIPTION="DRCCD (RPA+SOSEX) energy from Coulomb vertex: check if the energy is within tolerance"
 
 
 # RUN_COMMAND and CC4S_PATH path are globally
 # defined in the main test.sh script
-${RUN_COMMAND} ${CC4S_PATH} -file rpa.cc4s
+${RUN_COMMAND} ${CC4S_PATH} -file rpaFromVertex.cc4s
 
 
 ENERGY=$(readScalar DrccdEnergy.dat)

@@ -20,7 +20,7 @@ CcdEnergyFromCoulombIntegrals [
   HHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
-  (maxIterations 16)
+  (maxIterations 64)
 ] [
   (CcdEnergy CcdEnergy) 
   (CcdDoublesAmplitudes CcdDoublesAmplitudes)

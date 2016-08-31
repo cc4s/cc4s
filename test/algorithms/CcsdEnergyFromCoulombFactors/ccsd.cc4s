@@ -7,7 +7,7 @@ CoulombVertexReader [
 CoulombVertexDecomposition [
   CoulombVertex
   % Set the rank of the decomposed tensor and the number of iterations.
-  (rank 66) (maxIterations 20)
+  (rank 66) (maxIterations 32)
   % the LinearMixer is used by default
   (mixer "LinearMixer")
   (mixingRatio 0.8)
@@ -24,11 +24,32 @@ CoulombIntegralsFromVertex [
 % CoulombVertex
   HoleEigenEnergies ParticleEigenEnergies
 ] [
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
 ].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  % Sets maximum iterations. Default is 16.
+  (maxIterations 64)
+] [
+  (CcsdEnergy CcsdEnergy) 
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
+].
+
+TensorWriter [(Data CcsdEnergy)] [].
 
 % Compute the CcsdEnergy from the integrals using slicing
 CcsdEnergyFromSlicedIntegrals [
@@ -42,20 +63,21 @@ CcsdEnergyFromSlicedIntegrals [
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
-  (maxIterations 16)
+  (maxIterations 64)
   % Uncomment next line to set the slice rank of PPPPCoulombIntegrals. Default is No.
-% (sliceRank 40)
+  (sliceRank 13)
 ] [
-  (CcsdEnergy CcsdEnergy) 
+  (CcsdEnergy CcsdEnergySlice) 
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
   (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
 ].
 
-TensorWriter [(Data CcsdEnergy)] [].
+TensorWriter [(Data CcsdEnergySlice)] [].
 
 % Compute the CcsdEnergy from the Coulomb factors
 CcsdEnergyFromCoulombFactors [
-  % Coulomb factors are used when necessary for low memory and O(N^5)
+  % Coulomb vertex and factors are used when necessary for low memory and O(N^5)
+  (CoulombVertex ComposedCoulombVertex)
   FactorOrbitals CoulombFactors
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
@@ -63,7 +85,7 @@ CcsdEnergyFromCoulombFactors [
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   % Sets maximum iterations. Default is 16.
-  (maxIterations 16)
+  (maxIterations 64)
   % the LinearMixer is used by default
 % (mixer "LinearMixer")
 % (mixingRatio 1.5)
