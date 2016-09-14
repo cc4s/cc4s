@@ -27,6 +27,7 @@ extern "C" {
 };
 
 void ReduceEnergyMatrix::run() {
+  preconditionEnergyMatrix();
   readEnergyMatrix();
   diagonalizeEnergyMatrix();
   truncateUnitaryTransform();
@@ -48,8 +49,18 @@ void ReduceEnergyMatrix::dryRun() {
 }
 
 
-void ReduceEnergyMatrix::readEnergyMatrix() {
+void ReduceEnergyMatrix::preconditionEnergyMatrix() {
   EGH = getTensorArgument<complex>("EnergyMatrix");
+  // evaluate trace
+  Scalar<complex> e(*EGH->wrld);
+  e[""] = (*EGH)["GG"];
+  // shift by -Tr{E} to ensure that every eigenvalue is positive and away from 0
+  (*EGH)["GG"] -= e[""];
+  // remember shift to reconstruct the spectrum
+  shift = std::real(e.get_val());
+}
+
+void ReduceEnergyMatrix::readEnergyMatrix() {
   nG = EGH->lens[0];
 
   // read all elements on root
@@ -112,6 +123,7 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
 
     double energy(0.0);
     for (int i(0); i < nG; ++i) {
+      eigenValues[i] += shift;
       energy += eigenValues[i];
     }
     LOG(1, "GREDUCE") << "sum of eigenvalues=" << energy << std::endl;
