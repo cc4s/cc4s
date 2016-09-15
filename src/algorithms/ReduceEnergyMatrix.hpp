@@ -29,6 +29,7 @@ namespace cc4s {
     static double constexpr DEFAULT_REDUCTION = 0.5;
 
   protected:
+    void preconditionEnergyMatrix();
     void readEnergyMatrix();
     void diagonalizeEnergyMatrix();
     void truncateUnitaryTransform();
@@ -41,6 +42,7 @@ namespace cc4s {
     int64_t *indices;
     complex *elements;
     double *eigenValues;
+    double shift;
 
     int ng;
     complex *transformElements;
