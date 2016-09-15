@@ -27,7 +27,8 @@ extern "C" {
 };
 
 void ReduceEnergyMatrix::run() {
-  preconditionEnergyMatrix();
+  shift = 0.0;
+//  preconditionEnergyMatrix();
   readEnergyMatrix();
   diagonalizeEnergyMatrix();
   truncateUnitaryTransform();
@@ -54,7 +55,7 @@ void ReduceEnergyMatrix::preconditionEnergyMatrix() {
   // evaluate trace
   Scalar<complex> e(*EGH->wrld);
   e[""] = (*EGH)["GG"];
-  // shift by -Tr{E} to ensure that every eigenvalue is positive and away from 0
+  // shift by -Tr{E} to ensure that each eigenvalue is positive and away from 0
   (*EGH)["GG"] -= e[""];
   // remember shift to reconstruct the spectrum
   shift = std::real(e.get_val());
