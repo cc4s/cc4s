@@ -40,9 +40,17 @@ void ReduceEnergyMatrix::dryRun() {
     getTensorArgument<complex, DryTensor<complex>>("EnergyMatrix")
   );
   nG = EGH->lens[0];
-  double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
-  ng = reduction * nG;
-  DryMatrix<complex> *UGg(new DryMatrix<complex>(nG, ng, NS));
+
+
+  // calculate number of fieldVariables
+  int64_t fieldVariables(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES));
+  // if fieldVariables not given use reduction
+  if (fieldVariables == -1) {
+    double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
+    fieldVariables = nG * reduction;
+  }
+
+  DryMatrix<complex> *UGg(new DryMatrix<complex>(nG, fieldVariables, NS));
   allocatedTensorArgument<complex, DryTensor<complex>>(
     "EnergyMatrixTransform", UGg
   );
@@ -131,8 +139,18 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
     int bottom(0), top(nG-1), column(0);
     // approximated energy by truncation
     double e(0);
-    double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
-    while (bottom < top && ng < nG * reduction) {
+
+    // calculate number of fieldVariables
+    int64_t fieldVariables(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES));
+    // if fieldVariables not given use reduction
+    if (fieldVariables == -1) {
+      double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
+      fieldVariables = nG * reduction;
+    }
+
+    //    while (bottom < top && ng < nG * reduction) {
+
+    while (bottom < top && ng < fieldVariables) {
       if (std::abs(eigenValues[bottom]) > std::abs(eigenValues[top])) {
         // bottom value is larger in magnitude, take bottom
         column = bottom++;
