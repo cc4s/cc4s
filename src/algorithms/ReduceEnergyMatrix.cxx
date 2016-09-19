@@ -27,6 +27,7 @@ extern "C" {
 };
 
 void ReduceEnergyMatrix::run() {
+  EGH = getTensorArgument<complex>("EnergyMatrix");
   shift = 0.0;
 //  preconditionEnergyMatrix();
   readEnergyMatrix();
@@ -59,7 +60,6 @@ void ReduceEnergyMatrix::dryRun() {
 
 
 void ReduceEnergyMatrix::preconditionEnergyMatrix() {
-  EGH = getTensorArgument<complex>("EnergyMatrix");
   // evaluate trace
   Scalar<complex> e(*EGH->wrld);
   e[""] = (*EGH)["GG"];
