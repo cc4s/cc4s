@@ -6,6 +6,7 @@
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
+#include <cmath>
 
 using namespace CTF;
 using namespace cc4s;
@@ -20,6 +21,20 @@ Mp2EnergyMatrixFromCoulombIntegrals::Mp2EnergyMatrixFromCoulombIntegrals(
 Mp2EnergyMatrixFromCoulombIntegrals::~Mp2EnergyMatrixFromCoulombIntegrals() {
 }
 
+/*
+class raise {
+public:
+  raise(double expon_): expon(expon_) {
+  }
+  double operator()(double element) {
+    //    return std::pow(element,expon);
+    return 0;
+  }
+protected:
+  double expon;
+};
+*/
+
 void Mp2EnergyMatrixFromCoulombIntegrals::run() {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
@@ -29,14 +44,21 @@ void Mp2EnergyMatrixFromCoulombIntegrals::run() {
   Tabij["abij"] *= 2.0;
   Tabij["abij"] -= (*Vabij)["abji"];
 
-  Tensor<> Dabij(false, Vabij);
-  Dabij["abij"] =  (*epsi)["i"];
-  Dabij["abij"] += (*epsi)["j"];
-  Dabij["abij"] -= (*epsa)["a"];
-  Dabij["abij"] -= (*epsa)["b"];
+  Tensor<> Dabij(false, *Vabij);
+  Dabij["abij"] -= (*epsi)["i"];
+  Dabij["abij"] -= (*epsi)["j"];
+  Dabij["abij"] += (*epsa)["a"];
+  Dabij["abij"] += (*epsa)["b"];
 
+  //  double exponent(getRealArgument("exponent" , 1.0));
+    
+  //  Univar_Function<> raiseTensor(raise(exponent));
+  //  Univar_Function<> raiseTensor(&sqrt<double>);
+  //  Tensor<> raiseDabij(false, Dabij);
+  //  raiseDabij.sum(1.0, Dabij, "abij", 0.0, "abij", &raiseTensor);
+    
   Bivar_Function<> fDivide(&divide<double>);
-  Tabij.contract(1.0, Tabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+  Tabij.contract(-1.0, Tabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
 
   // TODO: use complex conversion routines
   Tensor<> imagTabij(false, Tabij);
