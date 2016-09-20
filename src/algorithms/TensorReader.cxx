@@ -1,8 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <algorithms/TensorReader.hpp>
-#include <util/BinaryTensorFormat.hpp>
-#include <util/LineNumberStream.hpp>
-#include <util/Scanner.hpp>
+#include <util/TensorIo.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
 #include <fstream>
@@ -22,143 +20,24 @@ TensorReader::~TensorReader() {
 }
 
 void TensorReader::run() {
-  std::string mode(getTextArgument("mode", "text"));
+  std::string dataName(getArgumentData("Data")->getName());
 
   // make sure all processes start reading the file at the same time in case
   // it has been modified before
   MPI_Barrier(Cc4s::world->comm);
 
-  if (mode == "binary") readBinary();
-  else readText();
-}
-
-void TensorReader::readBinary() {
-  std::string dataName(getArgumentData("Data")->getName());
-  // by default the file is named after the written data
-  std::string fileName(getTextArgument("file", dataName + ".bin"));
-
-  // open the file
-  MPI_File file;
-  int mpiError(
-    MPI_File_open(
-      Cc4s::world->comm, fileName.c_str(), MPI_MODE_RDONLY,
-      MPI_INFO_NULL, &file
-    )
-  );
-  if (mpiError) throw new Exception("Failed to open file");
-
-  int64_t offset(0);
-  MPI_Status status;
-  // reade header
-  BinaryTensorHeader header;
-  MPI_File_read_at(file, offset, &header, sizeof(header), MPI_BYTE, &status);
-  offset += sizeof(header);
-  if (strncmp(header.magic, header.MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
-  if (header.version > header.VERSION)
-    throw new Exception("Incompatible file format version");
-
-  // read dimension headers
-  int lens[header.order];
-  int syms[header.order];
-  for (int dim(0); dim < header.order; ++dim) {
-    BinaryTensorDimensionHeader dimensionHeader;
-    MPI_File_read_at(
-      file, offset, &dimensionHeader, sizeof(dimensionHeader), MPI_BYTE, &status
-    );
-    offset += sizeof(dimensionHeader);
-    lens[dim] = dimensionHeader.length;
-    syms[dim] = NS;
-  }
-
-  // allocate tensor
-  Tensor<> *A(
-    new Tensor<>(header.order, lens, syms, *Cc4s::world, dataName.c_str())
-  );
-  allocatedTensorArgument<>(dataName, A);
-
-  // read dense data
-  A->read_dense_from_file(file, offset);
-
-  // done
-  MPI_File_close(&file);
-}
-
-void TensorReader::readText() {
-  int order;
-  int *lens;
-  int *syms;
-
-  // open the file and read header on all processes
-  std::string dataName(getArgumentData("Data")->getName());
-  // by default the file is named after the written data
-  std::string fileName(getTextArgument("file", dataName + ".dat").c_str());
-  std::ifstream stream(fileName.c_str());
-  Scanner scanner(&stream);
-  std::string name(scanner.nextLine(' '));
-  std::stringstream lineStream(scanner.nextLine());
-  lineStream >> order;
-  lens = new int[order];
-  syms = new int[order];
-  int64_t indexCount(1);
-  for (int dim(0); dim < order; ++dim) {
-    lineStream >> lens[dim];
-    syms[dim] = NS;
-    indexCount *= lens[dim];
-  }
-  std::string rowIndexOrder(scanner.nextLine(' '));
-  std::string columnIndexOrder(scanner.nextLine());
-
-  int *storedLens(new int[order]);
-  int storedIndex(0);
-  for (unsigned int dim(0); dim < columnIndexOrder.length(); ++dim) {
-    // FIXME: i,j,k ... assumed in indexOrder strings
-    storedLens[storedIndex] = lens[columnIndexOrder[dim] - 'i'];
-    ++storedIndex;
-  }
-  for (unsigned int dim(0); dim < rowIndexOrder.length(); ++dim) {
-    storedLens[storedIndex] = lens[rowIndexOrder[dim] - 'i'];
-    ++storedIndex;
-  }
-
-  Tensor<> *B(new Tensor<> (order, storedLens, syms, *Cc4s::world, "B"));
-  int64_t bufferSize(getIntegerArgument("bufferSize", 128l*1024*1024));
-  int64_t localBufferSize(B->wrld->rank == 0 ? bufferSize : 0);
-  int64_t *indices(new int64_t[localBufferSize]);
-  double *values(new double[localBufferSize]);
-  // read the values only on root
-  int64_t index(0);
-  LOG(1, "TensorReader") << "indexCount=" << indexCount << std::endl;
-  while (index < indexCount) {
-    int64_t elementsCount(std::min(bufferSize, indexCount-index));
-    int64_t localElementsCount(B->wrld->rank == 0 ? elementsCount : 0);
-    for (int64_t i(0); i < localElementsCount; ++i) {
-      indices[i] = index+i;
-      values[i] = scanner.nextReal();
-    }
-    // wait until all processes finished reading this buffer
-    MPI_Barrier(Cc4s::world->comm);
-    LOG(1, "TensorReader") << "writing " << elementsCount << " values to tensor..." << std::endl;
-    B->write(localElementsCount, indices, values);
-    index += elementsCount;
-  }
-  delete[] indices;
-  delete[] values;
-
-  char indexOrder[order + 1];
-  for (int dim(0); dim < order; ++dim) {
-    indexOrder[dim] = 'i' + dim;
-  }
-  indexOrder[order] = 0;
-  std::string storedIndexOrder(columnIndexOrder + rowIndexOrder);
-  if (std::string(indexOrder) != storedIndexOrder) {
-    Tensor<> *A(new Tensor<>(order, lens, syms, *B->wrld, name.c_str()));
-    (*A)[indexOrder] = (*B)[storedIndexOrder.c_str()];
-    allocatedTensorArgument("Data", A);
-    delete B;
+  std::string mode(getTextArgument("mode", "text"));
+  Tensor<> *A;
+  if (mode == "binary") {
+    std::string fileName(getTextArgument("file", dataName + ".bin"));
+    A = TensorIo::readBinary(fileName);
   } else {
-    B->set_name(name.c_str());
-    allocatedTensorArgument("Data", B);
+    std::string fileName(getTextArgument("file", dataName + ".dat").c_str());
+    std::string delimiter(getTextArgument("delimiter", " "));
+    int64_t bufferSize(getIntegerArgument("bufferSize", 128l*1024*1024));
+    A = TensorIo::readText(fileName, delimiter, bufferSize);
   }
+  A->set_name(dataName.c_str());
+  allocatedTensorArgument<>("Data", A);
 }
 

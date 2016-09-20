@@ -2,6 +2,7 @@
 #ifndef SCANNER_DEFINED
 #define SCANNER_DEFINED
 
+#include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <sstream>
 #include <istream>
