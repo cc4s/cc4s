@@ -35,7 +35,7 @@ void VirtualHartreeFockEnergyMatrixFromCoulombVertex::run() {
   allocatedTensorArgument<complex>("EnergyMatrix", energyMatrix);
 
   LOG(1, "EnergyMatrix") << "Computing energy matrix from Coulomb vertex" << GammaGpq->get_name() 
-    << ", with NG=" << NG
+			 << ", with NG=" << GammaGpq->lens[0];
 
   (*energyMatrix)["GH"]  = 2.0 * conjGammaGpq["Gqq"] * (*GammaGpq)["Hrr"];
   (*energyMatrix)["GH"] -= 1.0 * conjGammaGpq["Gqr"] * (*GammaGpq)["Hrq"];
