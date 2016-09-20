@@ -38,11 +38,29 @@ void TensorWriter::writeBinary() {
     A->wrld->comm, fileName.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY,
     MPI_INFO_NULL, &file
   );
-  MPI_File_set_size(file, 0);
+  int64_t offset(0);
+
+  // truncate possibly existing file
+  MPI_File_set_size(file, offset);
+  // write header
   BinaryTensorHeader header(*A);
-  MPI_File_write(file, &header, sizeof(header), MPI_BYTE, &status);
+  MPI_File_write_at(file, offset, &header, sizeof(header), MPI_BYTE, &status);
+  offset += sizeof(header);
   // FIXME: status checking
-  A->write_dense_to_file(file, sizeof(header));
+
+  // write dimension header for each dimension
+  for (int dim(0); dim < A->order; ++dim) {
+    BinaryTensorDimensionHeader dimensionHeader(A->lens[dim], 'a'+dim);
+    MPI_File_write_at(
+      file, offset, &dimensionHeader, sizeof(dimensionHeader), MPI_BYTE, &status
+    );
+    offset += sizeof(dimensionHeader);
+  }
+
+  // write dense data
+  A->write_dense_to_file(file, offset);
+
+  // done
   MPI_File_close(&file);
 }
 

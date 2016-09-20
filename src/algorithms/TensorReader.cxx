@@ -33,22 +33,54 @@ void TensorReader::run() {
 }
 
 void TensorReader::readBinary() {
-  Tensor<> *A(getTensorArgument<>("Data"));
   std::string dataName(getArgumentData("Data")->getName());
   // by default the file is named after the written data
   std::string fileName(getTextArgument("file", dataName + ".bin"));
 
+  // open the file
   MPI_File file;
-  MPI_Status status;
-  MPI_File_open(
-    A->wrld->comm, fileName.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY,
-    MPI_INFO_NULL, &file
+  int mpiError(
+    MPI_File_open(
+      Cc4s::world->comm, fileName.c_str(), MPI_MODE_RDONLY,
+      MPI_INFO_NULL, &file
+    )
   );
-  MPI_File_set_size(file, 0);
-  BinaryTensorHeader header(*A);
-  MPI_File_write(file, &header, sizeof(header), MPI_BYTE, &status);
-  // FIXME: status checking
-  A->write_dense_to_file(file, sizeof(header));
+  if (mpiError) throw new Exception("Failed to open file");
+
+  int64_t offset(0);
+  MPI_Status status;
+  // reade header
+  BinaryTensorHeader header;
+  MPI_File_read_at(file, offset, &header, sizeof(header), MPI_BYTE, &status);
+  offset += sizeof(header);
+  if (strncmp(header.magic, header.MAGIC, sizeof(header.magic)) != 0)
+    throw new Exception("Invalid file format");
+  if (header.version > header.VERSION)
+    throw new Exception("Incompatible file format version");
+
+  // read dimension headers
+  int lens[header.order];
+  int syms[header.order];
+  for (int dim(0); dim < header.order; ++dim) {
+    BinaryTensorDimensionHeader dimensionHeader;
+    MPI_File_read_at(
+      file, offset, &dimensionHeader, sizeof(dimensionHeader), MPI_BYTE, &status
+    );
+    offset += sizeof(dimensionHeader);
+    lens[dim] = dimensionHeader.length;
+    syms[dim] = NS;
+  }
+
+  // allocate tensor
+  Tensor<> *A(
+    new Tensor<>(header.order, lens, syms, *Cc4s::world, dataName.c_str())
+  );
+  allocatedTensorArgument<>(dataName, A);
+
+  // read dense data
+  A->read_dense_from_file(file, offset);
+
+  // done
   MPI_File_close(&file);
 }
 
