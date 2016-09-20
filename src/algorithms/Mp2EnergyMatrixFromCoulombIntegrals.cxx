@@ -51,8 +51,8 @@ void Mp2EnergyMatrixFromCoulombIntegrals::run() {
     
   raise raiseToPower(exponent);
   Univar_Function<> raiseElement(raiseToPower);
-  Tensor<> raiseDabij(false, Dabij);
-  raiseDabij.sum(1.0, Dabij, "abij", 0.0, "abij", raiseElement);
+  //  Tensor<> raiseDabij(false, Dabij);
+  Dabij.sum(1.0, Dabij, "abij", 0.0, "abij", raiseElement);
     
   Bivar_Function<> fDivide(&divide<double>);
   Tabij.contract(-1.0, Tabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
