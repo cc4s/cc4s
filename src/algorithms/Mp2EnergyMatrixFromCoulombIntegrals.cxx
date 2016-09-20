@@ -21,21 +21,18 @@ Mp2EnergyMatrixFromCoulombIntegrals::Mp2EnergyMatrixFromCoulombIntegrals(
 Mp2EnergyMatrixFromCoulombIntegrals::~Mp2EnergyMatrixFromCoulombIntegrals() {
 }
 
-/*
-class raise {
-public:
-  raise(double expon_): expon(expon_) {
-  }
-  double operator()(double element) {
-    //    return std::pow(element,expon);
-    return 0;
-  }
-protected:
-  double expon;
-};
-*/
-
 void Mp2EnergyMatrixFromCoulombIntegrals::run() {
+  class raise {
+  public:
+    raise(double exponent_): exponent(exponent_) {
+    }
+    double operator()(double element) {
+      return std::pow(element, exponent);
+    }
+  protected:
+    double exponent;
+  };
+
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -45,17 +42,17 @@ void Mp2EnergyMatrixFromCoulombIntegrals::run() {
   Tabij["abij"] -= (*Vabij)["abji"];
 
   Tensor<> Dabij(false, *Vabij);
+  Dabij["abij"] =  (*epsa)["a"];
+  Dabij["abij"] += (*epsa)["b"];
   Dabij["abij"] -= (*epsi)["i"];
   Dabij["abij"] -= (*epsi)["j"];
-  Dabij["abij"] += (*epsa)["a"];
-  Dabij["abij"] += (*epsa)["b"];
 
-  //  double exponent(getRealArgument("exponent" , 1.0));
+  double exponent(getRealArgument("exponent" , 1.0));
     
-  //  Univar_Function<> raiseTensor(raise(exponent));
-  //  Univar_Function<> raiseTensor(&sqrt<double>);
-  //  Tensor<> raiseDabij(false, Dabij);
-  //  raiseDabij.sum(1.0, Dabij, "abij", 0.0, "abij", &raiseTensor);
+  raise raiseToPower(exponent);
+  Univar_Function<> raiseElement(raiseToPower);
+  Tensor<> raiseDabij(false, Dabij);
+  raiseDabij.sum(1.0, Dabij, "abij", 0.0, "abij", raiseElement);
     
   Bivar_Function<> fDivide(&divide<double>);
   Tabij.contract(-1.0, Tabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
