@@ -33,6 +33,7 @@ build/${CONFIG}/obj/algorithms/TensorWriter.o \
 build/${CONFIG}/obj/algorithms/TensorContraction.o \
 build/${CONFIG}/obj/algorithms/TensorSum.o \
 build/${CONFIG}/obj/algorithms/TensorNorm.o \
+build/${CONFIG}/obj/algorithms/ComplexTensorReader.o \
 build/${CONFIG}/obj/algorithms/ComplexTensorWriter.o \
 build/${CONFIG}/obj/algorithms/ComplexTensorContraction.o \
 build/${CONFIG}/obj/algorithms/ComplexTensorSum.o \
