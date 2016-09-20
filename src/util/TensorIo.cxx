@@ -225,7 +225,7 @@ void TensorIo::writeText(
 
   // only the root writes the file
   if (A.wrld->rank == 0) {
-    std::ofstream file(fileName);
+    std::ofstream file(fileName.c_str());
     file << A.get_name() << delimiter << A.order;
     for (int i(0); i < A.order; ++i) {
       file << delimiter << A.lens[i];
