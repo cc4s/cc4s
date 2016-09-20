@@ -105,12 +105,13 @@ Tensor<F> *TensorIo::readText(
   // read the values only on root
   int64_t index(0);
   LOG(1, "TensorReader") << "indexCount=" << indexCount << std::endl;
+  NumberScanner<F> numberScanner(&scanner);
   while (index < indexCount) {
     int64_t elementsCount(std::min(bufferSize, indexCount-index));
     int64_t localElementsCount(B->wrld->rank == 0 ? elementsCount : 0);
     for (int64_t i(0); i < localElementsCount; ++i) {
       indices[i] = index+i;
-      values[i] = scanner.nextReal();
+      values[i] = numberScanner.nextNumber();
     }
     // wait until all processes finished reading this buffer
     MPI_Barrier(Cc4s::world->comm);

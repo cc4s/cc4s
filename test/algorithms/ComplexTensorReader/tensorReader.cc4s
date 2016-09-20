@@ -1,0 +1,27 @@
+GenerateRandomComplexMatrix [(m 100) (n 100)] [(Result A)].
+ComplexTensorWriter [(Data A) (rowIndexOrder "i") (columnIndexOrder "j")] [].
+
+ComplexTensorReader [(file "A.dat")] [(Data B)].
+
+GenerateRandomComplexMatrix [(m 100) (n 100)] [Result].
+ComplexTensorSum [
+  A (AFactor  1.0) (AIndex "ij")
+  B (BFactor -1.0) (BIndex "ij")
+] [
+  Result (ResultIndex "ij")
+].
+ComplexTensorNorm [(A Result)] [Norm].
+% assert Norm == 0
+
+ComplexTensorWriter [(Data A) (mode "binary")] [].
+
+ComplexTensorReader [(file "A.bin") (mode "binary")] [(Data B)].
+
+ComplexTensorSum [
+  A (AFactor  1.0) (AIndex "ij")
+  B (BFactor -1.0) (BIndex "ij")
+] [
+  Result (ResultIndex "ij")
+].
+ComplexTensorNorm [(A Result)] [Norm].
+% assert Norm == 0
