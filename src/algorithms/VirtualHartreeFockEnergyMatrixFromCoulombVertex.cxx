@@ -35,7 +35,7 @@ void VirtualHartreeFockEnergyMatrixFromCoulombVertex::run() {
   allocatedTensorArgument<complex>("EnergyMatrix", energyMatrix);
 
   LOG(1, "EnergyMatrix") << "Computing energy matrix from Coulomb vertex" << GammaGpq->get_name() 
-			 << ", with NG=" << GammaGpq->lens[0];
+			 << ", with NG=" << GammaGpq->lens[0] << std::endl;
 
   (*energyMatrix)["GH"]  = 2.0 * conjGammaGpq["Gqq"] * (*GammaGpq)["Hrr"];
   (*energyMatrix)["GH"] -= 1.0 * conjGammaGpq["Gqr"] * (*GammaGpq)["Hrq"];
@@ -47,6 +47,8 @@ void VirtualHartreeFockEnergyMatrixFromCoulombVertex::dryRun() {
 			       DryTensor<complex>>("CoulombVertex"));
 
   DryTensor<complex> conjGammaGpq(*GammaGpq);
+
+  LOG(1, "EnergyMatrix") << "Computing energy matrix from Coulomb vertex with NG=" << GammaGpq->lens[0] << std::endl;
 
   DryMatrix<complex> *energyMatrix = new DryMatrix<complex>(
     GammaGpq->lens[0], GammaGpq->lens[0], NS
