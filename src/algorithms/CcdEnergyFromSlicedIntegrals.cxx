@@ -235,6 +235,8 @@ void CcdEnergyFromSlicedIntegrals::dryIterate() {
       int sliceRank(getIntegerArgument
 		    ("sliceRank",No));
 
+      LOG(1, abbreviation) << "Slicing Vabcd integrals with Nv=" << Nv << ", using sliceRank=" << sliceRank << std::endl;
+
       DryTensor<> *Vxycd(drySliceCoulombIntegrals(sliceRank));
       int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
       int syms[] = {NS, NS, NS, NS};
