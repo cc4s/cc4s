@@ -22,6 +22,7 @@ ComplexTensorWriter::~ComplexTensorWriter() {
 void ComplexTensorWriter::run() {
   Tensor<complex> *A(getTensorArgument<complex>("Data"));
   std::string dataName(getArgumentData("Data")->getName());
+  A->set_name(dataName.c_str());
 
   std::string mode(getTextArgument("mode", "text"));
   if (mode == "binary") {
