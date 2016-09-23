@@ -28,6 +28,7 @@ ThermalHolesAndParticles [
 ] [
   ChemicalPotential
   ThermalHoleEigenEnergies ThermalParticleEigenEnergies
+  ThermalHoleOccupancies ThermalParticleOccupancies
 ].
 
 CoulombIntegralsFromVertex [

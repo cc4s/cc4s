@@ -132,11 +132,11 @@ void ThermalHolesAndParticles::defineThermalHolesAndParticles() {
   double maxDelta(eigenStates[Np-1].first - eigenStates[0].first);
   double overlap(std::sqrt(32*maxDelta*kT));
   LOG(1, "ThermalHolesAndParticles") << "overlap of thermal particle and hole states=" << overlap << std::endl;
-  int holeEnd(No), particleStart(No);
+  int holeEnd(No), particleStart(-1);
   for (int p(0); p < Np; ++p) {
-    if (eigenStates[p].first < mu + overlap) holeEnd = p;
-    if (eigenStates[p].first <= mu - overlap) particleStart = p;
-    LOG(4, "ThermalHolesAndParticles") << "eigenEnerigies[" <<
+    if (eigenStates[p].first <= mu + overlap) holeEnd = p;
+    if (eigenStates[p].first < mu - overlap) particleStart = p;
+    LOG(4, "ThermalHolesAndParticles") << "eigenEnergies[" <<
       p << "<-" << eigenStates[p].second << "]=" <<
       eigenStates[p].first <<std::endl;
   }

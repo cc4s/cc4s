@@ -23,7 +23,7 @@ TensorWriter [(Data Mp2Energy)] [].
 %% must be equivalent to zero temperature states, except reordering %%
 ThermalHolesAndParticles [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-  (Temperature 0.027)
+  (Temperature 28)
   (Electrons 8)
 ] [
   ChemicalPotential
@@ -43,7 +43,7 @@ ThermalMp2EnergyFromCoulombIntegrals [
   ThermalPPHHCoulombIntegrals
   ThermalHoleEigenEnergies ThermalParticleEigenEnergies
   ThermalHoleOccupancies ThermalParticleOccupancies
-  (Temperature 0.027)
+  (Temperature 28)
 ] [
   ThermalMp2Energy
 ].

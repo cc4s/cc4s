@@ -36,7 +36,10 @@ void CoulombIntegralsFromVertex::run() {
   int NG(GammaGpq->lens[0]);
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
-  int Np = No + Nv;
+  // hole and particle states may overlap at finite temperature
+  int Np = GammaGpq->lens[1];
+  int iStart(0), iEnd(No);
+  int aStart(Np-Nv), aEnd(Np);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   int syms[] = { NS, NS, NS, NS };
@@ -80,12 +83,12 @@ void CoulombIntegralsFromVertex::run() {
   }
 
   // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
-  int GaiStart[] = {0 ,No, 0};
-  int GaiEnd[]   = {NG,Np,No};
-  int GabStart[] = {0 ,No,No};
-  int GabEnd[]   = {NG,Np,Np};
-  int GijStart[] = {0 , 0, 0};
-  int GijEnd[]   = {NG,No,No};
+  int GaiStart[] = {0 ,aStart,iStart};
+  int GaiEnd[]   = {NG,aEnd,  iEnd  };
+  int GabStart[] = {0 ,aStart,aStart};
+  int GabEnd[]   = {NG,aEnd,  aEnd  };
+  int GijStart[] = {0 ,iStart,iStart};
+  int GijEnd[]   = {NG,iEnd,  iEnd  };
   Tensor<complex> GammaGai(GammaGpq->slice(GaiStart,GaiEnd));
   Tensor<complex> GammaGab(GammaGpq->slice(GabStart,GabEnd));
   Tensor<complex> GammaGij(GammaGpq->slice(GijStart,GijEnd));
