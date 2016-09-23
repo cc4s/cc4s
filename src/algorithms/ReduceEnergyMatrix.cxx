@@ -52,6 +52,12 @@ void ReduceEnergyMatrix::dryRun() {
     fieldVariables = nG * reduction;
   }
 
+  LOG(1, "GREDUCE") << "diagonalizing " <<
+    nG << "x" << nG << " energy matrix..." << std::endl;
+
+  LOG(1, "GREDUCE") <<
+    "taking " << fieldVariables << " of " << nG << " eigenvectors" << std::endl;
+
   DryMatrix<complex> *UGg(new DryMatrix<complex>(nG, fieldVariables, NS));
   allocatedTensorArgument<complex, DryTensor<complex>>(
     "EnergyMatrixTransform", UGg
