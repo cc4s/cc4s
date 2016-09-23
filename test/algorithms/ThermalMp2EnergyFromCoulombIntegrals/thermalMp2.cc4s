@@ -31,6 +31,11 @@ ThermalHolesAndParticles [
   ThermalHoleOccupancies ThermalParticleOccupancies
 ].
 
+TensorWriter [(Data ThermalHoleEigenEnergies)] [].
+TensorWriter [(Data ThermalParticleEigenEnergies)] [].
+TensorWriter [(Data ThermalHoleOccupancies)] [].
+TensorWriter [(Data ThermalParticleOccupancies)] [].
+
 CoulombIntegralsFromVertex [
   CoulombVertex
   (HoleEigenEnergies ThermalHoleEigenEnergies)
