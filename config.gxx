@@ -17,7 +17,7 @@ CTF=modules/build/${CONFIG}/ctf
 INCLUDE=-I${CTF}/include
 
 # additional library paths and libraries to link to
-LIBS=-L${CTF}/lib -lctf -llapack -lblas
+LIBS=-L${CTF}/lib -lctf -lblas -llapack -lblacs -lscalapack
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
