@@ -51,6 +51,7 @@ build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/Mp2EnergyMatrixFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/VirtualHartreeFockEnergyMatrixFromCoulombVertex.o \
+build/${CONFIG}/obj/algorithms/ProjectorEnergyMatrixFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/EnergyMatrixFromDoublesAmplitudes.o \
 build/${CONFIG}/obj/algorithms/ReduceEnergyMatrix.o \
 build/${CONFIG}/obj/algorithms/ReduceCoulombVertex.o \

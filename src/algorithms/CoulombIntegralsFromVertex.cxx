@@ -148,6 +148,7 @@ void CoulombIntegralsFromVertex::run() {
     (*Vabci)["abci"] += imagGammaGab["Gac"] * imagGammaGai["Gbi"];
   }
 
+  /*
   // debugging info (imaginary part of integrals)
   if (Vabcd) {
     Tensor<> imagVabcd(false, *Vabcd);
@@ -196,6 +197,7 @@ void CoulombIntegralsFromVertex::run() {
     norm=frobeniusNorm(*Vijkl);
     LOG(1, "Integrals") << "Norm of " << Vijkl->get_name() << " =" << norm << std::endl;
   }
+  */
 
 }
 
