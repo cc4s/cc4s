@@ -30,7 +30,7 @@ void FiniteSizeCorrection::run() {
     class InvSqrt {
     public:
       double operator ()(double x) {
-        LOG_RANK(1, "FiniteSizeCorrection") << "invSqrt of " << x << std::endl;
+        LOG_RANK(1, "FiniteSizeCorrection") << "invSqrt of " << std::isinf(x) << std::endl;
         return std::isinf(x) ? 0.0 : std::sqrt(1.0 / x);
       }
     };
