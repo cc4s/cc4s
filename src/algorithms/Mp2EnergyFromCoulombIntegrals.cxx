@@ -1,5 +1,6 @@
 #include <algorithms/Mp2EnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
+#include <math/ComplexTensor.hpp>
 #include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -20,35 +21,19 @@ Mp2EnergyFromCoulombIntegrals::~Mp2EnergyFromCoulombIntegrals() {
 }
 
 void Mp2EnergyFromCoulombIntegrals::run() {
-  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
- 
-  Tensor<> Tabij(false, Vabij);
-  Tabij["abij"] =  (*epsi)["i"];
-  Tabij["abij"] += (*epsi)["j"];
-  Tabij["abij"] -= (*epsa)["a"];
-  Tabij["abij"] -= (*epsa)["b"];
-
-  Bivar_Function<> fDivide(&divide<double>);
-  Tabij.contract(1.0, (*Vabij),"abij", Tabij,"abij", 0.0,"abij", fDivide);
-
-  Scalar<> energy(*Cc4s::world);
-  double e, dire, exce;
-
-  energy[""] = 2.0 * Tabij["abij"] * (*Vabij)["abij"];
-  dire = energy.get_val();
-  energy[""] = Tabij["abji"] * (*Vabij)["abij"];
-  exce = -1.0 * energy.get_val();
-  e = dire + exce;
-
-  LOG(0, "MP2") << "e=" << e << std::endl;
-  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
-  LOG(1, "MP2") << "MP2x=" << exce << std::endl;
-
+  Data *Vabij(getArgumentData("PPHHCoulombIntegrals"));
+  TensorData<double> *realVabij(dynamic_cast<TensorData<double> *>(Vabij));
+  TensorData<complex> *complexVabij(dynamic_cast<TensorData<complex> *>(Vabij));
+  double e(0.0);
+  if (realVabij) {
+    e = calculateMp2Energy<double>(*realVabij->value);
+  } else {
+    e = std::real(calculateMp2Energy<complex>(*complexVabij->value));
+  }
   setRealArgument("Mp2Energy", e);
 }
 
+// FIXME: update dryRun to work in the complex case as well
 void Mp2EnergyFromCoulombIntegrals::dryRun() {
   //DryTensor<> *Vabij(
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
@@ -72,5 +57,38 @@ void Mp2EnergyFromCoulombIntegrals::dryRun() {
   DryTensor<> Tabij(4, vvoo, syms);
 
   DryScalar<> energy();
+}
+
+template <typename F>
+F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  Matrix<> Dai(Vabij.lens[0], Vabij.lens[2], NS, *Vabij.wrld, "Dai");
+  Dai["ai"] =  (*epsi)["i"];
+  Dai["ai"] -= (*epsa)["a"];
+
+  Tensor<F> Tabij(Vabij);
+  // use transform to divide real/complex Tabij by real Dabij = Dai+Dbj
+  CTF::Transform<double, double, F>(
+    std::function<void(double, double, F &)>(
+      [](double dai, double dbj, F &t) {
+        t = conj(t / (dai + dbj));
+      }
+    )
+  ) (
+    Dai["ai"], Dai["bj"], Tabij["abij"]
+  );
+
+  Scalar<F> energy(*Cc4s::world);
+  F dire, exce;
+
+  energy[""] = 2.0 * Tabij["abij"] * Vabij["abij"];
+  dire = energy.get_val();
+  energy[""] = Tabij["abji"] * Vabij["abij"];
+  exce = -1.0 * energy.get_val();
+  LOG(0, "MP2") << "e=" << (dire + exce) << std::endl;
+  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
+  LOG(1, "MP2") << "MP2x=" << exce << std::endl;
+  return dire + exce;
 }
 

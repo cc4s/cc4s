@@ -40,7 +40,15 @@ namespace cc4s {
      * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
     */
     virtual void dryRun();
+  protected:
+    void calculateRealIntegrals();
+    void calculateComplexIntegrals();
 
+    CTF::Tensor<complex> *GammaGai;
+    CTF::Tensor<complex> *GammaGia;
+    CTF::Tensor<complex> *GammaGab;
+    CTF::Tensor<complex> *GammaGij;
+    std::array<int,4> syms, vvvv, vovo, vvoo, oooo, ooov, vvvo;
   };
 }
 

@@ -23,6 +23,7 @@ CoulombVertexReader [
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (complex 1)
 ] [
   PPHHCoulombIntegrals
 ].
