@@ -44,19 +44,37 @@ void FiniteSizeCorrection::run() {
     Tensor<complex> conjCGai(false, CGai);
     Univar_Function<complex> fConj(conj<complex>);
     conjCGai.sum(1.0,CGai,"Gai", 0.0,"Gai", fConj);
-/*
+
     Tensor<> realCGai(3, CGai.lens, CGai.sym, *CGai.wrld, "realCGai");
-    Tensor<> imagCGai(3, CGai.lens, CGai.sym, *CGai.wrld, "realCGai");
+    Tensor<> imagCGai(3, CGai.lens, CGai.sym, *CGai.wrld, "imagCGai");
     fromComplexTensor(CGai, realCGai, imagCGai);
-*/
-    Tensor<> *Tabij(getTensorArgument("DoublesAmplitudes"));
+//    toComplexTensor(realPart, imagPart, complexTensor);
+//    toComplexTensor(realPart, complexTensor);
+
+ /*   Tensor<complex> Tabij(
+      4, realTabij->lens, realTabij->sym, *realTabij->wrld, "Tabij"
+    );
+    toComplexTensor(*realTabij, Tabij);
     int NG(CGai.lens[0]);
-    Vector<> SG(NG, *CGai.wrld, "SG");
+    Vector<complex> SG(NG, *CGai.wrld, "SG");
     // SG = Tabij ( 2*conj(CGai)*CGbj - conj(CGaj)*CGbi )
-    SG["G"] = conjCGai["Gai"] * CGai["Gbj"] * (*Tabij)["abij"];
+    SG["G"] = 2.0 * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
+    SG["G"] -=      conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
+    Vector<> *realSG(new Vector<>(NG, *CGai.wrld, "SG"));
+    fromComplexTensor(SG, *realSG);
+  */
+    Tensor<> Tabij(getTensorArgument("DoublesAmplitudes"));
+    int NG(CGai.lens[0]);
+    Vector<> *SG(new Vector<>(NG, *CGai.wrld, "SG"));
+    (*SG)["G"] = 2.0 * realCGai["Gai"] * realCGai["Gbj"]* Tabij["abij"];
+    (*SG)[""] +=2.0 * imagCGai["Gai"] * imagCGai["Gbj"]* Tabij["abij"];
+    (*SG)["G"] -= realCGai["Gaj"] * realCGai["Gbi"]* Tabij["abij"];
+    (*SG)["G"] -= imagCGai["Gaj"] * imagCGai["Gbi"]* Tabij["abij"];   
+    allocatedTensorArgument<>("StructureFactor", SG);
   }
   
   double energyCorrection(0.0);
   setRealArgument("EnergyCorrection", energyCorrection);
+  allocatedTensorArgument<>("VG",VG);
 }
 
