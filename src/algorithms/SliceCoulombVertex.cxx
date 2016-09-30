@@ -26,15 +26,17 @@ void SliceCoulombVertex::run() {
 
   // Read the Particle/Hole Eigenenergies
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
   // Compute the No,Nv,NG,Np
   int NG(GammaGqr->lens[0]);
   int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
   int Np(GammaGqr->lens[1]);
 
   // Allocate and compute GammaGai
-  int GaiStart[] = {0 ,Np-No, 0};
-  int GaiEnd[]   = {NG,Np   ,No};
+  int GaiStart[] = {0 ,No, 0};
+  int GaiEnd[]   = {NG,Np,No};
   Tensor<complex> *GammaGai(
     new Tensor<complex>(GammaGqr->slice(GaiStart,GaiEnd))
   );
