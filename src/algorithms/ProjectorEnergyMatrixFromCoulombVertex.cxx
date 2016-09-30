@@ -34,7 +34,7 @@ void ProjectorEnergyMatrixFromCoulombVertex::run() {
   );
   allocatedTensorArgument<complex>("EnergyMatrix", energyMatrix);
 
-  LOG(1, "EnergyMatrix") << "Computing projector energy matrix from Coulomb vertex" << GammaGqr->get_name() 
+  LOG(1, "EnergyMatrix") << "Computing projector energy matrix from Coulomb vertex " << GammaGqr->get_name() 
 			 << ", with NG=" << GammaGqr->lens[0] << std::endl;
 
   (*energyMatrix)["GH"] = conjGammaGqr["Gqr"] * (*GammaGqr)["Hqr"];

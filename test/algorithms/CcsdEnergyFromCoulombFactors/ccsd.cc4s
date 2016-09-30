@@ -6,8 +6,11 @@ CoulombVertexReader [
 
 CoulombVertexDecomposition [
   CoulombVertex
-  % Set the rank of the decomposed tensor and the number of iterations.
-  (rank 66) (maxIterations 32)
+  % Set the rank or the rankFactor (relative to NG) of
+  % the decomposed tensor and the number of iterations.
+  (rank 66)
+  (rankFactor 2.0)
+  (maxIterations 32)
   % the LinearMixer is used by default
   (mixer "LinearMixer")
   (mixingRatio 0.8)

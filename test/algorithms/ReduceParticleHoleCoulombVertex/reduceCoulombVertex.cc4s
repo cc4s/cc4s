@@ -1,5 +1,3 @@
-% RPA execution plan for large systems with Nv * No > NG
-% N**5 implementation
 ParticleHoleCoulombVertexReader [
   (file "../../resources/ParticleHoleCoulombVertex.bin")
 ] [
@@ -19,8 +17,6 @@ Mp2EnergyFromCoulombIntegrals [
   Mp2Energy 
 ].
 
-%%%%%%%%%%%%%%%
-% compute EnergyMatrix from direct term only (only negative eigenvalues)
 DrccdEnergyFromCoulombVertex [
   PPHHCoulombIntegrals
   ParticleHoleCoulombVertex
@@ -38,10 +34,7 @@ EnergyMatrixFromDoublesAmplitudes [
 ] [
   EnergyMatrix
 ].
-%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%
-% compute EnergyMatrix from direct & exchange term (also positive eigenvalues)
 %Mp2EnergyMatrixFromCoulombIntegrals [
 %  ParticleHoleCoulombVertex
 %  PPHHCoulombIntegrals
@@ -49,11 +42,11 @@ EnergyMatrixFromDoublesAmplitudes [
 %] [
 %  (Mp2EnergyMatrix EnergyMatrix)
 %].
-%%%%%%%%%%%%%%%
 
 ReduceEnergyMatrix [
   EnergyMatrix
-  (reduction 0.15)
+  (fieldVariables 16)
+  (reduction 0.5)
 ] [
   EnergyMatrixTransform
   EnergySpectrum

@@ -34,7 +34,7 @@ void VirtualHartreeFockEnergyMatrixFromCoulombVertex::run() {
   );
   allocatedTensorArgument<complex>("EnergyMatrix", energyMatrix);
 
-  LOG(1, "EnergyMatrix") << "Computing VHF energy matrix from Coulomb vertex" << GammaGqr->get_name() 
+  LOG(1, "EnergyMatrix") << "Computing VHF energy matrix from Coulomb vertex " << GammaGqr->get_name() 
 			 << ", with NG=" << GammaGqr->lens[0] << std::endl;
 
   (*energyMatrix)["GH"]  = 2.0 * conjGammaGqr["Gqq"] * (*GammaGqr)["Hrr"];
