@@ -22,59 +22,71 @@ FiniteSizeCorrection::~FiniteSizeCorrection() {
 }
 
 void FiniteSizeCorrection::run() {
+//Definition of the variables
   Tensor<complex> *GammaGai(
-    getTensorArgument<complex>("ParticleHoleCoulombVertex")
+	getTensorArgument<complex>("ParticleHoleCoulombVertex")
   );
   Tensor<> *VG(getTensorArgument<>("CoulombKernel"));
-  Tensor<> invVG(false, *VG);
-  {
+  Tensor<> realInvSqrtVG(false, *VG);
+  Tensor<complex> invSqrtVG(
+    1, realInvSqrtVG.lens, realInvSqrtVG.sym, 
+     *realInvSqrtVG.wrld, "invSqrtVG"
+  );
+//Starting a new space whose memory will be erased after operation
+  
+    //Define operation inverse square root
     class InvSqrt {
     public:
-      double operator ()(double x) {
-//        LOG_RANK(1, "FiniteSizeCorrection") << "is inf? " << std::isinf(x) <<"invert of "<< std::sqrt(1.0/x) << std::endl;
-        return std::sqrt(1.0 / x);
-      }
+	double operator ()(double x){
+		return std::sqrt(1.0 / x);
+	}
     };
-    InvSqrt invSqrt;
-    Univar_Function<> fInvSqrt(invSqrt);
-    invVG.sum(1.0,*VG,"G", 0.0,"G", fInvSqrt);
-    Tensor<complex> CGai(*GammaGai);
-    CGai["Gai"] *= invVG["G"];
+  //Get the inverted square root of VG
+  InvSqrt invSqrt;
+  Univar_Function<> fInvSqrt(invSqrt);
+  realInvSqrtVG.sum(1.0, *VG, "G", 0.0, "G", fInvSqrt);
+  toComplexTensor(realInvSqrtVG, invSqrtVG);
 
-    Tensor<complex> conjCGai(false, CGai);
-    Univar_Function<complex> fConj(conj<complex>);
-    conjCGai.sum(1.0,CGai,"Gai", 0.0,"Gai", fConj);
+  //Define CGai
+  Tensor<complex> CGai(*GammaGai);
+//  CGai["Gai"] *= invSqrtVG["G"];
 
-    Tensor<> realCGai(3, CGai.lens, CGai.sym, *CGai.wrld, "realCGai");
-    Tensor<> imagCGai(3, CGai.lens, CGai.sym, *CGai.wrld, "imagCGai");
-    fromComplexTensor(CGai, realCGai, imagCGai);
-//    toComplexTensor(realPart, imagPart, complexTensor);
-//    toComplexTensor(realPart, complexTensor);
+  //Conjugate of CGai
+  Tensor<complex> conjCGai(false, CGai);
+  Univar_Function<complex> fConj(conj<complex>);
+  conjCGai.sum(1.0, CGai, "Gai", 0.0, "Gai", fConj);
 
- /*   Tensor<complex> Tabij(
-      4, realTabij->lens, realTabij->sym, *realTabij->wrld, "Tabij"
-    );
-    toComplexTensor(*realTabij, Tabij);
-    int NG(CGai.lens[0]);
-    Vector<complex> SG(NG, *CGai.wrld, "SG");
-    // SG = Tabij ( 2*conj(CGai)*CGbj - conj(CGaj)*CGbi )
-    SG["G"] = 2.0 * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
-    SG["G"] -=      conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
-    Vector<> *realSG(new Vector<>(NG, *CGai.wrld, "SG"));
-    fromComplexTensor(SG, *realSG);
-  */
-    Tensor<> Tabij(getTensorArgument("DoublesAmplitudes"));
-    int NG(CGai.lens[0]);
-    Vector<> *SG(new Vector<>(NG, *CGai.wrld, "SG"));
-    (*SG)["G"] = 2.0 * realCGai["Gai"] * realCGai["Gbj"]* Tabij["abij"];
-    (*SG)[""] +=2.0 * imagCGai["Gai"] * imagCGai["Gbj"]* Tabij["abij"];
-    (*SG)["G"] -= realCGai["Gaj"] * realCGai["Gbi"]* Tabij["abij"];
-    (*SG)["G"] -= imagCGai["Gaj"] * imagCGai["Gbi"]* Tabij["abij"];   
-    allocatedTensorArgument<>("StructureFactor", SG);
-  }
+  //Get Tabij
+  Tensor<> *realTabij(getTensorArgument("DoublesAmplitudes"));
+  Tensor<complex> Tabij(
+    4, realTabij->lens, realTabij->sym, *realTabij->wrld, "Tabij"
+  );
+  toComplexTensor(*realTabij, Tabij);
   
-  double energyCorrection(0.0);
-  setRealArgument("EnergyCorrection", energyCorrection);
-  allocatedTensorArgument<>("VG",VG);
+  //construct SG
+  int NG(CGai.lens[0]);
+  Vector<complex> *SG(new Vector<complex>(NG, *CGai.wrld, "SG"));
+  (*SG)["G"] = 2.0 * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
+  (*SG)["G"] -= conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
+  Vector<> *realSG(new Vector<>(NG, *CGai.wrld, "realSG"));
+  fromComplexTensor(*SG, *realSG);
+  allocatedTensorArgument<>("StructureFactor", realSG);
+  //Get EMp2
+  Scalar<complex> EMp2(*CGai.wrld);
+  EMp2[""] = (*SG)["G"]; // * (*VG)["G"];
+  setRealArgument("EMp2", std::real(EMp2.get_val()));  
+  
+  
+  allocatedTensorArgument<>("VG", VG);
+
 }
+
+
+
+
+
+
+
+
+
 
