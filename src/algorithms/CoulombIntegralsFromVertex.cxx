@@ -22,22 +22,22 @@ CoulombIntegralsFromVertex::~CoulombIntegralsFromVertex() {
 }
 
 void CoulombIntegralsFromVertex::run() {
-  // Read the Coulomb vertex GammaGpq
-  Tensor<complex> *GammaGpq( getTensorArgument<complex>("CoulombVertex"));
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
 
   // Read the Particle/Hole Eigenenergies
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
   LOG(0, "Integrals") <<
-    "Reading Coulomb integrals form vertex " << GammaGpq->get_name() 
+    "Reading Coulomb integrals form vertex " << GammaGqr->get_name() 
 					     << std::endl;
 
   // Compute the No,Nv,NG,Np
-  int NG(GammaGpq->lens[0]);
+  int NG(GammaGqr->lens[0]);
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
-  int Np = No + Nv;
+  int Np(No + Nv);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   int syms[] = { NS, NS, NS, NS };
@@ -80,16 +80,16 @@ void CoulombIntegralsFromVertex::run() {
     allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
   }
 
-  // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
+  // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
   int GaiStart[] = {0 ,No, 0};
   int GaiEnd[]   = {NG,Np,No};
   int GabStart[] = {0 ,No,No};
   int GabEnd[]   = {NG,Np,Np};
   int GijStart[] = {0 , 0, 0};
   int GijEnd[]   = {NG,No,No};
-  Tensor<complex> GammaGai(GammaGpq->slice(GaiStart,GaiEnd));
-  Tensor<complex> GammaGab(GammaGpq->slice(GabStart,GabEnd));
-  Tensor<complex> GammaGij(GammaGpq->slice(GijStart,GijEnd));
+  Tensor<complex> GammaGai(GammaGqr->slice(GaiStart,GaiEnd));
+  Tensor<complex> GammaGab(GammaGqr->slice(GabStart,GabEnd));
+  Tensor<complex> GammaGij(GammaGqr->slice(GijStart,GijEnd));
 
   // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
   Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
@@ -202,8 +202,8 @@ void CoulombIntegralsFromVertex::run() {
 }
 
 void CoulombIntegralsFromVertex::dryRun() {
-  // Read the Coulomb vertex GammaGpq
-  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+  // Read the Coulomb vertex GammaGqr
+  DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
 			       DryTensor<complex>>("CoulombVertex"));
 
   // Read the Particle/Hole Eigenenergies
@@ -213,7 +213,7 @@ void CoulombIntegralsFromVertex::dryRun() {
 		    <double, DryTensor<double>>("ParticleEigenEnergies"));
 
   // Compute the No,Nv,NG
-  int NG(GammaGpq->lens[0]);
+  int NG(GammaGqr->lens[0]);
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
 
@@ -258,7 +258,7 @@ void CoulombIntegralsFromVertex::dryRun() {
     allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
   }
 
-  // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
+  // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
   int GaiLens[]   = {NG,Nv,No};
   int GabLens[]   = {NG,Nv,Nv};
   int GijLens[]   = {NG,No,No};

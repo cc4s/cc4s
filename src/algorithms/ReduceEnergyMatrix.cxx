@@ -41,7 +41,7 @@ void ReduceEnergyMatrix::dryRun() {
   DryTensor<complex> *EGH(
     getTensorArgument<complex, DryTensor<complex>>("EnergyMatrix")
   );
-  nG = EGH->lens[0];
+  NG = EGH->lens[0];
 
 
   // calculate number of fieldVariables
@@ -49,18 +49,18 @@ void ReduceEnergyMatrix::dryRun() {
   // if fieldVariables not given use reduction
   if (fieldVariables == -1) {
     double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
-    fieldVariables = nG * reduction;
+    fieldVariables = NG * reduction;
   }
 
   LOG(1, "GREDUCE") << "diagonalizing " <<
-    nG << "x" << nG << " energy matrix..." << std::endl;
+    NG << "x" << NG << " energy matrix..." << std::endl;
 
   LOG(1, "GREDUCE") <<
-    "taking " << fieldVariables << " of " << nG << " eigenvectors" << std::endl;
+    "taking NF=" << fieldVariables << " of NG=" << NG << " eigenvectors" << std::endl;
 
-  DryMatrix<complex> *UGg(new DryMatrix<complex>(nG, fieldVariables, NS));
+  DryMatrix<complex> *UGF(new DryMatrix<complex>(NG, fieldVariables, NS));
   allocatedTensorArgument<complex, DryTensor<complex>>(
-    "EnergyMatrixTransform", UGg
+    "EnergyMatrixTransform", UGF
   );
 }
 
@@ -76,7 +76,7 @@ void ReduceEnergyMatrix::preconditionEnergyMatrix() {
 }
 
 void ReduceEnergyMatrix::readEnergyMatrix() {
-  nG = EGH->lens[0];
+  NG = EGH->lens[0];
 
   // read all elements on root
   if (EGH->wrld->rank == 0) {
@@ -97,20 +97,20 @@ void ReduceEnergyMatrix::readEnergyMatrix() {
 
 void ReduceEnergyMatrix::diagonalizeEnergyMatrix() {
   LOG(1, "GREDUCE") << "diagonalizing " <<
-    nG << "x" << nG << " energy matrix..." << std::endl;
+    NG << "x" << NG << " energy matrix..." << std::endl;
 
   if (EGH->wrld->rank == 0) {
     // call LAPACK diagonalization routine on root only
-    int lda(nG), info;
-    eigenValues = new double[nG];
+    int lda(NG), info;
+    eigenValues = new double[NG];
     int workCount;
     complex *work;
-    double *realWork(new double[std::max(1, 3*nG-2)]);  
+    double *realWork(new double[std::max(1, 3*NG-2)]);  
     {
       complex optimalWorkCount;
       workCount = -1;
       zheev_(
-        "V", "L", &nG, elements, &lda,
+        "V", "L", &NG, elements, &lda,
         eigenValues, &optimalWorkCount, &workCount, realWork, &info
       );
       workCount = static_cast<int>(optimalWorkCount.real());
@@ -118,7 +118,7 @@ void ReduceEnergyMatrix::diagonalizeEnergyMatrix() {
     }
     // Solve eigenproblem
     zheev_(
-      "V", "L", &nG, elements, &lda,
+      "V", "L", &NG, elements, &lda,
       eigenValues, work, &workCount, realWork, &info
     );
     // Check for convergence
@@ -134,16 +134,16 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
   if (EGH->wrld->rank == 0) {
     // allocate elements of transform. In principle, it can be as large as E
     transformElements = new complex[elementsCount];
-    ng = 0;
+    NF = 0;
 
     double energy(0.0);
-    for (int i(0); i < nG; ++i) {
+    for (int i(0); i < NG; ++i) {
       eigenValues[i] += shift;
       energy += eigenValues[i];
     }
     LOG(1, "GREDUCE") << "sum of eigenvalues=" << energy << std::endl;
 
-    int bottom(0), top(nG-1), column(0);
+    int bottom(0), top(NG-1), column(0);
     // approximated energy by truncation
     double e(0);
 
@@ -152,12 +152,12 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
     // if fieldVariables not given use reduction
     if (fieldVariables == -1) {
       double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
-      fieldVariables = nG * reduction;
+      fieldVariables = NG * reduction;
     }
 
     //    while (bottom < top && ng < nG * reduction) {
 
-    while (bottom < top && ng < fieldVariables) {
+    while (bottom < top && NF < fieldVariables) {
       if (std::abs(eigenValues[bottom]) > std::abs(eigenValues[top])) {
         // bottom value is larger in magnitude, take bottom
         column = bottom++;
@@ -168,33 +168,33 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
       // add selected eigenvalue to approximation
       e += eigenValues[column];
       // add selected eigenvector to transform
-      for (int64_t i(0); i < nG; ++i) {
-        transformElements[ng*nG+i] = elements[column*nG+i];
+      for (int64_t i(0); i < NG; ++i) {
+        transformElements[NF*NG+i] = elements[column*NG+i];
       }
-      ng++;
+      NF++;
     }
     LOG(1, "GREDUCE") <<
-      "taking " << ng << " of " << nG << " eigenvectors for a fit accuracy of " <<
+      "taking NF=" << NF << " of NF=" << NG << " eigenvectors for a fit accuracy of " <<
       std::abs(e-energy)/energy << std::endl;
     LOG(1, "GREDUCE") <<
       "|smallest/largest eigenvalue|=" <<
       std::abs(eigenValues[column] / eigenValues[0]) << std::endl;
   } else {
     transformElements = new complex[0];
-    ng = 0;
+    NF = 0;
   }
   // broadcast ng to all ranks
-  MPI_Bcast(&ng, 1, MPI_INT, 0, EGH->wrld->comm);
+  MPI_Bcast(&NF, 1, MPI_INT, 0, EGH->wrld->comm);
 
   delete[] elements;
 }
 
 void ReduceEnergyMatrix::writeUnitaryTransform() {
-  Matrix<complex> *UGg(new Matrix<complex>(nG, ng, *EGH->wrld, "UGg"));
-  int localNg(UGg->wrld->rank == 0 ? ng : 0);
-  UGg->write(localNg*nG, indices, transformElements);
+  Matrix<complex> *UGF(new Matrix<complex>(NG, NF, *EGH->wrld, "UGF"));
+  int localNG(UGF->wrld->rank == 0 ? NF : 0);
+  UGF->write(localNG*NG, indices, transformElements);
   allocatedTensorArgument<complex>(
-    "EnergyMatrixTransform", UGg
+    "EnergyMatrixTransform", UGF
   );
   delete[] transformElements;
   delete[] indices;
@@ -203,8 +203,8 @@ void ReduceEnergyMatrix::writeUnitaryTransform() {
 // TODO: maybe also write the reduced energy spectrum
 // or sort them accordingly 
 void ReduceEnergyMatrix::writeEnergySpectrum() {
-  Vector<> *EG(new Vector<>(nG, *EGH->wrld, "EG"));
-  int localNG(EGH->wrld->rank == 0 ? nG : 0);
+  Vector<> *EG(new Vector<>(NG, *EGH->wrld, "EG"));
+  int localNG(EGH->wrld->rank == 0 ? NG : 0);
   int64_t *eigenValueIndices(new int64_t[localNG]);
   for (int i(0); i < localNG; ++i) {
     eigenValueIndices[i] = i;

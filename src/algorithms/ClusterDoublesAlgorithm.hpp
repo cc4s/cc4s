@@ -26,15 +26,6 @@ namespace cc4s {
      */
     virtual void run();
 
-    /** \brief The occupied orbital energies  */
-    CTF::Tensor<> *epsi;
-    /** \brief The virtual orbital energies  */
-    CTF::Tensor<> *epsa;
-    /** \brief The Coulomb integrals Vabij  */
-    CTF::Tensor<> *Vabij;
-    /** \brief The Coulomb Vertex GammaGpq  */
-    CTF::Tensor<complex> *GammaGpq;
-
     /**
      * \brief Performs a Dry Run
      */
@@ -73,7 +64,7 @@ namespace cc4s {
      * \brief Calculates the amplitudes from the current residuum and
      * returns them in-place.
      * Usually this is done by calculating
-     * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_b-\varepsilon_b)\f$,
+     * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)\f$,
      * but other methods, such as level shifting may be used.
      * \param[in] Rabij Residuum Tensor.
      */

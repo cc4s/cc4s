@@ -21,37 +21,37 @@ VirtualHartreeFockEnergyMatrixFromCoulombVertex::~VirtualHartreeFockEnergyMatrix
 }
 
 void VirtualHartreeFockEnergyMatrixFromCoulombVertex::run() {
-  // read the Coulomb vertex GammaGpq
-  Tensor<complex> *GammaGpq( getTensorArgument<complex>("CoulombVertex"));
+  // read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
 
-  // construct the conjugate of the Coulomb vertex GammaGpq
-  Tensor<complex> conjGammaGpq(*GammaGpq);
-  conjugate(conjGammaGpq);
+  // construct the conjugate of the Coulomb vertex GammaGqr
+  Tensor<complex> conjGammaGqr(*GammaGqr);
+  conjugate(conjGammaGqr);
 
   // compute the energy matrix
   Matrix<complex> *energyMatrix = new Matrix<complex>(
-    GammaGpq->lens[0], GammaGpq->lens[0], *GammaGpq->wrld
+    GammaGqr->lens[0], GammaGqr->lens[0], *GammaGqr->wrld
   );
   allocatedTensorArgument<complex>("EnergyMatrix", energyMatrix);
 
-  LOG(1, "EnergyMatrix") << "Computing energy matrix from Coulomb vertex" << GammaGpq->get_name() 
-			 << ", with NG=" << GammaGpq->lens[0] << std::endl;
+  LOG(1, "EnergyMatrix") << "Computing VHF energy matrix from Coulomb vertex" << GammaGqr->get_name() 
+			 << ", with NG=" << GammaGqr->lens[0] << std::endl;
 
-  (*energyMatrix)["GH"]  = 2.0 * conjGammaGpq["Gqq"] * (*GammaGpq)["Hrr"];
-  (*energyMatrix)["GH"] -= 1.0 * conjGammaGpq["Gqr"] * (*GammaGpq)["Hrq"];
+  (*energyMatrix)["GH"]  = 2.0 * conjGammaGqr["Gqq"] * (*GammaGqr)["Hrr"];
+  (*energyMatrix)["GH"] -= 1.0 * conjGammaGqr["Gqr"] * (*GammaGqr)["Hrq"];
 }
 
 void VirtualHartreeFockEnergyMatrixFromCoulombVertex::dryRun() {
-  // Read the Coulomb vertex GammaGpq
-  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+  // Read the Coulomb vertex GammaGqr
+  DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
 			       DryTensor<complex>>("CoulombVertex"));
 
-  DryTensor<complex> conjGammaGpq(*GammaGpq);
+  DryTensor<complex> conjGammaGqr(*GammaGqr);
 
-  LOG(1, "EnergyMatrix") << "Computing energy matrix from Coulomb vertex with NG=" << GammaGpq->lens[0] << std::endl;
+  LOG(1, "EnergyMatrix") << "Computing VHF energy matrix from Coulomb vertex with NG=" << GammaGqr->lens[0] << std::endl;
 
   DryMatrix<complex> *energyMatrix = new DryMatrix<complex>(
-    GammaGpq->lens[0], GammaGpq->lens[0], NS
+    GammaGqr->lens[0], GammaGqr->lens[0], NS
   );
   allocatedTensorArgument<complex, DryTensor<complex>>(
     "EnergyMatrix", energyMatrix

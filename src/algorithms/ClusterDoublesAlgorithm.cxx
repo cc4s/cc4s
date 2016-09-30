@@ -215,8 +215,8 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int slice
 }
 
 DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int sliceRank) {
-  // Read the Coulomb vertex GammaGpq
-  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+  // Read the Coulomb vertex GammaGqr
+  DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
 			       DryTensor<complex>>("CoulombVertex"));
   
   // Read the Particle/Hole Eigenenergies
@@ -224,7 +224,7 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int sliceRank) {
 		    <double, DryTensor<double>>("ParticleEigenEnergies"));
 
   int Nv(epsa->lens[0]);
-  int NG(GammaGpq->lens[0]);
+  int NG(GammaGqr->lens[0]);
   
   // Slice the respective parts from the Coulomb vertex
   int syms[] = { NS, NS, NS, NS };

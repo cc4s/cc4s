@@ -12,12 +12,12 @@ namespace cc4s {
     virtual ~ProjectorEnergyMatrixFromCoulombVertex();
     /**
      * \brief Calculates projector energy matrix from Coulomb vertex
-     * \f$\Gamma_{pG}^q\f$
+     * \f$\Gamma_{rG}^q\f$
      */
     virtual void run();
     /**
      * \brief Dry run for projector energy matrix from Coulomb vertex
-     * \f$\Gamma_{pG}^q\f$
+     * \f$\Gamma_{rG}^q\f$
      */
     virtual void dryRun();
   };

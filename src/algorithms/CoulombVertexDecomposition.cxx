@@ -19,7 +19,7 @@ CoulombVertexDecomposition::
   std::vector<Argument> const &argumentList
 ):
   Algorithm(argumentList),
-  Gamma0Gqr(nullptr), PiqR(nullptr), regularizationEstimator(nullptr)
+  composedGammaGqr(nullptr), PiqR(nullptr), regularizationEstimator(nullptr)
 {
 }
 
@@ -27,7 +27,7 @@ CoulombVertexDecomposition::
   ~CoulombVertexDecomposition()
 {
   if (PiqR) delete PiqR;
-  if (!isArgumentGiven("ComposedCoulombVertex") && Gamma0Gqr) delete Gamma0Gqr;
+  if (!isArgumentGiven("ComposedCoulombVertex") && composedGammaGqr) delete composedGammaGqr;
   if (regularizationEstimator) delete regularizationEstimator;
 }
 
@@ -71,12 +71,12 @@ void CoulombVertexDecomposition::run() {
   allocatedTensorArgument<complex>("FactorOrbitals", PirR);
   allocatedTensorArgument<complex>("CoulombFactors", LambdaGR);
 
-  Gamma0Gqr = new Tensor<complex>(
-    3, GammaGqr->lens, GammaGqr->sym, *GammaGqr->wrld, "Gamma0Gqr",
+  composedGammaGqr = new Tensor<complex>(
+    3, GammaGqr->lens, GammaGqr->sym, *GammaGqr->wrld, "composedGammaGqr",
     GammaGqr->profile
   );
   if (isArgumentGiven("ComposedCoulombVertex")) {
-    allocatedTensorArgument<complex>("ComposedCoulombVertex", Gamma0Gqr);
+    allocatedTensorArgument<complex>("ComposedCoulombVertex", composedGammaGqr);
   }
 
   double swampingThreshold(
@@ -132,13 +132,13 @@ void CoulombVertexDecomposition::dryRun() {
     "CoulombFactors", LambdaGR
   );
 
-  DryTensor<complex> *Gamma0Gqr(new DryTensor<complex>(*GammaGqr));
+  DryTensor<complex> *composedGammaGqr(new DryTensor<complex>(*GammaGqr));
   if (isArgumentGiven("ComposedCoulombVertex")) {
     allocatedTensorArgument<complex, DryTensor<complex>>(
-      "ComposedCoulombVertex", Gamma0Gqr
+      "ComposedCoulombVertex", composedGammaGqr
     );
   }
-  dryFit(GammaGqr, PiqR, PirR, LambdaGR, Gamma0Gqr);
+  dryFit(GammaGqr, PiqR, PirR, LambdaGR, composedGammaGqr);
 }
 
 
@@ -161,7 +161,7 @@ void CoulombVertexDecomposition::dryFit(
   DryTensor<complex> *GammaGqr,
   DryTensor<complex> *PiqR, DryTensor<complex> *PirR,
   DryTensor<complex> *LambdaGR,
-  DryTensor<complex> *Gamma0Gqr
+  DryTensor<complex> *composedGammaGqr
 ) {
   dryFitRegularizedAlternatingLeastSquaresFactor(
     *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G',
@@ -176,7 +176,7 @@ void CoulombVertexDecomposition::dryFit(
     *LambdaGR,'G'
   );
   dryComposeCanonicalPolyadicDecompositionTensors(
-    *LambdaGR, *PiqR, *PirR, *Gamma0Gqr
+    *LambdaGR, *PiqR, *PirR, *composedGammaGqr
   );
 }
 
@@ -271,11 +271,11 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
 
 double CoulombVertexDecomposition::getDelta() {
   composeCanonicalPolyadicDecompositionTensors(
-    *LambdaGR, *PiqR, *PirR, *Gamma0Gqr
+    *LambdaGR, *PiqR, *PirR, *composedGammaGqr
   );
-  (*Gamma0Gqr)["Gqr"] -= (*GammaGqr)["Gqr"];
-  double Delta(frobeniusNorm(*Gamma0Gqr));
-  (*Gamma0Gqr)["Gqr"] += (*GammaGqr)["Gqr"];
+  (*composedGammaGqr)["Gqr"] -= (*GammaGqr)["Gqr"];
+  double Delta(frobeniusNorm(*composedGammaGqr));
+  (*composedGammaGqr)["Gqr"] += (*GammaGqr)["Gqr"];
   return Delta;
 }
 

@@ -43,10 +43,10 @@ void CoulombVertexReader::run() {
   MPI_File_read(file, &header, sizeof(header), MPI_BYTE, &status);
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
     throw new Exception("Invalid file format");
-  NG = header.NG;
-  No = header.No;
-  Nv = header.Nv;
-  Np = No + Nv;
+  int NG(header.NG);
+  int No(header.No);
+  int Nv(header.Nv);
+  int Np(No + Nv);
   
   // Print NG, No, Nv, Np
   LOG(1, "Reader") << "NG=" << NG << std::endl;
@@ -59,20 +59,20 @@ void CoulombVertexReader::run() {
   int vertexSyms[] = { NS, NS, NS };
   Tensor<> *epsi(new Vector<>(No, *Cc4s::world, "epsi"));
   Tensor<> *epsa(new Vector<>(Nv, *Cc4s::world, "epsa"));
-  Tensor<complex> *GammaGpq(new Tensor<complex>
+  Tensor<complex> *GammaGqr(new Tensor<complex>
 			    (3, vertexLens, vertexSyms, 
-			     *Cc4s::world, "GammaGpq"));
+			     *Cc4s::world, "GammaGqr"));
 
   // Enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
-  allocatedTensorArgument<complex>("CoulombVertex", GammaGpq);
+  allocatedTensorArgument<complex>("CoulombVertex", GammaGqr);
 
   // Real and imaginary parts are read in seperately
-  Tensor<> realGammaGpq(3, vertexLens, vertexSyms, 
-			*Cc4s::world, "RealGammaGpq");
-  Tensor<> imagGammaGpq(3, vertexLens, vertexSyms, 
-			*Cc4s::world, "ImagGammaGpq");
+  Tensor<> realGammaGqr(3, vertexLens, vertexSyms, 
+			*Cc4s::world, "RealGammaGqr");
+  Tensor<> imagGammaGqr(3, vertexLens, vertexSyms, 
+			*Cc4s::world, "ImagGammaGqr");
 
   int64_t offset(sizeof(header));
   MPI_Offset fileSize;
@@ -83,12 +83,12 @@ void CoulombVertexReader::run() {
     //    LOG(1, "Reader") << "reading chunk at " <<
     //      std::hex << offset << std::dec << std::endl;
     if (strncmp(chunk.magic, Chunk::REALS_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(1, "Reader") << "reading " << realGammaGpq.get_name() << std::endl;
-      realGammaGpq.read_dense_from_file(file, offset+sizeof(chunk));
+      LOG(1, "Reader") << "reading " << realGammaGqr.get_name() << std::endl;
+      realGammaGqr.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::IMAGS_MAGIC, sizeof(chunk.magic)) == 0) {
-      LOG(1, "Reader") << "reading " << imagGammaGpq.get_name() << std::endl;
-      imagGammaGpq.read_dense_from_file(file, offset+sizeof(chunk));
+      LOG(1, "Reader") << "reading " << imagGammaGqr.get_name() << std::endl;
+      imagGammaGqr.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
       LOG(1, "Reader") << "reading " << epsi->get_name() << ", " 
@@ -101,7 +101,7 @@ void CoulombVertexReader::run() {
   MPI_File_close(&file);
 
   // Combine to complex tensor
-  toComplexTensor(realGammaGpq, imagGammaGpq, *GammaGpq);
+  toComplexTensor(realGammaGqr, imagGammaGqr, *GammaGqr);
 }
 
 void CoulombVertexReader::dryRun() {
@@ -116,10 +116,10 @@ void CoulombVertexReader::dryRun() {
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
     throw new Exception("Invalid file format");
   file.close();
-  NG = header.NG;
-  No = header.No;
-  Nv = header.Nv;
-  Np = No + Nv;
+  int NG(header.NG);
+  int No(header.No);
+  int Nv(header.Nv);
+  int Np(No + Nv);
   
   // Print NG, No, Nv, Np
   LOG(1, "Reader") << "NG=" << NG << std::endl;
@@ -132,17 +132,17 @@ void CoulombVertexReader::dryRun() {
   int vertexSyms[] = { NS, NS, NS };
   DryTensor<> *epsi(new DryVector<>(No));
   DryTensor<> *epsa(new DryVector<>(Nv));
-  DryTensor<complex> *GammaGpq(new DryTensor<complex>(3, vertexLens, 
+  DryTensor<complex> *GammaGqr(new DryTensor<complex>(3, vertexLens, 
 						      vertexSyms));
   // Enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
   allocatedTensorArgument<complex, DryTensor<complex>>("CoulombVertex", 
-						       GammaGpq);
+						       GammaGqr);
 
   // Real and imaginary parts are read in seperately
-  DryTensor<> realGammaGpq(3, vertexLens, vertexSyms);
-  DryTensor<> imagGammaGpq(3, vertexLens, vertexSyms);
-  //  realGammaGpq.use();
+  DryTensor<> realGammaGqr(3, vertexLens, vertexSyms);
+  DryTensor<> imagGammaGqr(3, vertexLens, vertexSyms);
+  //  realGammaGqr.use();
 }
 

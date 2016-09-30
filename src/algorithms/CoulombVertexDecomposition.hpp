@@ -67,7 +67,7 @@ namespace cc4s {
     /**
      * \brief The fit \f${\Pi^\ast}^{qR}\Pi_{rR}\Lambda_{GR}\f$.
      */
-    CTF::Tensor<complex> *Gamma0Gqr;
+    CTF::Tensor<complex> *composedGammaGqr;
     /**
      * \brief The conjugated factor orbitals
      * \f${\Pi^\ast}^{qR} = (\Pi_{qR})^\ast\f$.
@@ -112,7 +112,7 @@ namespace cc4s {
       DryTensor<complex> *GammaGqr,
       DryTensor<complex> *PiqR, DryTensor<complex> *PirR,
       DryTensor<complex> *LambdaGR,
-      DryTensor<complex> *Gamma0Gqr
+      DryTensor<complex> *composedGammaGqr
     );
     /**
      * \brief Normalizes the given factor orbitals, such that
