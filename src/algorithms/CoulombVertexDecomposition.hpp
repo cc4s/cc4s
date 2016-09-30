@@ -34,6 +34,10 @@ namespace cc4s {
      */
     int64_t rank;
 
+    static int64_t constexpr DEFAULT_RANK = -1;
+
+    static double constexpr DEFAULT_RANK_FACTOR = 2.0;
+
     /**
      * \brief The Frobenius norm of the difference between
      * \f$\Gamma^q_{rG}\f$ and its decomposition.

@@ -35,18 +35,26 @@ void CoulombVertexDecomposition::run() {
   GammaGqr = getTensorArgument<complex>("CoulombVertex");
   int NG(GammaGqr->lens[0]);
   int Np(GammaGqr->lens[1]);
-  rank = getIntegerArgument("rank", NG);
+
+  // calculate decomposition rank
+  rank = getIntegerArgument("rank", DEFAULT_RANK);
+  // if rank is not given use rank factors (if they are not given use rankFactors=2.0)
+  if (rank == -1) {
+    double rankFactor(getRealArgument("rankFactor", DEFAULT_RANK_FACTOR));
+    rank = NG * rankFactor;
+  }
+
   realFactorOrbitals = getIntegerArgument(
     "realFactorOrbitals", DEFAULT_REAL_FACTOR_ORBITALS
   );
   normalizedFactorOrbitals = getIntegerArgument(
     "normalizedFactorOrbitals", DEFAULT_NORMALIZED_FACTOR_ORBITALS
   );
-  LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank
+  LOG(0, "RALS") << "Tensor rank decomposition with rank NR=" << rank
     << ", realFactorOrbitals=" << realFactorOrbitals
     << ", normalizedFactorOrbitals=" << normalizedFactorOrbitals << std::endl;
-  LOG(1, "RALS") << "decomposing Coulomb vertex with NG=" << NG
-    << " Np=" << Np << std::endl;
+  LOG(1, "RALS") << "Decomposing Coulomb vertex " << GammaGqr->get_name() << " with NG=" << NG
+    << ", Np=" << Np << std::endl;
 
   writeSubIterations = getIntegerArgument(
     "writeSubIterations", DEFAULT_WRITE_SUB_ITERATIONS
@@ -115,10 +123,10 @@ void CoulombVertexDecomposition::dryRun() {
   normalizedFactorOrbitals = getIntegerArgument(
     "normalizedFactorOrbitals", DEFAULT_NORMALIZED_FACTOR_ORBITALS
   );
-  LOG(0, "RALS") << "Tensor rank decomposition with rank=" << rank
+  LOG(0, "RALS") << "Tensor rank decomposition with rank NR=" << rank
     << ", realFactorOrbitals=" << realFactorOrbitals
     << ", normalizedFactorOrbitals=" << normalizedFactorOrbitals << std::endl;
-  LOG(1, "RALS") << "decomposing Coulomb vertex with NG=" << NG
+  LOG(1, "RALS") << "Decomposing Coulomb vertex with NG=" << NG
     << " Np=" << Np << std::endl;
 
   // allocate factor tensors

@@ -174,7 +174,7 @@ void ReduceEnergyMatrix::truncateUnitaryTransform() {
       NF++;
     }
     LOG(1, "GREDUCE") <<
-      "taking NF=" << NF << " of NF=" << NG << " eigenvectors for a fit accuracy of " <<
+      "taking NF=" << NF << " of NG=" << NG << " eigenvectors for a fit accuracy of " <<
       std::abs(e-energy)/energy << std::endl;
     LOG(1, "GREDUCE") <<
       "|smallest/largest eigenvalue|=" <<
