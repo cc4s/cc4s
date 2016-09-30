@@ -13,6 +13,12 @@ namespace cc4s {
     );
     virtual ~FiniteSizeCorrection();
     virtual void run();
+  protected:
+    int NG;
+    double *structureFactors;
+
+    void calculateStructureFactor();
+    void calculateFiniteSizeCorrection();
   };
 }
 
