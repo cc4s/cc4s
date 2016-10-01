@@ -2,23 +2,8 @@
 
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
-#include <complex>
-/*
-#include <mkl.h>
-#include <mkl_scalapack.h>
-#include "mkl_lapacke.h"
-#include <mkl_cblas.h>
-*/
-extern "C" {
-  void pzgesvd_(
-    const char *jobu, const char *jobvt,
-    const int *m, const int *n,
-    const complex *a, const int *ia, const int *ja, const int *desca,
-    double *s, complex *u, const int *iu, const int *ju, const int *descu,
-    complex *vt, const int *ivt, const int *jvt, const int *descvt,
-    complex *work, const int *lwork, double *rwork, int *info
-  );
-};
+#include <extern/blacs.hpp>
+#include <extern/scalapack.hpp>
 
 using namespace cc4s;
 using namespace CTF;
@@ -34,6 +19,16 @@ SingularValueDecomposition<F>::SingularValueDecomposition(
 
 template <typename F>
 Matrix<F> &SingularValueDecomposition<F>::get() {
+  int rank(inverse.wrld->rank), nprocs(inverse.wrld->np);
+  int context;
+  Cblacs_get(-1, 0, &context);
+  int processorRows(nprocs), processorColumns(1), localRow, localColumns;
+  Cblacs_gridinit(&context, "Row", processorRows, processorColumns);
+  Cblacs_gridinfo(
+    context, &processorRows, &processorColumns, &localRow, &localColumns
+  );
+  LOG_RANK(1, "SVD") << "localRow=" << localRow << std::endl;
+/*
   int n(inverse.lens[0]);
   int iA, jA;
   int descA[9];
@@ -54,6 +49,7 @@ Matrix<F> &SingularValueDecomposition<F>::get() {
     work, &workCount, realWork,
     &info
   );
+*/
   return inverse;
 }
 

@@ -1,0 +1,5 @@
+GenerateRandomComplexMatrix [(m 2) (n 2)] [(Result A)].
+
+PseudoInverse [A] [InverseA].
+
+ComplexTensorWriter [(Data InverseA)] [].

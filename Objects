@@ -64,3 +64,4 @@ build/${CONFIG}/obj/algorithms/CcsdEnergyFromSlicedIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcsdEnergyFromSlicedIntegrals.o \
 build/${CONFIG}/obj/algorithms/SingleParticleOccupancies.o \
 build/${CONFIG}/obj/algorithms/PolarizabilityFromCoulombVertex.o \
+build/${CONFIG}/obj/algorithms/PseudoInverse.o \
