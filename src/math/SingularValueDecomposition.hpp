@@ -15,9 +15,6 @@ namespace cc4s {
 
   protected:
     CTF::Matrix<F> inverse;
-    void getProcessorGrid(
-      int processors, int &processorRows, int &processorColumns
-    );
   };
 
   template <typename F>

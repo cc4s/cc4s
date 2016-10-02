@@ -1,6 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef SCALAPACK_DEFINED
-#define SCALAPACK_DEFINED
+#ifndef SCA_LAPACK_DEFINED
+#define SCA_LAPACK_DEFINED
 
 #include <math/Complex.hpp>
 
@@ -10,11 +10,11 @@ extern "C" {
   // FIXME: check signature of descinit_ function
   void descinit_(
     int *descriptor,
-    int *globalRows,  int *globalColumns,
-    int *blockRows, int *blockColumns,
-    int *rowOffset, int *columnOffset,
-    int *context,
-    int *leadingDimensionSize,
+    const int *globalRows,  const int *globalColumns,
+    const int *blockRows, const int *blockColumns,
+    const int *rowOffset, const int *columnOffset,
+    const int *context,
+    const int *leadingDimensionSize,
     int *info
   );
   int numroc_(
@@ -35,6 +35,16 @@ extern "C" {
     double *s, complex *u, const int *iu, const int *ju, const int *descu,
     complex *vt, const int *ivt, const int *jvt, const int *descvt,
     complex *work, const int *lwork, double *rwork, int *info
+  );
+
+  void pzgemm_(
+    const char *opA, char *opB,
+    int *m, int *n, int *k,
+    const complex *alpha,
+    const complex *a, const int *ia, int *ja, const int *desca,
+    const complex *b, const int *ib, const int *jb, const int *descb,
+    const complex *beta,
+    complex *C, const int *ic, const int *jc, const int *descc
   );
 };
 
