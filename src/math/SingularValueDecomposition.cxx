@@ -35,7 +35,7 @@ Matrix<F> &SingularValueDecomposition<F>::get() {
     &beta,
     C.localValues, &offset, &offset, C.getDescriptor()
   );
-  inverse.write(C.localLens[0]*C.localLens[1], C.localIndices, C.localValues);
+  C.write(inverse);
 /*
   int n(inverse.lens[0]);
   int iA, jA;

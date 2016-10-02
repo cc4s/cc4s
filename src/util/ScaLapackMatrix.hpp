@@ -33,6 +33,11 @@ namespace cc4s {
     const int *getDescriptor() {
       return &dataType;
     }
+    /**
+     * \brief Writes the content of the ScaLapackMatrix to the given
+     * CTF::Matrix. The CTF::Matrix must be allocated in the correct shape.
+     */
+    void write(CTF::Matrix<F> &A);
 
     BlacsWorld *blacsWorld;
     int64_t *localIndices;

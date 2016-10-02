@@ -104,3 +104,17 @@ ScaLapackMatrix<double>::~ScaLapackMatrix();
 template
 ScaLapackMatrix<complex>::~ScaLapackMatrix();
 
+
+template <typename F>
+void ScaLapackMatrix<F>::write(CTF::Matrix<F> &A) {
+  // wait for all processes to finish pending operations
+  blacsWorld->barrier();
+  A.write(localLens[0]*localLens[1], localIndices, localValues);
+}
+
+// instantiate
+template
+void ScaLapackMatrix<double>::write(CTF::Matrix<double> &A);
+template
+void ScaLapackMatrix<complex>::write(CTF::Matrix<complex> &A);
+
