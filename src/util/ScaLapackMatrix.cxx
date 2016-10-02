@@ -36,8 +36,14 @@ ScaLapackMatrix<F>::ScaLapackMatrix(
   ScaLapackMatrix<F> &A
 ):
   ScaLapackDescriptor(A),
-  blacsWorld(A.blacsWorld)
+  blacsWorld(A.blacsWorld),
+  localIndices(new int64_t[localLens[0]*localLens[1]]),
+  localValues(new F[localLens[0]*localLens[1]])
 {
+  for (int64_t i(0); i < static_cast<int64_t>(localLens[0])*localLens[1]; ++i) {
+    localIndices[i] = A.localIndices[i];
+    localValues[i] = A.localValues[i];
+  }
 }
 
 // instantiate
@@ -59,8 +65,16 @@ ScaLapackMatrix<F>::ScaLapackMatrix(
   localIndices = new int64_t[localLens[0]*localLens[1]];
   // determine global indices of local data in block cyclic distribution scheme
   int64_t index(0);
-  for (int64_t j(blacsWorld->firstElement[1]); j < lens[1]; j += blacsWorld->lens[1]) {
-    for (int64_t i(blacsWorld->firstElement[0]); i < lens[0]; i += blacsWorld->lens[0]) {
+  for (
+    int64_t j(blacsWorld->firstElement[1]);
+    j < lens[1];
+    j += blacsWorld->lens[1]
+  ) {
+    for (
+      int64_t i(blacsWorld->firstElement[0]);
+      i < lens[0];
+      i += blacsWorld->lens[0]
+    ) {
       localIndices[index++] = i + lens[0]*j;
     }
   }

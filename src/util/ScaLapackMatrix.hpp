@@ -33,7 +33,7 @@ namespace cc4s {
     const int *getDescriptor() {
       return &dataType;
     }
-  protected:
+
     BlacsWorld *blacsWorld;
     int64_t *localIndices;
     F *localValues;

@@ -3,6 +3,7 @@
 #include <math/MathFunctions.hpp>
 #include <util/BlacsWorld.hpp>
 #include <util/ScaLapackMatrix.hpp>
+#include <extern/ScaLapack.hpp>
 #include <util/Log.hpp>
 
 using namespace cc4s;
@@ -18,9 +19,23 @@ SingularValueDecomposition<F>::SingularValueDecomposition(
 }
 
 template <typename F>
-Matrix<F> &SingularValueDecomposition<F>::get(){
+Matrix<F> &SingularValueDecomposition<F>::get() {
   BlacsWorld blacsWorld(inverse.wrld->rank, inverse.wrld->np);
-  ScaLapackMatrix<F> scaLapackA(inverse, &blacsWorld);
+  ScaLapackMatrix<F> A(inverse, &blacsWorld);
+  ScaLapackMatrix<F> C(A);
+
+  F alpha(1.0), beta(0.0);
+  int offset(1);
+  pgemm(
+    "None", "None",
+    &A.lens[0], &A.lens[1], &A.lens[1],
+    &alpha,
+    A.localValues, &offset, &offset, A.getDescriptor(),
+    A.localValues, &offset, &offset, A.getDescriptor(),
+    &beta,
+    C.localValues, &offset, &offset, C.getDescriptor()
+  );
+  inverse.write(C.localLens[0]*C.localLens[1], C.localIndices, C.localValues);
 /*
   int n(inverse.lens[0]);
   int iA, jA;

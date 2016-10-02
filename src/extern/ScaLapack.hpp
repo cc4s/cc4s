@@ -18,7 +18,8 @@ extern "C" {
     int *info
   );
   int numroc_(
-    int *globalSize, int *blockSize, int *iproc, int *isrcproc, int *nprocs
+    const int *globalSize, const int *blockSize,
+    const int *iproc, const int *isrcproc, const int *nprocs
   );
   void pdgesvd_(
     const char *jobu, const char *jobvt,
@@ -37,16 +38,47 @@ extern "C" {
     complex *work, const int *lwork, double *rwork, int *info
   );
 
+  void pdgemm_(
+    const char *opA, const char *opB,
+    const int *m, const int *n, const int *k,
+    const double *alpha,
+    const double *a, const int *ia, const int *ja, const int *desca,
+    const double *b, const int *ib, const int *jb, const int *descb,
+    const double *beta,
+    double *C, const int *ic, const int *jc, const int *descc
+  );
   void pzgemm_(
-    const char *opA, char *opB,
-    int *m, int *n, int *k,
+    const char *opA, const char *opB,
+    const int *m, const int *n, const int *k,
     const complex *alpha,
-    const complex *a, const int *ia, int *ja, const int *desca,
+    const complex *a, const int *ia, const int *ja, const int *desca,
     const complex *b, const int *ib, const int *jb, const int *descb,
     const complex *beta,
     complex *C, const int *ic, const int *jc, const int *descc
   );
 };
+
+// overloaded functions wrappers for invokation from template methods
+namespace cc4s {
+  void pgemm(
+    const char *opA, const char *opB,
+    const int *m, const int *n, const int *k,
+    const double *alpha,
+    const double *a, const int *ia, const int *ja, const int *desca,
+    const double *b, const int *ib, const int *jb, const int *descb,
+    const double *beta,
+    double *C, const int *ic, const int *jc, const int *descc
+  );
+  void pgemm(
+    const char *opA, const char *opB,
+    const int *m, const int *n, const int *k,
+    const complex *alpha,
+    const complex *a, const int *ia, const int *ja, const int *desca,
+    const complex *b, const int *ib, const int *jb, const int *descb,
+    const complex *beta,
+    complex *C, const int *ic, const int *jc, const int *descc
+  );
+}
 
 #endif
 
