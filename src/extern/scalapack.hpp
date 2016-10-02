@@ -7,8 +7,18 @@
 // TODO: use define for name mangling: underscore or not
 
 extern "C" {
+  // FIXME: check signature of descinit_ function
+  void descinit_(
+    int *descriptor,
+    int *globalRows,  int *globalColumns,
+    int *blockRows, int *blockColumns,
+    int *rowOffset, int *columnOffset,
+    int *context,
+    int *leadingDimensionSize,
+    int *info
+  );
   int numroc_(
-    int *n, int *nb, int *iproc, int *isrcproc, int *nprocs
+    int *globalSize, int *blockSize, int *iproc, int *isrcproc, int *nprocs
   );
   void pdgesvd_(
     const char *jobu, const char *jobvt,

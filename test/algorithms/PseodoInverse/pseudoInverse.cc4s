@@ -1,4 +1,4 @@
-GenerateRandomComplexMatrix [(m 2) (n 2)] [(Result A)].
+GenerateRandomComplexMatrix [(m 7) (n 7)] [(Result A)].
 
 PseudoInverse [A] [InverseA].
 

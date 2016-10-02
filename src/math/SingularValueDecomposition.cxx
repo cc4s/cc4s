@@ -19,15 +19,63 @@ SingularValueDecomposition<F>::SingularValueDecomposition(
 
 template <typename F>
 Matrix<F> &SingularValueDecomposition<F>::get() {
-  int rank(inverse.wrld->rank), nprocs(inverse.wrld->np);
+  int rows(inverse.lens[0]);
+  int columns(inverse.lens[1]);
+  int rank(inverse.wrld->rank);
+  int processors(inverse.wrld->np);
+  int processorRows(0), processorColumns(0), processorRow, processorColumn;
+  getProcessorGrid(processors, processorRows, processorColumns);
+  LOG(2, "SVD") << "processor rows=" << processorRows
+    << ", columns=" << processorColumns << std::endl;
   int context;
   Cblacs_get(-1, 0, &context);
-  int processorRows(nprocs), processorColumns(1), localRow, localColumns;
-  Cblacs_gridinit(&context, "Row", processorRows, processorColumns);
+  Cblacs_gridinit(&context, "ColumnMajor", processorRows, processorColumns);
   Cblacs_gridinfo(
-    context, &processorRows, &processorColumns, &localRow, &localColumns
+    context, &processorRows, &processorColumns, &processorRow, &processorColumn
   );
-  LOG_RANK(1, "SVD") << "localRow=" << localRow << std::endl;
+  int blockRows(std::max(rows / processorRows, 1));
+  int blockColumns(std::max(columns / processorColumns, 1));
+  int offset(0);
+  int descriptor[9];
+  int localRows(
+    numroc_(
+      &rows, &blockRows, &processorRow, &offset, &processorRows
+    )
+  );
+  int localColumns(
+    numroc_(
+      &columns, &blockColumns, &processorColumn, &offset,
+      &processorColumns
+    )
+  );
+  int info(0);
+  descinit_(
+    descriptor,
+    &rows, &columns,
+    &blockRows, &blockColumns,
+    &offset, &offset,
+    &context,
+    &localColumns,
+    &info
+  );
+//  LOG_RANK(1, "SVD") << "rank=" << rank << ", " <<
+//    localRows << "x" << localColumns << " block, first=(" <<
+//    processorRow << ","  << processorColumn << ")" << std::endl;
+  // allocate local data
+  LOG_RANK(1, "SVD") << "rank=" << rank << ", " <<
+    "local size=" << localRows*localColumns << std::endl;
+  F *values(new F[localRows*localColumns]);
+  int64_t *indices(new int64_t[localRows*localColumns]);
+  // determine global indices of local data in block cyclic distribution scheme
+  int64_t index(0);
+  LOG(1, "SVD") << "blockRows=" << blockRows << ", blockColumns=" << blockColumns << std::endl;
+  for (int64_t j(processorColumn); j < columns; j += processorColumns) {
+    for (int64_t i(processorRow); i < rows; i += processorRows) {
+//      LOG(1, "SVD") << "local[" << index << "]=(" << i << "," << j << ")=" << i+rows*j << std::endl;
+      indices[index++] = i + rows*j;
+    }
+  }
+  inverse.read(localRows*localColumns, indices, values);
 /*
   int n(inverse.lens[0]);
   int iA, jA;
@@ -50,6 +98,7 @@ Matrix<F> &SingularValueDecomposition<F>::get() {
     &info
   );
 */
+  delete[] values; delete[] indices;
   return inverse;
 }
 
@@ -67,7 +116,6 @@ SingularValueDecomposition<complex>::SingularValueDecomposition(
 );
 template
 Matrix<complex> &SingularValueDecomposition<complex>::get();
-
 
 
 template <typename F>
@@ -97,6 +145,31 @@ DrySingularValueDecomposition<complex>::DrySingularValueDecomposition(
 );
 template
 DryMatrix<complex> &DrySingularValueDecomposition<complex>::get();
+
+
+template <typename F>
+void SingularValueDecomposition<F>::getProcessorGrid(
+  int processors, int &processorRows, int &processorColumns
+) {
+  // this prefers rows < cols
+  if (processorRows <= 0)
+    processorRows = static_cast<int>(std::sqrt(processors));
+  processorColumns = processors / processorRows;
+  while (processorRows * processorColumns != processors) {
+    --processorRows;
+    processorColumns = processors / processorRows;
+  }
+}
+
+template
+void SingularValueDecomposition<double>::getProcessorGrid(
+  int processors, int &processorRows, int &processorColumns
+);
+template
+void SingularValueDecomposition<complex>::getProcessorGrid(
+  int processors, int &processorRows, int &processorColumns
+);
+
 
 /*
 #include <stdio.h>
