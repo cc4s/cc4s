@@ -15,7 +15,7 @@ ScaLapackDescriptor::ScaLapackDescriptor(
 {
   for (int d(0); d < 2; ++d) {
     lens[d] = lens_[d];
-    blockSize[d] = 16;
+    blockSize[d] = 32;
     offset[d] = 0;
     localLens[d] = numroc_(
       &lens[d], &blockSize[d],
