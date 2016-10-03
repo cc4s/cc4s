@@ -42,6 +42,9 @@ namespace cc4s {
     BlacsWorld *blacsWorld;
     int64_t *localIndices;
     F *localValues;
+
+  protected:
+    int getGlobalIndex(int localIndex, int dimension);
   };
 }
 

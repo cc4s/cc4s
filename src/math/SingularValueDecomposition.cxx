@@ -21,9 +21,9 @@ SingularValueDecomposition<F>::SingularValueDecomposition(
 template <typename F>
 Matrix<F> &SingularValueDecomposition<F>::get() {
   BlacsWorld blacsWorld(inverse.wrld->rank, inverse.wrld->np);
+  Matrix<F> I(inverse);
   ScaLapackMatrix<F> A(inverse, &blacsWorld);
   ScaLapackMatrix<F> C(A);
-
   F alpha(1.0), beta(0.0);
   int offset(1);
   pgemm(
@@ -58,6 +58,8 @@ Matrix<F> &SingularValueDecomposition<F>::get() {
     &info
   );
 */
+//  I["ij"] = I["ik"]*I["kj"];
+//  inverse["ij"] -= I["ij"];
   return inverse;
 }
 

@@ -7,7 +7,6 @@
 // TODO: use define for name mangling: underscore or not
 
 extern "C" {
-  // FIXME: check signature of descinit_ function
   void descinit_(
     int *descriptor,
     const int *globalRows,  const int *globalColumns,
@@ -19,6 +18,14 @@ extern "C" {
   );
   int numroc_(
     const int *globalSize, const int *blockSize,
+    const int *iproc, const int *isrcproc, const int *nprocs
+  );
+  int indxl2g_(
+    const int *localIndex, const int *blockSize,
+    const int *iproc, const int *isrcproc, const int *nprocs
+  );
+  int indxg2l_(
+    const int *globalIndex, const int *blockSize,
     const int *iproc, const int *isrcproc, const int *nprocs
   );
   void pdgesvd_(
@@ -58,8 +65,25 @@ extern "C" {
   );
 };
 
-// overloaded functions wrappers for invokation from template methods
+// overloaded functions wrappers for invocation from template methods
 namespace cc4s {
+  void pgesvd(
+    const char *jobu, const char *jobvt,
+    const int *m, const int *n,
+    const double *a, const int *ia, const int *ja, const int *desca,
+    double *s, double *u, const int *iu, const int *ju, const int *descu,
+    double *vt, const int *ivt, const int *jvt, const int *descvt,
+    double *work, const int *lwork, double *rwork, int *info
+  );
+  void pgesvd(
+    const char *jobu, const char *jobvt,
+    const int *m, const int *n,
+    const complex *a, const int *ia, const int *ja, const int *desca,
+    double *s, complex *u, const int *iu, const int *ju, const int *descu,
+    complex *vt, const int *ivt, const int *jvt, const int *descvt,
+    complex *work, const int *lwork, double *rwork, int *info
+  );
+
   void pgemm(
     const char *opA, const char *opB,
     const int *m, const int *n, const int *k,

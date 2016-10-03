@@ -14,8 +14,8 @@ BlacsWorld::BlacsWorld(int rank_, int processes, int processRows): rank(rank_) {
     --lens[0];
     lens[1] = processes / lens[0];
   }
-//  LOG(2, "BlacsWorld") << "process rows=" << lens[0]
-//    << ", columns=" << lens[1] << std::endl;
+  LOG(2, "BlacsWorld") << "process rows=" << lens[0]
+    << ", columns=" << lens[1] << std::endl;
   Cblacs_get(-1, 0, &context);
   Cblacs_gridinit(&context, "ColumnMajor", lens[0], lens[1]);
   Cblacs_gridinfo(
