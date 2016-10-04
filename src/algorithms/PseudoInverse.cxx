@@ -1,6 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <algorithms/PseudoInverse.hpp>
-#include <math/SingularValueDecomposition.hpp>
+#include <math/PseudoInverseSvd.hpp>
 #include <util/Log.hpp>
 #include <ctf.hpp>
 
@@ -21,8 +21,8 @@ void PseudoInverse::run() {
   Tensor<complex> *A(getTensorArgument<complex>("A"));
   if (A->order != 2) throw new Exception("Matrix expected as argument A");
   Matrix<complex> *MatrixA(static_cast<Matrix<complex> *>(A));
-  SingularValueDecomposition<complex> svd(*MatrixA);
-  Tensor<complex> *inverseA(new Tensor<complex>(svd.get()));
+  PseudoInverseSvd<complex> pseudoInverse(*MatrixA);
+  Tensor<complex> *inverseA(new Tensor<complex>(pseudoInverse.get()));
   allocatedTensorArgument<complex>("InverseA", inverseA);
 }
 
