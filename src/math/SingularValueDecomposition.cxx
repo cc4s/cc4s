@@ -23,9 +23,10 @@ Matrix<F> &SingularValueDecomposition<F>::get() {
   BlacsWorld blacsWorld(inverse.wrld->rank, inverse.wrld->np);
   Matrix<F> I(inverse);
   ScaLapackMatrix<F> A(inverse, &blacsWorld);
-  ScaLapackMatrix<F> C(A);
-  F alpha(1.0), beta(0.0);
+  ScaLapackMatrix<F> U(A);
+  ScaLapackMatrix<F> VT(A);
   int offset(1);
+/*
   pgemm(
     "None", "None",
     &A.lens[0], &A.lens[1], &A.lens[1],
@@ -35,31 +36,41 @@ Matrix<F> &SingularValueDecomposition<F>::get() {
     &beta,
     C.localValues, &offset, &offset, C.getDescriptor()
   );
-  C.write(inverse);
-/*
-  int n(inverse.lens[0]);
-  int iA, jA;
-  int descA[9];
-  complex *a;
-  double *sigma;
-  complex *U, *VT;
-  int iU, jU, iVT, jVT;
-  int descU[9], descVT[9];
-  complex *work;
-  int workCount;
-  double *realWork;
+*/
+  double *sigma(new double[A.lens[0]]);
+  F optimalWork;
+  double optimalRealWork;
   int info;
-  pzgesvd_(
-    "V", "V", &n, &n, a, &iA, &jA, descA,
+  int workCount(-1);
+  pgesvd(
+    "V", "V",
+    &A.lens[0], &A.lens[1],
+    A.localValues, &offset, &offset, A.getDescriptor(),
     sigma,
-    U, &iU, &jU, descU,
-    VT, &iVT, &jVT, descVT,
+    U.localValues, &offset, &offset, U.getDescriptor(),
+    VT.localValues, &offset, &offset, VT.getDescriptor(),
+    &optimalWork, &workCount, &optimalRealWork,
+    &info
+  );
+  LOG(4, "SVD") << "work size=" << optimalWork << "," << optimalRealWork << std::endl;
+  workCount = static_cast<int>(std::real(optimalWork)+0.5);
+  F *work(new F[workCount]);
+  double *realWork(new double[static_cast<int64_t>(optimalRealWork+0.5)]);
+  pgesvd(
+    "V", "V",
+    &A.lens[0], &A.lens[1],
+    A.localValues, &offset, &offset, A.getDescriptor(),
+    sigma,
+    U.localValues, &offset, &offset, U.getDescriptor(),
+    VT.localValues, &offset, &offset, VT.getDescriptor(),
     work, &workCount, realWork,
     &info
   );
-*/
-//  I["ij"] = I["ik"]*I["kj"];
-//  inverse["ij"] -= I["ij"];
+  for (int i(0); i < A.lens[0]; ++i) {
+    LOG(1, "SVG") << "sigma[" << i << "]=" << sigma[i] << std::endl;
+  }
+  U.write(inverse);
+  delete[] sigma;
   return inverse;
 }
 
