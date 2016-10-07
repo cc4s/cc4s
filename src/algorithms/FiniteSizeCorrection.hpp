@@ -18,6 +18,7 @@ namespace cc4s {
     double *structureFactors;
 
     void calculateStructureFactor();
+    void constructFibonacciGrid();
     void calculateFiniteSizeCorrection();
   };
 }
