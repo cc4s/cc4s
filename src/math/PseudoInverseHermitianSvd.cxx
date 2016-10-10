@@ -29,9 +29,9 @@ Matrix<F> &PseudoInverseHermitianSvd<F>::get() {
   pheev(
     "EV", "U",
     &ScaA.lens[0],
-    ScaA.localValues, &offset, &offset, ScaA.getDescriptor(),
+    ScaA.getLocalValues(), &offset, &offset, ScaA.getDescriptor(),
     lambda,
-    ScaU.localValues, &offset, &offset, ScaU.getDescriptor(),
+    ScaU.getLocalValues(), &offset, &offset, ScaU.getDescriptor(),
     &info
   );
   Vector<F> S(A.lens[0], *A.wrld, "Lambda");

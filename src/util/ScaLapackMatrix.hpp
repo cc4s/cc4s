@@ -30,9 +30,17 @@ namespace cc4s {
     // construct from CTF::Matrix
     ScaLapackMatrix(CTF::Matrix<F> &A, BlacsWorld *blacsWorld);
     ~ScaLapackMatrix();
-    const int *getDescriptor() {
+    const int *getDescriptor() const {
       return &dataType;
     }
+
+    const F *getLocalValues() const {
+      return localValues;
+    }
+    F *getLocalValues() {
+      return localValues;
+    }
+
     /**
      * \brief Writes the content of the ScaLapackMatrix to the given
      * CTF::Matrix. The CTF::Matrix must be allocated in the correct shape.
@@ -41,10 +49,10 @@ namespace cc4s {
 
     BlacsWorld *blacsWorld;
     int64_t *localIndices;
-    F *localValues;
 
   protected:
     int getGlobalIndex(int localIndex, int dimension);
+    F *localValues;
   };
 }
 

@@ -53,15 +53,18 @@ extern "C" {
     const double *a, const int *ia, const int *ja, const int *desca,
     double *s, double *u, const int *iu, const int *ju, const int *descu,
     double *vt, const int *ivt, const int *jvt, const int *descvt,
-    double *work, const int *lwork, double *rwork, int *info
+    double *work, const int *lwork,
+    int *info
   );
   void pzgesvd_(
     const char *jobu, const char *jobvt,
     const int *m, const int *n,
     const complex *a, const int *ia, const int *ja, const int *desca,
-    double *s, complex *u, const int *iu, const int *ju, const int *descu,
+    double *s,
+    complex *u, const int *iu, const int *ju, const int *descu,
     complex *vt, const int *ivt, const int *jvt, const int *descvt,
-    complex *work, const int *lwork, double *rwork, int *info
+    complex *work, const int *lwork, double *rwork,
+    int *info
   );
 
   void pdgemm_(
@@ -101,25 +104,6 @@ namespace cc4s {
     double *lambda,
     complex *z, const int *iz, const int *jz, const int *descz,
     int *info
-  );
-
-  // FIXME: double version only has one work array! put work allocation into
-  // cc4s wrappers
-  void pgesvd(
-    const char *jobu, const char *jobvt,
-    const int *m, const int *n,
-    const double *a, const int *ia, const int *ja, const int *desca,
-    double *s, double *u, const int *iu, const int *ju, const int *descu,
-    double *vt, const int *ivt, const int *jvt, const int *descvt,
-    double *work, const int *lwork, double *rwork, int *info
-  );
-  void pgesvd(
-    const char *jobu, const char *jobvt,
-    const int *m, const int *n,
-    const complex *a, const int *ia, const int *ja, const int *desca,
-    double *s, complex *u, const int *iu, const int *ju, const int *descu,
-    complex *vt, const int *ivt, const int *jvt, const int *descvt,
-    complex *work, const int *lwork, double *rwork, int *info
   );
 
   void pgemm(

@@ -3,6 +3,7 @@
 #include <math/MathFunctions.hpp>
 #include <util/BlacsWorld.hpp>
 #include <util/ScaLapackMatrix.hpp>
+#include <util/ScaLapackSingularValueDecomposition.hpp>
 #include <extern/ScaLapack.hpp>
 #include <util/Log.hpp>
 
@@ -12,49 +13,24 @@ using namespace CTF;
 
 template <typename F>
 PseudoInverseSvd<F>::PseudoInverseSvd(
-  Matrix<F> const &matrix_
+  Matrix<F> &A
 ):
-  A(matrix_)
+  inverse(A)
 {
-}
-
-template <typename F>
-Matrix<F> &PseudoInverseSvd<F>::get() {
+  // convert CTF matrices into ScaLapack matrices
   BlacsWorld blacsWorld(A.wrld->rank, A.wrld->np);
+  // TODO: only works for quadratic matrices
   ScaLapackMatrix<F> ScaA(A, &blacsWorld);
   ScaLapackMatrix<F> ScaU(ScaA);
   ScaLapackMatrix<F> ScaVT(ScaA);
-  int offset(1);
   double *sigma(new double[A.lens[0]]);
-  F optimalWork;
-  double optimalRealWork;
-  int info;
-  int workCount(-1);
-  pgesvd(
-    "V", "V",
-    &ScaA.lens[0], &ScaA.lens[1],
-    ScaA.localValues, &offset, &offset, ScaA.getDescriptor(),
-    sigma,
-    ScaU.localValues, &offset, &offset, ScaU.getDescriptor(),
-    ScaVT.localValues, &offset, &offset, ScaVT.getDescriptor(),
-    &optimalWork, &workCount, &optimalRealWork,
-    &info
-  );
-  LOG(4, "SVD") << "work size=" << optimalWork << "," << optimalRealWork << std::endl;
-  workCount = static_cast<int>(std::real(optimalWork)+0.5);
-  F *work(new F[workCount]);
-  double *realWork(new double[static_cast<int64_t>(optimalRealWork+0.5)]);
-  pgesvd(
-    "V", "V",
-    &ScaA.lens[0], &A.lens[1],
-    ScaA.localValues, &offset, &offset, ScaA.getDescriptor(),
-    sigma,
-    ScaU.localValues, &offset, &offset, ScaU.getDescriptor(),
-    ScaVT.localValues, &offset, &offset, ScaVT.getDescriptor(),
-    work, &workCount, realWork,
-    &info
-  );
-  delete[] work; delete[] realWork;
+
+  // do SVD using ScaLapack
+  ScaLapackSingularValueDecomposition<F> svd(&ScaA, &ScaU, &ScaVT, sigma);
+  svd.decompose(sigma);
+
+  // convert real sigma into complex CTF vector of their pseudo inverses
+  // TODO: only works for quadratic matrices
   Vector<F> S(A.lens[0], *A.wrld, "Sigma");
   int localSigmaCount(A.wrld->rank == 0 ? ScaA.lens[0] : 0);
   F *sigmaValues(new F[localSigmaCount]);
@@ -65,29 +41,36 @@ Matrix<F> &PseudoInverseSvd<F>::get() {
     sigmaValues[i] = sigma[i];
   }
   S.write(localSigmaCount, sigmaIndices, sigmaValues);
+
+  // convert ScaLapack result matrices to CTF
   Matrix<F> U(A);
-  Matrix<F> VT(A);
   ScaU.write(U);
+  Matrix<F> VT(A);
   ScaVT.write(VT);
+  // dump local storage
   delete[] sigmaIndices; delete[] sigmaValues;
   delete[] sigma;
 
-  U["ij"] = U["ij"] * S["j"];
-  A["ij"] = U["ik"] * VT["kj"];
-  return A;
+  // recompose in CTF to get pseudo inverse matrix
+  inverse["ij"] = U["ik"] * S["k"] * VT["kj"];
+}
+
+template <typename F>
+Matrix<F> &PseudoInverseSvd<F>::get() {
+  return inverse;
 }
 
 // instantiate
 template
 PseudoInverseSvd<double>::PseudoInverseSvd(
-  Matrix<double> const &matrix
+  Matrix<double> &matrix
 );
 template
 Matrix<double> &PseudoInverseSvd<double>::get();
 
 template
 PseudoInverseSvd<complex>::PseudoInverseSvd(
-  Matrix<complex> const &matrix
+  Matrix<complex> &matrix
 );
 template
 Matrix<complex> &PseudoInverseSvd<complex>::get();

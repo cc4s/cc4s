@@ -9,6 +9,7 @@ build/${CONFIG}/obj/util/DryTensor.o \
 build/${CONFIG}/obj/util/TensorIo.o \
 build/${CONFIG}/obj/util/BlacsWorld.o \
 build/${CONFIG}/obj/util/ScaLapackMatrix.o \
+build/${CONFIG}/obj/util/ScaLapackSingularValueDecomposition.o \
 build/${CONFIG}/obj/extern/ScaLapack.o \
 build/${CONFIG}/obj/math/MathFunctions.o \
 build/${CONFIG}/obj/math/ComplexTensor.o \
