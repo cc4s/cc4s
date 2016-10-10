@@ -7,6 +7,8 @@
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 using namespace cc4s;
 using namespace CTF;
@@ -23,6 +25,7 @@ FiniteSizeCorrection::~FiniteSizeCorrection() {
 
 void FiniteSizeCorrection::run() {
   calculateStructureFactor();
+  constructFibonacciGrid();
   calculateFiniteSizeCorrection();
 }
 
@@ -118,6 +121,30 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   // ...
   for (int g(0); g < NG; ++g) {
     LOG(1, "FiniteSizeCorrection") << structureFactors[g] << std::endl;
+  }
+}
+
+void FiniteSizeCorrection::constructFibonacciGrid(int N, double R) {
+  //This function construct a Fibonacci grid on a sphere with a certain radius.
+  //Returns a vector of vectors: {x,y,z}
+  //The N should be fixed and R should be a vector which is selected by another 
+  //function which determines the R's
+  double inc = M_PI * (3 - std::sqrt(5));
+  double off = 2. / N;
+  double r2d = 180./ M_PI;
+  double x, y, z, r, phi, theta;
+  new std::vector < vector<double>> fibonacciGrid;
+  std::vector <double> coordinate;
+  for (int k(0); k < N; ++k) {
+    y = R* (k*off - 1. + 0.5*off);
+    r = std::sqrt(R**2 - y*y);
+    phi = k * inc;
+    x = std::cos(phi)*r;
+    z = std::sin(phi)*r;
+    coordinate.push_back(x);
+    coordinate.push_back(y);
+    coordinate.push_back(z);
+    fibonacciGrid.push_back(coordinate);
   }
 }
 
