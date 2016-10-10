@@ -15,6 +15,7 @@ build/${CONFIG}/obj/math/ComplexTensor.o \
 build/${CONFIG}/obj/math/RandomTensor.o \
 build/${CONFIG}/obj/math/IterativePseudoInverse.o \
 build/${CONFIG}/obj/math/PseudoInverseSvd.o \
+build/${CONFIG}/obj/math/PseudoInverseHermitianSvd.o \
 build/${CONFIG}/obj/math/CanonicalPolyadicDecomposition.o \
 build/${CONFIG}/obj/math/RegularizedAlternatingLeastSquares.o \
 build/${CONFIG}/obj/mixers/Mixer.o \

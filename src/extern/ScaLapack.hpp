@@ -29,6 +29,24 @@ extern "C" {
     const int *iproc, const int *isrcproc, const int *nprocs
   );
 
+  void pdsyev_(
+    const char *jobz, const char *upperLower,
+    const int *m,
+    const double *a, const int *ia, const int *ja, const int *desca,
+    double *lambda,
+    double *z, const int *iz, const int *jz, const int *descz,
+    double *work, const int *lwork, int *info
+  );
+  void pzheev_(
+    const char *jobz, const char *upperLower,
+    const int *m,
+    const complex *a, const int *ia, const int *ja, const int *desca,
+    double *lambda,
+    complex *z, const int *iz, const int *jz, const int *descz,
+    complex *work, const int *lwork, double *realWork, const int *lRealCount,
+    int *info
+  );
+
   void pdgesvd_(
     const char *jobu, const char *jobvt,
     const int *m, const int *n,
@@ -68,6 +86,25 @@ extern "C" {
 
 // overloaded functions wrappers for invocation from template methods
 namespace cc4s {
+  void pheev(
+    const char *jobz, const char *upperLower,
+    const int *m,
+    const double *a, const int *ia, const int *ja, const int *desca,
+    double *lambda,
+    double *z, const int *iz, const int *jz, const int *descz,
+    int *info
+  );
+  void pheev(
+    const char *jobz, const char *upperLower,
+    const int *m,
+    const complex *a, const int *ia, const int *ja, const int *desca,
+    double *lambda,
+    complex *z, const int *iz, const int *jz, const int *descz,
+    int *info
+  );
+
+  // FIXME: double version only has one work array! put work allocation into
+  // cc4s wrappers
   void pgesvd(
     const char *jobu, const char *jobvt,
     const int *m, const int *n,
