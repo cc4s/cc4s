@@ -152,8 +152,9 @@ void FiniteSizeCorrection::interpolation3D() {
   Tensor<> *momenta(getTensorArgument<>("Momenta"));
   cc4s::Vector<> *regularGrid(new cc4s::Vector<>[NG]);
   momenta->read_all(regularGrid[0].coordinate);
-  for (int d(0); d < NG; ++d) {
-    LOG(1, "regularGrid") << regularGrid[d] << std::endl;
-  }
+  //remove duplicated grid points
+  //for (int d(0); d < NG; ++d) {
+  //  LOG(1, "regularGrid") << regularGrid[d] << std::endl;
+  //}
 }
     
