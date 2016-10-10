@@ -1,36 +1,30 @@
-% tensor rank decomposition execution plan
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [
-  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-  % Uncomment next line to set the read rank. Default value is No.
-% (readRank 40)
-].
-
-SliceCoulombVertex[
-  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-] [
-  ParticleHoleCoulombVertex
-].
-
-ParticleHoleCoulombIntegrals [
-  ParticleHoleCoulombVertex
-] [
-  PPHHCoulombIntegrals
-].
-
-Mp2EnergyFromCoulombIntegrals [
-  PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
-] [
-  Mp2Energy
+  CoulombVertex
+  HoleEigenEnergies ParticleEigenEnergies
 ].
 
 CoulombVertexDecomposition [
+  % CoulombVertex is to be decomposed.
   CoulombVertex
-  (rank 150) (maxIterations 32)
+  % Give the starting tensors if available. Else random tensors are used.
+% StartingCoulombFactors
+% StartingFactorOrbitals
+  % Set the rank or the rankFactor (relative to NG) of
+  % the decomposed tensor. Default is NR=2*NG.
+  (rank 66)
+  (rankFactor 2.0)
+  % Set the number of iterations. Default is 32.
+  (maxIterations 32)
+  (mixer "LinearMixer")
+  (mixingRatio 0.8)
+  % Set whether CoulombFactors or FactorOrbitals are fitted
+  % or kept fixed during the RALS iterations.
+  (fitCoulombFactors 1)
+  (fitFactorOrbitals 1)
 ] [
-  FactorOrbitals CoulombFactors
-  % approximation from the rank decomposition:
+  FactorOrbitals
+  CoulombFactors
   ComposedCoulombVertex
 ].
-

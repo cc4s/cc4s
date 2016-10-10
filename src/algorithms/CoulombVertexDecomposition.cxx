@@ -61,21 +61,38 @@ void CoulombVertexDecomposition::run() {
   );
 
   // allocate factor tensors
-  PiqR = new Matrix<complex>(
-    Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile
-  );
-  PirR = new Matrix<complex>(
-    Np, int(rank), NS, *GammaGqr->wrld, "PirR", GammaGqr->profile
-  );
-  LambdaGR = new Matrix<complex>(
-    NG, int(rank), NS, *GammaGqr->wrld, "LambdaGR", GammaGqr->profile
-  );
-  setRandomTensor(*PirR);
-  realizePi(*PirR); normalizePi(*PirR);
+  if (isArgumentGiven("StartingFactorOrbitals")) {
+    Tensor<complex> *PirRTensor(getTensorArgument<complex>("StartingFactorOrbitals"));
+    PirRTensor->set_name("StartingPirR");
+    if (PirRTensor->order != 2) throw new Exception("Matrix expected as argument StartingPirR");
+    LOG(1, "RALS") << "Initial PirR=" << PirRTensor->get_name() << std::endl;
+    PirR = reinterpret_cast<Matrix<complex> *>(PirRTensor);
+  }
+  else {
+    PirR = new Matrix<complex>(Np, int(rank), NS, *GammaGqr->wrld, "PirR", GammaGqr->profile);
+    LOG(1, "RALS") << "Initial PirR=RandomTensor" << std::endl;
+    setRandomTensor(*PirR);
+    realizePi(*PirR); normalizePi(*PirR);
+  }
+
+  if (isArgumentGiven("StartingCoulombFactors")) {
+    Tensor<complex> *LambdaGRTensor(getTensorArgument<complex>("StartingCoulombFactors"));
+    LambdaGRTensor->set_name("StartingLambdaGR");
+    if (LambdaGRTensor->order != 2) throw new Exception("Matrix expected as argument StartingLambdaGR");
+    LOG(1, "RALS") << "Initial LambdaGR=" << LambdaGRTensor->get_name() << std::endl;
+    LambdaGR = reinterpret_cast<Matrix<complex> *>(LambdaGRTensor);
+  }
+  else {
+    LambdaGR = new Matrix<complex>(NG, int(rank), NS, *GammaGqr->wrld, "LambdaGR", GammaGqr->profile);
+    LOG(1, "RALS") << "Initial LambdaGR=RandomTensor" << std::endl;
+    setRandomTensor(*LambdaGR);
+  }
+
+  PiqR = new Matrix<complex>(Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile);
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
   // PiqR["qR"] = conj(PirR["qR"])
   PiqR->sum(1.0, *PirR,"qR", 0.0,"qR", fConj);
-  setRandomTensor(*LambdaGR);
+
   allocatedTensorArgument<complex>("FactorOrbitals", PirR);
   allocatedTensorArgument<complex>("CoulombFactors", LambdaGR);
 
@@ -129,6 +146,20 @@ void CoulombVertexDecomposition::dryRun() {
   LOG(1, "RALS") << "Decomposing Coulomb vertex with NG=" << NG
     << " Np=" << Np << std::endl;
 
+  if (isArgumentGiven("StartingFactorOrbitals")) {
+    LOG(1, "RALS") << "Initial PirR=StartingPirR" << std::endl;
+  }
+  else {
+    LOG(1, "RALS") << "Initial PirR=RandomTensor" << std::endl;
+  }
+
+  if (isArgumentGiven("StartingCoulombFactors")) {
+    LOG(1, "RALS") << "Initial LambdaGR=StartingLambdaGR" << std::endl;
+  }
+  else {
+    LOG(1, "RALS") << "Initial LambdaGR=RandomTensor" << std::endl;
+  }
+
   // allocate factor tensors
   DryTensor<complex> *PiqR = new DryMatrix<complex>(Np, int(rank), NS);
   DryTensor<complex> *PirR = new DryMatrix<complex>(Np, int(rank), NS);
@@ -153,12 +184,21 @@ void CoulombVertexDecomposition::dryRun() {
 void CoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
-  iterateQuadraticFactor(iterationsCount);
 
-  fitRegularizedAlternatingLeastSquaresFactor(
-    *GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
-    *LambdaGR,'G', regularizationEstimator
-  );
+  int fitFactorOrbitals(getIntegerArgument
+			("fitFactorOrbitals", 1));
+
+  if (fitFactorOrbitals) {
+    iterateQuadraticFactor(iterationsCount);
+  }
+
+  int fitCoulombFactors(getIntegerArgument
+			("fitCoulombFactors", 1));
+
+  if (fitCoulombFactors) {
+    fitRegularizedAlternatingLeastSquaresFactor(*GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
+						*LambdaGR,'G', regularizationEstimator);
+  }
 
   Delta = getDelta();
   LOG(0, "RALS") << "iteration=" << (iterationsCount+1)
