@@ -19,6 +19,7 @@ namespace cc4s {
 
     void calculateStructureFactor();
     void constructFibonacciGrid();
+    void interpolation3D();
     void calculateFiniteSizeCorrection();
   };
 }

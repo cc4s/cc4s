@@ -2,6 +2,7 @@
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
 #include <math/MathFunctions.hpp>
+#include <math/Vector.hpp>
 #include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -26,6 +27,7 @@ FiniteSizeCorrection::~FiniteSizeCorrection() {
 void FiniteSizeCorrection::run() {
   calculateStructureFactor();
   constructFibonacciGrid();
+  interpolation3D();
   calculateFiniteSizeCorrection();
 }
 
@@ -95,12 +97,12 @@ void FiniteSizeCorrection::calculateStructureFactor() {
 
   //construct SG
   NG = CGai.lens[0];
-  Vector<complex> *SG(new Vector<complex>(NG, *CGai.wrld, "SG"));
+  CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
   (*SG)["G"] =   2.0 * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
 // BUG: the following line yields wrong sign:
 //  (*SG)["G"] -= 1.0 * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
   (*SG)["G"] += -1.0 * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
-  Vector<> *realSG(new Vector<>(NG, *CGai.wrld, "realSG"));
+  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
   //Get EMp2
@@ -124,27 +126,34 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   }
 }
 
-void FiniteSizeCorrection::constructFibonacciGrid(int N, double R) {
+void FiniteSizeCorrection::constructFibonacciGrid() {
   //This function construct a Fibonacci grid on a sphere with a certain radius.
   //Returns a vector of vectors: {x,y,z}
   //The N should be fixed and R should be a vector which is selected by another 
   //function which determines the R's
+  int N = 128;
+  double R = 1.0;
   double inc = M_PI * (3 - std::sqrt(5));
-  double off = 2. / N;
-  double r2d = 180./ M_PI;
-  double x, y, z, r, phi, theta;
-  new std::vector < vector<double>> fibonacciGrid;
-  std::vector <double> coordinate;
+  cc4s::Vector<> *fibonacciGrid(new cc4s::Vector<>[N]);
   for (int k(0); k < N; ++k) {
-    y = R* (k*off - 1. + 0.5*off);
-    r = std::sqrt(R**2 - y*y);
-    phi = k * inc;
-    x = std::cos(phi)*r;
-    z = std::sin(phi)*r;
-    coordinate.push_back(x);
-    coordinate.push_back(y);
-    coordinate.push_back(z);
-    fibonacciGrid.push_back(coordinate);
+    double z((2.0*k+1)/N - 1.0);
+    double r(R * std::sqrt(1.0 - z*z));
+    double phi(k * inc);
+    fibonacciGrid[k].coordinate[0] = r * std::cos(phi);
+    fibonacciGrid[k].coordinate[1] = r * std::sin(phi);
+    fibonacciGrid[k].coordinate[2] = R * z;
+    LOG(1, "FibonacciGrid") << z << "; " << fibonacciGrid[k] << std::endl;
   }
+  LOG(1, "FibonacciGrid") << fibonacciGrid[0].approximately(fibonacciGrid[1]) << std::endl;
+  LOG(1, "FibonacciGrid") << fibonacciGrid[1].approximately(fibonacciGrid[1]) << std::endl;
 }
 
+void FiniteSizeCorrection::interpolation3D() {
+  Tensor<> *momenta(getTensorArgument<>("Momenta"));
+  cc4s::Vector<> *regularGrid(new cc4s::Vector<>[NG]);
+  momenta->read_all(regularGrid[0].coordinate);
+  for (int d(0); d < NG; ++d) {
+    LOG(1, "regularGrid") << regularGrid[d] << std::endl;
+  }
+}
+    
