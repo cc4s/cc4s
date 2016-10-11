@@ -46,6 +46,12 @@ namespace cc4s {
       u -= v;
       return std::real(u.dot(u)) < epsilon;
     }
+    
+    double distance(Vector<F, D> const &v){
+      Vector<F,D> u(*this);
+      u -= v;
+      return std::real(u.dot(u)) 
+    }
 
     F coordinate[D];
   };

@@ -2,7 +2,7 @@
 #define INTERPOLATION_DEFINED
 
 #include <math/MathFunctions.hpp>
-
+#include <iostream>
 namespace cc4s {
   template<typename F=double>
   class Interpolation{
@@ -14,7 +14,7 @@ namespace cc4s {
     // target is a point between 0.--1.0 (normalised)
     // v is a pointer to an array of size 2 containing the two values of the 
     //two points which encompass the target point.
-      return (1.-target) * v[0] + target * v[1];
+      return (F)((1.-target) * (v[0]) + target * (v[1]));
     }
    
     F Bilinear(F *target, F *v){
@@ -34,16 +34,21 @@ namespace cc4s {
       surround (x, y, z).
       The front face of the cubic lies on the plane x = x0 (constant),
       The back face of the cubic lies on  the plane x =x1(constant),
-      and x1>x0. 
+      and x1<x0. 
       Point 0, 1, 2, 3 lie on the front face and counted from the bottom left 
       cornor counterclock wisely;
       Point 4, 5, 6, 7 lie on the back face and counted from the bottom left
       cornor counterclock wisely.
    */
-      F v_prime[2] = { Bilinear(&(target[1]), &(v[0]),
+      F v_prime[2] = { Bilinear(&(target[1]), &(v[0])),
                        Bilinear(&(target[1]), &(v[4]))};
       return Linear(target[0], v_prime);
     }
+  };
+  template <typename F=double>
+  inline std::ostream &operator << (std::ostream &stream, cc4s::Interpolation<F> const &v) {
+    stream << v << std::endl;
+    return stream;
   }
 }
 #endif

@@ -3,11 +3,13 @@
 #include <math/ComplexTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/Vector.hpp>
+#include <math/Interpolation.hpp>
 #include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
+#include <iostream>
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -121,9 +123,9 @@ void FiniteSizeCorrection::calculateStructureFactor() {
 
 void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   // ...
-  for (int g(0); g < NG; ++g) {
-    LOG(1, "FiniteSizeCorrection") << structureFactors[g] << std::endl;
-  }
+  //for (int g(0); g < NG; ++g) {
+  //  LOG(1, "FiniteSizeCorrection") << structureFactors[g] << std::endl;
+  //}
 }
 
 void FiniteSizeCorrection::constructFibonacciGrid() {
@@ -131,7 +133,7 @@ void FiniteSizeCorrection::constructFibonacciGrid() {
   //Returns a vector of vectors: {x,y,z}
   //The N should be fixed and R should be a vector which is selected by another 
   //function which determines the R's
-  int N = 128;
+  new int N = 128;
   double R = 1.0;
   double inc = M_PI * (3 - std::sqrt(5));
   cc4s::Vector<> *fibonacciGrid(new cc4s::Vector<>[N]);
@@ -142,7 +144,7 @@ void FiniteSizeCorrection::constructFibonacciGrid() {
     fibonacciGrid[k].coordinate[0] = r * std::cos(phi);
     fibonacciGrid[k].coordinate[1] = r * std::sin(phi);
     fibonacciGrid[k].coordinate[2] = R * z;
-    LOG(1, "FibonacciGrid") << z << "; " << fibonacciGrid[k] << std::endl;
+    //LOG(1, "FibonacciGrid") << z << "; " << fibonacciGrid[k] << std::endl;
   }
 //  LOG(1, "FibonacciGrid") << fibonacciGrid[0].approximately(fibonacciGrid[1]) << std::endl;
 //  LOG(1, "FibonacciGrid") << fibonacciGrid[1].approximately(fibonacciGrid[1]) << std::endl;
@@ -152,6 +154,24 @@ void FiniteSizeCorrection::interpolation3D() {
   Tensor<> *momenta(getTensorArgument<>("Momenta"));
   cc4s::Vector<> *regularGrid(new cc4s::Vector<>[NG]);
   momenta->read_all(regularGrid[0].coordinate);
+  class Function3D{
+  public:
+    cc4s:Vector<double, 3> coordinates;
+    double value;  
+  };
+  Function3D onRegularGrid;
+  
+  for (int t(0); t < N; ++t){
+    for (int d(0); d < NG; ++d){
+       
+    }
+  }
+  //double x[3]={0.3,0.4, 0.7};
+  //double v[8]={0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+  //cc4s::Interpolation<double> Intp;
+  //double tmp = Intp.Trilinear(x,v);
+  //LOG(1, "linear") << tmp << std::endl;
+  //std::cout << "Linear" << cc4s::Interpolation<>::Linear(x, v) <<std::endl;
   //remove duplicated grid points
   //for (int d(0); d < NG; ++d) {
   //  LOG(1, "regularGrid") << regularGrid[d] << std::endl;
