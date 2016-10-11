@@ -164,28 +164,57 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
       } 
       else {
-	// slice if Vabcd is not specified
+	if (isArgumentGiven("CoulombFactors")) {
+	  // Read the factorsSliceRank. If not provided use NG.
+	  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+	  LambdaGR->set_name("LambdaGR");
 
-	// Read the sliceRank. If not provided use No
-	int sliceRank(getIntegerArgument
-		      ("sliceRank",No));
+	  int NR(LambdaGR->lens[1]);
+	  int NG(LambdaGR->lens[0]);
 
-	// Slice loop starts here
-	for (int b(0); b < Nv; b += sliceRank) {
-	  for (int a(b); a < Nv; a += sliceRank) {
-	    LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	    Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
-	    Vxycd->set_name("Vxycd");
-	    int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-	    int syms[] = {NS, NS, NS, NS};
-	    Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);
-	    Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
-	    sliceIntoResiduum(Rxyij, a, b, Rabij);
-	    // The integrals of this slice are not needed anymore
-	    delete Vxycd;
+	  int factorsSliceRank(getIntegerArgument
+			   ("factorsSliceRank",NG));
+
+	  // Slice loop starts here
+	  for (int b(0); b < NR; b += factorsSliceRank) {
+	    for (int a(b); a < NR; a += factorsSliceRank) {
+	      LOG(1, abbreviation) << "Evaluting Xabij at R=" << a << ", S=" << b << std::endl;
+	      Tensor<> *Xabij(sliceAmplitudesFromCoulombFactors(a, b, factorsSliceRank));
+	      Xabij->set_name("Xabij");
+	      if (a==b) {
+		Rabij["abij"] += (*Xabij)["abij"];
+	      }
+	      else{
+		Rabij["abij"] += (*Xabij)["abij"];
+		Rabij["baij"] += (*Xabij)["abij"];
+	      }
+	      delete Xabij;
+	    }
+	  }
+
+
+	}
+	else {
+	  // Read the sliceRank. If not provided use No
+	  int integralSliceRank(getIntegerArgument
+			("integralSliceRank",No));
+
+	  // Slice loop starts here
+	  for (int b(0); b < Nv; b += integralSliceRank) {
+	    for (int a(b); a < Nv; a += integralSliceRank) {
+	      LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+	      Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, integralSliceRank));
+	      Vxycd->set_name("Vxycd");
+	      int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+	      int syms[] = {NS, NS, NS, NS};
+	      Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);
+	      Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
+	      sliceIntoResiduum(Rxyij, a, b, Rabij);
+	      // The integrals of this slice are not needed anymore
+	      delete Vxycd;
+	    }
 	  }
 	}
-
       }
 
       contraction   = "Vabcd";
@@ -235,13 +264,13 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
     DryTensor<> Xakci(*Vaibj);
     DryTensor<> Xakic(4, voov, syms);
 
-    // Read the sliceRank. If not provided use No
-    int sliceRank(getIntegerArgument
-		  ("sliceRank",No));
+    // Read the integralSliceRank. If not provided use No
+    int integralSliceRank(getIntegerArgument
+		  ("integralSliceRank",No));
 
     if (!Vabcd) {
       // Slice if Vabcd is not specified
-      int lens[] = { sliceRank, sliceRank, Nv, Nv };
+      int lens[] = { integralSliceRank, integralSliceRank, Nv, Nv };
       int syms[] = {NS, NS, NS, NS};
       // TODO: implement drySliceCoulombIntegrals
       DryTensor<> Vxycd(4, lens, syms);
@@ -306,15 +335,15 @@ void CcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
 	else {
 	  // Slice if Vabcd is not specified
 
-	  // Read the sliceRank. If not provided use No
-	  int64_t sliceRank(getIntegerArgument
-			    ("sliceRank",No));
+	  // Read the integralSliceRank. If not provided use No
+	  int64_t integralSliceRank(getIntegerArgument
+			    ("integralSliceRank",No));
 
 	  // Slice loop starts here
-	  for (int b(0); b < Nv; b += sliceRank) {
-	    for (int a(b); a < Nv; a += sliceRank) {
+	  for (int b(0); b < Nv; b += integralSliceRank) {
+	    for (int a(b); a < Nv; a += integralSliceRank) {
 	      LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	      Tensor<> *Vxyef(sliceCoulombIntegrals(a, b, sliceRank));
+	      Tensor<> *Vxyef(sliceCoulombIntegrals(a, b, integralSliceRank));
 	      int lens[] = { Vxyef->lens[0], Vxyef->lens[1], No, No };
 	      int syms[] = {NS, NS, NS, NS};
 	      Tensor<> Rxyij(4, lens, syms, *Vxyef->wrld, "Rxyij");

@@ -111,6 +111,20 @@ namespace cc4s {
     );
 
     /**
+     * \brief Calculates and returns one slice Xabij of the residuum
+     * from the Coulomb factors. The slice is computed from
+     * Rx and Ry and are restricted to the
+     * range {a, ..., sliceFactors+a-1} and {b, ..., SliceFactors+b-1}, respectively.
+     * The caller is responsible for deleting the dynamically allocated
+     * result tensor. 
+     * \param[in] a 1st sliced dimension (Rx).
+     * \param[in] b 2nd sliced dimension (Ry).
+     * \param[in] sliceFactors slicing rank of NR.
+     * \param[out] Xabij sliced Residuum
+     */
+    CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int sliceFactors);
+
+    /**
      * \brief Prints the energy from the residuum.
      * \param[in] Rabij the residuum.
      * \param[in] previousEnergy double that holds the previous energy.
