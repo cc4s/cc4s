@@ -144,8 +144,8 @@ void FiniteSizeCorrection::constructFibonacciGrid() {
     fibonacciGrid[k].coordinate[2] = R * z;
     LOG(1, "FibonacciGrid") << z << "; " << fibonacciGrid[k] << std::endl;
   }
-  LOG(1, "FibonacciGrid") << fibonacciGrid[0].approximately(fibonacciGrid[1]) << std::endl;
-  LOG(1, "FibonacciGrid") << fibonacciGrid[1].approximately(fibonacciGrid[1]) << std::endl;
+//  LOG(1, "FibonacciGrid") << fibonacciGrid[0].approximately(fibonacciGrid[1]) << std::endl;
+//  LOG(1, "FibonacciGrid") << fibonacciGrid[1].approximately(fibonacciGrid[1]) << std::endl;
 }
 
 void FiniteSizeCorrection::interpolation3D() {
