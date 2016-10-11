@@ -32,7 +32,7 @@ CcdEnergyFromCoulombIntegrals [
   HHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   (maxIterations 64)
-  (sliceRank 13)
+  (integralSliceRank 13)
 ] [
   (CcdEnergy CcdEnergySlice)
   (CcdDoublesAmplitudes CcdDoublesAmplitudesSlice)
