@@ -77,10 +77,9 @@ namespace cc4s {
     ScaLapackSingularValueDecomposition(
       ScaLapackMatrix<complex> const *A_,
       ScaLapackMatrix<complex> *U_,
-      ScaLapackMatrix<complex> *VT_,
-      double *sigma
+      ScaLapackMatrix<complex> *VT_
     ):
-      A(A_), workCount(-1), work(nullptr), realWork(nullptr)
+      A(A_), U(U_), VT(VT_), workCount(-1), work(nullptr), realWork(nullptr)
     {
       LOG(1, "ScaSVD") << A->lens[0] << "x" << A->lens[1] << std::endl;
       complex optimalWork;
@@ -91,12 +90,13 @@ namespace cc4s {
         "V", "V",
         &A->lens[0], &A->lens[1],
         A->getLocalValues(), &offset, &offset, A->getDescriptor(),
-        sigma,
+        nullptr,
         U->getLocalValues(), &offset, &offset, U->getDescriptor(),
         VT->getLocalValues(), &offset, &offset, VT->getDescriptor(),
         &optimalWork, &workCount, &optimalRealWork,
         &info
       );
+      LOG(1, "ScaSVD") << "worksize=" << optimalWork << "," << optimalRealWork << std::endl;
       // TODO: check info
       workCount = static_cast<int>(std::real(optimalWork)+0.5);
       // allocate work:

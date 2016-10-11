@@ -23,10 +23,10 @@ PseudoInverseSvd<F>::PseudoInverseSvd(
   ScaLapackMatrix<F> ScaA(A, &blacsWorld);
   ScaLapackMatrix<F> ScaU(ScaA);
   ScaLapackMatrix<F> ScaVT(ScaA);
-  double *sigma(new double[A.lens[0]]);
 
   // do SVD using ScaLapack
-  ScaLapackSingularValueDecomposition<F> svd(&ScaA, &ScaU, &ScaVT, sigma);
+  ScaLapackSingularValueDecomposition<F> svd(&ScaA, &ScaU, &ScaVT);
+  double *sigma(new double[A.lens[0]]);
   svd.decompose(sigma);
 
   // convert real sigma into complex CTF vector of their pseudo inverses
@@ -61,13 +61,14 @@ Matrix<F> &PseudoInverseSvd<F>::get() {
 }
 
 // instantiate
+/*
 template
 PseudoInverseSvd<double>::PseudoInverseSvd(
   Matrix<double> &matrix
 );
 template
 Matrix<double> &PseudoInverseSvd<double>::get();
-
+*/
 template
 PseudoInverseSvd<complex>::PseudoInverseSvd(
   Matrix<complex> &matrix
