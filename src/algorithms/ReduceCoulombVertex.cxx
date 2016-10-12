@@ -22,32 +22,32 @@ void ReduceCoulombVertex::run() {
   Tensor<complex> *GammaGqr(
     getTensorArgument<complex>("CoulombVertex")
   );
-  Tensor<complex> *UGg(
+  Tensor<complex> *UGF(
     getTensorArgument<complex>("EnergyMatrixTransform")
   );
-  int lens[] = { UGg->lens[1], GammaGqr->lens[1], GammaGqr->lens[2] };
+  int lens[] = { UGF->lens[1], GammaGqr->lens[1], GammaGqr->lens[2] };
   int syms[] = { NS, NS, NS };
-  Tensor<complex> *Gammagqr = new Tensor<complex>(
-    3, lens, syms, *GammaGqr->wrld, "Gammagqr"
+  Tensor<complex> *GammaFqr = new Tensor<complex>(
+    3, lens, syms, *GammaGqr->wrld, "GammaFqr"
   );
   allocatedTensorArgument<complex>(
-    "ReducedCoulombVertex", Gammagqr
+    "ReducedCoulombVertex", GammaFqr
   );
-  (*Gammagqr)["gqr"] = (*GammaGqr)["Gqr"] * (*UGg)["Gg"];
+  (*GammaFqr)["Fqr"] = (*GammaGqr)["Gqr"] * (*UGF)["GF"];
 }
 
 void ReduceCoulombVertex::dryRun() {
   DryTensor<complex> *GammaGqr(
     getTensorArgument<complex, DryTensor<complex>>("CoulombVertex")
   );
-  DryTensor<complex> *UGg(
+  DryTensor<complex> *UGF(
     getTensorArgument<complex, DryTensor<complex>>("EnergyMatrixTransform")
   );
-  int lens[] = { UGg->lens[1], GammaGqr->lens[1], GammaGqr->lens[2] };
+  int lens[] = { UGF->lens[1], GammaGqr->lens[1], GammaGqr->lens[2] };
   int syms[] = { NS, NS, NS };
-  DryTensor<complex> *Gammagqr = new DryTensor<complex>(3, lens, syms);
+  DryTensor<complex> *GammaFqr = new DryTensor<complex>(3, lens, syms);
   allocatedTensorArgument<complex, DryTensor<complex>>(
-    "ReducedCoulombVertex", Gammagqr
+    "ReducedCoulombVertex", GammaFqr
   );
 }
 

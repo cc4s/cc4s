@@ -211,23 +211,23 @@ Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a,
   Tensor<> *Tai(&TaiMixer->getNext());
   Tai->set_name("Tai");
 
-  // Read the Coulomb vertex GammaGpq
-  Tensor<complex> *GammaGpq( getTensorArgument<complex>("CoulombVertex"));
-  GammaGpq->set_name("GammaGpq");
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+  GammaGqr->set_name("GammaGqr");
 
   // Compute No,Nv,NG,Np
   int No(Tai->lens[1]);
   int Nv(Tai->lens[0]);
-  int NG(GammaGpq->lens[0]);
+  int NG(GammaGqr->lens[0]);
   int Np = No + Nv;
 
-  // Allocate and compute GammaGab,GammaGai from GammaGpq
+  // Allocate and compute GammaGab,GammaGai from GammaGqr
   int GaiStart[] = {0 ,No, 0};
   int GaiEnd[]   = {NG,Np,No};
   int GabStart[] = {0 ,No,No};
   int GabEnd[]   = {NG,Np,Np};
-  Tensor<complex> GammaGai(GammaGpq->slice(GaiStart,GaiEnd));
-  Tensor<complex> GammaGab(GammaGpq->slice(GabStart,GabEnd));
+  Tensor<complex> GammaGai(GammaGqr->slice(GaiStart,GaiEnd));
+  Tensor<complex> GammaGab(GammaGqr->slice(GabStart,GabEnd));
 
   // Split GammaGab,GammaGai into real and imaginary parts
   Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
@@ -257,11 +257,11 @@ Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a,
   Tensor<complex> rightGamma(GammaGab.slice(rightGammaStart, rightGammaEnd));
 
   // Split into real and imaginary parts
-  Tensor<> realLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGpq->wrld, "realLeftGamma");
-  Tensor<> imagLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGpq->wrld, "imagLeftGamma");
+  Tensor<> realLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld, "realLeftGamma");
+  Tensor<> imagLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld, "imagLeftGamma");
   fromComplexTensor(leftGamma, realLeftGamma, imagLeftGamma);
-  Tensor<> realRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGpq->wrld, "realRightGamma");
-  Tensor<> imagRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGpq->wrld, "imagRightGamma");
+  Tensor<> realRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld, "realRightGamma");
+  Tensor<> imagRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld, "imagRightGamma");
   fromComplexTensor(rightGamma, realRightGamma, imagRightGamma);
   
   // Allocate sliced Coulomb integrals
@@ -269,7 +269,7 @@ Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a,
     leftGamma.lens[1], rightGamma.lens[1], leftGamma.lens[2], rightGamma.lens[2]
   };
   int syms[] = { NS, NS, NS, NS };
-  Tensor<> *Vxycd(new Tensor<>(4, lens, syms, *GammaGpq->wrld, "Vxycd"));
+  Tensor<> *Vxycd(new Tensor<>(4, lens, syms, *GammaGqr->wrld, "Vxycd"));
 
   // Contract left and right slices of the dressed Coulomb vertices
   (*Vxycd)["xycd"]  = realLeftGamma["Gxc"] * realRightGamma["Gyd"];
@@ -279,8 +279,8 @@ Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a,
 
 DryTensor<> *ClusterSinglesDoublesAlgorithm::drySliceCoupledCoulombIntegrals(int sliceRank)
 {
-  // Read the Coulomb vertex GammaGpq
-  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+  // Read the Coulomb vertex GammaGqr
+  DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
 			       DryTensor<complex>>("CoulombVertex"));
   
   // Read the Particle/Hole Eigenenergies
@@ -292,10 +292,10 @@ DryTensor<> *ClusterSinglesDoublesAlgorithm::drySliceCoupledCoulombIntegrals(int
   // Compute No,Nv,NG,Np
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
-  int NG(GammaGpq->lens[0]);
+  int NG(GammaGqr->lens[0]);
   int syms[] = { NS, NS, NS, NS };
 
-  // Allocate and compute GammaGab,GammaGai from GammaGpq
+  // Allocate and compute GammaGab,GammaGai from GammaGqr
   int GaiLens[]   = {NG,Nv,No};
   int GabLens[]   = {NG,Nv,Nv};
   int GijLens[]   = {NG,No,No};

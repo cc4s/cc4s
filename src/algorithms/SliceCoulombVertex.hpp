@@ -17,10 +17,9 @@ namespace cc4s {
     );
     virtual ~SliceCoulombVertex();
     /**
-     * \brief Calculates Coulomb integrals Vabcd,Vabij,Vaibj,Vabci,Vijka,Vijkl
-     * from GammaGai,GammaGab,GammaGij Coulomb Vertices. Arguments can be
-     * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
-    */
+     * \brief Slices the particle hole part \f$\Gamma^{aG}_i\f$ from
+     * the full Coulomb vertex \f$\Gamma^{qG}_r\f$.
+     */
     virtual void run();
 
 

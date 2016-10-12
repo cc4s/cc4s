@@ -4,86 +4,20 @@ CoulombVertexReader [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
 
-SliceCoulombVertex [
-  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-] [
-  ParticleHoleCoulombVertex
-].
-
-ParticleHoleCoulombIntegrals [
-  ParticleHoleCoulombVertex
-] [
-  PPHHCoulombIntegrals
-].
-
-Mp2EnergyFromCoulombIntegrals [
-  PPHHCoulombIntegrals
-  HoleEigenEnergies ParticleEigenEnergies
-] [
-  Mp2Energy 
-].
-
-%%%%%%%%%%%%%%%
-% compute EnergyMatrix from direct term only (only negative eigenvalues)
-DrccdEnergyFromCoulombVertex [
-  PPHHCoulombIntegrals
-  ParticleHoleCoulombVertex
-  HoleEigenEnergies ParticleEigenEnergies
-  % just calculate direct MP2
-  (maxIterations 1)
-] [
-  DrccdEnergy
-  DrccdDoublesAmplitudes
-].
-
-EnergyMatrixFromDoublesAmplitudes [
-  ParticleHoleCoulombVertex
-  (DoublesAmplitudes DrccdDoublesAmplitudes)
+ProjectorEnergyMatrixFromCoulombVertex [
+  CoulombVertex
 ] [
   EnergyMatrix
 ].
-%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%
-% compute EnergyMatrix from direct & exchange term (also positive eigenvalues)
-%Mp2EnergyMatrixFromCoulombIntegrals [
-%  ParticleHoleCoulombVertex
-%  PPHHCoulombIntegrals
-%  HoleEigenEnergies ParticleEigenEnergies
-%] [
-%  (Mp2EnergyMatrix EnergyMatrix)
-%].
-%%%%%%%%%%%%%%%
 
 ReduceEnergyMatrix [
   EnergyMatrix
+  (fieldVariables 16)
   (reduction 0.5)
 ] [
   EnergyMatrixTransform
 ].
 
-ReduceParticleHoleCoulombVertex [
-  ParticleHoleCoulombVertex
-  EnergyMatrixTransform
-] [
-  ReducedParticleHoleCoulombVertex
-].
-
-ParticleHoleCoulombIntegrals [
-  (ParticleHoleCoulombVertex ReducedParticleHoleCoulombVertex)
-] [
-  (PPHHCoulombIntegrals ReducedPPHHCoulombIntegrals)
-].
-
-Mp2EnergyFromCoulombIntegrals [
-  (PPHHCoulombIntegrals ReducedPPHHCoulombIntegrals)
-  HoleEigenEnergies ParticleEigenEnergies
-] [
-  (Mp2Energy ReducedMp2Energy)
-].
-
-
-%
 ReduceCoulombVertex [
   CoulombVertex
   EnergyMatrixTransform
@@ -92,38 +26,48 @@ ReduceCoulombVertex [
 ].
 
 CoulombVertexDecomposition [
-  (CoulombVertex ReducedCoulombVertex)
-  (rank 100)
-  (maxIterations 64)
+  CoulombVertex
+  % Set the rank or the rankFactor (relative to NG) of
+  % the decomposed tensor and the number of iterations.
+  (rank 66)
+  (rankFactor 2.0)
+  (maxIterations 32)
+  % the LinearMixer is used by default
+  (mixer "LinearMixer")
   (mixingRatio 0.8)
 ] [
   FactorOrbitals CoulombFactors
-  % approximation from the rank decomposition:
+  % Returns (if given) the Coulomb Vertex from the decomposed tensors.
   ComposedCoulombVertex
 ].
 
-SliceCoulombVertex [
+CoulombIntegralsFromVertex [
+  % Compute the Coulomb integrals from the composed vertex
+  % rather than from the original one, for comparability
   (CoulombVertex ComposedCoulombVertex)
+% CoulombVertex
   HoleEigenEnergies ParticleEigenEnergies
 ] [
-  (ParticleHoleCoulombVertex ComposedParticleHoleCoulombVertex)
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
 ].
 
-ParticleHoleCoulombIntegrals [
-  (ParticleHoleCoulombVertex ComposedParticleHoleCoulombVertex)
-  HoleEigenEnergies ParticleEigenEnergies
+CcdEnergyFromCoulombFactors [
+  % Coulomb factors are used when necessary for low memory and O(N^5)
+  FactorOrbitals CoulombFactors
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  % Sets maximum iterations. Default is 16.
+  (maxIterations 64)
+  % the LinearMixer is used by default
+% (mixer "LinearMixer")
+% (mixingRatio 1.5)
 ] [
-  (PPHHCoulombIntegrals ComposedPPHHCoulombIntegrals)
+  (CcdEnergy CcdEnergyFactors)
+  (CcdDoublesAmplitudes CcdDoublesAmplitudesFactors)
 ].
 
-Mp2EnergyFromCoulombIntegrals [
-  (PPHHCoulombIntegrals ComposedPPHHCoulombIntegrals)
-  HoleEigenEnergies ParticleEigenEnergies
-] [
-  (Mp2Energy ComposedMp2Energy)
-].
-
-TensorWriter [(Data ComposedMp2Energy)] [].
-
-TensorWriter [(Data Mp2Energy)] [].
-TensorWriter [(Data ReducedMp2Energy)] [].
+TensorWriter [(Data CcdEnergyFactors)] [].

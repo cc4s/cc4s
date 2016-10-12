@@ -8,7 +8,7 @@ namespace cc4s {
   /**
    * \brief Caclulates the Coulomb Integrals \f$V_{ij}^{ab}, V_{bj}^{ai},
    * V_{kl}^{ij}, V_{cd}^{ab}, V_{ka}^{ij}, V_{ci}^{ab}\f$ (if given) from the
-   * Coulomb Vertex \f$\Gamma_{pG}^q\f$ and stores them in CTF Tensors Vabij,
+   * Coulomb Vertex \f$\Gamma_{rG}^q\f$ and stores them in CTF Tensors Vabij,
    * Vaibj, Vijkl, Vabcd, Vijka, and Vabci respectively. The arguments of the
    * integrals are PPPP, PPHH, HHHH, PHPH, HHHP, and PPPHCoulombIntegrals.
    */
@@ -25,14 +25,6 @@ namespace cc4s {
      * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
     */
     virtual void run();
-
-    /** \brief The occupied orbital energies  */
-    CTF::Tensor<> *epsi;
-    /** \brief The virtual orbital energies  */
-    CTF::Tensor<> *epsa;
-    /** \brief The Coulomb Vertex GammaGpq  */
-    CTF::Tensor<complex> *GammaGpq;
-
     /**
      * \brief Dry run for calculating Coulomb integrals
      * Vabcd,Vabij,Vaibj,Vabci,Vijka Vijkl

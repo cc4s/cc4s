@@ -15,7 +15,7 @@ namespace cc4s {
      * doubles amplitudes \f$T_{ij}^{ab}\f$ such that the direct term
      * of the energy \f$T_{ij}^{ab}V_{ab}^{ij}\f$ is given by the trace
      * of the energy matrix \f$E_G^G\f$.
-     * This algorith is intended for testing purposes only, since this
+     * This algorithm is intended for testing purposes only, since this
      * calculation is usually done in the DFT/HF electronic structure code
      * in order to reduces the size of the Coulomb vertex.
      */

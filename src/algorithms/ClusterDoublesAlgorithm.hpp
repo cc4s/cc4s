@@ -26,15 +26,6 @@ namespace cc4s {
      */
     virtual void run();
 
-    /** \brief The occupied orbital energies  */
-    CTF::Tensor<> *epsi;
-    /** \brief The virtual orbital energies  */
-    CTF::Tensor<> *epsa;
-    /** \brief The Coulomb integrals Vabij  */
-    CTF::Tensor<> *Vabij;
-    /** \brief The Coulomb Vertex GammaGpq  */
-    CTF::Tensor<complex> *GammaGpq;
-
     /**
      * \brief Performs a Dry Run
      */
@@ -73,7 +64,7 @@ namespace cc4s {
      * \brief Calculates the amplitudes from the current residuum and
      * returns them in-place.
      * Usually this is done by calculating
-     * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_b-\varepsilon_b)\f$,
+     * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)\f$,
      * but other methods, such as level shifting may be used.
      * \param[in] Rabij Residuum Tensor.
      */
@@ -118,6 +109,20 @@ namespace cc4s {
     void sliceIntoResiduum(
       CTF::Tensor<> &Rxyij, int a0, int b0, CTF::Tensor<> &Rabij
     );
+
+    /**
+     * \brief Calculates and returns one slice Xabij of the residuum
+     * from the Coulomb factors. The slice is computed from
+     * Rx and Ry and are restricted to the
+     * range {a, ..., sliceFactors+a-1} and {b, ..., SliceFactors+b-1}, respectively.
+     * The caller is responsible for deleting the dynamically allocated
+     * result tensor. 
+     * \param[in] a 1st sliced dimension (Rx).
+     * \param[in] b 2nd sliced dimension (Ry).
+     * \param[in] sliceFactors slicing rank of NR.
+     * \param[out] Xabij sliced Residuum
+     */
+    CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int sliceFactors);
 
     /**
      * \brief Prints the energy from the residuum.

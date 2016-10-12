@@ -176,7 +176,7 @@ void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
 }
 
 
-Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int sliceRank) {
+Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int integralSliceRank) {
   Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
@@ -187,9 +187,9 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int slice
   
   // Slice the respective parts from the Coulomb vertex
   int leftGammaStart[] = { 0, No+a, No };
-  int leftGammaEnd[] = { NG, std::min(No+a+sliceRank, Np), Np };
+  int leftGammaEnd[] = { NG, std::min(No+a+integralSliceRank, Np), Np };
   int rightGammaStart[] = { 0, No+b, No };
-  int rightGammaEnd[] = { NG, std::min(No+b+sliceRank, Np), Np };
+  int rightGammaEnd[] = { NG, std::min(No+b+integralSliceRank, Np), Np };
   // FIXME: replace copy constructor calls by allocation then T.slice(...) call
   Tensor<complex> leftGamma(GammaGqr->slice(leftGammaStart, leftGammaEnd));
   Tensor<complex> rightGamma(GammaGqr->slice(rightGammaStart, rightGammaEnd));
@@ -214,9 +214,9 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int slice
   return Vxycd;
 }
 
-DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int sliceRank) {
-  // Read the Coulomb vertex GammaGpq
-  DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integralSliceRank) {
+  // Read the Coulomb vertex GammaGqr
+  DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
 			       DryTensor<complex>>("CoulombVertex"));
   
   // Read the Particle/Hole Eigenenergies
@@ -224,12 +224,12 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int sliceRank) {
 		    <double, DryTensor<double>>("ParticleEigenEnergies"));
 
   int Nv(epsa->lens[0]);
-  int NG(GammaGpq->lens[0]);
+  int NG(GammaGqr->lens[0]);
   
   // Slice the respective parts from the Coulomb vertex
   int syms[] = { NS, NS, NS, NS };
-  int leftGammaLens[]  = { NG, sliceRank, Nv };
-  int rightGammaLens[] = { NG, sliceRank, Nv };
+  int leftGammaLens[]  = { NG, integralSliceRank, Nv };
+  int rightGammaLens[] = { NG, integralSliceRank, Nv };
   DryTensor<complex> leftGamma (3, leftGammaLens , syms);
   DryTensor<complex> rightGamma(3, rightGammaLens, syms);
 
@@ -304,4 +304,106 @@ void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij,
   e = dire + exce - previousEnergy;
   previousEnergy += e;
   LOG(2, abbreviation) << contraction << "=" << e << std::endl;
+}
+
+Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(int a,
+								     int b,
+								     int factorsSliceRank)
+{
+  Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
+  PirR->set_name("PirR");
+  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+  LambdaGR->set_name("LambdaGR");
+
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+
+  // Read the doubles amplitudes Tabij
+  Tensor<> *Tabij(&TabijMixer->getNext());
+  Tabij->set_name("Tabij");
+
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(PirR->lens[0]);
+  int NR(PirR->lens[1]);
+  int NG(LambdaGR->lens[0]);
+  int Rx(std::min(factorsSliceRank, NR-a));
+  int Ry(std::min(factorsSliceRank, NR-b));
+  int Rvoo[] = { Rx, Nv, No, No };
+  int RRoo[] = { Rx, Ry, No, No };
+  int RR[] = { Rx, Ry };
+  int syms[] = { NS, NS, NS, NS };
+
+  Tensor<complex> VRS(2, RR, syms, *PirR->wrld, "VRS");
+
+  Tensor<> realXRaij(4, Rvoo, syms, *PirR->wrld, "RealXRaij");
+  Tensor<> imagXRaij(4, Rvoo, syms, *PirR->wrld, "ImagXRaij");
+
+  // Allocate and compute PiaR
+  int aRStart[] = {No , 0};
+  int aREnd[]   = {Np ,NR};
+  Tensor<complex> PiaR(PirR->slice(aRStart,aREnd));
+  PiaR.set_name("PiaR");
+
+  // Slice the respective parts from PiaR
+  int leftPiStart[]  = { 0 ,                            a };
+  int leftPiEnd[]    = { Nv, std::min(a+factorsSliceRank, NR) };
+  int rightPiStart[] = { 0 ,                            b };
+  int rightPiEnd[]   = { Nv, std::min(b+factorsSliceRank, NR) };
+
+  Tensor<complex> leftPiaR (PiaR.slice(leftPiStart  ,  leftPiEnd));
+  leftPiaR.set_name("leftPiaR");
+  Tensor<complex> rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
+  rightPiaR.set_name("rightPiaR");
+
+  // Split left and right PiaR into real and imaginary parts
+  Tensor<> realLeftPiaR(2, leftPiaR.lens, leftPiaR.sym, *leftPiaR.wrld, "RealLeftPiaR");
+  Tensor<> imagLeftPiaR(2, leftPiaR.lens, leftPiaR.sym, *leftPiaR.wrld, "ImagRightPiaR");
+  fromComplexTensor(leftPiaR, realLeftPiaR, imagLeftPiaR);
+
+  Tensor<> realRightPiaR(2, rightPiaR.lens, rightPiaR.sym, *rightPiaR.wrld, "RealLeftPiaR");
+  Tensor<> imagRightPiaR(2, rightPiaR.lens, rightPiaR.sym, *rightPiaR.wrld, "ImagRightPiaR");
+  fromComplexTensor(leftPiaR, realLeftPiaR, imagLeftPiaR);
+
+  // Slice the respective parts from LambdaGR
+  int leftLambdaStart[]  = { 0  ,                            a };
+  int leftLambdaEnd[]    = { NG , std::min(a+factorsSliceRank, NR) };
+  Tensor<complex> leftLambdaGR (LambdaGR->slice(leftLambdaStart , leftLambdaEnd));
+  leftLambdaGR.set_name("leftLambdaGR");
+
+  int rightLambdaStart[]  = { 0  ,                            b };
+  int rightLambdaEnd[]    = { NG , std::min(b+factorsSliceRank, NR) };
+  Tensor<complex> rightLambdaGR (LambdaGR->slice(rightLambdaStart , rightLambdaEnd));
+  rightLambdaGR.set_name("rightLambdaGR");
+
+  // FIXME: Currently assuming GammaGqr = PirR*PirR*LambdaGR
+  //        First Pi not conjugated.
+  realXRaij["Rdij"] = (+1.0) * (*Tabij)["cdij"] * realLeftPiaR["cR"];
+  imagXRaij["Rdij"] = (-1.0) * (*Tabij)["cdij"] * imagLeftPiaR["cR"];
+  Tensor<complex> XRaij(4, Rvoo, syms, *PirR->wrld, "XRaij");
+  toComplexTensor(realXRaij, imagXRaij, XRaij);
+
+  Tensor<complex> XRSij(4, RRoo, syms, *PirR->wrld, "XRSij");
+  XRSij["RSij"] = XRaij["Rdij"] * rightPiaR["dS"];
+
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  Tensor<complex> conjLeftLambdaGR(false, leftLambdaGR);
+  conjLeftLambdaGR.set_name("ConjLeftLambdaGR");
+  conjLeftLambdaGR.sum(1.0, leftLambdaGR,"GR", 0.0,"GR", fConj);
+  VRS["RS"] = conjLeftLambdaGR["GR"] * rightLambdaGR["GS"];
+
+  XRSij["RSij"] = XRSij["RSij"]  * VRS["RS"];
+  XRaij["Rbij"] = XRSij["RSij"]  * rightPiaR["bS"];
+
+  // allocate Tensor for sliced T2 amplitudes
+  int vvoo[] = { Nv, Nv, No, No };
+  Tensor<> *Xabij(new Tensor<>(4, vvoo, syms, *PirR->wrld, "Xabij"));
+
+  // compute sliced amplitudes
+  fromComplexTensor(XRaij, realXRaij, imagXRaij);
+  (*Xabij)["abij"] += realXRaij["Rbij"]  * realLeftPiaR["aR"];
+  (*Xabij)["abij"] += imagXRaij["Rbij"]  * imagLeftPiaR["aR"];
+
+  // return sliced amplitudes
+  return Xabij;
 }

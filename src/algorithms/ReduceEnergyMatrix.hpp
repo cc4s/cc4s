@@ -13,12 +13,12 @@ namespace cc4s {
     virtual ~ReduceEnergyMatrix();
     /**
      * \brief calculates the eigenvalue decomposition of the given
-     * energy matrix \f$E_G^{G'}=U_G^H \lambda_H {U^\ast}_H^{G'}\f$,
-     * truncates \f$H\f$ to a minimal set of indices to reproduce the
-     * the energy \f${\rm Tr}\{E\}\approx\sum_H\lambda_H\f$ within
+     * energy matrix \f$E_G^{G'}=U_G^F \lambda_F {U^\ast}_F^{G'}\f$,
+     * truncates \f$F\f$ to a minimal set of indices to reproduce the
+     * the energy \f${\rm Tr}\{E\}\approx\sum_F\lambda_F\f$ within
      * the required accuracy specified.
      * Subsequently, the particle hole Coulomb vertex is reduced by
-     * \f$\Gamma^{qH}_r = \Gamma^{qG}_r U_G^H\f$.
+     * \f$\Gamma^{qF}_r = \Gamma^{qG}_r U_G^F\f$.
      */
     virtual void run();
     /**
@@ -38,14 +38,14 @@ namespace cc4s {
     void writeEnergySpectrum();
 
     CTF::Tensor<complex> *EGH;
-    int nG;
+    int NG;
     int64_t elementsCount;
     int64_t *indices;
     complex *elements;
     double *eigenValues;
     double shift;
 
-    int ng;
+    int NF;
     complex *transformElements;
   };
 }

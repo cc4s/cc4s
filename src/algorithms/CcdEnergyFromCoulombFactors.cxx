@@ -163,7 +163,7 @@ void CcdEnergyFromCoulombFactors::iterate(int i) {
 	contraction += Tabij->get_name();
 	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
       }
-      
+
       {
 	// Contract Vabcd with T2 Amplitudes via Coulomb factors
 
@@ -224,6 +224,38 @@ void CcdEnergyFromCoulombFactors::iterate(int i) {
 	contraction  += Tabij->get_name();
 	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
       }
+
+      /*
+      {
+	// Read the sliceFactors. If not provided use NG.
+
+	Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+	LambdaGR->set_name("LambdaGR");
+
+	int NR(LambdaGR->lens[1]);
+	int NG(LambdaGR->lens[0]);
+
+	int sliceFactors(getIntegerArgument
+		      ("sliceFactors",NG));
+
+	// Slice loop starts here
+	for (int b(0); b < NR; b += sliceFactors) {
+	  for (int a(b); a < NR; a += sliceFactors) {
+	    LOG(1, abbreviation) << "Evaluting Xabij at R=" << a << ", S=" << b << std::endl;
+	    Tensor<> *Xabij(sliceAmplitudesFromCoulombFactors(a, b, sliceFactors));
+	    Xabij->set_name("Xabij");
+	    if (a==b) {
+	      Rabij["abij"] += (*Xabij)["abij"];
+	    }
+	    else{
+	      Rabij["abij"] += (*Xabij)["abij"];
+	      Rabij["baij"] += (*Xabij)["abij"];
+	    }
+	    delete Xabij;
+	  }
+	}
+      }
+      */
 
     }
 

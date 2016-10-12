@@ -209,6 +209,10 @@ void CcdEnergyFromSlicedIntegrals::dryIterate() {
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
     DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
+
+    std::string abbreviation(getAbbreviation());
+    std::transform(abbreviation.begin(), abbreviation.end(), 
+		   abbreviation.begin(), ::toupper);
   
     // Compute the No,Nv,Np
     int No(Vabij->lens[2]);
@@ -234,6 +238,8 @@ void CcdEnergyFromSlicedIntegrals::dryIterate() {
       // Read the sliceRank. If not provided use No
       int sliceRank(getIntegerArgument
 		    ("sliceRank",No));
+
+      LOG(1, abbreviation) << "Slicing Vabcd integrals with Nv=" << Nv << ", using sliceRank=" << sliceRank << std::endl;
 
       DryTensor<> *Vxycd(drySliceCoulombIntegrals(sliceRank));
       int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
