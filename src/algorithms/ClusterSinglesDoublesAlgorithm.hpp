@@ -72,18 +72,48 @@ namespace cc4s {
      * result tensor. 
      * \param[in] a 1st sliced dimension (x).
      * \param[in] b 2nd sliced dimension (y).
-     * \param[in] sliceRank slicing rank.
+     * \param[in] integralsSliceSize slicing rank.
      * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
      */
-    CTF::Tensor<> *sliceCoupledCoulombIntegrals(int a, int b, int sliceRank);
+    CTF::Tensor<> *sliceCoupledCoulombIntegrals(int a, int b, int integralsSliceSize);
 
     /**
      * \brief Dry run for sliceCoupledCoulombIntegrals. 
      * \param[in] a 1st sliced dimension (x).
      * \param[in] b 2nd sliced dimension (y).
-     * \param[in] sliceRank slicing rank.
+     * \param[in] integralsSliceSize slicing rank.
      */
-    cc4s::DryTensor<> *drySliceCoupledCoulombIntegrals(int sliceRank);
+    cc4s::DryTensor<> *drySliceCoupledCoulombIntegrals(int integralsSliceSize);
+
+    /**
+     * \brief Calculates and returns one slice Fabij of the residuum
+     * from the dressed Coulomb factors. The slice is computed from
+     * Rx and Ry and are restricted to the
+     * range {a, ..., factorsSliceSize+a-1} and {b, ..., factorsSliceSize+b-1}, respectively.
+     * The caller is responsible for deleting the dynamically allocated
+     * result tensor. 
+     * \param[in] a 1st sliced dimension (Rx).
+     * \param[in] b 2nd sliced dimension (Ry).
+     * \param[in] factorsSliceSize slicing rank of NR.
+     * \param[out] Fabij sliced Residuum
+     */
+    CTF::Tensor<> *sliceAmplitudesFromCoupledCoulombFactors(int a, int b, int factorsSliceSize);
+
+    /**
+     * \brief Calculates and returns tensor Fabij of the residuum
+     * from the dressed Coulomb factors. 
+     * The caller is responsible for deleting the dynamically allocated
+     * result tensor. 
+     * \param[out] Fabij sliced Residuum
+     */
+    CTF::Tensor<> *amplitudesFromCoupledCoulombFactors();
+
+    /**
+     * \brief Dry run for sliceAmplitudesFromCoupledCoulombFactors.
+     * \param[in] factorsSliceSize slicing rank of NR.
+     * \param[out] Fabij sliced Residuum
+     */
+    cc4s::DryTensor<> *drySliceAmplitudesFromCoupledCoulombFactors(int factorsSliceSize);
   };
 }
 
