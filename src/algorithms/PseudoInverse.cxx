@@ -1,6 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <algorithms/PseudoInverse.hpp>
-#include <math/PseudoInverseSvd.hpp>
+#include <math/PseudoInverseHermitianSvd.hpp>
 #include <util/Log.hpp>
 #include <ctf.hpp>
 
@@ -22,7 +22,7 @@ void PseudoInverse::run() {
   // FIXME: use cast operators provided by CTF as soon as supported
   if (A->order != 2) throw new Exception("Matrix expected as argument A");
   Matrix<complex> *MatrixA(static_cast<Matrix<complex> *>(A));
-  PseudoInverseSvd<complex> pseudoInverse(*MatrixA);
+  PseudoInverseHermitianSvd<complex> pseudoInverse(*MatrixA);
   Tensor<complex> *inverseA(new Tensor<complex>(pseudoInverse.get()));
   allocatedTensorArgument<complex>("InverseA", inverseA);
 }

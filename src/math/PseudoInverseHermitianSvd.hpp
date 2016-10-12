@@ -10,11 +10,13 @@ namespace cc4s {
   template <typename F>
   class PseudoInverseHermitianSvd {
   public:
-    PseudoInverseHermitianSvd(CTF::Matrix<F> const &matrix);
+    PseudoInverseHermitianSvd(
+      CTF::Matrix<F> &matrix, double epsilon = 1-12
+    );
     CTF::Matrix<F> &get();
 
   protected:
-    CTF::Matrix<F> A;
+    CTF::Matrix<F> inverse;
   };
 
   template <typename F>

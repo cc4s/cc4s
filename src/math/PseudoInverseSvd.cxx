@@ -4,7 +4,6 @@
 #include <util/BlacsWorld.hpp>
 #include <util/ScaLapackMatrix.hpp>
 #include <util/ScaLapackSingularValueDecomposition.hpp>
-#include <extern/ScaLapack.hpp>
 #include <util/Log.hpp>
 
 using namespace cc4s;

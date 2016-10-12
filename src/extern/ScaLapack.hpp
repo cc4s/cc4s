@@ -35,7 +35,8 @@ extern "C" {
     const double *a, const int *ia, const int *ja, const int *desca,
     double *lambda,
     double *z, const int *iz, const int *jz, const int *descz,
-    double *work, const int *lwork, int *info
+    double *work, const int *lwork,
+    int *info
   );
   void pzheev_(
     const char *jobz, const char *upperLower,
@@ -43,7 +44,30 @@ extern "C" {
     const complex *a, const int *ia, const int *ja, const int *desca,
     double *lambda,
     complex *z, const int *iz, const int *jz, const int *descz,
-    complex *work, const int *lwork, double *realWork, const int *lRealCount,
+    complex *work, const int *lwork,
+    double *realWork, const int *lRealCount,
+    int *info
+  );
+
+  void pdsyevd_(
+    const char *jobz, const char *upperLower,
+    const int *m,
+    const double *a, const int *ia, const int *ja, const int *desca,
+    double *lambda,
+    double *z, const int *iz, const int *jz, const int *descz,
+    double *work, const int *lwork,
+    int *iwork, const int *liwork,
+    int *info
+  );
+  void pzheevd_(
+    const char *jobz, const char *upperLower,
+    const int *m,
+    const complex *a, const int *ia, const int *ja, const int *desca,
+    double *lambda,
+    complex *z, const int *iz, const int *jz, const int *descz,
+    complex *work, const int *lwork,
+    double *realWork, const int *lRealCount,
+    int *iwork, const int *liwork,
     int *info
   );
 
@@ -86,45 +110,6 @@ extern "C" {
     complex *C, const int *ic, const int *jc, const int *descc
   );
 };
-
-// overloaded functions wrappers for invocation from template methods
-namespace cc4s {
-  void pheev(
-    const char *jobz, const char *upperLower,
-    const int *m,
-    const double *a, const int *ia, const int *ja, const int *desca,
-    double *lambda,
-    double *z, const int *iz, const int *jz, const int *descz,
-    int *info
-  );
-  void pheev(
-    const char *jobz, const char *upperLower,
-    const int *m,
-    const complex *a, const int *ia, const int *ja, const int *desca,
-    double *lambda,
-    complex *z, const int *iz, const int *jz, const int *descz,
-    int *info
-  );
-
-  void pgemm(
-    const char *opA, const char *opB,
-    const int *m, const int *n, const int *k,
-    const double *alpha,
-    const double *a, const int *ia, const int *ja, const int *desca,
-    const double *b, const int *ib, const int *jb, const int *descb,
-    const double *beta,
-    double *C, const int *ic, const int *jc, const int *descc
-  );
-  void pgemm(
-    const char *opA, const char *opB,
-    const int *m, const int *n, const int *k,
-    const complex *alpha,
-    const complex *a, const int *ia, const int *ja, const int *desca,
-    const complex *b, const int *ib, const int *jb, const int *descb,
-    const complex *beta,
-    complex *C, const int *ic, const int *jc, const int *descc
-  );
-}
 
 #endif
 
