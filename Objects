@@ -7,10 +7,15 @@ build/${CONFIG}/obj/util/Timer.o \
 build/${CONFIG}/obj/util/FlopsCounter.o \
 build/${CONFIG}/obj/util/DryTensor.o \
 build/${CONFIG}/obj/util/TensorIo.o \
+build/${CONFIG}/obj/util/BlacsWorld.o \
+build/${CONFIG}/obj/util/ScaLapackMatrix.o \
+build/${CONFIG}/obj/extern/ScaLapack.o \
 build/${CONFIG}/obj/math/MathFunctions.o \
 build/${CONFIG}/obj/math/ComplexTensor.o \
 build/${CONFIG}/obj/math/RandomTensor.o \
 build/${CONFIG}/obj/math/IterativePseudoInverse.o \
+build/${CONFIG}/obj/math/PseudoInverseSvd.o \
+build/${CONFIG}/obj/math/PseudoInverseHermitianSvd.o \
 build/${CONFIG}/obj/math/CanonicalPolyadicDecomposition.o \
 build/${CONFIG}/obj/math/RegularizedAlternatingLeastSquares.o \
 build/${CONFIG}/obj/mixers/Mixer.o \
@@ -64,3 +69,4 @@ build/${CONFIG}/obj/algorithms/CcsdEnergyFromSlicedIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcsdEnergyFromSlicedIntegrals.o \
 build/${CONFIG}/obj/algorithms/SingleParticleOccupancies.o \
 build/${CONFIG}/obj/algorithms/PolarizabilityFromCoulombVertex.o \
+build/${CONFIG}/obj/algorithms/PseudoInverse.o \
