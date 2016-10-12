@@ -19,6 +19,7 @@ PseudoInverse::~PseudoInverse() {
 
 void PseudoInverse::run() {
   Tensor<complex> *A(getTensorArgument<complex>("A"));
+  // FIXME: use cast operators provided by CTF as soon as supported
   if (A->order != 2) throw new Exception("Matrix expected as argument A");
   Matrix<complex> *MatrixA(static_cast<Matrix<complex> *>(A));
   PseudoInverseSvd<complex> pseudoInverse(*MatrixA);

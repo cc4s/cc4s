@@ -1,4 +1,4 @@
-GenerateRandomComplexMatrix [(m 1000) (n 1000)] [(Result A)].
+GenerateRandomComplexMatrix [(m 10) (n 10)] [(Result A)].
 
 %ComplexTensorWriter [(Data A) (rowIndexOrder "i") (columnIndexOrder "j")] [].
 
@@ -15,14 +15,22 @@ PseudoInverse [A] [InverseA].
 %  (Result A)
 %].
 
-ComplexTensorSum [
-  (AFactor +1.0) A (AIndex "ij")
-  (BFactor -1.0) (B InverseA) (BIndex "ij")
+ComplexTensorContraction [
+  A (AIndex "ik")
+  (B InverseA) (BIndex "kj")
   (ResultIndex "ij")
 ] [
   (Result A)
 ].
 
-ComplexTensorNorm [A] [Norm].
+%ComplexTensorSum [
+%  (AFactor +1.0) A (AIndex "ij")
+%  (BFactor -1.0) (B InverseA) (BIndex "ij")
+%  (ResultIndex "ij")
+%] [
+%  (Result A)
+%].
 
-%TensorWriter [(Data Norm)] [].
+%ComplexTensorNorm [A] [Norm].
+
+ComplexTensorWriter [(Data A)] [].

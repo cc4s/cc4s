@@ -5,7 +5,6 @@
 #include <math/Complex.hpp>
 #include <util/ScaLapackMatrix.hpp>
 #include <extern/ScaLapack.hpp>
-#include <util/Log.hpp>
 
 namespace cc4s {
   // base template
@@ -19,8 +18,7 @@ namespace cc4s {
     ScaLapackSingularValueDecomposition(
       ScaLapackMatrix<double> const *A_,
       ScaLapackMatrix<double> *U_,
-      ScaLapackMatrix<double> *VT_,
-      double *sigma
+      ScaLapackMatrix<double> *VT_
     ):
       A(A_), U(U_), VT(VT_), workCount(-1), work(nullptr)
     {
@@ -31,7 +29,7 @@ namespace cc4s {
         "V", "V",
         &A->lens[0], &A->lens[1],
         A->getLocalValues(), &offset, &offset, A->getDescriptor(),
-        sigma,
+        nullptr,
         U->getLocalValues(), &offset, &offset, U->getDescriptor(),
         VT->getLocalValues(), &offset, &offset, VT->getDescriptor(),
         &optimalWork, &workCount,
@@ -81,7 +79,6 @@ namespace cc4s {
     ):
       A(A_), U(U_), VT(VT_), workCount(-1), work(nullptr), realWork(nullptr)
     {
-      LOG(1, "ScaSVD") << A->lens[0] << "x" << A->lens[1] << std::endl;
       complex optimalWork;
       double optimalRealWork;
       int offset(1);
@@ -96,7 +93,6 @@ namespace cc4s {
         &optimalWork, &workCount, &optimalRealWork,
         &info
       );
-      LOG(1, "ScaSVD") << "worksize=" << optimalWork << "," << optimalRealWork << std::endl;
       // TODO: check info
       workCount = static_cast<int>(std::real(optimalWork)+0.5);
       // allocate work:

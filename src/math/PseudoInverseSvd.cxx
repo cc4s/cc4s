@@ -13,7 +13,7 @@ using namespace CTF;
 
 template <typename F>
 PseudoInverseSvd<F>::PseudoInverseSvd(
-  Matrix<F> &A
+  Matrix<F> &A, double epsilon
 ):
   inverse(A)
 {
@@ -35,10 +35,11 @@ PseudoInverseSvd<F>::PseudoInverseSvd(
   int localSigmaCount(A.wrld->rank == 0 ? ScaA.lens[0] : 0);
   F *sigmaValues(new F[localSigmaCount]);
   int64_t *sigmaIndices(new int64_t[localSigmaCount]);
-  // TODO: invert singular values
   for (int64_t i(0); i < localSigmaCount; ++i) {
     sigmaIndices[i] = i;
-    sigmaValues[i] = sigma[i];
+    // invert singular values
+    sigmaValues[i] = (sigma[i] > epsilon) ? 1 / sigma[i] : 0;
+    // TODO: warn about very small singular values above epsilon
   }
   S.write(localSigmaCount, sigmaIndices, sigmaValues);
 
@@ -52,7 +53,9 @@ PseudoInverseSvd<F>::PseudoInverseSvd(
   delete[] sigma;
 
   // recompose in CTF to get pseudo inverse matrix
-  inverse["ij"] = U["ik"] * S["k"] * VT["kj"];
+  inverse["ij"] = VT["ki"] * S["k"] * U["jk"];
+  Univar_Function<F> fConj(conj<F>);
+  inverse.sum(1.0,inverse,"ij", 0.0,"ij", fConj);
 }
 
 template <typename F>
@@ -61,17 +64,16 @@ Matrix<F> &PseudoInverseSvd<F>::get() {
 }
 
 // instantiate
-/*
 template
 PseudoInverseSvd<double>::PseudoInverseSvd(
-  Matrix<double> &matrix
+  Matrix<double> &matrix, double epsilon
 );
 template
 Matrix<double> &PseudoInverseSvd<double>::get();
-*/
+
 template
 PseudoInverseSvd<complex>::PseudoInverseSvd(
-  Matrix<complex> &matrix
+  Matrix<complex> &matrix, double epsilon
 );
 template
 Matrix<complex> &PseudoInverseSvd<complex>::get();

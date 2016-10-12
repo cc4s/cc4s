@@ -12,6 +12,8 @@
   * for the gxx configuration the following additional libraries are required
     ** blacs-openmpi
     ** lapack-openmpi
+    ** blacsCinit-openmpi
+    ** scalapack-openmpi
   * make sure, ctf is built for your configuration
   * run ''make -j 8 [CONFIG=<config]>'' to build for the desired environment, by default for ''icc''. The ''-j'' option issues a parallel make on 8 processes.
   * run ''make install [CONFIG=<config>]'' to copy the executable to the specified target directory. The default is ''~/bin/cc4s/<config>''.

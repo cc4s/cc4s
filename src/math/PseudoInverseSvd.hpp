@@ -10,7 +10,7 @@ namespace cc4s {
   template <typename F>
   class PseudoInverseSvd {
   public:
-    PseudoInverseSvd(CTF::Matrix<F> &A);
+    PseudoInverseSvd(CTF::Matrix<F> &A, double epsilon = 1e-12);
     CTF::Matrix<F> &get();
 
   protected:
