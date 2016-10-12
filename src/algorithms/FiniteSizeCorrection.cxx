@@ -180,24 +180,20 @@ void FiniteSizeCorrection::interpolation3D() {
   }
   
   std::sort(momentumGrid, &momentumGrid[NG]);
+  //look for the lengths of unit vectors in each direction
+  cc4s::Vector<double,NG> x, y, z;
+  for (int t(0); t<NG; ++t){
+    x[t] = std::abs(regularGrid[t][0]);
+    y[t] = std::abs(regularGrid[t][1]);
+    z[t] = std::abs(regularGrid[t][2]);
+  }
+  std::sort(x[0], x[NG]);
+  std::sort(y[0], y[NG]);
+  std::sort(z[0], z[NG]);
   //for (int g(0); g<NG; ++g) {
   //  LOG(1, "Sorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
   //  << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
   //}
-  cc4s::Vector<double, 8>  Cube(Momentum *momentum, 
-    cc4s::Vector<> *regularGrid){
-    //look for the lengths of unit vectors in each direction
-    cc4s::Vector<double,NG> x, y, z;
-    for (int t(0); t<NG; ++t){
-      x[t] = std::abs(regularGrid[t][0]);
-      y[t] = std::abs(regularGrid[t][1]);
-      z[t] = std::abs(regularGrid[t][2]);
-    }
-    std::sort(x[0], x[NG]);
-    std::sort(y[0], y[NG]);
-    std::sort(z[0], z[NG]);
-    &(momentum.v) /  
-  }
 
     //LOG(1, "test") << "length[" << g << "]=" << regularGrid[g].length() << std::endl;
     //LOG(1, "Unsorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v

@@ -33,13 +33,13 @@ namespace cc4s {
       return *this;
     }
     
-    Vector<F,D> &operator / (Vector<F,D> const &v, F r){
+    Vector<F,D> &operator / (F r){
       for (int d(0); d<D; ++d){
         coordinate[d] = coordinate[d] / r;
       }
     }
 
-    Vector<F,D> &operator * (Vector<F,D> const &v, F r){
+    Vector<F,D> &operator * (F r){
       for (int d(0); d<D; ++d){
         coordinate[d] = coordinate[d] * r;
       }
