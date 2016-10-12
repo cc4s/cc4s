@@ -12,6 +12,7 @@
 #include <iostream>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <vector>
 
 using namespace cc4s;
 using namespace CTF;
@@ -133,17 +134,18 @@ void FiniteSizeCorrection::constructFibonacciGrid() {
   //Returns a vector of vectors: {x,y,z}
   //The N should be fixed and R should be a vector which is selected by another 
   //function which determines the R's
-  new int N = 128;
+  N = 128;
   double R = 1.0;
   double inc = M_PI * (3 - std::sqrt(5));
-  cc4s::Vector<> *fibonacciGrid(new cc4s::Vector<>[N]);
+  //cc4s::Vector<> *fibonacciGrid(new cc4s::Vector<>[N]);
+  std::vector<std::vector<double>> fibonacciGrid(N, std::vector<double>(3));
   for (int k(0); k < N; ++k) {
     double z((2.0*k+1)/N - 1.0);
     double r(R * std::sqrt(1.0 - z*z));
     double phi(k * inc);
-    fibonacciGrid[k].coordinate[0] = r * std::cos(phi);
-    fibonacciGrid[k].coordinate[1] = r * std::sin(phi);
-    fibonacciGrid[k].coordinate[2] = R * z;
+    fibonacciGrid[k][0] = r * std::cos(phi);
+    fibonacciGrid[k][1] = r * std::sin(phi);
+    fibonacciGrid[k][2] = R * z;
     //LOG(1, "FibonacciGrid") << z << "; " << fibonacciGrid[k] << std::endl;
   }
 //  LOG(1, "FibonacciGrid") << fibonacciGrid[0].approximately(fibonacciGrid[1]) << std::endl;
@@ -153,19 +155,63 @@ void FiniteSizeCorrection::constructFibonacciGrid() {
 void FiniteSizeCorrection::interpolation3D() {
   Tensor<> *momenta(getTensorArgument<>("Momenta"));
   cc4s::Vector<> *regularGrid(new cc4s::Vector<>[NG]);
-  momenta->read_all(regularGrid[0].coordinate);
-  class Function3D{
+// or alternatively:
+//  std::vector<cc4s::Vector<>> regularGrid(NG);
+  momenta->read_all(&(regularGrid[0][0]));
+  class Momentum {
   public:
-    cc4s:Vector<double, 3> coordinates;
-    double value;  
-  };
-  Function3D onRegularGrid;
-  
-  for (int t(0); t < N; ++t){
-    for (int d(0); d < NG; ++d){
-       
+    cc4s::Vector<> v;
+    double s;
+    double l;
+    Momentum(): s(0.0), l(0.0) {
     }
+    Momentum(cc4s::Vector<> v_, double s_) {
+      v = v_; 
+      s = s_;
+      l = v_.length();
+    }
+    bool operator < (Momentum const &m) {
+      return v < m.v;
+    }
+  };
+  Momentum *momentumGrid(new Momentum[NG]);
+  for (int g(0); g<NG; ++g) {
+    momentumGrid[g] = Momentum(regularGrid[g], structureFactors[g]);
   }
+  
+  std::sort(momentumGrid, &momentumGrid[NG]);
+  //for (int g(0); g<NG; ++g) {
+  //  LOG(1, "Sorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
+  //  << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
+  //}
+  cc4s::Vector<double, 8>  Cube(Momentum *momentum, 
+    cc4s::Vector<> *regularGrid){
+    //look for the lengths of unit vectors in each direction
+    cc4s::Vector<double,NG> x, y, z;
+    for (int t(0); t<NG; ++t){
+      x[t] = std::abs(regularGrid[t][0]);
+      y[t] = std::abs(regularGrid[t][1]);
+      z[t] = std::abs(regularGrid[t][2]);
+    }
+    std::sort(x[0], x[NG]);
+    std::sort(y[0], y[NG]);
+    std::sort(z[0], z[NG]);
+    &(momentum.v) /  
+  }
+
+    //LOG(1, "test") << "length[" << g << "]=" << regularGrid[g].length() << std::endl;
+    //LOG(1, "Unsorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v
+    //<< ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
+ // for (int n(0); n < NG; ++n){
+ //   onRegularGrid[n].initial(regularGrid[n], structureFactors[n]);
+ // }
+ // cout << onRegularGrid.coordinates
+ // 
+ // for (int t(0); t < N; ++t){
+ //   for (int d(0); d < NG; ++d){
+ //      
+ //   }
+ // }
   //double x[3]={0.3,0.4, 0.7};
   //double v[8]={0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
   //cc4s::Interpolation<double> Intp;
@@ -177,4 +223,4 @@ void FiniteSizeCorrection::interpolation3D() {
   //  LOG(1, "regularGrid") << regularGrid[d] << std::endl;
   //}
 }
-    
+

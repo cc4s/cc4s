@@ -15,6 +15,7 @@ namespace cc4s {
     virtual void run();
   protected:
     int NG;
+    int N;
     double *structureFactors;
 
     void calculateStructureFactor();
