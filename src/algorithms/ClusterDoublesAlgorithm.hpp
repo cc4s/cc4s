@@ -84,19 +84,19 @@ namespace cc4s {
      * result tensor. 
      * \param[in] a 1st sliced dimension (x).
      * \param[in] b 2nd sliced dimension (y).
-     * \param[in] sliceRank slicing rank.
+     * \param[in] integralsSliceSize slicing size.
      * \param[out] Vxycd sliced Coulomb integrals Vabcd
      */
-    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b, int sliceRank);
+    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b, int integralsSliceSize);
 
     /**
      * \brief Dry run for sliceCoulombIntegrals.
      * \param[in] a 1st sliced dimension (x).
      * \param[in] b 2nd sliced dimension (y).
-     * \param[in] sliceRank slicing rank.
+     * \param[in] integralsSliceSize slicing size.
      * \param[out] Vxycd sliced Coulomb integrals Vabcd
      */
-    cc4s::DryTensor<> *drySliceCoulombIntegrals(int sliceRank);
+    cc4s::DryTensor<> *drySliceCoulombIntegrals(int integralsSliceSize);
 
     /**
      * \brief Adds the given slice of the residuum tensor Rxyij to the
@@ -114,25 +114,28 @@ namespace cc4s {
      * \brief Calculates and returns one slice Xabij of the residuum
      * from the Coulomb factors. The slice is computed from
      * Rx and Ry and are restricted to the
-     * range {a, ..., sliceFactors+a-1} and {b, ..., SliceFactors+b-1}, respectively.
+     * range {a, ..., factorsSliceSize+a-1} and {b, ..., factorsSliceSize+b-1}, respectively.
      * The caller is responsible for deleting the dynamically allocated
      * result tensor. 
      * \param[in] a 1st sliced dimension (Rx).
      * \param[in] b 2nd sliced dimension (Ry).
-     * \param[in] sliceFactors slicing rank of NR.
-     * \param[out] Xabij sliced Residuum
+     * \param[in] factorsSliceSize slicing size of NR.
+     * \param[out] Fabij sliced Residuum
      */
-    CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int sliceFactors);
+    CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int factorsSliceSize);
 
     /**
-     * \brief Prints the energy from the residuum.
-     * \param[in] Rabij the residuum.
-     * \param[in] previousEnergy double that holds the previous energy.
-     * \param[in] contraction string with the name of the contraction.
+     * \brief Dry run for sliceAmplitudesFromCoulombFactors.
+     * \param[in] factorsSliceSize slicing size of NR.
+     * \param[out] Fabij dry tensor of sliced residuum.
      */
-    void printEnergyFromResiduum(CTF::Tensor<> &Rabij,
-				 double &previousEnergy,
-				 std::string contraction);
+    cc4s::DryTensor<> *drySliceAmplitudesFromCoulombFactors(int factorsSliceSize);
+
+    /**
+     * \brief Prints the energy from the residuum Rabij.
+     * \param[in] Rabij the residuum.
+     */
+    void printEnergyFromResiduum(CTF::Tensor<> &Rabij);
 
   };
 }
