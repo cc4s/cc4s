@@ -156,7 +156,7 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
 	      }
 	      else{
 		Rabij["abij"] += (*Fabij)["abij"];
-		Rabij["baij"] += (*Fabij)["abij"];
+		Rabij["baji"] += (*Fabij)["abij"];
 	      }
 	      delete Fabij;
 	    }
