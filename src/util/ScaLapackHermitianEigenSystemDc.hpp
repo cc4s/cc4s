@@ -5,6 +5,7 @@
 #include <math/Complex.hpp>
 #include <util/ScaLapackMatrix.hpp>
 #include <extern/ScaLapack.hpp>
+#include <util/Exception.hpp>
 
 namespace cc4s {
   // base template
@@ -38,7 +39,9 @@ namespace cc4s {
         &optimalIntegerWork, &integerWorkCount,
         &info
       );
-      // TODO: check info
+      if (info != 0) {
+        throw new Exception("ERROR: PDSYEVD initialization failed");
+      }
       workCount = static_cast<int>(optimalWork+0.5);
       integerWorkCount = optimalIntegerWork;
       // allocate work:
@@ -66,7 +69,9 @@ namespace cc4s {
         integerWork, &integerWorkCount,
         &info
       );
-      // TODO: check info
+      if (info != 0) {
+        throw new Exception("ERROR: PDSYEVD diagonlization failed");
+      }
     }
   protected:
     ScaLapackMatrix<double> const *A;
@@ -105,7 +110,9 @@ namespace cc4s {
         &optimalIntegerWork, &integerWorkCount,
         &info
       );
-      // TODO: check info
+      if (info != 0) {
+        throw new Exception("ERROR: PZHEEVD initialization failed");
+      }
       workCount = static_cast<int>(std::real(optimalWork)+0.5);
       realWorkCount = static_cast<int64_t>(optimalRealWork+0.5);
       integerWorkCount = optimalIntegerWork;
@@ -139,7 +146,9 @@ namespace cc4s {
         integerWork, &integerWorkCount,
         &info
       );
-      // TODO: check info
+      if (info != 0) {
+        throw new Exception("ERROR: PZHEEVD diagonlization failed");
+      }
     }
   protected:
     ScaLapackMatrix<complex> const *A;
