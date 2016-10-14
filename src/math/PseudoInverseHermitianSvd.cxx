@@ -30,10 +30,15 @@ PseudoInverseHermitianSvd<F>::PseudoInverseHermitianSvd(
   int localLambdaCount(A.wrld->rank == 0 ? A.lens[0] : 0);
   F *lambdaValues(new F[localLambdaCount]);
   int64_t *lambdaIndices(new int64_t[localLambdaCount]);
+  bool smallLambda(false);
   for (int64_t i(0); i < localLambdaCount; ++i) {
     lambdaIndices[i] = i;
+    smallLambda |= std::abs(lambda[i]) < 1e3*epsilon;
     lambdaValues[i] = (std::abs(lambda[i]) > epsilon) ? 1/lambda[i] : 0;
-    // TODO: warn about small eigenvalues greater than epsilon
+  }
+  if (smallLambda) {
+    LOG(1, "PseudoInverseHermitianSvd")
+      << "WARNING: Very small eigenvalues occurred" << std::endl;
   }
   D.write(localLambdaCount, lambdaIndices, lambdaValues);
   Matrix<F> U(A);
