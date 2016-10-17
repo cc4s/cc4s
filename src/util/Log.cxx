@@ -11,7 +11,7 @@ LogStream::LogStream(
   std::string const &indent_
 ):
   std::ostream(&logBuffer),
-  logFile(logFileName.c_str()),
+  logFile(logFileName.c_str(), std::ofstream::out | std::ofstream::trunc),
   logBuffer(logFile.rdbuf(), std::cout.rdbuf()),
   logLevel(logLevel_), indent(indent_)
 {
