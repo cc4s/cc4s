@@ -34,6 +34,29 @@ void FiniteSizeCorrection::run() {
   calculateFiniteSizeCorrection();
 }
 
+
+class FiniteSizeCorrection::Momentum {
+  public:
+    cc4s::Vector<> v;
+    double s;
+    double l;
+    Momentum(): s(0.0), l(0.0) {
+    }
+    Momentum(cc4s::Vector<> v_, double s_) {
+      v = v_; 
+      s = s_;
+      l = v_.length();
+    }
+  static bool sortbyl (Momentum const &n, Momentum const &m) {
+    return n.l < m.l;
+  }
+  static bool sortbyv (Momentum const &n, Momentum const &m) {
+    return n.v < m.v;
+  }
+};
+
+
+
 void FiniteSizeCorrection::calculateStructureFactor() {
 //Definition of the variables
   Tensor<complex> *GammaGai(
@@ -137,15 +160,15 @@ void FiniteSizeCorrection::constructFibonacciGrid() {
   N = 128;
   double R = 1.0;
   double inc = M_PI * (3 - std::sqrt(5));
-  //cc4s::Vector<> *fibonacciGrid(new cc4s::Vector<>[N]);
-  std::vector<std::vector<double>> fibonacciGrid(N, std::vector<double>(3));
+  fibonacciGrid = new Momentum[N];
+  //std::vector<std::vector<double>> fibonacciGrid(N, std::vector<double>(3));
   for (int k(0); k < N; ++k) {
     double z((2.0*k+1)/N - 1.0);
     double r(R * std::sqrt(1.0 - z*z));
     double phi(k * inc);
-    fibonacciGrid[k][0] = r * std::cos(phi);
-    fibonacciGrid[k][1] = r * std::sin(phi);
-    fibonacciGrid[k][2] = R * z;
+    fibonacciGrid[k].v[0] = r * std::cos(phi);
+    fibonacciGrid[k].v[1] = r * std::sin(phi);
+    fibonacciGrid[k].v[2] = R * z;
     //LOG(1, "FibonacciGrid") << z << "; " << fibonacciGrid[k] << std::endl;
   }
 //  LOG(1, "FibonacciGrid") << fibonacciGrid[0].approximately(fibonacciGrid[1]) << std::endl;
@@ -158,42 +181,66 @@ void FiniteSizeCorrection::interpolation3D() {
 // or alternatively:
 //  std::vector<cc4s::Vector<>> regularGrid(NG);
   momenta->read_all(&(regularGrid[0][0]));
-  class Momentum {
-  public:
-    cc4s::Vector<> v;
-    double s;
-    double l;
-    Momentum(): s(0.0), l(0.0) {
-    }
-    Momentum(cc4s::Vector<> v_, double s_) {
-      v = v_; 
-      s = s_;
-      l = v_.length();
-    }
-    bool operator < (Momentum const &m) {
-      return v < m.v;
-    }
-  };
   Momentum *momentumGrid(new Momentum[NG]);
   for (int g(0); g<NG; ++g) {
     momentumGrid[g] = Momentum(regularGrid[g], structureFactors[g]);
   }
+  //sort according to vector length. 
   
-  std::sort(momentumGrid, &momentumGrid[NG]);
-  //look for the lengths of unit vectors in each direction
-  cc4s::Vector<double,NG> x, y, z;
-  for (int t(0); t<NG; ++t){
-    x[t] = std::abs(regularGrid[t][0]);
-    y[t] = std::abs(regularGrid[t][1]);
-    z[t] = std::abs(regularGrid[t][2]);
+  std::sort(momentumGrid, &momentumGrid[NG], Momentum::sortbyl);
+  
+  for (int g(0); g<NG; ++g) {
+    LOG(1, "Sorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
+    << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
   }
-  std::sort(x[0], x[NG]);
-  std::sort(y[0], y[NG]);
-  std::sort(z[0], z[NG]);
-  //for (int g(0); g<NG; ++g) {
-  //  LOG(1, "Sorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
-  //  << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
-  //}
+  //get the 3 unit vectors;
+  cc4s::Vector<> a(momentumGrid[1].v);
+  LOG(1, "GridSearch") << "b1=#1" << std::endl;
+  //the 0th element is 0, avoid it.
+  int j=2;
+  //a and b should not be parallel;
+  while ((a.cross(momentumGrid[j].v)).length() < 1e-8) ++j;
+  cc4s::Vector<> b(momentumGrid[j].v);
+  LOG(1, "GridSearch") << "b2=#" << j << std::endl;
+  ++j;
+  //a, b and c should not be on the same plane;
+  while (abs((a.cross(b)).dot(momentumGrid[j].v)) < 1e-8) ++j;
+  cc4s::Vector<> c(momentumGrid[j].v);
+  LOG(1, "GridSearch") << "b3=#" << j << std::endl;
+  LOG(1, "GridSearch") << "b1=" << a << std::endl;
+  LOG(1, "GridSearch") << "b2=" << b << std::endl;
+  LOG(1, "GridSearch") << "b3=" << c << std::endl;
+  
+  //construct the transformation matrix  
+  cc4s::Vector<> *T(new cc4s::Vector<>[3]);
+  double Omega((a.cross(b)).dot(c));
+  T[0] = b.cross(c)/Omega;
+  T[1] = c.cross(a)/Omega;
+  T[2] = a.cross(b)/Omega;
+  double x, y, z;
+  for (int d(0); d<NG; ++d){
+    x = T[0].dot(momentumGrid[d].v);
+    y = T[1].dot(momentumGrid[d].v);
+    z = T[2].dot(momentumGrid[d].v);
+    momentumGrid[d].v[0] = (abs(x) < 1e-8) ? 0 : x;
+    momentumGrid[d].v[1] = (abs(y) < 1e-8) ? 0 : y;
+    momentumGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
+    LOG(1, "Transformed")  << "momentumGrid[" << d << "]=" << momentumGrid[d].v 
+    << ",l " << momentumGrid[d].l << ", " << momentumGrid[d].s << std::endl;
+  }
+
+  for (int d(0); d<N; ++d){
+    x = T[0].dot(fibonacciGrid[d].v);
+    y = T[1].dot(fibonacciGrid[d].v);
+    z = T[2].dot(fibonacciGrid[d].v);
+    fibonacciGrid[d].v[0] = (abs(x) < 1e-8) ? 0 : x;
+    fibonacciGrid[d].v[1] = (abs(y) < 1e-8) ? 0 : y;
+    fibonacciGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
+    LOG(1, "Transformed")  << "fibonacciGrid[" << d << "]=" << fibonacciGrid[d].v 
+    << ",l " << fibonacciGrid[d].l << ", " << fibonacciGrid[d].s << std::endl;
+  }
+
+  
 
     //LOG(1, "test") << "length[" << g << "]=" << regularGrid[g].length() << std::endl;
     //LOG(1, "Unsorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v

@@ -17,7 +17,8 @@ namespace cc4s {
     int NG;
     int N;
     double *structureFactors;
-
+    class Momentum;
+    Momentum *fibonacciGrid;
     void calculateStructureFactor();
     void constructFibonacciGrid();
     void interpolation3D();

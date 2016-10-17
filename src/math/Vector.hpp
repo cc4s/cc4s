@@ -37,12 +37,26 @@ namespace cc4s {
       for (int d(0); d<D; ++d){
         coordinate[d] = coordinate[d] / r;
       }
+      return *this;
     }
 
     Vector<F,D> &operator * (F r){
       for (int d(0); d<D; ++d){
         coordinate[d] = coordinate[d] * r;
       }
+      return *this;
+    }
+
+    // Specialization for D=3
+    Vector<F,3> cross(Vector<F,3> const &v) {
+      Vector<F,3> t;
+      t.coordinate[0] = coordinate[1]*v.coordinate[2] - 
+                          coordinate[2]*v.coordinate[1];
+      t.coordinate[1] = coordinate[2]*v.coordinate[0] - 
+                          coordinate[0]*v.coordinate[2];
+      t.coordinate[2] = coordinate[0]*v.coordinate[1] - 
+                          coordinate[1]*v.coordinate[0];
+      return t;
     }
 
     F dot(Vector<F,D> const &v) {
@@ -53,19 +67,19 @@ namespace cc4s {
       return sum;
     }
 
-    int approximately(Vector<F,D> const &v, const double epsilon = 1e-12) {
+    int approximately(Vector<F,D> const &v, const double epsilon = 1e-12) const {
       Vector<F,D> u(*this);
       u -= v;
       return std::real(u.dot(u)) < epsilon;
     }
 
-    double distance(Vector<F, D> const &v){
+    double distance(Vector<F, D> const &v) const {
       Vector<F,D> u(*this);
       u -= v;
       return std::real(u.dot(u)); 
     }
 
-    double length(){
+    double length() const {
       Vector<F,D> u(*this);
       return std::sqrt(std::real(u.dot(u))); 
     }
@@ -97,7 +111,6 @@ namespace cc4s {
       }
       return false;
     }
-
     F coordinate[D];
   };
 
@@ -108,7 +121,8 @@ namespace cc4s {
     }
     stream << v.coordinate[D-1];
     return stream;
-  }
+  };
+
 }
 
 #endif
