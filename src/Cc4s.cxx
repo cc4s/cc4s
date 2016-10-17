@@ -30,7 +30,7 @@ void Cc4s::run() {
     "execution plan read, steps=" << algorithms.size() << std::endl;
 
   int64_t rootFlops, totalFlops;
-  double totalTime;
+  Time totalTime;
   {
     FlopsCounter rootCounter(&rootFlops);
     FlopsCounter totalCounter(&totalFlops, world->comm);
@@ -40,7 +40,7 @@ void Cc4s::run() {
       LOG(0, "root") << "step=" << (i+1) << ", " << algorithms[i]->getName() << std::endl;
 
       int64_t flops;
-      double time;
+      Time time;
       {
         FlopsCounter flopsCounter(&flops);
         Timer timer(&time);
@@ -50,7 +50,7 @@ void Cc4s::run() {
 
       LOG(1, "root") << "step=" << (i+1) << ", realtime=" << time << " s"
         << ", operations=" << flops / 1e9 << " GFLOPS/core"
-        << ", speed=" << flops / 1e9 / time << " GFLOPS/s/core" << std::endl;
+        << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
     }
   }
 
@@ -94,7 +94,7 @@ void Cc4s::printBanner() {
 }
 
 void Cc4s::printStatistics(
-  int64_t rootFlops, int64_t totalFlops, double totalTime
+  int64_t rootFlops, int64_t totalFlops, Time const &totalTime
 ) {
   std::string pid, comm, state, ppid, pgrp, session, ttyNr,
     tpgid, flags, minflt, cminflt, majflt, cmajflt,
@@ -112,7 +112,7 @@ void Cc4s::printStatistics(
   int64_t pageSize = sysconf(_SC_PAGE_SIZE);
   LOG(0, "root") << "total realtime=" << totalTime << " s" << std::endl;
   LOG(0, "root") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
-    << " speed=" << rootFlops/1e9 / totalTime << " GFLOPS/s/core" << std::endl;
+    << " speed=" << rootFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
   LOG(0, "root") << "physical memory=" << rss * pageSize / 1e9 << " GB/core"
     << ", virtual memory: " << vsize / 1e9 << " GB/core" << std::endl;
 
@@ -137,7 +137,9 @@ int main(int argumentCount, char **arguments) {
   Cc4s::world = new World(argumentCount, arguments);
   Cc4s::options = new Options(argumentCount, arguments);
   Log::setRank(Cc4s::world->rank);
-  LogStream logStream(Cc4s::options->logFile, Cc4s::options->logLevel);
+  LogStream logStream(
+    Cc4s::options->logFile, Cc4s::options->logLevel
+  );
   Log::setLogStream(&logStream);
 
   try {

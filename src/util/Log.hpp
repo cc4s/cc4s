@@ -2,6 +2,8 @@
 #ifndef LOG_DEFINED
 #define LOG_DEFINED
 
+#include <util/Time.hpp>
+
 #include <string>
 #include <iostream>
 #include <streambuf>
@@ -43,7 +45,7 @@ namespace cc4s {
 
     std::ostream &prepare(
       int const rank,
-      std::string const &fileName,
+      std::string const &sourceFileName,
       int const level,
       std::string const &category = ""
     );
@@ -62,6 +64,8 @@ namespace cc4s {
      * By default a tab character will be used.
      */
     std::string indent;
+
+    Time startTime;
   };
 
   /**
@@ -70,7 +74,7 @@ namespace cc4s {
    */
   class Log {
   public:
-    static void setRank(int const rank);
+    static void setRank(const int rank);
     static int getRank();
     static void setLogStream(LogStream *logStream);
     static LogStream &getLogStream();
