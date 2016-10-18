@@ -16,10 +16,26 @@ Delete::~Delete() {
 }
 
 void Delete::run() {
-  delete getArgumentData("Data");
+  Data *data(getArgumentData("Data"));
+  if (data) {
+    std::string dataName(data->getName());
+    delete data;
+    // remention it in case it will be written to in the future
+    new Data(dataName);
+  } else {
+    LOG(0, "Delete") << "Data not allocated." << std::endl;
+  }
 }
 
 void Delete::dryRun() {
-  delete getArgumentData("Data");
+  Data *data(getArgumentData("Data"));
+  if (data) {
+    std::string dataName(data->getName());
+    delete data;
+    // remention it in case it will be written to in the future
+    new Data(dataName);
+  } else {
+    LOG(0, "Delete") << "Data not allocated." << std::endl;
+  }
 }
 

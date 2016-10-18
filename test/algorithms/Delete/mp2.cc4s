@@ -22,6 +22,15 @@ CoulombIntegralsFromVertex [
   PPHHCoulombIntegrals
 ].
 
+% test whether it can be recomputed
+Delete [(Data PPHHCoulombIntegrals)] [].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
 Delete [(Data CoulombVertex)] [].
 
 Mp2EnergyFromCoulombIntegrals [
