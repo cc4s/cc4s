@@ -67,7 +67,7 @@ namespace cc4s {
       return sum;
     }
 
-    int approximately(Vector<F,D> const &v, const double epsilon = 1e-12) const {
+    int approximately(Vector<F,D> const &v, const double epsilon = 1e-10) const {
       Vector<F,D> u(*this);
       u -= v;
       return std::real(u.dot(u)) < epsilon;
@@ -101,7 +101,7 @@ namespace cc4s {
     }
 
     bool operator < (Vector<F, D>  const &v) const {
-      const double epsilon(1e-12);
+      const double epsilon(1e-10);
       for (int d(0); d<D; ++d) {
         if (coordinate[d] < v.coordinate[d] - epsilon) {
           return true;

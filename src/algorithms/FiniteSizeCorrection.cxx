@@ -42,17 +42,26 @@ class FiniteSizeCorrection::Momentum {
     double l;
     Momentum(): s(0.0), l(0.0) {
     }
-    Momentum(cc4s::Vector<> v_, double s_) {
+    Momentum(cc4s::Vector<> v_, double s_=0.) {
       v = v_; 
       s = s_;
       l = v_.length();
     }
-  static bool sortbyl (Momentum const &n, Momentum const &m) {
-    return n.l < m.l;
-  }
-  static bool sortbyv (Momentum const &n, Momentum const &m) {
-    return n.v < m.v;
-  }
+    double locate(Momentum *m, int const n) {
+      cc4s::Vector<> u(v);
+      if (v[3] < 0.) u= v*(-1.);
+      for (int d(0); d < n; ++d) {
+       // LOG(1,"locating") << "d=#" << d <<std::endl;
+        if (u.approximately(m[d].v)) return m[d].s;
+      }  
+      return 0;
+    }
+    static bool sortbyl (Momentum const &n, Momentum const &m) {
+      return n.l < m.l;
+    }
+    static bool sortbyv (Momentum const &n, Momentum const &m) {
+      return n.v < m.v;
+    }
 };
 
 
@@ -158,7 +167,7 @@ void FiniteSizeCorrection::constructFibonacciGrid() {
   //The N should be fixed and R should be a vector which is selected by another 
   //function which determines the R's
   N = 128;
-  double R = 1.0;
+  double R = 0.2;
   double inc = M_PI * (3 - std::sqrt(5));
   fibonacciGrid = new Momentum[N];
   //std::vector<std::vector<double>> fibonacciGrid(N, std::vector<double>(3));
@@ -185,14 +194,23 @@ void FiniteSizeCorrection::interpolation3D() {
   for (int g(0); g<NG; ++g) {
     momentumGrid[g] = Momentum(regularGrid[g], structureFactors[g]);
   }
+
+  //test sort by v
+  //std::sort(momentumGrid, &momentumGrid[NG], Momentum::sortbyv);
+  ////
+  //for (int g(0); g<NG; ++g) {
+  //  LOG(1, "Sortedbyv")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
+  //  << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
+  //}
   //sort according to vector length. 
   
   std::sort(momentumGrid, &momentumGrid[NG], Momentum::sortbyl);
   
   for (int g(0); g<NG; ++g) {
-    LOG(1, "Sorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
+    LOG(1, "Sortedbyl")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
     << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
   }
+
   //get the 3 unit vectors;
   cc4s::Vector<> a(momentumGrid[1].v);
   LOG(1, "GridSearch") << "b1=#1" << std::endl;
@@ -225,10 +243,14 @@ void FiniteSizeCorrection::interpolation3D() {
     momentumGrid[d].v[0] = (abs(x) < 1e-8) ? 0 : x;
     momentumGrid[d].v[1] = (abs(y) < 1e-8) ? 0 : y;
     momentumGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
-    LOG(1, "Transformed")  << "momentumGrid[" << d << "]=" << momentumGrid[d].v 
-    << ",l " << momentumGrid[d].l << ", " << momentumGrid[d].s << std::endl;
+   // LOG(1, "Transformed")  << "momentumGrid[" << d << "]=" << momentumGrid[d].v 
+   // << ",l " << momentumGrid[d].l << ", " << momentumGrid[d].s << std::endl;
   }
-
+  //for (int d(0); d<NG; ++d){
+  //  LOG(1, "Locate")  << momentumGrid[d].locate(momentumGrid, NG) 
+  //    << " momentumGrid["<< d << "]" << momentumGrid[d].s << std::endl;
+  //}
+ 
   for (int d(0); d<N; ++d){
     x = T[0].dot(fibonacciGrid[d].v);
     y = T[1].dot(fibonacciGrid[d].v);
@@ -236,25 +258,70 @@ void FiniteSizeCorrection::interpolation3D() {
     fibonacciGrid[d].v[0] = (abs(x) < 1e-8) ? 0 : x;
     fibonacciGrid[d].v[1] = (abs(y) < 1e-8) ? 0 : y;
     fibonacciGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
-    LOG(1, "Transformed")  << "fibonacciGrid[" << d << "]=" << fibonacciGrid[d].v 
-    << ",l " << fibonacciGrid[d].l << ", " << fibonacciGrid[d].s << std::endl;
+    //LOG(1, "Transformed")  << "fibonacciGrid[" << d << "]=" << fibonacciGrid[d].v 
+    //<< ",l " << fibonacciGrid[d].l << ", " << fibonacciGrid[d].s << std::endl;
   }
+  //sort momentumGrid w.r.t. x, y, z in order to find the SG
+  std::sort(momentumGrid, &momentumGrid[NG], Momentum::sortbyv);
+  for (int d(0); d<NG; ++d){
+    LOG(1, "Sortbyv")  << "momentumGrid[" << d << "]=" << momentumGrid[d].v 
+    << ",l " << momentumGrid[d].l << ", " << momentumGrid[d].s << std::endl;
+  }
+  //Trilinear interpolation on each point
+  Momentum vertex[8];
+  for (int d(0); d <N; ++d) {
+    int xmin=std::floor(fibonacciGrid[d].v[0]);
+    int xmax=std::ceil(fibonacciGrid[d].v[0]);
+    int ymin=std::floor(fibonacciGrid[d].v[1]);
+    int ymax=std::ceil(fibonacciGrid[d].v[1]);
+    int zmin=std::floor(fibonacciGrid[d].v[2]);
+    int zmax=std::ceil(fibonacciGrid[d].v[2]);
+    vertex[0].v[0] = xmax;
+    vertex[0].v[1] = ymin;
+    vertex[0].v[2] = zmin;
+    vertex[1].v[0] = xmax;
+    vertex[1].v[1] = ymax;
+    vertex[1].v[2] = zmin;
+    vertex[2].v[0] = xmax;
+    vertex[2].v[1] = ymax;
+    vertex[2].v[2] = zmax;
+    vertex[3].v[0] = xmax;
+    vertex[3].v[1] = ymin;
+    vertex[3].v[2] = zmax;
+    vertex[4].v[0] = xmin;
+    vertex[4].v[1] = ymin;
+    vertex[4].v[2] = zmin;
+    vertex[5].v[0] = xmin;
+    vertex[5].v[1] = ymax;
+    vertex[5].v[2] = zmin;
+    vertex[6].v[0] = xmin;
+    vertex[6].v[1] = ymax;
+    vertex[6].v[2] = zmax;
+    vertex[7].v[0] = xmin;
+    vertex[7].v[1] = ymin;
+    vertex[7].v[2] = zmax;
+    double x[3] = {
+      fibonacciGrid[d].v[0]-xmin, fibonacciGrid[d].v[1]-ymin,
+      fibonacciGrid[d].v[2]-zmin
+                  };
+    double v[8] = {
+      vertex[0].locate(momentumGrid,NG),vertex[1].locate(momentumGrid,NG),
+      vertex[2].locate(momentumGrid,NG),vertex[3].locate(momentumGrid,NG),
+      vertex[4].locate(momentumGrid,NG),vertex[5].locate(momentumGrid,NG),
+      vertex[6].locate(momentumGrid,NG),vertex[7].locate(momentumGrid,NG)
+                  };
+    for (int t(0); t< 8; ++t) {
+      LOG(1, "vertex") << v[t] << std::endl; 
+    }
+    
+    cc4s::Interpolation<double> intp;
+    fibonacciGrid[d].s = intp.Trilinear(x,v);
+    LOG(1, "linear") << fibonacciGrid[d].s << " v="
+      << fibonacciGrid[d].v << std::endl;
+  } 
 
   
 
-    //LOG(1, "test") << "length[" << g << "]=" << regularGrid[g].length() << std::endl;
-    //LOG(1, "Unsorted")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v
-    //<< ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
- // for (int n(0); n < NG; ++n){
- //   onRegularGrid[n].initial(regularGrid[n], structureFactors[n]);
- // }
- // cout << onRegularGrid.coordinates
- // 
- // for (int t(0); t < N; ++t){
- //   for (int d(0); d < NG; ++d){
- //      
- //   }
- // }
   //double x[3]={0.3,0.4, 0.7};
   //double v[8]={0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
   //cc4s::Interpolation<double> Intp;
