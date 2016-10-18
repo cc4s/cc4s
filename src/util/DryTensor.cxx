@@ -1,4 +1,4 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <util/DryTensor.hpp>
 
 #include <math/Complex.hpp>
@@ -13,19 +13,24 @@ std::vector<DryMemory::ExtendingResource> DryMemory::extendingResources;
 
 template <typename F>
 DryMatrix<F>::DryMatrix(
-  int rows, int cols, int sym
+  int rows, int cols, int sym, SourceLocation const &location
 ):
   DryTensor<F>(
     2, std::array<int,2>{{rows, cols}}.data(),
-    std::array<int,2>{{sym, NS}}.data()
+    std::array<int,2>{{sym, NS}}.data(),
+    location
   )
 {
 }
 // instantiate
 template
-DryMatrix<double>::DryMatrix(int rows, int cols, int sym);
+DryMatrix<double>::DryMatrix(
+  int rows, int cols, int sym, SourceLocation const &location
+);
 template
-DryMatrix<complex>::DryMatrix(int rows, int cols, int sym);
+DryMatrix<complex>::DryMatrix(
+  int rows, int cols, int sym, SourceLocation const &location
+);
 
 template <typename F>
 DryVector<F>::DryVector(

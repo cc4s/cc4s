@@ -91,7 +91,10 @@ namespace cc4s {
   template <typename F=double>
   class DryMatrix: public DryTensor<F> {
   public:
-    DryMatrix(int rowCount, int columnCount, int sym);
+    DryMatrix(
+      int rowCount, int columnCount, int sym,
+      SourceLocation const &location = SourceLocation()
+    );
   };
 
   template <typename F=double>
