@@ -91,10 +91,10 @@ void ClusterDoublesAlgorithm::dryRun() {
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
 
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<> *epsi(getTensorArgument<double, 
-		    DryTensor<double>>("HoleEigenEnergies"));
+  DryTensor<> *epsi(getTensorArgument<double,
+                    DryTensor<double>>("HoleEigenEnergies"));
   DryTensor<> *epsa(getTensorArgument<double, 
-		    DryTensor<double>>("ParticleEigenEnergies"));
+                    DryTensor<double>>("ParticleEigenEnergies"));
 
   std::string abbreviation(getAbbreviation());
   std::transform(
@@ -125,12 +125,14 @@ void ClusterDoublesAlgorithm::dryRun() {
     int Nv(epsa->lens[0]);
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
-    DryTensor<> Tabij(4, vvoo, syms);
-    allocatedTensorArgument(amplitudesName.str(), new DryTensor<>(Tabij));
+    DryTensor<> Tabij(4, vvoo, syms, SOURCE_LOCATION);
+    allocatedTensorArgument(
+      amplitudesName.str(), new DryTensor<>(Tabij, SOURCE_LOCATION)
+    );
   }
 
   // Allocate the energy e
-  DryScalar<> energy();
+  DryScalar<> energy(SOURCE_LOCATION);
 
   getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
 
@@ -172,7 +174,7 @@ void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
   cc4s::DryTensor<> &Rabij
 ) {
   // Build Dabij
-  DryTensor<> Dabij(Rabij);
+  DryTensor<> Dabij(Rabij, SOURCE_LOCATION);
 }
 
 
@@ -217,11 +219,12 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int integ
 DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integralsSliceSize) {
   // Read the Coulomb vertex GammaGqr
   DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
-			       DryTensor<complex>>("CoulombVertex"));
+                               DryTensor<complex>>("CoulombVertex"));
   
   // Read the Particle/Hole Eigenenergies
-  DryTensor<> *epsa(getTensorArgument
-		    <double, DryTensor<double>>("ParticleEigenEnergies"));
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
+  );
 
   int Nv(epsa->lens[0]);
   int NG(GammaGqr->lens[0]);
@@ -230,20 +233,20 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integralsSlic
   int syms[] = { NS, NS, NS, NS };
   int leftGammaLens[]  = { NG, integralsSliceSize, Nv };
   int rightGammaLens[] = { NG, integralsSliceSize, Nv };
-  DryTensor<complex> leftGamma (3, leftGammaLens , syms);
-  DryTensor<complex> rightGamma(3, rightGammaLens, syms);
+  DryTensor<complex> leftGamma (3, leftGammaLens , syms, SOURCE_LOCATION);
+  DryTensor<complex> rightGamma(3, rightGammaLens, syms, SOURCE_LOCATION);
 
   // Split into real and imaginary parts
-  DryTensor<> realLeftGamma(3, leftGammaLens, syms);
-  DryTensor<> imagLeftGamma(3, leftGammaLens, syms);
+  DryTensor<> realLeftGamma(3, leftGammaLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagLeftGamma(3, leftGammaLens, syms, SOURCE_LOCATION);
 
-  DryTensor<> realRightGamma(3, rightGammaLens, syms);
-  DryTensor<> imagRightGamma(3, rightGammaLens, syms);
+  DryTensor<> realRightGamma(3, rightGammaLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagRightGamma(3, rightGammaLens, syms, SOURCE_LOCATION);
 
   // Allocate sliced Coulomb integrals
   int lens[] = {leftGamma.lens[1], rightGamma.lens[1], 
 		leftGamma.lens[2], rightGamma.lens[2]};
-  DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms));
+  DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms, SOURCE_LOCATION));
 
   return Vxycd;
 }
@@ -409,13 +412,15 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(int f
 {
   getTensorArgument<complex,DryTensor<complex>>("FactorOrbitals");
   DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
-			       DryTensor<complex>>("CoulombFactors"));
+                               DryTensor<complex>>("CoulombFactors"));
   
   // Read the Particle/Hole Eigenenergies
-  DryTensor<> *epsa(getTensorArgument
-		    <double, DryTensor<double>>("ParticleEigenEnergies"));
-  DryTensor<> *epsi(getTensorArgument
-		    <double, DryTensor<double>>("HoleEigenEnergies"));
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
+  );
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
+  );
 
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
@@ -429,41 +434,42 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(int f
   int syms[] = {               NS,               NS, NS, NS };
 
   // Read the doubles amplitudes Tabij
-  DryTensor<> Tabij(4, vvoo, syms);
+  DryTensor<> Tabij(4, vvoo, syms, SOURCE_LOCATION);
 
-  DryTensor<complex> VRS(2, RR, syms);
+  DryTensor<complex> VRS(2, RR, syms, SOURCE_LOCATION);
 
-  DryTensor<> realXRaij(4, Rvoo, syms);
-  DryTensor<> imagXRaij(4, Rvoo, syms);
+  DryTensor<> realXRaij(4, Rvoo, syms, SOURCE_LOCATION);
+  DryTensor<> imagXRaij(4, Rvoo, syms, SOURCE_LOCATION);
 
   // Allocate PiaR
-  DryTensor<complex> PiaR(2, vR, syms);
+  DryTensor<complex> PiaR(2, vR, syms, SOURCE_LOCATION);
 
   // Slice the respective parts from PiaR
-  DryTensor<complex>  leftPiaR(2, vR, syms);
-  DryTensor<complex> rightPiaR(2, vR, syms);
+  DryTensor<complex>  leftPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<complex> rightPiaR(2, vR, syms, SOURCE_LOCATION);
 
   // Split left and right PiaR into real and imaginary parts
-  DryTensor<>  realLeftPiaR(2, vR, syms);
-  DryTensor<>  imagLeftPiaR(2, vR, syms);
-  DryTensor<> realRightPiaR(2, vR, syms);
-  DryTensor<> imagRightPiaR(2, vR, syms);
+  DryTensor<>  realLeftPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<>  imagLeftPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<> realRightPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<> imagRightPiaR(2, vR, syms, SOURCE_LOCATION);
 
   // Slice the respective parts from LambdaGR
-  DryTensor<complex>  leftLambdaGR(2, GR, syms);
-  DryTensor<complex> rightLambdaGR(2, GR, syms);
+  DryTensor<complex>  leftLambdaGR(2, GR, syms, SOURCE_LOCATION);
+  DryTensor<complex> rightLambdaGR(2, GR, syms, SOURCE_LOCATION);
 
   // FIXME: Currently assuming GammaGqr = PirR*PirR*LambdaGR
   //        First Pi not conjugated.
-  DryTensor<complex> XRaij(4, Rvoo, syms);
+  DryTensor<complex> XRaij(4, Rvoo, syms, SOURCE_LOCATION);
 
-  DryTensor<complex> XRSij(4, RRoo, syms);
+  DryTensor<complex> XRSij(4, RRoo, syms, SOURCE_LOCATION);
 
-  DryTensor<complex> conjLeftLambdaGR(leftLambdaGR);
+  DryTensor<complex> conjLeftLambdaGR(leftLambdaGR, SOURCE_LOCATION);
 
   // allocate Tensor for sliced T2 amplitudes
-  DryTensor<> *Fabij(new DryTensor<>(4, vvoo, syms));
+  DryTensor<> *Fabij(new DryTensor<>(4, vvoo, syms, SOURCE_LOCATION));
 
   // return sliced amplitudes
   return Fabij;
 }
+

@@ -130,19 +130,21 @@ void CoulombVertexReader::dryRun() {
   // Allocate output tensors
   int vertexLens[] = { NG, Np, Np };
   int vertexSyms[] = { NS, NS, NS };
-  DryTensor<> *epsi(new DryVector<>(No));
-  DryTensor<> *epsa(new DryVector<>(Nv));
-  DryTensor<complex> *GammaGqr(new DryTensor<complex>(3, vertexLens, 
-						      vertexSyms));
+  DryTensor<> *epsi(new DryVector<>(No, SOURCE_LOCATION));
+  DryTensor<> *epsa(new DryVector<>(Nv, SOURCE_LOCATION));
+  DryTensor<complex> *GammaGqr(
+    new DryTensor<complex>(3, vertexLens, vertexSyms, SOURCE_LOCATION)
+  );
   // Enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
-  allocatedTensorArgument<complex, DryTensor<complex>>("CoulombVertex", 
-						       GammaGqr);
+  allocatedTensorArgument<complex, DryTensor<complex>>(
+    "CoulombVertex", GammaGqr
+  );
 
   // Real and imaginary parts are read in seperately
-  DryTensor<> realGammaGqr(3, vertexLens, vertexSyms);
-  DryTensor<> imagGammaGqr(3, vertexLens, vertexSyms);
+  DryTensor<> realGammaGqr(3, vertexLens, vertexSyms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGqr(3, vertexLens, vertexSyms, SOURCE_LOCATION);
   //  realGammaGqr.use();
 }
 

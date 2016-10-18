@@ -2,21 +2,39 @@
 #ifndef DRY_TENSOR_DEFINED
 #define DRY_TENSOR_DEFINED
 
+#include <util/SourceLocation.hpp>
 #include <util/Log.hpp>
 #include <cstdint>
 #include <vector>
+#include <string>
+
 
 namespace cc4s {
   class DryMemory {
   public:
-    static void allocate(int64_t size) {
+    typedef std::pair<int64_t, SourceLocation> ExtendingResource;
+
+    static void allocate(
+      int64_t size, SourceLocation const &location
+    ) {
       currentTotalSize += size;
-      if (currentTotalSize > maxTotalSize) maxTotalSize = currentTotalSize;
+      if (currentTotalSize > maxTotalSize) {
+        maxTotalSize = currentTotalSize;
+        extendingResources.push_back(
+          ExtendingResource(maxTotalSize, location)
+        );
+        LOG(1, "DryMemory") << "extending size=" << size << " at "
+          << location << std::endl;
+      } else {
+        LOG(1, "DryMemory") << "non-extending size=" << size << " at "
+          << location << std::endl;
+      }
     }
     static void free(int64_t size) {
       currentTotalSize -= size;
     }
     static int64_t currentTotalSize, maxTotalSize;
+    static std::vector<ExtendingResource> extendingResources;
   };
 
   template <typename F=double>
@@ -31,15 +49,20 @@ namespace cc4s {
      * Symmetryies are also ignored at the moment.
      */
     DryTensor(
-      int order_, int const *lens_, int const *syms_
-    ): order(order_) {
+      int order_, int const *lens_, int const *syms_,
+      SourceLocation const &location_ = SourceLocation()
+    ): order(order_), location(location_) {
       for (int i(0); i < order_; ++i) {
         lens.push_back(lens_[i]);
         syms.push_back(syms_[i]);
       }
       allocate();
     }
-    DryTensor(DryTensor const &A): order(A.order), lens(A.lens), syms(A.syms) {
+    DryTensor(
+      DryTensor const &A, SourceLocation const &location_ = SourceLocation()
+    ):
+      order(A.order), lens(A.lens), syms(A.syms), location(location_)
+    {
       allocate();
     }
     virtual ~DryTensor() {
@@ -49,6 +72,7 @@ namespace cc4s {
 
     int order;
     std::vector<int> lens, syms;
+    SourceLocation location;
 
   protected:
     void allocate() {
@@ -56,7 +80,7 @@ namespace cc4s {
       for (int i(0); i < order; ++i) {
         size *= lens[i];
       }
-      DryMemory::allocate(size);
+      DryMemory::allocate(size, location);
     }
     void free() {
       DryMemory::free(size);
@@ -73,14 +97,16 @@ namespace cc4s {
   template <typename F=double>
   class DryVector: public DryTensor<F> {
   public:
-    DryVector(int elementsCount);
+    DryVector(
+      int elementsCount, SourceLocation const &location = SourceLocation()
+    );
   };
 
   template <typename F=double>
   class DryScalar: public DryTensor<F> {
   public:
-    DryScalar();
-    DryScalar(F const value);
+    DryScalar(SourceLocation const &location = SourceLocation());
+    DryScalar(F const value, SourceLocation const &location = SourceLocation());
   };
 }
 
