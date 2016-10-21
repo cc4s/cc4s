@@ -20,7 +20,7 @@ namespace cc4s {
     class Momentum;
     Momentum *fibonacciGrid;
     void calculateStructureFactor();
-    void constructFibonacciGrid();
+    void constructFibonacciGrid(double R);
     void interpolation3D();
     void calculateFiniteSizeCorrection();
   };
