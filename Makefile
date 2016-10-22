@@ -16,13 +16,16 @@ clean:
 # primary target
 all: build/${CONFIG}/bin/${TARGET}
 
-.PHONY: test
+.PHONY: test wiki
 test:
 	bash test/test.sh -c $(CONFIG)
 
 # generate documentation
 doc:
 	doxygen
+
+wiki:
+	bash utils/extract.sh -R -d wiki/dist -b wiki/build -p src test.wiki
 
 # copy binary to installation directory
 install: build/${CONFIG}/bin/${TARGET}
