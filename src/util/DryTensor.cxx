@@ -8,6 +8,8 @@
 using namespace cc4s;
 
 int64_t DryMemory::currentTotalSize = 0, DryMemory::maxTotalSize = 0;
+std::vector<DryMemory::ExtendingResource> DryMemory::extendingResources;
+
 
 template <typename F>
 DryMatrix<F>::DryMatrix(
@@ -27,49 +29,58 @@ DryMatrix<complex>::DryMatrix(int rows, int cols, int sym);
 
 template <typename F>
 DryVector<F>::DryVector(
-  int elements
+  int elements, SourceLocation const &location
 ):
   DryTensor<F>(
     1, std::array<int,1>{{elements}}.data(),
-    std::array<int,1>{{NS}}.data()
+    std::array<int,1>{{NS}}.data(),
+    location
   )
 {
 }
 // instantiate
 template
-DryVector<double>::DryVector(int elements);
+DryVector<double>::DryVector(int elements, SourceLocation const &location);
 template
-DryVector<complex>::DryVector(int elements);
+DryVector<complex>::DryVector(int elements, SourceLocation const &location);
 
 
 template <typename F>
 DryScalar<F>::DryScalar(
+  SourceLocation const &location
 ):
   DryTensor<F>(
     0, std::array<int,0>{{}}.data(),
-    std::array<int,0>{{}}.data()
+    std::array<int,0>{{}}.data(),
+    location
   )
 {
 }
 // instantiate
 template
-DryScalar<double>::DryScalar();
+DryScalar<double>::DryScalar(SourceLocation const &location);
 template
-DryScalar<complex>::DryScalar();
+DryScalar<complex>::DryScalar(SourceLocation const &location);
 
 template <typename F>
 DryScalar<F>::DryScalar(
-  F const value // will be discarded
+  F const value, // will be discarded
+  SourceLocation const &location
 ):
   DryTensor<F>(
     0, std::array<int,0>{{}}.data(),
-    std::array<int,0>{{}}.data()
+    std::array<int,0>{{}}.data(),
+    location
   )
 {
 }
 // instantiate
 template
-DryScalar<double>::DryScalar(double const value);
+DryScalar<double>::DryScalar(
+  double const value, SourceLocation const &location
+);
 template
-DryScalar<complex>::DryScalar(complex const value);
+DryScalar<complex>::DryScalar(
+  complex const value, SourceLocation const &location
+);
 

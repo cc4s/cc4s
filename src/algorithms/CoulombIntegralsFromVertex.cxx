@@ -203,14 +203,17 @@ void CoulombIntegralsFromVertex::run() {
 
 void CoulombIntegralsFromVertex::dryRun() {
   // Read the Coulomb vertex GammaGqr
-  DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
-			       DryTensor<complex>>("CoulombVertex"));
+  DryTensor<complex> *GammaGqr(
+    getTensorArgument<complex, DryTensor<complex>>("CoulombVertex")
+  );
 
   // Read the Particle/Hole Eigenenergies
-  DryTensor<> *epsi(getTensorArgument
-		    <double, DryTensor<double>>("HoleEigenEnergies"));
-  DryTensor<> *epsa(getTensorArgument
-		    <double, DryTensor<double>>("ParticleEigenEnergies"));
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
+  );
 
   // Compute the No,Nv,NG
   int NG(GammaGqr->lens[0]);
@@ -226,18 +229,18 @@ void CoulombIntegralsFromVertex::dryRun() {
   int ooov[] = { No, No, No, Nv };
   int vvvo[] = { Nv, Nv, Nv, No };
 
-  DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") 
-		     ?new DryTensor<>(4, vvvv, syms) : nullptr);
-  DryTensor<> *Vaibj(isArgumentGiven("PHPHCoulombIntegrals") 
-		     ?new DryTensor<>(4, vovo, syms) : nullptr);
+  DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
+    new DryTensor<>(4, vvvv, syms, SOURCE_LOCATION) : nullptr);
+  DryTensor<> *Vaibj(isArgumentGiven("PHPHCoulombIntegrals") ?
+    new DryTensor<>(4, vovo, syms, SOURCE_LOCATION) : nullptr);
   DryTensor<> *Vabij(isArgumentGiven("PPHHCoulombIntegrals") ?
-		     new DryTensor<>(4, vvoo, syms) : nullptr);
+    new DryTensor<>(4, vvoo, syms, SOURCE_LOCATION) : nullptr);
   DryTensor<> *Vijkl(isArgumentGiven("HHHHCoulombIntegrals") ?
-		     new DryTensor<>(4, oooo, syms) : nullptr);
+    new DryTensor<>(4, oooo, syms, SOURCE_LOCATION) : nullptr);
   DryTensor<> *Vijka(isArgumentGiven("HHHPCoulombIntegrals") ?
-		     new DryTensor<>(4, ooov, syms) : nullptr);
+    new DryTensor<>(4, ooov, syms, SOURCE_LOCATION) : nullptr);
   DryTensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
-		     new DryTensor<>(4, vvvo, syms) : nullptr);
+    new DryTensor<>(4, vvvo, syms, SOURCE_LOCATION) : nullptr);
 
   if (Vabcd) {
     allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
@@ -263,17 +266,18 @@ void CoulombIntegralsFromVertex::dryRun() {
   int GabLens[]   = {NG,Nv,Nv};
   int GijLens[]   = {NG,No,No};
 
-  DryTensor<complex> GammaGai(3, GaiLens, syms);
-  DryTensor<complex> GammaGab(3, GabLens, syms);
-  DryTensor<complex> GammaGij(3, GijLens, syms);
+  DryTensor<complex> GammaGai(3, GaiLens, syms, SOURCE_LOCATION);
+  DryTensor<complex> GammaGab(3, GabLens, syms, SOURCE_LOCATION);
+  DryTensor<complex> GammaGij(3, GijLens, syms, SOURCE_LOCATION);
 
   // Split GammaGab,GammaGai,GammaGij into real and imaginary parts
-  DryTensor<> realGammaGai(3, GaiLens, syms);
-  DryTensor<> imagGammaGai(3, GaiLens, syms);
+  DryTensor<> realGammaGai(3, GaiLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGai(3, GaiLens, syms, SOURCE_LOCATION);
 
-  DryTensor<> realGammaGab(3, GabLens, syms);
-  DryTensor<> imagGammaGab(3, GabLens, syms);
+  DryTensor<> realGammaGab(3, GabLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGab(3, GabLens, syms, SOURCE_LOCATION);
 
-  DryTensor<> realGammaGij(3, GijLens, syms);
-  DryTensor<> imagGammaGij(3, GijLens, syms);
+  DryTensor<> realGammaGij(3, GijLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGij(3, GijLens, syms, SOURCE_LOCATION);
 }
+

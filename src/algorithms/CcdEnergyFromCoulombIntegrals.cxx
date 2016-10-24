@@ -202,8 +202,11 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
     // the PPPPCoulombIntegrals may not be given then slicing is required
-    DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ? 
-		       getTensorArgument<double, DryTensor<double>>("PPPPCoulombIntegrals") : nullptr);
+    DryTensor<> *Vabcd(
+      isArgumentGiven("PPPPCoulombIntegrals") ?
+        getTensorArgument<double, DryTensor<double>>("PPPPCoulombIntegrals") :
+        nullptr
+    );
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
     DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
@@ -222,26 +225,25 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
     int oo[] = { No, No };
 
     // Allocate Tensors for T2 amplitudes
-    DryTensor<> Rabij(*Vabij);
+    DryTensor<> Rabij(*Vabij, SOURCE_LOCATION);
 
     // Define intermediates
-    DryTensor<> Kac(2, vv, syms);
-    DryTensor<> Kki(2, oo, syms);
+    DryTensor<> Kac(2, vv, syms, SOURCE_LOCATION);
+    DryTensor<> Kki(2, oo, syms, SOURCE_LOCATION);
 
-    DryTensor<> Xklij(*Vijkl);
-    DryTensor<> Xakci(*Vaibj);
-    DryTensor<> Xakic(4, voov, syms);
+    DryTensor<> Xklij(*Vijkl, SOURCE_LOCATION);
+    DryTensor<> Xakci(*Vaibj, SOURCE_LOCATION);
+    DryTensor<> Xakic(4, voov, syms, SOURCE_LOCATION);
 
     if (!Vabcd) {
       if (isArgumentGiven("CoulombFactors")) {
 	// Read the factorsSliceSize. If not provided use NG.
 	DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
-				     DryTensor<complex>>("CoulombFactors"));
+                               DryTensor<complex>>("CoulombFactors"));
 
 	int NR(LambdaGR->lens[1]);
 
-	int factorsSliceSize(getIntegerArgument
-			     ("factorsSliceSize",NR));
+	int factorsSliceSize(getIntegerArgument("factorsSliceSize",NR));
 
 	LOG(1, abbreviation) << "Computing residuum Rabij from factors with NR=" << NR 
 			     << ", using slicing size=" << factorsSliceSize << std::endl;
@@ -260,7 +262,7 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
 	  DryTensor<> *Vxycd(drySliceCoulombIntegrals(integralsSliceSize));
 	  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
 	  int syms[] = {NS, NS, NS, NS};
-	  DryTensor<> Rxyij(4, lens, syms);
+	  DryTensor<> Rxyij(4, lens, syms, SOURCE_LOCATION);
 	}
     }
 
