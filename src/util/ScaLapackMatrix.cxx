@@ -8,26 +8,25 @@ using namespace cc4s;
 
 ScaLapackDescriptor::ScaLapackDescriptor(
   BlacsWorld *blacsWorld,
-  int lens_[2]
+  int lens_[2],
+  int blockSize_
 ):
   dataType(1),
   blacsContext(blacsWorld->context)
 {
   for (int d(0); d < 2; ++d) {
     lens[d] = lens_[d];
-    blockSize[d] = 32;
+    blockSize[d] = std::min(blockSize_, lens_[d]);
     offset[d] = 0;
     localLens[d] = numroc_(
       &lens[d], &blockSize[d],
       &blacsWorld->firstElement[d], &offset[d], &blacsWorld->lens[d]
     );
-/*
-    LOG_RANK(1, "ScaLapackMatrix") << "rank=" << blacsWorld->rank << ", lens[" << d << "]=" << lens[d] << std::endl;
-    LOG_RANK(1, "ScaLapackMatrix") << "rank=" << blacsWorld->rank << ", blockSize[" << d << "]=" << blockSize[d] << std::endl;
-    LOG_RANK(1, "ScaLapackMatrix") << "rank=" << blacsWorld->rank << ", offset[" << d << "]=" << offset[d] << std::endl;
-    LOG_RANK(1, "ScaLapackMatrix") << "rank=" << blacsWorld->rank << ", localLens[" << d << "]=" << localLens[d] << std::endl;
-    LOG_RANK(1, "ScaLapackMatrix") << "rank=" << blacsWorld->rank << ", firstelement[" << d << "]=" << blacsWorld->firstElement[d] << std::endl;
-*/
+    std::cout << "rank=" << blacsWorld->rank << ", lens[" << d << "]=" << lens[d] << std::endl;
+    std::cout << "rank=" << blacsWorld->rank << ", blockSize[" << d << "]=" << blockSize[d] << std::endl;
+    std::cout << "rank=" << blacsWorld->rank << ", offset[" << d << "]=" << offset[d] << std::endl;
+    std::cout << "rank=" << blacsWorld->rank << ", localLens[" << d << "]=" << localLens[d] << std::endl;
+    std::cout << "rank=" << blacsWorld->rank << ", firstelement[" << d << "]=" << blacsWorld->firstElement[d] << std::endl;
   }
 }
 
@@ -55,9 +54,9 @@ ScaLapackMatrix<complex>::ScaLapackMatrix(ScaLapackMatrix<complex> &A);
 
 template <typename F>
 ScaLapackMatrix<F>::ScaLapackMatrix(
-  CTF::Matrix<F> &A, BlacsWorld *blacsWorld_
+  CTF::Matrix<F> &A, BlacsWorld *blacsWorld_, int blockSize
 ):
-  ScaLapackDescriptor(blacsWorld_, A.lens),
+  ScaLapackDescriptor(blacsWorld_, A.lens, blockSize),
   blacsWorld(blacsWorld_)
 {
   // allocate local data
@@ -78,11 +77,11 @@ ScaLapackMatrix<F>::ScaLapackMatrix(
 // instantiate
 template
 ScaLapackMatrix<double>::ScaLapackMatrix(
-  CTF::Matrix<double> &A, BlacsWorld *blacsWorld_
+  CTF::Matrix<double> &A, BlacsWorld *blacsWorld, int blockSize
 );
 template
 ScaLapackMatrix<complex>::ScaLapackMatrix(
-  CTF::Matrix<complex> &A, BlacsWorld *blacsWorld_
+  CTF::Matrix<complex> &A, BlacsWorld *blacsWorld, int blockSize
 );
 
 
@@ -112,9 +111,10 @@ void ScaLapackMatrix<double>::write(CTF::Matrix<double> &A);
 template
 void ScaLapackMatrix<complex>::write(CTF::Matrix<complex> &A);
 
+
 template <typename F>
 int ScaLapackMatrix<F>::getGlobalIndex(int localIndex, int d) {
-  // convert to and from Frotran indices
+  // convert to and from Fortran indices
   ++localIndex;
   return indxl2g_(
     &localIndex, &blockSize[d],

@@ -8,10 +8,7 @@
 namespace cc4s {
   class ScaLapackDescriptor {
   public:
-    ScaLapackDescriptor(
-      BlacsWorld *blacsWorld,
-      int lens_[2]
-    );
+    ScaLapackDescriptor(BlacsWorld *blacsWorld, int lens_[2], int blockSize);
     int dataType;     // 1 for dense matrices
     int blacsContext;
     int lens[2];
@@ -25,18 +22,44 @@ namespace cc4s {
   template <typename F>
   class ScaLapackMatrix: public ScaLapackDescriptor {
   public:
-    // copy other ScaLapack matrix
+    /**
+     * \brief Copies the content ScaLapack matrix
+     * inheriting its distribution and its BlacsWorld.
+     */
     ScaLapackMatrix(ScaLapackMatrix<F> &A);
-    // construct from CTF::Matrix
-    ScaLapackMatrix(CTF::Matrix<F> &A, BlacsWorld *blacsWorld);
+    /**
+     * \brief Construct a ScaLapack matrix from the content of a
+     * CTF::Matrix in the given BlacsWorld.
+     */
+    ScaLapackMatrix(
+      CTF::Matrix<F> &A, BlacsWorld *blacsWorld, int blockSize = 64
+    );
+    /**
+     * \brief Frees all resources associated with the ScaLapack matrix on
+     * all processes.
+     */
     ~ScaLapackMatrix();
+
+    /**
+     * \brief Returns a pointer to a ScaLapack matrix descriptor, i.e.
+     * the first 9 integers of the class ScaLapackDescriptor,
+     * which are in the format ScaLapack routines expect it.
+     */
     const int *getDescriptor() const {
       return &dataType;
     }
 
+    /**
+     * \brief Returns the pointer to the block data owned by this process.
+     */
     const F *getLocalValues() const {
       return localValues;
     }
+
+    /**
+     * \brief Returns the pointer to the mutable block data owned by this
+     * process.
+     */
     F *getLocalValues() {
       return localValues;
     }
@@ -47,11 +70,28 @@ namespace cc4s {
      */
     void write(CTF::Matrix<F> &A);
 
+  protected:
+    /**
+     * \brief Retrieves the global row or column index within the full matrix
+     * from the given row or column index within the local block.
+     */
+    int getGlobalIndex(int localIndex, int dimension);
+
+    /**
+     * \brief The BlacsWorld specifying the processor grid this matrix
+     * is distributed over.
+     */
     BlacsWorld *blacsWorld;
+    /**
+     * \brief The global indices within the local matrix elements owned
+     * by this process. The global index of an element in row i and
+     * in column j of the full matrix is (i + lens[0]*j).
+     */
     int64_t *localIndices;
 
-  protected:
-    int getGlobalIndex(int localIndex, int dimension);
+    /**
+     * \brief The block data owned by this process.
+     */
     F *localValues;
   };
 }
