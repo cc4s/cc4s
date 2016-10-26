@@ -15,7 +15,7 @@ namespace cc4s {
     virtual void run();
   protected:
     int NG;
-    int N;
+    const int  N=128;//The # of points on the fibonacciGrid, fixed #.
     double *structureFactors;
     class Momentum;
     Momentum *fibonacciGrid;

@@ -21,7 +21,8 @@ namespace cc4s {
     // Bilinear interpolates in 2D space
     // target is the pointer points to a 2D point (x, y), x, y are normalised
     // v is a pointer points to an array of 4 values of the 4
-    // points surrounding (x, y), counterclock wise starting from bottom left.
+    // points surrounding (x, y), which are ordered as 
+    // [(xmin, ymin),(xmax, ymin),(xmin, ymax), (xmax, ymax)].
       F v_prime[2] = { Linear(target[0], &(v[0])),
                        Linear(target[0], &(v[2]))};
       return Linear(target[1], v_prime);
@@ -31,14 +32,11 @@ namespace cc4s {
     /*Trilinear interpolates in 3D space.
       target is the pointer points to a 3D point (x, y, z) (normalised).
       v is the pointer points to an array of 8 values of the 8 points which 
-      surround (x, y, z).
-      The front face of the cubic lies on the plane x = x0 (constant),
-      The back face of the cubic lies on  the plane x =x1(constant),
-      and x1<x0. 
-      Point 0, 1, 2, 3 lie on the front face and counted from the bottom left 
-      cornor counterclock wisely;
-      Point 4, 5, 6, 7 lie on the back face and counted from the bottom left
-      cornor counterclock wisely.
+      surround (x, y, z), which are ordered as
+     [(xmin, ymin, zmin), (xmin, ymax, zmin),
+      (xmin, ymin, zmax), (xmin, ymax, zmax),
+      (xmax, ymin, zmin), (xmax, ymax, zmin),
+      (xmax ,ymin, zmax), (xmax, ymax, zmax)]
    */
       F v_prime[2] = { Bilinear(&(target[1]), &(v[0])),
                        Bilinear(&(target[1]), &(v[4]))};

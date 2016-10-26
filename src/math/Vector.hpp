@@ -99,6 +99,10 @@ namespace cc4s {
     F &operator [](int d) {
       return coordinate[d];
     }
+    
+    static bool sortByLength(Vector<F, D> const &n, Vector<F,D> const &m){
+      return n.length() < m.length();
+    }
 
     bool operator < (Vector<F, D>  const &v) const {
       const double epsilon(1e-10);
