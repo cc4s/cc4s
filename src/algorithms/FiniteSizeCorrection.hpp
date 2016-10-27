@@ -16,6 +16,9 @@ namespace cc4s {
   protected:
     int NG;
     const int  N=128;//The # of points on the fibonacciGrid, fixed #.
+    int numBins;
+    double *lengthG;
+    double *aveSG;
     double *structureFactors;
     class Momentum;
     Momentum *fibonacciGrid;
@@ -23,6 +26,7 @@ namespace cc4s {
     void constructFibonacciGrid(double R);
     void interpolation3D();
     void calculateFiniteSizeCorrection();
+    double cubicSplineInterp(double x);
   };
 }
 

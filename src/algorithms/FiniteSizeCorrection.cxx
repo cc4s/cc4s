@@ -4,6 +4,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/Vector.hpp>
 #include <math/Interpolation.hpp>
+#include <math/Integration.hpp>
 #include <util/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -52,7 +53,7 @@ class FiniteSizeCorrection::Momentum {
       //if (v[3] < 0.) u= v*(-1.);
       for (int d(0); d < n; ++d) {
         if (u.approximately(m[d].v)) {
-          LOG(1,"Locating") << "d= " << d << " v= " << m[d].v << ", " << std::endl;
+         // LOG(1,"Locating") << "d= " << d << " v= " << m[d].v << ", " << std::endl;
           return m[d].s;
         }
       }  
@@ -157,12 +158,6 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   realSG->read_all(structureFactors);
 }
 
-void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
-  // ...
-  //for (int g(0); g < NG; ++g) {
-  //  LOG(1, "FiniteSizeCorrection") << structureFactors[g] << std::endl;
-  //}
-}
 
 void FiniteSizeCorrection::constructFibonacciGrid(double R) {
   //This function construct a Fibonacci grid on a sphere with a certain radius.
@@ -195,7 +190,7 @@ void FiniteSizeCorrection::interpolation3D() {
   momenta->read_all(&(regularGrid[0][0]));
   Momentum *momentumGrid(new Momentum[2*NG]);
   for (int g(0); g<NG; ++g) {
-    LOG(1,"reg") << "g= " << g << "v= " << regularGrid[g] << std::endl;
+//    LOG(1,"reg") << "g= " << g << "v= " << regularGrid[g] << std::endl;
     momentumGrid[g] = Momentum(regularGrid[g], structureFactors[g]);
     momentumGrid[g+NG] = Momentum(regularGrid[g]*(-1.), structureFactors[g]);
   }
@@ -263,33 +258,41 @@ void FiniteSizeCorrection::interpolation3D() {
   //}
   //Determine the radii at which to construct the fibonacciGrids.
   std::sort(regularGrid, &regularGrid[N], Vector<double,3>::sortByLength);
-  for (int d(1); d < N; ++d) {
-  //  if (abs(regularGrid[d].length()-regularGrid[d-1].length()) < 1e-2) 
-  //    continue;
-  //  constructFibonacciGrid(regularGrid[d].length());
-    double r = ((double) rand() / (RAND_MAX));
-    LOG(1, "random") << r << std::endl;
-    constructFibonacciGrid(r);
-    for (int d(0); d<N; ++d){
-      x = T[0].dot(fibonacciGrid[d].v);
-      y = T[1].dot(fibonacciGrid[d].v);
-      z = T[2].dot(fibonacciGrid[d].v);
-      fibonacciGrid[d].v[0] = (abs(x) < 1e-8) ? 0 : x;
-      fibonacciGrid[d].v[1] = (abs(y) < 1e-8) ? 0 : y;
-      fibonacciGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
+  numBins=0;
+  for (int d(1); d < NG; ++d) {
+    if (abs(regularGrid[d].length()-regularGrid[d-1].length()) < 1e-3) continue;
+    else ++numBins;
+  }
+  aveSG = new double[numBins-1];
+  lengthG = new double[numBins-1];
+  numBins = 0;
+  for (int d(1); d < NG; ++d) {
+    if (abs(regularGrid[d].length()-regularGrid[d-1].length()) < 1e-3) 
+      continue;
+    constructFibonacciGrid(regularGrid[d].length());
+    //double r = ((double) rand() / (RAND_MAX))/10.;
+    //LOG(1, "random") << r << std::endl;
+    //constructFibonacciGrid(r);
+    for (int g(0); g<N; ++g){
+      x = T[0].dot(fibonacciGrid[g].v);
+      y = T[1].dot(fibonacciGrid[g].v);
+      z = T[2].dot(fibonacciGrid[g].v);
+      fibonacciGrid[g].v[0] = (abs(x) < 1e-8) ? 0 : x;
+      fibonacciGrid[g].v[1] = (abs(y) < 1e-8) ? 0 : y;
+      fibonacciGrid[g].v[2] = (abs(z) < 1e-8) ? 0 : z;
       //LOG(1, "Transformed")  << "fibonacciGrid[" << d << "]=" << fibonacciGrid[d].v 
       //<< ",l " << fibonacciGrid[d].l << ", " << fibonacciGrid[d].s << std::endl;
     }
     //Trilinear interpolation on each point
     Momentum vertex[8];
     double average=0.;
-    for (int d(0); d <10; ++d) {
-      int xmin=std::floor(fibonacciGrid[d].v[0]);
-      int xmax=std::ceil(fibonacciGrid[d].v[0]);
-      int ymin=std::floor(fibonacciGrid[d].v[1]);
-      int ymax=std::ceil(fibonacciGrid[d].v[1]);
-      int zmin=std::floor(fibonacciGrid[d].v[2]);
-      int zmax=std::ceil(fibonacciGrid[d].v[2]);
+    for (int t(0); t < N; ++t) {
+      int xmin=std::floor(fibonacciGrid[t].v[0]);
+      int xmax=std::ceil(fibonacciGrid[t].v[0]);
+      int ymin=std::floor(fibonacciGrid[t].v[1]);
+      int ymax=std::ceil(fibonacciGrid[t].v[1]);
+      int zmin=std::floor(fibonacciGrid[t].v[2]);
+      int zmax=std::ceil(fibonacciGrid[t].v[2]);
       vertex[0].v[0] = xmin;
       vertex[0].v[1] = ymin;
       vertex[0].v[2] = zmin;
@@ -315,8 +318,8 @@ void FiniteSizeCorrection::interpolation3D() {
       vertex[7].v[1] = ymax;
       vertex[7].v[2] = zmax;
       double x[3] = {
-        fibonacciGrid[d].v[0]-xmin, fibonacciGrid[d].v[1]-ymin,
-        fibonacciGrid[d].v[2]-zmin
+        fibonacciGrid[t].v[0]-xmin, fibonacciGrid[t].v[1]-ymin,
+        fibonacciGrid[t].v[2]-zmin
                     };
       double v[8] = {
         vertex[0].locate(momentumGrid,2*NG),vertex[1].locate(momentumGrid,2*NG),
@@ -329,17 +332,42 @@ void FiniteSizeCorrection::interpolation3D() {
      //   LOG(1, "vertex") << v[t] << std::endl; 
      // }
       
-      cc4s::Interpolation<double> intp;
-      fibonacciGrid[d].s = intp.Trilinear(x,v);
-      LOG(1, "linear") << fibonacciGrid[d].s << " v="
-        << fibonacciGrid[d].v << std::endl;
-      average += fibonacciGrid[d].s;
+      cc4s::Interpolation3D<double> intp;
+      fibonacciGrid[t].s = intp.Trilinear(x,v);
+      //LOG(1, "linear") << fibonacciGrid[t].s << " v="
+      //  << fibonacciGrid[t].v << std::endl;
+      average += fibonacciGrid[t].s;
     }
     average = average / N; 
-    //LOG(1, "Average") << "Radius= " << regularGrid[d].length() << " average=" <<
+    aveSG[numBins] = average;
+    lengthG[numBins] =  regularGrid[d].length();
+    LOG(1, "Average") << "Radius= " << regularGrid[d].length() << " numBins= " << numBins 
+      << std::endl;
+    numBins++;
+    LOG(1, "numBins")  << numBins << std::endl;
+    
+    //LOG(1, "Average") << "Radius= " << r<< " average=" <<
     //  average << std::endl;
-    LOG(1, "Average") << "Radius= " << r<< " average=" <<
-      average << std::endl;
   }  
+  //Cubic spline interpolation
+}
+
+double FiniteSizeCorrection::cubicSplineInterp(double x) {
+  cc4s::Interpolation1D<double> Int1d(numBins-1, lengthG, aveSG);
+  Int1d.cubicSpline(0., 0., "M");
+  return Int1d.getValue(x);
+}
+ 
+void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
+  //cc4s::Interpolation1D<double> Int1d(numBins-1, lengthG, aveSG);
+  //double *xtmp = new double[90];
+  //double *ytmp = new double[90];
+  //for (int i(0); i<90; ++i) xtmp[i] = i*lengthG[numBins-1]/100.;
+  //Int1d.cubicSpline(0., 0., "M");
+  //ytmp = Int1d.getValue(xtmp, 90); 
+  //for (int i(0); i < 90; ++i)
+  //  LOG(1,"ytmp") << "xtmp= " << xtmp[i] << " ytmp= " << ytmp[i]<< std::endl; 
+  double r1 = integrate(cubicSplineInterp, 0.0, 0.2, 100, simpson());
+  LOG(1,"integrate") << r1 << std::endl;
 }
 
