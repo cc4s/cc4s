@@ -22,11 +22,13 @@ ScaLapackDescriptor::ScaLapackDescriptor(
       &lens[d], &blockSize[d],
       &blacsWorld->firstElement[d], &offset[d], &blacsWorld->lens[d]
     );
+/*
     std::cout << "rank=" << blacsWorld->rank << ", lens[" << d << "]=" << lens[d] << std::endl;
     std::cout << "rank=" << blacsWorld->rank << ", blockSize[" << d << "]=" << blockSize[d] << std::endl;
     std::cout << "rank=" << blacsWorld->rank << ", offset[" << d << "]=" << offset[d] << std::endl;
     std::cout << "rank=" << blacsWorld->rank << ", localLens[" << d << "]=" << localLens[d] << std::endl;
     std::cout << "rank=" << blacsWorld->rank << ", firstelement[" << d << "]=" << blacsWorld->firstElement[d] << std::endl;
+*/
   }
 }
 
