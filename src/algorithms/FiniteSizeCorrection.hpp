@@ -3,7 +3,7 @@
 #define FINITE_SIZE_CORRECTION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-
+#include <math/Interpolation.hpp>
 namespace cc4s {
   class FiniteSizeCorrection: public Algorithm {
   public:
@@ -25,8 +25,9 @@ namespace cc4s {
     void calculateStructureFactor();
     void constructFibonacciGrid(double R);
     void interpolation3D();
+    double integrate(cc4s::Inter1D<double> Int1d, double start, double end, int steps);
+    double simpson(cc4s::Inter1D<double> Int1d, double x, double h);
     void calculateFiniteSizeCorrection();
-    double cubicSplineInterp(double x);
   };
 }
 

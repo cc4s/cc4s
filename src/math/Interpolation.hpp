@@ -6,7 +6,7 @@
 #include <string>
 namespace cc4s {
   template<typename F=double>
-  class Interpolation3D{
+  class Inter3D{
   //This class provides, so far, linear interpolation in 1D, 2D and 3D spaces.
   // Further interpolation methods like cubic spline interpolation will be 
   // added.
@@ -45,12 +45,12 @@ namespace cc4s {
     }
   };
   template<typename F=double>
-  class Interpolation1D{
+  class Inter1D{
   public:
   /*when you creat an instance of this class, you need to specify the size
     of the data set you are interpolating on, and the corresponding x and y
   */
-    Interpolation1D(const int size, F *x, F *y){
+    Inter1D(const int size, F *x, F *y){
       N = size;
       xv = new F[N];
       yv = new F[N];
@@ -72,16 +72,18 @@ namespace cc4s {
       double u[N];
       double qn(0.), un(0.), sig(0.), p(0.); 
       if (boundaryCondition == "N"){
+        LOG(1, "Interpolation::cubicSpline") << "Natural" << std::endl;
         y2d[0] = 0.;
         u[0] = 0.;
       }
       else if (boundaryCondition == "M"){
+        LOG(1, "Interpolation::cubicSpline") << "Manual " << y1d0 << std::endl;
         y2d[0] = -0.5; //does not really matter, T.B.C
-        u[0] = (3./(xv[1]-xv[0]))*((yv[1]-yv[0]))
-          /((xv[1]-xv[0])-y1d0);
+        u[0] = (3./(xv[1]-xv[0]))*(((yv[1]-yv[0]))
+          /(xv[1]-xv[0])-y1d0);
         qn = 0.5;
-        un = (3./(xv[N-1]-xv[N-2]))*(y1dn - (yv[N-1]-yv[N-2]))
-          /(xv[N-1]-xv[N-2]);
+        un = (3./(xv[N-1]-xv[N-2]))*((yv[N-1]-yv[N-2])
+          /(xv[N-1]-xv[N-2])-y1dn);
       }
       for (int i(1); i < N-1; i++){
         sig = (xv[i]-xv[i-1])/(xv[i+1]-xv[i-1]);
@@ -99,6 +101,7 @@ namespace cc4s {
     F getValue(F xinterp){
       //LOG(1,"getValue") << "n= " << n << std::endl;
       //int n=1;
+      double yinterp(0.);
       double h,a,b;
       int klow, khigh, k;
       //y= new double[n];
@@ -121,14 +124,13 @@ namespace cc4s {
       yinterp = a*yv[klow-1]+ b*yv[khigh-1] + ((a*a*a-a)*y2d[klow-1]
         +(b*b*b-b)*y2d[khigh-1])*(h*h)/6.;
       //}
-    return yinterp;
+      return yinterp;
     }
     int N;
     F *xv, *yv, *y2d;
-    F yinterp;
   };
   template <typename F=double>
-  inline std::ostream &operator << (std::ostream &stream, cc4s::Interpolation3D<F> const &v) {
+  inline std::ostream &operator << (std::ostream &stream, cc4s::Inter3D<F> const &v) {
     stream << v << std::endl;
     return stream;
   }
