@@ -40,12 +40,14 @@ class FiniteSizeCorrection::Momentum {
     cc4s::Vector<> v;
     double s;
     double l;
-    Momentum(): s(0.0), l(0.0) {
+    double vg;
+    Momentum(): s(0.0), l(0.0) ,vg(0.) {
     }
-    Momentum(cc4s::Vector<> v_, double s_=0.) {
+    Momentum(cc4s::Vector<> v_, double s_=0., double vg_=0.) {
       v = v_; 
       s = s_;
       l = v_.length();
+      vg = vg_;
     }
     double locate(Momentum *m, int const n) {
       cc4s::Vector<> u(v);
@@ -152,7 +154,8 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   setRealArgument("EMp2", DEMp2);  
 
   allocatedTensorArgument<>("VG", realVG);
-
+  VofG = new double[NG];
+  realVG->read_all(VofG);
   structureFactors = new double[NG];
   realSG->read_all(structureFactors);
 }
@@ -187,11 +190,11 @@ void FiniteSizeCorrection::interpolation3D() {
 // or alternatively:
 //  std::vector<cc4s::Vector<>> regularGrid(NG);
   momenta->read_all(&(regularGrid[0][0]));
-  Momentum *momentumGrid(new Momentum[2*NG]);
+  momentumGrid = new Momentum[2*NG];
   for (int g(0); g<NG; ++g) {
 //    LOG(1,"reg") << "g= " << g << "v= " << regularGrid[g] << std::endl;
-    momentumGrid[g] = Momentum(regularGrid[g], structureFactors[g]);
-    momentumGrid[g+NG] = Momentum(regularGrid[g]*(-1.), structureFactors[g]);
+    momentumGrid[g] = Momentum(regularGrid[g], structureFactors[g], VofG[g]);
+    momentumGrid[g+NG] = Momentum(regularGrid[g]*(-1.), structureFactors[g], VofG[g]);
   }
 
   //test sort by v
@@ -205,13 +208,15 @@ void FiniteSizeCorrection::interpolation3D() {
   
   std::sort(momentumGrid, &momentumGrid[2*NG], Momentum::sortbyl);
   
-  for (int g(0); g<2*NG; ++g) {
-    LOG(1, "Sortedbyl")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
-    << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
-  }
+  //for (int g(0); g<2*NG; ++g) {
+  //  LOG(1, "Sortedbyl")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
+  //  << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
+  //}
 
   //get the 3 unit vectors;
   cc4s::Vector<> a(momentumGrid[2].v);
+  //GC is the shortes vector.
+  GC = a.length();
   LOG(1, "GridSearch") << "b1=#2" << std::endl;
   //the 0th element is 0, avoid it.
   int j=3;
@@ -242,7 +247,7 @@ void FiniteSizeCorrection::interpolation3D() {
     momentumGrid[d].v[0] = (abs(x) < 1e-8) ? 0 : x;
     momentumGrid[d].v[1] = (abs(y) < 1e-8) ? 0 : y;
     momentumGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
-    LOG(1, "Transformed") << "d= " << d << " v= " << momentumGrid[d].v << std::endl;
+  //  LOG(1, "Transformed") << "d= " << d << " v= " << momentumGrid[d].v << std::endl;
   }
   //for (int d(0); d<NG; ++d){
   //  LOG(1, "Locate")  << momentumGrid[d].locate(momentumGrid, NG) 
@@ -327,11 +332,7 @@ void FiniteSizeCorrection::interpolation3D() {
         vertex[2].locate(momentumGrid,2*NG),vertex[3].locate(momentumGrid,2*NG),
         vertex[4].locate(momentumGrid,2*NG),vertex[5].locate(momentumGrid,2*NG),
         vertex[6].locate(momentumGrid,2*NG),vertex[7].locate(momentumGrid,2*NG)
-      
                     };
-     // for (int t(0); t< 8; ++t) {
-     //   LOG(1, "vertex") << v[t] << std::endl; 
-     // }
       
       cc4s::Inter3D<double> intp;
       fibonacciGrid[t].s = intp.Trilinear(x,v);
@@ -342,18 +343,17 @@ void FiniteSizeCorrection::interpolation3D() {
     average = average / N; 
     aveSG[numBins] = average;
     lengthG[numBins] =  regularGrid[d].length();
-    //LOG(1, "Average") << "Radius= " << regularGrid[d].length() << " numBins= " << numBins 
-    //  << std::endl;
     numBins++;
-    //LOG(1, "numBins")  << numBins << std::endl;
     
     //LOG(1, "Average") << "Radius= " << r<< " average=" <<
     //  average << std::endl;
   }  
-  //Cubic spline interpolation
 }
 
-double FiniteSizeCorrection::integrate(cc4s::Inter1D<double> Int1d, double start, double end, int steps){
+double FiniteSizeCorrection::integrate(
+  cc4s::Inter1D<double> Int1d,
+  double start, double end, int steps
+){
   double s = 0;
   double h = (end-start)/steps;
   for (int i = 0; i < steps; ++i)
@@ -361,8 +361,18 @@ double FiniteSizeCorrection::integrate(cc4s::Inter1D<double> Int1d, double start
   return h*s;
 } 
 
-double FiniteSizeCorrection::simpson(cc4s::Inter1D<double> Int1d, double x, double h){
-  return (Int1d.getValue(x) + 4*Int1d.getValue(x+h/2.) + Int1d.getValue(x+h))/6.;
+double FiniteSizeCorrection::simpson(
+  cc4s::Inter1D<double> Int1d,
+  double x, double h
+){
+  return (SGxVG(Int1d, x) + 4*SGxVG(Int1d, x+h/2.) + SGxVG(Int1d, x+h))/6.;
+  //return (x*x + 4*(x+h/2.)*(x+h/2.) + (x+h)*(x+h))/6.;
+}
+
+double FiniteSizeCorrection::SGxVG(
+  cc4s::Inter1D<double> Int1d, double x
+){
+  return (x > 0. && x<GC) ? (cos(x/GC*M_PI)+1)*1./2/x/x*Int1d.getValue(x) : 0.;
 }
 
 void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
@@ -382,8 +392,14 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   for (int i(0); i<numBins; i++){
     LOG(1, "SGTest") << lengthG[i] << " " << aveSG[i] << std::endl;
   }
-
-  double r1 = integrate(Int1d, 0.0, 0.2, 100);
-  LOG(1,"integrate") << r1 << std::endl;
+  //double volume = 169.41;
+  double r1 = integrate(Int1d, 0.0, GC, 1000)/36.96039604;
+  double sumSGVG(0.);
+  double sumSGVG1(0.);
+  for (int d(0); d < NG; ++d){
+    sumSGVG1 += VofG[d] * structureFactors[d];
+  }
+  LOG(1,"integrate") << r1 << " sum= " << sumSGVG << " sum1= "
+   << sumSGVG1<< " GC=" << GC << std::endl;
 }
 

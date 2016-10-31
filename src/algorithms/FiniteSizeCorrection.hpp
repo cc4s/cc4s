@@ -20,13 +20,23 @@ namespace cc4s {
     double *lengthG;
     double *aveSG;
     double *structureFactors;
+    double *VofG;
+    double GC;
     class Momentum;
     Momentum *fibonacciGrid;
+    Momentum *momentumGrid;
     void calculateStructureFactor();
     void constructFibonacciGrid(double R);
     void interpolation3D();
-    double integrate(cc4s::Inter1D<double> Int1d, double start, double end, int steps);
-    double simpson(cc4s::Inter1D<double> Int1d, double x, double h);
+    double SGxVG(cc4s::Inter1D<double> Int1d, double x);
+    double integrate(
+      cc4s::Inter1D<double> Int1d,
+      double start, double end, int steps
+      );
+    double simpson(
+      cc4s::Inter1D<double> Int1d,
+      double x, double h
+      );
     void calculateFiniteSizeCorrection();
   };
 }
