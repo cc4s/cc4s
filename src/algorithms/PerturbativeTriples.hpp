@@ -18,6 +18,10 @@ namespace cc4s {
      */
     virtual void run();
     /**
+     * \brief Calculates perturbative triples correction
+     */
+    virtual void runPiecuch();
+    /**
      * \brief Dry run for perturbative triples correction
      */
     virtual void dryRun();
