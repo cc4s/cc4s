@@ -84,7 +84,7 @@ void CoulombVertexSingularVectors::dryRun() {
   // if fieldVariables not given use reduction
   if (NF == DEFAULT_FIELD_VARIABLES) {
     double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
-    NF = static_cast<int>NG * reduction + 0.5);
+    NF = static_cast<int>(NG * reduction + 0.5);
   }
 
   allocatedTensorArgument<complex, DryTensor<complex>>(
