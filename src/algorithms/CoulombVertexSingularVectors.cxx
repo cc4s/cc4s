@@ -50,11 +50,11 @@ void CoulombVertexSingularVectors::run() {
   eigenSystem.solve(SS);
 
   // get number of field variables
-  int64_t NF(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES));
+  int NF(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES));
   // if fieldVariables not given use reduction
   if (NF == DEFAULT_FIELD_VARIABLES) {
     double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
-    NF = static_cast<int64_t>(NG * reduction + 0.5);
+    NF = static_cast<int>(NG * reduction + 0.5);
   }
 
   // write singular vectors back to CTF
@@ -84,7 +84,7 @@ void CoulombVertexSingularVectors::dryRun() {
   // if fieldVariables not given use reduction
   if (NF == DEFAULT_FIELD_VARIABLES) {
     double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
-    NF = static_cast<int64_t>(NG * reduction + 0.5);
+    NF = static_cast<int>NG * reduction + 0.5);
   }
 
   allocatedTensorArgument<complex, DryTensor<complex>>(
