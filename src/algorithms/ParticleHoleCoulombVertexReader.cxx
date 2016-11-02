@@ -111,10 +111,10 @@ void ParticleHoleCoulombVertexReader::dryRun() {
   // allocate output tensors
   int vertexLens[] = { NG, Nv, No };
   int vertexSyms[] = { NS, NS, NS };
-  DryTensor<> *epsi(new DryVector<>(No));
-  DryTensor<> *epsa(new DryVector<>(Nv));
+  DryTensor<> *epsi(new DryVector<>(No, SOURCE_LOCATION));
+  DryTensor<> *epsa(new DryVector<>(Nv, SOURCE_LOCATION));
   DryTensor<complex> *GammaGai(
-    new DryTensor<complex>(3, vertexLens, vertexSyms)
+    new DryTensor<complex>(3, vertexLens, vertexSyms, SOURCE_LOCATION)
   );
   // enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
@@ -122,8 +122,8 @@ void ParticleHoleCoulombVertexReader::dryRun() {
   allocatedTensorArgument<complex>("ParticleHoleCoulombVertex", GammaGai);
 
   // real and imaginary parts are read in seperately
-  DryTensor<> realGammaGai(3, vertexLens, vertexSyms);
-  DryTensor<> imagGammaGai(3, vertexLens, vertexSyms);
+  DryTensor<> realGammaGai(3, vertexLens, vertexSyms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGai(3, vertexLens, vertexSyms, SOURCE_LOCATION);
   dryReadGammaGaiChunkBlocked(&realGammaGai);
   dryReadGammaGaiChunkBlocked(&imagGammaGai);
 
@@ -165,9 +165,9 @@ void ParticleHoleCoulombVertexReader::dryReadGammaGaiChunkBlocked(
 ) {
   int64_t elements(Nv*No*NG);
   // values array
-  DryMemory::allocate(sizeof(double)*elements);
+  DryMemory::allocate(sizeof(double)*elements, SOURCE_LOCATION);
   // indices array
-  DryMemory::allocate(sizeof(int64_t)*elements);
+  DryMemory::allocate(sizeof(int64_t)*elements, SOURCE_LOCATION);
   DryMemory::free(sizeof(int64_t)*elements);
   DryMemory::free(sizeof(double)*elements);
 }

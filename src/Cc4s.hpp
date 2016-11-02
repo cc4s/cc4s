@@ -2,6 +2,8 @@
 #ifndef CC4S_DEFINED
 #define CC4S_DEFINED
 
+#include <util/Time.hpp>
+
 #include <ctf.hpp>
 #include <Options.hpp>
 
@@ -20,7 +22,7 @@ namespace cc4s {
   protected:
     void printBanner();
     void printStatistics(
-      int64_t rootFlops, int64_t totalFlops, double totalTime
+      int64_t rootFlops, int64_t totalFlops, Time const &totalTime
     );
   };
 }

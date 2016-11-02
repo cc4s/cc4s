@@ -1,5 +1,3 @@
-% RPA execution plan for large systems with Nv * No > NG
-% N**5 implementation
 ParticleHoleCoulombVertexReader [
   (file "../../resources/ParticleHoleCoulombVertex.bin")
 ] [
@@ -12,12 +10,10 @@ ParticleHoleCoulombIntegrals [
   PPHHCoulombIntegrals
 ].
 
-% Compute RPA energy directly from Vertex
 Mp2EnergyMatrixFromCoulombIntegrals [
   PPHHCoulombIntegrals
   ParticleHoleCoulombVertex
   HoleEigenEnergies ParticleEigenEnergies
 ] [
-  Mp2EnergyMatrix 
+  (Mp2EnergyMatrix EnergyMatrix)
 ].
-

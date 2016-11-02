@@ -2,6 +2,8 @@
 #ifndef SCANNER_DEFINED
 #define SCANNER_DEFINED
 
+#include <math/Complex.hpp>
+#include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <sstream>
 #include <istream>
@@ -27,7 +29,7 @@ namespace cc4s {
         // fill the rest of the buffer from the file
         int64_t size(buffer+BUFFER_SIZE-end);
         int64_t count(stream->read(end, size).gcount());
-        LOG(1, "Scanner") << count << " bytes fetched." << std::endl;
+        LOG(2, "Scanner") << count << " bytes fetched." << std::endl;
         // account the read characters to the buffer
         end += count;
         // if not all requested characters could be read the file is done
@@ -68,10 +70,45 @@ namespace cc4s {
       return lineStream.str();
     }
 
-    double nextReal() {
-      refillBuffer();
-      return std::strtod(pos, &pos);
+    template <typename NumberType>
+    friend class NumberScanner;
+  };
+
+  template <typename NumberType=double>
+  class NumberScanner {
+  };
+  template <>
+  class NumberScanner<double> {
+    public:
+    NumberScanner(Scanner *scanner_): scanner(scanner_) {
     }
+    double nextNumber() {
+      scanner->refillBuffer();
+      return std::strtod(scanner->pos, &scanner->pos);
+    }
+  protected:
+    Scanner *scanner;
+  };
+  template <>
+  class NumberScanner<complex> {
+    public:
+    NumberScanner(Scanner *scanner_): scanner(scanner_) {
+    }
+    complex nextNumber() {
+      scanner->refillBuffer();
+      while (isspace(*scanner->pos) || *scanner->pos == '(') ++scanner->pos;
+      // read real part
+      double r(std::strtod(scanner->pos, &scanner->pos));
+      // skip ','
+      ++scanner->pos;
+      // read imaginary part
+      double i(std::strtod(scanner->pos, &scanner->pos));
+      // skip ')'
+      ++scanner->pos;
+      return complex(r, i);
+    }
+  protected:
+    Scanner *scanner;
   };
 }
 #endif

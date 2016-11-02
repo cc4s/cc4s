@@ -22,6 +22,10 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~DcdEnergyFromCoulombFactors();
+    /**
+     * \brief Returns the abbreviation of the routine (DCD).
+     * \return abbreviation of the routine
+     */
     virtual std::string getAbbreviation() { return "Dcd"; }
 
   protected:

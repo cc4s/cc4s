@@ -19,12 +19,23 @@ CcdEnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
-  % Sets maximum iterations. Default is 16.
   (maxIterations 64)
 ] [
   (CcdEnergy CcdEnergy) 
   (CcdDoublesAmplitudes CcdDoublesAmplitudes)
 ].
 
+CcdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 64)
+  (integralSliceRank 13)
+] [
+  (CcdEnergy CcdEnergySlice)
+  (CcdDoublesAmplitudes CcdDoublesAmplitudesSlice)
+].
 
 TensorWriter [(Data CcdEnergy)] [].

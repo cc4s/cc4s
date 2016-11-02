@@ -36,9 +36,12 @@ void EnergyMatrixFromDoublesAmplitudes::run() {
   Univar_Function<complex> fConj(&conj<complex>);
   conjGammaGai.sum(1.0, *GammaGai,"Gai", 0.0,"Gai", fConj);
 
-  Matrix<complex> *energyMatrix = new Matrix<complex>(
-    GammaGai->lens[0], GammaGai->lens[0], *Tabij->wrld
-  );
+  LOG(1, "EnergyMatrix") << "Computing energy matrix from doubles amplitudes" << Tabij->get_name()
+			 << " and coulomb vertex" << GammaGai->get_name() 
+			 << ", with NG=" << GammaGai->lens[0] << std::endl;
+
+  Matrix<complex> *energyMatrix = new Matrix<complex>(GammaGai->lens[0], GammaGai->lens[0], 
+						      *Tabij->wrld, "energyMatrix");
   allocatedTensorArgument<complex>("EnergyMatrix", energyMatrix);
 
   (*energyMatrix)["GH"] =
@@ -73,6 +76,9 @@ void EnergyMatrixFromDoublesAmplitudes::dryRun() {
   allocatedTensorArgument<complex, DryTensor<complex>>(
     "EnergyMatrix", energyMatrix
   );
+
+  LOG(1, "EnergyMatrix") << "Computing energy matrix from doubles amplitudes and coulomb vertex, with NG=" 
+			 << GammaGai->lens[0] << std::endl;
 
   // Allocate intermediate (implicitly used)
   int syms[] = { NS, NS, NS };

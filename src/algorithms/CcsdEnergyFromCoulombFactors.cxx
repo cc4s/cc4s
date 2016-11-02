@@ -47,21 +47,21 @@ void CcsdEnergyFromCoulombFactors::iterate(int i) {
     std::transform(abbreviation.begin(), abbreviation.end(), 
 		   abbreviation.begin(), ::toupper);
 
-    // Read the Coulomb vertex GammaGpq
-    Tensor<complex> *GammaGpq( getTensorArgument<complex>("CoulombVertex"));
-    int NG(GammaGpq->lens[0]);
+    // Read the Coulomb vertex GammaGqr
+    Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+    int NG(GammaGqr->lens[0]);
     int Np = No + Nv;
 
-    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
+    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
     int GaiStart[] = {0 ,No, 0};
     int GaiEnd[]   = {NG,Np,No};
     int GabStart[] = {0 ,No,No};
     int GabEnd[]   = {NG,Np,Np};
     int GijStart[] = {0 , 0, 0};
     int GijEnd[]   = {NG,No,No};
-    Tensor<complex> GammaGai(GammaGpq->slice(GaiStart,GaiEnd));
-    Tensor<complex> GammaGab(GammaGpq->slice(GabStart,GabEnd));
-    Tensor<complex> GammaGij(GammaGpq->slice(GijStart,GijEnd));
+    Tensor<complex> GammaGai(GammaGqr->slice(GaiStart,GaiEnd));
+    Tensor<complex> GammaGab(GammaGqr->slice(GabStart,GabEnd));
+    Tensor<complex> GammaGij(GammaGqr->slice(GijStart,GijEnd));
 
     // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
     Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
@@ -419,14 +419,14 @@ void CcsdEnergyFromCoulombFactors::dryIterate() {
     // Symmetries used by intermediates
     int syms[] = { NS, NS, NS, NS };
 
-    // Read the Coulomb vertex GammaGpq
-    DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+    // Read the Coulomb vertex GammaGqr
+    DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
 				 DryTensor<complex>>("CoulombVertex"));
 
     // Compute the NG,Np
-    int NG(GammaGpq->lens[0]);
+    int NG(GammaGqr->lens[0]);
 
-    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
+    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
     int GaiLens[]   = {NG,Nv,No};
     int GabLens[]   = {NG,Nv,Nv};
 

@@ -12,3 +12,16 @@ TensorSum [
 ].
 TensorNorm [(A Result)] [Norm].
 % assert Norm == 0
+
+TensorWriter [(Data A) (mode "binary")] [].
+
+TensorReader [(file "A.bin") (mode "binary")] [(Data B)].
+
+TensorSum [
+  A (AFactor  1.0) (AIndex "ij")
+  B (BFactor -1.0) (BIndex "ij")
+] [
+  Result (ResultIndex "ij")
+].
+TensorNorm [(A Result)] [Norm].
+% assert Norm == 0

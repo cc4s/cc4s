@@ -52,21 +52,21 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
     std::transform(abbreviation.begin(), abbreviation.end(), 
 		   abbreviation.begin(), ::toupper);
 
-    // Read the Coulomb vertex GammaGpq
-    Tensor<complex> *GammaGpq( getTensorArgument<complex>("CoulombVertex"));
-    int NG(GammaGpq->lens[0]);
+    // Read the Coulomb vertex GammaGqr
+    Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+    int NG(GammaGqr->lens[0]);
     int Np = No + Nv;
 
-    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
+    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
     int GaiStart[] = {0 ,No, 0};
     int GaiEnd[]   = {NG,Np,No};
     int GabStart[] = {0 ,No,No};
     int GabEnd[]   = {NG,Np,Np};
     int GijStart[] = {0 , 0, 0};
     int GijEnd[]   = {NG,No,No};
-    Tensor<complex> GammaGai(GammaGpq->slice(GaiStart,GaiEnd));
-    Tensor<complex> GammaGab(GammaGpq->slice(GabStart,GabEnd));
-    Tensor<complex> GammaGij(GammaGpq->slice(GijStart,GijEnd));
+    Tensor<complex> GammaGai(GammaGqr->slice(GaiStart,GaiEnd));
+    Tensor<complex> GammaGab(GammaGqr->slice(GabStart,GabEnd));
+    Tensor<complex> GammaGij(GammaGqr->slice(GijStart,GijEnd));
 
     // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
     Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
@@ -343,26 +343,61 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 	    }
 	  }
 	  else {
-	    // Read the sliceRank. If not provided use No
-	    int sliceRank(getIntegerArgument
-			  ("sliceRank",No));
 
-	    // Slice loop starts here
-	    for (int b(0); b < Nv; b += sliceRank) {
-	      for (int a(b); a < Nv; a += sliceRank) {
-		LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-		Tensor<> *Vxycd(sliceCoupledCoulombIntegrals(a, b, sliceRank));
-		Vxycd->set_name("Vxycd");
-		int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-		int syms[] = {NS, NS, NS, NS};
-		Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
+	    if (isArgumentGiven("CoulombFactors")) {
 
-		// Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
-		Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+	      if (isArgumentGiven("factorsSliceSize")) {
+		// Read the factorsSliceSize.
+		Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+		LambdaGR->set_name("LambdaGR");
 
-		sliceIntoResiduum(Rxyij, a, b, Rabij);
-		// The integrals of this slice are not needed anymore
-		delete Vxycd;
+		int NR(LambdaGR->lens[1]);
+		
+		int factorsSliceSize(getIntegerArgument
+				     ("factorsSliceSize"));
+
+		// Slice loop starts here
+		for (int b(0); b < NR; b += factorsSliceSize) {
+		  for (int a(0); a < NR; a += factorsSliceSize) {
+		    LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+		    Tensor<> *Fabij(sliceAmplitudesFromCoupledCoulombFactors(a, b, factorsSliceSize));
+		    Fabij->set_name("Fabij");
+		    Rabij["abij"] += (*Fabij)["abij"];
+		    delete Fabij;
+		  }
+		}
+	      }
+	      else{
+		LOG(1, abbreviation) << "Evaluting Fabij" << std::endl;
+		Tensor<> *Fabij(amplitudesFromCoupledCoulombFactors());
+		Fabij->set_name("Fabij");
+		Rabij["abij"] += (*Fabij)["abij"];
+		delete Fabij;
+	      }
+	    }
+	    else {
+
+	      // Read the integralsSliceSize. If not provided use No
+	      int integralsSliceSize(getIntegerArgument
+				    ("integralsSliceSize",No));
+
+	      // Slice loop starts here
+	      for (int b(0); b < Nv; b += integralsSliceSize) {
+		for (int a(b); a < Nv; a += integralsSliceSize) {
+		  LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+		  Tensor<> *Vxycd(sliceCoupledCoulombIntegrals(a, b, integralsSliceSize));
+		  Vxycd->set_name("Vxycd");
+		  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+		  int syms[] = {NS, NS, NS, NS};
+		  Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
+
+		  // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
+		  Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+
+		  sliceIntoResiduum(Rxyij, a, b, Rabij);
+		  // The integrals of this slice are not needed anymore
+		  delete Vxycd;
+		}
 	      }
 	    }
 	  }
@@ -373,7 +408,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
       // Append amplitudes to the mixer
       TabijMixer->append(Rabij);
     }
-
+  
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
@@ -449,6 +484,11 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
     // Read the Particle/Hole Eigenenergies epsi epsa
     DryTensor<> *epsi(getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies"));
     DryTensor<> *epsa(getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies"));
+
+    // Get abbreviation of algorithm
+    std::string abbreviation(getAbbreviation());
+    std::transform(abbreviation.begin(), abbreviation.end(), 
+		   abbreviation.begin(), ::toupper);
   
     // Compute the No,Nv,Np
     int No(epsi->lens[0]);
@@ -457,14 +497,14 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
     // Symmetries used by intermediates
     int syms[] = { NS, NS, NS, NS };
 
-    // Read the Coulomb vertex GammaGpq
-    DryTensor<complex> *GammaGpq(getTensorArgument<complex, 
+    // Read the Coulomb vertex GammaGqr
+    DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
 				 DryTensor<complex>>("CoulombVertex"));
 
     // Compute the NG,Np
-    int NG(GammaGpq->lens[0]);
+    int NG(GammaGqr->lens[0]);
 
-    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGpq
+    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
     int GaiLens[]   = {NG,Nv,No};
     int GabLens[]   = {NG,Nv,Nv};
 
@@ -503,18 +543,35 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
       }
 
       if (!Vabcd) {
-	// Slice if Vabcd is not specified
+	if (isArgumentGiven("CoulombFactors")) {
+	  // Read the factorsSliceSize. If not provided use NG.
+	  DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
+				       DryTensor<complex>>("CoulombFactors"));
 
-	// Read the sliceRank. If not provided use No
-	int sliceRank(getIntegerArgument
-		      ("sliceRank",No));
+	  int NR(LambdaGR->lens[1]);
 
-	int ssvv[] = { sliceRank, sliceRank, Nv, Nv };
-	// TODO: implement drySliceCoulombIntegrals
-	DryTensor<> Vxycd(4, ssvv, syms);
+	  int factorsSliceSize(getIntegerArgument
+			       ("factorsSliceSize",NR));
 
-	int ssoo[] = { sliceRank, sliceRank, No, No };
-	DryTensor<> Rxyij(4, ssoo, syms);
+	  LOG(1, abbreviation) << "Computing residuum Rabij from coupled factors with NR=" << NR 
+			       << ", using slicing size=" << factorsSliceSize << std::endl;
+	  DryTensor<> *Fabij(drySliceAmplitudesFromCoupledCoulombFactors(factorsSliceSize));
+	  delete Fabij;
+	}
+	else {
+	  // Read the integralsSliceSize. If not provided use No
+	  int integralsSliceSize(getIntegerArgument
+				 ("integralsSliceSize",No));
+
+	  LOG(1, abbreviation) << "Slicing Vabcd with Nv=" << Nv << ", with integals slice size=" 
+			       << integralsSliceSize << std::endl;
+
+	  // Slice if Vabcd is not specified
+	  DryTensor<> *Vxycd(drySliceCoupledCoulombIntegrals(integralsSliceSize));
+	  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+	  int syms[] = {NS, NS, NS, NS};
+	  DryTensor<> Rxyij(4, lens, syms);
+	}
       }
 
       dryDoublesAmplitudesFromResiduum(Rabij);

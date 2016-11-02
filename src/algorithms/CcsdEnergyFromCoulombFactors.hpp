@@ -30,17 +30,6 @@ namespace cc4s {
      */
     virtual std::string getAbbreviation() { return "Ccsd"; }
 
-    /** \brief The occupied orbital energies  */
-    CTF::Tensor<> *epsi;
-    /** \brief The virtual orbital energies  */
-    CTF::Tensor<> *epsa;
-    /** \brief The Coulomb integrals Vabij  */
-    CTF::Tensor<> *Vabij;
-    /** \brief The singles amplitudes Tai  */
-    CTF::Tensor<> *Tai;
-    /** \brief The doubles amplitudes Tabij  */
-    CTF::Tensor<> *Tabij;
-
   protected:
     /**
      * \brief Implements the iterate method with the CCSD iteration. Iteration

@@ -41,9 +41,6 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 
     LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
-    double previousEnergy(0);
-    std::string contraction;
-
     if (i == 0) {
       // For first iteration compute only the MP2 amplitudes 
       // Since Tabij = 0, Vabij is the only non-zero term
@@ -90,18 +87,8 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	// Contract Kac with T2 Amplitudes
 	Rabij["abij"]  = ( 1.0) * Kac["ac"] * (*Tabij)["cbij"];
 
-	contraction  = Kac.get_name();
-	contraction += "*";
-	contraction += Tabij->get_name();
-	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
-
 	// Contract Kki with T2 Amplitudes
 	Rabij["abij"] += (-1.0) * Kki["ki"] * (*Tabij)["abkj"];
-
-	contraction  = Kki.get_name();
-	contraction += "*";
-	contraction += Tabij->get_name();
-	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
 
 	// Build Xakic
 	Xakic["akic"]  = ( 1.0) * (*Vabij)["acik"];
@@ -117,18 +104,8 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	Rabij["abij"] += ( 2.0) * Xakic["akic"] * (*Tabij)["cbkj"];
 	Rabij["abij"] += (-1.0) * Xakic["akic"] * (*Tabij)["bckj"];
 
-	contraction  = Xakic.get_name();
-	contraction += "*";
-	contraction += Tabij->get_name();
-	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
-
 	Rabij["abij"] += (-1.0) * Xakci["akci"] * (*Tabij)["cbkj"];
 	Rabij["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
-
-	contraction  = Xakci.get_name();
-	contraction += "*";
-	contraction += Tabij->get_name();
-	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
 
 	// Symmetrize Rabij by applying permutation operator
 	// to save memory we use Xakci as intermediate for the permutation operator 
@@ -143,20 +120,12 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	// Rabij are the Tabij amplitudes for the next iteration and need to be build
 	Rabij["abij"] += (*Vabij)["abij"];
 
-	contraction  = Vabij->get_name();
-	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
-
 	// Build Xklij intermediate
 	Xklij["klij"]  = (*Vijkl)["klij"];
 	Xklij["klij"] += (*Vabij)["cdkl"] * (*Tabij)["cdij"];
 
 	// Contract Xklij with T2 Amplitudes
 	Rabij["abij"] += Xklij["klij"] * (*Tabij)["abkl"];
-
-	contraction  = Xklij.get_name();
-	contraction += "*";
-	contraction += Tabij->get_name();
-	printEnergyFromResiduum(Rabij, previousEnergy, contraction);
       }
       
       // Contract Vabcd with T2 Amplitudes
@@ -164,34 +133,58 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 	Rabij["abij"] += (*Vabcd)["abcd"] * (*Tabij)["cdij"];
       } 
       else {
-	// slice if Vabcd is not specified
+	if (isArgumentGiven("CoulombFactors")) {
+	  // Read the factorsSliceSize. If not provided use NG.
+	  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+	  LambdaGR->set_name("LambdaGR");
 
-	// Read the sliceRank. If not provided use No
-	int sliceRank(getIntegerArgument
-		      ("sliceRank",No));
+	  int NR(LambdaGR->lens[1]);
 
-	// Slice loop starts here
-	for (int b(0); b < Nv; b += sliceRank) {
-	  for (int a(b); a < Nv; a += sliceRank) {
-	    LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	    Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
-	    Vxycd->set_name("Vxycd");
-	    int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-	    int syms[] = {NS, NS, NS, NS};
-	    Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);
-	    Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
-	    sliceIntoResiduum(Rxyij, a, b, Rabij);
-	    // The integrals of this slice are not needed anymore
-	    delete Vxycd;
+	  int factorsSliceSize(getIntegerArgument
+			   ("factorsSliceSize",NR));
+
+	  // Slice loop starts here
+	  for (int b(0); b < NR; b += factorsSliceSize) {
+	    for (int a(b); a < NR; a += factorsSliceSize) {
+	      LOG(1, abbreviation) << "Evaluting residuum from coulomb factors at R=" 
+				   << a << ", S=" << b << std::endl;
+	      Tensor<> *Fabij(sliceAmplitudesFromCoulombFactors(a, b, factorsSliceSize));
+	      Fabij->set_name("Fabij");
+	      if (a==b) {
+		Rabij["abij"] += (*Fabij)["abij"];
+	      }
+	      else{
+		Rabij["abij"] += (*Fabij)["abij"];
+		Rabij["baji"] += (*Fabij)["abij"];
+	      }
+	      delete Fabij;
+	    }
+	  }
+
+
+	}
+	else {
+	  // Read the integralsSliceSize. If not provided use No
+	  int integralsSliceSize(getIntegerArgument
+			("integralsSliceSize",No));
+
+	  // Slice loop starts here
+	  for (int b(0); b < Nv; b += integralsSliceSize) {
+	    for (int a(b); a < Nv; a += integralsSliceSize) {
+	      LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+	      Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, integralsSliceSize));
+	      Vxycd->set_name("Vxycd");
+	      int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+	      int syms[] = {NS, NS, NS, NS};
+	      Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld);
+	      Rxyij["xyij"] = (*Vxycd)["xycd"] * (*Tabij)["cdij"];
+	      sliceIntoResiduum(Rxyij, a, b, Rabij);
+	      // The integrals of this slice are not needed anymore
+	      delete Vxycd;
+	    }
 	  }
 	}
-
       }
-
-      contraction   = "Vabcd";
-      contraction  += "*";
-      contraction  += Tabij->get_name();
-      printEnergyFromResiduum(Rabij, previousEnergy, contraction);
     }
 
     // Calculate the amplitdues from the residuum
@@ -209,11 +202,18 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl
     // the PPPPCoulombIntegrals may not be given then slicing is required
-    DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ? 
-		       getTensorArgument<double, DryTensor<double>>("PPPPCoulombIntegrals") : nullptr);
+    DryTensor<> *Vabcd(
+      isArgumentGiven("PPPPCoulombIntegrals") ?
+        getTensorArgument<double, DryTensor<double>>("PPPPCoulombIntegrals") :
+        nullptr
+    );
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
     DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
+
+    std::string abbreviation(getAbbreviation());
+    std::transform(abbreviation.begin(), abbreviation.end(), 
+		   abbreviation.begin(), ::toupper);
   
     // Compute the No,Nv,Np
     int No(Vabij->lens[2]);
@@ -225,27 +225,45 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
     int oo[] = { No, No };
 
     // Allocate Tensors for T2 amplitudes
-    DryTensor<> Rabij(*Vabij);
+    DryTensor<> Rabij(*Vabij, SOURCE_LOCATION);
 
     // Define intermediates
-    DryTensor<> Kac(2, vv, syms);
-    DryTensor<> Kki(2, oo, syms);
+    DryTensor<> Kac(2, vv, syms, SOURCE_LOCATION);
+    DryTensor<> Kki(2, oo, syms, SOURCE_LOCATION);
 
-    DryTensor<> Xklij(*Vijkl);
-    DryTensor<> Xakci(*Vaibj);
-    DryTensor<> Xakic(4, voov, syms);
-
-    // Read the sliceRank. If not provided use No
-    int sliceRank(getIntegerArgument
-		  ("sliceRank",No));
+    DryTensor<> Xklij(*Vijkl, SOURCE_LOCATION);
+    DryTensor<> Xakci(*Vaibj, SOURCE_LOCATION);
+    DryTensor<> Xakic(4, voov, syms, SOURCE_LOCATION);
 
     if (!Vabcd) {
-      // Slice if Vabcd is not specified
-      int lens[] = { sliceRank, sliceRank, Nv, Nv };
-      int syms[] = {NS, NS, NS, NS};
-      // TODO: implement drySliceCoulombIntegrals
-      DryTensor<> Vxycd(4, lens, syms);
-      DryTensor<> Rxyij(*Vijkl);
+      if (isArgumentGiven("CoulombFactors")) {
+	// Read the factorsSliceSize. If not provided use NG.
+	DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
+                               DryTensor<complex>>("CoulombFactors"));
+
+	int NR(LambdaGR->lens[1]);
+
+	int factorsSliceSize(getIntegerArgument("factorsSliceSize",NR));
+
+	LOG(1, abbreviation) << "Computing residuum Rabij from factors with NR=" << NR 
+			     << ", using slicing size=" << factorsSliceSize << std::endl;
+	DryTensor<> *Fabij(drySliceAmplitudesFromCoulombFactors(factorsSliceSize));
+	delete Fabij;
+	}
+	else {
+	  // Read the integralsSliceSize. If not provided use No
+	  int integralsSliceSize(getIntegerArgument
+				 ("integralsSliceSize",No));
+
+	  LOG(1, abbreviation) << "Slicing Vabcd with Nv=" << Nv << ", with integals slice size=" 
+			       << integralsSliceSize << std::endl;
+
+	  // Slice if Vabcd is not specified
+	  DryTensor<> *Vxycd(drySliceCoulombIntegrals(integralsSliceSize));
+	  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+	  int syms[] = {NS, NS, NS, NS};
+	  DryTensor<> Rxyij(4, lens, syms, SOURCE_LOCATION);
+	}
     }
 
     dryDoublesAmplitudesFromResiduum(Rabij);
@@ -306,15 +324,15 @@ void CcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
 	else {
 	  // Slice if Vabcd is not specified
 
-	  // Read the sliceRank. If not provided use No
-	  int64_t sliceRank(getIntegerArgument
-			    ("sliceRank",No));
+	  // Read the integralsSliceSize. If not provided use No
+	  int64_t integralsSliceSize(getIntegerArgument
+			    ("integralsSliceSize",No));
 
 	  // Slice loop starts here
-	  for (int b(0); b < Nv; b += sliceRank) {
-	    for (int a(b); a < Nv; a += sliceRank) {
+	  for (int b(0); b < Nv; b += integralsSliceSize) {
+	    for (int a(b); a < Nv; a += integralsSliceSize) {
 	      LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	      Tensor<> *Vxyef(sliceCoulombIntegrals(a, b, sliceRank));
+	      Tensor<> *Vxyef(sliceCoulombIntegrals(a, b, integralsSliceSize));
 	      int lens[] = { Vxyef->lens[0], Vxyef->lens[1], No, No };
 	      int syms[] = {NS, NS, NS, NS};
 	      Tensor<> Rxyij(4, lens, syms, *Vxyef->wrld, "Rxyij");

@@ -16,10 +16,6 @@ namespace cc4s {
      * \brief Reads real tensor data into the tensor Data.
      */
     virtual void run();
-
-  protected:
-    void readText();
-    void readBinary();
   };
 }
 

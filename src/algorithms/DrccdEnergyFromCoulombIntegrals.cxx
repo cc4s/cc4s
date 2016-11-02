@@ -47,14 +47,14 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
   } 
   else {
     // For the rest iterations compute the DRCCD amplitudes
-    Rabij["abij"] = (*Vabij)["abij"];
+    Rabij["abij"]  = (*Vabij)["abij"];
     Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
     if (linearized) {
       Rabij["abij"] += 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
     } else {
       // Construct intermediates
       Tensor<> Cabij(false, *Vabij);
-      Cabij["abij"] =  2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
+      Cabij["abij"]  = 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
       Rabij["abij"] += Cabij["abij"];
       Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
     }

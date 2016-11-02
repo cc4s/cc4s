@@ -1,0 +1,11 @@
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+SliceCoulombVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  ParticleHoleCoulombVertex
+].
