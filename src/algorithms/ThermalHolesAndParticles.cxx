@@ -171,8 +171,7 @@ void ThermalHolesAndParticles::determineThermalOccupancies() {
   // use positive temperatures for particles, negative ones for holes
   class occupancy {
   public:
-    occupancy(double kT_): kT(kT_) {
-    }
+    occupancy(double kT_): kT(kT_) { }
     void operator()(double &eps) {
       eps = 1.0 / (1.0 + std::exp(-eps/kT));
     }
