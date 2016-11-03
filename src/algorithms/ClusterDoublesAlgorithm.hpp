@@ -1,4 +1,4 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CLUSTER_DOUBLES_ALGORITHM_DEFINED 
 #define CLUSTER_DOUBLES_ALGORITHM_DEFINED
 
