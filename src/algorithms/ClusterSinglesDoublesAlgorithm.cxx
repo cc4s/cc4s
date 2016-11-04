@@ -62,12 +62,12 @@ void ClusterSinglesDoublesAlgorithm::run() {
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+                 abbreviation.begin(), ::toupper);
 
   // Iteration for determining the amplitudes Tai and Tabij
   // and the energy e
   int maxIterationsCount(getIntegerArgument("maxIterations", 
-					    DEFAULT_MAX_ITERATIONS));
+                                            DEFAULT_MAX_ITERATIONS));
 
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
@@ -121,13 +121,13 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
 
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
   DryTensor<> *epsi(getTensorArgument<double, 
-		    DryTensor<double>>("HoleEigenEnergies"));
+                    DryTensor<double>>("HoleEigenEnergies"));
   DryTensor<> *epsa(getTensorArgument<double, 
-		    DryTensor<double>>("ParticleEigenEnergies"));
+                    DryTensor<double>>("ParticleEigenEnergies"));
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+                 abbreviation.begin(), ::toupper);
 
   // Instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
@@ -155,13 +155,13 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
     doublesAmplitudesName << getAbbreviation() << "DoublesAmplitudes";
     DryTensor<> Tabij(4, vvoo, syms);
     allocatedTensorArgument(doublesAmplitudesName.str(), 
-			    new DryTensor<>(Tabij));
+                            new DryTensor<>(Tabij));
 
     std::stringstream singlesAmplitudesName;
     singlesAmplitudesName << getAbbreviation() << "SinglesAmplitudes";
     DryTensor<> Tai(2, vo, syms);
     allocatedTensorArgument(singlesAmplitudesName.str(), 
-			    new DryTensor<>(Tai));
+                            new DryTensor<>(Tai));
   }
 
   // Allocate the energy e
@@ -204,8 +204,8 @@ void ClusterSinglesDoublesAlgorithm::drySinglesAmplitudesFromResiduum(
 }
 
 Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a, 
-								       int b, 
-								       int integralsSliceSize)
+                                                                       int b, 
+                                                                       int integralsSliceSize)
 {
   // Read the amplitudes Tai
   Tensor<> *Tai(&TaiMixer->getNext());
@@ -231,15 +231,15 @@ Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a,
 
   // Split GammaGab,GammaGai into real and imaginary parts
   Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
-			*GammaGai.wrld, "RealGammaGai");
+                        *GammaGai.wrld, "RealGammaGai");
   Tensor<> imagGammaGai(3, GammaGai.lens, GammaGai.sym, 
-			*GammaGai.wrld, "ImagGammaGai");
+                        *GammaGai.wrld, "ImagGammaGai");
   fromComplexTensor(GammaGai, realGammaGai, imagGammaGai);
 
   Tensor<> realGammaGab(3, GammaGab.lens, GammaGab.sym, 
-			*GammaGab.wrld, "RealGammaGab");
+                        *GammaGab.wrld, "RealGammaGab");
   Tensor<> imagGammaGab(3, GammaGab.lens, GammaGab.sym, 
-			*GammaGab.wrld, "ImagGammaGab");
+                        *GammaGab.wrld, "ImagGammaGab");
   fromComplexTensor(GammaGab, realGammaGab, imagGammaGab);
 
   // Construct dressed Coulomb vertex GammaGab
@@ -281,13 +281,13 @@ DryTensor<> *ClusterSinglesDoublesAlgorithm::drySliceCoupledCoulombIntegrals(int
 {
   // Read the Coulomb vertex GammaGqr
   DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
-			       DryTensor<complex>>("CoulombVertex"));
+                               DryTensor<complex>>("CoulombVertex"));
   
   // Read the Particle/Hole Eigenenergies
   DryTensor<> *epsi(getTensorArgument
-		    <double, DryTensor<double>>("HoleEigenEnergies"));
+                    <double, DryTensor<double>>("HoleEigenEnergies"));
   DryTensor<> *epsa(getTensorArgument
-		    <double, DryTensor<double>>("ParticleEigenEnergies"));
+                    <double, DryTensor<double>>("ParticleEigenEnergies"));
 
   // Compute No,Nv,NG,Np
   int No(epsi->lens[0]);
@@ -329,15 +329,15 @@ DryTensor<> *ClusterSinglesDoublesAlgorithm::drySliceCoupledCoulombIntegrals(int
 
   // Allocate sliced Coulomb integrals
   int lens[] = {leftGamma.lens[1], rightGamma.lens[1], 
-		leftGamma.lens[2], rightGamma.lens[2]};
+                leftGamma.lens[2], rightGamma.lens[2]};
   DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms));
 
   return Vxycd;
 }
 
 Tensor<> *ClusterSinglesDoublesAlgorithm::sliceAmplitudesFromCoupledCoulombFactors(int a,
-										   int b,
-										   int factorsSliceSize)
+                                                                                   int b,
+                                                                                   int factorsSliceSize)
 {
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
   PirR->set_name("PirR");
@@ -593,12 +593,12 @@ DryTensor<> *ClusterSinglesDoublesAlgorithm::drySliceAmplitudesFromCoupledCoulom
 {
   getTensorArgument<complex,DryTensor<complex>>("FactorOrbitals");
   DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
-			       DryTensor<complex>>("CoulombFactors"));
+                               DryTensor<complex>>("CoulombFactors"));
   
   DryTensor<> *epsa(getTensorArgument
-		    <double, DryTensor<double>>("ParticleEigenEnergies"));
+                    <double, DryTensor<double>>("ParticleEigenEnergies"));
   DryTensor<> *epsi(getTensorArgument
-		    <double, DryTensor<double>>("HoleEigenEnergies"));
+                    <double, DryTensor<double>>("HoleEigenEnergies"));
 
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);

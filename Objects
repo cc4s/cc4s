@@ -24,8 +24,6 @@ build/${CONFIG}/obj/algorithms/ClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterSinglesDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexReader.o \
-build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/SliceCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexDecomposition.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexDecomposition.o \
@@ -47,10 +45,10 @@ build/${CONFIG}/obj/algorithms/PartitionTensor.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexReader.o \
 build/${CONFIG}/obj/algorithms/CoulombIntegralsFromVertex.o \
 build/${CONFIG}/obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
+build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
+build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/CcdEnergyFromCoulombFactors.o \
-build/${CONFIG}/obj/algorithms/DcdEnergyFromCoulombFactors.o \
 build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/Mp2EnergyMatrixFromCoulombIntegrals.o \
@@ -59,12 +57,6 @@ build/${CONFIG}/obj/algorithms/CoulombVertexSingularVectors.o \
 build/${CONFIG}/obj/algorithms/EnergyMatrixFromDoublesAmplitudes.o \
 build/${CONFIG}/obj/algorithms/ApproximateCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/ReduceParticleHoleCoulombVertex.o \
-build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombFactors.o \
-build/${CONFIG}/obj/algorithms/DcsdEnergyFromCoulombFactors.o \
-build/${CONFIG}/obj/algorithms/CcdEnergyFromSlicedIntegrals.o \
-build/${CONFIG}/obj/algorithms/DcdEnergyFromSlicedIntegrals.o \
-build/${CONFIG}/obj/algorithms/CcsdEnergyFromSlicedIntegrals.o \
-build/${CONFIG}/obj/algorithms/DcsdEnergyFromSlicedIntegrals.o \
 build/${CONFIG}/obj/algorithms/SingleParticleOccupancies.o \
 build/${CONFIG}/obj/algorithms/PolarizabilityFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/ThermalHolesAndParticles.o \

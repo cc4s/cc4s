@@ -14,11 +14,11 @@ namespace cc4s {
     PerturbativeTriples(std::vector<Argument> const &argumentList);
     virtual ~PerturbativeTriples();
     /**
-     * \brief Calculates perturbative triples correction
+     * \brief Calculates perturbative triples correction. Routine based on Helgaker book.
      */
     virtual void run();
     /**
-     * \brief Calculates perturbative triples correction
+     * \brief Calculates perturbative triples correction. Routine based on Piecuch paper.
      */
     virtual void runPiecuch();
     /**

@@ -195,18 +195,18 @@ void CoulombVertexDecomposition::fit(
 ) {
 
   int fitFactorOrbitals(getIntegerArgument
-			("fitFactorOrbitals", 1));
+                        ("fitFactorOrbitals", 1));
 
   if (fitFactorOrbitals) {
     iterateQuadraticFactor(iterationsCount);
   }
 
   int fitCoulombFactors(getIntegerArgument
-			("fitCoulombFactors", 1));
+                        ("fitCoulombFactors", 1));
 
   if (fitCoulombFactors) {
     fitRegularizedAlternatingLeastSquaresFactor(*GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
-						*LambdaGR,'G', regularizationEstimator);
+                                                *LambdaGR,'G', regularizationEstimator);
   }
 
   Delta = getDelta();

@@ -37,13 +37,13 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vabci Vijka
     // The Vabcd and Vabci may not be given then slicing is required
     Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
-		    getTensorArgument("PPPPCoulombIntegrals") : nullptr);
+                    getTensorArgument("PPPPCoulombIntegrals") : nullptr);
     Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
     Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
     Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
     Tensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
-		    getTensorArgument("PPPHCoulombIntegrals") : nullptr);
+                    getTensorArgument("PPPHCoulombIntegrals") : nullptr);
   
     // Compute the No,Nv
     int No(Vabij->lens[2]);
@@ -52,7 +52,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
     // Get abbreviation of algorithm
     std::string abbreviation(getAbbreviation());
     std::transform(abbreviation.begin(), abbreviation.end(), 
-		   abbreviation.begin(), ::toupper);
+                   abbreviation.begin(), ::toupper);
 
     // Read the Coulomb vertex GammaGqr
     Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
@@ -72,21 +72,21 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
     // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
     Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
-			  *GammaGai.wrld, "RealGammaGai");
+                          *GammaGai.wrld, "RealGammaGai");
     Tensor<> imagGammaGai(3, GammaGai.lens, GammaGai.sym, 
-			  *GammaGai.wrld, "ImagGammaGai");
+                          *GammaGai.wrld, "ImagGammaGai");
     fromComplexTensor(GammaGai, realGammaGai, imagGammaGai);
 
     Tensor<> realGammaGab(3, GammaGab.lens, GammaGab.sym, 
-			  *GammaGab.wrld, "RealGammaGab");
+                          *GammaGab.wrld, "RealGammaGab");
     Tensor<> imagGammaGab(3, GammaGab.lens, GammaGab.sym, 
-			  *GammaGab.wrld, "ImagGammaGab");
+                          *GammaGab.wrld, "ImagGammaGab");
     fromComplexTensor(GammaGab, realGammaGab, imagGammaGab);
 
     Tensor<> realGammaGij(3, GammaGij.lens, GammaGij.sym, 
-			  *GammaGij.wrld, "RealGammaGij");
+                          *GammaGij.wrld, "RealGammaGij");
     Tensor<> imagGammaGij(3, GammaGij.lens, GammaGij.sym, 
-			  *GammaGij.wrld, "ImagGammaGij");
+                          *GammaGij.wrld, "ImagGammaGij");
     fromComplexTensor(GammaGij, realGammaGij, imagGammaGij);
 
     // Symmetries used by intermediates
@@ -104,301 +104,301 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
       Rabij.set_name("Rabij");
 
       if (i == 0) {
-	// For first iteration compute only the MP2 amplitudes 
-	// Since Tabij = 0, Vabij is the only non-zero term
-	Rabij["abij"] = (*Vabij)["abij"];
+        // For first iteration compute only the MP2 amplitudes 
+        // Since Tabij = 0, Vabij is the only non-zero term
+        Rabij["abij"] = (*Vabij)["abij"];
       } 
       else {
-	// For the rest iterations compute the DCSD amplitudes
+        // For the rest iterations compute the DCSD amplitudes
 
-	// Intermediate tensor Xabij=T2+T1*T1
-	Tensor<> Xabij(Tabij);
-	Xabij.set_name("Xabij");
-	Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+        // Intermediate tensor Xabij=T2+T1*T1
+        Tensor<> Xabij(Tabij);
+        Xabij.set_name("Xabij");
+        Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
 
-	{
-	  // Intermediates used for T2 amplitudes
-	  int vv[] = { Nv, Nv };
-	  Tensor<> Lac(2, vv, syms, *Vabij->wrld, "Lac");
-	  int oo[] = { No, No };
-	  Tensor<> Lki(2, oo, syms, *Vabij->wrld, "Lki");
+        {
+          // Intermediates used for T2 amplitudes
+          int vv[] = { Nv, Nv };
+          Tensor<> Lac(2, vv, syms, *Vabij->wrld, "Lac");
+          int oo[] = { No, No };
+          Tensor<> Lki(2, oo, syms, *Vabij->wrld, "Lki");
 
-	  Tensor<> Xklij(false, *Vijkl);
-	  Xklij.set_name("Xklij");
-	  Tensor<> Xakci(false, *Vaibj);
-	  Xakci.set_name("Xakci");
-	  int voov[] = { Nv, No, No, Nv };
-	  Tensor<> Xakic(4, voov, syms, *Vabij->wrld, "Xakic");
+          Tensor<> Xklij(false, *Vijkl);
+          Xklij.set_name("Xklij");
+          Tensor<> Xakci(false, *Vaibj);
+          Xakci.set_name("Xakci");
+          int voov[] = { Nv, No, No, Nv };
+          Tensor<> Xakic(4, voov, syms, *Vabij->wrld, "Xakic");
 
-	  // Intermediate tensor Yabij=T2-2*T1*T1
-	  Tensor<> Yabij(Tabij);
-	  Yabij.set_name("Yabij");
-	  Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
+          // Intermediate tensor Yabij=T2-2*T1*T1
+          Tensor<> Yabij(Tabij);
+          Yabij.set_name("Yabij");
+          Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
 
-	  // Build Lac
-	  Lac["ac"]      = (-1.0) * (*Vabij)["cdkl"] * Yabij["adkl"]; // Use Yabij in DCSD
-	  Lac["ac"]     += ( 0.5) * (*Vabij)["dckl"] * Yabij["adkl"]; // Use Yabij in DCSD
+          // Build Lac
+          Lac["ac"]      = (-1.0) * (*Vabij)["cdkl"] * Yabij["adkl"]; // Use Yabij in DCSD
+          Lac["ac"]     += ( 0.5) * (*Vabij)["dckl"] * Yabij["adkl"]; // Use Yabij in DCSD
 
-	  if (Vabci) {
-	    Lac["ac"] += ( 2.0) * (*Vabci)["cdak"] * (*Tai)["dk"];
-	    Lac["ac"] += (-1.0) * (*Vabci)["dcak"] * (*Tai)["dk"];
-	  }
-	  else {
-	    Lac["ac"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * (*Tai)["dk"];
-	    Lac["ac"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * (*Tai)["dk"];
-	    Lac["ac"] += (-1.0) * realGammaGai["Gck"] * realGammaGab["Gda"] * (*Tai)["dk"];
-	    Lac["ac"] += (-1.0) * imagGammaGai["Gck"] * imagGammaGab["Gda"] * (*Tai)["dk"];
-	  }
+          if (Vabci) {
+            Lac["ac"] += ( 2.0) * (*Vabci)["cdak"] * (*Tai)["dk"];
+            Lac["ac"] += (-1.0) * (*Vabci)["dcak"] * (*Tai)["dk"];
+          }
+          else {
+            Lac["ac"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * (*Tai)["dk"];
+            Lac["ac"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * (*Tai)["dk"];
+            Lac["ac"] += (-1.0) * realGammaGai["Gck"] * realGammaGab["Gda"] * (*Tai)["dk"];
+            Lac["ac"] += (-1.0) * imagGammaGai["Gck"] * imagGammaGab["Gda"] * (*Tai)["dk"];
+          }
 
-	  // Build Lki
-	  Lki["ki"]  = ( 1.0) * (*Vabij)["cdkl"] * Yabij["cdil"]; // Use Yabij in DCSD
-	  Lki["ki"] += (-0.5) * (*Vabij)["dckl"] * Yabij["cdil"]; // Use Yabij in DCSD
-	  Lki["ki"] += ( 2.0) * (*Vijka)["klic"] * (*Tai)["cl"];
-	  Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
+          // Build Lki
+          Lki["ki"]  = ( 1.0) * (*Vabij)["cdkl"] * Yabij["cdil"]; // Use Yabij in DCSD
+          Lki["ki"] += (-0.5) * (*Vabij)["dckl"] * Yabij["cdil"]; // Use Yabij in DCSD
+          Lki["ki"] += ( 2.0) * (*Vijka)["klic"] * (*Tai)["cl"];
+          Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
     
-	  // Contract Lac with T2 Amplitudes
-	  Rabij["abij"]  = ( 1.0) * Lac["ac"] * (*Tabij)["cbij"];
+          // Contract Lac with T2 Amplitudes
+          Rabij["abij"]  = ( 1.0) * Lac["ac"] * (*Tabij)["cbij"];
 
-	  // Contract Lki with T2 Amplitudes
-	  Rabij["abij"] += (-1.0) * Lki["ki"] * (*Tabij)["abkj"];
+          // Contract Lki with T2 Amplitudes
+          Rabij["abij"] += (-1.0) * Lki["ki"] * (*Tabij)["abkj"];
 
-	  // Contract Coulomb integrals with T2 amplitudes
-	  if (Vabci) {
-	    Rabij["abij"] += ( 1.0) * (*Vabci)["baci"] * (*Tai)["cj"];
-	    Rabij["abij"] += (-1.0) * (*Tai)  ["ak"]   * (*Vaibj)["bkci"] * (*Tai)["cj"];
-	  }
-	  else {
-	    Tensor<> realDressedGammaGai(realGammaGai);
-	    Tensor<> imagDressedGammaGai(imagGammaGai);
-	    realDressedGammaGai.set_name("realDressedGammaGai");
-	    imagDressedGammaGai.set_name("imagDressedGammaGai");
+          // Contract Coulomb integrals with T2 amplitudes
+          if (Vabci) {
+            Rabij["abij"] += ( 1.0) * (*Vabci)["baci"] * (*Tai)["cj"];
+            Rabij["abij"] += (-1.0) * (*Tai)  ["ak"]   * (*Vaibj)["bkci"] * (*Tai)["cj"];
+          }
+          else {
+            Tensor<> realDressedGammaGai(realGammaGai);
+            Tensor<> imagDressedGammaGai(imagGammaGai);
+            realDressedGammaGai.set_name("realDressedGammaGai");
+            imagDressedGammaGai.set_name("imagDressedGammaGai");
 
-	    realDressedGammaGai["Gai"] += (-1.0) * realGammaGij["Gki"] * (*Tai)["ak"];
-	    imagDressedGammaGai["Gai"] += (-1.0) * imagGammaGij["Gki"] * (*Tai)["ak"];
+            realDressedGammaGai["Gai"] += (-1.0) * realGammaGij["Gki"] * (*Tai)["ak"];
+            imagDressedGammaGai["Gai"] += (-1.0) * imagGammaGij["Gki"] * (*Tai)["ak"];
 
-	    Rabij["abij"] += ( 1.0) * realDressedGammaGai["Gai"] * realGammaGab["Gbc"] * (*Tai)["cj"];
-	    Rabij["abij"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGab["Gbc"] * (*Tai)["cj"];
-	  }
-	  Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
-	  Rabij["abij"] += ( 1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
-	  
-	  // Build Xakic
-	  if (Vabci) {
-	    Xakic["akic"]  = ( 1.0) * (*Vabij)["acik"];
-	    Xakic["akic"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["al"];
-	    Xakic["akic"] += ( 1.0) * (*Vabci)["dcak"] * (*Tai)["di"];
+            Rabij["abij"] += ( 1.0) * realDressedGammaGai["Gai"] * realGammaGab["Gbc"] * (*Tai)["cj"];
+            Rabij["abij"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGab["Gbc"] * (*Tai)["cj"];
+          }
+          Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
+          Rabij["abij"] += ( 1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
+          
+          // Build Xakic
+          if (Vabci) {
+            Xakic["akic"]  = ( 1.0) * (*Vabij)["acik"];
+            Xakic["akic"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["al"];
+            Xakic["akic"] += ( 1.0) * (*Vabci)["dcak"] * (*Tai)["di"];
 
-	    Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] *   Yabij ["dail"]; // Use Yabij in DCSD
-	    Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
-	    //	    Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCSD
-	  }
-	  else {
-	    Tensor<> realDressedGammaGai(realGammaGai);
-	    Tensor<> imagDressedGammaGai(imagGammaGai);
-	    realDressedGammaGai.set_name("realDressedGammaGai");
-	    imagDressedGammaGai.set_name("imagDressedGammaGai");
+            Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] *   Yabij ["dail"]; // Use Yabij in DCSD
+            Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
+            //      Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCSD
+          }
+          else {
+            Tensor<> realDressedGammaGai(realGammaGai);
+            Tensor<> imagDressedGammaGai(imagGammaGai);
+            realDressedGammaGai.set_name("realDressedGammaGai");
+            imagDressedGammaGai.set_name("imagDressedGammaGai");
 
-	    realDressedGammaGai["Gai"] += (-1.0) * realGammaGij["Gil"] * (*Tai)["al"];
-	    imagDressedGammaGai["Gai"] += (-1.0) * imagGammaGij["Gil"] * (*Tai)["al"];
+            realDressedGammaGai["Gai"] += (-1.0) * realGammaGij["Gil"] * (*Tai)["al"];
+            imagDressedGammaGai["Gai"] += (-1.0) * imagGammaGij["Gil"] * (*Tai)["al"];
 
-	    realDressedGammaGai["Gai"] += ( 1.0) * realGammaGab["Gad"] * (*Tai)["di"];
-	    imagDressedGammaGai["Gai"] += ( 1.0) * imagGammaGab["Gad"] * (*Tai)["di"];
+            realDressedGammaGai["Gai"] += ( 1.0) * realGammaGab["Gad"] * (*Tai)["di"];
+            imagDressedGammaGai["Gai"] += ( 1.0) * imagGammaGab["Gad"] * (*Tai)["di"];
 
-	    Xakic["akic"]  = ( 1.0) * realDressedGammaGai["Gai"] * realGammaGai["Gck"];
-	    Xakic["akic"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGai["Gck"];
+            Xakic["akic"]  = ( 1.0) * realDressedGammaGai["Gai"] * realGammaGai["Gck"];
+            Xakic["akic"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGai["Gck"];
 
-	    Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] *   Yabij ["dail"]; // Use Yabij in DCSD
-	    Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
-	    //	    Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCSD
-	  }
+            Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] *   Yabij ["dail"]; // Use Yabij in DCSD
+            Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
+            //      Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"]; // Removed in DCSD
+          }
 
-	  // Build Xakci
-	  if (Vabci) {
-	    Xakci["akci"]  = ( 1.0) * (*Vaibj)["akci"];
-	    Xakci["akci"] += (-1.0) * (*Vijka)["klic"] * (*Tai)["al"];
-	    Xakci["akci"] += ( 1.0) * (*Vabci)["cdak"] * (*Tai)["di"];
-	    Xakci["akci"] += (-1.0) * (*Tai)["al"] * (*Vabij)["cdlk"] * (*Tai)["di"];
-	    //	    Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCSD
-	  }
-	  else {
-	    // Construct dressed Coulomb vertex GammaGab and GammaGij
-	    Tensor<> realDressedGammaGab(realGammaGab);
-	    Tensor<> imagDressedGammaGab(imagGammaGab);
-	    realDressedGammaGab.set_name("realDressedGammaGab");
-	    imagDressedGammaGab.set_name("imagDressedGammaGab");
+          // Build Xakci
+          if (Vabci) {
+            Xakci["akci"]  = ( 1.0) * (*Vaibj)["akci"];
+            Xakci["akci"] += (-1.0) * (*Vijka)["klic"] * (*Tai)["al"];
+            Xakci["akci"] += ( 1.0) * (*Vabci)["cdak"] * (*Tai)["di"];
+            Xakci["akci"] += (-1.0) * (*Tai)["al"] * (*Vabij)["cdlk"] * (*Tai)["di"];
+            //      Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCSD
+          }
+          else {
+            // Construct dressed Coulomb vertex GammaGab and GammaGij
+            Tensor<> realDressedGammaGab(realGammaGab);
+            Tensor<> imagDressedGammaGab(imagGammaGab);
+            realDressedGammaGab.set_name("realDressedGammaGab");
+            imagDressedGammaGab.set_name("imagDressedGammaGab");
 
-	    Tensor<> realDressedGammaGij(realGammaGij);
-	    Tensor<> imagDressedGammaGij(imagGammaGij);
-	    realDressedGammaGij.set_name("realDressedGammaGij");
-	    imagDressedGammaGij.set_name("imagDressedGammaGij");
+            Tensor<> realDressedGammaGij(realGammaGij);
+            Tensor<> imagDressedGammaGij(imagGammaGij);
+            realDressedGammaGij.set_name("realDressedGammaGij");
+            imagDressedGammaGij.set_name("imagDressedGammaGij");
 
-	    realDressedGammaGab["Gac"] += (-1.0) * realGammaGai["Gcl"] * (*Tai)["al"];
-	    imagDressedGammaGab["Gac"] += (-1.0) * imagGammaGai["Gcl"] * (*Tai)["al"];
+            realDressedGammaGab["Gac"] += (-1.0) * realGammaGai["Gcl"] * (*Tai)["al"];
+            imagDressedGammaGab["Gac"] += (-1.0) * imagGammaGai["Gcl"] * (*Tai)["al"];
 
-	    realDressedGammaGij["Gki"] += ( 1.0) * realGammaGai["Gdk"] * (*Tai)["di"];
-	    imagDressedGammaGij["Gki"] += ( 1.0) * imagGammaGai["Gdk"] * (*Tai)["di"];
-	    
-	    // Xakci = Vakci - Vlkci * Tal + Vakcd * Tdi - Vcdlk * Tdail
-	    Xakci["akci"]  = ( 1.0) * realDressedGammaGab["Gac"] * realDressedGammaGij["Gki"];
-	    Xakci["akci"] += ( 1.0) * imagDressedGammaGab["Gac"] * imagDressedGammaGij["Gki"];
+            realDressedGammaGij["Gki"] += ( 1.0) * realGammaGai["Gdk"] * (*Tai)["di"];
+            imagDressedGammaGij["Gki"] += ( 1.0) * imagGammaGai["Gdk"] * (*Tai)["di"];
+            
+            // Xakci = Vakci - Vlkci * Tal + Vakcd * Tdi - Vcdlk * Tdail
+            Xakci["akci"]  = ( 1.0) * realDressedGammaGab["Gac"] * realDressedGammaGij["Gki"];
+            Xakci["akci"] += ( 1.0) * imagDressedGammaGab["Gac"] * imagDressedGammaGij["Gki"];
 
-	    // Xakci = 0.5 * Vcdlk * Tdail
-	    //	    Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCSD
-	  }
+            // Xakci = 0.5 * Vcdlk * Tdail
+            //      Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"]; // Removed in DCSD
+          }
 
-	  // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
-	  Rabij["abij"] += ( 2.0) * Xakic["akic"] * (*Tabij)["cbkj"];
-	  Rabij["abij"] += (-1.0) * Xakic["akic"] * (*Tabij)["bckj"];
+          // Contract Xakic and Xakci intermediates with T2 amplitudes Tabij
+          Rabij["abij"] += ( 2.0) * Xakic["akic"] * (*Tabij)["cbkj"];
+          Rabij["abij"] += (-1.0) * Xakic["akic"] * (*Tabij)["bckj"];
 
-	  Rabij["abij"] += (-1.0) * Xakci["akci"] * (*Tabij)["cbkj"];
-	  Rabij["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
+          Rabij["abij"] += (-1.0) * Xakci["akci"] * (*Tabij)["cbkj"];
+          Rabij["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
 
-	  // Symmetrize Rabij by applying permutation operator
-	  // to save memory we use Xakci as intermediate for the permutation operator 
-	  Xakci["aibj"]  = Rabij["abij"];
-	  Rabij["abij"] += Xakci["bjai"]; 
+          // Symmetrize Rabij by applying permutation operator
+          // to save memory we use Xakci as intermediate for the permutation operator 
+          Xakci["aibj"]  = Rabij["abij"];
+          Rabij["abij"] += Xakci["bjai"]; 
 
-	  //////////////////////////////////////////////////////////////////////
-	  // Now add all terms to Rabij that do not need to be symmetrized with
-	  // the permutation operator
-	  //////////////////////////////////////////////////////////////////////
+          //////////////////////////////////////////////////////////////////////
+          // Now add all terms to Rabij that do not need to be symmetrized with
+          // the permutation operator
+          //////////////////////////////////////////////////////////////////////
 
-	  // Add Vabij to Rabij (MP2 term)
-	  Rabij["abij"] += (*Vabij)["abij"];
+          // Add Vabij to Rabij (MP2 term)
+          Rabij["abij"] += (*Vabij)["abij"];
 
-	  if (Vabci) {
-	    // Build Xklij intermediate
-	    Xklij["klij"]  = (*Vijkl)["klij"];
-	    Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
-	    Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
-	    Xklij["klij"] += (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dj"]; // Added in DCSD
-	    //	    Xklij["klij"] += (*Vabij)["cdkl"] * Xabij["cdij"];       // Removed in DCSD
+          if (Vabci) {
+            // Build Xklij intermediate
+            Xklij["klij"]  = (*Vijkl)["klij"];
+            Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
+            Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
+            Xklij["klij"] += (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dj"]; // Added in DCSD
+            //      Xklij["klij"] += (*Vabij)["cdkl"] * Xabij["cdij"];       // Removed in DCSD
 
-	    // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
-	    Rabij["abij"] += Xklij["klij"] * Xabij["abkl"];
+            // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
+            Rabij["abij"] += Xklij["klij"] * Xabij["abkl"];
 
-	    // Contract Xklij with T1 Amplitudes
-	    Xklij["klij"]  = (*Vabij)["cdkl"] * (*Tabij)["cdij"]; // Removed in DCSD from T2 Amplitudes
-	    Rabij["abij"] += (*Tai)["bl"] * Xklij["klij"] * (*Tai)["ak"];
-	  }
-	  else {
-	    // Build Xklij intermediate
-	    Xklij["klij"]  = (*Vijkl)["klij"];
-	    Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
-	    Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
+            // Contract Xklij with T1 Amplitudes
+            Xklij["klij"]  = (*Vabij)["cdkl"] * (*Tabij)["cdij"]; // Removed in DCSD from T2 Amplitudes
+            Rabij["abij"] += (*Tai)["bl"] * Xklij["klij"] * (*Tai)["ak"];
+          }
+          else {
+            // Build Xklij intermediate
+            Xklij["klij"]  = (*Vijkl)["klij"];
+            Xklij["klij"] += (*Vijka)["klic"] * (*Tai)["cj"];
+            Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
 
-	    // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
-	    Rabij["abij"] +=  Xklij["klij"] * Xabij["abkl"];
+            // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
+            Rabij["abij"] +=  Xklij["klij"] * Xabij["abkl"];
 
-	    // Construct last term
-	    Xklij["klij"]  =  (*Tai)["dj"] * (*Vabij)["cdkl"] * (*Tai)["ci"];
+            // Construct last term
+            Xklij["klij"]  =  (*Tai)["dj"] * (*Vabij)["cdkl"] * (*Tai)["ci"];
 
-	    // Add last term contracted only with the doubles
-	    // The singles term is computed in the slicing
-	    Rabij["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
-	  }
+            // Add last term contracted only with the doubles
+            // The singles term is computed in the slicing
+            Rabij["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
+          }
 
-	}
+        }
 
-	if (Vabcd) {
-	  // Contract Vabcd with T2 and T1 Amplitudes using Xabij
-	  Rabij["abij"] += (*Vabcd)["abcd"] * Xabij["cdij"];
+        if (Vabcd) {
+          // Contract Vabcd with T2 and T1 Amplitudes using Xabij
+          Rabij["abij"] += (*Vabcd)["abcd"] * Xabij["cdij"];
 
-	  // Contract Vabci with T2 and T1 amplitudes using Xabij
-	  Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabci)["cdak"] * Xabij["cdij"];
-	  Rabij["abij"] += (-1.0) * (*Tai)["ak"] * (*Vabci)["dcbk"] * Xabij["cdij"];
-	} 
-	else {
-	  // Slice if Vabcd is not specified
+          // Contract Vabci with T2 and T1 amplitudes using Xabij
+          Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabci)["cdak"] * Xabij["cdij"];
+          Rabij["abij"] += (-1.0) * (*Tai)["ak"] * (*Vabci)["dcbk"] * Xabij["cdij"];
+        } 
+        else {
+          // Slice if Vabcd is not specified
 
-	  if (Vabci) {
-	    // Contract Vabci with T2 and T1 amplitudes using Xabij
-	    Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabci)["cdak"] * Xabij["cdij"];
-	    Rabij["abij"] += (-1.0) * (*Tai)["ak"] * (*Vabci)["dcbk"] * Xabij["cdij"];
+          if (Vabci) {
+            // Contract Vabci with T2 and T1 amplitudes using Xabij
+            Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabci)["cdak"] * Xabij["cdij"];
+            Rabij["abij"] += (-1.0) * (*Tai)["ak"] * (*Vabci)["dcbk"] * Xabij["cdij"];
 
-	    // Read the sliceRank. If not provided use No
-	    int sliceRank(getIntegerArgument
-			  ("sliceRank",No));
+            // Read the sliceRank. If not provided use No
+            int sliceRank(getIntegerArgument
+                          ("sliceRank",No));
 
-	    // Slice loop starts here
-	    for (int b(0); b < Nv; b += sliceRank) {
-	      for (int a(b); a < Nv; a += sliceRank) {
-		LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-		Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
-		Vxycd->set_name("Vxycd");
-		int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-		int syms[] = {NS, NS, NS, NS};
-		Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
+            // Slice loop starts here
+            for (int b(0); b < Nv; b += sliceRank) {
+              for (int a(b); a < Nv; a += sliceRank) {
+                LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+                Tensor<> *Vxycd(sliceCoulombIntegrals(a, b, sliceRank));
+                Vxycd->set_name("Vxycd");
+                int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+                int syms[] = {NS, NS, NS, NS};
+                Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
 
-		// Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
-		Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
-	      
-		sliceIntoResiduum(Rxyij, a, b, Rabij);
-		// The integrals of this slice are not needed anymore
-		delete Vxycd;
-	      }
-	    }
-	  }
-	  else {
+                // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
+                Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+              
+                sliceIntoResiduum(Rxyij, a, b, Rabij);
+                // The integrals of this slice are not needed anymore
+                delete Vxycd;
+              }
+            }
+          }
+          else {
 
-	    if (isArgumentGiven("CoulombFactors")) {
+            if (isArgumentGiven("CoulombFactors")) {
 
-	      if (isArgumentGiven("factorsSliceSize")) {
-		// Read the factorsSliceSize.
-		Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
-		LambdaGR->set_name("LambdaGR");
+              if (isArgumentGiven("factorsSliceSize")) {
+                // Read the factorsSliceSize.
+                Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+                LambdaGR->set_name("LambdaGR");
 
-		int NR(LambdaGR->lens[1]);
-		
-		int factorsSliceSize(getIntegerArgument
-				     ("factorsSliceSize"));
+                int NR(LambdaGR->lens[1]);
+                
+                int factorsSliceSize(getIntegerArgument
+                                     ("factorsSliceSize"));
 
-		// Slice loop starts here
-		for (int b(0); b < NR; b += factorsSliceSize) {
-		  for (int a(0); a < NR; a += factorsSliceSize) {
-		    LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
-		    Tensor<> *Fabij(sliceAmplitudesFromCoupledCoulombFactors(a, b, factorsSliceSize));
-		    Fabij->set_name("Fabij");
-		    Rabij["abij"] += (*Fabij)["abij"];
-		    delete Fabij;
-		  }
-		}
-	      }
-	      else{
-		LOG(1, abbreviation) << "Evaluting Fabij" << std::endl;
-		Tensor<> *Fabij(amplitudesFromCoupledCoulombFactors());
-		Fabij->set_name("Fabij");
-		Rabij["abij"] += (*Fabij)["abij"];
-		delete Fabij;
-	      }
-	    }
-	    else {
+                // Slice loop starts here
+                for (int b(0); b < NR; b += factorsSliceSize) {
+                  for (int a(0); a < NR; a += factorsSliceSize) {
+                    LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+                    Tensor<> *Fabij(sliceAmplitudesFromCoupledCoulombFactors(a, b, factorsSliceSize));
+                    Fabij->set_name("Fabij");
+                    Rabij["abij"] += (*Fabij)["abij"];
+                    delete Fabij;
+                  }
+                }
+              }
+              else{
+                LOG(1, abbreviation) << "Evaluting Fabij" << std::endl;
+                Tensor<> *Fabij(amplitudesFromCoupledCoulombFactors());
+                Fabij->set_name("Fabij");
+                Rabij["abij"] += (*Fabij)["abij"];
+                delete Fabij;
+              }
+            }
+            else {
 
-	      // Read the integralsSliceSize. If not provided use No
-	      int integralsSliceSize(getIntegerArgument
-				    ("integralsSliceSize",No));
+              // Read the integralsSliceSize. If not provided use No
+              int integralsSliceSize(getIntegerArgument
+                                    ("integralsSliceSize",No));
 
-	      // Slice loop starts here
-	      for (int b(0); b < Nv; b += integralsSliceSize) {
-		for (int a(b); a < Nv; a += integralsSliceSize) {
-		  LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-		  Tensor<> *Vxycd(sliceCoupledCoulombIntegrals(a, b, integralsSliceSize));
-		  Vxycd->set_name("Vxycd");
-		  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-		  int syms[] = {NS, NS, NS, NS};
-		  Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
+              // Slice loop starts here
+              for (int b(0); b < Nv; b += integralsSliceSize) {
+                for (int a(b); a < Nv; a += integralsSliceSize) {
+                  LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+                  Tensor<> *Vxycd(sliceCoupledCoulombIntegrals(a, b, integralsSliceSize));
+                  Vxycd->set_name("Vxycd");
+                  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+                  int syms[] = {NS, NS, NS, NS};
+                  Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
 
-		  // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
-		  Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+                  // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
+                  Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
 
-		  sliceIntoResiduum(Rxyij, a, b, Rabij);
-		  // The integrals of this slice are not needed anymore
-		  delete Vxycd;
-		}
-	      }
-	    }
-	  }
-	}
+                  sliceIntoResiduum(Rxyij, a, b, Rabij);
+                  // The integrals of this slice are not needed anymore
+                  delete Vxycd;
+                }
+              }
+            }
+          }
+        }
       }
       // Calculate the amplitudes from the residuum
       doublesAmplitudesFromResiduum(Rabij);
@@ -454,14 +454,14 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
       Rai["ai"] += ( 2.0) * (*Vabij)["acik"] * (*Tai)["ck"];
       Rai["ai"] += (-1.0) * (*Vaibj)["ciak"] * (*Tai)["ck"];
       if (Vabci) {
-      	Rai["ai"] += ( 2.0) * (*Vabci)["cdak"] * Xabij["cdik"];
-      	Rai["ai"] += (-1.0) * (*Vabci)["dcak"] * Xabij["cdik"];
+        Rai["ai"] += ( 2.0) * (*Vabci)["cdak"] * Xabij["cdik"];
+        Rai["ai"] += (-1.0) * (*Vabci)["dcak"] * Xabij["cdik"];
       }
       else {
-	Rai["ai"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * Xabij["cdik"];
-	Rai["ai"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * Xabij["cdik"];
-	Rai["ai"] += (-1.0) * realGammaGab["Gda"] * realGammaGai["Gck"] * Xabij["cdik"];
-	Rai["ai"] += (-1.0) * imagGammaGab["Gda"] * imagGammaGai["Gck"] * Xabij["cdik"];
+        Rai["ai"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * Xabij["cdik"];
+        Rai["ai"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * Xabij["cdik"];
+        Rai["ai"] += (-1.0) * realGammaGab["Gda"] * realGammaGai["Gck"] * Xabij["cdik"];
+        Rai["ai"] += (-1.0) * imagGammaGab["Gda"] * imagGammaGai["Gck"] * Xabij["cdik"];
       }
       Rai["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
       Rai["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
@@ -478,14 +478,14 @@ void DcsdEnergyFromCoulombIntegrals::dryIterate() {
     // TODO: the Mixer should provide a DryTensor in the future
     // Read the DCSD amplitudes Tai and Tabij
     DryTensor<> *Tai(getTensorArgument<double, 
-    		     DryTensor<double>>("DcsdSinglesAmplitudes"));
+                     DryTensor<double>>("DcsdSinglesAmplitudes"));
     DryTensor<> *Tabij(getTensorArgument<double, 
-		       DryTensor<double>>("DcsdDoublesAmplitudes"));
+                       DryTensor<double>>("DcsdDoublesAmplitudes"));
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vijka Vabci
     // the Vabcd and Vabci may not be given then slicing is required
     DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ? getTensorArgument<double, 
-		       DryTensor<double>>("PPPPCoulombIntegrals") : nullptr);
+                       DryTensor<double>>("PPPPCoulombIntegrals") : nullptr);
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
     DryTensor<> *Vijkl(getTensorArgument<double, DryTensor<double>>("HHHHCoulombIntegrals"));
@@ -499,7 +499,7 @@ void DcsdEnergyFromCoulombIntegrals::dryIterate() {
     // Get abbreviation of algorithm
     std::string abbreviation(getAbbreviation());
     std::transform(abbreviation.begin(), abbreviation.end(), 
-		   abbreviation.begin(), ::toupper);
+                   abbreviation.begin(), ::toupper);
   
     // Compute the No,Nv,Np
     int No(epsi->lens[0]);
@@ -510,7 +510,7 @@ void DcsdEnergyFromCoulombIntegrals::dryIterate() {
 
     // Read the Coulomb vertex GammaGqr
     DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
-				 DryTensor<complex>>("CoulombVertex"));
+                                 DryTensor<complex>>("CoulombVertex"));
 
     // Compute the NG,Np
     int NG(GammaGqr->lens[0]);
@@ -543,46 +543,46 @@ void DcsdEnergyFromCoulombIntegrals::dryIterate() {
       DryTensor<> Rabij(*Tabij);
 
       {
-	// Intermediates used for T2 amplitudes
-	DryTensor<> Lac(2, vv, syms);
-	DryTensor<> Lki(2, oo, syms);
+        // Intermediates used for T2 amplitudes
+        DryTensor<> Lac(2, vv, syms);
+        DryTensor<> Lki(2, oo, syms);
 
-	DryTensor<> Xklij(*Vijkl);
-	DryTensor<> Xakci(*Vaibj);
-	int voov[] = { Nv, No, No, Nv };
-	DryTensor<> Xakic(4, voov, syms);
+        DryTensor<> Xklij(*Vijkl);
+        DryTensor<> Xakci(*Vaibj);
+        int voov[] = { Nv, No, No, Nv };
+        DryTensor<> Xakic(4, voov, syms);
       }
 
       if (!Vabcd) {
-	if (isArgumentGiven("CoulombFactors")) {
-	  // Read the factorsSliceSize. If not provided use NG.
-	  DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
-				       DryTensor<complex>>("CoulombFactors"));
+        if (isArgumentGiven("CoulombFactors")) {
+          // Read the factorsSliceSize. If not provided use NG.
+          DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
+                                       DryTensor<complex>>("CoulombFactors"));
 
-	  int NR(LambdaGR->lens[1]);
+          int NR(LambdaGR->lens[1]);
 
-	  int factorsSliceSize(getIntegerArgument
-			       ("factorsSliceSize",NR));
+          int factorsSliceSize(getIntegerArgument
+                               ("factorsSliceSize",NR));
 
-	  LOG(1, abbreviation) << "Computing residuum Rabij from coupled factors with NR=" << NR 
-			       << ", using slicing size=" << factorsSliceSize << std::endl;
-	  DryTensor<> *Fabij(drySliceAmplitudesFromCoupledCoulombFactors(factorsSliceSize));
-	  delete Fabij;
-	}
-	else {
-	  // Read the integralsSliceSize. If not provided use No
-	  int integralsSliceSize(getIntegerArgument
-				 ("integralsSliceSize",No));
+          LOG(1, abbreviation) << "Computing residuum Rabij from coupled factors with NR=" << NR 
+                               << ", using slicing size=" << factorsSliceSize << std::endl;
+          DryTensor<> *Fabij(drySliceAmplitudesFromCoupledCoulombFactors(factorsSliceSize));
+          delete Fabij;
+        }
+        else {
+          // Read the integralsSliceSize. If not provided use No
+          int integralsSliceSize(getIntegerArgument
+                                 ("integralsSliceSize",No));
 
-	  LOG(1, abbreviation) << "Slicing Vabcd with Nv=" << Nv << ", with integals slice size=" 
-			       << integralsSliceSize << std::endl;
+          LOG(1, abbreviation) << "Slicing Vabcd with Nv=" << Nv << ", with integals slice size=" 
+                               << integralsSliceSize << std::endl;
 
-	  // Slice if Vabcd is not specified
-	  DryTensor<> *Vxycd(drySliceCoupledCoulombIntegrals(integralsSliceSize));
-	  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-	  int syms[] = {NS, NS, NS, NS};
-	  DryTensor<> Rxyij(4, lens, syms);
-	}
+          // Slice if Vabcd is not specified
+          DryTensor<> *Vxycd(drySliceCoupledCoulombIntegrals(integralsSliceSize));
+          int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+          int syms[] = {NS, NS, NS, NS};
+          DryTensor<> Rxyij(4, lens, syms);
+        }
       }
 
       dryDoublesAmplitudesFromResiduum(Rabij);

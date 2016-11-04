@@ -50,12 +50,12 @@ void ClusterDoublesAlgorithm::run() {
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+                 abbreviation.begin(), ::toupper);
 
   // Iteration for determining the doubles amplitudes Tabij
   // and the energy e
   int maxIterationsCount(getIntegerArgument("maxIterations", 
-					    DEFAULT_MAX_ITERATIONS));
+                                            DEFAULT_MAX_ITERATIONS));
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
     // call the iterate of the actual algorithm, which is still left open here
@@ -245,7 +245,7 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integralsSlic
 
   // Allocate sliced Coulomb integrals
   int lens[] = {leftGamma.lens[1], rightGamma.lens[1], 
-		leftGamma.lens[2], rightGamma.lens[2]};
+                leftGamma.lens[2], rightGamma.lens[2]};
   DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms, SOURCE_LOCATION));
 
   return Vxycd;
@@ -293,7 +293,7 @@ void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij)
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+                 abbreviation.begin(), ::toupper);
 
   // Direct term
   energy[""] = 2.0 * Eabij["abij"] * (*Vabij)["abij"];
@@ -307,8 +307,8 @@ void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij)
 }
 
 Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(int a,
-								     int b,
-								     int factorsSliceSize)
+                                                                     int b,
+                                                                     int factorsSliceSize)
 {
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
   PirR->set_name("PirR");
