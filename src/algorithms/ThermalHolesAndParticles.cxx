@@ -181,12 +181,16 @@ void ThermalHolesAndParticles::determineThermalOccupancies() {
 
   Tensor<> *ftEpsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> *ftNi(new Tensor<>(*ftEpsi));
-  CTF::Transform<>(occupancy(-kT)) ( (*ftNi)["i"] );
+  CTF::Transform<>( std::function<void(double &)>(occupancy(-kT)) ) (
+    (*ftNi)["i"]
+  );
   allocatedTensorArgument("ThermalHoleOccupancies", ftNi);
 
   Tensor<> *ftEpsa(getTensorArgument("ThermalParticleEigenEnergies"));
   Tensor<> *ftNa(new Tensor<>(*ftEpsa));
-  CTF::Transform<>(occupancy(+kT)) ( (*ftNa)["a"] );
+  CTF::Transform<>( std::function<void(double &)>(occupancy(+kT)) ) (
+    (*ftNa)["a"]
+  );
   allocatedTensorArgument("ThermalParticleOccupancies", ftNa);
 }
 
