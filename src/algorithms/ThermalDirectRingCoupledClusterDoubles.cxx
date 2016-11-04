@@ -20,58 +20,105 @@ ThermalDirectRingCoupledClusterDoubles::
 ) {
 }
 
-void ThermalDirectRingCoupledClusterDoubles::iterate(int i) {
-  // Read the DRCCD amplitudes Tabij
-  Tensor<> *Tabij(&TabijMixer->getNext());
-  
+void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   // Read Vabij
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
-  // Construct intermediate Amplitudes
-  Tensor<> Rabij(false, *Tabij);
+  // use double buffering for amplitudes
+  Tensor<> *thisTabij(&Tabij[n&1]);
+  Tensor<> *nextTabij(&Tabij[(n^1)&1]);
+  // ... and the energies
+  Scalar<> *thisEnergy(&energy[n&1]);
+  Scalar<> *nextEnergy(&energy[(n^1)&1]);
+
+  // get the occupancies for contractions
+  Tensor<> *Ni(getTensorArgument("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument("ThermalParticleOccupancies"));
 
   std::string abbreviation(getAbbreviation());
-  std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+  std::transform(
+    abbreviation.begin(), abbreviation.end(),
+    abbreviation.begin(), ::toupper
+  );
 
-  int linearized(getIntegerArgument("linearized", 0));
-  if (linearized) {
-    LOG(1, abbreviation) << "Solving linearized T2 Amplitude Equations" << std::endl;
-  } else {
-    LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
-  }
 
-  if (i == 0) {
-    // For first iteration compute only the MP2 amplitudes 
-    // Since Tabij = 0, Vabij is the only non-zero term
+  // I. Start with contribution where the two particle hole pairs are either
+  // both incomming (the closing and the quadratic case)
+  // or both outgoing (the Coulomb case).
+  Tensor<> PVabij(*Vabij);
+  PVabij.set_name("PVabij");
+  // propgate the connected states (i.e. integrated over the interval)
+  PPHHImaginaryTimePropagation pphhPropagation(beta / samples);
+  Transform<>(std::function<void(double, double, double &)>(pphhPropagation)) (
+    (*Dai)["ai"], (*Dai)["bj"], PVabij["abij"]
+  );
 
-    Rabij["abij"] += (*Vabij)["abij"];
-  } 
-  else {
-    // For the rest iterations compute the DRCCD amplitudes
-    Rabij["abij"]  = (*Vabij)["abij"];
-    Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
-    if (linearized) {
-      Rabij["abij"] += 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
-    } else {
-      // Construct intermediates
-      Tensor<> Cabij(false, *Vabij);
-      Cabij["abij"]  = 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
-      Rabij["abij"] += Cabij["abij"];
-      Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
-    }
-  }
+  // I.A. close the current amplitudes and compute the contributions
+  // to the updated energy
+  // Note that contractions need to involve the thermal occupancies
+  directEnergy[""] += 2.0 * (*thisTabij)["abij"] *
+    (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"] * PVabij["abij"];
+  // TODO: think of how to factor that...
+  exchangeEnergy[""] += -1.0 * (*thisTabij)["abji"] *
+    (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"] * PVabij["abij"];
 
-  // Calculate the amplitdues from the residuum
-  doublesAmplitudesFromResiduum(Rabij);
-  // And append them to the mixer
-  TabijMixer->append(Rabij);
+
+  // II. calculate all contributions to the next amplitudes having
+  // exactly one occurrance of interaction H_1
+
+  // II.A Start with the contributions that can use the same propagated
+  // particle hole pairs PVabij
+
+  // II.A.1 The Coulomb contribution
+  (*nextTabij)["abij"] = PVabij["cdkl"];
+
+  // II.B The other terms require the current amplitudes where one particle
+  // hole pair propgates freely from the start to the end of the interval.
+  // Propagate the left pair accordingly.
+  FreePHImaginaryTimePropagation phPropagation(beta / samples);
+  Transform<>(std::function<void(double, double &)>(phPropagation)) (
+    (*Dai)["ai"], (*thisTabij)["abij"]
+  );
+
+  // II.B.1 The quadratic contribution. Note that the left pair of the
+  // amplitudes is prepated for free propagation.
+  (*nextTabij)["abij"] +=
+    (*thisTabij)["acik"] *
+      Na["c"] * Ni["k"] * PVabij["cdkl"] * Na["d"] * Ni["l"] *
+      (*thisTabij)["bdjl"];
+
+  // II.C Now, add contributions where the one particle hole propgates to,
+  // the other from the Coulomb interaction. Wlog, the left one propgates to it.
+  PVabij["abij"] = (*Vabij)["abij"];
+  PHHPImaginaryTimePropagation phhpPropagation(beta / samples);
+  Transform<>(std::function<void(double, double, double &)>(phhpPropagation)) (
+    (*Dai)["ai"], (*Dai)["bj"], PVabij["abij"]
+
+  // II.C.1 The linear term with V contracted on the right side
+  (*nextTabij)["abij"] +=
+    (*thisTabij)["acik"] * Na["c"] * Ni["k"] * PVabij["cdkl"];
+
+  // II.C.2 the linear term with V contracted on the left side.
+  // Note that we need to reverse the order in PVabij and thisTabij
+  // since their left side is prepared for contraction or free propagation,
+  // respectively.
+  (*nextTabij)["abij"] +=
+      PVabij["dali"] * Na["d"] * Ni["l"] * (*thisTabij)["bdjl"];
+
+
+  // III. finally, also propagate the right particle hole pair of the current
+  // amplitudes freely
+  Transform<>(std::function<void(double, double &)>(phPropagation)) (
+    (*Dai)["bj"], (*thisTabij)["abij"]
+  );
+  // and add it to the nextTabij. These are the contributions without an
+  // occurrance of the interaction H_1 within the current interval
+  (*nextTabij)["abij"] += (*thisTabij)["abij"];
 }
 
 
-void DrccdEnergyFromCoulombIntegrals::dryIterate() {
+void DrccdEnergyFromCoulombIntegrals::dryUpdate() {
   {
-    // TODO: the Mixer should provide a DryTensor in the future
     // Read the DRCCD amplitudes Tabij
     //DryTensor<> *Tabij(
     getTensorArgument<double, DryTensor<double>>("DrccdDoublesAmplitudes");
@@ -86,8 +133,6 @@ void DrccdEnergyFromCoulombIntegrals::dryIterate() {
     // Define intermediates
     DryTensor<> Cabij(*Vabij);
 
-    // TODO: implment dryDoublesAmplitudesFromResiduum
-    // at the moment, assume usage of Dabij
     DryTensor<> Dabij(*Vabij);
   }
 }

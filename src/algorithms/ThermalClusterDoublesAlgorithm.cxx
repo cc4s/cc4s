@@ -16,6 +16,7 @@ ThermalClusterDoublesAlgorithm::ThermalClusterDoublesAlgorithm(
 }
 
 ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
+  
 }
 
 void ThermalClusterDoublesAlgorithm::run() {
@@ -27,12 +28,14 @@ void ThermalClusterDoublesAlgorithm::run() {
   int Nv(Vabij->lens[0]);
   int syms[] = { NS, NS, NS, NS };
   int vvoo[] = { Nv, Nv, No, No };
-  Tabij = new Tensor<>(4, vvoo, syms, *Vabij->wrld, "Tabij");
+  Tabij[0] = new Tensor<>(4, vvoo, syms, *Vabij->wrld, "Tabij0");
+  Tabij[1] = new Tensor<>(4, vvoo, syms, *Vabij->wrld, "Tabij1");
 
   // Allocate the energy e
-  energy = new Scalar<>(*Vabij->wrld);
-  energy.set_name("energy");
-  double e(0), dire, exce;
+  directEnergy = new Scalar<>(*Vabij->wrld);
+  directEnergy.set_name("directEnergy");
+  exchangeEnergy = new Scalar<>(*Vabij->wrld);
+  exchangeEnergy.set_name("exchangeEnergy");
 
   std::string abbreviation(getAbbreviation());
   std::transform(
@@ -40,25 +43,25 @@ void ThermalClusterDoublesAlgorithm::run() {
 		abbreviation.begin(), ::toupper
   );
 
-  // Iteration for determining the doubles amplitudes Tabij
-  // and the energy e
-  int maxIterationsCount(getIntegerArgument("maxIterations", 
-					    DEFAULT_MAX_ITERATIONS));
-  for (int i(0); i < maxIterationsCount; ++i) {
-    LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
-    // call the iterate of the actual algorithm, which is still left open here
-    iterate(i);
-    Tensor<> *Tabij(&TabijMixer->getNext());
-    Tabij->set_name("Tabij");
-    // Direct term
-    energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
-    dire = energy.get_val();
-    // Exchange term
-    energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
-    exce = -1.0 * energy.get_val();
-    // Total energy
-    e = dire + exce;
-    LOG(0, abbreviation) << "e=" << e << std::endl;
+  // allocate and initialize the eigenenergy difference matrix
+  Dai = new Matrix<>(Nv, No, *Vaij->wrld);
+  Dai->set_name("Dai");
+  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  Dai["ai"] =  (*epsa)["a"];
+  Dai["ai"] -= (*epsi)["i"];
+
+  beta = 1 / getRealArgument("Temperature");
+
+  double dire, exce;
+  int samples(getIntegerArgument("samples", DEFAULT_SAMPLES));
+  for (int n(0); n < samples; ++n) {
+    LOG(0, abbreviation) << "step=" << i+1 << std::endl;
+    // update the next amplitudes according to the algorithm implementation
+    update(n);
+    dire = directEnergy->get_val();
+    exce = exchangeEnergy->get_val();
+    LOG(0, abbreviation) << "e=" << dire+exce << std::endl;
     LOG(1, abbreviation) << "dir=" << dire << std::endl;
     LOG(1, abbreviation) << "exc=" << exce << std::endl;
   }
@@ -71,7 +74,7 @@ void ThermalClusterDoublesAlgorithm::run() {
 
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), e);
+  setRealArgument(energyName.str(), dire+exce);
 }
 
 void ThermalClusterDoublesAlgorithm::dryRun() {
@@ -79,10 +82,12 @@ void ThermalClusterDoublesAlgorithm::dryRun() {
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
 
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<> *epsi(getTensorArgument<double,
-                    DryTensor<double>>("ThermalHoleEigenEnergies"));
-  DryTensor<> *epsa(getTensorArgument<double, 
-                    DryTensor<double>>("ThermalParticleEigenEnergies"));
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<double>>("ThermalHoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ThermalParticleEigenEnergies")
+  );
 
   std::string abbreviation(getAbbreviation());
   std::transform(
@@ -136,30 +141,6 @@ void ThermalClusterDoublesAlgorithm::dryIterate() {
   LOG(0, "CluserDoubles") << "Dry run for iteration not given for "
     << getAbbreviation() << std::endl;
 }
-
-void ThermalClusterDoublesAlgorithm::(
-  CTF::Tensor<> &Rabij
-) {
-  Dabij.set_name("Dabij");
-  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
-  Dabij["abij"]  = (*epsi)["i"];
-  Dabij["abij"] += (*epsi)["j"];
-  Dabij["abij"] -= (*epsa)["a"];
-  Dabij["abij"] -= (*epsa)["b"];
-
-  // Divide Rabij/Dabij to get Tabij
-  Bivar_Function<> fDivide(&divide<double>);
-  Rabij.contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
-}
-
-void ThermalClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
-  cc4s::DryTensor<> &Rabij
-) {
-  // Build Dabij
-  DryTensor<> Dabij(Rabij, SOURCE_LOCATION);
-}
-
 
 Tensor<> *ThermalClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int integralsSliceSize) {
   Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));

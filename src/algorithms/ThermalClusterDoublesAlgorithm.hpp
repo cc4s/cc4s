@@ -44,13 +44,26 @@ namespace cc4s {
      * \brief The current correlation energy from all diagrams that were
      * closed up to the current moment in imaginart time.
      **/
-    Scalar<> *energy;
+    Scalar<> *directEnergy, *exchangeEnergy;
 
     /**
-     * \brief The current thermal amplitudes of doubles diagrams up to the
-     * current moment in imaginary time.
+     * \brief The thermal amplitudes of doubles diagrams of the
+     * current and the subsequent moment in imaginary time.
      */
-    Tensor<> *Tabij;
+    Tensor<> *Tabij[2];
+
+    /**
+     * \brief The eigenenergy difference of between the state a and i.
+     * This is used to propagate all states in imaginary time.
+     **/
+    Tensor<> *Dai;
+
+    /**
+     * \brief Inverse temperature \f$\beta=1/k_{\rm B}T\f$, where
+     * \f$k_{\rm B}T\f$ is given in the same unit as the eigenenergies
+     * \f$\varepsilon_p\f$.
+     **/
+    double beta;
 
     /**
      * \brief Advances the correlation energy and the amplitudes from the
@@ -67,6 +80,127 @@ namespace cc4s {
      * that.
      */
     virtual void dryUpdate();
+  };
+
+
+  class ImaginaryTimePropagation {
+  protected:
+    ImaginaryTimePropagation(
+      double DTau_
+    ): DTau(DTau_) {
+    }
+    double DTau;
+  };
+
+  /**
+   * \brief Offers a transform method for the propagation of
+   * one particle hole pair without interaction
+   * within the imgainary time interval of length DTau.
+   **/
+  class FreePHImaginaryTimePropagation: public ImaginaryTimePropagation {
+  public:
+    FreePPHHImaginaryTimePropagation(
+      double DTau_
+    ): ImaginaryTimePropagation(DTau_) {
+    }
+    /**
+     * \brief Transforms the amplitude P given the energy differences
+     * of the particle hole pair.
+     * \param[in] Dai The energy difference of the pair propagating.
+     * \param[inout] P The amplitude to transform according to the propagation.
+     **/
+    void operator ()(double Dai, double &P) {
+      P *= std::exp(-Dai*DTau);
+    }
+  };
+
+  /**
+   * \brief Offers a transform method for the propagation of
+   * two particle hole pairs without interaction
+   * within the imgainary time interval of length DTau.
+   **/
+  class FreePPHHImaginaryTimePropagation: public ImaginaryTimePropagation {
+  public:
+    FreePPHHImaginaryTimePropagation(
+      double DTau_
+    ): ImaginaryTimePropagation(DTau_) {
+    }
+    /**
+     * \brief Transforms the amplitude P given the energy differences
+     * of the particle hole pairs.
+     * \param[in] Dai The energy difference of the first pair propagating.
+     * \param[in] Dbj The energy difference of the second pair propagating.
+     * \param[inout] P The amplitude to transform according to the propagation.
+     **/
+    void operator ()(double Dai, double Dbj, double &P) {
+      P *= std::exp(-(Dai+Dbj)*DTau);
+    }
+  };
+
+  /**
+   * \brief Offers a transform method for the propagation of
+   * two particle hole pairs from or to the Coulomb interaction
+   * at tau within the imgainary time interval of length DTau.
+   **/
+  class PPHHImaginaryTimePropagation: public ImaginaryTimePropagation {
+  public:
+    PPHHImaginaryTimePropagation(
+      double DTau_
+    ): ImaginaryTimePropagation(DTau_) {
+    }
+    /**
+     * \brief Transforms the amplitude P given the energy differences
+     * of two particle hole pairs, which are either both incoming or both
+     * outgoing.
+     * \param[in] Dai The energy difference of the first pair propagating.
+     * \param[in] Dbj The energy difference of the second propagating.
+     * \param[inout] P The amplitude to transform according to the propagation.
+     **/
+    void operator ()(double Dai, double Dbj, double &P) {
+      const double Delta(Dai+Dbj);
+      const double DeltaDTau(Delta*DTau);
+      // use the first order approximation around Delta=zero if applicable
+      // to avoid division by small numbers
+      P *= (DeltaDTau*DeltaDTau * DTau > 6e-15) ?
+        (1 - std::exp(DeltaDTau) / Delta :
+        DTau * (1 - DeltaDTau*DTau/2);
+    }
+  };
+
+  /**
+   * \brief Offers a transform method for the propagation of
+   * one particle hole pair to and one pair from the Coulomb interaction
+   * at tau within the imgainary time interval of length DTau.
+   **/
+  class HPPHImaginaryTimePropagation: public ImaginaryTimePropagation {
+  public:
+    HPPHImaginaryTimePropagation(
+      double DTau_
+    ): ImaginaryTimePropagation(DTau_) {
+    }
+    /**
+     * \brief Transforms the amplitude P given the energy differences
+     * of the in- and outgoing particle hole pairs.
+     * \param[in] Dai The energy difference of the pair propagating to the
+     *                interaction.
+     * \param[in] Dbj The energy difference of the pair propagating from the
+     *                interaction.
+     * \param[inout] P The amplitude to transform according to the propagation.
+     **/
+    void operator ()(double Dai, double Dbj, double &P) {
+      const double mu((Dbj+Dai)*0.5);
+      const double Delta((Dbj-Dai)*0.5);
+      const double meanP(std::exp(-mu*DTau));
+      const double DeltaDTau(Delta*DTau);
+      const double DeltaDTauSquared(DeltaDTau*DeltaDTau);
+      // use the second order approximation around Delta=zero if applicable
+      // to avoid division by small numbers
+      P *= meanP * (
+        (DeltaDTauSquared*DeltaDTauSquared * DTau > 1.20e-13) ?
+          std::sinh(DeltaDTau) / Delta :
+          DTau * (1 + DeltaDTauSquared*DTau/6)
+      );
+    }
   };
 }
 

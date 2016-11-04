@@ -32,25 +32,27 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   Tabij["abij"] += (*epsa)["b"];
   Tabij["abij"] -= (*epsi)["i"];
   Tabij["abij"] -= (*epsi)["j"];
+
   // then, compute the factor from the time integration for each abij
   // from the \Delta^{ab}_{ij}
   // treat \Delta = 0 specially
   class timeIntegral {
   public:
-    timeIntegral(double kT_): kT(kT_) {
-    }
-    const double operator()(double const eps) const {
-      return std::abs(eps) > 1e-8 ?
+    timeIntegral(double kT_): kT(kT_) { }
+    void operator()(double &eps) {
+      eps = std::abs(eps) > 1e-8 ?
         (std::exp(-eps/kT) - 1.0 + eps/kT) / (eps*eps/kT) :
         0.5/kT;
     }
   protected:
     double kT;
   };
-  Univar_Function<> mp2TimeIntegral(
-    timeIntegral(getRealArgument("Temperature"))
+  Transform<>(
+    std::function<void(double &)>(timeIntegral(getRealArgument("Temperature")))
+  ) (
+    Tabij["abij"]
   );
-  Tabij.sum(1.0,Tabij,"abij", 0.0,"abij", mp2TimeIntegral);
+
   // finally aggregate the Fermi occupancies for a,b,i and j in the
   // same tensor
   Tabij["abij"] *= (*Na)["a"];
