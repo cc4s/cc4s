@@ -40,7 +40,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   std::string abbreviation(getAbbreviation());
   std::transform(
     abbreviation.begin(), abbreviation.end(), 
-		abbreviation.begin(), ::toupper
+                abbreviation.begin(), ::toupper
   );
 
   // allocate and initialize the eigenenergy difference matrix
@@ -209,7 +209,7 @@ DryTensor<> *ThermalClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integr
 
   // Allocate sliced Coulomb integrals
   int lens[] = {leftGamma.lens[1], rightGamma.lens[1], 
-		leftGamma.lens[2], rightGamma.lens[2]};
+                leftGamma.lens[2], rightGamma.lens[2]};
   DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms, SOURCE_LOCATION));
 
   return Vxycd;
@@ -257,7 +257,7 @@ void ThermalClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabi
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+                 abbreviation.begin(), ::toupper);
 
   // Direct term
   energy[""] = 2.0 * Eabij["abij"] * (*Vabij)["abij"];
@@ -271,8 +271,8 @@ void ThermalClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabi
 }
 
 Tensor<> *ThermalClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(int a,
-								     int b,
-								     int factorsSliceSize)
+                                                                     int b,
+                                                                     int factorsSliceSize)
 {
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
   PirR->set_name("PirR");

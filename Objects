@@ -51,12 +51,10 @@ build/${CONFIG}/obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/Mp2EnergyMatrixFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/VirtualHartreeFockEnergyMatrixFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexSingularVectors.o \
-build/${CONFIG}/obj/algorithms/EnergyMatrixFromDoublesAmplitudes.o \
+build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexSingularVectors.o \
 build/${CONFIG}/obj/algorithms/ApproximateCoulombVertex.o \
-build/${CONFIG}/obj/algorithms/ReduceParticleHoleCoulombVertex.o \
+build/${CONFIG}/obj/algorithms/ApproximateParticleHoleCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/SingleParticleOccupancies.o \
 build/${CONFIG}/obj/algorithms/PolarizabilityFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/ThermalHolesAndParticles.o \
