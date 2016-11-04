@@ -32,7 +32,7 @@ void ThermalDirectRingCoupledClusterDoubles::iterate(int i) {
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+                 abbreviation.begin(), ::toupper);
 
   int linearized(getIntegerArgument("linearized", 0));
   if (linearized) {
