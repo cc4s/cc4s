@@ -77,9 +77,11 @@ void ClusterDoublesAlgorithm::run() {
 
   std::stringstream amplitudesName;
   amplitudesName << getAbbreviation() << "DoublesAmplitudes";
-  allocatedTensorArgument(
-    amplitudesName.str(), new Tensor<>(TabijMixer->getNext())
-  );
+  if (isArgumentGiven(amplitudesName.str())) {
+    allocatedTensorArgument(
+      amplitudesName.str(), new Tensor<>(TabijMixer->getNext())
+    );
+  }
 
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";

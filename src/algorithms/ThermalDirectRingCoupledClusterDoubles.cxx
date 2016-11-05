@@ -22,7 +22,7 @@ ThermalDirectRingCoupledClusterDoubles::
 
 void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   // Read Vabij
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+  Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
 
   // use double buffering for amplitudes
   Tensor<> *thisTabij(Tabij[n&1]);
@@ -45,19 +45,29 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   Tensor<> PVabij(*Vabij);
   PVabij.set_name("PVabij");
   // propgate the connected states (i.e. integrated over the interval)
+/*
   PPHHImaginaryTimePropagation pphhPropagation(beta / samples);
+  LOG(1, abbreviation) <<
+    "Propagating states connected to Coulomb interaction" << std::endl;
   Transform<>(std::function<void(double, double, double &)>(pphhPropagation)) (
     (*Dai)["ai"], (*Dai)["bj"], PVabij["abij"]
   );
+*/
+  // II.A.1 The Coulomb contribution
+  LOG(1, abbreviation) << "Coulomb contribution to amplitudes" << std::endl;
+  (*nextTabij)["abij"] = (1.0 / samples) * PVabij["abij"];
+
+  PVabij["abij"] *= (*Ni)["i"];
+  PVabij["abij"] *= (*Ni)["j"];
+  PVabij["abij"] *= (*Na)["a"];
+  PVabij["abij"] *= (*Na)["b"];
 
   // I.A. close the current amplitudes and compute the contributions
   // to the updated energy
   // Note that contractions need to involve the thermal occupancies
-  (*directEnergy)[""] += 2.0 * (*thisTabij)["abij"] *
-    (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"] * PVabij["abij"];
-  // TODO: think of how to factor that...
-  (*exchangeEnergy)[""] += -1.0 * (*thisTabij)["abji"] *
-    (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"] * PVabij["abij"];
+  LOG(1, abbreviation) << "Amplitude contribution to energy" << std::endl;
+  (*directEnergy)[""] += (2.0 / beta) * (*thisTabij)["abij"] * PVabij["abij"];
+  (*exchangeEnergy)[""] += (-1.0 / beta) * (*thisTabij)["abji"] * PVabij["abij"];
 
 
   // II. calculate all contributions to the next amplitudes having
@@ -66,17 +76,17 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   // II.A Start with the contributions that can use the same propagated
   // particle hole pairs PVabij
 
-  // II.A.1 The Coulomb contribution
-  (*nextTabij)["abij"] = PVabij["cdkl"];
 
   // II.B The other terms require the current amplitudes where one particle
   // hole pair propgates freely from the start to the end of the interval.
   // Propagate the left pair accordingly.
   FreePHImaginaryTimePropagation phPropagation(beta / samples);
+  LOG(1, abbreviation) << "Propagating left states of amplitudes" << std::endl;
   Transform<>(std::function<void(double, double &)>(phPropagation)) (
     (*Dai)["ai"], (*thisTabij)["abij"]
   );
 
+/*
   // II.B.1 The quadratic contribution. Note that the left pair of the
   // amplitudes is prepated for free propagation.
   (*nextTabij)["abij"] +=
@@ -102,10 +112,11 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   // respectively.
   (*nextTabij)["abij"] +=
       PVabij["dali"] * (*Na)["d"] * (*Ni)["l"] * (*thisTabij)["bdjl"];
-
+*/
 
   // III. finally, also propagate the right particle hole pair of the current
   // amplitudes freely
+  LOG(1, abbreviation) << "Propagating right states of amplitudes" << std::endl;
   Transform<>(std::function<void(double, double &)>(phPropagation)) (
     (*Dai)["bj"], (*thisTabij)["abij"]
   );

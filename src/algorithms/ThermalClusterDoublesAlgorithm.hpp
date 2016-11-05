@@ -169,7 +169,7 @@ namespace cc4s {
       // use the first order approximation around Delta=zero if applicable
       // to avoid division by small numbers
       P *= (DeltaDTau*DeltaDTau * DTau > 6e-15) ?
-        (1 - std::exp(DeltaDTau)) / Delta :
+        (1 - std::exp(-DeltaDTau)) / Delta :
         DTau * (1 - DeltaDTau*DTau/2);
     }
   };
@@ -195,9 +195,9 @@ namespace cc4s {
      * \param[inout] P The amplitude to transform according to the propagation.
      **/
     void operator ()(double Dai, double Dbj, double &P) {
-      const double mu((Dbj+Dai)*0.5);
+      const double meanD((Dbj+Dai)*0.5);
       const double Delta((Dbj-Dai)*0.5);
-      const double meanP(std::exp(-mu*DTau));
+      const double meanP(std::exp(-meanD*DTau));
       const double DeltaDTau(Delta*DTau);
       const double DeltaDTauSquared(DeltaDTau*DeltaDTau);
       // use the second order approximation around Delta=zero if applicable

@@ -100,15 +100,19 @@ void ClusterSinglesDoublesAlgorithm::run() {
 
   std::stringstream doublesAmplitudesName;
   doublesAmplitudesName << getAbbreviation() << "DoublesAmplitudes";
-  allocatedTensorArgument(
-    doublesAmplitudesName.str(), new Tensor<>(TabijMixer->getNext())
-  );
+  if (isArgumentGiven(doublesAmplitudesName.str())) {
+    allocatedTensorArgument(
+      doublesAmplitudesName.str(), new Tensor<>(TabijMixer->getNext())
+    );
+  }
 
   std::stringstream singlesAmplitudesName;
   singlesAmplitudesName << getAbbreviation() << "SinglesAmplitudes";
-  allocatedTensorArgument(
-    singlesAmplitudesName.str(), new Tensor<>(TaiMixer->getNext())
-  );
+  if (isArgumentGiven(singlesAmplitudesName.str())) {
+    allocatedTensorArgument(
+      singlesAmplitudesName.str(), new Tensor<>(TaiMixer->getNext())
+    );
+  }
 
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";

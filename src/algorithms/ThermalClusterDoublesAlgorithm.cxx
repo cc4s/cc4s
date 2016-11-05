@@ -21,7 +21,7 @@ ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
 
 void ThermalClusterDoublesAlgorithm::run() {
   // Read the Coulomb Integrals Vabij required for the energy
-  Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
+  Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
 
   // Allocate the doubles amplitudes
   int No(Vabij->lens[2]);
@@ -52,6 +52,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   (*Dai)["ai"] -= (*epsi)["i"];
 
   beta = 1 / getRealArgument("Temperature");
+  LOG(1, abbreviation) << "beta=" << beta << std::endl;
 
   double dire, exce;
   samples = getIntegerArgument("samples", DEFAULT_SAMPLES);
