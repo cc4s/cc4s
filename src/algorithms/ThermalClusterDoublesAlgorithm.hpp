@@ -15,10 +15,10 @@ namespace cc4s {
    */
   class ThermalClusterDoublesAlgorithm: public Algorithm {
   public:
-    ClusterDoublesAlgorithm(
+    ThermalClusterDoublesAlgorithm(
       std::vector<Argument> const &argumentList
     );
-    virtual ~ClusterDoublesAlgorithm();
+    virtual ~ThermalClusterDoublesAlgorithm();
     /**
      * \brief Calculates the energy of this ThermalClusterDoubles algorithm
      */
@@ -29,8 +29,8 @@ namespace cc4s {
      */
     virtual void dryRun();
     /**
-     * \brief Returns the abbreviation of the concrete algorithm, e.g.
-     * "ThermalCcd".
+     * \brief Returns the abbreviation of the concrete algorithm, without
+     * the leading "Thermal", e.g. "Ccd" for "ThermalCcdEnergy"
      */
     virtual std::string getAbbreviation() = 0;
 
@@ -44,19 +44,19 @@ namespace cc4s {
      * \brief The current correlation energy from all diagrams that were
      * closed up to the current moment in imaginart time.
      **/
-    Scalar<> *directEnergy, *exchangeEnergy;
+    CTF::Scalar<> *directEnergy, *exchangeEnergy;
 
     /**
      * \brief The thermal amplitudes of doubles diagrams of the
      * current and the subsequent moment in imaginary time.
      */
-    Tensor<> *Tabij[2];
+    CTF::Tensor<> *Tabij[2];
 
     /**
      * \brief The eigenenergy difference of between the state a and i.
      * This is used to propagate all states in imaginary time.
      **/
-    Tensor<> *Dai;
+    CTF::Tensor<> *Dai;
 
     /**
      * \brief Inverse temperature \f$\beta=1/k_{\rm B}T\f$, where
@@ -66,12 +66,19 @@ namespace cc4s {
     double beta;
 
     /**
+     * \brief The number of imaginary frequency intervals between \f$0\f$ and
+     * \f$\beta\f$ for the approximate solution of the amplitude integral
+     * equation.
+     **/
+    int samples;
+
+    /**
      * \brief Advances the correlation energy and the amplitudes from the
      * the current moment in imaginary time to the next sample according
      * to the concrete implementation.
      * \param[in] i sample number
      */
-    virtual void update(int i) = 0;
+    virtual void update(int n) = 0;
 
     /**
      * \brief Performs a dry run of an update according to the concrete
@@ -99,7 +106,7 @@ namespace cc4s {
    **/
   class FreePHImaginaryTimePropagation: public ImaginaryTimePropagation {
   public:
-    FreePPHHImaginaryTimePropagation(
+    FreePHImaginaryTimePropagation(
       double DTau_
     ): ImaginaryTimePropagation(DTau_) {
     }
@@ -162,7 +169,7 @@ namespace cc4s {
       // use the first order approximation around Delta=zero if applicable
       // to avoid division by small numbers
       P *= (DeltaDTau*DeltaDTau * DTau > 6e-15) ?
-        (1 - std::exp(DeltaDTau) / Delta :
+        (1 - std::exp(DeltaDTau)) / Delta :
         DTau * (1 - DeltaDTau*DTau/2);
     }
   };

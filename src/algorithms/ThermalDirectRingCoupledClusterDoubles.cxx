@@ -25,11 +25,8 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
   // use double buffering for amplitudes
-  Tensor<> *thisTabij(&Tabij[n&1]);
-  Tensor<> *nextTabij(&Tabij[(n^1)&1]);
-  // ... and the energies
-  Scalar<> *thisEnergy(&energy[n&1]);
-  Scalar<> *nextEnergy(&energy[(n^1)&1]);
+  Tensor<> *thisTabij(Tabij[n&1]);
+  Tensor<> *nextTabij(Tabij[(n^1)&1]);
 
   // get the occupancies for contractions
   Tensor<> *Ni(getTensorArgument("ThermalHoleOccupancies"));
@@ -56,10 +53,10 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   // I.A. close the current amplitudes and compute the contributions
   // to the updated energy
   // Note that contractions need to involve the thermal occupancies
-  directEnergy[""] += 2.0 * (*thisTabij)["abij"] *
+  (*directEnergy)[""] += 2.0 * (*thisTabij)["abij"] *
     (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"] * PVabij["abij"];
   // TODO: think of how to factor that...
-  exchangeEnergy[""] += -1.0 * (*thisTabij)["abji"] *
+  (*exchangeEnergy)[""] += -1.0 * (*thisTabij)["abji"] *
     (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"] * PVabij["abij"];
 
 
@@ -84,26 +81,27 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   // amplitudes is prepated for free propagation.
   (*nextTabij)["abij"] +=
     (*thisTabij)["acik"] *
-      Na["c"] * Ni["k"] * PVabij["cdkl"] * Na["d"] * Ni["l"] *
+      (*Na)["c"] * (*Ni)["k"] * PVabij["cdkl"] * (*Na)["d"] * (*Ni)["l"] *
       (*thisTabij)["bdjl"];
 
   // II.C Now, add contributions where the one particle hole propgates to,
   // the other from the Coulomb interaction. Wlog, the left one propgates to it.
   PVabij["abij"] = (*Vabij)["abij"];
-  PHHPImaginaryTimePropagation phhpPropagation(beta / samples);
-  Transform<>(std::function<void(double, double, double &)>(phhpPropagation)) (
+  HPPHImaginaryTimePropagation hpphPropagation(beta / samples);
+  Transform<>(std::function<void(double, double, double &)>(hpphPropagation)) (
     (*Dai)["ai"], (*Dai)["bj"], PVabij["abij"]
+  );
 
   // II.C.1 The linear term with V contracted on the right side
   (*nextTabij)["abij"] +=
-    (*thisTabij)["acik"] * Na["c"] * Ni["k"] * PVabij["cdkl"];
+    (*thisTabij)["acik"] * (*Na)["c"] * (*Ni)["k"] * PVabij["cdkl"];
 
   // II.C.2 the linear term with V contracted on the left side.
   // Note that we need to reverse the order in PVabij and thisTabij
   // since their left side is prepared for contraction or free propagation,
   // respectively.
   (*nextTabij)["abij"] +=
-      PVabij["dali"] * Na["d"] * Ni["l"] * (*thisTabij)["bdjl"];
+      PVabij["dali"] * (*Na)["d"] * (*Ni)["l"] * (*thisTabij)["bdjl"];
 
 
   // III. finally, also propagate the right particle hole pair of the current
@@ -117,23 +115,21 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
 }
 
 
-void DrccdEnergyFromCoulombIntegrals::dryUpdate() {
-  {
-    // Read the DRCCD amplitudes Tabij
-    //DryTensor<> *Tabij(
-    getTensorArgument<double, DryTensor<double>>("DrccdDoublesAmplitudes");
-    //);
+void ThermalDirectRingCoupledClusterDoubles::dryUpdate() {
+  // Read the DRCCD amplitudes Tabij
+  //DryTensor<> *Tabij(
+  getTensorArgument<double, DryTensor<double>>("DrccdDoublesAmplitudes");
+  //);
 
-    // Read the Coulomb Integrals Vabij
-    DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
-  
-    // Allocate Tensors for T2 amplitudes
-    DryTensor<> Rabij(*Vabij);
+  // Read the Coulomb Integrals Vabij
+  DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
 
-    // Define intermediates
-    DryTensor<> Cabij(*Vabij);
+  // Allocate Tensors for T2 amplitudes
+  DryTensor<> Rabij(*Vabij);
 
-    DryTensor<> Dabij(*Vabij);
-  }
+  // Define intermediates
+  DryTensor<> Cabij(*Vabij);
+
+  DryTensor<> Dabij(*Vabij);
 }
 

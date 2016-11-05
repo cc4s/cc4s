@@ -19,16 +19,20 @@ namespace cc4s {
     );
     virtual ~ThermalDirectRingCoupledClusterDoubles();
 
+    virtual std::string getAbbreviation() {
+      return "Drccd";
+    }
+
   protected:
     /**
      * \brief Implements the iterate method with the DRCCD iteration.
      * \param[in] i Iteration number
      */
-    virtual void iterate(int i);
+    virtual void update(int n);
     /**
      * \brief Implements the dry iterate method with the DRCCD iteration.
      */
-    virtual void dryIterate();
+    virtual void dryUpdate();
   };
 }
 
