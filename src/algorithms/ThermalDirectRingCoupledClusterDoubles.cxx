@@ -55,19 +55,10 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
 */
   // II.A.1 The Coulomb contribution
   LOG(1, abbreviation) << "Coulomb contribution to amplitudes" << std::endl;
-  (*nextTabij)["abij"] = (1.0 / samples) * PVabij["abij"];
-
-  PVabij["abij"] *= (*Ni)["i"];
-  PVabij["abij"] *= (*Ni)["j"];
-  PVabij["abij"] *= (*Na)["a"];
-  PVabij["abij"] *= (*Na)["b"];
-
-  // I.A. close the current amplitudes and compute the contributions
-  // to the updated energy
-  // Note that contractions need to involve the thermal occupancies
-  LOG(1, abbreviation) << "Amplitude contribution to energy" << std::endl;
-  (*directEnergy)[""] += (2.0 / beta) * (*thisTabij)["abij"] * PVabij["abij"];
-  (*exchangeEnergy)[""] += (-1.0 / beta) * (*thisTabij)["abji"] * PVabij["abij"];
+  // and add it to the nextTabij. These are the contributions without an
+  // occurrance of the interaction H_1 within the current interval
+  (*nextTabij)["abij"] = (beta/samples) * PVabij["abij"];
+  (*nextTabij)["abij"] += (*thisTabij)["abij"];
 
 
   // II. calculate all contributions to the next amplitudes having
@@ -80,10 +71,18 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   // II.B The other terms require the current amplitudes where one particle
   // hole pair propgates freely from the start to the end of the interval.
   // Propagate the left pair accordingly.
+/*
+  FreePPHHImaginaryTimePropagation phPropagation(beta / samples);
+  LOG(1, abbreviation) << "Propagating both states of amplitudes" << std::endl;
+  Transform<>(std::function<void(double, double, double &)>(phPropagation)) (
+    (*Dai)["ai"], (*Dai)["bj"], (*nextTabij)["abij"]
+  );
+*/
+
   FreePHImaginaryTimePropagation phPropagation(beta / samples);
   LOG(1, abbreviation) << "Propagating left states of amplitudes" << std::endl;
   Transform<>(std::function<void(double, double &)>(phPropagation)) (
-    (*Dai)["ai"], (*thisTabij)["abij"]
+    (*Dai)["ai"], (*nextTabij)["abij"]
   );
 
 /*
@@ -118,11 +117,20 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
   // amplitudes freely
   LOG(1, abbreviation) << "Propagating right states of amplitudes" << std::endl;
   Transform<>(std::function<void(double, double &)>(phPropagation)) (
-    (*Dai)["bj"], (*thisTabij)["abij"]
+    (*Dai)["bj"], (*nextTabij)["abij"]
   );
-  // and add it to the nextTabij. These are the contributions without an
-  // occurrance of the interaction H_1 within the current interval
-  (*nextTabij)["abij"] += (*thisTabij)["abij"];
+
+  PVabij["abij"] *= (*Ni)["i"];
+  PVabij["abij"] *= (*Ni)["j"];
+  PVabij["abij"] *= (*Na)["a"];
+  PVabij["abij"] *= (*Na)["b"];
+
+  // I.A. close the current amplitudes and compute the contributions
+  // to the updated energy
+  // Note that contractions need to involve the thermal occupancies
+  LOG(1, abbreviation) << "Amplitude contribution to energy" << std::endl;
+  (*directEnergy)[""] += (2.0 / samples) * (*nextTabij)["abij"] * PVabij["abij"];
+  (*exchangeEnergy)[""] += (-1.0 / samples) * (*nextTabij)["abji"] * PVabij["abij"];
 }
 
 
