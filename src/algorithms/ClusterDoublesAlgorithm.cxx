@@ -77,9 +77,11 @@ void ClusterDoublesAlgorithm::run() {
 
   std::stringstream amplitudesName;
   amplitudesName << getAbbreviation() << "DoublesAmplitudes";
-  allocatedTensorArgument(
-    amplitudesName.str(), new Tensor<>(TabijMixer->getNext())
-  );
+  if (isArgumentGiven(amplitudesName.str())) {
+    allocatedTensorArgument(
+      amplitudesName.str(), new Tensor<>(TabijMixer->getNext())
+    );
+  }
 
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";
@@ -152,11 +154,12 @@ void ClusterDoublesAlgorithm::dryIterate() {
 void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   CTF::Tensor<> &Rabij
 ) {
+  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+
   // Build Dabij
   Tensor<> Dabij(false, Rabij);
   Dabij.set_name("Dabij");
-  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
   Dabij["abij"]  = (*epsi)["i"];
   Dabij["abij"] += (*epsi)["j"];
   Dabij["abij"] -= (*epsa)["a"];
@@ -168,6 +171,23 @@ void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   // Divide Rabij/Dabij to get Tabij
   Bivar_Function<> fDivide(&divide<double>);
   Rabij.contract(1.0, Rabij,"abij", Dabij,"abij", 0.0,"abij", fDivide);
+
+/*
+  // TODO: test why bivariate transform doesn't work
+  Matrix<> Dai(epsa->lens[0], epsi->lens[0], *epsi->wrld);
+  Dai.set_name("Dai");
+  Dai["ai"]  = (*epsi)["i"];
+  Dai["ai"] -= (*epsa)["a"];
+  Transform<double, double, double>(
+    std::function<void(double, double, double &)>(
+      [](double Dai, double Dbj, double &R) {
+        R /= Dai + Dbj;
+      }
+    )
+  ) (
+    Dai["ai"], Dai["bj"], Rabij["abij"]
+  );
+*/
 }
 
 void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(

@@ -1,3 +1,5 @@
+// FIXME: bug at T with overlap but where not all occupied states are virtuals.
+// i.e.: 0<=i<7 and 1<=a<30 in Mp2
 #include <algorithms/ThermalHolesAndParticles.hpp>
 #include <util/DryTensor.hpp>
 #include <util/Log.hpp>

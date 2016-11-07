@@ -1,0 +1,73 @@
+%% compute insulator drccd first at zero temperature %%
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
+DrccdEnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (maxIterations 32)
+] [
+  DrccdEnergy
+].
+
+TensorWriter [(Data DrccdEnergy)] [].
+
+
+%% now, determine thermal hole and particle states at low temperature %%
+%% must be equivalent to zero temperature states, except reordering %%
+ThermalHolesAndParticles [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (Temperature 2.6)
+  (Electrons 8)
+] [
+  ChemicalPotential
+  ThermalHoleEigenEnergies ThermalParticleEigenEnergies
+  ThermalHoleOccupancies ThermalParticleOccupancies
+].
+
+TensorWriter [(Data ThermalHoleEigenEnergies)] [].
+TensorWriter [(Data ThermalParticleEigenEnergies)] [].
+TensorWriter [(Data ThermalHoleOccupancies)] [].
+TensorWriter [(Data ThermalParticleOccupancies)] [].
+
+% thermal holes and particles require a larger Vabij
+CoulombIntegralsFromVertex [
+  CoulombVertex
+  (HoleEigenEnergies ThermalHoleEigenEnergies)
+  (ParticleEigenEnergies ThermalParticleEigenEnergies)
+] [
+  (PPHHCoulombIntegrals ThermalPPHHCoulombIntegrals)
+].
+
+% compare to MP2
+ThermalMp2EnergyFromCoulombIntegrals [
+  ThermalPPHHCoulombIntegrals
+  ThermalHoleEigenEnergies ThermalParticleEigenEnergies
+  ThermalHoleOccupancies ThermalParticleOccupancies
+  (Temperature 2.6)
+] [
+  ThermalMp2Energy
+].
+
+TensorWriter [(Data ThermalMp2Energy)] [].
+
+ThermalDirectRingCoupledClusterDoubles [
+  ThermalPPHHCoulombIntegrals
+  ThermalHoleEigenEnergies ThermalParticleEigenEnergies
+  ThermalHoleOccupancies ThermalParticleOccupancies
+  (Temperature 2.6)
+  (samples 1024)
+] [
+  ThermalDrccdEnergy
+].
+
+TensorWriter [(Data ThermalDrccdEnergy)] [].
