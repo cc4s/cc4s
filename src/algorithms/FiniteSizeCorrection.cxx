@@ -54,7 +54,6 @@ class FiniteSizeCorrection::Momentum {
       //if (v[3] < 0.) u= v*(-1.);
       for (int d(0); d < n; ++d) {
         if (u.approximately(m[d].v)) {
-         // LOG(1,"Locating") << "d= " << d << " v= " << m[d].v << ", " << std::endl;
           return m[d].s;
         }
       }  
@@ -105,6 +104,7 @@ void FiniteSizeCorrection::calculateStructureFactor() {
     1, realInvSqrtVG.lens, realInvSqrtVG.sym, 
      *realInvSqrtVG.wrld, "invSqrtVG"
   );
+
 //Starting a new space whose memory will be erased after operation
     //Define operation inverse square root
     class InvSqrt {
@@ -113,6 +113,7 @@ void FiniteSizeCorrection::calculateStructureFactor() {
 		return std::sqrt(1.0 / x);
 	}
     };
+
   //Get the inverted square root of VG
   InvSqrt invSqrt;
   Univar_Function<> fInvSqrt(invSqrt);
@@ -139,6 +140,7 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   NG = CGai.lens[0];
   CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
   (*SG)["G"] =   2.0 * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
+
 // BUG: the following line yields wrong sign:
 //  (*SG)["G"] -= 1.0 * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
   (*SG)["G"] += -1.0 * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
@@ -146,8 +148,6 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
   //Get EMp2
-  //Scalar<complex> EMp2(*CGai.wrld);
-  //EMp2[""] = (*SG)["G"] * VG["G"];
   Scalar<> EMp2(*CGai.wrld);
   EMp2[""] = (*realSG)["G"] * (*realVG)["G"];
   double DEMp2(std::real(EMp2.get_val()));
@@ -166,11 +166,10 @@ void FiniteSizeCorrection::constructFibonacciGrid(double R) {
   //Returns a vector of vectors: {x,y,z}
   //The N should be fixed and R should be a vector which is selected by another 
   //function which determines the R's
-  //N = 128;
- // double R = 0.2;
+  //N = 128; N is the number of points on the sphere, defined in .cxx file
   double inc = M_PI * (3 - std::sqrt(5));
   fibonacciGrid = new Momentum[N];
-  //std::vector<std::vector<double>> fibonacciGrid(N, std::vector<double>(3));
+
   for (int k(0); k < N; ++k) {
     double z((2.0*k+1)/N - 1.0);
     double r(R * std::sqrt(1.0 - z*z));
@@ -178,47 +177,30 @@ void FiniteSizeCorrection::constructFibonacciGrid(double R) {
     fibonacciGrid[k].v[0] = r * std::cos(phi);
     fibonacciGrid[k].v[1] = r * std::sin(phi);
     fibonacciGrid[k].v[2] = R * z;
-    //LOG(1, "FibonacciGrid") << z << "; " << fibonacciGrid[k] << std::endl;
   }
-//  LOG(1, "FibonacciGrid") << fibonacciGrid[0].approximately(fibonacciGrid[1]) << std::endl;
-//  LOG(1, "FibonacciGrid") << fibonacciGrid[1].approximately(fibonacciGrid[1]) << std::endl;
 }
 
 void FiniteSizeCorrection::interpolation3D() {
   Tensor<> *momenta(getTensorArgument<>("Momenta"));
   cc4s::Vector<> *regularGrid(new cc4s::Vector<>[NG]);
-// or alternatively:
-//  std::vector<cc4s::Vector<>> regularGrid(NG);
   momenta->read_all(&(regularGrid[0][0]));
   momentumGrid = new Momentum[2*NG];
   for (int g(0); g<NG; ++g) {
-//    LOG(1,"reg") << "g= " << g << "v= " << regularGrid[g] << std::endl;
     momentumGrid[g] = Momentum(regularGrid[g], structureFactors[g], VofG[g]);
     momentumGrid[g+NG] = Momentum(regularGrid[g]*(-1.), structureFactors[g], VofG[g]);
   }
 
-  //test sort by v
-  //std::sort(momentumGrid, &momentumGrid[NG], Momentum::sortbyv);
-  ////
-  //for (int g(0); g<NG; ++g) {
-  //  LOG(1, "Sortedbyv")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
-  //  << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
-  //}
   //sort according to vector length. 
   
   std::sort(momentumGrid, &momentumGrid[2*NG], Momentum::sortbyl);
   
-  //for (int g(0); g<2*NG; ++g) {
-  //  LOG(1, "Sortedbyl")  << "momentumGrid[" << g << "]=" << momentumGrid[g].v 
-  //  << ",l " << momentumGrid[g].l << ", " << momentumGrid[g].s << std::endl;
-  //}
 
   //get the 3 unit vectors;
   cc4s::Vector<> a(momentumGrid[2].v);
   //GC is the shortes vector.
   GC = a.length();
   LOG(1, "GridSearch") << "b1=#2" << std::endl;
-  //the 0th element is 0, avoid it.
+  //the 0th and 1st elements are 0, avoid it.
   int j=3;
   //a and b should not be parallel;
   while ((a.cross(momentumGrid[j].v)).length() < 1e-8) ++j;
@@ -247,19 +229,8 @@ void FiniteSizeCorrection::interpolation3D() {
     momentumGrid[d].v[0] = (abs(x) < 1e-8) ? 0 : x;
     momentumGrid[d].v[1] = (abs(y) < 1e-8) ? 0 : y;
     momentumGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
-  //  LOG(1, "Transformed") << "d= " << d << " v= " << momentumGrid[d].v << std::endl;
   }
-  //for (int d(0); d<NG; ++d){
-  //  LOG(1, "Locate")  << momentumGrid[d].locate(momentumGrid, NG) 
-  //    << " momentumGrid["<< d << "]" << momentumGrid[d].s << std::endl;
-  //}
  
-  //sort momentumGrid w.r.t. x, y, z in order to find the SG
-  //std::sort(momentumGrid, &momentumGrid[2*NG], Momentum::sortbyv);
-  //for (int d(0); d<2*NG; ++d){
-  //  LOG(1, "Sortbyv")  << "momentumGrid[" << d << "]=" << momentumGrid[d].v 
-  //  << ",l " << momentumGrid[d].l << ", " << momentumGrid[d].s << std::endl;
-  //}
   //Determine the radii at which to construct the fibonacciGrids.
   std::sort(regularGrid, &regularGrid[NG], Vector<double,3>::sortByLength);
   numBins=1;
@@ -276,9 +247,6 @@ void FiniteSizeCorrection::interpolation3D() {
     if (abs(regularGrid[d].length()-regularGrid[d-1].length()) < 1e-3) 
       continue;
     constructFibonacciGrid(regularGrid[d].length());
-    //double r = ((double) rand() / (RAND_MAX))/10.;
-    //LOG(1, "random") << r << std::endl;
-    //constructFibonacciGrid(r);
     for (int g(0); g<N; ++g){
       x = T[0].dot(fibonacciGrid[g].v);
       y = T[1].dot(fibonacciGrid[g].v);
@@ -286,9 +254,8 @@ void FiniteSizeCorrection::interpolation3D() {
       fibonacciGrid[g].v[0] = (abs(x) < 1e-8) ? 0 : x;
       fibonacciGrid[g].v[1] = (abs(y) < 1e-8) ? 0 : y;
       fibonacciGrid[g].v[2] = (abs(z) < 1e-8) ? 0 : z;
-      //LOG(1, "Transformed")  << "fibonacciGrid[" << d << "]=" << fibonacciGrid[d].v 
-      //<< ",l " << fibonacciGrid[d].l << ", " << fibonacciGrid[d].s << std::endl;
     }
+
     //Trilinear interpolation on each point
     Momentum vertex[8];
     double average=0.;
@@ -323,10 +290,12 @@ void FiniteSizeCorrection::interpolation3D() {
       vertex[7].v[0] = xmax;
       vertex[7].v[1] = ymax;
       vertex[7].v[2] = zmax;
+
       double x[3] = {
         fibonacciGrid[t].v[0]-xmin, fibonacciGrid[t].v[1]-ymin,
         fibonacciGrid[t].v[2]-zmin
                     };
+
       double v[8] = {
         vertex[0].locate(momentumGrid,2*NG),vertex[1].locate(momentumGrid,2*NG),
         vertex[2].locate(momentumGrid,2*NG),vertex[3].locate(momentumGrid,2*NG),
@@ -336,8 +305,6 @@ void FiniteSizeCorrection::interpolation3D() {
       
       cc4s::Inter3D<double> intp;
       fibonacciGrid[t].s = intp.Trilinear(x,v);
-      //LOG(1, "linear") << fibonacciGrid[t].s << " v="
-      //  << fibonacciGrid[t].v << std::endl;
       average += fibonacciGrid[t].s;
     }
     average = average / N; 
@@ -345,8 +312,6 @@ void FiniteSizeCorrection::interpolation3D() {
     lengthG[numBins] =  regularGrid[d].length();
     numBins++;
     
-    //LOG(1, "Average") << "Radius= " << r<< " average=" <<
-    //  average << std::endl;
   }  
 }
 
@@ -366,7 +331,6 @@ double FiniteSizeCorrection::simpson(
   double x, double h
 ){
   return (SGxVG(Int1d, x) + 4*SGxVG(Int1d, x+h/2.) + SGxVG(Int1d, x+h))/6.;
-  //return (x*x + 4*(x+h/2.)*(x+h/2.) + (x+h)*(x+h))/6.;
 }
 
 double FiniteSizeCorrection::SGxVG(
