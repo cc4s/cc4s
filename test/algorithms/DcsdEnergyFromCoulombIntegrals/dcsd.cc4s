@@ -24,8 +24,7 @@ DcsdEnergyFromCoulombIntegrals [
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
-  % Sets maximum iterations. Default is 16.
-  (maxIterations 64)
+  (maxIterations 32)
 ] [
   (DcsdEnergy DcsdEnergy) 
   (DcsdSinglesAmplitudes DcsdSinglesAmplitudes)
@@ -33,3 +32,57 @@ DcsdEnergyFromCoulombIntegrals [
 ].
 
 TensorWriter [(Data DcsdEnergy)] [].
+
+DcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 32)
+  (integralsSliceSize 13)
+] [
+  (DcsdEnergy DcsdEnergySlice)
+  (DcsdSinglesAmplitudes DcsdSinglesAmplitudesSlice)
+  (DcsdDoublesAmplitudes DcsdDoublesAmplitudesSlice)
+].
+
+TensorWriter [(Data DcsdEnergySlice)] [].
+
+CoulombVertexDecomposition [
+  CoulombVertex
+  % Set the rank or the rankFactor (relative to NG) of
+  % the decomposed tensor and the number of iterations.
+  % If both are given, rank is taken into account.
+  (rank 99)
+  (rankFactor 3.0)
+  (maxIterations 64)
+  (mixer "LinearMixer")
+  (mixingRatio 0.8)
+] [
+  FactorOrbitals CoulombFactors
+  % Returns (if given) the Coulomb Vertex from the decomposed tensors.
+  ComposedCoulombVertex
+].
+
+DcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  FactorOrbitals CoulombFactors
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 32)
+  (integralsSliceSize 13)
+  (factorsSliceSize 33)
+% (mixer "LinearMixer")
+% (mixingRatio 1.5)
+] [
+  (DcsdEnergy DcsdEnergyFactors)
+  (DcsdSinglesAmplitudes DcsdSinglesAmplitudesFactors)
+  (DcsdDoublesAmplitudes DcsdDoublesAmplitudesFactors)
+].
+
+TensorWriter [(Data DcsdEnergyFactors)] [].

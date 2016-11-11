@@ -1,4 +1,4 @@
-CONFIG=icc
+CONFIG=gxx
 
 include config.${CONFIG}
 include Libraries

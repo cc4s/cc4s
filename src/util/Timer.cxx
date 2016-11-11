@@ -1,7 +1,5 @@
 #include <util/Timer.hpp>
 
-#include <ctime>
-
 using namespace cc4s;
 
 /**
@@ -10,8 +8,7 @@ using namespace cc4s;
  * written to upon destruction of the object marking the end of the
  * measurement.
  */
-Timer::Timer(double *seconds_): seconds(seconds_) {
-  clock_gettime(CLOCK_REALTIME, &start);
+Timer::Timer(Time *time_): time(time_), start(Time::getCurrentRealTime()) {
 }
 
 /**
@@ -20,7 +17,6 @@ Timer::Timer(double *seconds_): seconds(seconds_) {
  * construction of the timer object.
  */
 Timer::~Timer() {
-  timespec end;
-  clock_gettime(CLOCK_REALTIME, &end);
-  *seconds = end.tv_sec-start.tv_sec + (end.tv_nsec-start.tv_nsec) / 1e9;
+  *time = Time::getCurrentRealTime();
+  *time -= start;
 }

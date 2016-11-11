@@ -34,6 +34,10 @@ namespace cc4s {
      */
     int64_t rank;
 
+    static int64_t constexpr DEFAULT_RANK = -1;
+
+    static double constexpr DEFAULT_RANK_FACTOR = 2.0;
+
     /**
      * \brief The Frobenius norm of the difference between
      * \f$\Gamma^q_{rG}\f$ and its decomposition.
@@ -67,7 +71,7 @@ namespace cc4s {
     /**
      * \brief The fit \f${\Pi^\ast}^{qR}\Pi_{rR}\Lambda_{GR}\f$.
      */
-    CTF::Tensor<complex> *Gamma0Gqr;
+    CTF::Tensor<complex> *composedGammaGqr;
     /**
      * \brief The conjugated factor orbitals
      * \f${\Pi^\ast}^{qR} = (\Pi_{qR})^\ast\f$.
@@ -112,7 +116,7 @@ namespace cc4s {
       DryTensor<complex> *GammaGqr,
       DryTensor<complex> *PiqR, DryTensor<complex> *PirR,
       DryTensor<complex> *LambdaGR,
-      DryTensor<complex> *Gamma0Gqr
+      DryTensor<complex> *composedGammaGqr
     );
     /**
      * \brief Normalizes the given factor orbitals, such that

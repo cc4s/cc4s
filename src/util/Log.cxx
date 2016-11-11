@@ -11,20 +11,23 @@ LogStream::LogStream(
   std::string const &indent_
 ):
   std::ostream(&logBuffer),
-  logFile(logFileName.c_str()),
+  logFile(logFileName.c_str(), std::ofstream::out | std::ofstream::trunc),
   logBuffer(logFile.rdbuf(), std::cout.rdbuf()),
-  logLevel(logLevel_), indent(indent_)
+  logLevel(logLevel_),
+  indent(indent_),
+  startTime(Time::getCurrentRealTime())
 {
 }
 
 std::ostream &LogStream::prepare(
   int const rank,
-  std::string const &fileName,
+  std::string const &sourceFileName,
   int const level,
   std::string const &category
 ) {
-  // TODO: add time here
-  logFile << rank << " " << level << " ";
+  Time time(Time::getCurrentRealTime());
+  time -= startTime;
+  logFile << time << " ";
   std::ostream *log(&logFile);
   if (logLevel >= level) {
     for (int i(0); i < level; ++i) {
@@ -34,7 +37,7 @@ std::ostream &LogStream::prepare(
     log = this;
   }
   if (category == "root") logFile << "root: ";
-  else (*log) << (category.length() > 0 ? category : fileName) << ": ";
+  else (*log) << (category.length() > 0 ? category : sourceFileName) << ": ";
   return *log;
 }
 

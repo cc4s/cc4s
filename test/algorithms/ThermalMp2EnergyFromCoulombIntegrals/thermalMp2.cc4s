@@ -1,0 +1,58 @@
+%% compute insulator MP2 first at zero temperature %%
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
+Mp2EnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+] [
+  Mp2Energy
+].
+
+TensorWriter [(Data Mp2Energy)] [].
+
+%% now, determine thermal hole and particle states at low temperature %%
+%% must be equivalent to zero temperature states, except reordering %%
+ThermalHolesAndParticles [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (Temperature 28)
+  (Electrons 8)
+] [
+  ChemicalPotential
+  ThermalHoleEigenEnergies ThermalParticleEigenEnergies
+  ThermalHoleOccupancies ThermalParticleOccupancies
+].
+
+TensorWriter [(Data ThermalHoleEigenEnergies)] [].
+TensorWriter [(Data ThermalParticleEigenEnergies)] [].
+TensorWriter [(Data ThermalHoleOccupancies)] [].
+TensorWriter [(Data ThermalParticleOccupancies)] [].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex
+  (HoleEigenEnergies ThermalHoleEigenEnergies)
+  (ParticleEigenEnergies ThermalParticleEigenEnergies)
+] [
+  (PPHHCoulombIntegrals ThermalPPHHCoulombIntegrals)
+].
+
+ThermalMp2EnergyFromCoulombIntegrals [
+  ThermalPPHHCoulombIntegrals
+  ThermalHoleEigenEnergies ThermalParticleEigenEnergies
+  ThermalHoleOccupancies ThermalParticleOccupancies
+  (Temperature 28)
+] [
+  ThermalMp2Energy
+].
+
+TensorWriter [(Data ThermalMp2Energy)] [].
+
+%% assert Mp2Energy==ThermalMp2Energy

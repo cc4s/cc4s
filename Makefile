@@ -1,6 +1,6 @@
 # default configuration, override with
 #   make all CONFIG=(icc|gcc)
-CONFIG=icc
+CONFIG=gxx
 
 include config.${CONFIG}
 include Objects
@@ -16,13 +16,16 @@ clean:
 # primary target
 all: build/${CONFIG}/bin/${TARGET}
 
-.PHONY: test
+.PHONY: test wiki
 test:
 	bash test/test.sh -c $(CONFIG)
 
 # generate documentation
 doc:
 	doxygen
+
+wiki:
+	bash utils/extract.sh -R -d wiki/dist -b wiki/build -p src test.wiki
 
 # copy binary to installation directory
 install: build/${CONFIG}/bin/${TARGET}
@@ -40,7 +43,7 @@ COMPILER_VERSION:=$(shell ${CXX} --version | head -n 1)
 
 # add build environment specifics to INCLUDE and to OPTIONS
 INCLUDE+=-Isrc
-OPTIONS+= -std=c++0x -Wall -fmax-errors=3 -g \
+OPTIONS+= -std=c++0x -Wall -fmax-errors=3 \
 -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
 "-DCC4S_DATE=\"${DATE}\"" \

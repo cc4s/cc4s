@@ -1,0 +1,42 @@
+%ParticleHoleCoulombVertexReader [
+%  (file "../../resources/ParticleHoleCoulombVertex.bin")
+%] [
+%  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%].
+
+%ParticleHoleCoulombIntegrals [
+%  ParticleHoleCoulombVertex
+%] [
+%  PPHHCoulombIntegrals
+%].
+
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
+% test whether it can be recomputed
+Delete [(Data PPHHCoulombIntegrals)] [].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
+Delete [(Data CoulombVertex)] [].
+
+Mp2EnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+] [
+  Mp2Energy
+].
+
+TensorWriter [(Data Mp2Energy)] [].
