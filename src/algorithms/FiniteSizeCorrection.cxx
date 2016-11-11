@@ -372,7 +372,7 @@ double FiniteSizeCorrection::simpson(
 double FiniteSizeCorrection::SGxVG(
   cc4s::Inter1D<double> Int1d, double x
 ){
-  return (x > 0. && x<GC) ? (cos(x/GC*M_PI)+1)*1./2/x/x*Int1d.getValue(x) : 0.;
+  return (x > 0. && x<GC) ? (cos(x/GC*M_PI)+1)*1./2/x/x*Int1d.getValue(x)*x*x : 0.;
 }
 
 void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
@@ -392,8 +392,9 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   for (int i(0); i<numBins; i++){
     LOG(1, "SGTest") << lengthG[i] << " " << aveSG[i] << std::endl;
   }
-  //double volume = 169.41;
-  double r1 = integrate(Int1d, 0.0, GC, 1000)/36.96039604;
+  int kpoints(getIntegerArgument("kpoints"));
+  double volume(getRealArgument("volume"));
+  double r1 = integrate(Int1d, 0.0, GC, 1000)/36.96039604*volume*kpt*4*M_PI;
   double sumSGVG(0.);
   double sumSGVG1(0.);
   for (int d(0); d < NG; ++d){
