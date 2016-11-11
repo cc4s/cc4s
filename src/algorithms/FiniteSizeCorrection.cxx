@@ -358,7 +358,7 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   }
   int kpoints(getIntegerArgument("kpoints"));
   double volume(getRealArgument("volume"));
-  double r1 = integrate(Int1d, 0.0, GC, 1000)/36.96039604*volume*kpt*4*M_PI;
+  double r1 = integrate(Int1d, 0.0, GC, 1000)/36.96039604*volume*kpoints*4*M_PI;
   double sumSGVG(0.);
   double sumSGVG1(0.);
   for (int d(0); d < NG; ++d){
