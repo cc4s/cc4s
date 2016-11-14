@@ -157,15 +157,15 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
     int vo[] = { Nv, No };
     std::stringstream doublesAmplitudesName;
     doublesAmplitudesName << getAbbreviation() << "DoublesAmplitudes";
-    DryTensor<> Tabij(4, vvoo, syms);
+    DryTensor<> Tabij(4, vvoo, syms, SOURCE_LOCATION);
     allocatedTensorArgument(doublesAmplitudesName.str(), 
-                            new DryTensor<>(Tabij));
+                            new DryTensor<>(Tabij, SOURCE_LOCATION));
 
     std::stringstream singlesAmplitudesName;
     singlesAmplitudesName << getAbbreviation() << "SinglesAmplitudes";
-    DryTensor<> Tai(2, vo, syms);
+    DryTensor<> Tai(2, vo, syms, SOURCE_LOCATION);
     allocatedTensorArgument(singlesAmplitudesName.str(), 
-                            new DryTensor<>(Tai));
+                            new DryTensor<>(Tai, SOURCE_LOCATION));
   }
 
   // Allocate the energy e
@@ -204,7 +204,7 @@ void ClusterSinglesDoublesAlgorithm::drySinglesAmplitudesFromResiduum(
   cc4s::DryTensor<> &Rai
 ) {
   // Build Dai
-  DryTensor<> Dai(Rai);
+  DryTensor<> Dai(Rai, SOURCE_LOCATION);
 }
 
 Tensor<> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(int a, 
@@ -304,37 +304,37 @@ DryTensor<> *ClusterSinglesDoublesAlgorithm::drySliceCoupledCoulombIntegrals(int
   int GabLens[]   = {NG,Nv,Nv};
   int GijLens[]   = {NG,No,No};
 
-  DryTensor<complex> GammaGai(3, GaiLens, syms);
-  DryTensor<complex> GammaGab(3, GabLens, syms);
-  DryTensor<complex> GammaGij(3, GijLens, syms);
+  DryTensor<complex> GammaGai(3, GaiLens, syms, SOURCE_LOCATION);
+  DryTensor<complex> GammaGab(3, GabLens, syms, SOURCE_LOCATION);
+  DryTensor<complex> GammaGij(3, GijLens, syms, SOURCE_LOCATION);
 
   // Split GammaGab,GammaGai into real and imaginary parts
-  DryTensor<> realGammaGai(3, GaiLens, syms);
-  DryTensor<> imagGammaGai(3, GaiLens, syms);
+  DryTensor<> realGammaGai(3, GaiLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGai(3, GaiLens, syms, SOURCE_LOCATION);
 
-  DryTensor<> realGammaGab(3, GabLens, syms);
-  DryTensor<> imagGammaGab(3, GabLens, syms);
+  DryTensor<> realGammaGab(3, GabLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGab(3, GabLens, syms, SOURCE_LOCATION);
 
-  DryTensor<> realGammaGij(3, GijLens, syms);
-  DryTensor<> imagGammaGij(3, GijLens, syms);
+  DryTensor<> realGammaGij(3, GijLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGij(3, GijLens, syms, SOURCE_LOCATION);
   
   // Slice the respective parts from the Coulomb vertex
   int leftGammaLens[]  = { NG, integralsSliceSize, Nv };
   int rightGammaLens[] = { NG, integralsSliceSize, Nv };
-  DryTensor<complex> leftGamma (3, leftGammaLens , syms);
-  DryTensor<complex> rightGamma(3, rightGammaLens, syms);
+  DryTensor<complex> leftGamma (3, leftGammaLens , syms, SOURCE_LOCATION);
+  DryTensor<complex> rightGamma(3, rightGammaLens, syms, SOURCE_LOCATION);
 
   // Split into real and imaginary parts
-  DryTensor<> realLeftGamma(3, leftGammaLens, syms);
-  DryTensor<> imagLeftGamma(3, leftGammaLens, syms);
+  DryTensor<> realLeftGamma(3, leftGammaLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagLeftGamma(3, leftGammaLens, syms, SOURCE_LOCATION);
 
-  DryTensor<> realRightGamma(3, rightGammaLens, syms);
-  DryTensor<> imagRightGamma(3, rightGammaLens, syms);
+  DryTensor<> realRightGamma(3, rightGammaLens, syms, SOURCE_LOCATION);
+  DryTensor<> imagRightGamma(3, rightGammaLens, syms, SOURCE_LOCATION);
 
   // Allocate sliced Coulomb integrals
   int lens[] = {leftGamma.lens[1], rightGamma.lens[1], 
                 leftGamma.lens[2], rightGamma.lens[2]};
-  DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms));
+  DryTensor<> *Vxycd(new DryTensor<>(4, lens, syms, SOURCE_LOCATION));
 
   return Vxycd;
 }
@@ -617,54 +617,54 @@ DryTensor<> *ClusterSinglesDoublesAlgorithm::drySliceAmplitudesFromCoupledCoulom
   int syms[] = {               NS,               NS, NS, NS };
 
   // Read the doubles amplitudes Tabij
-  DryTensor<> Tabij(4, vvoo, syms);
-  DryTensor<>   Tai(2,   vo, syms);
+  DryTensor<> Tabij(4, vvoo, syms, SOURCE_LOCATION);
+  DryTensor<>   Tai(2,   vo, syms, SOURCE_LOCATION);
 
-  DryTensor<> Iabij(4, vvoo, syms);
+  DryTensor<> Iabij(4, vvoo, syms, SOURCE_LOCATION);
 
-  DryTensor<complex> VRS(2, RR, syms);
+  DryTensor<complex> VRS(2, RR, syms, SOURCE_LOCATION);
 
-  DryTensor<> realXRaij(4, Rvoo, syms);
-  DryTensor<> imagXRaij(4, Rvoo, syms);
+  DryTensor<> realXRaij(4, Rvoo, syms, SOURCE_LOCATION);
+  DryTensor<> imagXRaij(4, Rvoo, syms, SOURCE_LOCATION);
 
   // Allocate PiaR
-  DryTensor<complex> PiaR(2, vR, syms);
+  DryTensor<complex> PiaR(2, vR, syms, SOURCE_LOCATION);
 
   // Slice the respective parts from PiaR
-  DryTensor<complex>  leftPiaR(2, vR, syms);
-  DryTensor<complex> rightPiaR(2, vR, syms);
+  DryTensor<complex>  leftPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<complex> rightPiaR(2, vR, syms, SOURCE_LOCATION);
 
   // Split left and right PiaR into real and imaginary parts
-  DryTensor<>  realLeftPiaR(2, vR, syms);
-  DryTensor<>  imagLeftPiaR(2, vR, syms);
-  DryTensor<> realRightPiaR(2, vR, syms);
-  DryTensor<> imagRightPiaR(2, vR, syms);
+  DryTensor<>  realLeftPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<>  imagLeftPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<> realRightPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<> imagRightPiaR(2, vR, syms, SOURCE_LOCATION);
 
   // Slice the respective parts from LambdaGR
-  DryTensor<complex>  leftLambdaGR(2, GR, syms);
-  DryTensor<complex> rightLambdaGR(2, GR, syms);
+  DryTensor<complex>  leftLambdaGR(2, GR, syms, SOURCE_LOCATION);
+  DryTensor<complex> rightLambdaGR(2, GR, syms, SOURCE_LOCATION);
 
   // Allocate dressed PiaR
-  DryTensor<complex> dressedPiaR(2, vR, syms);
+  DryTensor<complex> dressedPiaR(2, vR, syms, SOURCE_LOCATION);
 
   // Slice the respective parts from dressed PiaR
-  DryTensor<complex>  leftDressedPiaR(2, vR, syms);
-  DryTensor<complex> rightDressedPiaR(2, vR, syms);
+  DryTensor<complex>  leftDressedPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<complex> rightDressedPiaR(2, vR, syms, SOURCE_LOCATION);
 
   // Split left and right PiaR into real and imaginary parts
-  DryTensor<>  realLeftDressedPiaR(2, vR, syms);
-  DryTensor<>  imagLeftDressedPiaR(2, vR, syms);
+  DryTensor<>  realLeftDressedPiaR(2, vR, syms, SOURCE_LOCATION);
+  DryTensor<>  imagLeftDressedPiaR(2, vR, syms, SOURCE_LOCATION);
 
   // FIXME: Currently assuming GammaGqr = PirR*PirR*LambdaGR
   //        First Pi not conjugated.
-  DryTensor<complex> XRaij(4, Rvoo, syms);
+  DryTensor<complex> XRaij(4, Rvoo, syms, SOURCE_LOCATION);
 
-  DryTensor<complex> XRSij(4, RRoo, syms);
+  DryTensor<complex> XRSij(4, RRoo, syms, SOURCE_LOCATION);
 
-  DryTensor<complex> conjLeftLambdaGR(leftLambdaGR);
+  DryTensor<complex> conjLeftLambdaGR(leftLambdaGR, SOURCE_LOCATION);
 
   // allocate Tensor for sliced T2 amplitudes
-  DryTensor<> *Fabij(new DryTensor<>(4, vvoo, syms));
+  DryTensor<> *Fabij(new DryTensor<>(4, vvoo, syms, SOURCE_LOCATION));
 
   // return sliced amplitudes
   return Fabij;
