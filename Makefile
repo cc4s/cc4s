@@ -5,6 +5,13 @@ CONFIG=gxx
 include config.${CONFIG}
 include Objects
 
+ifneq ($(IS_CLEANING),TRUE)
+	# include created dependencies
+	# if the makefile is compiling
+	-include ${OBJECTS:.o=.d}
+	-include build/${CONFIG}/obj/${TARGET}.d
+endif
+
 # goals:
 .DEFAULT_GOAL := all
 # define IS_CLEANING when clean triggered
@@ -59,12 +66,6 @@ build/${CONFIG}/obj/%.d: src/%.cxx
 # keep dependency files
 .PRECIOUS: build/${CONFIG}/obj/%.o ${OBJECTS}
 
-ifneq ($(IS_CLEANING),TRUE)
-	# include created dependencies
-	# if the makefile is compiling
-	-include ${OBJECTS:.o=.d}
-	-include build/${CONFIG}/obj/${TARGET}.d
-endif
 
 # compile a object file
 build/${CONFIG}/obj/%.o: build/${CONFIG}/obj/%.d

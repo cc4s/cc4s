@@ -508,38 +508,38 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
     int GaiLens[]   = {NG,Nv,No};
     int GabLens[]   = {NG,Nv,Nv};
 
-    DryTensor<complex> GammaGai(3, GaiLens, syms);
-    DryTensor<complex> GammaGab(3, GabLens, syms);
+    DryTensor<complex> GammaGai(3, GaiLens, syms, SOURCE_LOCATION);
+    DryTensor<complex> GammaGab(3, GabLens, syms, SOURCE_LOCATION);
 
     // Split GammaGab,GammaGai into real and imaginary parts
-    DryTensor<> realGammaGai(3, GaiLens, syms);
-    DryTensor<> imagGammaGai(3, GaiLens, syms);
+    DryTensor<> realGammaGai(3, GaiLens, syms, SOURCE_LOCATION);
+    DryTensor<> imagGammaGai(3, GaiLens, syms, SOURCE_LOCATION);
 
-    DryTensor<> realGammaGab(3, GabLens, syms);
-    DryTensor<> imagGammaGab(3, GabLens, syms);
+    DryTensor<> realGammaGab(3, GabLens, syms, SOURCE_LOCATION);
+    DryTensor<> imagGammaGab(3, GabLens, syms, SOURCE_LOCATION);
 
     // Intermediates used both by T1 and T2
     int vv[] = { Nv, Nv };
-    DryTensor<> Kac(2, vv, syms);
+    DryTensor<> Kac(2, vv, syms, SOURCE_LOCATION);
     int oo[] = { No, No };
-    DryTensor<> Kki(2, oo, syms);
+    DryTensor<> Kki(2, oo, syms, SOURCE_LOCATION);
 
     // Construct intermediate tensor X=T2+T1*T1
-    DryTensor<> Xabij(*Vabij);
+    DryTensor<> Xabij(*Vabij, SOURCE_LOCATION);
 
     {
       // Allocate Tensors for T2 amplitudes
-      DryTensor<> Rabij(*Tabij);
+      DryTensor<> Rabij(*Tabij, SOURCE_LOCATION);
 
       {
         // Intermediates used for T2 amplitudes
-        DryTensor<> Lac(2, vv, syms);
-        DryTensor<> Lki(2, oo, syms);
+        DryTensor<> Lac(2, vv, syms, SOURCE_LOCATION);
+        DryTensor<> Lki(2, oo, syms, SOURCE_LOCATION);
 
-        DryTensor<> Xklij(*Vijkl);
-        DryTensor<> Xakci(*Vaibj);
+        DryTensor<> Xklij(*Vijkl, SOURCE_LOCATION);
+        DryTensor<> Xakci(*Vaibj, SOURCE_LOCATION);
         int voov[] = { Nv, No, No, Nv };
-        DryTensor<> Xakic(4, voov, syms);
+        DryTensor<> Xakic(4, voov, syms, SOURCE_LOCATION);
       }
 
       if (!Vabcd) {
@@ -570,7 +570,7 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
           DryTensor<> *Vxycd(drySliceCoupledCoulombIntegrals(integralsSliceSize));
           int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
           int syms[] = {NS, NS, NS, NS};
-          DryTensor<> Rxyij(4, lens, syms);
+          DryTensor<> Rxyij(4, lens, syms, SOURCE_LOCATION);
         }
       }
 
@@ -579,7 +579,7 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
 
     {
       // Allocate Tensors for T1 amplitudes
-      DryTensor<> Rai(*Tai);
+      DryTensor<> Rai(*Tai, SOURCE_LOCATION);
       dryDoublesAmplitudesFromResiduum(Rai);
     }
 

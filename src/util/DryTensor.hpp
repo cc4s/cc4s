@@ -23,10 +23,10 @@ namespace cc4s {
         extendingResources.push_back(
           ExtendingResource(maxTotalSize, location)
         );
-        LOG(1, "DryMemory") << "extending size=" << size << " at "
+        LOG(2, "DryMemory") << "extending size=" << size << " at "
           << location << std::endl;
       } else {
-        LOG(1, "DryMemory") << "non-extending size=" << size << " at "
+        LOG(2, "DryMemory") << "non-extending size=" << size << " at "
           << location << std::endl;
       }
     }
