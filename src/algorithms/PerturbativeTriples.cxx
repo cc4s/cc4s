@@ -207,12 +207,8 @@ void PerturbativeTriples::dryRun() {
   getTensorArgument<double, DryTensor<double>>("HHHPCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("PPPHCoulombIntegrals");
 
-  DryTensor<> *Tai(
-    getTensorArgument<double, DryTensor<double>>("CcsdSinglesAmplitudes")
-  );
-  DryTensor<> *Tabij(
-    getTensorArgument<double, DryTensor<double>>("CcsdDoublesAmplitudes")
-  );
+  getTensorArgument<double, DryTensor<double>>("CcsdSinglesAmplitudes");
+  getTensorArgument<double, DryTensor<double>>("CcsdDoublesAmplitudes");
 
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
   DryTensor<> *epsi(
