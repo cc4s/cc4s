@@ -1,8 +1,9 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DRY_TENSOR_DEFINED
 #define DRY_TENSOR_DEFINED
 
 #include <util/SourceLocation.hpp>
+#include <util/IndexedDryTensor.hpp>
 #include <util/Log.hpp>
 #include <cstdint>
 #include <vector>
@@ -37,7 +38,7 @@ namespace cc4s {
     static std::vector<ExtendingResource> extendingResources;
   };
 
-  template <typename F=double>
+  template <typename F>
   class DryTensor {
   public:
     /**
@@ -69,6 +70,10 @@ namespace cc4s {
       free();
     }
     virtual void use() {}
+
+    IndexedDryTensor<F> operator[](std::string const &indices) {
+      return IndexedDryTensor<F>(*this, indices);
+    }
 
     int order;
     std::vector<int> lens, syms;

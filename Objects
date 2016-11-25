@@ -32,6 +32,7 @@ build/${CONFIG}/obj/algorithms/GenerateRandomComplexMatrix.o \
 build/${CONFIG}/obj/algorithms/GenerateRandomTensor.o \
 build/${CONFIG}/obj/algorithms/TensorReader.o \
 build/${CONFIG}/obj/algorithms/TensorWriter.o \
+build/${CONFIG}/obj/algorithms/TensorNetwork.o \
 build/${CONFIG}/obj/algorithms/TensorContraction.o \
 build/${CONFIG}/obj/algorithms/TensorSum.o \
 build/${CONFIG}/obj/algorithms/TensorNorm.o \
