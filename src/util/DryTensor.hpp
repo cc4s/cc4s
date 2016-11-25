@@ -71,13 +71,27 @@ namespace cc4s {
     }
     virtual void use() {}
 
+    /**
+     * \brief Specify named indices of this tensor to be used in a
+     * tensor expression. Indexed tensors are atomic types of tensor
+     * expressions.
+     **/
     IndexedDryTensor<F> operator[](std::string const &indices) {
       return IndexedDryTensor<F>(*this, indices);
+    }
+
+
+    void set_name(std::string const &name_) {
+      name = name_;
+    }
+    std::string const &get_name() const {
+      return name;
     }
 
     int order;
     std::vector<int> lens, syms;
     SourceLocation location;
+    std::string name;
 
   protected:
     void allocate() {
