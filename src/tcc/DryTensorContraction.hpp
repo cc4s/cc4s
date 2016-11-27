@@ -26,7 +26,7 @@ namespace cc4s {
      * side and another expression on the right hand side.
      **/
     DryTensorContraction(
-      DryTensorContraction<F> *lhs, DryTensorExpression<F> *rhs
+      DryTensorContraction<F> *lhs, IndexedDryTensor<F> *rhs
     ): factors(lhs->factors) {
       factors.push_back(rhs);
       // the factors from the lhs expression are now contained here
@@ -38,7 +38,7 @@ namespace cc4s {
      * side and another expression on the left hand side.
      **/
     DryTensorContraction(
-      DryTensorExpression<F> *lhs, DryTensorContraction<F> *rhs
+      IndexedDryTensor<F> *lhs, DryTensorContraction<F> *rhs
     ): factors(rhs.factors) {
       factors.push_back(lhs);
       // the factors from the rhs expression are now contained here
@@ -46,13 +46,24 @@ namespace cc4s {
       delete rhs;
     }
     /**
+     * \brief Constructor given two indexed tensors.
+     **/
+    DryTensorContraction(
+      IndexedDryTensor<F> *lhs, IndexedDryTensor<F> *rhs
+    ) {
+      factors.push_back(lhs);
+      factors.push_back(rhs);
+    }
+    /**
      * \brief Constructor given two general expressions.
+     * This is currently not supported.
      **/
     DryTensorContraction(
       DryTensorExpression<F> *lhs, DryTensorExpression<F> *rhs
     ) {
-      factors.push_back(lhs);
-      factors.push_back(rhs);
+      static_assert(
+        false, "Only contractions of contractions or tensors supported."
+      );
     }
     virtual ~DryTensorContraction() {
       // subexpressions are dependent entities: delete each factor
@@ -68,33 +79,14 @@ namespace cc4s {
       LOG(0, "TCC") << factors.size() << " tensors contracted" << std::endl;
     }
 
-  protected:
-    std::vector<DryTensorExpression<F> *> factors;
+    std::vector<IndexedDryTensor<F> *> factors;
   };
 
-  template <typename F>
-  DryTensorContraction<F> &operator *(
-    DryTensorContraction<F> &A, DryTensorContraction<F> &B
+  template <typename Lhs, typename Rhs>
+  DryTensorContraction<typename Lhs::FieldType> &operator *(
+    Lhs &A, Rhs &B
   ) {
-    return *new DryTensorContraction<F>(&A, &B);
-  }
-  template <typename F>
-  DryTensorContraction<F> &operator *(
-    DryTensorContraction<F> &A, DryTensorExpression<F> &B
-  ) {
-    return *new DryTensorContraction<F>(&A, &B);
-  }
-  template <typename F>
-  DryTensorContraction<F> &operator *(
-    DryTensorExpression<F> &A, DryTensorContraction<F> &B
-  ) {
-    return *new DryTensorContraction<F>(&A, &B);
-  }
-  template <typename F>
-  DryTensorContraction<F> &operator *(
-    DryTensorExpression<F> &A, DryTensorExpression<F> &B
-  ) {
-    return *new DryTensorContraction<F>(&A, &B);
+    return *new DryTensorContraction<typename Rhs::FieldType>(&A, &B);
   }
 }
 

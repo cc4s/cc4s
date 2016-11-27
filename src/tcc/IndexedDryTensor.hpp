@@ -11,7 +11,7 @@ namespace cc4s {
   class DryTensor;
 
   template <typename F>
-  class IndexedDryTensor: public cc4s::DryTensorExpression<F> {
+  class IndexedDryTensor: public DryTensorExpression<F> {
   public:
     /**
      * \brief Creates an expression with named indices from a stored
@@ -26,7 +26,6 @@ namespace cc4s {
     IndexedDryTensor(
       DryTensor<F> *tensor_, std::string const &indices_
     ): tensor(tensor_), indices(indices_) {
-      // TODO: define index map
     }
     virtual ~IndexedDryTensor() {
     }
@@ -35,26 +34,17 @@ namespace cc4s {
       LOG(0, "TCC") << tensor->get_name() << "[" << indices << "]" << std::endl;
     }
 
-    cc4s::DryTensor<F> &getTensor() const {
-      return *tensor;
-    }
-
-    std::string const &getIndices() const {
-      return indices;
-    }
-
-
     /**
      * \brief Assigns the given right hand side expression to this
      * indexed tensor, returning this indexed tensor as result expression
      * for possible further operations.
      **/
-    DryTensorAssignment<F> &operator =(DryTensorExpression<F> &T) {
-      return *new DryTensorAssignment<F>(this, &T);
+    template <typename Rhs>
+    DryTensorAssignment<typename Rhs::FieldType> &operator =(Rhs &rhs) {
+      return *new DryTensorAssignment<typename Rhs::FieldType>(this, &rhs);
     }
 
-  protected:
-    cc4s::DryTensor<F> *tensor;
+    DryTensor<F> *tensor;
     std::string indices;
   };
 }

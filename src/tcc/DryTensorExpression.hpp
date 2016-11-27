@@ -3,16 +3,10 @@
 #define DRY_TENSOR_EXPRESSION_DEFINED
 
 namespace cc4s {
+  // forward class declaration of interdependent expression types
   template <typename F=double>
-  class DryTensorExpression {
-  public:
-    virtual ~DryTensorExpression() {
-    }
-    virtual void log() const = 0;
-  protected:
-  };
+  class DryTensorExpression;
 
-// forward class declaration of interdependent expression types
   template <typename F=double>
   class IndexedDryTensor;
 
@@ -21,6 +15,23 @@ namespace cc4s {
 
   template <typename F=double>
   class DryTensorAssignment;
+
+  template <typename F>
+  class DryTensorExpression {
+  public:
+    typedef F FieldType;
+    virtual ~DryTensorExpression() {
+    }
+    virtual void log() const = 0;
+
+    template <typename Rhs>
+    DryTensorAssignment<F> &operator =(Rhs &rhs) {
+      static_assert(
+        false, "Only indexed tensors may be used as the left hand side of an assignment."
+      );
+    }
+  protected:
+  };
 }
 
 

@@ -11,6 +11,17 @@ namespace cc4s {
   public:
     DryTensorAssignment(
       IndexedDryTensor<F> *lhs_, DryTensorExpression<F> *rhs_
+    ) {
+      static_assert(
+        false, "Only tensors or contractions may be used as the right hand side of an assignment."
+      );
+    }
+    DryTensorAssignment(
+      IndexedDryTensor<F> *lhs_, IndexedDryTensor<F> *rhs_
+    ): lhs(lhs_), rhs(rhs_) {
+    }
+    DryTensorAssignment(
+      IndexedDryTensor<F> *lhs_, DryTensorContraction<F> *rhs_
     ): lhs(lhs_), rhs(rhs_) {
     }
     virtual ~DryTensorAssignment() {
@@ -21,7 +32,7 @@ namespace cc4s {
       lhs->log();
       LOG(0,"TCC") << "assignment" << std::endl;
     };
-  protected:
+
     IndexedDryTensor<F> *lhs;
     DryTensorExpression<F> *rhs;
   };
