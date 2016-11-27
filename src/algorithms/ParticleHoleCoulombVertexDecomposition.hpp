@@ -5,7 +5,7 @@
 #include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
 #include <math/RegularizedAlternatingLeastSquares.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <ctf.hpp>
 
 namespace cc4s {

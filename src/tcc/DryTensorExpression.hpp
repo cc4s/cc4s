@@ -25,9 +25,9 @@ namespace cc4s {
 
 
 // include all known expression types
-#include <util/IndexedDryTensor.hpp>
-#include <util/DryTensorContraction.hpp>
-#include <util/DryTensorAssignment.hpp>
+#include <tcc/IndexedDryTensor.hpp>
+#include <tcc/DryTensorContraction.hpp>
+#include <tcc/DryTensorAssignment.hpp>
 
 #endif
 

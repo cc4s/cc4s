@@ -2,8 +2,8 @@
 #ifndef DRY_TENSOR_ASSIGNMENT_DEFINED
 #define DRY_TENSOR_ASSIGNMENT_DEFINED
 
-#include <util/DryTensorExpression.hpp>
-#include <util/IndexedDryTensor.hpp>
+#include <tcc/DryTensorExpression.hpp>
+#include <tcc/IndexedDryTensor.hpp>
 
 namespace cc4s {
   template <typename F>

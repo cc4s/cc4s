@@ -3,7 +3,7 @@
 #define DRY_TENSOR_DEFINED
 
 #include <util/SourceLocation.hpp>
-#include <util/IndexedDryTensor.hpp>
+#include <tcc/IndexedDryTensor.hpp>
 #include <util/Log.hpp>
 #include <cstdint>
 #include <vector>

@@ -1,7 +1,7 @@
 #include <algorithms/ClusterDoublesAlgorithm.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>

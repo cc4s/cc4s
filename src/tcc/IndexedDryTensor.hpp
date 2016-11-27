@@ -2,7 +2,7 @@
 #ifndef INDEXED_DRY_TENSOR_DEFINED
 #define INDEXED_DRY_TENSOR_DEFINED
 
-#include <util/DryTensorExpression.hpp>
+#include <tcc/DryTensorExpression.hpp>
 #include <util/Log.hpp>
 #include <string>
 

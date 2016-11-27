@@ -3,7 +3,7 @@
 #define COULOMB_VERTEX_DECOMPOSITION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <math/Complex.hpp>
 #include <math/RegularizedAlternatingLeastSquares.hpp>
 #include <ctf.hpp>

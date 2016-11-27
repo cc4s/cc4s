@@ -1,5 +1,6 @@
 #include <algorithms/TensorNetwork.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
+
 #include <ctf.hpp>
 #include <array>
 

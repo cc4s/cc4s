@@ -3,7 +3,7 @@
 #define REGULARIZED_ALTERNATING_LEAST_SQUARES_DEFINED
 
 #include <math/Complex.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <ctf.hpp>
 

@@ -2,7 +2,7 @@
 #ifndef DRY_TENSOR_CONTRACTION_DEFINED
 #define DRY_TENSOR_CONTRACTION_DEFINED
 
-#include <util/DryTensorExpression.hpp>
+#include <tcc/DryTensorExpression.hpp>
 #include <util/Log.hpp>
 #include <vector>
 
