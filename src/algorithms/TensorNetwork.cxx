@@ -50,8 +50,13 @@ void TensorNetwork::dryRun() {
   );
   LambdaT.set_name("LambdaT");
 
-  T["abij"] = T["cdij"] *
-    (PiT["Sa"] * PiT["Rb"] * (LambdaT["SG"] * Lambda["RG"])) * (Pi["Rd"] * Pi["Sc"]);
+//  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
+
+  DryTensorAssignment<> ladder(
+    T["abij"] = T["cdij"] *
+      PiT["Sa"] * PiT["Rb"] * LambdaT["SF"] * Lambda["RF"] * Pi["Rd"] * Pi["Sc"]
+  );
+  ladder.log();
 }
 
 

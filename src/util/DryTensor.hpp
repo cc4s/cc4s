@@ -76,8 +76,8 @@ namespace cc4s {
      * tensor expression. Indexed tensors are atomic types of tensor
      * expressions.
      **/
-    IndexedDryTensor<F> operator[](std::string const &indices) {
-      return IndexedDryTensor<F>(*this, indices);
+    IndexedDryTensor<F> &operator[](std::string const &indices) {
+      return *new IndexedDryTensor<F>(this, indices);
     }
 
 

@@ -7,45 +7,58 @@
 #include <vector>
 
 namespace cc4s {
-  template <typename F=double>
-  class DryTensorContraction: public cc4s::DryTensorExpression<F> {
+  template <typename F>
+  class DryTensorContraction: public DryTensorExpression<F> {
   public:
     /**
      * \brief Flattening constructor given two contractions.
      **/
     DryTensorContraction(
-      DryTensorContraction<F> const &lhs, DryTensorContraction<F> const &rhs
+      DryTensorContraction<F> *lhs, DryTensorContraction<F> *rhs
     ): factors(lhs.factors) {
-      factors.insert(factors.end(), rhs.factors.begin(), rhs.factors.end());
+      factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
+      // the factors from both lhs and rhs contractions are now contained here
+      lhs->factors.clear(); rhs->factors.clear();
+      delete lhs, rhs;
     }
     /**
      * \brief Flattening constructor given a contraction on the left hand
      * side and another expression on the right hand side.
      **/
     DryTensorContraction(
-      DryTensorContraction<F> const &lhs, DryTensorExpression<F> const &rhs
-    ): factors(lhs.factors) {
-      factors.push_back(&rhs);
+      DryTensorContraction<F> *lhs, DryTensorExpression<F> *rhs
+    ): factors(lhs->factors) {
+      factors.push_back(rhs);
+      // the factors from the lhs expression are now contained here
+      lhs->factors.clear();
+      delete lhs;
     }
     /**
      * \brief Flattening constructor given a contraction on the right hand
      * side and another expression on the left hand side.
      **/
     DryTensorContraction(
-      DryTensorExpression<F> const &lhs, DryTensorContraction<F> const &rhs
+      DryTensorExpression<F> *lhs, DryTensorContraction<F> *rhs
     ): factors(rhs.factors) {
-      factors.push_back(&lhs);
+      factors.push_back(lhs);
+      // the factors from the rhs expression are now contained here
+      rhs->factors.clear();
+      delete rhs;
     }
     /**
      * \brief Constructor given two general expressions.
      **/
     DryTensorContraction(
-      DryTensorExpression<F> const &lhs, DryTensorExpression<F> const &rhs
+      DryTensorExpression<F> *lhs, DryTensorExpression<F> *rhs
     ) {
-      factors.push_back(&lhs);
-      factors.push_back(&rhs);
+      factors.push_back(lhs);
+      factors.push_back(rhs);
     }
     virtual ~DryTensorContraction() {
+      // subexpressions are dependent entities: delete each factor
+      for (auto factor(factors.begin()); factor != factors.end(); ++factor) {
+        delete *factor;
+      }
     }
 
     virtual void log() const {
@@ -56,32 +69,32 @@ namespace cc4s {
     }
 
   protected:
-    std::vector<cc4s::DryTensorExpression<F> const *> factors;
+    std::vector<DryTensorExpression<F> *> factors;
   };
 
   template <typename F>
-  cc4s::DryTensorContraction<F> operator *(
-    cc4s::DryTensorContraction<F> const &A, cc4s::DryTensorContraction<F> const &B
+  DryTensorContraction<F> &operator *(
+    DryTensorContraction<F> &A, DryTensorContraction<F> &B
   ) {
-    return cc4s::DryTensorContraction<F>(A, B);
+    return *new DryTensorContraction<F>(&A, &B);
   }
   template <typename F>
-  cc4s::DryTensorContraction<F> operator *(
-    cc4s::DryTensorContraction<F> const &A, cc4s::DryTensorExpression<F> const &B
+  DryTensorContraction<F> &operator *(
+    DryTensorContraction<F> &A, DryTensorExpression<F> &B
   ) {
-    return cc4s::DryTensorContraction<F>(A, B);
+    return *new DryTensorContraction<F>(&A, &B);
   }
   template <typename F>
-  cc4s::DryTensorContraction<F> operator *(
-    cc4s::DryTensorExpression<F> const &A, cc4s::DryTensorContraction<F> const &B
+  DryTensorContraction<F> &operator *(
+    DryTensorExpression<F> &A, DryTensorContraction<F> &B
   ) {
-    return cc4s::DryTensorContraction<F>(A, B);
+    return *new DryTensorContraction<F>(&A, &B);
   }
   template <typename F>
-  cc4s::DryTensorContraction<F> operator *(
-    cc4s::DryTensorExpression<F> const &A, cc4s::DryTensorExpression<F> const &B
+  DryTensorContraction<F> &operator *(
+    DryTensorExpression<F> &A, DryTensorExpression<F> &B
   ) {
-    return cc4s::DryTensorContraction<F>(A, B);
+    return *new DryTensorContraction<F>(&A, &B);
   }
 }
 

@@ -11,11 +11,23 @@ namespace cc4s {
     virtual void log() const = 0;
   protected:
   };
+
+// forward class declaration of interdependent expression types
+  template <typename F=double>
+  class IndexedDryTensor;
+
+  template <typename F=double>
+  class DryTensorContraction;
+
+  template <typename F=double>
+  class DryTensorAssignment;
 }
+
 
 // include all known expression types
 #include <util/IndexedDryTensor.hpp>
 #include <util/DryTensorContraction.hpp>
+#include <util/DryTensorAssignment.hpp>
 
 #endif
 

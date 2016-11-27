@@ -10,12 +10,23 @@ namespace cc4s {
   template <typename F=double>
   class DryTensor;
 
-  template <typename F=double>
+  template <typename F>
   class IndexedDryTensor: public cc4s::DryTensorExpression<F> {
   public:
+    /**
+     * \brief Creates an expression with named indices from a stored
+     * tensor further operations such as contractions or index permutations.
+     * \param[in] tensor_ The stored tensor to be operated on.
+     * The tensor is an idependent entity and will not be destroyed upon
+     * destruction of this expression.
+     * \param[in] indices_ The index character string where each character
+     * specifies the index name of the respective dimension index in this
+     * expression.
+     **/
     IndexedDryTensor(
-      cc4s::DryTensor<F> const &tensor_, std::string const &indices_
-    ): tensor(&tensor_), indices(indices_) {
+      DryTensor<F> *tensor_, std::string const &indices_
+    ): tensor(tensor_), indices(indices_) {
+      // TODO: define index map
     }
     virtual ~IndexedDryTensor() {
     }
@@ -32,30 +43,18 @@ namespace cc4s {
       return indices;
     }
 
-    /**
-     * \brief Create another indexed tensor from this one having
-     * different index names.
-     **/
-    IndexedDryTensor<F> const &operator [](std::string const &newIndices) {
-      return IndexedDryTensor(tensor, newIndices);
-    }
 
     /**
      * \brief Assigns the given right hand side expression to this
      * indexed tensor, returning this indexed tensor as result expression
      * for possible further operations.
      **/
-    IndexedDryTensor<F> &operator =(
-      cc4s::DryTensorExpression<F> const &T
-    ) {
-      T.log();
-      this->log();
-      LOG(0,"TCC") << "summed" << std::endl;
-      return *this;
+    DryTensorAssignment<F> &operator =(DryTensorExpression<F> &T) {
+      return *new DryTensorAssignment<F>(this, &T);
     }
 
   protected:
-    cc4s::DryTensor<F> const *tensor;
+    cc4s::DryTensor<F> *tensor;
     std::string indices;
   };
 }
