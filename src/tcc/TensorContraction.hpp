@@ -3,6 +3,7 @@
 #define TENSOR_CONTRACTION_DEFINED
 
 #include <tcc/TensorExpression.hpp>
+#include <tcc/TensorOperation.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Log.hpp>
 #include <vector>
@@ -79,6 +80,56 @@ namespace cc4s {
         (*factor)->log();
       }
       LOG(0, "TCC") << factors.size() << " tensors contracted" << std::endl;
+    }
+
+    virtual TensorOperation<F> *compile(std::string const &lhsIndices) {
+      LOG(0, "TCC") << "building contraction..." << std::endl;
+      return compileLocalContraction(lhsIndices, factors[0], factors[1]);
+    }
+
+    TensorOperation<F> *compileLocalContraction(
+      std::string const &lhsIndices,
+      IndexedTensor<F> *a, IndexedTensor<F> *b
+    ) {
+      char contractedIndices[
+        std::min(a->indices.length(), b->indices.length()) + 1
+      ];
+      char outerIndices[
+        a->indices.length() + b->indices.length() + 1
+      ];
+      int c(0), o(0);
+      for (int i(0); i < a->indices.length(); ++i) {
+        const char index(a->indices[i]);
+        // go through unique indices of a
+        if (a->indices.find(index, i+1) == std::string::npos) {
+          if (
+            b->indices.find(index) != std::string::npos &&  // in both
+            lhsIndices.find(index) == std::string::npos     // but not on lhs
+          ) {
+            contractedIndices[c++] = index;
+          } else {
+            outerIndices[o++] = index;
+          }
+        }
+      }
+      contractedIndices[c] = 0;
+      for (int i(0); i < b->indices.length(); ++i) {
+        const char index(b->indices[i]);
+        // go through unique indices of b
+        if (b->indices.find(index, i+1) == std::string::npos) {
+          if (
+            std::find(contractedIndices, contractedIndices+c, index) ==
+              contractedIndices+c
+          ) {
+            outerIndices[o++] = index;
+          }
+        }
+      }
+      outerIndices[o] = 0;
+      LOG(0, "TCC") << *a << "*" << *b << ": " <<
+        "contrated indices=\"" << contractedIndices << "\"" << ", " <<
+        "outer indices=\"" << outerIndices << "\"" << std::endl;
+      return nullptr;
     }
 
     std::vector<IndexedTensor<F> *> factors;

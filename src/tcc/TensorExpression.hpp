@@ -18,6 +18,9 @@ namespace cc4s {
   template <typename F=double>
   class TensorAssignment;
 
+  template <typename F=double>
+  class TensorOperation;
+
   template <typename F>
   class TensorExpression {
   public:
@@ -33,7 +36,11 @@ namespace cc4s {
         "Only indexed tensors may be used as the left hand side of an assignment."
       );
     }
-  protected:
+
+    /**
+     * \brief Compile this tensor expression into a TensorOperation.
+     **/
+    virtual TensorOperation<F> *compile(std::string const &lhsIndices) = 0;
   };
 }
 

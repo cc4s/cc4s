@@ -3,6 +3,7 @@
 #define INDEXED_TENSOR_DEFINED
 
 #include <tcc/TensorExpression.hpp>
+#include <tcc/TensorOperation.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Log.hpp>
 #include <string>
@@ -52,6 +53,11 @@ namespace cc4s {
 
     DryTensor<F> *tensor;
     std::string indices;
+
+  protected:
+    virtual TensorOperation<F> *compile(std::string const &lhsIndices) {
+      return nullptr;
+    }
   };
 
   template <typename F>

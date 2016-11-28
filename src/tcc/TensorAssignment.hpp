@@ -4,7 +4,9 @@
 
 #include <tcc/TensorExpression.hpp>
 #include <tcc/IndexedTensor.hpp>
+#include <tcc/TensorOperation.hpp>
 #include <util/StaticAssert.hpp>
+#include <util/Exception.hpp>
 
 namespace cc4s {
   template <typename F>
@@ -29,11 +31,34 @@ namespace cc4s {
     virtual ~TensorAssignment() {
       delete lhs, delete rhs;
     }
+
     virtual void log() const {
       rhs->log();
       lhs->log();
       LOG(0,"TCC") << "assignment" << std::endl;
     };
+
+    virtual TensorOperation<F> *compile(std::string const &) {
+      // definitions guarantee exprected structure:
+      // lhs is either a contraction
+      TensorContraction<F> *contraction(
+        dynamic_cast<TensorContraction<F> *>(rhs)
+      );
+      if (contraction) {
+        return contraction->compile(lhs->indices);
+      }
+
+      // or an IndexedTensor directly
+      IndexedTensor<F> *indexedTensor(
+        dynamic_cast<IndexedTensor<F> *>(rhs)
+      );
+      if (indexedTensor) {
+        return new TensorSumOperation<F>(lhs, indexedTensor);
+      }
+      throw new Exception(
+        "Only contractions or indexed tensors are supported as the right hand side of an assignment."
+      );
+    }
 
     IndexedTensor<F> *lhs;
     TensorExpression<F> *rhs;

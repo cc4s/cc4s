@@ -54,7 +54,7 @@ void TensorNetwork::dryRun() {
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
 
-  TensorOperation<> ladder(
+  TensorOperation<> *ladder = compile(
     T["abij"] =
       T["cdicdi"] * Pi["RdRd"]  * PiT["Rb"] * Pi["Sc"] * PiT["Sa"] * LambdaT["SF"] * Lambda["RF"]
   );
