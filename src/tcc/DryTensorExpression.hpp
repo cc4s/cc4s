@@ -2,6 +2,8 @@
 #ifndef DRY_TENSOR_EXPRESSION_DEFINED
 #define DRY_TENSOR_EXPRESSION_DEFINED
 
+#include <util/StaticAssert.hpp>
+
 namespace cc4s {
   // forward class declaration of interdependent expression types
   template <typename F=double>
@@ -27,7 +29,8 @@ namespace cc4s {
     template <typename Rhs>
     DryTensorAssignment<F> &operator =(Rhs &rhs) {
       static_assert(
-        false, "Only indexed tensors may be used as the left hand side of an assignment."
+        StaticAssert<F>::False,
+        "Only indexed tensors may be used as the left hand side of an assignment."
       );
     }
   protected:

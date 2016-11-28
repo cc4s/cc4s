@@ -3,6 +3,7 @@
 #define DRY_TENSOR_CONTRACTION_DEFINED
 
 #include <tcc/DryTensorExpression.hpp>
+#include <util/StaticAssert.hpp>
 #include <util/Log.hpp>
 #include <vector>
 
@@ -62,7 +63,8 @@ namespace cc4s {
       DryTensorExpression<F> *lhs, DryTensorExpression<F> *rhs
     ) {
       static_assert(
-        false, "Only contractions of contractions or tensors supported."
+        StaticAssert<F>::False,
+        "Only contractions of contractions or tensors supported."
       );
     }
     virtual ~DryTensorContraction() {

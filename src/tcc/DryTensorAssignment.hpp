@@ -4,6 +4,7 @@
 
 #include <tcc/DryTensorExpression.hpp>
 #include <tcc/IndexedDryTensor.hpp>
+#include <util/StaticAssert.hpp>
 
 namespace cc4s {
   template <typename F>
@@ -13,7 +14,8 @@ namespace cc4s {
       IndexedDryTensor<F> *lhs_, DryTensorExpression<F> *rhs_
     ) {
       static_assert(
-        false, "Only tensors or contractions may be used as the right hand side of an assignment."
+        StaticAssert<F>::False,
+        "Only tensors or contractions may be used as the right hand side of an assignment."
       );
     }
     DryTensorAssignment(
