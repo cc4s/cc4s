@@ -3,12 +3,11 @@
 #define DRY_TENSOR_DEFINED
 
 #include <util/SourceLocation.hpp>
-#include <tcc/IndexedDryTensor.hpp>
+#include <tcc/IndexedTensor.hpp>
 #include <util/Log.hpp>
 #include <cstdint>
 #include <vector>
 #include <string>
-
 
 namespace cc4s {
   class DryMemory {
@@ -76,8 +75,8 @@ namespace cc4s {
      * tensor expression. Indexed tensors are atomic types of tensor
      * expressions.
      **/
-    IndexedDryTensor<F> &operator[](std::string const &indices) {
-      return *new IndexedDryTensor<F>(this, indices);
+    IndexedTensor<F> &operator[](std::string const &indices) {
+      return *new IndexedTensor<F>(this, indices);
     }
 
 

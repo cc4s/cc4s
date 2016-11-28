@@ -8,6 +8,22 @@ namespace cc4s {
   public:
     enum { False = false };
   };
+
+  template <typename A, typename B>
+  class TypeRelations {
+  public:
+    enum { Equals = false, PointerTo = false };
+  };
+  template <typename A>
+  class TypeRelations<A,A> {
+  public:
+    enum { Equals = true, PointerTo = false };
+  };
+  template <typename A>
+  class TypeRelations<A *, A> {
+  public:
+    enum { Equals = false, PointerTo = true };
+  };
 }
 
 #endif

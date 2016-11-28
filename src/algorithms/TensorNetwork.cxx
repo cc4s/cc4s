@@ -1,6 +1,6 @@
 #include <algorithms/TensorNetwork.hpp>
 #include <tcc/DryTensor.hpp>
-#include <tcc/DryTensorTransaction.hpp>
+#include <tcc/TensorOperation.hpp>
 
 #include <ctf.hpp>
 #include <array>
@@ -54,9 +54,9 @@ void TensorNetwork::dryRun() {
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
 
-  DryTensorTransaction<> ladder(
-    T["abij"] = T["cdij"] *
-      PiT["Sa"] * PiT["Rb"] * LambdaT["SF"] * Lambda["RF"] * Pi["Rd"] * Pi["Sc"]
+  TensorOperation<> ladder(
+    T["abij"] =
+      T["cdicdi"] * Pi["RdRd"]  * PiT["Rb"] * Pi["Sc"] * PiT["Sa"] * LambdaT["SF"] * Lambda["RF"]
   );
 }
 

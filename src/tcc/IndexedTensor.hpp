@@ -1,17 +1,19 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef INDEXED_DRY_TENSOR_DEFINED
-#define INDEXED_DRY_TENSOR_DEFINED
+#ifndef INDEXED_TENSOR_DEFINED
+#define INDEXED_TENSOR_DEFINED
 
-#include <tcc/DryTensorExpression.hpp>
+#include <tcc/TensorExpression.hpp>
+#include <util/StaticAssert.hpp>
 #include <util/Log.hpp>
 #include <string>
+#include <ostream>
 
 namespace cc4s {
   template <typename F=double>
   class DryTensor;
 
   template <typename F>
-  class IndexedDryTensor: public DryTensorExpression<F> {
+  class IndexedTensor: public TensorExpression<F> {
   public:
     /**
      * \brief Creates an expression with named indices from a stored
@@ -23,11 +25,11 @@ namespace cc4s {
      * specifies the index name of the respective dimension index in this
      * expression.
      **/
-    IndexedDryTensor(
+    IndexedTensor(
       DryTensor<F> *tensor_, std::string const &indices_
     ): tensor(tensor_), indices(indices_) {
     }
-    virtual ~IndexedDryTensor() {
+    virtual ~IndexedTensor() {
     }
 
     virtual void log() const {
@@ -40,13 +42,24 @@ namespace cc4s {
      * for possible further operations.
      **/
     template <typename Rhs>
-    DryTensorAssignment<typename Rhs::FieldType> &operator =(Rhs &rhs) {
-      return *new DryTensorAssignment<typename Rhs::FieldType>(this, &rhs);
+    TensorAssignment<typename Rhs::FieldType> &operator =(Rhs &rhs) {
+      static_assert(
+        TypeRelations<F, typename Rhs::FieldType>::Equals,
+        "Assignment requires tensors of same type"
+      );
+      return *new TensorAssignment<typename Rhs::FieldType>(this, &rhs);
     }
 
     DryTensor<F> *tensor;
     std::string indices;
   };
+
+  template <typename F>
+  inline std::ostream &operator <<(
+    std::ostream &stream, IndexedTensor<F> const &t
+  ) {
+    return stream << t.tensor->get_name() << "[" << t.indices << "]";
+  }
 }
 
 
