@@ -44,11 +44,5 @@ namespace cc4s {
   };
 }
 
-
-// include all known expression types
-#include <tcc/IndexedTensor.hpp>
-#include <tcc/TensorContraction.hpp>
-#include <tcc/TensorAssignment.hpp>
-
 #endif
 

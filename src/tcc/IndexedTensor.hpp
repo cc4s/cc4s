@@ -3,8 +3,8 @@
 #define INDEXED_TENSOR_DEFINED
 
 #include <tcc/TensorExpression.hpp>
-#include <tcc/TensorOperation.hpp>
 #include <util/StaticAssert.hpp>
+#include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <string>
 #include <ostream>
@@ -37,6 +37,11 @@ namespace cc4s {
       LOG(0, "TCC") << tensor->get_name() << "[" << indices << "]" << std::endl;
     }
 
+    virtual TensorOperation<F> *compile(std::string const &lhsIndices) {
+      // not to be used
+      throw new Exception("Operation required.");
+    }
+
     /**
      * \brief Assigns the given right hand side expression to this
      * indexed tensor, returning this indexed tensor as result expression
@@ -53,11 +58,6 @@ namespace cc4s {
 
     DryTensor<F> *tensor;
     std::string indices;
-
-  protected:
-    virtual TensorOperation<F> *compile(std::string const &lhsIndices) {
-      return nullptr;
-    }
   };
 
   template <typename F>

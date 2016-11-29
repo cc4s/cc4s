@@ -70,6 +70,14 @@ namespace cc4s {
     }
     virtual void use() {}
 
+    int64_t getElementsCount() const {
+      int64_t elementsCount(1);
+      for (int i(0); i < order; ++i) {
+        elementsCount *= lens[i];
+      }
+      return elementsCount;
+    }
+
     /**
      * \brief Specify named indices of this tensor to be used in a
      * tensor expression. Indexed tensors are atomic types of tensor
@@ -94,10 +102,7 @@ namespace cc4s {
 
   protected:
     void allocate() {
-      size = sizeof(F);
-      for (int i(0); i < order; ++i) {
-        size *= lens[i];
-      }
+      size = sizeof(F) * getElementsCount();
       DryMemory::allocate(size, location);
     }
     void free() {

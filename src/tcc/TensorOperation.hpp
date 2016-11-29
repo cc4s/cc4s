@@ -2,8 +2,9 @@
 #ifndef TENSOR_OPERATION_DEFINED
 #define TENSOR_OPERATION_DEFINED
 
+#include <tcc/DryTensor.hpp>
+#include <tcc/Costs.hpp>
 #include <tcc/TensorExpression.hpp>
-#include <util/StaticAssert.hpp>
 #include <util/Log.hpp>
 #include <algorithm>
 
@@ -11,30 +12,30 @@ namespace cc4s {
   template <typename F>
   class TensorOperation {
   public:
+    TensorOperation(Costs const &costs_): costs(costs_) {
+    }
     virtual ~TensorOperation() {
     }
 
     virtual void execute() = 0;
 
+    virtual DryTensor<F> *getResult() = 0;
+    virtual std::string const &getResultIndices() = 0;
+
     /**
-     * \brief Number of tensor elements of storage required by the result.
+     * \brief Costs to evaluate this operation in time and memory
      **/
-    int64_t elementsCount;
+    Costs costs;
+
+  protected:
     /**
-     * \brief Maximum number of tensor elements of storage required
-     * during the evaluation of this operation.
+     * \brief Delete suboperations without deleting fetch operations at the
+     * leaves. This is used
+     * by the contraction compiler when different orders of contrations
+     * need to be tried without deleting the tensor fetch operations each time.
      **/
-    int64_t maxMemoryCount;
-    /**
-     * \brief Number of tensor element multiplication required for
-     * the evaluation of this operation.
-     **/
-    int64_t multiplicationsCount;
-    /**
-     * \brief Number of tensor elements additions required for
-     * the evaluation of this operation.
-     **/
-    int64_t additionsCount;
+    virtual void clearLeavingFetches() {
+    }
   };
 
   template <typename F>
@@ -42,10 +43,6 @@ namespace cc4s {
     return expression.compile("");
   }
 }
-
-// include all known operation types
-#include <tcc/TensorContractionOperation.hpp>
-#include <tcc/TensorSumOperation.hpp>
 
 #endif
 
