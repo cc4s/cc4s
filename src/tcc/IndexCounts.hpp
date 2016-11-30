@@ -2,8 +2,6 @@
 #ifndef INDEX_COUNTS_DEFINED
 #define INDEX_COUNTS_DEFINED
 
-#include <limits>
-
 namespace cc4s {
   class IndexCounts {
   public:
@@ -27,7 +25,7 @@ namespace cc4s {
       return counts[static_cast<uint8_t>(index)];
     }
 
-    static constexpr int INDICES_COUNT = std::numeric_limits<uint8_t>::max();
+    static constexpr int INDICES_COUNT = UINT8_MAX;
     int counts[INDICES_COUNT];
   };
 }

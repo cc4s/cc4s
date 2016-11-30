@@ -41,7 +41,7 @@ namespace cc4s {
 
     virtual TensorOperation<F> *compile(std::string const &) {
       return new TensorAssignmentOperation<F>(
-        new TensorFetchOperation<F>(lhs->tensor),
+        new TensorFetchOperation<F>(lhs),
         rhs->compile(lhs->indices)
       );
     }

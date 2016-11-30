@@ -39,7 +39,7 @@ namespace cc4s {
 
     virtual TensorOperation<F> *compile(std::string const &lhsIndices) {
       // not to be used
-      throw new Exception("Operation required.");
+      throw new EXCEPTION("Operation required.");
     }
 
     /**

@@ -10,6 +10,9 @@
 
 namespace cc4s {
   template <typename F>
+  class TensorContractionOperation;
+
+  template <typename F>
   class TensorOperation {
   public:
     TensorOperation(Costs const &costs_): costs(costs_) {
@@ -36,6 +39,9 @@ namespace cc4s {
      **/
     virtual void clearLeavingFetches() {
     }
+
+    friend class TensorContraction<F>;
+    friend class TensorContractionOperation<F>;
   };
 
   template <typename F>

@@ -11,7 +11,10 @@ namespace cc4s {
   public:
     TensorAssignmentOperation(
       TensorFetchOperation<F> *lhs_, TensorOperation<F> *rhs_
-    ): lhs(lhs_), rhs(rhs_) {
+    ):
+      TensorOperation<F>(rhs_->costs),
+      lhs(lhs_), rhs(rhs_)
+    {
     }
     virtual ~TensorAssignmentOperation() {
       // the suboperations are dependent entities

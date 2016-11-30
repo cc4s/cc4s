@@ -64,7 +64,7 @@ void CoulombVertexDecomposition::run() {
   if (isArgumentGiven("StartingFactorOrbitals")) {
     Tensor<complex> *PirRTensor(getTensorArgument<complex>("StartingFactorOrbitals"));
     PirRTensor->set_name("StartingPirR");
-    if (PirRTensor->order != 2) throw new Exception("Matrix expected as argument StartingPirR");
+    if (PirRTensor->order != 2) throw new EXCEPTION("Matrix expected as argument StartingPirR");
     LOG(1, "RALS") << "Initial PirR=" << PirRTensor->get_name() << std::endl;
     PirR = reinterpret_cast<Matrix<complex> *>(PirRTensor);
   }
@@ -78,7 +78,7 @@ void CoulombVertexDecomposition::run() {
   if (isArgumentGiven("StartingCoulombFactors")) {
     Tensor<complex> *LambdaGRTensor(getTensorArgument<complex>("StartingCoulombFactors"));
     LambdaGRTensor->set_name("StartingLambdaGR");
-    if (LambdaGRTensor->order != 2) throw new Exception("Matrix expected as argument StartingLambdaGR");
+    if (LambdaGRTensor->order != 2) throw new EXCEPTION("Matrix expected as argument StartingLambdaGR");
     LOG(1, "RALS") << "Initial LambdaGR=" << LambdaGRTensor->get_name() << std::endl;
     LambdaGR = reinterpret_cast<Matrix<complex> *>(LambdaGRTensor);
   }
@@ -271,7 +271,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   if (!mixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
-    throw new Exception(stringStream.str());
+    throw new EXCEPTION(stringStream.str());
   }
 
 //  Univar_Function<complex> fConj(&cc4s::conj<complex>);

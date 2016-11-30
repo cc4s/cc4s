@@ -2,8 +2,8 @@
 #ifndef TENSOR_FETCH_OPERATION_DEFINED
 #define TENSOR_FETCH_OPERATION_DEFINED
 
-#include <tcc/IndexedTensor.hpp>
 #include <tcc/DryTensor.hpp>
+#include <tcc/IndexedTensor.hpp>
 
 namespace cc4s {
   template <typename F>

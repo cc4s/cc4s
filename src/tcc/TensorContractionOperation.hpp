@@ -18,7 +18,7 @@ namespace cc4s {
       DryTensor<F> *result_, std::string const &resultIndices_,
       Costs &contractionCosts
     ):
-      TensorOperation<F>(left_.costs + right_.costs),
+      TensorOperation<F>(left_->costs + right_->costs),
       left(left_), right(right_),
       result(result_),
       resultIndices(resultIndices_)
@@ -54,9 +54,9 @@ namespace cc4s {
 
   protected:
     virtual void clearLeavingFetches() {
-      left.clearLeavingFetches();
+      left->clearLeavingFetches();
       delete left; left = nullptr;
-      right.clearLeavingFetches();
+      right->clearLeavingFetches();
       delete right; right = nullptr;
     }
 
@@ -65,6 +65,8 @@ namespace cc4s {
 
     DryTensor<F> *result;
     std::string resultIndices;
+
+    friend class TensorContraction<F>;
   };
 }
 

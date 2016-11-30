@@ -124,7 +124,7 @@ namespace cc4s {
           // just compile the contraction of a&b
           TensorContractionOperation<F> *abContraction(compile(a, b));
           // add the indices of the result
-          indexCounts.add(abContraction.getResultIndices());
+          indexCounts.add(abContraction->getResultIndices());
 
           // build new list of factors
           std::vector<TensorOperation<F> *> subOperations(
@@ -244,7 +244,7 @@ namespace cc4s {
       contractedIndices[c] = 0;
 
       // allocate intermedate result
-      DryTensor<F> contractionResult(
+      DryTensor<F> *contractionResult(
         new DryTensor<F>(o, outerIndexDimensions, outerIndexSymmetries)
       );
       // TODO: name intermediate result tensor
