@@ -1,6 +1,10 @@
 #include <algorithms/TensorNetwork.hpp>
 #include <tcc/DryTensor.hpp>
+#include <tcc/TensorContraction.hpp>
+#include <tcc/TensorAssignment.hpp>
 #include <tcc/TensorOperation.hpp>
+#include <tcc/TensorAssignmentOperation.hpp>
+#include <tcc/TensorContractionOperation.hpp>
 
 #include <ctf.hpp>
 #include <array>

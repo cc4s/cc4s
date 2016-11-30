@@ -40,7 +40,7 @@ namespace cc4s {
         &info
       );
       if (info != 0) {
-        throw new Exception("ERROR: PDSYEVD initialization failed");
+        throw new EXCEPTION("ERROR: PDSYEVD initialization failed");
       }
       workCount = static_cast<int>(optimalWork+0.5);
       integerWorkCount = optimalIntegerWork;
@@ -70,7 +70,7 @@ namespace cc4s {
         &info
       );
       if (info != 0) {
-        throw new Exception("ERROR: PDSYEVD diagonlization failed");
+        throw new EXCEPTION("ERROR: PDSYEVD diagonlization failed");
       }
     }
   protected:
@@ -111,7 +111,7 @@ namespace cc4s {
         &info
       );
       if (info != 0) {
-        throw new Exception("ERROR: PZHEEVD initialization failed");
+        throw new EXCEPTION("ERROR: PZHEEVD initialization failed");
       }
       workCount = static_cast<int>(std::real(optimalWork)+0.5);
       realWorkCount = static_cast<int64_t>(optimalRealWork+0.5);
@@ -147,7 +147,7 @@ namespace cc4s {
         &info
       );
       if (info != 0) {
-        throw new Exception("ERROR: PZHEEVD diagonlization failed");
+        throw new EXCEPTION("ERROR: PZHEEVD diagonlization failed");
       }
     }
   protected:
