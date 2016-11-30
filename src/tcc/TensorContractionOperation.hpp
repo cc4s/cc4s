@@ -5,6 +5,7 @@
 #include <tcc/TensorOperation.hpp>
 #include <tcc/Costs.hpp>
 #include <tcc/DryTensor.hpp>
+#include <util/Log.hpp>
 
 #include <string>
 
@@ -41,7 +42,14 @@ namespace cc4s {
     }
 
     virtual void execute() {
-      // TODO: call CTF functions or think of other binding mechanism
+      left->execute();
+      right->execute();
+      LOG(0, "TCC") << "executing " <<
+        result->get_name() << "[" << resultIndices << "] = " <<
+        left->getResult()->get_name() << "[" << left->getResultIndices() <<
+        "] * " <<
+        right->getResult()->get_name() << "[" << right->getResultIndices() <<
+        "]" << std::endl;
     }
 
     virtual DryTensor<F> *getResult() {
@@ -53,11 +61,12 @@ namespace cc4s {
     }
 
   protected:
-    virtual void clearLeavingFetches() {
-      left->clearLeavingFetches();
-      delete left; left = nullptr;
-      right->clearLeavingFetches();
-      delete right; right = nullptr;
+    virtual bool clearLeavingFetches() {
+      if (left->clearLeavingFetches()) delete left;
+      left = nullptr;
+      if (right->clearLeavingFetches()) delete right;
+      right = nullptr;
+      return true;
     }
 
     TensorOperation<F> *left;
