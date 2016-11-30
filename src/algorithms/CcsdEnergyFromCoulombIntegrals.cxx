@@ -107,7 +107,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
       Tensor<> Rabij(false, *Vabij);
       Rabij.set_name("Rabij");
 
-      if (i == 0) {
+      if (i == 0 && !isArgumentGiven("StartingDoublesAmplitudes") ) {
         // For first iteration compute only the MP2 amplitudes 
         // Since Tabij = 0, Vabij is the only non-zero term
         Rabij["abij"] = (*Vabij)["abij"];

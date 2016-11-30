@@ -50,8 +50,14 @@ void ClusterSinglesDoublesAlgorithm::run() {
     // Allocate the doubles amplitudes and append it to the mixer
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
-    Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
-    TabijMixer->append(Tabij);
+    if (isArgumentGiven("StartingDoublesAmplitudes")) {
+      Tensor<> Tabij(getTensorArgument("StartingDoublesAmplitudes"));
+      TabijMixer->append(Tabij);
+    }
+    else {
+      Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
+      TabijMixer->append(Tabij);
+    }
     // The amplitudes will from now on be managed by the mixer
   }
 
