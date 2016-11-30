@@ -34,7 +34,7 @@ void ClusterSinglesDoublesAlgorithm::run() {
   if (!TabijMixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
-    throw new Exception(stringStream.str());
+    throw new EXCEPTION(stringStream.str());
   }
   // create another mixer for the singles, this time it must exists
   TaiMixer = MixerFactory<double>::create(mixerName, this);
@@ -145,7 +145,7 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
   if (!TabijMixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
-    throw new Exception(stringStream.str());
+    throw new EXCEPTION(stringStream.str());
   }
   // TODO: implement DryTensor in mixers
   if (mixerName != "LinearMixer") {

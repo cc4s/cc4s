@@ -21,7 +21,7 @@ Tensor<F> *TensorIo::readBinary(std::string const &fileName) {
       MPI_INFO_NULL, &file
     )
   );
-  if (mpiError) throw new Exception("Failed to open file");
+  if (mpiError) throw new EXCEPTION("Failed to open file");
 
   int64_t offset(0);
   MPI_Status status;
@@ -30,9 +30,9 @@ Tensor<F> *TensorIo::readBinary(std::string const &fileName) {
   MPI_File_read_at(file, offset, &header, sizeof(header), MPI_BYTE, &status);
   offset += sizeof(header);
   if (strncmp(header.magic, header.MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
+    throw new EXCEPTION("Invalid file format");
   if (header.version > header.VERSION)
-    throw new Exception("Incompatible file format version");
+    throw new EXCEPTION("Incompatible file format version");
 
   // read dimension headers
   int lens[header.order];

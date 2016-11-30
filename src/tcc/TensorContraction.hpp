@@ -3,7 +3,11 @@
 #define TENSOR_CONTRACTION_DEFINED
 
 #include <tcc/TensorExpression.hpp>
+#include <tcc/DryTensor.hpp>
 #include <tcc/TensorOperation.hpp>
+#include <tcc/TensorContractionOperation.hpp>
+#include <tcc/TensorFetchOperation.hpp>
+#include <tcc/IndexCounts.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Log.hpp>
 #include <vector>
@@ -83,56 +87,192 @@ namespace cc4s {
     }
 
     virtual TensorOperation<F> *compile(std::string const &lhsIndices) {
-      LOG(0, "TCC") << "building contraction..." << std::endl;
-      return compileLocalContraction(lhsIndices, factors[0], factors[1]);
-    }
-
-    TensorOperation<F> *compileLocalContraction(
-      std::string const &lhsIndices,
-      IndexedTensor<F> *a, IndexedTensor<F> *b
-    ) {
-      char contractedIndices[
-        std::min(a->indices.length(), b->indices.length()) + 1
-      ];
-      char outerIndices[
-        a->indices.length() + b->indices.length() + 1
-      ];
-      int c(0), o(0);
-      for (int i(0); i < a->indices.length(); ++i) {
-        const char index(a->indices[i]);
-        // go through unique indices of a
-        if (a->indices.find(index, i+1) == std::string::npos) {
-          if (
-            b->indices.find(index) != std::string::npos &&  // in both
-            lhsIndices.find(index) == std::string::npos     // but not on lhs
-          ) {
-            contractedIndices[c++] = index;
-          } else {
-            outerIndices[o++] = index;
-          }
-        }
+      LOG(0, "TCC") << "compiling contraction..." << std::endl;
+      LOG(0, "TCC") << "building index counts..." << std::endl;
+      indexCounts = IndexCounts();
+      indexCounts.add(lhsIndices);
+      std::vector<TensorOperation<F> *> operations(factors.size());
+      for (int i(0); i < factors.size(); ++i) {
+        operations.push_back(new TensorFetchOperation<F>(factors[i]));
+        indexCounts.add(factors[i]->indices);
       }
-      contractedIndices[c] = 0;
-      for (int i(0); i < b->indices.length(); ++i) {
-        const char index(b->indices[i]);
-        // go through unique indices of b
-        if (b->indices.find(index, i+1) == std::string::npos) {
-          if (
-            std::find(contractedIndices, contractedIndices+c, index) ==
-              contractedIndices+c
-          ) {
-            outerIndices[o++] = index;
-          }
-        }
-      }
-      outerIndices[o] = 0;
-      LOG(0, "TCC") << *a << "*" << *b << ": " <<
-        "contrated indices=\"" << contractedIndices << "\"" << ", " <<
-        "outer indices=\"" << outerIndices << "\"" << std::endl;
-      return nullptr;
+      return compile(operations);
     }
 
     std::vector<IndexedTensor<F> *> factors;
+
+  protected:
+    /**
+     * \brief Compiles the given list of TensorOperations trying to find
+     * the best order of contractions. The indexCounts are modified
+     * during evaluation.
+     **/
+    TensorContractionOperation<F> *compile(
+      std::vector<TensorOperation<F> *> operations
+    ) {
+      // no best contraction known at first
+      TensorContractionOperation<F> *bestContraction(nullptr);
+      for (int i(0); i < operations.size()-1; ++i) {
+        TensorOperation<F> *a(operations[i]);
+        // take out the indices of factor a
+        indexCounts.add(a->getResultIndices(), -1);
+        for (int j(i+1); j < operations.size(); ++j) {
+          TensorOperation<F> *b(operations[j]);
+          // take out the indices of factor b
+          indexCounts.add(b->getResultIndices(), -1);
+
+          // just compile the contraction of a&b
+          TensorContractionOperation<F> *abContraction(compile(a, b));
+          // add the indices of the result
+          indexCounts.add(abContraction->getResultIndices());
+
+          // build new list of factors
+          std::vector<TensorOperation<F> *> subOperations(
+            operations.size() - 1
+          );
+          subOperations.push_back(abContraction);
+          for (int k(0); k < operations.size(); ++k) {
+            if (k != i && k != j) subOperations.push_back(operations[k]);
+          }
+
+          // now do a recursive compilation of all the remaining factors
+          TensorContractionOperation<F> *fullContraction(
+            compile(subOperations)
+          );
+
+          // take out indices of contraction of a&b again
+          // for considering the next possibility
+          indexCounts.add(abContraction->getResultIndices(), -1);
+
+          // see if the entire contraction is currently best
+          if (
+            !bestContraction ||
+            fullContraction->costs < bestContraction->costs
+          ) {
+            if (bestContraction) {
+              // yes: throw away the previous best but keep the fetch ops
+              bestContraction->clearLeavingFetches();
+              delete bestContraction;
+            }
+            bestContraction = fullContraction;
+          } else {
+            // no: throw away this one but keep the fetch operations
+            fullContraction->clearLeavingFetches();
+            delete fullContraction;
+          }
+
+          // add the indices of factor b again
+          indexCounts.add(b->getResultIndices());
+        }
+        // add the indices of factor a again
+        indexCounts.add(a->getResultIndices());
+      }
+      return bestContraction;
+    }
+
+    TensorContractionOperation<F> *compile(
+      TensorOperation<F> *a, TensorOperation<F> *b
+    ) {
+      char contractedIndices[
+        std::min(a->getResultIndices().length(), b->getResultIndices().length())
+          + 1
+      ];
+      int contractedIndexDimensions[
+        std::min(a->getResultIndices().length(), b->getResultIndices().length())
+          + 1
+      ];
+      char outerIndices[
+        a->getResultIndices().length() + b->getResultIndices().length() + 1
+      ];
+      int outerIndexDimensions[
+        a->getResultIndices().length() + b->getResultIndices().length() + 1
+      ];
+      int outerIndexSymmetries[
+        a->getResultIndices().length() + b->getResultIndices().length() + 1
+      ];
+      char uniqueIndices[
+        a->getResultIndices().length() + b->getResultIndices().length() + 1
+      ];
+      int uniqueIndexDimensions[
+        a->getResultIndices().length() + b->getResultIndices().length() + 1
+      ];
+      int c(0), o(0), u(0);
+
+      // determine common unique indices
+      for (int i(0); i < a->getResultIndices().length(); ++i) {
+        const char index(a->getResultIndices()[i]);
+        if (
+          std::find(uniqueIndices, uniqueIndices+u, index) == uniqueIndices+u
+        ) {
+          uniqueIndices[u] = index;
+          uniqueIndexDimensions[u] = a->getResult()->lens[i];
+          ++u;
+        }
+      }
+      for (int i(0); i < b->getResultIndices().length(); ++i) {
+        const char index(b->getResultIndices()[i]);
+        if (
+          std::find(uniqueIndices, uniqueIndices+u, index) == uniqueIndices+u
+        ) {
+          uniqueIndices[u] = index;
+          uniqueIndexDimensions[u] = b->getResult()->lens[i];
+          ++u;
+        }
+      }
+      uniqueIndices[u] = 0;
+
+      int64_t outerElementsCount(1), contractedElementsCount(1);
+      for (int i(0); i < u; ++i) {
+        const char index(uniqueIndices[i]);
+        // go through unique indices
+        if (indexCounts[index] > 0) {
+          // index occurs outside
+          outerIndices[o] = index;
+          outerElementsCount *=
+            outerIndexDimensions[o] = uniqueIndexDimensions[i];
+          outerIndexSymmetries[o] = 0;
+          ++o;
+        } else {
+          // index does not occur outside
+          contractedIndices[c] = index;
+          contractedElementsCount *=
+            contractedIndexDimensions[c] = uniqueIndexDimensions[i];
+          ++c;
+        }
+      }
+      outerIndices[o] = 0;
+      contractedIndices[c] = 0;
+
+      // allocate intermedate result
+      DryTensor<F> *contractionResult(
+        new DryTensor<F>(o, outerIndexDimensions, outerIndexSymmetries)
+      );
+      // TODO: name intermediate result tensor
+      Costs contractionCosts(
+        contractionResult->getElementsCount(),
+        0,
+        outerElementsCount * contractedElementsCount,
+        outerElementsCount * contractedElementsCount - outerElementsCount
+      );
+
+      LOG(0, "TCC") << "a[" << a->getResultIndices() << "]*" <<
+        "b[" << b->getResultIndices() << ": " <<
+        "outerIndices=\"" << outerIndices << "\", " <<
+        "contractedIndices=\"" << contractedIndices << "\"" << std::endl;
+
+      return new TensorContractionOperation<F>(
+        a, b,
+        contractionResult, outerIndices,
+        contractionCosts
+      );
+    }
+
+    /**
+     * \brief Tracks the number of occurrences of each index in the remaining
+     * contraction to compile. Indices on the left hand side of the enclosing
+     * assignment are also counted. This array is updated during compilation.
+     **/
+    IndexCounts indexCounts;
   };
 
   template <typename Lhs, typename Rhs>

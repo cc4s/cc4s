@@ -33,12 +33,12 @@ void ParticleHoleCoulombVertexReader::run() {
   LOG(0, "Reader") <<
     "Reading particle hole Coulomb vertex from file " << fileName << " ...";
   std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
-  if (!file.is_open()) throw new Exception("Failed to open file");
+  if (!file.is_open()) throw new EXCEPTION("Failed to open file");
   // read header
   Header header;
   file.read(reinterpret_cast<char *>(&header), sizeof(header));
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
+    throw new EXCEPTION("Invalid file format");
   NG = header.NG;
   No = header.No;
   Nv = header.Nv;
@@ -96,12 +96,12 @@ void ParticleHoleCoulombVertexReader::dryRun() {
   LOG(0, "Reader") <<
     "Reading particle hole Coulomb vertex from file " << fileName << std::endl;
   std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
-  if (!file.is_open()) throw new Exception("Failed to open file");
+  if (!file.is_open()) throw new EXCEPTION("Failed to open file");
   // read header
   Header header;
   file.read(reinterpret_cast<char *>(&header), sizeof(header));
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
+    throw new EXCEPTION("Invalid file format");
   file.close();
   NG = header.NG;
   No = header.No;
