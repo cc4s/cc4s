@@ -1,7 +1,7 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#include <util/DryTensor.hpp>
-
 #include <math/Complex.hpp>
+#include <tcc/DryTensor.hpp>
+
 #include <ctf.hpp>
 #include <array>
 

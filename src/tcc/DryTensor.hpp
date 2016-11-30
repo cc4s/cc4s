@@ -1,13 +1,13 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DRY_TENSOR_DEFINED
 #define DRY_TENSOR_DEFINED
 
 #include <util/SourceLocation.hpp>
+#include <tcc/IndexedTensor.hpp>
 #include <util/Log.hpp>
 #include <cstdint>
 #include <vector>
 #include <string>
-
 
 namespace cc4s {
   class DryMemory {
@@ -37,7 +37,7 @@ namespace cc4s {
     static std::vector<ExtendingResource> extendingResources;
   };
 
-  template <typename F=double>
+  template <typename F>
   class DryTensor {
   public:
     /**
@@ -70,9 +70,27 @@ namespace cc4s {
     }
     virtual void use() {}
 
+    /**
+     * \brief Specify named indices of this tensor to be used in a
+     * tensor expression. Indexed tensors are atomic types of tensor
+     * expressions.
+     **/
+    IndexedTensor<F> &operator[](std::string const &indices) {
+      return *new IndexedTensor<F>(this, indices);
+    }
+
+
+    void set_name(std::string const &name_) {
+      name = name_;
+    }
+    std::string const &get_name() const {
+      return name;
+    }
+
     int order;
     std::vector<int> lens, syms;
     SourceLocation location;
+    std::string name;
 
   protected:
     void allocate() {
