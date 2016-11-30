@@ -22,7 +22,16 @@ LaplceMp2Energy::~LaplceMp2Energy() {
 void LaplceMp2Energy::run() {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+  Tensor<> *Tn  (getTensorArgument("LaplaceGridPoints"));
+  Tensor<> *Wn  (getTensorArgument("LaplaceWights"));
+
+  Tensor<> Pan(2, vn, syms, *epsi->wrld, "Pan");
+  Tensor<> Hin(2, on, syms, *epsi->wrld, "Hin");
+
+  Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
+  PirR->set_name("PirR");
+  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+  LambdaGR->set_name("LambdaGR");
  
   Tensor<> Tabij(false, Vabij);
   Tabij["abij"] =  (*epsi)["i"];
