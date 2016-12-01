@@ -37,12 +37,6 @@ namespace cc4s {
       delete lhs, delete rhs;
     }
 
-    virtual void log() const {
-      rhs->log();
-      lhs->log();
-      LOG(0,"TCC") << "assignment" << std::endl;
-    };
-
     virtual shared_ptr<TensorOperation<F>> compile(std::string const &) {
       return make_shared<TensorAssignmentOperation<F>>(
         make_shared<TensorFetchOperation<F>>(lhs),

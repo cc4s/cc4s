@@ -2,6 +2,11 @@
 #ifndef TENSOR_CONTRACTION_DEFINED
 #define TENSOR_CONTRACTION_DEFINED
 
+// TODO: decouple compiler from expression structure
+// TODO: use namespace tcc and rename TensorX into X
+// TODO: rename cc4s::DryTensor into tcc::Tensor
+// TODO: decouple execution from expression structure, including binding to CTF
+
 #include <tcc/TensorExpression.hpp>
 #include <tcc/DryTensor.hpp>
 #include <tcc/TensorOperation.hpp>
@@ -81,13 +86,6 @@ namespace cc4s {
       for (auto factor(factors.begin()); factor != factors.end(); ++factor) {
         delete *factor;
       }
-    }
-
-    virtual void log() const {
-      for (auto factor(factors.begin()); factor != factors.end(); ++factor) {
-        (*factor)->log();
-      }
-      LOG(0, "TCC") << factors.size() << " tensors contracted" << std::endl;
     }
 
     virtual shared_ptr<TensorOperation<F>> compile(

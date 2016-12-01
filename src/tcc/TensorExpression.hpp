@@ -32,7 +32,6 @@ namespace cc4s {
     typedef F FieldType;
     virtual ~TensorExpression() {
     }
-    virtual void log() const = 0;
 
     template <typename Rhs>
     TensorAssignment<F> &operator =(Rhs &rhs) {
