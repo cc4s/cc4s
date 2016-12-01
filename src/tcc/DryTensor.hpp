@@ -51,10 +51,10 @@ namespace cc4s {
     DryTensor(
       int order_, int const *lens_, int const *syms_,
       SourceLocation const &location_ = SourceLocation()
-    ): order(order_), location(location_) {
+    ): order(order_), location(location_), lens(order_), syms(order_) {
       for (int i(0); i < order_; ++i) {
-        lens.push_back(lens_[i]);
-        syms.push_back(syms_[i]);
+        lens[i] = lens_[i];
+        syms[i] = syms_[i];
       }
       allocate();
     }

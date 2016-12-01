@@ -93,7 +93,7 @@ namespace cc4s {
       indexCounts.add(lhsIndices);
       std::vector<TensorOperation<F> *> operations(factors.size());
       for (int i(0); i < factors.size(); ++i) {
-        operations.push_back(new TensorFetchOperation<F>(factors[i]));
+        operations[i] = new TensorFetchOperation<F>(factors[i]);
         indexCounts.add(factors[i]->indices);
       }
       return compile(operations);
@@ -123,42 +123,53 @@ namespace cc4s {
 
           // just compile the contraction of a&b
           TensorContractionOperation<F> *abContraction(compile(a, b));
-          // add the indices of the result
-          indexCounts.add(abContraction->getResultIndices());
 
-          // build new list of factors
-          std::vector<TensorOperation<F> *> subOperations(
-            operations.size() - 1
-          );
-          subOperations.push_back(abContraction);
-          for (int k(0); k < operations.size(); ++k) {
-            if (k != i && k != j) subOperations.push_back(operations[k]);
-          }
-
-          // now do a recursive compilation of all the remaining factors
-          TensorContractionOperation<F> *fullContraction(
-            compile(subOperations)
-          );
-
-          // take out indices of contraction of a&b again
-          // for considering the next possibility
-          indexCounts.add(abContraction->getResultIndices(), -1);
-
-          // see if the entire contraction is currently best
-          if (
-            !bestContraction ||
-            fullContraction->costs < bestContraction->costs
-          ) {
-            if (bestContraction) {
-              // yes: throw away the previous best but keep the fetch ops
-              bestContraction->clearLeavingFetches();
-              delete bestContraction;
-            }
-            bestContraction = fullContraction;
+          if (operations.size() == 2) {
+            // we are done if there were only 2 factors to contract
+            bestContraction = abContraction;
           } else {
-            // no: throw away this one but keep the fetch operations
-            fullContraction->clearLeavingFetches();
-            delete fullContraction;
+            // otherwise, add indices of the result for further consideration
+            indexCounts.add(abContraction->getResultIndices());
+            // build new list of factors
+            std::vector<TensorOperation<F> *> subOperations(
+              operations.size() - 1
+            );
+            subOperations[0] = abContraction;
+            int l(1);
+            for (int k(0); k < operations.size(); ++k) {
+              if (k != i && k != j) subOperations[l++] = operations[k];
+            }
+
+            // now do a recursive compilation of all the remaining factors
+            TensorContractionOperation<F> *fullContraction(
+              compile(subOperations)
+            );
+
+            // take out indices of contraction of a&b again
+            // for considering the next possibility
+            indexCounts.add(abContraction->getResultIndices(), -1);
+
+            // see if the entire contraction is currently best
+            if (
+              !bestContraction ||
+              fullContraction->costs < bestContraction->costs
+            ) {
+              LOG(0, "TCC") << "improved solution found: " <<
+                fullContraction->costs.multiplicationsCount << " FLOPS, " <<
+                fullContraction->costs.maxElementsCount << " elements" <<
+                std::endl;
+              if (bestContraction) {
+                // yes: throw away the previous best but keep the fetch ops
+                bestContraction->clearLeavingFetches();
+                delete bestContraction;
+              }
+              bestContraction = fullContraction;
+            } else {
+              LOG(0, "TCC") << "discarding inferior solution" << std::endl;
+              // no: throw away this one but keep the fetch operations
+              fullContraction->clearLeavingFetches();
+              delete fullContraction;
+            }
           }
 
           // add the indices of factor b again
@@ -247,6 +258,9 @@ namespace cc4s {
       DryTensor<F> *contractionResult(
         new DryTensor<F>(o, outerIndexDimensions, outerIndexSymmetries)
       );
+      contractionResult->set_name(
+        a->getResult()->get_name() + b->getResult()->get_name()
+      );
       // TODO: name intermediate result tensor
       Costs contractionCosts(
         contractionResult->getElementsCount(),
@@ -255,8 +269,11 @@ namespace cc4s {
         outerElementsCount * contractedElementsCount - outerElementsCount
       );
 
-      LOG(0, "TCC") << "a[" << a->getResultIndices() << "]*" <<
-        "b[" << b->getResultIndices() << ": " <<
+      LOG(0, "TCC") <<
+        a->getResult()->get_name() << "[" << a->getResultIndices() <<
+        "]*" <<
+        b->getResult()->get_name() << "[" << b->getResultIndices() <<
+        "]: " <<
         "outerIndices=\"" << outerIndices << "\", " <<
         "contractedIndices=\"" << contractedIndices << "\"" << std::endl;
 

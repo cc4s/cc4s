@@ -24,6 +24,13 @@ namespace cc4s {
     virtual void execute() {
       // TODO: access actual tensors within DryTensors for execution
       // lhs->tensor->t->sum(lhs->indices, ... , *rhs->tensor->t, rhs->indices);
+      rhs->execute();
+      lhs->execute();
+      LOG(0, "TCC") << "executing " <<
+        lhs->getResult()->get_name() << "[" << lhs->getResultIndices() <<
+        "] = " <<
+        rhs->getResult()->get_name() << "[" << rhs->getResultIndices() <<
+        "]" << std::endl;
     }
 
     virtual DryTensor<F> *getResult() {

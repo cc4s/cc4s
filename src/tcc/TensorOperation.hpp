@@ -36,8 +36,10 @@ namespace cc4s {
      * leaves. This is used
      * by the contraction compiler when different orders of contrations
      * need to be tried without deleting the tensor fetch operations each time.
+     * \returns True if the called object can be deleted after returning.
      **/
-    virtual void clearLeavingFetches() {
+    virtual bool clearLeavingFetches() {
+      return false;
     }
 
     friend class TensorContraction<F>;
@@ -46,7 +48,14 @@ namespace cc4s {
 
   template <typename F>
   TensorOperation<F> *compile(TensorExpression<F> &expression) {
-    return expression.compile("");
+    TensorOperation<F> *result(compile(&expression));
+    delete &expression;
+    return result;
+  }
+
+  template <typename F>
+  TensorOperation<F> *compile(TensorExpression<F> *expression) {
+    return expression->compile("");
   }
 }
 

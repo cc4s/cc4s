@@ -4,6 +4,7 @@
 
 #include <tcc/DryTensor.hpp>
 #include <tcc/IndexedTensor.hpp>
+#include <util/Log.hpp>
 
 namespace cc4s {
   template <typename F>
