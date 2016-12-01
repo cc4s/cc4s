@@ -96,7 +96,7 @@ namespace cc4s {
       indexCounts = IndexCounts();
       indexCounts.add(lhsIndices);
       std::vector<shared_ptr<TensorOperation<F>>> operations(factors.size());
-      for (int i(0); i < factors.size(); ++i) {
+      for (unsigned int i(0); i < factors.size(); ++i) {
         operations[i] = make_shared<TensorFetchOperation<F>>(factors[i]);
         indexCounts.add(factors[i]->indices);
       }
@@ -124,11 +124,11 @@ namespace cc4s {
     ) {
       // no best contraction known at first
       shared_ptr<TensorContractionOperation<F>> bestContraction;
-      for (int i(0); i < operations.size()-1; ++i) {
+      for (unsigned int i(0); i < operations.size()-1; ++i) {
         shared_ptr<TensorOperation<F>> a(operations[i]);
         // take out the indices of factor a
         indexCounts.add(a->getResultIndices(), -1);
-        for (int j(i+1); j < operations.size(); ++j) {
+        for (unsigned int j(i+1); j < operations.size(); ++j) {
           shared_ptr<TensorOperation<F>> b(operations[j]);
           // take out the indices of factor b
           indexCounts.add(b->getResultIndices(), -1);
@@ -150,7 +150,7 @@ namespace cc4s {
             );
             subOperations[0] = abContraction;
             int l(1);
-            for (int k(0); k < operations.size(); ++k) {
+            for (unsigned int k(0); k < operations.size(); ++k) {
               if (k != i && k != j) subOperations[l++] = operations[k];
             }
 
@@ -200,10 +200,12 @@ namespace cc4s {
       const shared_ptr<TensorOperation<F>> &a,
       const shared_ptr<TensorOperation<F>> &b
     ) {
+/*
       char contractedIndices[
         std::min(a->getResultIndices().length(), b->getResultIndices().length())
           + 1
       ];
+*/
       int contractedIndexDimensions[
         std::min(a->getResultIndices().length(), b->getResultIndices().length())
           + 1
@@ -226,7 +228,7 @@ namespace cc4s {
       int c(0), o(0), u(0);
 
       // determine common unique indices
-      for (int i(0); i < a->getResultIndices().length(); ++i) {
+      for (unsigned int i(0); i < a->getResultIndices().length(); ++i) {
         const char index(a->getResultIndices()[i]);
         if (
           std::find(uniqueIndices, uniqueIndices+u, index) == uniqueIndices+u
@@ -236,7 +238,7 @@ namespace cc4s {
           ++u;
         }
       }
-      for (int i(0); i < b->getResultIndices().length(); ++i) {
+      for (unsigned int i(0); i < b->getResultIndices().length(); ++i) {
         const char index(b->getResultIndices()[i]);
         if (
           std::find(uniqueIndices, uniqueIndices+u, index) == uniqueIndices+u
@@ -261,14 +263,14 @@ namespace cc4s {
           ++o;
         } else {
           // index does not occur outside
-          contractedIndices[c] = index;
+//          contractedIndices[c] = index;
           contractedElementsCount *=
             contractedIndexDimensions[c] = uniqueIndexDimensions[i];
           ++c;
         }
       }
       outerIndices[o] = 0;
-      contractedIndices[c] = 0;
+//      contractedIndices[c] = 0;
 
       // allocate intermedate result
       DryTensor<F> *contractionResult(
