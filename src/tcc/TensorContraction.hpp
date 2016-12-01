@@ -160,15 +160,17 @@ namespace cc4s {
                 std::endl;
               if (bestContraction) {
                 // yes: throw away the previous best but keep the fetch ops
-                bestContraction->clearLeavingFetches();
-                delete bestContraction;
+                if (bestContraction->clearLeavingFetches()) {
+                  delete bestContraction;
+                }
               }
               bestContraction = fullContraction;
             } else {
               LOG(0, "TCC") << "discarding inferior solution" << std::endl;
               // no: throw away this one but keep the fetch operations
-              fullContraction->clearLeavingFetches();
-              delete fullContraction;
+              if (fullContraction->clearLeavingFetches()) {
+                delete fullContraction;
+              }
             }
           }
 
