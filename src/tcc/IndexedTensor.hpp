@@ -6,8 +6,11 @@
 #include <util/StaticAssert.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
+
 #include <string>
 #include <ostream>
+#include <memory>
+using std::shared_ptr;
 
 namespace cc4s {
   template <typename F=double>
@@ -37,7 +40,9 @@ namespace cc4s {
       LOG(0, "TCC") << tensor->get_name() << "[" << indices << "]" << std::endl;
     }
 
-    virtual TensorOperation<F> *compile(std::string const &lhsIndices) {
+    virtual shared_ptr<TensorOperation<F>> compile(
+      std::string const &lhsIndices
+    ) {
       // not to be used
       throw new EXCEPTION("Operation required.");
     }

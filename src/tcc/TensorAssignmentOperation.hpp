@@ -5,28 +5,29 @@
 #include <tcc/TensorOperation.hpp>
 #include <tcc/TensorFetchOperation.hpp>
 
+#include <memory>
+using std::shared_ptr;
+
 namespace cc4s {
   template <typename F>
   class TensorAssignmentOperation: public TensorOperation<F> {
   public:
     TensorAssignmentOperation(
-      TensorFetchOperation<F> *lhs_, TensorOperation<F> *rhs_
+      const shared_ptr<TensorFetchOperation<F>> &lhs_,
+      const shared_ptr<TensorOperation<F>> &rhs_
     ):
       TensorOperation<F>(rhs_->costs),
       lhs(lhs_), rhs(rhs_)
     {
     }
     virtual ~TensorAssignmentOperation() {
-      // the suboperations are dependent entities
-      if (lhs) delete lhs;
-      if (rhs) delete rhs;
     }
     virtual void execute() {
       // TODO: access actual tensors within DryTensors for execution
       // lhs->tensor->t->sum(lhs->indices, ... , *rhs->tensor->t, rhs->indices);
       rhs->execute();
       lhs->execute();
-      LOG(0, "TCC") << "executing " <<
+      LOG(1, "TCC") << "executing " <<
         lhs->getResult()->get_name() << "[" << lhs->getResultIndices() <<
         "] = " <<
         rhs->getResult()->get_name() << "[" << rhs->getResultIndices() <<
@@ -42,8 +43,8 @@ namespace cc4s {
     }
 
   protected:
-    TensorFetchOperation<F> *lhs;
-    TensorOperation<F> *rhs;
+    shared_ptr<TensorFetchOperation<F>> lhs;
+    shared_ptr<TensorOperation<F>> rhs;
   };
 }
 

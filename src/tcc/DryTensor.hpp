@@ -23,11 +23,14 @@ namespace cc4s {
         extendingResources.push_back(
           ExtendingResource(maxTotalSize, location)
         );
+/*
         LOG(2, "DryMemory") << "extending size=" << size << " at "
           << location << std::endl;
       } else {
+
         LOG(2, "DryMemory") << "non-extending size=" << size << " at "
           << location << std::endl;
+*/
       }
     }
     static void free(int64_t size) {
@@ -51,7 +54,7 @@ namespace cc4s {
     DryTensor(
       int order_, int const *lens_, int const *syms_,
       SourceLocation const &location_ = SourceLocation()
-    ): order(order_), location(location_), lens(order_), syms(order_) {
+    ): order(order_), lens(order_), syms(order_), location(location_) {
       for (int i(0); i < order_; ++i) {
         lens[i] = lens_[i];
         syms[i] = syms_[i];

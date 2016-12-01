@@ -9,6 +9,10 @@
 #include <util/StaticAssert.hpp>
 #include <util/Exception.hpp>
 
+#include <memory>
+using std::shared_ptr;
+using std::make_shared;
+
 namespace cc4s {
   template <typename F>
   class TensorAssignment: public TensorExpression<F> {
@@ -39,9 +43,9 @@ namespace cc4s {
       LOG(0,"TCC") << "assignment" << std::endl;
     };
 
-    virtual TensorOperation<F> *compile(std::string const &) {
-      return new TensorAssignmentOperation<F>(
-        new TensorFetchOperation<F>(lhs),
+    virtual shared_ptr<TensorOperation<F>> compile(std::string const &) {
+      return make_shared<TensorAssignmentOperation<F>>(
+        make_shared<TensorFetchOperation<F>>(lhs),
         rhs->compile(lhs->indices)
       );
     }
