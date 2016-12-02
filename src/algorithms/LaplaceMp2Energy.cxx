@@ -125,6 +125,7 @@ void LaplaceMp2Energy::run() {
   toComplexTensor(*realwn, *wn);
 
 
+  calculateDirectTermAnalytically();
   double dire(calculateDirectTerm());
 //  double exce(calculateExchangeTerm());
 //  double e(dire + exce);
@@ -200,6 +201,46 @@ double LaplaceMp2Energy::calculateDirectTerm() {
   ChiVRSn["RSn"] = (*GpRSn)["RSn"] * (*GhRSn)["SRn"];
   ChiVRSn["RTn"] = ChiVRSn["RSn"] * (*VRS)["ST"];
   energy[""] = (*wn)["n"] * ChiVRSn["RTn"] * ChiVRSn["TRn"];
+  complex e(energy.get_val());
+  LOG(0, "IMP2") << "Direct energy computed = " << e << std::endl;
+  return 2.0 * std::real(energy.get_val());
+}
+
+double LaplaceMp2Energy::calculateDirectTermAnalytically() {
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
+  int NF(GammaFqr->lens[0]);
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(No+Nv);
+  int FaiStart[] = {0, No, 0};
+  int FaiEnd[]   = {NF,Np,No};
+  Tensor<complex> GammaFai(GammaFqr->slice(FaiStart,FaiEnd));
+  GammaFai.set_name("GammaFai");
+  Tensor<complex> conjGammaFai(false, GammaFai);
+  Univar_Function<complex> fConj(&conj<complex>);
+  conjGammaFai.sum(1.0, GammaFai,"Fai", 0.0,"Fai", fConj);
+
+  int lens[] = { Nv,Nv,No,No };
+  int syms[] = { NS,NS,NS,NS };
+  Tensor<complex> cVabij(4, lens, syms, *GammaFqr->wrld, "cVabij");
+  cVabij["abij"] = conjGammaFai["Fai"] * GammaFai["Fbj"];
+
+  Tensor<complex> cDabij(false, cVabij);
+  Tensor<complex> cepsi(1, &No, syms, *epsi->wrld, "cepsi");
+  toComplexTensor(*epsi, cepsi);
+  Tensor<complex> cepsa(1, &Nv, syms, *epsa->wrld, "cepsi");
+  toComplexTensor(*epsa, cepsa);
+  cDabij["abij"] =  cepsi["i"];
+  cDabij["abij"] += cepsi["j"];
+  cDabij["abij"] -= cepsa["a"];
+  cDabij["abij"] -= cepsa["b"];
+  Bivar_Function<complex> fDivide(&divide<complex>);
+  cDabij.contract(1.0, cVabij,"abij", cDabij,"abij", 0.0,"abij", fDivide);
+
+  Scalar<complex> energy(*Cc4s::world);
+  energy[""] = cDabij["abij"] * cVabij["abij"];
   complex e(energy.get_val());
   LOG(0, "IMP2") << "Direct energy computed = " << e << std::endl;
   return 2.0 * std::real(energy.get_val());

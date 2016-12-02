@@ -28,6 +28,7 @@ namespace cc4s {
 
     double calculateDirectTerm();
     double calculateExchangeTerm();
+    double calculateDirectTermAnalytically();
   };
 }
 
