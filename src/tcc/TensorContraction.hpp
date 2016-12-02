@@ -2,6 +2,11 @@
 #ifndef TENSOR_CONTRACTION_DEFINED
 #define TENSOR_CONTRACTION_DEFINED
 
+// TODO: decouple compiler from expression structure
+// TODO: use namespace tcc and rename TensorX into X
+// TODO: rename cc4s::DryTensor into tcc::Tensor
+// TODO: decouple execution from expression structure, including binding to CTF
+
 #include <tcc/TensorExpression.hpp>
 #include <tcc/DryTensor.hpp>
 #include <tcc/TensorOperation.hpp>
@@ -10,7 +15,11 @@
 #include <tcc/IndexCounts.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Log.hpp>
+
 #include <vector>
+#include <memory>
+using std::shared_ptr;
+using std::make_shared;
 
 namespace cc4s {
   template <typename F>
@@ -79,24 +88,26 @@ namespace cc4s {
       }
     }
 
-    virtual void log() const {
-      for (auto factor(factors.begin()); factor != factors.end(); ++factor) {
-        (*factor)->log();
-      }
-      LOG(0, "TCC") << factors.size() << " tensors contracted" << std::endl;
-    }
-
-    virtual TensorOperation<F> *compile(std::string const &lhsIndices) {
+    virtual shared_ptr<TensorOperation<F>> compile(
+      std::string const &lhsIndices
+    ) {
       LOG(0, "TCC") << "compiling contraction..." << std::endl;
-      LOG(0, "TCC") << "building index counts..." << std::endl;
+      LOG(2, "TCC") << "building index counts..." << std::endl;
       indexCounts = IndexCounts();
       indexCounts.add(lhsIndices);
-      std::vector<TensorOperation<F> *> operations(factors.size());
-      for (int i(0); i < factors.size(); ++i) {
-        operations[i] = new TensorFetchOperation<F>(factors[i]);
+      std::vector<shared_ptr<TensorOperation<F>>> operations(factors.size());
+      for (unsigned int i(0); i < factors.size(); ++i) {
+        operations[i] = make_shared<TensorFetchOperation<F>>(factors[i]);
         indexCounts.add(factors[i]->indices);
       }
-      return compile(operations);
+      triedPossibilitiesCount = 0;
+      shared_ptr<TensorOperation<F>> result(compile(operations));
+      LOG(1, "TCC") <<
+        "possibilites tried=" << triedPossibilitiesCount <<
+        ", FLOPS=" << result->costs.multiplicationsCount <<
+        ", maximum elements stored=" << result->costs.maxElementsCount <<
+        std::endl;
+      return result;
     }
 
     std::vector<IndexedTensor<F> *> factors;
@@ -107,22 +118,25 @@ namespace cc4s {
      * the best order of contractions. The indexCounts are modified
      * during evaluation.
      **/
-    TensorContractionOperation<F> *compile(
-      std::vector<TensorOperation<F> *> operations
+    shared_ptr<TensorContractionOperation<F>> compile(
+      const std::vector<shared_ptr<TensorOperation<F>>> &operations,
+      const int level = 0
     ) {
       // no best contraction known at first
-      TensorContractionOperation<F> *bestContraction(nullptr);
-      for (int i(0); i < operations.size()-1; ++i) {
-        TensorOperation<F> *a(operations[i]);
+      shared_ptr<TensorContractionOperation<F>> bestContraction;
+      for (unsigned int i(0); i < operations.size()-1; ++i) {
+        shared_ptr<TensorOperation<F>> a(operations[i]);
         // take out the indices of factor a
         indexCounts.add(a->getResultIndices(), -1);
-        for (int j(i+1); j < operations.size(); ++j) {
-          TensorOperation<F> *b(operations[j]);
+        for (unsigned int j(i+1); j < operations.size(); ++j) {
+          shared_ptr<TensorOperation<F>> b(operations[j]);
           // take out the indices of factor b
           indexCounts.add(b->getResultIndices(), -1);
 
           // just compile the contraction of a&b
-          TensorContractionOperation<F> *abContraction(compile(a, b));
+          shared_ptr<TensorContractionOperation<F>> abContraction(
+            compile(a, b)
+          );
 
           if (operations.size() == 2) {
             // we are done if there were only 2 factors to contract
@@ -131,18 +145,18 @@ namespace cc4s {
             // otherwise, add indices of the result for further consideration
             indexCounts.add(abContraction->getResultIndices());
             // build new list of factors
-            std::vector<TensorOperation<F> *> subOperations(
+            std::vector<shared_ptr<TensorOperation<F>>> subOperations(
               operations.size() - 1
             );
             subOperations[0] = abContraction;
             int l(1);
-            for (int k(0); k < operations.size(); ++k) {
+            for (unsigned int k(0); k < operations.size(); ++k) {
               if (k != i && k != j) subOperations[l++] = operations[k];
             }
 
             // now do a recursive compilation of all the remaining factors
-            TensorContractionOperation<F> *fullContraction(
-              compile(subOperations)
+            shared_ptr<TensorContractionOperation<F>> fullContraction(
+              compile(subOperations, level+1)
             );
 
             // take out indices of contraction of a&b again
@@ -154,24 +168,23 @@ namespace cc4s {
               !bestContraction ||
               fullContraction->costs < bestContraction->costs
             ) {
-              LOG(0, "TCC") << "improved solution found: " <<
-                fullContraction->costs.multiplicationsCount << " FLOPS, " <<
-                fullContraction->costs.maxElementsCount << " elements" <<
-                std::endl;
-              if (bestContraction) {
-                // yes: throw away the previous best but keep the fetch ops
-                if (bestContraction->clearLeavingFetches()) {
-                  delete bestContraction;
-                }
-              }
               bestContraction = fullContraction;
+              if (level == 0) { // do output only in topmost level
+                LOG(2, "TCC") <<
+                  "possibilites tried=" << triedPossibilitiesCount <<
+                  ", improved solution found: " <<
+                  "FLOPS=" << fullContraction->costs.multiplicationsCount <<
+                  ", maximum elements stored=" <<
+                  fullContraction->costs.maxElementsCount << std::endl;
+              }
             } else {
-              LOG(0, "TCC") << "discarding inferior solution" << std::endl;
-              // no: throw away this one but keep the fetch operations
-              if (fullContraction->clearLeavingFetches()) {
-                delete fullContraction;
+              if (level == 0) {
+                LOG(3, "TCC") <<
+                  "possibilites tried=" << triedPossibilitiesCount <<
+                  ", discarding inferior solution" << std::endl;
               }
             }
+            ++triedPossibilitiesCount;
           }
 
           // add the indices of factor b again
@@ -183,13 +196,16 @@ namespace cc4s {
       return bestContraction;
     }
 
-    TensorContractionOperation<F> *compile(
-      TensorOperation<F> *a, TensorOperation<F> *b
+    shared_ptr<TensorContractionOperation<F>> compile(
+      const shared_ptr<TensorOperation<F>> &a,
+      const shared_ptr<TensorOperation<F>> &b
     ) {
+/*
       char contractedIndices[
         std::min(a->getResultIndices().length(), b->getResultIndices().length())
           + 1
       ];
+*/
       int contractedIndexDimensions[
         std::min(a->getResultIndices().length(), b->getResultIndices().length())
           + 1
@@ -212,7 +228,7 @@ namespace cc4s {
       int c(0), o(0), u(0);
 
       // determine common unique indices
-      for (int i(0); i < a->getResultIndices().length(); ++i) {
+      for (unsigned int i(0); i < a->getResultIndices().length(); ++i) {
         const char index(a->getResultIndices()[i]);
         if (
           std::find(uniqueIndices, uniqueIndices+u, index) == uniqueIndices+u
@@ -222,7 +238,7 @@ namespace cc4s {
           ++u;
         }
       }
-      for (int i(0); i < b->getResultIndices().length(); ++i) {
+      for (unsigned int i(0); i < b->getResultIndices().length(); ++i) {
         const char index(b->getResultIndices()[i]);
         if (
           std::find(uniqueIndices, uniqueIndices+u, index) == uniqueIndices+u
@@ -247,14 +263,14 @@ namespace cc4s {
           ++o;
         } else {
           // index does not occur outside
-          contractedIndices[c] = index;
+//          contractedIndices[c] = index;
           contractedElementsCount *=
             contractedIndexDimensions[c] = uniqueIndexDimensions[i];
           ++c;
         }
       }
       outerIndices[o] = 0;
-      contractedIndices[c] = 0;
+//      contractedIndices[c] = 0;
 
       // allocate intermedate result
       DryTensor<F> *contractionResult(
@@ -270,7 +286,7 @@ namespace cc4s {
         outerElementsCount * contractedElementsCount,
         outerElementsCount * contractedElementsCount - outerElementsCount
       );
-
+/*
       LOG(0, "TCC") <<
         a->getResult()->get_name() << "[" << a->getResultIndices() <<
         "]*" <<
@@ -278,10 +294,10 @@ namespace cc4s {
         "]: " <<
         "outerIndices=\"" << outerIndices << "\", " <<
         "contractedIndices=\"" << contractedIndices << "\"" << std::endl;
-
-      return new TensorContractionOperation<F>(
+*/
+      return make_shared<TensorContractionOperation<F>>(
         a, b,
-        contractionResult, outerIndices,
+        contractionResult, static_cast<const char *>(outerIndices),
         contractionCosts
       );
     }
@@ -292,6 +308,8 @@ namespace cc4s {
      * assignment are also counted. This array is updated during compilation.
      **/
     IndexCounts indexCounts;
+
+    int64_t triedPossibilitiesCount;
   };
 
   template <typename Lhs, typename Rhs>

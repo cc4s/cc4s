@@ -7,6 +7,8 @@
 #include <tcc/TensorContractionOperation.hpp>
 
 #include <array>
+#include <memory>
+using std::shared_ptr;
 
 using namespace cc4s;
 
@@ -61,17 +63,17 @@ void TensorNetwork::dryRun() {
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
 
-  TensorOperation<> *factorOperation = compile(
+  shared_ptr<TensorOperation<>> factorOperation = compile(
     Gamma["Fqr"] = Lambda["RF"] * PiT["Rq"] * Pi["Rr"]
   );
   factorOperation->execute();
 
-  TensorOperation<> *ladder = compile(
+  shared_ptr<TensorOperation<>> ladderOperation = compile(
     T["abij"] =
       T["cdij"] * Pi["Rd"]  * PiT["Rb"] *
       Pi["Sc"] * PiT["Sa"] * LambdaT["SF"] * Lambda["RF"]
   );
-  ladder->execute();
+  ladderOperation->execute();
 }
 
 

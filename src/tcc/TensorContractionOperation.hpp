@@ -8,15 +8,17 @@
 #include <util/Log.hpp>
 
 #include <string>
+#include <memory>
+using std::shared_ptr;
 
 namespace cc4s {
   template <typename F>
   class TensorContractionOperation: public TensorOperation<F> {
   public:
     TensorContractionOperation(
-      TensorOperation<F> *left_,
-      TensorOperation<F> *right_,
-      DryTensor<F> *result_, std::string const &resultIndices_,
+      const shared_ptr<TensorOperation<F>> &left_,
+      const shared_ptr<TensorOperation<F>> &right_,
+      DryTensor<F> *result_, const char *resultIndices_,
       Costs &contractionCosts
     ):
       TensorOperation<F>(left_->costs + right_->costs),
@@ -34,17 +36,13 @@ namespace cc4s {
     }
 
     virtual ~TensorContractionOperation() {
-      // the suboperations and the intermediate result are dependent entities
-      // unless they have been taken over by another entity
-      if (left) delete left;
-      if (right) delete right;
       if (result) delete result;
     }
 
     virtual void execute() {
       left->execute();
       right->execute();
-      LOG(0, "TCC") << "executing " <<
+      LOG(1, "TCC") << "executing " <<
         result->get_name() << "[" << resultIndices << "] = " <<
         left->getResult()->get_name() << "[" << left->getResultIndices() <<
         "] * " <<
@@ -61,16 +59,8 @@ namespace cc4s {
     }
 
   protected:
-    virtual bool clearLeavingFetches() {
-      if (left->clearLeavingFetches()) delete left;
-      left = nullptr;
-      if (right->clearLeavingFetches()) delete right;
-      right = nullptr;
-      return true;
-    }
-
-    TensorOperation<F> *left;
-    TensorOperation<F> *right;
+    shared_ptr<TensorOperation<F>> left;
+    shared_ptr<TensorOperation<F>> right;
 
     DryTensor<F> *result;
     std::string resultIndices;
