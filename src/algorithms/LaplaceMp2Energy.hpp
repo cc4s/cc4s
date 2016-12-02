@@ -1,8 +1,9 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef LAPLACE_MP2_ENERGY_DEFINED
 #define LAPLACE_MP2_ENERGY_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <math/Complex.hpp>
 
 namespace cc4s {
   /**
@@ -21,6 +22,12 @@ namespace cc4s {
      * \brief Dry run for the MP2 energy from Coulomb integrals Vabij
      */
     virtual void dryRun();
+
+  protected:
+    CTF::Tensor<complex> *GpRSn, *GhRSn, *VRS, *wn;
+
+    double calculateDirectTerm();
+    double calculateExchangeTerm();
   };
 }
 

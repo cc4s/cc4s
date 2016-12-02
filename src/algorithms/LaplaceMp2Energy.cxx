@@ -19,14 +19,16 @@ LaplaceMp2Energy::LaplaceMp2Energy(
 }
 
 LaplaceMp2Energy::~LaplaceMp2Energy() {
+  delete GhRSn; delete GpRSn;
+  delete VRS; delete wn;
 }
 
 void LaplaceMp2Energy::run() {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Tn  (getTensorArgument("ImaginaryTimePoints"));
-  Tensor<> *Wn  (getTensorArgument("ImaginaryTimeWeights"));
 
+  // TODO: slice over imaginary time samples to conserve memory
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
   int Nn(Tn->lens[0]);
@@ -46,6 +48,7 @@ void LaplaceMp2Energy::run() {
   ) (
     Pan["an"]
   );
+  LOG(0, "IMP2") << "Particle time propagator set up" << std::endl;
 
   Hin["in"]  = (*epsi)["i"];
   Hin["in"] += (-1.0) * mu;
@@ -56,6 +59,7 @@ void LaplaceMp2Energy::run() {
   ) (
     Hin["in"]
   );
+  LOG(0, "IMP2") << "Hole time propagator set up" << std::endl;
 
   Tensor<complex> CPan(2, vn, syms, *epsi->wrld, "CPan");
   toComplexTensor(Pan, CPan);
@@ -70,13 +74,12 @@ void LaplaceMp2Energy::run() {
 
   int Np(PirR->lens[0]);
   int NR(PirR->lens[1]);
-  int NG(LambdaGR->lens[0]);
-  int  RR[] =     { NR, NR };
+  int RR[]  =     { NR, NR };
   int RRn[] = { NR, NR, Nn };
 
-  Tensor<complex> VRS  (2, RR,  syms, *PirR->wrld,   "VRS");
-  Tensor<complex> GpRSn(2, RRn, syms, *PirR->wrld, "GpRSn");
-  Tensor<complex> GhRSn(2, RRn, syms, *PirR->wrld, "GhRSn");
+  VRS =   new Tensor<complex>(2, RR,  syms, *PirR->wrld,   "VRS");
+  GpRSn = new Tensor<complex>(3, RRn, syms, *PirR->wrld, "GpRSn");
+  GhRSn = new Tensor<complex>(3, RRn, syms, *PirR->wrld, "GhRSn");
 
   // Allocate and compute PiaR
   int aRStart[] = {No , 0};
@@ -94,32 +97,34 @@ void LaplaceMp2Energy::run() {
   Tensor<complex> conjLambdaGR(false, LambdaGR);
   conjLambdaGR.set_name("ConjLambdaGR");
   conjLambdaGR.sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
-  VRS["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
+  (*VRS)["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
+  // FIXME: imaginary part manually discarded, should be zero
+  VRS->sum(-0.5, *VRS,"RS", 0.5,"RS", fConj);
+  LOG(0, "IMP2") << "Coulomb propagator set up" << std::endl;
 
-  Tensor<complex> conjPiiR(false, PiiR);
-  conjPiiR.set_name("ConjPiiR");
-  conjPiiR.sum(1.0, PiiR,"iR", 0.0,"iR", fConj);
-  GhRSn["RSn"] = conjPiiR["iS"] * PiiR["iR"] * Hin["in"];
+  // TODO: check for real factor orbitals
+  (*GhRSn)["RSn"] = PiiR["iS"] * PiiR["iR"] * Hin["in"];
+  LOG(0, "IMP2") << "Hole propagator set up" << std::endl;
 
-  Tensor<complex> conjPiaR(false, PiaR);
-  conjPiaR.set_name("ConjPiaR");
-  conjPiaR.sum(1.0, PiaR,"aR", 0.0,"aR", fConj);
-  GpRSn["RSn"] = conjPiaR["aS"] * PiaR["aR"] * Pan["an"];
+  (*GpRSn)["RSn"] = PiaR["aS"] * PiaR["aR"] * Pan["an"];
+  LOG(0, "IMP2") << "Particle propagator set up" << std::endl;
 
-  Scalar<> energy(*Cc4s::world);
-  double e, dire, exce;
 
-  energy[""] = VRS["RS"] * GpRSn["RTn"] * GhRSn["TRn"] * GpRSn["SUn"] * GhRSn["USn"] * VRS["TU"];
-  dire =  2.0 * energy.get_val();
-  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] * GpRSn["RTn"] * GhRSn["URn"];
-  exce = -1.0 * energy.get_val();
-  e = dire + exce;
+  // get numerical weights
+  Tensor<> *realwn(getTensorArgument("ImaginaryTimeWeights"));
+  wn = new Tensor<complex>(1, &Nn, syms, *PirR->wrld, "wn");
+  toComplexTensor(*realwn, *wn);
 
-  LOG(0, "MP2") << "e=" << e << std::endl;
+
+  double dire(calculateDirectTerm());
+//  double exce(calculateExchangeTerm());
+//  double e(dire + exce);
+
+//  LOG(0, "MP2") << "e=" << e << std::endl;
   LOG(1, "MP2") << "MP2d=" << dire << std::endl;
-  LOG(1, "MP2") << "MP2x=" << exce << std::endl;
+//  LOG(1, "MP2") << "MP2x=" << exce << std::endl;
 
-  setRealArgument("Mp2Energy", e);
+  setRealArgument("Mp2Energy", dire);
 }
 
 void LaplaceMp2Energy::dryRun() {
@@ -153,15 +158,14 @@ void LaplaceMp2Energy::dryRun() {
   DryTensor<> Pan(2, vn, syms, SOURCE_LOCATION);
   DryTensor<> Hin(2, on, syms, SOURCE_LOCATION);
 
-  int Np(PirR->lens[0]);
+//  int Np(PirR->lens[0]);
   int NR(PirR->lens[1]);
-  int NG(LambdaGR->lens[0]);
   int RR[] =   { NR, NR };
   int RRn[] =  { NR, NR, Nn };
 
   DryTensor<complex> VRS  (2, RR,  syms, SOURCE_LOCATION);
-  DryTensor<complex> GpRSn(2, RRn, syms, SOURCE_LOCATION);
-  DryTensor<complex> GhRSn(2, RRn, syms, SOURCE_LOCATION);
+  DryTensor<complex> GpRSn(3, RRn, syms, SOURCE_LOCATION);
+  DryTensor<complex> GhRSn(3, RRn, syms, SOURCE_LOCATION);
 
   // Allocate and compute PiaR
   int vR[] =   { Nv, NR };
@@ -176,7 +180,25 @@ void LaplaceMp2Energy::dryRun() {
   DryTensor<complex> conjPiiR(PiiR);
 
   DryTensor<complex> conjPiaR(PiaR);
+  Wn->use();
 
   DryScalar<> energy();
+}
+
+double LaplaceMp2Energy::calculateDirectTerm() {
+  Scalar<complex> energy(*Cc4s::world);
+  Tensor<complex> ChiVRSn(false, *GpRSn);
+  ChiVRSn["RSn"] = (*GpRSn)["RSn"] * (*GhRSn)["SRn"];
+  ChiVRSn["RSn"] *= (*VRS)["RS"];
+  energy[""] = (*wn)["n"] * ChiVRSn["RSn"] * ChiVRSn["SRn"];
+  LOG(0, "IMP2") << "Direct energy computed" << std::endl;
+  return 2.0 * std::real(energy.get_val());
+}
+
+double LaplaceMp2Energy::calculateExchangeTerm() {
+//  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] * GpRSn["RTn"] * GhRSn["URn"] * (*Wn)["n"];
+//  LOG(0, "IMP2") << "Exchange energy computed" << std::endl;
+//  exce = -1.0 * energy.get_val();
+  return 0.0;
 }
 
