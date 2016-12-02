@@ -4,6 +4,11 @@
 
 #include <util/StaticAssert.hpp>
 
+#include <memory>
+using std::shared_ptr;
+
+// TODO: use shared pointers for entire tcc
+
 namespace cc4s {
   // forward class declaration of interdependent expression types
   template <typename F=double>
@@ -27,7 +32,6 @@ namespace cc4s {
     typedef F FieldType;
     virtual ~TensorExpression() {
     }
-    virtual void log() const = 0;
 
     template <typename Rhs>
     TensorAssignment<F> &operator =(Rhs &rhs) {
@@ -40,7 +44,9 @@ namespace cc4s {
     /**
      * \brief Compile this tensor expression into a TensorOperation.
      **/
-    virtual TensorOperation<F> *compile(std::string const &lhsIndices) = 0;
+    virtual shared_ptr<TensorOperation<F>> compile(
+      std::string const &lhsIndices
+    ) = 0;
   };
 }
 

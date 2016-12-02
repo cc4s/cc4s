@@ -8,6 +8,9 @@
 #include <util/Log.hpp>
 #include <algorithm>
 
+#include <memory>
+using std::shared_ptr;
+
 namespace cc4s {
   template <typename F>
   class TensorContractionOperation;
@@ -29,32 +32,18 @@ namespace cc4s {
      * \brief Costs to evaluate this operation in time and memory
      **/
     Costs costs;
-
-  protected:
-    /**
-     * \brief Delete suboperations without deleting fetch operations at the
-     * leaves. This is used
-     * by the contraction compiler when different orders of contrations
-     * need to be tried without deleting the tensor fetch operations each time.
-     * \returns True if the called object can be deleted after returning.
-     **/
-    virtual bool clearLeavingFetches() {
-      return false;
-    }
-
-    friend class TensorContraction<F>;
-    friend class TensorContractionOperation<F>;
   };
 
   template <typename F>
-  TensorOperation<F> *compile(TensorExpression<F> &expression) {
-    TensorOperation<F> *result(compile(&expression));
+  shared_ptr<TensorOperation<F>> compile(TensorExpression<F> &expression) {
+    shared_ptr<TensorOperation<F>> result(compile(&expression));
+    // TODO: use shared pointers in entire tcc
     delete &expression;
     return result;
   }
 
   template <typename F>
-  TensorOperation<F> *compile(TensorExpression<F> *expression) {
+  shared_ptr<TensorOperation<F>> compile(TensorExpression<F> *expression) {
     return expression->compile("");
   }
 }
