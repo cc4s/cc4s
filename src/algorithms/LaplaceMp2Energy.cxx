@@ -26,12 +26,12 @@ LaplaceMp2Energy::~LaplaceMp2Energy() {
 void LaplaceMp2Energy::run() {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  Tensor<> *Tn  (getTensorArgument("ImaginaryTimePoints"));
+  Tensor<> *Taun(getTensorArgument("ImaginaryTimePoints"));
 
   // TODO: slice over imaginary time samples to conserve memory
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
-  int Nn(Tn->lens[0]);
+  int Nn(Taun->lens[0]);
   int on[] = { No, Nn };
   int vn[] = { Nv, Nn };
   int syms[] = { NS, NS, NS, NS };
@@ -40,26 +40,22 @@ void LaplaceMp2Energy::run() {
 
   double mu(getRealArgument("ChemicalPotential"));
   Pan["an"]  = (*epsa)["a"];
-  Pan["an"] += (-1.0) * mu;
-  Pan["an"] *= (*Tn)["n"];
-
-  Pan["an"] = CTF::Function<double, double>(
-    std::function<double(double)>([](double c){ return std::exp(-c); })
+  Pan["an"] -= mu;
+  Pan["an"] *= (*Taun)["n"];
+  CTF::Transform<double>(
+    std::function<void(double &)>([](double &c){ c = std::exp(-c); })
   ) (
     Pan["an"]
   );
-  LOG(0, "IMP2") << "Particle time propagator set up" << std::endl;
 
   Hin["in"]  = (*epsi)["i"];
-  Hin["in"] += (-1.0) * mu;
-  Hin["in"] *= (*Tn)["n"];
-
-  Hin["in"] = CTF::Function<double, double>(
-    std::function<double(double)>([](double c){ return std::exp(c); })
+  Hin["in"] -= mu;
+  Hin["in"] *= (*Taun)["n"];
+  CTF::Transform<double>(
+    std::function<void(double &)>([](double &c){ c = std::exp(+c); })
   ) (
     Hin["in"]
   );
-  LOG(0, "IMP2") << "Hole time propagator set up" << std::endl;
 
   Tensor<complex> CPan(2, vn, syms, *epsi->wrld, "CPan");
   toComplexTensor(Pan, CPan);
@@ -77,19 +73,32 @@ void LaplaceMp2Energy::run() {
   int RR[]  =     { NR, NR };
   int RRn[] = { NR, NR, Nn };
 
+  {
+    // check whether factor orbitals are real
+    Tensor<> realPirR(2, PirR->lens, PirR->sym, *PirR->wrld, "realPirR");
+    Tensor<> imagPirR(2, PirR->lens, PirR->sym, *PirR->wrld, "imagPirR");
+    fromComplexTensor(*PirR, realPirR, imagPirR);
+    double imagNorm(imagPirR.norm2());
+    if (imagNorm > 1e-8) {
+      throw new EXCEPTION(
+        "real factor orbitals expecteed. Use (realFactorOrbitals 1) in decomposition."
+      );
+    }
+  }
+
   VRS =   new Tensor<complex>(2, RR,  syms, *PirR->wrld,   "VRS");
   GpRSn = new Tensor<complex>(3, RRn, syms, *PirR->wrld, "GpRSn");
   GhRSn = new Tensor<complex>(3, RRn, syms, *PirR->wrld, "GhRSn");
 
   // Allocate and compute PiaR
-  int aRStart[] = {No , 0};
-  int aREnd[]   = {Np ,NR};
+  int aRStart[] = {No, 0};
+  int aREnd[]   = {Np,NR};
   Tensor<complex> PiaR(PirR->slice(aRStart,aREnd));
   PiaR.set_name("PiaR");
 
   // Allocate and compute PiiR
-  int iRStart[] = {0 , 0};
-  int iREnd[]   = {No ,NR};
+  int iRStart[] = {0,  0};
+  int iREnd[]   = {No,NR};
   Tensor<complex> PiiR(PirR->slice(iRStart,iREnd));
   PiiR.set_name("PiiR");
 
@@ -99,14 +108,14 @@ void LaplaceMp2Energy::run() {
   conjLambdaGR.sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
   (*VRS)["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
   // FIXME: imaginary part manually discarded, should be zero
-  VRS->sum(-0.5, *VRS,"RS", 0.5,"RS", fConj);
+//  VRS->sum(-0.5, *VRS,"RS", 0.5,"RS", fConj);
   LOG(0, "IMP2") << "Coulomb propagator set up" << std::endl;
 
-  // TODO: check for real factor orbitals
-  (*GhRSn)["RSn"] = PiiR["iS"] * PiiR["iR"] * Hin["in"];
+  // NOTE: the hole propagator sign is considered for the entire term, not here
+  (*GhRSn)["RSn"] = PiiR["iS"] * PiiR["iR"] * CHin["in"];
   LOG(0, "IMP2") << "Hole propagator set up" << std::endl;
 
-  (*GpRSn)["RSn"] = PiaR["aS"] * PiaR["aR"] * Pan["an"];
+  (*GpRSn)["RSn"] = PiaR["aS"] * PiaR["aR"] * CPan["an"];
   LOG(0, "IMP2") << "Particle propagator set up" << std::endl;
 
 
@@ -189,14 +198,16 @@ double LaplaceMp2Energy::calculateDirectTerm() {
   Scalar<complex> energy(*Cc4s::world);
   Tensor<complex> ChiVRSn(false, *GpRSn);
   ChiVRSn["RSn"] = (*GpRSn)["RSn"] * (*GhRSn)["SRn"];
-  ChiVRSn["RSn"] *= (*VRS)["RS"];
-  energy[""] = (*wn)["n"] * ChiVRSn["RSn"] * ChiVRSn["SRn"];
-  LOG(0, "IMP2") << "Direct energy computed" << std::endl;
+  ChiVRSn["RTn"] = ChiVRSn["RSn"] * (*VRS)["ST"];
+  energy[""] = (*wn)["n"] * ChiVRSn["RTn"] * ChiVRSn["TRn"];
+  complex e(energy.get_val());
+  LOG(0, "IMP2") << "Direct energy computed = " << e << std::endl;
   return 2.0 * std::real(energy.get_val());
 }
 
 double LaplaceMp2Energy::calculateExchangeTerm() {
-//  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] * GpRSn["RTn"] * GhRSn["URn"] * (*Wn)["n"];
+//  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] *
+//    GpRSn["RTn"] * GhRSn["URn"] * (*Wn)["n"];
 //  LOG(0, "IMP2") << "Exchange energy computed" << std::endl;
 //  exce = -1.0 * energy.get_val();
   return 0.0;
