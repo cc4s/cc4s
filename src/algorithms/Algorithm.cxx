@@ -91,7 +91,6 @@ double Algorithm::getRealArgument(std::string const &name) {
   if (realData) return realData->value;
   IntegerData *integerData(dynamic_cast<IntegerData *>(data));
   if (integerData) return getRealArgumentFromInteger(integerData);
-  return realData ? realData->value : getRealArgumentFromInteger(integerData);
   TensorData<double> *tensorData(dynamic_cast<TensorData<double> *>(data));
   if (tensorData) return getRealArgumentFromTensor(tensorData);
   std::stringstream sstream;
