@@ -3,7 +3,6 @@
 #define DRY_TENSOR_DEFINED
 
 #include <util/SourceLocation.hpp>
-#include <tcc/IndexedTensor.hpp>
 #include <util/Log.hpp>
 #include <cstdint>
 #include <vector>
@@ -40,7 +39,7 @@ namespace cc4s {
     static std::vector<ExtendingResource> extendingResources;
   };
 
-  template <typename F>
+  template <typename F=double>
   class DryTensor {
   public:
     /**
@@ -80,16 +79,6 @@ namespace cc4s {
       }
       return elementsCount;
     }
-
-    /**
-     * \brief Specify named indices of this tensor to be used in a
-     * tensor expression. Indexed tensors are atomic types of tensor
-     * expressions.
-     **/
-    IndexedTensor<F> &operator[](std::string const &indices) {
-      return *new IndexedTensor<F>(this, indices);
-    }
-
 
     void set_name(std::string const &name_) {
       name = name_;

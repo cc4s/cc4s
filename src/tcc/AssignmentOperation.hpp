@@ -1,29 +1,28 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TENSOR_ASSIGNMENT_OPERATION_DEFINED
-#define TENSOR_ASSIGNMENT_OPERATION_DEFINED
+#ifndef TCC_ASSIGNMENT_OPERATION_DEFINED
+#define TCC_ASSIGNMENT_OPERATION_DEFINED
 
-#include <tcc/TensorOperation.hpp>
-#include <tcc/TensorFetchOperation.hpp>
+#include <tcc/Operation.hpp>
+#include <tcc/FetchOperation.hpp>
 
 #include <memory>
-using std::shared_ptr;
 
-namespace cc4s {
+namespace tcc {
   template <typename F>
-  class TensorAssignmentOperation: public TensorOperation<F> {
+  class AssignmentOperation: public Operation<F> {
   public:
-    TensorAssignmentOperation(
-      const shared_ptr<TensorFetchOperation<F>> &lhs_,
-      const shared_ptr<TensorOperation<F>> &rhs_
+    AssignmentOperation(
+      const std::shared_ptr<FetchOperation<F>> &lhs_,
+      const std::shared_ptr<Operation<F>> &rhs_
     ):
-      TensorOperation<F>(rhs_->costs),
+      Operation<F>(rhs_->costs),
       lhs(lhs_), rhs(rhs_)
     {
     }
-    virtual ~TensorAssignmentOperation() {
+    virtual ~AssignmentOperation() {
     }
     virtual void execute() {
-      // TODO: access actual tensors within DryTensors for execution
+      // TODO: access actual tensors within Tensors for execution
       // lhs->tensor->t->sum(lhs->indices, ... , *rhs->tensor->t, rhs->indices);
       rhs->execute();
       lhs->execute();
@@ -34,7 +33,7 @@ namespace cc4s {
         "]" << std::endl;
     }
 
-    virtual DryTensor<F> *getResult() {
+    virtual std::shared_ptr<Tensor<F>> getResult() {
       return lhs->getResult();
     }
 
@@ -43,8 +42,8 @@ namespace cc4s {
     }
 
   protected:
-    shared_ptr<TensorFetchOperation<F>> lhs;
-    shared_ptr<TensorOperation<F>> rhs;
+    std::shared_ptr<FetchOperation<F>> lhs;
+    std::shared_ptr<Operation<F>> rhs;
   };
 }
 

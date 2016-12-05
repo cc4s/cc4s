@@ -1,10 +1,10 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef COSTS_DEFINED
-#define COSTS_DEFINED
+#ifndef TCC_COSTS_DEFINED
+#define TCC_COSTS_DEFINED
 
 #include <limits>
 
-namespace cc4s {
+namespace tcc {
   class Costs {
   public:
     Costs(

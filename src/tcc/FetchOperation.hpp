@@ -1,32 +1,31 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TENSOR_FETCH_OPERATION_DEFINED
-#define TENSOR_FETCH_OPERATION_DEFINED
+#ifndef TCC_FETCH_OPERATION_DEFINED
+#define TCC_FETCH_OPERATION_DEFINED
 
-#include <tcc/DryTensor.hpp>
+#include <tcc/Tensor.hpp>
 #include <tcc/IndexedTensor.hpp>
 #include <util/Log.hpp>
 
-namespace cc4s {
+namespace tcc {
   template <typename F>
-  class TensorFetchOperation: public TensorOperation<F> {
+  class FetchOperation: public Operation<F> {
   public:
-    TensorFetchOperation(
+    FetchOperation(
       IndexedTensor<F> *t_
     ):
-      TensorOperation<F>(Costs(t_->tensor->getElementsCount())),
+      Operation<F>(Costs(t_->tensor->getElementsCount())),
       tensor(t_->tensor),
       indices(t_->indices)
     {
     }
-    virtual ~TensorFetchOperation() {
-      // the fetched tensor is an idependent entity and not to be deleted
+    virtual ~FetchOperation() {
     }
 
     virtual void execute() {
       // nothing to be done in a fetch
     }
 
-    virtual DryTensor<F> *getResult() {
+    virtual std::shared_ptr<Tensor<F>> getResult() {
       return tensor;
     }
 
@@ -35,7 +34,7 @@ namespace cc4s {
     }
 
   protected:
-    DryTensor<F> *tensor;
+    std::shared_ptr<Tensor<F>> tensor;
     std::string indices;
   };
 }

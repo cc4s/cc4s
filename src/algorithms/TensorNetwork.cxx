@@ -1,16 +1,18 @@
 #include <algorithms/TensorNetwork.hpp>
-#include <tcc/DryTensor.hpp>
-#include <tcc/TensorContraction.hpp>
-#include <tcc/TensorAssignment.hpp>
-#include <tcc/TensorOperation.hpp>
-#include <tcc/TensorAssignmentOperation.hpp>
-#include <tcc/TensorContractionOperation.hpp>
+#include <tcc/Tensor.hpp>
+#include <tcc/Contraction.hpp>
+#include <tcc/Assignment.hpp>
+#include <tcc/Operation.hpp>
+#include <tcc/AssignmentOperation.hpp>
+#include <tcc/ContractionOperation.hpp>
 
 #include <array>
 #include <memory>
 using std::shared_ptr;
+using std::make_shared;
 
 using namespace cc4s;
+using namespace tcc;
 
 ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);
 
@@ -30,50 +32,60 @@ void TensorNetwork::run() {
 
 
 void TensorNetwork::dryRun() {
-  DryTensor<> T(
-    4, std::array<int,4>{{100,100,10,10}}.data(),
-    std::array<int,4>{{0,0,0,0}}.data()
+  int No(10);
+  int Nv(90);
+  int Np(No+Nv);
+  int NF(200);
+  int NR(300);
+
+  shared_ptr<Tensor<>> T(
+    make_shared<Tensor<>>(std::vector<int>{{100,100,10,10}}, "T")
   );
-  T.set_name("T");
-  DryTensor<> Pi(
-    2, std::array<int,2>{{300,100}}.data(),
-    std::array<int,2>{{0,0}}.data()
+  shared_ptr<Tensor<>> Pi(
+    make_shared<Tensor<>>(std::vector<int>{{300,100}}, "Pi")
   );
-  Pi.set_name("Pi");
-  DryTensor<> PiT(
-    2, std::array<int,2>{{300,100}}.data(),
-    std::array<int,2>{{0,0}}.data()
+  shared_ptr<Tensor<>> PiT(
+    make_shared<Tensor<>>(std::vector<int>{{300,100}}, "PiT")
   );
-  PiT.set_name("PiT");
-  DryTensor<> Lambda(
-    2, std::array<int,2>{{300,200}}.data(),
-    std::array<int,2>{{0,0}}.data()
+  shared_ptr<Tensor<>> Lambda(
+    make_shared<Tensor<>>(std::vector<int>{{300,200}}, "Lambda")
   );
-  Lambda.set_name("Lambda");
-  DryTensor<> LambdaT(
-    2, std::array<int,2>{{300,200}}.data(),
-    std::array<int,2>{{0,0}}.data()
+  shared_ptr<Tensor<>> LambdaT(
+    make_shared<Tensor<>>(std::vector<int>{{300,200}}, "LambdaT")
   );
-  LambdaT.set_name("LambdaT");
-  DryTensor<> Gamma(
-    3, std::array<int,3>{{200, 100,100}}.data(),
-    std::array<int,3>{{0,0,0}}.data()
-  );
-  Gamma.set_name("Gamma");
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
 
-  shared_ptr<TensorOperation<>> factorOperation = compile(
-    Gamma["Fqr"] = Lambda["RF"] * PiT["Rq"] * Pi["Rr"]
-  );
-  factorOperation->execute();
 
-  shared_ptr<TensorOperation<>> ladderOperation = compile(
-    T["abij"] =
-      T["cdij"] * Pi["Rd"]  * PiT["Rb"] *
-      Pi["Sc"] * PiT["Sa"] * LambdaT["SF"] * Lambda["RF"]
+  shared_ptr<Operation<>> ladderOperation = compile(
+    (*T)["abij"] =
+      (*T)["cdij"] * (*Pi)["Rd"]  * (*PiT)["Rb"] *
+      (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
   );
   ladderOperation->execute();
+
+// this contraction already requires heuristics
+/*
+  Tensor<> Pia(std::vector<int>{{NR,Nv}}, "Pia");
+  Tensor<> Pii(std::vector<int>{{NR,No}}, "Pii");
+  int Nn(7);
+  Tensor<> w(std::vector<int>{{Nn}}, "w");
+  Tensor<> H(std::array<int>{{No,Nn}}, "H");
+  Tensor<> P(std::array<int>{{Nv,Nn}}, "P");
+  Tensor<> e(std::vector<int>(), "e");
+  
+  shared_ptr<Operation<>> imaginaryTimeMp2Operation = compile(
+    e[""] =
+      Pii["Ri"]  * Pia["Ra"] *
+        LambdaT["RF"] * Lambda["SF"] *
+      Pii["Sj"] * Pia["Sb"] *
+        w["n"] * P["an"] * H["in"] * P["bn"] * H["jn"] *
+      Pii["Ti"]  * Pia["Ta"] *
+        LambdaT["TH"] * Lambda["UH"] *
+      Pii["Uj"] * Pia["Ub"]
+  );
+  imaginaryTimeMp2Operation->execute();
+*/
 }
 
 

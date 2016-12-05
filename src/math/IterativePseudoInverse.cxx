@@ -2,6 +2,7 @@
 
 #include <math/MathFunctions.hpp>
 #include <math/RandomTensor.hpp>
+#include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <complex>
 #include <limits>

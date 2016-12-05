@@ -1,50 +1,46 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TENSOR_EXPRESSION_DEFINED
-#define TENSOR_EXPRESSION_DEFINED
+#ifndef TCC_EXPRESSION_DEFINED
+#define TCC_EXPRESSION_DEFINED
 
 #include <util/StaticAssert.hpp>
-
 #include <memory>
-using std::shared_ptr;
 
-// TODO: use shared pointers for entire tcc
-
-namespace cc4s {
+namespace tcc {
   // forward class declaration of interdependent expression types
   template <typename F=double>
-  class TensorExpression;
+  class Expression;
 
   template <typename F=double>
   class IndexedTensor;
 
   template <typename F=double>
-  class TensorContraction;
+  class Contraction;
 
   template <typename F=double>
-  class TensorAssignment;
+  class Assignment;
 
   template <typename F=double>
-  class TensorOperation;
+  class Operation;
 
   template <typename F>
-  class TensorExpression {
+  class Expression {
   public:
     typedef F FieldType;
-    virtual ~TensorExpression() {
+    virtual ~Expression() {
     }
 
     template <typename Rhs>
-    TensorAssignment<F> &operator =(Rhs &rhs) {
+    Assignment<F> &operator =(Rhs &rhs) {
       static_assert(
-        StaticAssert<F>::False,
+        cc4s::StaticAssert<F>::False,
         "Only indexed tensors may be used as the left hand side of an assignment."
       );
     }
 
     /**
-     * \brief Compile this tensor expression into a TensorOperation.
+     * \brief Compile this tensor expression into a Operation.
      **/
-    virtual shared_ptr<TensorOperation<F>> compile(
+    virtual std::shared_ptr<Operation<F>> compile(
       std::string const &lhsIndices
     ) = 0;
   };

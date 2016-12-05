@@ -1,27 +1,27 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TENSOR_CONTRACTION_OPERATION_DEFINED
-#define TENSOR_CONTRACTION_OPERATION_DEFINED
+#ifndef TCC_CONTRACTION_OPERATION_DEFINED
+#define TCC_CONTRACTION_OPERATION_DEFINED
 
-#include <tcc/TensorOperation.hpp>
+#include <tcc/Operation.hpp>
 #include <tcc/Costs.hpp>
-#include <tcc/DryTensor.hpp>
+#include <tcc/Tensor.hpp>
 #include <util/Log.hpp>
 
 #include <string>
 #include <memory>
-using std::shared_ptr;
 
-namespace cc4s {
+namespace tcc {
   template <typename F>
-  class TensorContractionOperation: public TensorOperation<F> {
+  class ContractionOperation: public Operation<F> {
   public:
-    TensorContractionOperation(
-      const shared_ptr<TensorOperation<F>> &left_,
-      const shared_ptr<TensorOperation<F>> &right_,
-      DryTensor<F> *result_, const char *resultIndices_,
+    ContractionOperation(
+      const std::shared_ptr<Operation<F>> &left_,
+      const std::shared_ptr<Operation<F>> &right_,
+      const std::shared_ptr<Tensor<F>> &result_,
+      const char *resultIndices_,
       Costs &contractionCosts
     ):
-      TensorOperation<F>(left_->costs + right_->costs),
+      Operation<F>(left_->costs + right_->costs),
       left(left_), right(right_),
       result(result_),
       resultIndices(resultIndices_)
@@ -35,8 +35,7 @@ namespace cc4s {
       this->costs += contractionCosts;
     }
 
-    virtual ~TensorContractionOperation() {
-      if (result) delete result;
+    virtual ~ContractionOperation() {
     }
 
     virtual void execute() {
@@ -50,7 +49,7 @@ namespace cc4s {
         "]" << std::endl;
     }
 
-    virtual DryTensor<F> *getResult() {
+    virtual std::shared_ptr<Tensor<F>> getResult() {
       return result;
     }
 
@@ -59,13 +58,13 @@ namespace cc4s {
     }
 
   protected:
-    shared_ptr<TensorOperation<F>> left;
-    shared_ptr<TensorOperation<F>> right;
+    std::shared_ptr<Operation<F>> left;
+    std::shared_ptr<Operation<F>> right;
 
-    DryTensor<F> *result;
+    std::shared_ptr<Tensor<F>> result;
     std::string resultIndices;
 
-    friend class TensorContraction<F>;
+    friend class Contraction<F>;
   };
 }
 

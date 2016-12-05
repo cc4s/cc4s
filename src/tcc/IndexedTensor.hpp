@@ -1,8 +1,8 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef INDEXED_TENSOR_DEFINED
-#define INDEXED_TENSOR_DEFINED
+#ifndef TCC_INDEXED_TENSOR_DEFINED
+#define TCC_INDEXED_TENSOR_DEFINED
 
-#include <tcc/TensorExpression.hpp>
+#include <tcc/Expression.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
@@ -10,37 +10,33 @@
 #include <string>
 #include <ostream>
 #include <memory>
-using std::shared_ptr;
 
-namespace cc4s {
+namespace tcc {
   template <typename F=double>
-  class DryTensor;
+  class Tensor;
 
   template <typename F>
-  class IndexedTensor: public TensorExpression<F> {
+  class IndexedTensor:
+    public Expression<F>,
+    public std::enable_shared_from_this<IndexedTensor<F>>
+  {
   public:
     /**
      * \brief Creates an expression with named indices from a stored
-     * tensor further operations such as contractions or index permutations.
+     * tensor for further operations such as contractions or assignments.
      * \param[in] tensor_ The stored tensor to be operated on.
-     * The tensor is an idependent entity and will not be destroyed upon
-     * destruction of this expression.
      * \param[in] indices_ The index character string where each character
      * specifies the index name of the respective dimension index in this
      * expression.
      **/
     IndexedTensor(
-      DryTensor<F> *tensor_, std::string const &indices_
+      const std::shared_ptr<Tensor<F>> &tensor_, const std::string &indices_
     ): tensor(tensor_), indices(indices_) {
     }
     virtual ~IndexedTensor() {
     }
 
-    virtual void log() const {
-      LOG(0, "TCC") << tensor->get_name() << "[" << indices << "]" << std::endl;
-    }
-
-    virtual shared_ptr<TensorOperation<F>> compile(
+    virtual std::shared_ptr<Operation<F>> compile(
       std::string const &lhsIndices
     ) {
       // not to be used
@@ -53,21 +49,25 @@ namespace cc4s {
      * for possible further operations.
      **/
     template <typename Rhs>
-    TensorAssignment<typename Rhs::FieldType> &operator =(Rhs &rhs) {
+    Assignment<typename Rhs::FieldType> &operator =(
+      const std::shared_ptr<Rhs> &rhs
+    ) {
       static_assert(
-        TypeRelations<F, typename Rhs::FieldType>::Equals,
+        cc4s::TypeRelations<F, typename Rhs::FieldType>::Equals,
         "Assignment requires tensors of same type"
       );
-      return *new TensorAssignment<typename Rhs::FieldType>(this, &rhs);
+      return std::make_shared<Assignment<typename Rhs::FieldType>>(
+        this->shared_from_this(), rhs
+      );
     }
 
-    DryTensor<F> *tensor;
+    std::shared_ptr<Tensor<F>> tensor;
     std::string indices;
   };
 
   template <typename F>
   inline std::ostream &operator <<(
-    std::ostream &stream, IndexedTensor<F> const &t
+    std::ostream &stream, const IndexedTensor<F> &t
   ) {
     return stream << t.tensor->get_name() << "[" << t.indices << "]";
   }

@@ -1,70 +1,61 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TENSOR_CONTRACTION_DEFINED
-#define TENSOR_CONTRACTION_DEFINED
+#ifndef TCC_CONTRACTION_DEFINED
+#define TCC_CONTRACTION_DEFINEDoin
 
 // TODO: decouple compiler from expression structure
-// TODO: use namespace tcc and rename TensorX into X
-// TODO: rename cc4s::DryTensor into tcc::Tensor
 // TODO: decouple execution from expression structure, including binding to CTF
 
-#include <tcc/TensorExpression.hpp>
-#include <tcc/DryTensor.hpp>
-#include <tcc/TensorOperation.hpp>
-#include <tcc/TensorContractionOperation.hpp>
-#include <tcc/TensorFetchOperation.hpp>
+#include <tcc/Expression.hpp>
+#include <tcc/Tensor.hpp>
+#include <tcc/Operation.hpp>
+#include <tcc/ContractionOperation.hpp>
+#include <tcc/FetchOperation.hpp>
 #include <tcc/IndexCounts.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Log.hpp>
 
 #include <vector>
 #include <memory>
-using std::shared_ptr;
-using std::make_shared;
 
-namespace cc4s {
+namespace tcc {
   template <typename F>
-  class TensorContraction: public TensorExpression<F> {
+  class Contraction: public Expression<F> {
   public:
     /**
      * \brief Flattening constructor given two contractions.
      **/
-    TensorContraction(
-      TensorContraction<F> *lhs, TensorContraction<F> *rhs
-    ): factors(lhs.factors) {
+    Contraction(
+      const std::shared_ptr<Contraction<F>> &lhs,
+      const std::shared_ptr<Contraction<F>> &rhs
+    ): factors(lhs->factors) {
       factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
-      // the factors from both lhs and rhs contractions are now contained here
-      lhs->factors.clear(); rhs->factors.clear();
-      delete lhs, rhs;
     }
     /**
      * \brief Flattening constructor given a contraction on the left hand
      * side and another expression on the right hand side.
      **/
-    TensorContraction(
-      TensorContraction<F> *lhs, IndexedTensor<F> *rhs
+    Contraction(
+      const std::shared_ptr<Contraction<F>> &lhs,
+      const std::shared_ptr<IndexedTensor<F>> &rhs
     ): factors(lhs->factors) {
       factors.push_back(rhs);
-      // the factors from the lhs expression are now contained here
-      lhs->factors.clear();
-      delete lhs;
     }
     /**
      * \brief Flattening constructor given a contraction on the right hand
      * side and another expression on the left hand side.
      **/
-    TensorContraction(
-      IndexedTensor<F> *lhs, TensorContraction<F> *rhs
-    ): factors(rhs.factors) {
+    Contraction(
+      const std::shared_ptr<IndexedTensor<F>> &lhs,
+      const std::shared_ptr<Contraction<F>> &rhs
+    ): factors(rhs->factors) {
       factors.push_back(lhs);
-      // the factors from the rhs expression are now contained here
-      rhs->factors.clear();
-      delete rhs;
     }
     /**
      * \brief Constructor given two indexed tensors.
      **/
-    TensorContraction(
-      IndexedTensor<F> *lhs, IndexedTensor<F> *rhs
+    Contraction(
+      const std::shared_ptr<IndexedTensor<F>> &lhs,
+      const std::shared_ptr<IndexedTensor<F>> &rhs
     ) {
       factors.push_back(lhs);
       factors.push_back(rhs);
@@ -73,35 +64,34 @@ namespace cc4s {
      * \brief Constructor given two general expressions.
      * This is currently not supported.
      **/
-    TensorContraction(
-      TensorExpression<F> *lhs, TensorExpression<F> *rhs
+    Contraction(
+      const std::shared_ptr<Expression<F>> &lhs,
+      const std::shared_ptr<Expression<F>> &rhs
     ) {
       static_assert(
-        StaticAssert<F>::False,
+        cc4s::StaticAssert<F>::False,
         "Only contractions of contractions or tensors supported."
       );
     }
-    virtual ~TensorContraction() {
-      // subexpressions are dependent entities: delete each factor
-      for (auto factor(factors.begin()); factor != factors.end(); ++factor) {
-        delete *factor;
-      }
+    virtual ~Contraction() {
     }
 
-    virtual shared_ptr<TensorOperation<F>> compile(
+    virtual std::shared_ptr<Operation<F>> compile(
       std::string const &lhsIndices
     ) {
       LOG(0, "TCC") << "compiling contraction..." << std::endl;
       LOG(2, "TCC") << "building index counts..." << std::endl;
       indexCounts = IndexCounts();
       indexCounts.add(lhsIndices);
-      std::vector<shared_ptr<TensorOperation<F>>> operations(factors.size());
+      std::vector<std::shared_ptr<Operation<F>>> operations(
+        factors.size()
+      );
       for (unsigned int i(0); i < factors.size(); ++i) {
-        operations[i] = make_shared<TensorFetchOperation<F>>(factors[i]);
+        operations[i] = std::make_shared<FetchOperation<F>>(factors[i]);
         indexCounts.add(factors[i]->indices);
       }
       triedPossibilitiesCount = 0;
-      shared_ptr<TensorOperation<F>> result(compile(operations));
+      std::shared_ptr<Operation<F>> result(compile(operations));
       LOG(1, "TCC") <<
         "possibilites tried=" << triedPossibilitiesCount <<
         ", FLOPS=" << result->costs.multiplicationsCount <<
@@ -110,31 +100,31 @@ namespace cc4s {
       return result;
     }
 
-    std::vector<IndexedTensor<F> *> factors;
+    std::vector<const std::shared_ptr<IndexedTensor<F>>> factors;
 
   protected:
     /**
-     * \brief Compiles the given list of TensorOperations trying to find
+     * \brief Compiles the given list of Operations trying to find
      * the best order of contractions. The indexCounts are modified
      * during evaluation.
      **/
-    shared_ptr<TensorContractionOperation<F>> compile(
-      const std::vector<shared_ptr<TensorOperation<F>>> &operations,
+    std::shared_ptr<ContractionOperation<F>> compile(
+      const std::vector<std::shared_ptr<Operation<F>>> &operations,
       const int level = 0
     ) {
       // no best contraction known at first
-      shared_ptr<TensorContractionOperation<F>> bestContraction;
+      std::shared_ptr<ContractionOperation<F>> bestContraction;
       for (unsigned int i(0); i < operations.size()-1; ++i) {
-        shared_ptr<TensorOperation<F>> a(operations[i]);
+        std::shared_ptr<Operation<F>> a(operations[i]);
         // take out the indices of factor a
         indexCounts.add(a->getResultIndices(), -1);
         for (unsigned int j(i+1); j < operations.size(); ++j) {
-          shared_ptr<TensorOperation<F>> b(operations[j]);
+          std::shared_ptr<Operation<F>> b(operations[j]);
           // take out the indices of factor b
           indexCounts.add(b->getResultIndices(), -1);
 
           // just compile the contraction of a&b
-          shared_ptr<TensorContractionOperation<F>> abContraction(
+          std::shared_ptr<ContractionOperation<F>> abContraction(
             compile(a, b)
           );
 
@@ -145,7 +135,7 @@ namespace cc4s {
             // otherwise, add indices of the result for further consideration
             indexCounts.add(abContraction->getResultIndices());
             // build new list of factors
-            std::vector<shared_ptr<TensorOperation<F>>> subOperations(
+            std::vector<std::shared_ptr<Operation<F>>> subOperations(
               operations.size() - 1
             );
             subOperations[0] = abContraction;
@@ -155,7 +145,7 @@ namespace cc4s {
             }
 
             // now do a recursive compilation of all the remaining factors
-            shared_ptr<TensorContractionOperation<F>> fullContraction(
+            std::shared_ptr<ContractionOperation<F>> fullContraction(
               compile(subOperations, level+1)
             );
 
@@ -196,9 +186,9 @@ namespace cc4s {
       return bestContraction;
     }
 
-    shared_ptr<TensorContractionOperation<F>> compile(
-      const shared_ptr<TensorOperation<F>> &a,
-      const shared_ptr<TensorOperation<F>> &b
+    std::shared_ptr<ContractionOperation<F>> compile(
+      const std::shared_ptr<Operation<F>> &a,
+      const std::shared_ptr<Operation<F>> &b
     ) {
 /*
       char contractedIndices[
@@ -273,8 +263,10 @@ namespace cc4s {
 //      contractedIndices[c] = 0;
 
       // allocate intermedate result
-      DryTensor<F> *contractionResult(
-        new DryTensor<F>(o, outerIndexDimensions, outerIndexSymmetries)
+      std::shared_ptr<Tensor<F>> contractionResult(
+        std::make_shared<Tensor<F>>(
+          std::vector<int>(outerIndexDimensions, outerIndexDimensions+o)
+        )
       );
       contractionResult->set_name(
         a->getResult()->get_name() + b->getResult()->get_name()
@@ -295,7 +287,7 @@ namespace cc4s {
         "outerIndices=\"" << outerIndices << "\", " <<
         "contractedIndices=\"" << contractedIndices << "\"" << std::endl;
 */
-      return make_shared<TensorContractionOperation<F>>(
+      return std::make_shared<ContractionOperation<F>>(
         a, b,
         contractionResult, static_cast<const char *>(outerIndices),
         contractionCosts
@@ -313,14 +305,16 @@ namespace cc4s {
   };
 
   template <typename Lhs, typename Rhs>
-  inline TensorContraction<typename Lhs::FieldType> &operator *(
-    Lhs &A, Rhs &B
+  inline std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
+    const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
   ) {
     static_assert(
-      TypeRelations<typename Lhs::FieldType, typename Rhs::FieldType>::Equals,
+      cc4s::TypeRelations<
+        typename Lhs::FieldType, typename Rhs::FieldType
+      >::Equals,
       "Only tensors of the same type can be contracted."
     );
-    return *new TensorContraction<typename Lhs::FieldType>(&A, &B);
+    return std::make_shared<Contraction<typename Lhs::FieldType>>(A, B);
   }
 }
 

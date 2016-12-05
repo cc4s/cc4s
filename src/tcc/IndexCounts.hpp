@@ -1,8 +1,8 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef INDEX_COUNTS_DEFINED
-#define INDEX_COUNTS_DEFINED
+#ifndef TCC_INDEX_COUNTS_DEFINED
+#define TCC_INDEX_COUNTS_DEFINED
 
-namespace cc4s {
+namespace tcc {
   class IndexCounts {
   public:
     IndexCounts() {
