@@ -14,12 +14,20 @@ namespace tcc {
   template <typename F>
   class ContractionOperation: public Operation<F> {
   public:
+    /**
+     * \brief Creates a contraction operation contracting the results of
+     * the left and the right sub-operations where the result is to be
+     * stored in the specified result tensor.
+     * Not intended for direct invocation. Use compile(expression) to
+     * generate operations.
+     **/
     ContractionOperation(
       const std::shared_ptr<Operation<F>> &left_,
       const std::shared_ptr<Operation<F>> &right_,
       const std::shared_ptr<Tensor<F>> &result_,
       const char *resultIndices_,
-      Costs &contractionCosts
+      Costs &contractionCosts,
+      const typename Operation<F>::ProtectedToken &
     ):
       Operation<F>(left_->costs + right_->costs),
       left(left_), right(right_),

@@ -19,6 +19,12 @@ namespace tcc {
   template <typename F>
   class IndexedTensor: public Expression<F> {
   public:
+    /**
+     * \brief Creats an expression with named indices from a stored
+     * tensor for further operations such as moves or contractions.
+     * Not for direct invocation. Use tcc::IndexedTensor<F>::create
+     * or the operator [] on tcc::Tensor<F> objects instead.
+     **/
     IndexedTensor(
       const std::shared_ptr<Tensor<F>> &tensor_, const std::string &indices_,
       const typename Expression<F>::ProtectedToken &protectedToken
@@ -34,13 +40,9 @@ namespace tcc {
       throw new EXCEPTION("Operation on IndexedTensor required.");
     }
 
-    std::shared_ptr<Tensor<F>> tensor;
-    std::string indices;
-
-  protected:
     /**
      * \brief Creates an expression with named indices from a stored
-     * tensor for further operations such as contractions or assignments.
+     * tensor for further operations such as moves or contractions.
      * \param[in] tensor The stored tensor to be operated on.
      * \param[in] indices The index character string where each character
      * specifies the index name of the respective dimension index in this
@@ -54,7 +56,10 @@ namespace tcc {
       );
     }
 
-    friend class Tensor<F>;
+    std::shared_ptr<Tensor<F>> tensor;
+    std::string indices;
+
+  protected:
     template <typename Rhs>
     friend std::shared_ptr<Assignment<typename Rhs::FieldType>> operator <<=(
       const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,

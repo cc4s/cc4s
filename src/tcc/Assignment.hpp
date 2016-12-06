@@ -14,6 +14,12 @@ namespace tcc {
   template <typename F>
   class Assignment: public Expression<F> {
   public:
+    /**
+     * \brief Creates a move expression of the right hand side tensor
+     * expression rhs in the left hand tensor expression lhs.
+     * Not indended for direct invocation. Use Assignment::create or
+     * the operator <<= instead.
+     **/
     Assignment(
       const std::shared_ptr<IndexedTensor<F>> &lhs_,
       const std::shared_ptr<Expression<F>> &rhs_,
@@ -47,6 +53,22 @@ namespace tcc {
         ),
         rhs->compile(lhs->indices),
         typename Operation<F>::ProtectedToken()
+      );
+    }
+
+    /**
+     * \brief Moves the given right hand side expression into the given
+     * indexed tensor, returning the indexed tensor as result expression
+     * for possible further operations.
+     **/
+    template <typename Rhs>
+    static std::shared_ptr<Assignment<typename Rhs::FieldType>> create(
+      const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
+      const std::shared_ptr<Rhs> &rhs
+    ) {
+      return std::make_shared<Assignment<typename Rhs::FieldType>>(
+        lhs, rhs,
+        typename Expression<typename Rhs::FieldType>::ProtectedToken()
       );
     }
 

@@ -12,6 +12,12 @@ namespace tcc {
   template <typename F>
   class FetchOperation: public Operation<F> {
   public:
+    /**
+     * \brief Creates a fetch operation of a tensor making it accessible
+     * for subsequent move or contraction operations.
+     * Not intended for direct invocation. Use compile(expression) to
+     * generate operations.
+     **/
     FetchOperation(
       const std::shared_ptr<IndexedTensor<F>> &t_,
       const typename Operation<F>::ProtectedToken &

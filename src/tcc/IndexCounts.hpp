@@ -3,6 +3,13 @@
 #define TCC_INDEX_COUNTS_DEFINED
 
 namespace tcc {
+  /**
+   * \brief Contains frequency counts for all indicies in a
+   * contraction including the indices on the left hand side.
+   * These counts are used to efficiently determine which indices
+   * are outer indices and which are contracted indices for each
+   * individual contraction.
+   **/
   class IndexCounts {
   public:
     IndexCounts() {

@@ -18,17 +18,13 @@
 #include <memory>
 
 namespace tcc {
-/*
-  template <typename Lhs, typename Rhs>
-  std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
-    const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
-  );
-*/
   template <typename F>
   class Contraction: public Expression<F> {
   public:
     /**
      * \brief Flattening constructor given two contractions.
+     * Not intended for direct invocation, create contractions
+     * using the static create method or the operator *.
      **/
     Contraction(
       const std::shared_ptr<Contraction<F>> &lhs,
@@ -40,6 +36,8 @@ namespace tcc {
     /**
      * \brief Flattening constructor given a contraction on the left hand
      * side and another expression on the right hand side.
+     * Not intended for direct invocation, create contractions
+     * using the static create method or the operator *.
      **/
     Contraction(
       const std::shared_ptr<Contraction<F>> &lhs,
@@ -51,6 +49,8 @@ namespace tcc {
     /**
      * \brief Flattening constructor given a contraction on the right hand
      * side and another expression on the left hand side.
+     * Not intended for direct invocation, create contractions
+     * using the static create method or the operator *.
      **/
     Contraction(
       const std::shared_ptr<IndexedTensor<F>> &lhs,
@@ -61,6 +61,8 @@ namespace tcc {
     }
     /**
      * \brief Constructor given two indexed tensors.
+     * Not intended for direct invocation, create contractions
+     * using the static create method or the operator *.
      **/
     Contraction(
       const std::shared_ptr<IndexedTensor<F>> &lhs,
@@ -73,6 +75,8 @@ namespace tcc {
     /**
      * \brief Constructor given two general expressions.
      * This is currently not supported.
+     * Not intended for direct invocation, create contractions
+     * using the static create method or the operator *.
      **/
     Contraction(
       const std::shared_ptr<Expression<F>> &lhs,
@@ -111,6 +115,26 @@ namespace tcc {
         ", maximum elements stored=" << result->costs.maxElementsCount <<
         std::endl;
       return result;
+    }
+
+    /**
+     * \brief Creates a contraction expression of the two given tensor
+     * expressions A and B.
+     **/
+    template <typename Lhs, typename Rhs>
+    static std::shared_ptr<Contraction<typename Lhs::FieldType>> create(
+      const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
+    ) {
+      static_assert(
+        cc4s::TypeRelations<
+          typename Lhs::FieldType, typename Rhs::FieldType
+        >::Equals,
+        "Only tensors of the same type can be contracted."
+      );
+      return std::make_shared<Contraction<typename Lhs::FieldType>>(
+        A, B,
+        typename Expression<typename Lhs::FieldType>::ProtectedToken()
+      );
     }
 
     std::vector<std::shared_ptr<IndexedTensor<F>>> factors;
@@ -296,7 +320,8 @@ namespace tcc {
       return std::make_shared<ContractionOperation<F>>(
         a, b,
         contractionResult, static_cast<const char *>(outerIndices),
-        contractionCosts
+        contractionCosts,
+        typename Operation<F>::ProtectedToken()
       );
     }
 
@@ -309,12 +334,17 @@ namespace tcc {
 
     int64_t triedPossibilitiesCount;
 
+    // allows access to all operator * overloads to create contraction objects
     template <typename Lhs, typename Rhs>
     friend std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
       const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
     );
   };
 
+  /**
+   * \brief Creates a contraction expression of the two given tensor
+   * expressions A and B using the multiplication operator *.
+   **/
   template <typename Lhs, typename Rhs>
   inline std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
     const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B

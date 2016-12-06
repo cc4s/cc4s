@@ -24,6 +24,11 @@ namespace tcc {
     };
 
   public:
+    /**
+     * \brief Create a tensor of dimensions lens_[0] x lens_[1] x ... with
+     * a specified name.
+     * Not intended for direct invocation. Use Tcc::createTensor instead.
+     **/
     Tensor(
       const std::vector<int> &lens_,
       const std::string &name_,
