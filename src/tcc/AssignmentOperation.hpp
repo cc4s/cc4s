@@ -27,9 +27,9 @@ namespace tcc {
       rhs->execute();
       lhs->execute();
       LOG(1, "TCC") << "executing " <<
-        lhs->getResult()->get_name() << "[" << lhs->getResultIndices() <<
+        lhs->getResult()->getName() << "[" << lhs->getResultIndices() <<
         "] = " <<
-        rhs->getResult()->get_name() << "[" << rhs->getResultIndices() <<
+        rhs->getResult()->getName() << "[" << rhs->getResultIndices() <<
         "]" << std::endl;
     }
 

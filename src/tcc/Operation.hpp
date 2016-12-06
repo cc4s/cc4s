@@ -37,7 +37,7 @@ namespace tcc {
   std::shared_ptr<Operation<F>> compile(
     const std::shared_ptr<Expression<F>> &expression
   ) {
-    return compile(expression, "");
+    return expression->compile("");
   }
 }
 

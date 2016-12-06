@@ -42,10 +42,10 @@ namespace tcc {
       left->execute();
       right->execute();
       LOG(1, "TCC") << "executing " <<
-        result->get_name() << "[" << resultIndices << "] = " <<
-        left->getResult()->get_name() << "[" << left->getResultIndices() <<
+        result->getName() << "[" << resultIndices << "] = " <<
+        left->getResult()->getName() << "[" << left->getResultIndices() <<
         "] * " <<
-        right->getResult()->get_name() << "[" << right->getResultIndices() <<
+        right->getResult()->getName() << "[" << right->getResultIndices() <<
         "]" << std::endl;
     }
 

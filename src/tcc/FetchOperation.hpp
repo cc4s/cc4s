@@ -6,12 +6,14 @@
 #include <tcc/IndexedTensor.hpp>
 #include <util/Log.hpp>
 
+#include <memory>
+
 namespace tcc {
   template <typename F>
   class FetchOperation: public Operation<F> {
   public:
     FetchOperation(
-      IndexedTensor<F> *t_
+      const std::shared_ptr<IndexedTensor<F>> &t_
     ):
       Operation<F>(Costs(t_->tensor->getElementsCount())),
       tensor(t_->tensor),

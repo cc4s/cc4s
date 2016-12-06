@@ -1,6 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_CONTRACTION_DEFINED
-#define TCC_CONTRACTION_DEFINEDoin
+#define TCC_CONTRACTION_DEFINED
 
 // TODO: decouple compiler from expression structure
 // TODO: decouple execution from expression structure, including binding to CTF
@@ -100,7 +100,7 @@ namespace tcc {
       return result;
     }
 
-    std::vector<const std::shared_ptr<IndexedTensor<F>>> factors;
+    std::vector<std::shared_ptr<IndexedTensor<F>>> factors;
 
   protected:
     /**
@@ -206,9 +206,6 @@ namespace tcc {
       int outerIndexDimensions[
         a->getResultIndices().length() + b->getResultIndices().length() + 1
       ];
-      int outerIndexSymmetries[
-        a->getResultIndices().length() + b->getResultIndices().length() + 1
-      ];
       char uniqueIndices[
         a->getResultIndices().length() + b->getResultIndices().length() + 1
       ];
@@ -249,7 +246,6 @@ namespace tcc {
           outerIndices[o] = index;
           outerElementsCount *=
             outerIndexDimensions[o] = uniqueIndexDimensions[i];
-          outerIndexSymmetries[o] = 0;
           ++o;
         } else {
           // index does not occur outside
@@ -265,13 +261,10 @@ namespace tcc {
       // allocate intermedate result
       std::shared_ptr<Tensor<F>> contractionResult(
         std::make_shared<Tensor<F>>(
-          std::vector<int>(outerIndexDimensions, outerIndexDimensions+o)
+          std::vector<int>(outerIndexDimensions, outerIndexDimensions+o),
+          a->getResult()->getName() + b->getResult()->getName()
         )
       );
-      contractionResult->set_name(
-        a->getResult()->get_name() + b->getResult()->get_name()
-      );
-      // TODO: name intermediate result tensor
       Costs contractionCosts(
         contractionResult->getElementsCount(),
         0,
@@ -280,9 +273,9 @@ namespace tcc {
       );
 /*
       LOG(0, "TCC") <<
-        a->getResult()->get_name() << "[" << a->getResultIndices() <<
+        a->getResult()->getName() << "[" << a->getResultIndices() <<
         "]*" <<
-        b->getResult()->get_name() << "[" << b->getResultIndices() <<
+        b->getResult()->getName() << "[" << b->getResultIndices() <<
         "]: " <<
         "outerIndices=\"" << outerIndices << "\", " <<
         "contractedIndices=\"" << contractedIndices << "\"" << std::endl;

@@ -40,36 +40,39 @@ namespace tcc {
       std::string const &lhsIndices
     ) {
       // not to be used
-      throw new EXCEPTION("Operation required.");
-    }
-
-    /**
-     * \brief Assigns the given right hand side expression to this
-     * indexed tensor, returning this indexed tensor as result expression
-     * for possible further operations.
-     **/
-    template <typename Rhs>
-    Assignment<typename Rhs::FieldType> &operator =(
-      const std::shared_ptr<Rhs> &rhs
-    ) {
-      static_assert(
-        cc4s::TypeRelations<F, typename Rhs::FieldType>::Equals,
-        "Assignment requires tensors of same type"
-      );
-      return std::make_shared<Assignment<typename Rhs::FieldType>>(
-        this->shared_from_this(), rhs
-      );
+      throw new EXCEPTION("Operation on IndexedTensor required.");
     }
 
     std::shared_ptr<Tensor<F>> tensor;
     std::string indices;
   };
 
+  /**
+   * \brief Assigns the given right hand side expression to this
+   * indexed tensor, returning this indexed tensor as result expression
+   * for possible further operations.
+   **/
+  template <typename Lhs, typename Rhs>
+  std::shared_ptr<Assignment<typename Rhs::FieldType>> operator <<=(
+    const std::shared_ptr<Lhs> &lhs,
+    const std::shared_ptr<Rhs> &rhs
+  ) {
+    static_assert(
+      cc4s::TypeRelations<
+        typename Lhs::FieldType, typename Rhs::FieldType
+      >::Equals,
+      "Assignment requires tensors of same type"
+    );
+    return std::make_shared<Assignment<typename Rhs::FieldType>>(
+      lhs, rhs
+    );
+  }
+
   template <typename F>
   inline std::ostream &operator <<(
     std::ostream &stream, const IndexedTensor<F> &t
   ) {
-    return stream << t.tensor->get_name() << "[" << t.indices << "]";
+    return stream << t.tensor->getName() << "[" << t.indices << "]";
   }
 }
 

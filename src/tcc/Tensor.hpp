@@ -9,6 +9,8 @@
 #include <string>
 
 namespace tcc {
+  class TensorFactory;
+
   template <typename F>
   class Tensor: public std::enable_shared_from_this<Tensor<F>> {
   public:
@@ -16,6 +18,8 @@ namespace tcc {
      * \brief Creates an abstract tensor object which is elementary to
      * all tensor expression compilation and execution functionality.
      * Symmetryies are not supported at the moment.
+     * Note that tensor objects should only be created by the Tcc object
+     * which specifies the environment the tensor lives in.
      */
     Tensor(
       const std::vector<int> lens_,
@@ -53,6 +57,17 @@ namespace tcc {
 
   protected:
     std::string name;
+  };
+
+  class Tcc {
+  public:
+    template <typename F=double>
+    std::shared_ptr<Tensor<F>> createTensor(
+      const std::vector<int> lens,
+      const std::string &name
+    ) {
+      return std::make_shared<Tensor<F>>(lens, name);
+    }
   };
 }
 

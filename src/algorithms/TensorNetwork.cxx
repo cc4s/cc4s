@@ -37,33 +37,36 @@ void TensorNetwork::dryRun() {
   int Np(No+Nv);
   int NF(200);
   int NR(300);
+  Tcc tcc;
 
   shared_ptr<Tensor<>> T(
-    make_shared<Tensor<>>(std::vector<int>{{100,100,10,10}}, "T")
+    tcc.createTensor<>(std::vector<int>{{100,100,10,10}}, "T")
   );
   shared_ptr<Tensor<>> Pi(
-    make_shared<Tensor<>>(std::vector<int>{{300,100}}, "Pi")
+    tcc.createTensor<>(std::vector<int>{{300,100}}, "Pi")
   );
   shared_ptr<Tensor<>> PiT(
-    make_shared<Tensor<>>(std::vector<int>{{300,100}}, "PiT")
+    tcc.createTensor<>(std::vector<int>{{300,100}}, "PiT")
   );
   shared_ptr<Tensor<>> Lambda(
-    make_shared<Tensor<>>(std::vector<int>{{300,200}}, "Lambda")
+    tcc.createTensor<>(std::vector<int>{{300,200}}, "Lambda")
   );
   shared_ptr<Tensor<>> LambdaT(
-    make_shared<Tensor<>>(std::vector<int>{{300,200}}, "LambdaT")
+    tcc.createTensor<>(std::vector<int>{{300,200}}, "LambdaT")
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
 
+//  shared_ptr<Expression<>> ladderExpression((*Pi)["rq"] <<= (*Pi)["Rr"] * (*Pi)["Rq"]);
 
   shared_ptr<Operation<>> ladderOperation = compile(
-    (*T)["abij"] =
-      (*T)["cdij"] * (*Pi)["Rd"]  * (*PiT)["Rb"] *
-      (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
+    shared_ptr<Expression<>>(
+      (*T)["abij"] <<=
+        (*T)["cdij"] * (*Pi)["Rd"]  * (*PiT)["Rb"] *
+        (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
+    )
   );
   ladderOperation->execute();
-
 // this contraction already requires heuristics
 /*
   Tensor<> Pia(std::vector<int>{{NR,Nv}}, "Pia");
