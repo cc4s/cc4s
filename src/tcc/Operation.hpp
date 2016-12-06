@@ -33,9 +33,13 @@ namespace tcc {
     Costs costs;
   };
 
-  template <typename F>
-  std::shared_ptr<Operation<F>> compile(
-    const std::shared_ptr<Expression<F>> &expression
+  /**
+   * \brief Compiles the given expression and returns the resulting
+   * operation. Exp needs to be a derived class of tcc::Expression.
+   **/
+  template <typename Exp>
+  std::shared_ptr<Operation<typename Exp::FieldType>> compile(
+    const std::shared_ptr<Exp> &expression
   ) {
     return expression->compile("");
   }

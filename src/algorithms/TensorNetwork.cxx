@@ -60,11 +60,9 @@ void TensorNetwork::dryRun() {
 //  shared_ptr<Expression<>> ladderExpression((*Pi)["rq"] <<= (*Pi)["Rr"] * (*Pi)["Rq"]);
 
   shared_ptr<Operation<>> ladderOperation = compile(
-    shared_ptr<Expression<>>(
-      (*T)["abij"] <<=
-        (*T)["cdij"] * (*Pi)["Rd"]  * (*PiT)["Rb"] *
-        (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
-    )
+    (*T)["abij"] <<=
+      (*T)["cdij"] * (*Pi)["Rd"]  * (*PiT)["Rb"] *
+      (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
   );
   ladderOperation->execute();
 // this contraction already requires heuristics
@@ -78,7 +76,7 @@ void TensorNetwork::dryRun() {
   Tensor<> e(std::vector<int>(), "e");
   
   shared_ptr<Operation<>> imaginaryTimeMp2Operation = compile(
-    e[""] =
+    e[""] <<=
       Pii["Ri"]  * Pia["Ra"] *
         LambdaT["RF"] * Lambda["SF"] *
       Pii["Sj"] * Pia["Sb"] *
