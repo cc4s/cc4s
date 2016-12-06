@@ -18,6 +18,12 @@
 #include <memory>
 
 namespace tcc {
+/*
+  template <typename Lhs, typename Rhs>
+  std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
+    const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
+  );
+*/
   template <typename F>
   class Contraction: public Expression<F> {
   public:
@@ -26,7 +32,8 @@ namespace tcc {
      **/
     Contraction(
       const std::shared_ptr<Contraction<F>> &lhs,
-      const std::shared_ptr<Contraction<F>> &rhs
+      const std::shared_ptr<Contraction<F>> &rhs,
+      const typename Expression<F>::ProtectedToken &
     ): factors(lhs->factors) {
       factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
     }
@@ -36,7 +43,8 @@ namespace tcc {
      **/
     Contraction(
       const std::shared_ptr<Contraction<F>> &lhs,
-      const std::shared_ptr<IndexedTensor<F>> &rhs
+      const std::shared_ptr<IndexedTensor<F>> &rhs,
+      const typename Expression<F>::ProtectedToken &
     ): factors(lhs->factors) {
       factors.push_back(rhs);
     }
@@ -46,7 +54,8 @@ namespace tcc {
      **/
     Contraction(
       const std::shared_ptr<IndexedTensor<F>> &lhs,
-      const std::shared_ptr<Contraction<F>> &rhs
+      const std::shared_ptr<Contraction<F>> &rhs,
+      const typename Expression<F>::ProtectedToken &
     ): factors(rhs->factors) {
       factors.push_back(lhs);
     }
@@ -55,7 +64,8 @@ namespace tcc {
      **/
     Contraction(
       const std::shared_ptr<IndexedTensor<F>> &lhs,
-      const std::shared_ptr<IndexedTensor<F>> &rhs
+      const std::shared_ptr<IndexedTensor<F>> &rhs,
+      const typename Expression<F>::ProtectedToken &
     ) {
       factors.push_back(lhs);
       factors.push_back(rhs);
@@ -66,7 +76,8 @@ namespace tcc {
      **/
     Contraction(
       const std::shared_ptr<Expression<F>> &lhs,
-      const std::shared_ptr<Expression<F>> &rhs
+      const std::shared_ptr<Expression<F>> &rhs,
+      const typename Expression<F>::ProtectedToken &
     ) {
       static_assert(
         cc4s::StaticAssert<F>::False,
@@ -260,7 +271,7 @@ namespace tcc {
 
       // allocate intermedate result
       std::shared_ptr<Tensor<F>> contractionResult(
-        std::make_shared<Tensor<F>>(
+        a->getResult()->getTcc()->createTensor(
           std::vector<int>(outerIndexDimensions, outerIndexDimensions+o),
           a->getResult()->getName() + b->getResult()->getName()
         )
@@ -295,6 +306,11 @@ namespace tcc {
     IndexCounts indexCounts;
 
     int64_t triedPossibilitiesCount;
+
+    template <typename Lhs, typename Rhs>
+    friend std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
+      const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
+    );
   };
 
   template <typename Lhs, typename Rhs>
@@ -307,7 +323,10 @@ namespace tcc {
       >::Equals,
       "Only tensors of the same type can be contracted."
     );
-    return std::make_shared<Contraction<typename Lhs::FieldType>>(A, B);
+    return std::make_shared<Contraction<typename Lhs::FieldType>>(
+      A, B,
+      typename Expression<typename Lhs::FieldType>::ProtectedToken()
+    );
   }
 }
 

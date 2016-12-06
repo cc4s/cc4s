@@ -39,6 +39,11 @@ void TensorNetwork::dryRun() {
   int NR(300);
   Tcc tcc;
 
+/*
+  shared_ptr<Tensor<complex>> Tc(
+    tcc.createTensor<complex>(std::vector<int>{{100,100,10,10}}, "Tc")
+  );
+*/
   shared_ptr<Tensor<>> T(
     tcc.createTensor<>(std::vector<int>{{100,100,10,10}}, "T")
   );

@@ -16,21 +16,11 @@ namespace tcc {
   class Tensor;
 
   template <typename F>
-  class IndexedTensor:
-    public Expression<F>,
-    public std::enable_shared_from_this<IndexedTensor<F>>
-  {
+  class IndexedTensor: public Expression<F> {
   public:
-    /**
-     * \brief Creates an expression with named indices from a stored
-     * tensor for further operations such as contractions or assignments.
-     * \param[in] tensor_ The stored tensor to be operated on.
-     * \param[in] indices_ The index character string where each character
-     * specifies the index name of the respective dimension index in this
-     * expression.
-     **/
     IndexedTensor(
-      const std::shared_ptr<Tensor<F>> &tensor_, const std::string &indices_
+      const std::shared_ptr<Tensor<F>> &tensor_, const std::string &indices_,
+      const typename Expression<F>::ProtectedToken &protectedToken
     ): tensor(tensor_), indices(indices_) {
     }
     virtual ~IndexedTensor() {
@@ -45,27 +35,59 @@ namespace tcc {
 
     std::shared_ptr<Tensor<F>> tensor;
     std::string indices;
+
+  protected:
+    /**
+     * \brief Creates an expression with named indices from a stored
+     * tensor for further operations such as contractions or assignments.
+     * \param[in] tensor The stored tensor to be operated on.
+     * \param[in] indices The index character string where each character
+     * specifies the index name of the respective dimension index in this
+     * expression.
+     **/
+    static std::shared_ptr<IndexedTensor<F>> create(
+      const std::shared_ptr<Tensor<F>> &tensor, const std::string &indices
+    ) {
+      return std::make_shared<IndexedTensor<F>>(
+        tensor, indices, typename Expression<F>::ProtectedToken()
+      );
+    }
+
+    friend class Tensor<F>;
   };
 
   /**
-   * \brief Assigns the given right hand side expression to this
-   * indexed tensor, returning this indexed tensor as result expression
+   * \brief Moves the given right hand side expression into the given
+   * indexed tensor, returning the indexed tensor as result expression
    * for possible further operations.
+   * Note that the operator = cannot be used since all expressions are
+   * represented by shared pointers.
    **/
-  template <typename Lhs, typename Rhs>
+  template <typename Rhs>
   std::shared_ptr<Assignment<typename Rhs::FieldType>> operator <<=(
-    const std::shared_ptr<Lhs> &lhs,
+    const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
     const std::shared_ptr<Rhs> &rhs
+  ) {
+    return std::make_shared<Assignment<typename Rhs::FieldType>>(
+      lhs, rhs
+    );
+  }
+
+  template <typename Lhs, typename Rhs>
+  std::shared_ptr<Assignment<typename Lhs::FieldType>> operator <<=(
+    const std::shared_ptr<Lhs> &, const std::shared_ptr<Rhs> &rhs
   ) {
     static_assert(
       cc4s::TypeRelations<
         typename Lhs::FieldType, typename Rhs::FieldType
       >::Equals,
-      "Assignment requires tensors of same type"
+      "Move operations requires tensors of same type."
     );
-    return std::make_shared<Assignment<typename Rhs::FieldType>>(
-      lhs, rhs
+    static_assert(
+      cc4s::StaticAssert<Lhs>::False,
+      "Only indexed tensors may be used as the left hand side of a move operation."
     );
+    return std::shared_ptr<Assignment<typename Lhs::FieldType>>();
   }
 
   template <typename F>
