@@ -2,7 +2,6 @@
 #ifndef TCC_OPERATION_DEFINED
 #define TCC_OPERATION_DEFINED
 
-#include <tcc/Tensor.hpp>
 #include <tcc/Costs.hpp>
 #include <tcc/Expression.hpp>
 #include <util/Log.hpp>
@@ -11,6 +10,9 @@
 #include <memory>
 
 namespace tcc {
+  template <typename F>
+  class Tensor;
+
   template <typename F>
   class ContractionOperation;
 

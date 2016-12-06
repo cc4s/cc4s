@@ -35,7 +35,7 @@ namespace tcc {
     }
 
     /**
-     * \brief Compile this tensor expression into a Operation.
+     * \brief Compile this tensor expression into an Operation.
      **/
     virtual std::shared_ptr<Operation<F>> compile(
       std::string const &lhsIndices

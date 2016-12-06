@@ -3,6 +3,7 @@
 #define TCC_INDEXED_TENSOR_DEFINED
 
 #include <tcc/Expression.hpp>
+#include <tcc/Assignment.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
@@ -54,6 +55,11 @@ namespace tcc {
     }
 
     friend class Tensor<F>;
+    template <typename Rhs>
+    friend std::shared_ptr<Assignment<typename Rhs::FieldType>> operator <<=(
+      const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
+      const std::shared_ptr<Rhs> &rhs
+    );
   };
 
   /**
@@ -69,7 +75,8 @@ namespace tcc {
     const std::shared_ptr<Rhs> &rhs
   ) {
     return std::make_shared<Assignment<typename Rhs::FieldType>>(
-      lhs, rhs
+      lhs, rhs,
+      typename Expression<typename Rhs::FieldType>::ProtectedToken()
     );
   }
 
