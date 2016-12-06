@@ -6,7 +6,8 @@
 #include <tcc/AssignmentOperation.hpp>
 #include <tcc/ContractionOperation.hpp>
 
-#include <array>
+#include <initializer_list>
+#include <vector>
 #include <memory>
 using std::shared_ptr;
 using std::make_shared;
@@ -45,19 +46,19 @@ void TensorNetwork::dryRun() {
   );
 */
   shared_ptr<Tensor<>> T(
-    tcc.createTensor<>(std::vector<int>{{100,100,10,10}}, "T")
+    tcc.createTensor<>(std::vector<int>({100,100,10,10}), "T")
   );
   shared_ptr<Tensor<>> Pi(
-    tcc.createTensor<>(std::vector<int>{{300,100}}, "Pi")
+    tcc.createTensor<>(std::vector<int>({300,100}), "Pi")
   );
   shared_ptr<Tensor<>> PiT(
-    tcc.createTensor<>(std::vector<int>{{300,100}}, "PiT")
+    tcc.createTensor<>(std::vector<int>({300,100}), "PiT")
   );
   shared_ptr<Tensor<>> Lambda(
-    tcc.createTensor<>(std::vector<int>{{300,200}}, "Lambda")
+    tcc.createTensor<>(std::vector<int>({300,200}), "Lambda")
   );
   shared_ptr<Tensor<>> LambdaT(
-    tcc.createTensor<>(std::vector<int>{{300,200}}, "LambdaT")
+    tcc.createTensor<>(std::vector<int>({300,200}), "LambdaT")
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
