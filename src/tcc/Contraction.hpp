@@ -98,7 +98,9 @@ namespace tcc {
         factors.size()
       );
       for (unsigned int i(0); i < factors.size(); ++i) {
-        operations[i] = std::make_shared<FetchOperation<F>>(factors[i]);
+        operations[i] = std::make_shared<FetchOperation<F>>(
+          factors[i], typename Operation<F>::ProtectedToken()
+        );
         indexCounts.add(factors[i]->indices);
       }
       triedPossibilitiesCount = 0;

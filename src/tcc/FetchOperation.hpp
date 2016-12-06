@@ -13,7 +13,8 @@ namespace tcc {
   class FetchOperation: public Operation<F> {
   public:
     FetchOperation(
-      const std::shared_ptr<IndexedTensor<F>> &t_
+      const std::shared_ptr<IndexedTensor<F>> &t_,
+      const typename Operation<F>::ProtectedToken &
     ):
       Operation<F>(Costs(t_->tensor->getElementsCount())),
       tensor(t_->tensor),

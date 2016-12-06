@@ -12,9 +12,6 @@
 
 namespace tcc {
   template <typename F>
-  class Operation;
-
-  template <typename F>
   class Assignment: public Expression<F> {
   public:
     Assignment(
@@ -44,8 +41,12 @@ namespace tcc {
 
     virtual std::shared_ptr<Operation<F>> compile(const std::string &) {
       return std::make_shared<AssignmentOperation<F>>(
-        std::make_shared<FetchOperation<F>>(lhs),
-        rhs->compile(lhs->indices)
+        std::make_shared<FetchOperation<F>>(
+          lhs,
+          typename Operation<F>::ProtectedToken()
+        ),
+        rhs->compile(lhs->indices),
+        typename Operation<F>::ProtectedToken()
       );
     }
 

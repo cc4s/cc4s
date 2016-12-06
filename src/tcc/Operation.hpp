@@ -33,6 +33,13 @@ namespace tcc {
      * \brief Costs to evaluate this operation in time and memory
      **/
     Costs costs;
+
+  protected:
+    class ProtectedToken {
+    };
+
+    friend class Assignment<F>;
+    friend class Contraction<F>;
   };
 
   /**

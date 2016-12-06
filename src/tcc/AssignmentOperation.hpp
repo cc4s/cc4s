@@ -13,7 +13,8 @@ namespace tcc {
   public:
     AssignmentOperation(
       const std::shared_ptr<FetchOperation<F>> &lhs_,
-      const std::shared_ptr<Operation<F>> &rhs_
+      const std::shared_ptr<Operation<F>> &rhs_,
+      const typename Operation<F>::ProtectedToken &
     ):
       Operation<F>(rhs_->costs),
       lhs(lhs_), rhs(rhs_)
