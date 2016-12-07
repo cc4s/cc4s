@@ -109,14 +109,14 @@ void LaplaceMp2Energy::run() {
   (*VRS)["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
   // FIXME: imaginary part manually discarded, should be zero
 //  VRS->sum(-0.5, *VRS,"RS", 0.5,"RS", fConj);
-  LOG(0, "IMP2") << "Coulomb propagator set up" << std::endl;
+  LOG(1, "MP2") << "Coulomb propagator set up" << std::endl;
 
   // NOTE: the hole propagator sign is considered for the entire term, not here
   (*GhRSn)["RSn"] = PiiR["iS"] * PiiR["iR"] * CHin["in"];
-  LOG(0, "IMP2") << "Hole propagator set up" << std::endl;
+  LOG(1, "MP2") << "Hole propagator set up" << std::endl;
 
   (*GpRSn)["RSn"] = PiaR["aS"] * PiaR["aR"] * CPan["an"];
-  LOG(0, "IMP2") << "Particle propagator set up" << std::endl;
+  LOG(1, "MP2") << "Particle propagator set up" << std::endl;
 
 
   // get numerical weights
@@ -126,15 +126,18 @@ void LaplaceMp2Energy::run() {
 
 
   calculateDirectTermAnalytically();
-  double dire(calculateDirectTerm());
+  calculateDirectTerm();
+  //  double dire(calculateDirectTerm());
 //  double exce(calculateExchangeTerm());
 //  double e(dire + exce);
 
 //  LOG(0, "MP2") << "e=" << e << std::endl;
-  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
+//  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
+  LOG(1, "MP2") << "MP2dLaplace=" << calculateDirectTerm() << std::endl;
+  LOG(1, "MP2") << "MP2dAnalytical=" << calculateDirectTermAnalytically() << std::endl;
 //  LOG(1, "MP2") << "MP2x=" << exce << std::endl;
 
-  setRealArgument("Mp2Energy", dire);
+//  setRealArgument("Mp2Energy", dire);
 }
 
 void LaplaceMp2Energy::dryRun() {
@@ -202,7 +205,7 @@ double LaplaceMp2Energy::calculateDirectTerm() {
   ChiVRSn["RTn"] = ChiVRSn["RSn"] * (*VRS)["ST"];
   energy[""] = (*wn)["n"] * ChiVRSn["RTn"] * ChiVRSn["TRn"];
   complex e(energy.get_val());
-  LOG(0, "IMP2") << "Direct energy computed = " << e << std::endl;
+  LOG(1, "MP2") << "Direct energy computed from Laplace = " << e << std::endl;
   return 2.0 * std::real(energy.get_val());
 }
 
@@ -242,14 +245,14 @@ double LaplaceMp2Energy::calculateDirectTermAnalytically() {
   Scalar<complex> energy(*Cc4s::world);
   energy[""] = cDabij["abij"] * cVabij["abij"];
   complex e(energy.get_val());
-  LOG(0, "IMP2") << "Direct energy computed = " << e << std::endl;
+  LOG(1, "MP2") << "Direct energy computed analytically = " << e << std::endl;
   return 2.0 * std::real(energy.get_val());
 }
 
 double LaplaceMp2Energy::calculateExchangeTerm() {
 //  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] *
 //    GpRSn["RTn"] * GhRSn["URn"] * (*Wn)["n"];
-//  LOG(0, "IMP2") << "Exchange energy computed" << std::endl;
+//  LOG(1, "MP2") << "Exchange energy computed" << std::endl;
 //  exce = -1.0 * energy.get_val();
   return 0.0;
 }
