@@ -165,53 +165,55 @@ namespace tcc {
             compile(a, b)
           );
 
-          if (operations.size() == 2) {
-            // we are done if there were only 2 factors to contract
-            bestContraction = abContraction;
-          } else {
-            // otherwise, add indices of the result for further consideration
-            indexCounts.add(abContraction->getResultIndices());
-            // build new list of factors
-            std::vector<std::shared_ptr<Operation<F>>> subOperations(
-              operations.size() - 1
-            );
-            subOperations[0] = abContraction;
-            int l(1);
-            for (unsigned int k(0); k < operations.size(); ++k) {
-              if (k != i && k != j) subOperations[l++] = operations[k];
-            }
-
-            // now do a recursive compilation of all the remaining factors
-            std::shared_ptr<ContractionOperation<F>> fullContraction(
-              compile(subOperations, level+1)
-            );
-
-            // take out indices of contraction of a&b again
-            // for considering the next possibility
-            indexCounts.add(abContraction->getResultIndices(), -1);
-
-            // see if the entire contraction is currently best
-            if (
-              !bestContraction ||
-              fullContraction->costs < bestContraction->costs
-            ) {
-              bestContraction = fullContraction;
-              if (level == 0) { // do output only in topmost level
-                LOG(2, "TCC") <<
-                  "possibilites tried=" << triedPossibilitiesCount <<
-                  ", improved solution found: " <<
-                  "FLOPS=" << fullContraction->costs.multiplicationsCount <<
-                  ", maximum elements stored=" <<
-                  fullContraction->costs.maxElementsCount << std::endl;
-              }
+          if (abContraction) {
+            if (operations.size() == 2) {
+              // we are done if there were only 2 factors to contract
+              bestContraction = abContraction;
             } else {
-              if (level == 0) {
-                LOG(3, "TCC") <<
-                  "possibilites tried=" << triedPossibilitiesCount <<
-                  ", discarding inferior solution" << std::endl;
+              // otherwise, add indices of the result for further consideration
+              indexCounts.add(abContraction->getResultIndices());
+              // build new list of factors
+              std::vector<std::shared_ptr<Operation<F>>> subOperations(
+                operations.size() - 1
+              );
+              subOperations[0] = abContraction;
+              int l(1);
+              for (unsigned int k(0); k < operations.size(); ++k) {
+                if (k != i && k != j) subOperations[l++] = operations[k];
               }
+
+              // now do a recursive compilation of all the remaining factors
+              std::shared_ptr<ContractionOperation<F>> fullContraction(
+                compile(subOperations, level+1)
+              );
+
+              // take out indices of contraction of a&b again
+              // for considering the next possibility
+              indexCounts.add(abContraction->getResultIndices(), -1);
+
+              // see if the entire contraction is currently best
+              if (
+                !bestContraction ||
+                fullContraction->costs < bestContraction->costs
+              ) {
+                bestContraction = fullContraction;
+                if (level == 0) { // do output only in topmost level
+                  LOG(2, "TCC") <<
+                    "possibilites tried=" << triedPossibilitiesCount <<
+                    ", improved solution found: " <<
+                    "FLOPS=" << fullContraction->costs.multiplicationsCount <<
+                    ", maximum elements stored=" <<
+                    fullContraction->costs.maxElementsCount << std::endl;
+                }
+              } else {
+                if (level == 0) {
+                  LOG(3, "TCC") <<
+                    "possibilites tried=" << triedPossibilitiesCount <<
+                    ", discarding inferior solution" << std::endl;
+                }
+              }
+              ++triedPossibilitiesCount;
             }
-            ++triedPossibilitiesCount;
           }
 
           // add the indices of factor b again
@@ -262,17 +264,28 @@ namespace tcc {
           ++u;
         }
       }
+      const int uniqueAIndices(u);
+      int commonIndicesCount(0);
       for (unsigned int i(0); i < b->getResultIndices().length(); ++i) {
         const char index(b->getResultIndices()[i]);
+        char *previousIndex;
         if (
-          std::find(uniqueIndices, uniqueIndices+u, index) == uniqueIndices+u
+          (previousIndex = std::find(uniqueIndices, uniqueIndices+u, index)) ==
+            uniqueIndices+u
         ) {
           uniqueIndices[u] = index;
           uniqueIndexDimensions[u] = b->getResult()->lens[i];
           ++u;
+        } else if (previousIndex < uniqueIndices+uniqueAIndices) {
+          ++commonIndicesCount;
         }
       }
       uniqueIndices[u] = 0;
+
+      // skip contractions with no common indices
+      if (commonIndicesCount == 0) {
+        return std::shared_ptr<ContractionOperation<F>>();
+      }
 
       int64_t outerElementsCount(1), contractedElementsCount(1);
       for (int i(0); i < u; ++i) {

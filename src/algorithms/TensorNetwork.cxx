@@ -42,7 +42,7 @@ void TensorNetwork::dryRun() {
 
 /*
   shared_ptr<Tensor<complex>> Tc(
-    tcc.createTensor<complex>(std::vector<int>{{100,100,10,10}}, "Tc")
+    tcc.createTensor<complex>(std::vector<int>({100,100,10,10}), "Tc")
   );
 */
   shared_ptr<Tensor<>> T(
@@ -72,25 +72,38 @@ void TensorNetwork::dryRun() {
       (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
   );
   ladderOperation->execute();
+
 // this contraction already requires heuristics
 /*
-  Tensor<> Pia(std::vector<int>{{NR,Nv}}, "Pia");
-  Tensor<> Pii(std::vector<int>{{NR,No}}, "Pii");
+  shared_ptr<Tensor<>> Pia(
+    tcc.createTensor<>(std::vector<int>({NR,Nv}), "Pia")
+  );
+  shared_ptr<Tensor<>> Pii(
+    tcc.createTensor<>(std::vector<int>({NR,No}), "Pii")
+  );
   int Nn(7);
-  Tensor<> w(std::vector<int>{{Nn}}, "w");
-  Tensor<> H(std::array<int>{{No,Nn}}, "H");
-  Tensor<> P(std::array<int>{{Nv,Nn}}, "P");
-  Tensor<> e(std::vector<int>(), "e");
-  
+  shared_ptr<Tensor<>> w(
+    tcc.createTensor<>(std::vector<int>({Nn}), "w")
+  );
+  shared_ptr<Tensor<>> H(
+    tcc.createTensor<>(std::vector<int>({No,Nn}), "H")
+  );
+  shared_ptr<Tensor<>> P(
+    tcc.createTensor<>(std::vector<int>({Nv,Nn}), "P")
+  );
+  shared_ptr<Tensor<>> e(
+    tcc.createTensor<>(std::vector<int>(), "e")
+  );
+
   shared_ptr<Operation<>> imaginaryTimeMp2Operation = compile(
-    e[""] <<=
-      Pii["Ri"]  * Pia["Ra"] *
-        LambdaT["RF"] * Lambda["SF"] *
-      Pii["Sj"] * Pia["Sb"] *
-        w["n"] * P["an"] * H["in"] * P["bn"] * H["jn"] *
-      Pii["Ti"]  * Pia["Ta"] *
-        LambdaT["TH"] * Lambda["UH"] *
-      Pii["Uj"] * Pia["Ub"]
+    (*e)[""] <<=
+      (*Pii)["Ri"]  * (*Pia)["Ra"] *
+        (*LambdaT)["RF"] * (*Lambda)["SF"] *
+      (*Pii)["Sj"] * (*Pia)["Sb"] *
+        (*w)["n"] * (*P)["an"] * (*H)["in"] * (*P)["bn"] * (*H)["jn"] *
+      (*Pii)["Ti"]  * (*Pia)["Ta"] *
+        (*LambdaT)["TH"] * (*Lambda)["UH"] *
+      (*Pii)["Uj"] * (*Pia)["Ub"]
   );
   imaginaryTimeMp2Operation->execute();
 */
