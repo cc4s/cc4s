@@ -4,7 +4,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/Vector.hpp>
 #include <math/Interpolation.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>

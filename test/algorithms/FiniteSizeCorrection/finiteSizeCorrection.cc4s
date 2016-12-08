@@ -35,13 +35,11 @@ FiniteSizeCorrection [
   Momenta
   (kpoints 1)
   (volume 136.99)
+  (constantFactor 0.002351)
+  (shortestGvector 0.02351)
 ] [
   EnergyCorrection
   StructureFactor
   VG
   EMp2
 ].
-
-TensorWriter [(Data StructureFactor)] [].
-TensorWriter [(Data VG)] [].
-TensorWriter [(Data Mp2Energy)] [].
