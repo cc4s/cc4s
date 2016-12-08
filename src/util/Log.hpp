@@ -8,7 +8,6 @@
 #include <iostream>
 #include <streambuf>
 #include <fstream>
-#include <ctf.hpp>
 
 namespace cc4s {
   class LogBuffer: public std::streambuf {
@@ -82,9 +81,6 @@ namespace cc4s {
     static int rank;
     static LogStream *logStream;
   };
-
-  template <typename F>
-  void logMatrix(int level, CTF::Matrix<F> &matrix);
 }
 
 // TODO: return output stream for all processes, including those

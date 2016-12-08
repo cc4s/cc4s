@@ -1,8 +1,7 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#include <util/DryTensor.hpp>
-
 #include <math/Complex.hpp>
-#include <ctf.hpp>
+#include <tcc/DryTensor.hpp>
+
 #include <array>
 
 using namespace cc4s;
@@ -17,7 +16,7 @@ DryMatrix<F>::DryMatrix(
 ):
   DryTensor<F>(
     2, std::array<int,2>{{rows, cols}}.data(),
-    std::array<int,2>{{sym, NS}}.data(),
+    std::array<int,2>{{sym, 0}}.data(),
     location
   )
 {
@@ -38,7 +37,7 @@ DryVector<F>::DryVector(
 ):
   DryTensor<F>(
     1, std::array<int,1>{{elements}}.data(),
-    std::array<int,1>{{NS}}.data(),
+    std::array<int,1>{{0}}.data(),
     location
   )
 {

@@ -1,13 +1,13 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DRY_TENSOR_DEFINED
 #define DRY_TENSOR_DEFINED
 
 #include <util/SourceLocation.hpp>
+#include <tcc/IndexedTensor.hpp>
 #include <util/Log.hpp>
 #include <cstdint>
 #include <vector>
 #include <string>
-
 
 namespace cc4s {
   class DryMemory {
@@ -23,11 +23,14 @@ namespace cc4s {
         extendingResources.push_back(
           ExtendingResource(maxTotalSize, location)
         );
+/*
         LOG(2, "DryMemory") << "extending size=" << size << " at "
           << location << std::endl;
       } else {
+
         LOG(2, "DryMemory") << "non-extending size=" << size << " at "
           << location << std::endl;
+*/
       }
     }
     static void free(int64_t size) {
@@ -37,7 +40,7 @@ namespace cc4s {
     static std::vector<ExtendingResource> extendingResources;
   };
 
-  template <typename F=double>
+  template <typename F>
   class DryTensor {
   public:
     /**
@@ -51,10 +54,10 @@ namespace cc4s {
     DryTensor(
       int order_, int const *lens_, int const *syms_,
       SourceLocation const &location_ = SourceLocation()
-    ): order(order_), location(location_) {
+    ): order(order_), lens(order_), syms(order_), location(location_) {
       for (int i(0); i < order_; ++i) {
-        lens.push_back(lens_[i]);
-        syms.push_back(syms_[i]);
+        lens[i] = lens_[i];
+        syms[i] = syms_[i];
       }
       allocate();
     }
@@ -70,16 +73,39 @@ namespace cc4s {
     }
     virtual void use() {}
 
+    int64_t getElementsCount() const {
+      int64_t elementsCount(1);
+      for (int i(0); i < order; ++i) {
+        elementsCount *= lens[i];
+      }
+      return elementsCount;
+    }
+
+    /**
+     * \brief Specify named indices of this tensor to be used in a
+     * tensor expression. Indexed tensors are atomic types of tensor
+     * expressions.
+     **/
+    IndexedTensor<F> &operator[](std::string const &indices) {
+      return *new IndexedTensor<F>(this, indices);
+    }
+
+
+    void set_name(std::string const &name_) {
+      name = name_;
+    }
+    std::string const &get_name() const {
+      return name;
+    }
+
     int order;
     std::vector<int> lens, syms;
     SourceLocation location;
+    std::string name;
 
   protected:
     void allocate() {
-      size = sizeof(F);
-      for (int i(0); i < order; ++i) {
-        size *= lens[i];
-      }
+      size = sizeof(F) * getElementsCount();
       DryMemory::allocate(size, location);
     }
     void free() {

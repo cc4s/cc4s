@@ -1,6 +1,6 @@
 #include <algorithms/CoulombVertexReader.hpp>
 #include <math/ComplexTensor.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -36,13 +36,13 @@ void CoulombVertexReader::run() {
       MPI_INFO_NULL, &file
     )
   );
-  if (mpiError) throw new Exception("Failed to open file");
+  if (mpiError) throw new EXCEPTION("Failed to open file");
   // Read header: obtain NG,No,Nv,Np
   Header header;
   MPI_Status status;
   MPI_File_read(file, &header, sizeof(header), MPI_BYTE, &status);
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
+    throw new EXCEPTION("Invalid file format");
   int NG(header.NG);
   int No(header.No);
   int Nv(header.Nv);
@@ -109,12 +109,12 @@ void CoulombVertexReader::dryRun() {
   LOG(0, "Reader") <<
     "Reading Coulomb vertex from file " << fileName << std::endl;
   std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
-  if (!file.is_open()) throw new Exception("Failed to open file");
+  if (!file.is_open()) throw new EXCEPTION("Failed to open file");
   // Read header
   Header header;
   file.read(reinterpret_cast<char *>(&header), sizeof(header));
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
+    throw new EXCEPTION("Invalid file format");
   file.close();
   int NG(header.NG);
   int No(header.No);

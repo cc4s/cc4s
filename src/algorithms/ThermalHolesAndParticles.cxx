@@ -1,7 +1,7 @@
 // FIXME: bug at T with overlap but where not all occupied states are virtuals.
 // i.e.: 0<=i<7 and 1<=a<30 in Mp2
 #include <algorithms/ThermalHolesAndParticles.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -70,7 +70,7 @@ void ThermalHolesAndParticles::orderStates() {
   epsp->read_all(eigenEnergies);
   for (int p(0); p < Np; ++p) {
     if (eigenEnergies[p] != eigenStates[p].first)
-      throw new Exception("Failed to order EigenEnergies");
+      throw new EXCEPTION("Failed to order EigenEnergies");
   }
 
   // order the states in the CoulombVertex accordingly
@@ -120,7 +120,7 @@ void ThermalHolesAndParticles::determineChemicalPotential() {
     }
   }
   if (iterations == maxIterations)
-    throw new Exception("Failed to determine chemical potential.");
+    throw new EXCEPTION("Failed to determine chemical potential.");
   LOG(1, "ThermalHolesAndParticles") << "Chemical potential=" << mu << std::endl;
   setRealArgument("ChemicalPotential", mu);
 }

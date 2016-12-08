@@ -2,7 +2,7 @@
 #define ITERATIVE_PSEUDO_INVERSE_DEFINED
 
 #include <math/Complex.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <ctf.hpp>
 #include <random>
 

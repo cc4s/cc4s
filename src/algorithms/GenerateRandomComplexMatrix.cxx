@@ -25,7 +25,7 @@ void GenerateRandomComplexMatrix::run() {
   std::string symmetry(getTextArgument("symmetric", "none"));
   int sym(NS);
   if (symmetry == "hermitian") {
-    throw new Exception("Hermitian symmetry of complex tensors not yet supported.");
+    throw new EXCEPTION("Hermitian symmetry of complex tensors not yet supported.");
   }
   Matrix<complex> *C(new Matrix<complex>(m, n, sym, *Cc4s::world, "C"));
   setRandomTensor(*C);

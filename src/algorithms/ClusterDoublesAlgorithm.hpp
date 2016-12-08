@@ -6,7 +6,7 @@
 #include <mixers/Mixer.hpp>
 #include <string>
 #include <ctf.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 
 namespace cc4s {
   /**

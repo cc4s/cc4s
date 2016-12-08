@@ -1,6 +1,6 @@
 #include <algorithms/CcdEnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
@@ -41,7 +41,7 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 
     LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
-    if (i == 0) {
+    if (i == 0 && !isArgumentGiven("StartingDoublesAmplitudes") ) {
       // For first iteration compute only the MP2 amplitudes 
       // Since Tabij = 0, Vabij is the only non-zero term
       Rabij["abij"] += (*Vabij)["abij"];

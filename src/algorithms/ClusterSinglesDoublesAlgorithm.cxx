@@ -1,7 +1,7 @@
 #include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
@@ -34,7 +34,7 @@ void ClusterSinglesDoublesAlgorithm::run() {
   if (!TabijMixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
-    throw new Exception(stringStream.str());
+    throw new EXCEPTION(stringStream.str());
   }
   // create another mixer for the singles, this time it must exists
   TaiMixer = MixerFactory<double>::create(mixerName, this);
@@ -50,8 +50,14 @@ void ClusterSinglesDoublesAlgorithm::run() {
     // Allocate the doubles amplitudes and append it to the mixer
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
-    Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
-    TabijMixer->append(Tabij);
+    if (isArgumentGiven("StartingDoublesAmplitudes")) {
+      Tensor<> Tabij(getTensorArgument("StartingDoublesAmplitudes"));
+      TabijMixer->append(Tabij);
+    }
+    else {
+      Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
+      TabijMixer->append(Tabij);
+    }
     // The amplitudes will from now on be managed by the mixer
   }
 
@@ -139,7 +145,7 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
   if (!TabijMixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
-    throw new Exception(stringStream.str());
+    throw new EXCEPTION(stringStream.str());
   }
   // TODO: implement DryTensor in mixers
   if (mixerName != "LinearMixer") {

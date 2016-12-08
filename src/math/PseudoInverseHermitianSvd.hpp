@@ -2,7 +2,8 @@
 #define PSEUDO_INVERSE_HERMITIAN_SVD_DEFINED
 
 #include <math/Complex.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
+
 #include <ctf.hpp>
 #include <random>
 
