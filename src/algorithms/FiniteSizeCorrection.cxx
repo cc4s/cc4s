@@ -197,8 +197,15 @@ void FiniteSizeCorrection::interpolation3D() {
 
   //get the 3 unit vectors;
   cc4s::Vector<> a(momentumGrid[2].v);
-  //GC is the shortes vector.
-  GC = a.length();
+
+  // GC is the shortest vector.
+  if (isArgumentGiven("shortestGvector")) {
+    GC = getRealArgument("shortestGvector");
+  }
+  else {
+    GC = a.length();
+  }
+
   LOG(1, "GridSearch") << "b1=#2" << std::endl;
   //the 0th and 1st elements are 0, avoid it.
   int j=3;
@@ -358,7 +365,8 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   }
   int kpoints(getIntegerArgument("kpoints"));
   double volume(getRealArgument("volume"));
-  double r1 = integrate(Int1d, 0.0, GC, 1000)/36.96039604*volume*kpoints*4*M_PI;
+  double constantFactor(getRealArgument("constantFactor"));
+  double r1 = integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
   double sumSGVG(0.);
   double sumSGVG1(0.);
   for (int d(0); d < NG; ++d){
@@ -367,4 +375,3 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   LOG(1,"integrate") << r1 << " sum= " << sumSGVG << " sum1= "
    << sumSGVG1<< " GC=" << GC << std::endl;
 }
-
