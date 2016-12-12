@@ -88,10 +88,14 @@ void ParticleHoleCoulombVertexReader::run() {
   while (offset < fileSize) {
     MPI_File_read_at(file, offset, &chunk, sizeof(chunk), MPI_BYTE, &status);
     if (strncmp(chunk.magic, Chunk::REALSIA_MAGIC, sizeof(chunk.magic)) == 0) {
+      // NOTE: dirty fix for bug in particle hole FTODDUMP
+      chunk.size = sizeof(chunk) + sizeof(double) * Nv*No*NG;
       LOG(1, "Reader") << "reading " << realGammaGai.get_name() << std::endl;
       realGammaGai.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::IMAGSIA_MAGIC, sizeof(chunk.magic)) == 0) {
+      // NOTE: dirty fix for bug in particle hole FTODDUMP
+      chunk.size = sizeof(chunk) + sizeof(double) * Nv*No*NG;
       LOG(1, "Reader") << "reading " << imagGammaGai.get_name() << std::endl;
       imagGammaGai.read_dense_from_file(file, offset+sizeof(chunk));
     } else
