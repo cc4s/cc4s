@@ -94,7 +94,7 @@ namespace tcc {
      * tensor expression. Indexed tensors are atomic types of tensor
      * expressions.
      **/
-    std::shared_ptr<IndexedTensor<F>> operator[](std::string const &indices) {
+    std::shared_ptr<IndexedTensor<F>> operator[](const std::string &indices) {
       return IndexedTensor<F>::create(
         this->shared_from_this(), indices
       );
@@ -118,61 +118,18 @@ namespace tcc {
     friend class Tcc<F>;
   };
 
+  /**
+   * \brief Specify named indices of this tensor to be used in a
+   * tensor expression. Indexed tensors are atomic types of tensor
+   * expressions.
+   **/
   template <typename F>
-  class Tcc: public std::enable_shared_from_this<Tcc<F>> {
-  protected:
-    class ProtectedToken {
-    };
-
-  public:
-    Tcc(
-      const std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory_,
-      const ProtectedToken &
-    ): machineTensorFactory(machineTensorFactory_) {
-    }
-
-    static std::shared_ptr<Tcc<F>> create(
-      const std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory_
-    ) {
-      return std::make_shared<Tcc<F>>(machineTensorFactory_, ProtectedToken());
-    }
-
-    /**
-     * \brief Create a tcc tensor of dimensions lens_[0] x lens_[1] x ... with
-     * a specified name. The underlying machine tensor will only be allocated
-     * during execution of tensor operations involving this tensor.
-     * Symmetryies are not supported at the moment.
-     * Note that tensor objects should only be created by the Tcc object
-     * which specifies the environment the tensor lives in.
-     */
-    std::shared_ptr<Tensor<F>> createTensor(
-      const std::vector<int> &lens,
-      const std::string &name
-    ) {
-      return std::make_shared<Tensor<F>>(
-        lens, name, this->shared_from_this(),
-        typename Tensor<F>::ProtectedToken()
-      );
-    }
-
-    std::shared_ptr<Tensor<F>> createTensor(
-      const std::shared_ptr<MachineTensor<F>> &machineTensor
-    ) {
-      return std::make_shared<Tensor<F>>(
-        machineTensor, this->shared_from_this(),
-        typename Tensor<F>::ProtectedToken()
-      );
-    }
-
-    std::shared_ptr<MachineTensor<F>> createMachineTensor(
-      const std::shared_ptr<Tensor<F>> &tensor
-    ) {
-      return machineTensorFactory->createTensor(tensor->lens, tensor->name);
-    }
-
-  protected:
-    std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory;
-  };
+  std::shared_ptr<IndexedTensor<F>> operator->*(
+    const std::shared_ptr<Tensor<F>> &A,
+    const std::string &indices
+  ) {
+    return IndexedTensor<F>::create(A, indices);
+  }
 }
 
 #endif

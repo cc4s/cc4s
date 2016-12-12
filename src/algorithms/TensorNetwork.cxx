@@ -1,19 +1,12 @@
 #include <algorithms/TensorNetwork.hpp>
-#include <tcc/Tensor.hpp>
-#include <tcc/Contraction.hpp>
-#include <tcc/Move.hpp>
-#include <tcc/Operation.hpp>
-#include <tcc/MoveOperation.hpp>
-#include <tcc/ContractionOperation.hpp>
+#include <tcc/Tcc.hpp>
 //#include <util/CtfMachineTensor.hpp>
 #include <tcc/DryMachineTensor.hpp>
 #include <Cc4s.hpp>
 
-#include <initializer_list>
 #include <vector>
 #include <memory>
 using std::shared_ptr;
-using std::make_shared;
 
 using namespace cc4s;
 using namespace tcc;
@@ -69,13 +62,9 @@ void TensorNetwork::dryRun() {
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
-
-  shared_ptr<Contraction<>> TPi(
-    Contraction<>::create((*T)["cdij"], (*Pi)["Rd"])
-  );
   shared_ptr<Operation<>> ladderOperation = compile(
     (*T)["abij"] <<=
-      TPi * (*PiT)["Rb"] *
+      (*T)["cdij"] * (*Pi)["Rd"] * (*PiT)["Rb"] *
       (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
   );
   ladderOperation->execute();
