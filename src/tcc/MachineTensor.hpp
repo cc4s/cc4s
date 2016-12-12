@@ -33,7 +33,7 @@ namespace tcc {
 
     /**
      * \brief Performs a generic move operation of the form 
-     * this[bIndices] <<= alpha * f(A[aIndices]) + beta * this[bIndices]
+     * this[bIndices] <<= f(alpha * A[aIndices]) + beta * this[bIndices]
      **/
     virtual void move(
       F alpha,
@@ -50,12 +50,12 @@ namespace tcc {
      * this[cIndices] <<=
      *   alpha * A[aIndices] * B[bIndices] + beta * this[cIndices]
      **/
-    virtual void contraction(
+    virtual void contract(
       F alpha,
       const std::shared_ptr<MachineTensor<F>> &A, const std::string &aIndices,
       const std::shared_ptr<MachineTensor<F>> &B, const std::string &bIndices,
       F beta,
-      std::string &cIndices
+      const std::string &cIndices
     ) = 0;
 
     /**
@@ -63,7 +63,7 @@ namespace tcc {
      * this[cIndices] <<=
      *   alpha * g(A[aIndices], B[bIndices]) + beta * this[cIndices]
      **/
-    virtual void contraction(
+    virtual void contract(
       F alpha,
       const std::shared_ptr<MachineTensor<F>> &A, const std::string &aIndices,
       const std::shared_ptr<MachineTensor<F>> &B, const std::string &bIndices,
@@ -96,7 +96,7 @@ namespace tcc {
    * \brief A MachineTensorFactory object provides an interface to create
    * instances of the underlying implementation of the MachineTensor class.
    **/
-  template <typename F>
+  template <typename F=double>
   class MachineTensorFactory {
   public:
     /**

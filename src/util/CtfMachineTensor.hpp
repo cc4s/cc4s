@@ -83,14 +83,14 @@ namespace cc4s {
     }
 
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]
-    void contraction(
+    void contract(
       F alpha,
       const std::shared_ptr<tcc::MachineTensor<F>> &A,
       const std::string &aIndices,
       const std::shared_ptr<tcc::MachineTensor<F>> &B,
       const std::string &bIndices,
       F beta,
-      std::string &cIndices
+      const std::string &cIndices
     ) {
       std::shared_ptr<CtfMachineTensor<F>> ctfA(
         std::dynamic_pointer_cast<CtfMachineTensor<F>>(A)
@@ -111,7 +111,7 @@ namespace cc4s {
     }
 
     // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
-    void contraction(
+    void contract(
       F alpha,
       const std::shared_ptr<tcc::MachineTensor<F>> &A,
       const std::string &aIndices,

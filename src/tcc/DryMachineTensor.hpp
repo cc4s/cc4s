@@ -3,6 +3,9 @@
 #define DRY_MACHINE_TENSOR_DEFINED
 
 #include <tcc/MachineTensor.hpp>
+#include <util/Exception.hpp>
+#include <util/Log.hpp>
+
 #include <string>
 #include <memory>
 
@@ -44,11 +47,12 @@ namespace cc4s {
       }
       LOG(1, "TCC") << "move " <<
         getName() << "[" << bIndices << "] <<= " <<
-        dryA->getName() << "[" << aIndices << "]" << std::endl;
+        alpha << " * " << dryA->getName() << "[" << aIndices << "] + " <<
+        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
     }
 
-    // this[bIndices] = alpha * f(A[aIndices]) + beta*this[bIndices]
-    void move(
+    // this[bIndices] = f(alpha * A[aIndices]) + beta * this[bIndices]
+    virtual void move(
       F alpha,
       const std::shared_ptr<tcc::MachineTensor<F>> &A,
       const std::string &aIndices,
@@ -56,51 +60,46 @@ namespace cc4s {
       const std::string &bIndices,
       const std::function<F(const F)> &f
     ) {
-      std::shared_ptr<CtfMachineTensor<F>> ctfA(
-        std::dynamic_pointer_cast<CtfMachineTensor<F>>(A)
+      std::shared_ptr<DryMachineTensor<F>> dryA(
+        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
       );
-      if (!ctfA) {
+      if (!dryA) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
-      ctfTensor.sum(
-        alpha,
-        ctfA->ctfTensor, aIndices.c_str(),
-        beta,
-        bIndices.c_str(),
-        CTF::Univar_Function<F>(f)
-      );
+      LOG(1, "TCC") << "move " <<
+        getName() << "[" << bIndices << "] <<= f(" <<
+        alpha << " * " << dryA->getName() << "[" << aIndices << "]) + " <<
+        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
     }
 
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]
-    void contraction(
+    virtual void contract(
       F alpha,
       const std::shared_ptr<tcc::MachineTensor<F>> &A,
       const std::string &aIndices,
       const std::shared_ptr<tcc::MachineTensor<F>> &B,
       const std::string &bIndices,
       F beta,
-      std::string &cIndices
+      const std::string &cIndices
     ) {
-      std::shared_ptr<CtfMachineTensor<F>> ctfA(
-        std::dynamic_pointer_cast<CtfMachineTensor<F>>(A)
+      std::shared_ptr<DryMachineTensor<F>> dryA(
+        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
       );
-      std::shared_ptr<CtfMachineTensor<F>> ctfB(
-        std::dynamic_pointer_cast<CtfMachineTensor<F>>(B)
+      std::shared_ptr<DryMachineTensor<F>> dryB(
+        std::dynamic_pointer_cast<DryMachineTensor<F>>(B)
       );
-      if (!ctfA || !ctfB) {
+      if (!dryA || !dryB) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
-      ctfTensor.contract(
-        alpha,
-        ctfA->ctfTensor, aIndices.c_str(),
-        ctfB->ctfTensor, bIndices.c_str(),
-        beta,
-        cIndices.c_str()
-      );
+      LOG(1, "TCC") << "contract " <<
+        getName() << "[" << cIndices << "] <<= " <<
+        alpha << " * " << dryA->getName() << "[" << aIndices << "] * " <<
+        dryB->getName() << "[" << bIndices << "] + " <<
+        beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
     }
 
     // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
-    void contraction(
+    virtual void contract(
       F alpha,
       const std::shared_ptr<tcc::MachineTensor<F>> &A,
       const std::string &aIndices,
@@ -110,79 +109,69 @@ namespace cc4s {
       const std::string &cIndices,
       const std::function<F(const F, const F)> &g
     ) {
-      std::shared_ptr<CtfMachineTensor<F>> ctfA(
-        std::dynamic_pointer_cast<CtfMachineTensor<F>>(A)
+      std::shared_ptr<DryMachineTensor<F>> dryA(
+        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
       );
-      std::shared_ptr<CtfMachineTensor<F>> ctfB(
-        std::dynamic_pointer_cast<CtfMachineTensor<F>>(B)
+      std::shared_ptr<DryMachineTensor<F>> dryB(
+        std::dynamic_pointer_cast<DryMachineTensor<F>>(B)
       );
-      if (!ctfA || !ctfB) {
+      if (!dryA || !dryB) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
-      ctfTensor.contract(
-        alpha,
-        ctfA->ctfTensor, aIndices.c_str(),
-        ctfB->ctfTensor, bIndices.c_str(),
-        beta,
-        cIndices.c_str(),
-        CTF::Bivar_Function<F>(g)
-      );
+      LOG(1, "TCC") << "contract " <<
+        getName() << "[" << cIndices << "] <<= g(" <<
+        alpha << " * " << dryA->getName() << "[" << aIndices << "], " <<
+        dryB->getName() << "[" << bIndices << "]) + " <<
+        beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
     }
 
     // TODO: interfaces to be defined: slice, permute, transform
 
     virtual std::vector<int> getLens() const {
-      return std::vector<int>(ctfTensor.lens, ctfTensor.lens+ctfTensor.order);
+      return lens;
     }
 
     virtual std::string getName() const {
-      return std::string(ctfTensor.get_name());
+      return name;
     }
 
   protected:
-    /**
-     * \brief The adapted CTF tensor
-     **/
-    CTF::Tensor<F> ctfTensor;
+    std::vector<int> lens;
+    std::string name;
 
-    friend class CtfMachineTensorFactory<F>;
+    friend class DryMachineTensorFactory<F>;
   };
 
   template <typename F>
-  class CtfMachineTensorFactory: public tcc::MachineTensorFactory<F> {
+  class DryMachineTensorFactory: public tcc::MachineTensorFactory<F> {
   protected:
     class ProtectedToken {
     };
 
   public:
-    CtfMachineTensorFactory(
-      CTF::World *world_, const ProtectedToken &
-    ): world(world_) {
+    DryMachineTensorFactory(const ProtectedToken &) {
     }
 
-    virtual ~CtfMachineTensorFactory() {
+    virtual ~DryMachineTensorFactory() {
     }
 
     virtual std::shared_ptr<tcc::MachineTensor<F>> createTensor(
       const std::vector<int> &lens,
       const std::string &name
     ) {
-      return std::shared_ptr<typename tcc::MachineTensor<F>>(
-        std::make_shared<CtfMachineTensor<F>>(
-          lens, name, world, typename CtfMachineTensor<F>::ProtectedToken()
+      return std::shared_ptr<tcc::MachineTensor<F>>(
+        std::make_shared<DryMachineTensor<F>>(
+          lens, name, typename DryMachineTensor<F>::ProtectedToken()
         )
       );
     }
 
-    static std::shared_ptr<CtfMachineTensorFactory<F>> create(
-      CTF::World *world
+    static std::shared_ptr<DryMachineTensorFactory<F>> create(
     ) {
-      return std::make_shared<CtfMachineTensorFactory<F>>(
-        world, ProtectedToken()
+      return std::make_shared<DryMachineTensorFactory<F>>(
+        ProtectedToken()
       );
     }
-  protected:
-    CTF::World *world;
   };
 }
 

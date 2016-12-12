@@ -37,7 +37,7 @@ namespace tcc {
       return tensor;
     }
 
-    virtual std::string const &getResultIndices() {
+    virtual const std::string &getResultIndices() {
       return indices;
     }
 

@@ -34,15 +34,19 @@ namespace tcc {
     virtual void execute() {
       rhs->execute();
       lhs->execute();
-      // TODO: access actual tensors within Tensors for execution
-      // lhs->tensor->t->sum(lhs->indices, ... , *rhs->tensor->t, rhs->indices);
+      lhs->getResult()->getMachineTensor()->move(
+        F(1),
+        rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
+        F(0),
+        lhs->getResultIndices()
+      );
     }
 
     virtual std::shared_ptr<Tensor<F>> getResult() {
       return lhs->getResult();
     }
 
-    virtual std::string const &getResultIndices() {
+    virtual const std::string &getResultIndices() {
       return lhs->getResultIndices();
     }
 

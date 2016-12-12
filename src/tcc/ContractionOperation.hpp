@@ -49,19 +49,20 @@ namespace tcc {
     virtual void execute() {
       left->execute();
       right->execute();
-      LOG(1, "TCC") << "executing " <<
-        result->getName() << "[" << resultIndices << "] = " <<
-        left->getResult()->getName() << "[" << left->getResultIndices() <<
-        "] * " <<
-        right->getResult()->getName() << "[" << right->getResultIndices() <<
-        "]" << std::endl;
+      this->getResult()->getMachineTensor()->contract(
+        F(1),
+        left->getResult()->getMachineTensor(), left->getResultIndices(),
+        right->getResult()->getMachineTensor(), right->getResultIndices(),
+        F(0),
+        this->getResultIndices()
+      );
     }
 
     virtual std::shared_ptr<Tensor<F>> getResult() {
       return result;
     }
 
-    virtual std::string const &getResultIndices() {
+    virtual const std::string &getResultIndices() {
       return resultIndices;
     }
 

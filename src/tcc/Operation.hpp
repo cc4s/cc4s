@@ -27,7 +27,7 @@ namespace tcc {
     virtual void execute() = 0;
 
     virtual std::shared_ptr<Tensor<F>> getResult() = 0;
-    virtual std::string const &getResultIndices() = 0;
+    virtual const std::string &getResultIndices() = 0;
 
     /**
      * \brief Costs to evaluate this operation in time and memory

@@ -5,7 +5,8 @@
 #include <tcc/Operation.hpp>
 #include <tcc/AssignmentOperation.hpp>
 #include <tcc/ContractionOperation.hpp>
-#include <util/CtfMachineTensor.hpp>
+//#include <util/CtfMachineTensor.hpp>
+#include <tcc/DryMachineTensor.hpp>
 #include <Cc4s.hpp>
 
 #include <initializer_list>
@@ -40,10 +41,11 @@ void TensorNetwork::dryRun() {
   int Np(No+Nv);
   int NF(200);
   int NR(300);
-  shared_ptr<CtfMachineTensorFactory<>> ctfFactory(
-    CtfMachineTensorFactory<>::create(Cc4s::world)
+  shared_ptr<MachineTensorFactory<>> machineTensorFactory(
+//    CtfMachineTensorFactory<>::create(Cc4s::world)
+    DryMachineTensorFactory<>::create()
   );
-  shared_ptr<Tcc<>> tcc(Tcc<>::create(ctfFactory));
+  shared_ptr<Tcc<>> tcc(Tcc<>::create(machineTensorFactory));
 
 /*
   shared_ptr<Tensor<complex>> Tc(

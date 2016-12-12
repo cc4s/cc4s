@@ -70,6 +70,14 @@ namespace tcc {
       return tcc;
     }
 
+    std::shared_ptr<MachineTensor<F>> getMachineTensor() {
+      if (!machineTensor) {
+        // allocate the implementation specific machine tensor upon request
+        machineTensor = tcc->createMachineTensor(this->shared_from_this());
+      }
+      return machineTensor;
+    }
+
     /**
      * \brief Returns the number of elements contained in this tensor.
      **/
@@ -148,12 +156,18 @@ namespace tcc {
     }
 
     std::shared_ptr<Tensor<F>> createTensor(
-      const std::shared_ptr<MachineTensor<F>> machineTensor
+      const std::shared_ptr<MachineTensor<F>> &machineTensor
     ) {
       return std::make_shared<Tensor<F>>(
         machineTensor, this->shared_from_this(),
         typename Tensor<F>::ProtectedToken()
       );
+    }
+
+    std::shared_ptr<MachineTensor<F>> createMachineTensor(
+      const std::shared_ptr<Tensor<F>> &tensor
+    ) {
+      return machineTensorFactory->createTensor(tensor->lens, tensor->name);
     }
 
   protected:
