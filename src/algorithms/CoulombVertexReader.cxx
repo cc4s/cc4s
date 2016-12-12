@@ -116,6 +116,7 @@ void CoulombVertexReader::dryRun() {
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
     throw new EXCEPTION("Invalid file format");
   file.close();
+
   int NG(header.NG);
   int No(header.No);
   int Nv(header.Nv);

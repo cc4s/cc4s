@@ -33,37 +33,6 @@ namespace cc4s {
      */
     virtual void dryRun();
 
-  protected:
-    /** \brief number of occupied orbitals */
-    int No;
-    /** \brief number of unoccupied orbitals */
-    int Nv;
-    /** \brief number of occupied plus unoccupied orbitals */
-    int Np;
-    /** \brief number of G-vectors */
-    int NG;
-
-    /**
-     * \brief Reads a chunk from the ParticleHole Coulomb Vertex GammaGai
-     * \param[in] file name of file of Coulomb Vertex
-     * \param[in,out] GammaGai tensor to read the ParticleHole Coulomb Vertex
-     */
-    void readGammaGaiChunkBlocked(std::ifstream &file, CTF::Tensor<> *GammaGai);
-    /**
-     * \brief Performs a dry run of reading the ParticleHole Coulomb Vertex.
-     * \param[in,out] GammaGai DryTensor to read the ParticleHole Coulomb Vertex
-     */
-    void dryReadGammaGaiChunkBlocked(DryTensor<> *GammaGai);
-    /**
-     * \brief Reads a chunk from the orbital energies epsi, epsa
-     * \param[in] file name of file of Coulomb Vertex
-     * \param[in,out] epsi energies of occupied orbitals
-     * \param[in,out] epsa energies of unoccupied orbitals
-     */
-    void readEpsChunk(
-      std::ifstream &file,  CTF::Tensor<> *epsi, CTF::Tensor<> *epsa
-    );
-
     class Header {
     public:
       char magic[8];
