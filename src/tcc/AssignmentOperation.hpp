@@ -34,12 +34,6 @@ namespace tcc {
     virtual void execute() {
       rhs->execute();
       lhs->execute();
-      LOG(1, "TCC") << "executing " <<
-        lhs->getResult()->getName() << "[" << lhs->getResultIndices() <<
-        "] = " <<
-        rhs->getResult()->getName() << "[" << rhs->getResultIndices() <<
-        "]" << std::endl;
-
       // TODO: access actual tensors within Tensors for execution
       // lhs->tensor->t->sum(lhs->indices, ... , *rhs->tensor->t, rhs->indices);
     }
