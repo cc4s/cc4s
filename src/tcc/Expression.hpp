@@ -17,7 +17,7 @@ namespace tcc {
   class Contraction;
 
   template <typename F=double>
-  class Assignment;
+  class Move;
 
   template <typename F=double>
   class Operation;

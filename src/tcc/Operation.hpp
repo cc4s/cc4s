@@ -38,7 +38,7 @@ namespace tcc {
     class ProtectedToken {
     };
 
-    friend class Assignment<F>;
+    friend class Move<F>;
     friend class Contraction<F>;
   };
 

@@ -3,7 +3,7 @@
 #define TCC_ASSIGNMENT_DEFINED
 
 #include <tcc/Expression.hpp>
-#include <tcc/AssignmentOperation.hpp>
+#include <tcc/MoveOperation.hpp>
 #include <tcc/FetchOperation.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Exception.hpp>
@@ -12,15 +12,15 @@
 
 namespace tcc {
   template <typename F>
-  class Assignment: public Expression<F> {
+  class Move: public Expression<F> {
   public:
     /**
      * \brief Creates a move expression of the right hand side tensor
      * expression rhs in the left hand tensor expression lhs.
-     * Not indended for direct invocation. Use Assignment::create or
+     * Not indended for direct invocation. Use Move::create or
      * the operator <<= instead.
      **/
-    Assignment(
+    Move(
       const std::shared_ptr<IndexedTensor<F>> &lhs_,
       const std::shared_ptr<Expression<F>> &rhs_,
       const typename Expression<F>::ProtectedToken &
@@ -30,23 +30,23 @@ namespace tcc {
         "Only tensors or contractions may be used as the right hand side of an assignment."
       );
     }
-    Assignment(
+    Move(
       const std::shared_ptr<IndexedTensor<F>> &lhs_,
       const std::shared_ptr<IndexedTensor<F>> &rhs_,
       const typename Expression<F>::ProtectedToken &
     ): lhs(lhs_), rhs(rhs_) {
     }
-    Assignment(
+    Move(
       const std::shared_ptr<IndexedTensor<F>> &lhs_,
       const std::shared_ptr<Contraction<F>> &rhs_,
       const typename Expression<F>::ProtectedToken &
     ): lhs(lhs_), rhs(rhs_) {
     }
-    virtual ~Assignment() {
+    virtual ~Move() {
     }
 
     virtual std::shared_ptr<Operation<F>> compile(const std::string &) {
-      return std::make_shared<AssignmentOperation<F>>(
+      return std::make_shared<MoveOperation<F>>(
         std::make_shared<FetchOperation<F>>(
           lhs,
           typename Operation<F>::ProtectedToken()
@@ -62,11 +62,11 @@ namespace tcc {
      * for possible further operations.
      **/
     template <typename Rhs>
-    static std::shared_ptr<Assignment<typename Rhs::FieldType>> create(
+    static std::shared_ptr<Move<typename Rhs::FieldType>> create(
       const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
       const std::shared_ptr<Rhs> &rhs
     ) {
-      return std::make_shared<Assignment<typename Rhs::FieldType>>(
+      return std::make_shared<Move<typename Rhs::FieldType>>(
         lhs, rhs,
         typename Expression<typename Rhs::FieldType>::ProtectedToken()
       );

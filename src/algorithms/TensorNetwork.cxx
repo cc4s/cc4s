@@ -1,9 +1,9 @@
 #include <algorithms/TensorNetwork.hpp>
 #include <tcc/Tensor.hpp>
 #include <tcc/Contraction.hpp>
-#include <tcc/Assignment.hpp>
+#include <tcc/Move.hpp>
 #include <tcc/Operation.hpp>
-#include <tcc/AssignmentOperation.hpp>
+#include <tcc/MoveOperation.hpp>
 #include <tcc/ContractionOperation.hpp>
 //#include <util/CtfMachineTensor.hpp>
 #include <tcc/DryMachineTensor.hpp>

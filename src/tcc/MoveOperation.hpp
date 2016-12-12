@@ -9,7 +9,7 @@
 
 namespace tcc {
   template <typename F>
-  class AssignmentOperation: public Operation<F> {
+  class MoveOperation: public Operation<F> {
   public:
     /**
      * \brief Creates a move operation moving the results of
@@ -18,7 +18,7 @@ namespace tcc {
      * Not intended for direct invocation. Use compile(expression) to
      * generate operations.
      **/
-    AssignmentOperation(
+    MoveOperation(
       const std::shared_ptr<FetchOperation<F>> &lhs_,
       const std::shared_ptr<Operation<F>> &rhs_,
       const typename Operation<F>::ProtectedToken &
@@ -28,7 +28,7 @@ namespace tcc {
     {
     }
 
-    virtual ~AssignmentOperation() {
+    virtual ~MoveOperation() {
     }
 
     virtual void execute() {

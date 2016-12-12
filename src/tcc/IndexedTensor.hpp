@@ -3,7 +3,7 @@
 #define TCC_INDEXED_TENSOR_DEFINED
 
 #include <tcc/Expression.hpp>
-#include <tcc/Assignment.hpp>
+#include <tcc/Move.hpp>
 #include <util/StaticAssert.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
@@ -61,7 +61,7 @@ namespace tcc {
 
   protected:
     template <typename Rhs>
-    friend std::shared_ptr<Assignment<typename Rhs::FieldType>> operator <<=(
+    friend std::shared_ptr<Move<typename Rhs::FieldType>> operator <<=(
       const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
       const std::shared_ptr<Rhs> &rhs
     );
@@ -75,18 +75,18 @@ namespace tcc {
    * represented by shared pointers.
    **/
   template <typename Rhs>
-  std::shared_ptr<Assignment<typename Rhs::FieldType>> operator <<=(
+  std::shared_ptr<Move<typename Rhs::FieldType>> operator <<=(
     const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
     const std::shared_ptr<Rhs> &rhs
   ) {
-    return std::make_shared<Assignment<typename Rhs::FieldType>>(
+    return std::make_shared<Move<typename Rhs::FieldType>>(
       lhs, rhs,
       typename Expression<typename Rhs::FieldType>::ProtectedToken()
     );
   }
 
   template <typename Lhs, typename Rhs>
-  std::shared_ptr<Assignment<typename Lhs::FieldType>> operator <<=(
+  std::shared_ptr<Move<typename Lhs::FieldType>> operator <<=(
     const std::shared_ptr<Lhs> &, const std::shared_ptr<Rhs> &rhs
   ) {
     static_assert(
@@ -99,7 +99,7 @@ namespace tcc {
       cc4s::StaticAssert<Lhs>::False,
       "Only indexed tensors may be used as the left hand side of a move operation."
     );
-    return std::shared_ptr<Assignment<typename Lhs::FieldType>>();
+    return std::shared_ptr<Move<typename Lhs::FieldType>>();
   }
 
   template <typename F>
