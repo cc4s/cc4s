@@ -3,6 +3,7 @@
 #define TCC_TENSOR_DEFINED
 
 #include <tcc/IndexedTensor.hpp>
+#include <tcc/MachineTensor.hpp>
 #include <util/Log.hpp>
 #include <util/StaticAssert.hpp>
 #include <cstdint>
@@ -10,8 +11,12 @@
 #include <string>
 
 namespace tcc {
+  template <typename F=double>
   class Tcc;
 
+  /**
+   * \brief 
+   **/
   template <typename F>
   class Tensor: public std::enable_shared_from_this<Tensor<F>> {
   protected:
@@ -25,16 +30,33 @@ namespace tcc {
 
   public:
     /**
-     * \brief Create a tensor of dimensions lens_[0] x lens_[1] x ... with
-     * a specified name.
+     * \brief Create a tcc tensor of dimensions lens_[0] x lens_[1] x ... with
+     * a specified name. The underlying machine tensor will only be allocated
+     * during execution of tensor operations involving this tensor.
      * Not intended for direct invocation. Use Tcc::createTensor instead.
      **/
     Tensor(
       const std::vector<int> &lens_,
       const std::string &name_,
-      Tcc *tcc_,
+      const std::shared_ptr<Tcc<F>> &tcc_,
       const ProtectedToken &
     ): lens(lens_), name(name_), tcc(tcc_) {
+      // the machine tensor is not allocated initially
+    }
+
+    /**
+     * \brief Create a tensor from a given machine tensor.
+     * Not intended for direct invocation. Use Tcc::createTensor instead.
+     **/
+    Tensor(
+      const std::shared_ptr<MachineTensor<F>> &machineTensor_,
+      const std::shared_ptr<Tcc<F>> &tcc_,
+      const ProtectedToken &
+    ):
+      lens(machineTensor_->getLens()), name(machineTensor_->getName()),
+      machineTensor(machineTensor_),
+      tcc(tcc_)
+    {
     }
 
     void setName(const std::string &name_) {
@@ -44,10 +66,13 @@ namespace tcc {
       return name;
     }
 
-    Tcc *getTcc() {
+    std::shared_ptr<Tcc<F>> &getTcc() {
       return tcc;
     }
 
+    /**
+     * \brief Returns the number of elements contained in this tensor.
+     **/
     int64_t getElementsCount() const {
       int64_t elementsCount(1);
       for (unsigned int i(0); i < lens.size(); ++i) {
@@ -69,40 +94,70 @@ namespace tcc {
 
     std::vector<int> lens;
 
-    friend class Tcc;
-
   protected:
+    /**
+     * \brief The tensor name.
+     **/
     std::string name;
-    Tcc *tcc;
+
+    std::shared_ptr<MachineTensor<F>> machineTensor;
+
+    /**
+     * \brief The pointer to the tcc object that created this tensor.
+     **/
+    std::shared_ptr<Tcc<F>> tcc;
+
+    friend class Tcc<F>;
   };
 
-  class Tcc {
+  template <typename F>
+  class Tcc: public std::enable_shared_from_this<Tcc<F>> {
+  protected:
+    class ProtectedToken {
+    };
+
   public:
+    Tcc(
+      const std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory_,
+      const ProtectedToken &
+    ): machineTensorFactory(machineTensorFactory_) {
+    }
+
+    static std::shared_ptr<Tcc<F>> create(
+      const std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory_
+    ) {
+      return std::make_shared<Tcc<F>>(machineTensorFactory_, ProtectedToken());
+    }
+
     /**
-     * \brief Creates an abstract tensor object which is elementary to
-     * all tensor expression compilation and execution functionality.
+     * \brief Create a tcc tensor of dimensions lens_[0] x lens_[1] x ... with
+     * a specified name. The underlying machine tensor will only be allocated
+     * during execution of tensor operations involving this tensor.
      * Symmetryies are not supported at the moment.
      * Note that tensor objects should only be created by the Tcc object
      * which specifies the environment the tensor lives in.
      */
-    template <typename F=double>
     std::shared_ptr<Tensor<F>> createTensor(
       const std::vector<int> &lens,
       const std::string &name
     ) {
       return std::make_shared<Tensor<F>>(
-        lens, name, this, typename Tensor<F>::ProtectedToken()
+        lens, name, this->shared_from_this(),
+        typename Tensor<F>::ProtectedToken()
       );
     }
-/*
-    void *operator new(const size_t size) {
-      static_assert(
-        cc4s::StaticAssert<Tcc>::False,
-        "Tcc objects cannot be allocated dynamically"
+
+    std::shared_ptr<Tensor<F>> createTensor(
+      const std::shared_ptr<MachineTensor<F>> machineTensor
+    ) {
+      return std::make_shared<Tensor<F>>(
+        machineTensor, this->shared_from_this(),
+        typename Tensor<F>::ProtectedToken()
       );
-      return nullptr;
     }
-*/
+
+  protected:
+    std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory;
   };
 }
 

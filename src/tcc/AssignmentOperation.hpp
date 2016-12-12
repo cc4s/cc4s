@@ -27,11 +27,11 @@ namespace tcc {
       lhs(lhs_), rhs(rhs_)
     {
     }
+
     virtual ~AssignmentOperation() {
     }
+
     virtual void execute() {
-      // TODO: access actual tensors within Tensors for execution
-      // lhs->tensor->t->sum(lhs->indices, ... , *rhs->tensor->t, rhs->indices);
       rhs->execute();
       lhs->execute();
       LOG(1, "TCC") << "executing " <<
@@ -39,6 +39,9 @@ namespace tcc {
         "] = " <<
         rhs->getResult()->getName() << "[" << rhs->getResultIndices() <<
         "]" << std::endl;
+
+      // TODO: access actual tensors within Tensors for execution
+      // lhs->tensor->t->sum(lhs->indices, ... , *rhs->tensor->t, rhs->indices);
     }
 
     virtual std::shared_ptr<Tensor<F>> getResult() {

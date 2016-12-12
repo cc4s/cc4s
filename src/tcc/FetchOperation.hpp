@@ -31,7 +31,6 @@ namespace tcc {
     }
 
     virtual void execute() {
-      // nothing to be done in a fetch
     }
 
     virtual std::shared_ptr<Tensor<F>> getResult() {

@@ -22,8 +22,8 @@ namespace tcc {
     /**
      * \brief Creats an expression with named indices from a stored
      * tensor for further operations such as moves or contractions.
-     * Not for direct invocation. Use tcc::IndexedTensor<F>::create
-     * or the operator [] on tcc::Tensor<F> objects instead.
+     * Not for direct invocation. Use tcc::IndexedTensor<F,TF>::create
+     * or the operator [] on tcc::Tensor<F,TF> objects instead.
      **/
     IndexedTensor(
       const std::shared_ptr<Tensor<F>> &tensor_, const std::string &indices_,

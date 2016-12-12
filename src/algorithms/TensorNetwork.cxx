@@ -5,6 +5,8 @@
 #include <tcc/Operation.hpp>
 #include <tcc/AssignmentOperation.hpp>
 #include <tcc/ContractionOperation.hpp>
+#include <util/CtfMachineTensor.hpp>
+#include <Cc4s.hpp>
 
 #include <initializer_list>
 #include <vector>
@@ -38,7 +40,10 @@ void TensorNetwork::dryRun() {
   int Np(No+Nv);
   int NF(200);
   int NR(300);
-  Tcc tcc;
+  shared_ptr<CtfMachineTensorFactory<>> ctfFactory(
+    CtfMachineTensorFactory<>::create(Cc4s::world)
+  );
+  shared_ptr<Tcc<>> tcc(Tcc<>::create(ctfFactory));
 
 /*
   shared_ptr<Tensor<complex>> Tc(
@@ -46,19 +51,19 @@ void TensorNetwork::dryRun() {
   );
 */
   shared_ptr<Tensor<>> T(
-    tcc.createTensor<>(std::vector<int>({100,100,10,10}), "T")
+    tcc->createTensor(std::vector<int>({100,100,10,10}), "T")
   );
   shared_ptr<Tensor<>> Pi(
-    tcc.createTensor<>(std::vector<int>({300,100}), "Pi")
+    tcc->createTensor(std::vector<int>({300,100}), "Pi")
   );
   shared_ptr<Tensor<>> PiT(
-    tcc.createTensor<>(std::vector<int>({300,100}), "PiT")
+    tcc->createTensor(std::vector<int>({300,100}), "PiT")
   );
   shared_ptr<Tensor<>> Lambda(
-    tcc.createTensor<>(std::vector<int>({300,200}), "Lambda")
+    tcc->createTensor(std::vector<int>({300,200}), "Lambda")
   );
   shared_ptr<Tensor<>> LambdaT(
-    tcc.createTensor<>(std::vector<int>({300,200}), "LambdaT")
+    tcc->createTensor(std::vector<int>({300,200}), "LambdaT")
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
