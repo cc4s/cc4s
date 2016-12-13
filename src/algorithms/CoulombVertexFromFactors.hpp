@@ -23,7 +23,7 @@ namespace cc4s {
     virtual void dryRun();
 
     template <typename T, typename MT>
-    void runIt(const bool dryRun);
+    void run(const bool dryRun);
   };
 }
 

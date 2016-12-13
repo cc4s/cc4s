@@ -26,16 +26,16 @@ CoulombVertexFromFactors::~CoulombVertexFromFactors() {
 }
 
 void CoulombVertexFromFactors::run() {
-  this->runIt<CTF::Tensor<complex>, CtfMachineTensor<complex>>(false);
+  run<CTF::Tensor<complex>, CtfMachineTensor<complex>>(false);
 }
 
 void CoulombVertexFromFactors::dryRun() {
-  this->runIt<DryTensor<complex>, DryMachineTensor<complex>>(true);
+  run<DryTensor<complex>, DryMachineTensor<complex>>(true);
 }
 
 // TMT is either CtfMachineTensor or DryMachineTensor
 template <typename T, typename MT>
-void CoulombVertexFromFactors::runIt(const bool dryRun) {
+void CoulombVertexFromFactors::run(const bool dryRun) {
   // create the MachineTensor factory for constructing intermediate results
   shared_ptr<MachineTensorFactory<complex>> machineTensorFactory(
     MT::Factory::create()
