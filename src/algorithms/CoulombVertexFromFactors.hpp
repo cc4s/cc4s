@@ -3,6 +3,8 @@
 #define COULOMB_VERTEX_FROM_FACTORS_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <tcc/MachineTensor.hpp>
+#include <memory>
 
 namespace cc4s {
   /**
@@ -18,9 +20,10 @@ namespace cc4s {
     virtual ~CoulombVertexFromFactors();
 
     virtual void run();
-
     virtual void dryRun();
 
+    template <typename T, typename MT>
+    void runIt(const bool dryRun);
   };
 }
 

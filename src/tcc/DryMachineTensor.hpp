@@ -3,6 +3,7 @@
 #define DRY_MACHINE_TENSOR_DEFINED
 
 #include <tcc/MachineTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 
@@ -20,12 +21,26 @@ namespace cc4s {
     };
 
   public:
+    // required by templates to infer corresponding Factory type
+    typedef DryMachineTensorFactory<F> Factory;
+    typedef DryTensor<F> Tensor;
+
     // constructors called by factory
     DryMachineTensor(
-      const std::vector<int> &lens_,
-      const std::string &name_,
+      const std::vector<int> &lens,
+      const std::string &name,
       const ProtectedToken &
-    ): lens(lens_), name(name_) {
+    ):
+      tensor(
+        static_cast<int>(lens.size()), lens.data(),
+        std::vector<int>(0, lens.size()).data()
+      )
+    {
+      tensor.set_name(name);
+    }
+
+    // copy constructor from DryTensor, for compatibility
+    DryMachineTensor(const Tensor &T): tensor(T) {
     }
 
     virtual ~DryMachineTensor() {
@@ -128,16 +143,15 @@ namespace cc4s {
     // TODO: interfaces to be defined: slice, permute, transform
 
     virtual std::vector<int> getLens() const {
-      return lens;
+      return tensor.lens;
     }
 
     virtual std::string getName() const {
-      return name;
+      return tensor.name;
     }
 
-  protected:
-    std::vector<int> lens;
-    std::string name;
+    // adapted DryTensor
+    Tensor tensor;
 
     friend class DryMachineTensorFactory<F>;
   };

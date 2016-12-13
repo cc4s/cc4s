@@ -5,6 +5,8 @@
 #include <tcc/Tensor.hpp>
 #include <tcc/Move.hpp>
 #include <tcc/Contraction.hpp>
+#include <tcc/DryTensor.hpp>
+#include <tcc/DryMachineTensor.hpp>
 
 #include <vector>
 #include <string>

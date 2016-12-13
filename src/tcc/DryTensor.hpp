@@ -63,7 +63,8 @@ namespace cc4s {
     DryTensor(
       DryTensor const &A, SourceLocation const &location_ = SourceLocation()
     ):
-      order(A.order), lens(A.lens), syms(A.syms), location(location_)
+      order(A.order), lens(A.lens), syms(A.syms), location(location_),
+      name(A.name)
     {
       allocate();
     }

@@ -3,6 +3,7 @@
 #define CTF_MACHINE_TENSOR_DEFINED
 
 #include <tcc/MachineTensor.hpp>
+#include <Cc4s.hpp>
 #include <ctf.hpp>
 #include <string>
 #include <memory>
@@ -18,6 +19,10 @@ namespace cc4s {
     };
 
   public:
+    // required by templates to infer corresponding Factory type
+    typedef CtfMachineTensorFactory<F> Factory;
+    typedef CTF::Tensor<F> Tensor;
+
     // constructors called by factory
     CtfMachineTensor(
       const std::vector<int> &lens,
@@ -25,7 +30,7 @@ namespace cc4s {
       CTF::World *world,
       const ProtectedToken &
     ):
-      ctfTensor(
+      tensor(
         static_cast<int>(lens.size()), lens.data(),
         std::vector<int>(0, lens.size()).data(),
         *world, name.c_str()
@@ -34,9 +39,7 @@ namespace cc4s {
     }
 
     // copy constructor from CTF tensor, for compatibility
-    CtfMachineTensor(
-      const CTF::Tensor<F> &T
-    ): ctfTensor(T) {
+    CtfMachineTensor(const Tensor &T): tensor(T) {
     }
 
     virtual ~CtfMachineTensor() {
@@ -56,9 +59,9 @@ namespace cc4s {
       if (!ctfA) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
-      ctfTensor.sum(
+      tensor.sum(
         alpha,
-        ctfA->ctfTensor, aIndices.c_str(),
+        ctfA->tensor, aIndices.c_str(),
         beta,
         bIndices.c_str()
       );
@@ -79,9 +82,9 @@ namespace cc4s {
       if (!ctfA) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
-      ctfTensor.sum(
+      tensor.sum(
         alpha,
-        ctfA->ctfTensor, aIndices.c_str(),
+        ctfA->tensor, aIndices.c_str(),
         beta,
         bIndices.c_str(),
         CTF::Univar_Function<F>(f)
@@ -107,10 +110,10 @@ namespace cc4s {
       if (!ctfA || !ctfB) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
-      ctfTensor.contract(
+      tensor.contract(
         alpha,
-        ctfA->ctfTensor, aIndices.c_str(),
-        ctfB->ctfTensor, bIndices.c_str(),
+        ctfA->tensor, aIndices.c_str(),
+        ctfB->tensor, bIndices.c_str(),
         beta,
         cIndices.c_str()
       );
@@ -136,10 +139,10 @@ namespace cc4s {
       if (!ctfA || !ctfB) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
-      ctfTensor.contract(
+      tensor.contract(
         alpha,
-        ctfA->ctfTensor, aIndices.c_str(),
-        ctfB->ctfTensor, bIndices.c_str(),
+        ctfA->tensor, aIndices.c_str(),
+        ctfB->tensor, bIndices.c_str(),
         beta,
         cIndices.c_str(),
         CTF::Bivar_Function<F>(g)
@@ -149,17 +152,17 @@ namespace cc4s {
     // TODO: interfaces to be defined: slice, permute, transform
 
     virtual std::vector<int> getLens() const {
-      return std::vector<int>(ctfTensor.lens, ctfTensor.lens+ctfTensor.order);
+      return std::vector<int>(tensor.lens, tensor.lens+tensor.order);
     }
 
     virtual std::string getName() const {
-      return std::string(ctfTensor.get_name());
+      return std::string(tensor.get_name());
     }
 
     /**
      * \brief The adapted CTF tensor
      **/
-    CTF::Tensor<F> ctfTensor;
+    Tensor tensor;
 
     friend class CtfMachineTensorFactory<F>;
   };
@@ -191,7 +194,7 @@ namespace cc4s {
     }
 
     static std::shared_ptr<CtfMachineTensorFactory<F>> create(
-      CTF::World *world
+      CTF::World *world = Cc4s::world
     ) {
       return std::make_shared<CtfMachineTensorFactory<F>>(
         world, ProtectedToken()
