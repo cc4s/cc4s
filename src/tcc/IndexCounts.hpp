@@ -1,8 +1,15 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef INDEX_COUNTS_DEFINED
-#define INDEX_COUNTS_DEFINED
+#ifndef TCC_INDEX_COUNTS_DEFINED
+#define TCC_INDEX_COUNTS_DEFINED
 
-namespace cc4s {
+namespace tcc {
+  /**
+   * \brief Contains frequency counts for all indicies in a
+   * contraction including the indices on the left hand side.
+   * These counts are used to efficiently determine which indices
+   * are outer indices and which are contracted indices for each
+   * individual contraction.
+   **/
   class IndexCounts {
   public:
     IndexCounts() {

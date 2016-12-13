@@ -66,3 +66,4 @@ build/${CONFIG}/obj/algorithms/ThermalDirectRingCoupledClusterDoubles.o \
 build/${CONFIG}/obj/algorithms/PseudoInverse.o \
 build/${CONFIG}/obj/algorithms/Delete.o \
 build/${CONFIG}/obj/algorithms/PerturbativeTriples.o \
+build/${CONFIG}/obj/algorithms/CoulombVertexFromFactors.o \

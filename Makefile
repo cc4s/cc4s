@@ -50,7 +50,7 @@ COMPILER_VERSION:=$(shell ${CXX} --version | head -n 1)
 
 # add build environment specifics to INCLUDE and to OPTIONS
 INCLUDE+=-Isrc
-OPTIONS+= -std=c++0x -Wall -fmax-errors=3 \
+OPTIONS+= -std=c++11 -Wall -fmax-errors=3 \
 -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
 "-DCC4S_DATE=\"${DATE}\"" \

@@ -1,12 +1,16 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef COSTS_DEFINED
-#define COSTS_DEFINED
+#ifndef TCC_COSTS_DEFINED
+#define TCC_COSTS_DEFINED
 
 #include <limits>
 
-namespace cc4s {
+namespace tcc {
   class Costs {
   public:
+    /**
+     * \brief Creates an object containing the overall estimated costs of
+     * a tensor operation in terms of memory and number of operations.
+     **/
     Costs(
     ):
       maxElementsCount(std::numeric_limits<int64_t>::max()),
@@ -78,14 +82,14 @@ namespace cc4s {
     int64_t additionsCount;
   };
 
-  Costs operator +(Costs const &a, Costs const &b) {
+  inline Costs operator +(Costs const &a, Costs const &b) {
     Costs result(a);
     result += b;
     return result;
   }
 
   // TODO: use cost model for comparison
-  bool operator <(Costs const &a, Costs const &b) {
+  inline bool operator <(Costs const &a, Costs const &b) {
     return (a.multiplicationsCount + a.additionsCount) <
       (b.multiplicationsCount + b.additionsCount);
   }
