@@ -33,6 +33,12 @@ namespace cc4s {
     {
     }
 
+    // copy constructor from CTF tensor, for compatibility
+    CtfMachineTensor(
+      const CTF::Tensor<F> &T
+    ): ctfTensor(T) {
+    }
+
     virtual ~CtfMachineTensor() {
     }
 
@@ -150,7 +156,6 @@ namespace cc4s {
       return std::string(ctfTensor.get_name());
     }
 
-  protected:
     /**
      * \brief The adapted CTF tensor
      **/

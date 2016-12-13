@@ -62,7 +62,7 @@ namespace tcc {
      * for possible further operations.
      **/
     template <typename Rhs>
-    static std::shared_ptr<Move<typename Rhs::FieldType>> create(
+    static inline std::shared_ptr<Move<typename Rhs::FieldType>> create(
       const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
       const std::shared_ptr<Rhs> &rhs
     ) {

@@ -117,19 +117,6 @@ namespace tcc {
 
     friend class Tcc<F>;
   };
-
-  /**
-   * \brief Specify named indices of this tensor to be used in a
-   * tensor expression. Indexed tensors are atomic types of tensor
-   * expressions.
-   **/
-  template <typename F>
-  std::shared_ptr<IndexedTensor<F>> operator->*(
-    const std::shared_ptr<Tensor<F>> &A,
-    const std::string &indices
-  ) {
-    return IndexedTensor<F>::create(A, indices);
-  }
 }
 
 #endif

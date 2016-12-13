@@ -75,7 +75,7 @@ namespace tcc {
    * represented by shared pointers.
    **/
   template <typename Rhs>
-  std::shared_ptr<Move<typename Rhs::FieldType>> operator <<=(
+  inline std::shared_ptr<Move<typename Rhs::FieldType>> operator <<=(
     const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
     const std::shared_ptr<Rhs> &rhs
   ) {
@@ -86,7 +86,7 @@ namespace tcc {
   }
 
   template <typename Lhs, typename Rhs>
-  std::shared_ptr<Move<typename Lhs::FieldType>> operator <<=(
+  inline std::shared_ptr<Move<typename Lhs::FieldType>> operator <<=(
     const std::shared_ptr<Lhs> &, const std::shared_ptr<Rhs> &rhs
   ) {
     static_assert(

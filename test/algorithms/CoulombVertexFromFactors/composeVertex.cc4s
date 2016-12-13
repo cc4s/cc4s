@@ -1,0 +1,41 @@
+ComplexTensorReader [
+  (mode "binary")
+  (file "../../resources/FactorOrbitals.bin")
+] [
+  (Data FactorOrbitals)
+].
+ComplexTensorReader [
+  (mode "binary")
+  (file "../../resources/CoulombFactors.bin")
+] [
+  (Data CoulombFactors)
+].
+
+ComplexTensorReader [
+  (mode "binary")
+  (file "../../resources/ComposedCoulombVertex.bin")
+] [
+  (Data ComposedCoulombVertex)
+].
+
+CoulombVertexFromFactors [
+  FactorOrbitals CoulombFactors
+] [
+  CoulombVertex
+].
+
+ComplexTensorSum [
+  (A ComposedCoulombVertex)
+  (AFactor +1.0) (AIndex "Fqr")
+  (B CoulombVertex)
+  (BFactor -1.0) (BIndex "Fqr")
+  (ResultIndex "Fqr")
+] [
+  (Result ComposedCoulombVertex)
+].
+
+ComplexTensorNorm [
+  (A ComposedCoulombVertex)
+] [
+  Norm
+].

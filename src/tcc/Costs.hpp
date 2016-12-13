@@ -82,14 +82,14 @@ namespace tcc {
     int64_t additionsCount;
   };
 
-  Costs operator +(Costs const &a, Costs const &b) {
+  inline Costs operator +(Costs const &a, Costs const &b) {
     Costs result(a);
     result += b;
     return result;
   }
 
   // TODO: use cost model for comparison
-  bool operator <(Costs const &a, Costs const &b) {
+  inline bool operator <(Costs const &a, Costs const &b) {
     return (a.multiplicationsCount + a.additionsCount) <
       (b.multiplicationsCount + b.additionsCount);
   }
