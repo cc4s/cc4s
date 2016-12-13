@@ -22,8 +22,6 @@ build/${CONFIG}/obj/mixers/LinearMixer.o \
 build/${CONFIG}/obj/algorithms/Algorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterSinglesDoublesAlgorithm.o \
-build/${CONFIG}/obj/algorithms/ParticleHoleCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexReader.o \
 build/${CONFIG}/obj/algorithms/SliceCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexDecomposition.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexDecomposition.o \
@@ -43,6 +41,8 @@ build/${CONFIG}/obj/algorithms/ComplexTensorSum.o \
 build/${CONFIG}/obj/algorithms/ComplexTensorNorm.o \
 build/${CONFIG}/obj/algorithms/FromComplexTensor.o \
 build/${CONFIG}/obj/algorithms/PartitionTensor.o \
+build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexReader.o \
+build/${CONFIG}/obj/algorithms/ParticleHoleCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexReader.o \
 build/${CONFIG}/obj/algorithms/CoulombIntegralsFromVertex.o \
 build/${CONFIG}/obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
