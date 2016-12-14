@@ -29,6 +29,7 @@ namespace tcc {
       Costs &contractionCosts,
       const typename Operation<F>::ProtectedToken &
     ):
+      alpha(F(1)), beta(F(0)),
       Operation<F>(left_->costs + right_->costs),
       left(left_), right(right_),
       result(result_),
@@ -67,6 +68,8 @@ namespace tcc {
     }
 
   protected:
+    F alpha, beta;
+
     std::shared_ptr<Operation<F>> left;
     std::shared_ptr<Operation<F>> right;
 

@@ -34,35 +34,35 @@ void TensorNetwork::dryRun() {
   int Np(No+Nv);
   int NF(200);
   int NR(300);
-  shared_ptr<MachineTensorFactory<>> machineTensorFactory(
+  auto machineTensorFactory(
 //    CtfMachineTensorFactory<>::create(Cc4s::world)
     DryMachineTensorFactory<>::create()
   );
-  shared_ptr<Tcc<>> tcc(Tcc<>::create(machineTensorFactory));
+  auto tcc(Tcc<>::create(machineTensorFactory));
 
 /*
   shared_ptr<Tensor<complex>> Tc(
     tcc.createTensor<complex>(std::vector<int>({100,100,10,10}), "Tc")
   );
 */
-  shared_ptr<Tensor<>> T(
+  auto T(
     tcc->createTensor(std::vector<int>({100,100,10,10}), "T")
   );
-  shared_ptr<Tensor<>> Pi(
+  auto Pi(
     tcc->createTensor(std::vector<int>({300,100}), "Pi")
   );
-  shared_ptr<Tensor<>> PiT(
+  auto PiT(
     tcc->createTensor(std::vector<int>({300,100}), "PiT")
   );
-  shared_ptr<Tensor<>> Lambda(
+  auto Lambda(
     tcc->createTensor(std::vector<int>({300,200}), "Lambda")
   );
-  shared_ptr<Tensor<>> LambdaT(
+  auto LambdaT(
     tcc->createTensor(std::vector<int>({300,200}), "LambdaT")
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
-  shared_ptr<Operation<>> ladderOperation = compile(
+  auto ladderOperation = compile(
     (*T)["abij"] <<=
       -1*(*T)["cdij"] * (*Pi)["Rd"] * (*PiT)["Rb"] *
       (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]

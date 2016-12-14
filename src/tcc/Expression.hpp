@@ -37,9 +37,15 @@ namespace tcc {
     /**
      * \brief Compile this tensor expression into an Operation.
      **/
-    virtual std::shared_ptr<Operation<F>> compile(
-      std::string const &lhsIndices
-    ) = 0;
+    virtual std::shared_ptr<Operation<F>> compile() = 0;
+
+    // FIXME: protect
+    /**
+     * \brief The enclosing expression using the result of this expression or
+     * nullptr if it is the outermost expression node.
+     * Note that the object is not owned by the parent.
+     **/
+    std::weak_ptr<Expression<F>> parent;
 
   protected:
     /**

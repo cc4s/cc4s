@@ -6,6 +6,7 @@
 // TODO: decouple execution from expression structure, including binding to CTF
 
 #include <tcc/Expression.hpp>
+#include <tcc/Move.hpp>
 #include <tcc/Tensor.hpp>
 #include <tcc/Operation.hpp>
 #include <tcc/ContractionOperation.hpp>
@@ -111,24 +112,25 @@ namespace tcc {
     virtual ~Contraction() {
     }
 
-    virtual std::shared_ptr<Operation<F>> compile(
-      std::string const &lhsIndices
-    ) {
+    virtual std::shared_ptr<Operation<F>> compile() {
+      auto moveParent(
+        std::dynamic_pointer_cast<Move<F>,Expression<F>>(this->parent.lock())
+      );
+      if (!moveParent) throw new EXCEPTION("A contraction must be the right-hand-side of a move expression.");
+      // TODO: support pure moves:
+      // i.e. rhs is a contraction with exactly one element (e.g. scalar *)
+      // or just a tensor (e.g. index permutation)
       LOG(0, "TCC") << "compiling contraction..." << std::endl;
       LOG(2, "TCC") << "building index counts..." << std::endl;
       indexCounts = IndexCounts();
-      indexCounts.add(lhsIndices);
-      std::vector<std::shared_ptr<Operation<F>>> operations(
-        factors.size()
-      );
+      indexCounts.add(moveParent->lhs->indices);
+      std::vector<std::shared_ptr<Operation<F>>> operations(factors.size());
       for (unsigned int i(0); i < factors.size(); ++i) {
-        operations[i] = std::make_shared<FetchOperation<F>>(
-          factors[i], typename Operation<F>::ProtectedToken()
-        );
+        operations[i] = factors[i]->compile();
         indexCounts.add(factors[i]->indices);
       }
       triedPossibilitiesCount = 0;
-      std::shared_ptr<Operation<F>> result(compile(operations));
+      auto result(compile(operations));
       LOG(1, "TCC") <<
         "possibilites tried=" << triedPossibilitiesCount <<
         ", FLOPS=" << result->costs.multiplicationsCount <<
@@ -397,10 +399,15 @@ namespace tcc {
       >::Equals,
       "Only tensors of the same type can be contracted."
     );
-    return std::make_shared<Contraction<typename Lhs::FieldType>>(
-      A, B,
-      typename Expression<typename Lhs::FieldType>::ProtectedToken()
+    auto contraction(
+      std::make_shared<Contraction<typename Lhs::FieldType>>(
+        A, B,
+        typename Expression<typename Lhs::FieldType>::ProtectedToken()
+      )
     );
+    A->parent = contraction;
+    B->parent = contraction;
+    return contraction;
   }
 
   /**
@@ -415,10 +422,14 @@ namespace tcc {
       cc4s::TypeRelations<S, typename Lhs::FieldType>::CompatibleTo,
       "The type of the scalar must be compatible to the tensor type."
     );
-    return std::make_shared<Contraction<typename Lhs::FieldType>>(
-      A, s,
-      typename Expression<typename Lhs::FieldType>::ProtectedToken()
+    auto contraction(
+      std::make_shared<Contraction<typename Lhs::FieldType>>(
+        A, s,
+        typename Expression<typename Lhs::FieldType>::ProtectedToken()
+      )
     );
+    A->parent = contraction;
+    return contraction;
   }
 
   /**
@@ -433,10 +444,14 @@ namespace tcc {
       cc4s::TypeRelations<S, typename Rhs::FieldType>::CompatibleTo,
       "The type of the scalar must be compatible to the tensor type."
     );
-    return std::make_shared<Contraction<typename Rhs::FieldType>>(
-      A, s,
-      typename Expression<typename Rhs::FieldType>::ProtectedToken()
+    auto contraction(
+      std::make_shared<Contraction<typename Rhs::FieldType>>(
+        A, s,
+        typename Expression<typename Rhs::FieldType>::ProtectedToken()
+      )
     );
+    A->parent = contraction;
+    return contraction;
   }
 }
 

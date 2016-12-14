@@ -3,7 +3,6 @@
 #define TCC_FETCH_OPERATION_DEFINED
 
 #include <tcc/Tensor.hpp>
-#include <tcc/IndexedTensor.hpp>
 #include <util/Log.hpp>
 
 #include <memory>
@@ -19,12 +18,13 @@ namespace tcc {
      * generate operations.
      **/
     FetchOperation(
-      const std::shared_ptr<IndexedTensor<F>> &t_,
+      const std::shared_ptr<Tensor<F>> &tensor_,
+      const std::string &indices_,
       const typename Operation<F>::ProtectedToken &
     ):
-      Operation<F>(Costs(t_->tensor->getElementsCount())),
-      tensor(t_->tensor),
-      indices(t_->indices)
+      Operation<F>(Costs(tensor_->getElementsCount())),
+      tensor(tensor_),
+      indices(indices_)
     {
     }
     virtual ~FetchOperation() {

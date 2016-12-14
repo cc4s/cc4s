@@ -45,15 +45,9 @@ namespace tcc {
     virtual ~Move() {
     }
 
-    virtual std::shared_ptr<Operation<F>> compile(const std::string &) {
-      return std::make_shared<MoveOperation<F>>(
-        std::make_shared<FetchOperation<F>>(
-          lhs,
-          typename Operation<F>::ProtectedToken()
-        ),
-        rhs->compile(lhs->indices),
-        typename Operation<F>::ProtectedToken()
-      );
+    virtual std::shared_ptr<Operation<F>> compile() {
+      // TODO: compile lhs in rhs implictly?
+      return rhs->compile();
     }
 
     /**
@@ -66,10 +60,14 @@ namespace tcc {
       const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
       const std::shared_ptr<Rhs> &rhs
     ) {
-      return std::make_shared<Move<typename Rhs::FieldType>>(
-        lhs, rhs,
-        typename Expression<typename Rhs::FieldType>::ProtectedToken()
+      auto move(
+        std::make_shared<Move<typename Rhs::FieldType>>(
+          lhs, rhs,
+          typename Expression<typename Rhs::FieldType>::ProtectedToken()
+        )
       );
+      lhs->parent = move;
+      rhs->parent = move;
     }
 
     std::shared_ptr<IndexedTensor<F>> lhs;

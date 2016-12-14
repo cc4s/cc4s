@@ -38,6 +38,7 @@ namespace tcc {
     class ProtectedToken {
     };
 
+    friend class IndexedTensor<F>;
     friend class Move<F>;
     friend class Contraction<F>;
   };
@@ -50,7 +51,7 @@ namespace tcc {
   inline std::shared_ptr<Operation<typename Exp::FieldType>> compile(
     const std::shared_ptr<Exp> &expression
   ) {
-    return expression->compile("");
+    return expression->compile();
   }
 }
 

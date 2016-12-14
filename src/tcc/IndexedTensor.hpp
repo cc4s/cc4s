@@ -33,11 +33,10 @@ namespace tcc {
     virtual ~IndexedTensor() {
     }
 
-    virtual std::shared_ptr<Operation<F>> compile(
-      std::string const &lhsIndices
-    ) {
-      // not to be used
-      throw new EXCEPTION("Operation on IndexedTensor required.");
+    virtual std::shared_ptr<Operation<F>> compile() {
+      return std::make_shared<FetchOperation<F>>(
+        tensor, indices, typename Operation<F>::ProtectedToken()
+      );
     }
 
     /**
@@ -79,10 +78,15 @@ namespace tcc {
     const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
     const std::shared_ptr<Rhs> &rhs
   ) {
-    return std::make_shared<Move<typename Rhs::FieldType>>(
-      lhs, rhs,
-      typename Expression<typename Rhs::FieldType>::ProtectedToken()
+    auto move(
+      std::make_shared<Move<typename Rhs::FieldType>>(
+        lhs, rhs,
+        typename Expression<typename Rhs::FieldType>::ProtectedToken()
+      )
     );
+    lhs->parent = move;
+    rhs->parent = move;
+    return move;
   }
 
   template <typename Lhs, typename Rhs>
