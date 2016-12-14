@@ -30,7 +30,7 @@ namespace tcc {
       const std::shared_ptr<Contraction<F>> &lhs,
       const std::shared_ptr<Contraction<F>> &rhs,
       const typename Expression<F>::ProtectedToken &
-    ): factors(lhs->factors) {
+    ): factors(lhs->factors), scalar(F(1)) {
       factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
     }
     /**
@@ -43,7 +43,7 @@ namespace tcc {
       const std::shared_ptr<Contraction<F>> &lhs,
       const std::shared_ptr<IndexedTensor<F>> &rhs,
       const typename Expression<F>::ProtectedToken &
-    ): factors(lhs->factors) {
+    ): factors(lhs->factors), scalar(F(1)) {
       factors.push_back(rhs);
     }
     /**
@@ -56,7 +56,7 @@ namespace tcc {
       const std::shared_ptr<IndexedTensor<F>> &lhs,
       const std::shared_ptr<Contraction<F>> &rhs,
       const typename Expression<F>::ProtectedToken &
-    ): factors(rhs->factors) {
+    ): factors(rhs->factors), scalar(F(1)) {
       factors.push_back(lhs);
     }
     /**
@@ -68,7 +68,7 @@ namespace tcc {
       const std::shared_ptr<IndexedTensor<F>> &lhs,
       const std::shared_ptr<IndexedTensor<F>> &rhs,
       const typename Expression<F>::ProtectedToken &
-    ) {
+    ): scalar(F(1)) {
       factors.push_back(lhs);
       factors.push_back(rhs);
     }
@@ -88,6 +88,26 @@ namespace tcc {
         "Only contractions of contractions or tensors supported."
       );
     }
+    /**
+     * \brief Constructor given an indexed tensor and a scalar.
+     **/
+    Contraction(
+      const std::shared_ptr<IndexedTensor<F>> &lhs,
+      const F s,
+      const typename Expression<F>::ProtectedToken &
+    ): scalar(F(s)) {
+      factors.push_back(lhs);
+    }
+    /**
+     * \brief Falttening constructor given a contraction and a scalar.
+     **/
+    Contraction(
+      const std::shared_ptr<Contraction<F>> &lhs,
+      const F s,
+      const typename Expression<F>::ProtectedToken &
+    ): factors(lhs.factors), scalar(lhs.scalar * F(s)) {
+    }
+
     virtual ~Contraction() {
     }
 
@@ -138,6 +158,7 @@ namespace tcc {
     }
 
     std::vector<std::shared_ptr<IndexedTensor<F>>> factors;
+    F scalar;
 
   protected:
     /**
@@ -352,6 +373,14 @@ namespace tcc {
     friend std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
       const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
     );
+    template <typename Lhs, typename S>
+    friend std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
+      const std::shared_ptr<Lhs> &A, const S s
+    );
+    template <typename Rhs, typename S>
+    friend std::shared_ptr<Contraction<typename Rhs::FieldType>> operator *(
+      const S s, const std::shared_ptr<Rhs> &A
+    );
   };
 
   /**
@@ -371,6 +400,42 @@ namespace tcc {
     return std::make_shared<Contraction<typename Lhs::FieldType>>(
       A, B,
       typename Expression<typename Lhs::FieldType>::ProtectedToken()
+    );
+  }
+
+  /**
+   * \brief Creates a contraction expression of a given tensor
+   * expressions A and a scalar s using the multiplication operator *.
+   **/
+  template <typename Lhs, typename S>
+  inline std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
+    const std::shared_ptr<Lhs> &A, const S s
+  ) {
+    static_assert(
+      cc4s::TypeRelations<S, typename Lhs::FieldType>::CompatibleTo,
+      "The type of the scalar must be compatible to the tensor type."
+    );
+    return std::make_shared<Contraction<typename Lhs::FieldType>>(
+      A, s,
+      typename Expression<typename Lhs::FieldType>::ProtectedToken()
+    );
+  }
+
+  /**
+   * \brief Creates a contraction expression of a given tensor
+   * expressions A and a scalar s using the multiplication operator *.
+   **/
+  template <typename Rhs, typename S>
+  inline std::shared_ptr<Contraction<typename Rhs::FieldType>> operator *(
+    const S s, const std::shared_ptr<Rhs> &A
+  ) {
+    static_assert(
+      cc4s::TypeRelations<S, typename Rhs::FieldType>::CompatibleTo,
+      "The type of the scalar must be compatible to the tensor type."
+    );
+    return std::make_shared<Contraction<typename Rhs::FieldType>>(
+      A, s,
+      typename Expression<typename Rhs::FieldType>::ProtectedToken()
     );
   }
 }

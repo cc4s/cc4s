@@ -64,7 +64,7 @@ void TensorNetwork::dryRun() {
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
   shared_ptr<Operation<>> ladderOperation = compile(
     (*T)["abij"] <<=
-      (*T)["cdij"] * (*Pi)["Rd"] * (*PiT)["Rb"] *
+      -1*(*T)["cdij"] * (*Pi)["Rd"] * (*PiT)["Rb"] *
       (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
   );
   ladderOperation->execute();
