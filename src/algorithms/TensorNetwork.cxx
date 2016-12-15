@@ -1,6 +1,5 @@
 #include <algorithms/TensorNetwork.hpp>
 #include <tcc/Tcc.hpp>
-//#include <util/CtfMachineTensor.hpp>
 #include <tcc/DryMachineTensor.hpp>
 #include <Cc4s.hpp>
 
@@ -62,12 +61,12 @@ void TensorNetwork::dryRun() {
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
-//  tcc->compile( (*T)["abij"] += (*T)["abji"] )->execute();
+  tcc->compile( (*T)["abij"] -= -1/4. *(*T)["abji"] )->execute();
 
   auto ladderOperation = tcc->compile(
-    (*T)["abij"] -=
-      (*T)["cdij"] * (*Pi)["Rd"] * (*PiT)["Rb"] *
-      (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
+    (*T)["abij"] <<=
+      2 * (*T)["cdij"] * (*Pi)["Rd"] * (*PiT)["Rb"] *
+      (*Pi)["Sc"] * (*PiT)["Sa"] * (-3) * (*LambdaT)["SF"] * (*Lambda)["RF"]
   );
   ladderOperation->execute();
 

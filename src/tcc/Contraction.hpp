@@ -3,19 +3,15 @@
 #define TCC_CONTRACTION_DEFINED
 
 #include <tcc/Expression.hpp>
-#include <tcc/Move.hpp>
-#include <tcc/Tensor.hpp>
-#include <tcc/Operation.hpp>
-#include <tcc/ContractionOperation.hpp>
-#include <tcc/FetchOperation.hpp>
-#include <tcc/IndexCounts.hpp>
 #include <util/StaticAssert.hpp>
-#include <util/Log.hpp>
 
 #include <vector>
 #include <memory>
 
 namespace tcc {
+  template <typename F>
+  class IndexedTensor;
+
   template <typename F>
   class Contraction: public Expression<F> {
   public:
@@ -50,7 +46,7 @@ namespace tcc {
      **/
     template <typename S, typename Lhs>
     static std::shared_ptr<Contraction<typename Lhs::FieldType>> create(
-      const S s, const std::shared_ptr<Lhs> &A
+      const S alpha, const std::shared_ptr<Lhs> &A
     ) {
       static_assert(
         cc4s::TypeRelations<S, typename Lhs::FieldType>::CASTABLE_TO,
@@ -58,7 +54,7 @@ namespace tcc {
       );
       auto contraction(
         std::make_shared<Contraction<typename Lhs::FieldType>>(
-          s, A,
+          alpha, A,
           typename Expression<typename Lhs::FieldType>::ProtectedToken()
         )
       );
@@ -76,7 +72,7 @@ namespace tcc {
       const std::shared_ptr<Contraction<F>> &lhs,
       const std::shared_ptr<Contraction<F>> &rhs,
       const typename Expression<F>::ProtectedToken &
-    ): factors(lhs->factors), alpha(F(1)) {
+    ): alpha(lhs->alpha * rhs->alpha), factors(lhs->factors) {
       factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
     }
     /**
@@ -89,7 +85,7 @@ namespace tcc {
       const std::shared_ptr<Contraction<F>> &lhs,
       const std::shared_ptr<IndexedTensor<F>> &rhs,
       const typename Expression<F>::ProtectedToken &
-    ): factors(lhs->factors), alpha(F(1)) {
+    ): alpha(lhs->alpha), factors(lhs->factors) {
       factors.push_back(rhs);
     }
     /**
@@ -102,7 +98,7 @@ namespace tcc {
       const std::shared_ptr<IndexedTensor<F>> &lhs,
       const std::shared_ptr<Contraction<F>> &rhs,
       const typename Expression<F>::ProtectedToken &
-    ): factors(rhs->factors), alpha(F(1)) {
+    ): alpha(rhs->alpha), factors(rhs->factors) {
       factors.push_back(lhs);
     }
     /**
@@ -140,10 +136,10 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const F s,
+      const F alpha_,
       const std::shared_ptr<IndexedTensor<F>> &lhs,
       const typename Expression<F>::ProtectedToken &
-    ): alpha(s) {
+    ): alpha(alpha_) {
       factors.push_back(lhs);
     }
     /**
@@ -152,17 +148,17 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const F s,
+      const F alpha_,
       const std::shared_ptr<Contraction<F>> &lhs,
       const typename Expression<F>::ProtectedToken &
-    ): factors(lhs->factors), alpha(lhs->alpha * s) {
+    ): alpha(lhs->alpha * alpha_), factors(lhs->factors) {
     }
 
     virtual ~Contraction() {
     }
 
-    std::vector<std::shared_ptr<IndexedTensor<F>>> factors;
     F alpha;
+    std::vector<std::shared_ptr<IndexedTensor<F>>> factors;
   };
 
   /**

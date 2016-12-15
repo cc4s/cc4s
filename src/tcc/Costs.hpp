@@ -7,19 +7,6 @@
 namespace tcc {
   class Costs {
   public:
-    /**
-     * \brief Creates an object containing the overall estimated costs of
-     * a tensor operation in terms of memory and number of operations.
-     **/
-    Costs(
-    ):
-      maxElementsCount(std::numeric_limits<int64_t>::max()),
-      elementsCount(std::numeric_limits<int64_t>::max()),
-      multiplicationsCount(std::numeric_limits<int64_t>::max()),
-      additionsCount(std::numeric_limits<int64_t>::max())
-    {
-    }
-
     Costs(
       int64_t const elementsCount_
     ):

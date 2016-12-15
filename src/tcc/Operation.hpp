@@ -3,18 +3,12 @@
 #define TCC_OPERATION_DEFINED
 
 #include <tcc/Costs.hpp>
-#include <tcc/Expression.hpp>
-#include <util/Log.hpp>
-#include <algorithm>
 
 #include <memory>
 
 namespace tcc {
   template <typename F>
   class Tensor;
-
-  template <typename F>
-  class Tcc;
 
   template <typename F>
   class Operation {
@@ -34,8 +28,8 @@ namespace tcc {
      **/
     Costs costs;
 
-    protected:
-      class ProtectedToken {
+  protected:
+    class ProtectedToken {
     };
 
     friend class Tcc<F>;

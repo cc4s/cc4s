@@ -1,6 +1,7 @@
 #include <algorithms/CoulombVertexFromFactors.hpp>
 #include <math/Complex.hpp>
 #include <tcc/Tcc.hpp>
+#include <tcc/DryMachineTensor.hpp>
 #include <util/CtfMachineTensor.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>

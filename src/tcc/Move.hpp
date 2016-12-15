@@ -1,16 +1,17 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TCC_ASSIGNMENT_DEFINED
-#define TCC_ASSIGNMENT_DEFINED
+#ifndef TCC_MOVE_DEFINED
+#define TCC_MOVE_DEFINED
 
 #include <tcc/Expression.hpp>
-#include <tcc/MoveOperation.hpp>
-#include <tcc/FetchOperation.hpp>
+#include <tcc/Contraction.hpp>
 #include <util/StaticAssert.hpp>
-#include <util/Exception.hpp>
 
 #include <memory>
 
 namespace tcc {
+  template <typename F>
+  class IndexedTensor;
+
   template <typename F>
   class Move: public Expression<F> {
   public:

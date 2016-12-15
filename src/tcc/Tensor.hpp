@@ -4,8 +4,6 @@
 
 #include <tcc/IndexedTensor.hpp>
 #include <tcc/MachineTensor.hpp>
-#include <util/Log.hpp>
-#include <util/StaticAssert.hpp>
 #include <cstdint>
 #include <vector>
 #include <string>

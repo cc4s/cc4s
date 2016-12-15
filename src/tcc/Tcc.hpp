@@ -3,22 +3,27 @@
 #define TCC_DEFINED
 
 #include <tcc/Expression.hpp>
-#include <tcc/Contraction.hpp>
-#include <tcc/Move.hpp>
-#include <tcc/Tensor.hpp>
-#include <tcc/Operation.hpp>
-#include <tcc/ContractionOperation.hpp>
-#include <tcc/FetchOperation.hpp>
-#include <tcc/IndexCounts.hpp>
-#include <tcc/DryTensor.hpp>
-#include <tcc/DryMachineTensor.hpp>
 
-#include <util/StaticAssert.hpp>
+#include <tcc/IndexedTensor.hpp>
+#include <tcc/Move.hpp>
+#include <tcc/Contraction.hpp>
+#include <tcc/Tensor.hpp>
+#include <tcc/FetchOperation.hpp>
+#include <tcc/MoveOperation.hpp>
+#include <tcc/ContractionOperation.hpp>
+#include <tcc/IndexCounts.hpp>
+
 #include <util/Log.hpp>
 
 #include <vector>
 #include <string>
 #include <memory>
+
+// TODO: support comma operator for sequence of operations
+// TODO: expression definitions with local index renaming
+// TODO: permutation and anti-permutation operator
+// TODO: common subexpression optimization
+// TODO: better heuristics for large networks
 
 namespace tcc {
   template <typename F>
@@ -84,13 +89,12 @@ namespace tcc {
     std::shared_ptr<Operation<F>> compile(
       const std::shared_ptr<Move<F>> &move
     ) {
-      auto contraction(move->rhs);
-      // TODO: support pure moves:
-      // i.e. rhs is a contraction with exactly one element
       LOG(0, "TCC") << "compiling contraction..." << std::endl;
       LOG(2, "TCC") << "building index counts..." << std::endl;
+
       indexCounts = IndexCounts();
       indexCounts.add(move->lhs->indices);
+      auto contraction(move->rhs);
       std::vector<std::shared_ptr<Operation<F>>> operations(
         contraction->factors.size()
       );
@@ -99,35 +103,48 @@ namespace tcc {
         indexCounts.add(contraction->factors[i]->indices);
       }
       triedPossibilitiesCount = 0;
-      auto contractionOperation(compile(operations));
 
-      // directly write to destination tensor instead of intermediate tensor
-      contractionOperation->result = move->lhs->tensor;
-      contractionOperation->resultIndices = move->lhs->indices;
+      std::shared_ptr<NonVoidOperation<F>> operation;
+      if (operations.size() < 2) {
+        operation = MoveOperation<F>::create(
+          operations[0],
+          move->lhs->tensor, move->lhs->indices.c_str(),
+          Costs(move->lhs->tensor->getElementsCount())
+        );
+      } else {
+        operation = compileContractions(operations);
+        // directly write to destination tensor instead of intermediate tensor
+        operation->result = move->lhs->tensor;
+        operation->resultIndices = move->lhs->indices;
+      }
       // enter the scalars alpha and beta
-      contractionOperation->alpha = contraction->alpha;
-      contractionOperation->beta = move->beta;
+      operation->alpha = contraction->alpha;
+      operation->beta = move->beta;
 
       LOG(1, "TCC") <<
         "possibilites tried=" << triedPossibilitiesCount <<
-        ", FLOPS=" << contractionOperation->costs.multiplicationsCount+contractionOperation->costs.additionsCount <<
-        ", maximum elements stored=" << contractionOperation->costs.maxElementsCount <<
+        ", FLOPS=" <<
+          operation->costs.multiplicationsCount +
+          operation->costs.additionsCount <<
+        ", maximum elements stored=" <<
+          operation->costs.maxElementsCount <<
         std::endl;
-      return contractionOperation;
+
+      return operation;
     }
 
   protected:
     /**
-     * \brief Compiles the given list of Operations trying to find
-     * the best order of contractions. The indexCounts are modified
+     * \brief Compiles the given list of at least 2 Operations trying to
+     * find the best order of contractions. The indexCounts are modified
      * during evaluation.
      **/
-    std::shared_ptr<ContractionOperation<F>> compile(
+    std::shared_ptr<ContractionOperation<F>> compileContractions(
       const std::vector<std::shared_ptr<Operation<F>>> &operations,
       const int level = 0
     ) {
       // no best contraction known at first
-      std::shared_ptr<ContractionOperation<F>> bestContraction;
+      std::shared_ptr<ContractionOperation<F>> bestContractions;
       for (unsigned int i(0); i < operations.size()-1; ++i) {
         std::shared_ptr<Operation<F>> a(operations[i]);
         // take out the indices of factor a
@@ -138,49 +155,49 @@ namespace tcc {
           indexCounts.add(b->getResultIndices(), -1);
 
           // just compile the contraction of a&b
-          std::shared_ptr<ContractionOperation<F>> abContraction(
-            compile(a, b)
+          std::shared_ptr<ContractionOperation<F>> contractionOperation(
+            createContractionOperation(a, b)
           );
 
-          if (abContraction) {
+          if (contractionOperation) {
             if (operations.size() == 2) {
               // we are done if there were only 2 factors to contract
-              bestContraction = abContraction;
+              bestContractions = contractionOperation;
             } else {
               // otherwise, add indices of the result for further consideration
-              indexCounts.add(abContraction->getResultIndices());
+              indexCounts.add(contractionOperation->getResultIndices());
               // build new list of factors
               std::vector<std::shared_ptr<Operation<F>>> subOperations(
                 operations.size() - 1
               );
-              subOperations[0] = abContraction;
+              subOperations[0] = contractionOperation;
               int l(1);
               for (unsigned int k(0); k < operations.size(); ++k) {
                 if (k != i && k != j) subOperations[l++] = operations[k];
               }
 
               // now do a recursive compilation of all the remaining factors
-              std::shared_ptr<ContractionOperation<F>> fullContraction(
-                compile(subOperations, level+1)
+              std::shared_ptr<ContractionOperation<F>> allContractions(
+                compileContractions(subOperations, level+1)
               );
 
               // take out indices of contraction of a&b again
               // for considering the next possibility
-              indexCounts.add(abContraction->getResultIndices(), -1);
+              indexCounts.add(contractionOperation->getResultIndices(), -1);
 
               // see if the entire contraction is currently best
               if (
-                !bestContraction ||
-                fullContraction->costs < bestContraction->costs
+                !bestContractions ||
+                allContractions->costs < bestContractions->costs
               ) {
-                bestContraction = fullContraction;
+                bestContractions = allContractions;
                 if (level == 0) { // do output only in topmost level
                   LOG(2, "TCC") <<
                     "possibilites tried=" << triedPossibilitiesCount <<
                     ", improved solution found: " <<
-                    "FLOPS=" << fullContraction->costs.multiplicationsCount <<
+                    "FLOPS=" << allContractions->costs.multiplicationsCount <<
                     ", maximum elements stored=" <<
-                    fullContraction->costs.maxElementsCount << std::endl;
+                    allContractions->costs.maxElementsCount << std::endl;
                 }
               } else {
                 if (level == 0) {
@@ -199,10 +216,14 @@ namespace tcc {
         // add the indices of factor a again
         indexCounts.add(a->getResultIndices());
       }
-      return bestContraction;
+      return bestContractions;
     }
 
-    std::shared_ptr<ContractionOperation<F>> compile(
+    /**
+     * \brief Creates a ContractionOperation contracting two previously
+     * compiled operations and assessing its costs.
+     **/
+    std::shared_ptr<ContractionOperation<F>> createContractionOperation(
       const std::shared_ptr<Operation<F>> &a,
       const std::shared_ptr<Operation<F>> &b
     ) {
@@ -283,17 +304,17 @@ namespace tcc {
           a->getResult()->getName() + b->getResult()->getName()
         )
       );
+      // assess costs
       Costs contractionCosts(
         contractionResult->getElementsCount(),
         0,
         outerElementsCount * contractedElementsCount,
         outerElementsCount * contractedElementsCount - outerElementsCount
       );
-      return std::make_shared<ContractionOperation<F>>(
+      return ContractionOperation<F>::create(
         a, b,
         contractionResult, static_cast<const char *>(outerIndices),
-        contractionCosts,
-        typename Operation<F>::ProtectedToken()
+        contractionCosts
       );
     }
 

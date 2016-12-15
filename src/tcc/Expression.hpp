@@ -2,26 +2,9 @@
 #ifndef TCC_EXPRESSION_DEFINED
 #define TCC_EXPRESSION_DEFINED
 
-#include <util/StaticAssert.hpp>
 #include <memory>
 
 namespace tcc {
-  // forward class declaration of interdependent expression types and methods
-  template <typename F=double>
-  class Expression;
-
-  template <typename F=double>
-  class IndexedTensor;
-
-  template <typename F=double>
-  class Contraction;
-
-  template <typename F=double>
-  class Move;
-
-  template <typename F=double>
-  class Operation;
-
   template <typename F>
   class Expression {
   public:
@@ -34,7 +17,7 @@ namespace tcc {
     virtual ~Expression() {
     }
 
-    // FIXME: protect
+    // FIXME: protect or discard
     /**
      * \brief The enclosing expression using the result of this expression or
      * nullptr if it is the outermost expression node.

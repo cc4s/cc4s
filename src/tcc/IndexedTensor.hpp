@@ -5,8 +5,6 @@
 #include <tcc/Expression.hpp>
 #include <tcc/Move.hpp>
 #include <util/StaticAssert.hpp>
-#include <util/Exception.hpp>
-#include <util/Log.hpp>
 
 #include <string>
 #include <ostream>

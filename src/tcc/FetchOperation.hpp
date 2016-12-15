@@ -2,9 +2,9 @@
 #ifndef TCC_FETCH_OPERATION_DEFINED
 #define TCC_FETCH_OPERATION_DEFINED
 
+#include <tcc/Operation.hpp>
 #include <tcc/Tensor.hpp>
 #include <tcc/Costs.hpp>
-#include <util/Log.hpp>
 
 #include <memory>
 
