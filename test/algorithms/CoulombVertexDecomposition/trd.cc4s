@@ -16,7 +16,7 @@ CoulombVertexDecomposition [
   (rank 66)
   (rankFactor 2.0)
   % Set the number of iterations. Default is 32.
-  (maxIterations 32)
+  (maxIterations 256)
   (mixer "LinearMixer")
   (mixingRatio 0.8)
   % Set whether CoulombFactors or FactorOrbitals are fitted
@@ -27,4 +27,23 @@ CoulombVertexDecomposition [
   FactorOrbitals
   CoulombFactors
   ComposedCoulombVertex
+].
+
+ComplexTensorWriter [
+  (mode "binary")
+  (file "../../resources/FactorOrbitals.bin")
+  (Data FactorOrbitals)
+] [
+].
+ComplexTensorWriter [
+  (mode "binary")
+  (file "../../resources/CoulombFactors.bin")
+  (Data CoulombFactors)
+] [
+].
+ComplexTensorWriter [
+  (mode "binary")
+  (file "../../resources/ComposedCoulombVertex.bin")
+  (Data ComposedCoulombVertex)
+] [
 ].

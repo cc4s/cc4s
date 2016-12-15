@@ -6,7 +6,8 @@
 #include <sstream>
 #include <iostream>
 
-#define EXCEPTION(message) DetailedException((message), __FILE__, __LINE__)
+#define EXCEPTION(message) \
+  cc4s::DetailedException((message), __FILE__, __LINE__)
 #define Assert(condition, message) \
   if (!(condition)) throw new EXCEPTION(message);
 
