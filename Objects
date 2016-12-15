@@ -58,6 +58,7 @@ build/${CONFIG}/obj/algorithms/ApproximateCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/ApproximateParticleHoleCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/SingleParticleOccupancies.o \
 build/${CONFIG}/obj/algorithms/PolarizabilityFromCoulombVertex.o \
+build/${CONFIG}/obj/algorithms/FiniteSizeCorrection.o \
 build/${CONFIG}/obj/algorithms/ThermalHolesAndParticles.o \
 build/${CONFIG}/obj/algorithms/ThermalMp2EnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/ThermalClusterDoublesAlgorithm.o \
@@ -65,4 +66,5 @@ build/${CONFIG}/obj/algorithms/ThermalDirectRingCoupledClusterDoubles.o \
 build/${CONFIG}/obj/algorithms/PseudoInverse.o \
 build/${CONFIG}/obj/algorithms/Delete.o \
 build/${CONFIG}/obj/algorithms/PerturbativeTriples.o \
+build/${CONFIG}/obj/algorithms/LaplaceMp2Energy.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexFromFactors.o \

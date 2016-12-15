@@ -1,0 +1,49 @@
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
+DrccdEnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (maxIterations 1)
+] [
+  (DrccdEnergy Mp2Energy)
+  (DrccdDoublesAmplitudes DoublesAmplitudes)
+].
+
+SliceCoulombVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  ParticleHoleCoulombVertex
+].
+
+TensorReader [] [(Data CoulombKernel)].
+TensorReader [] [(Data Momenta)].
+
+FiniteSizeCorrection [
+  ParticleHoleCoulombVertex
+  CoulombKernel
+  DoublesAmplitudes
+  Momenta
+% Set the number of kpoints, the volume of the simulation cell, and the
+% constantFactor
+  (kpoints 1)
+  (volume 136.99)
+  (constantFactor 0.002351)
+% Set the shortest G-vector (if given), else the smallest G-vector will be
+% used
+  (shortestGvector 0.02351)
+] [
+  EnergyCorrection
+  StructureFactor
+  VG
+  EMp2
+].
