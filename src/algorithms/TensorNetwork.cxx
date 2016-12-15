@@ -62,9 +62,11 @@ void TensorNetwork::dryRun() {
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
-  auto ladderOperation = compile(
-    (*T)["abij"] <<=
-      -1*(*T)["cdij"] * (*Pi)["Rd"] * (*PiT)["Rb"] *
+//  tcc->compile( (*T)["abij"] += (*T)["abji"] )->execute();
+
+  auto ladderOperation = tcc->compile(
+    (*T)["abij"] -=
+      (*T)["cdij"] * (*Pi)["Rd"] * (*PiT)["Rb"] *
       (*Pi)["Sc"] * (*PiT)["Sa"] * (*LambdaT)["SF"] * (*Lambda)["RF"]
   );
   ladderOperation->execute();

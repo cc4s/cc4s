@@ -15,7 +15,7 @@ namespace tcc {
      * \brief Creates a move operation moving the results of
      * the right hand side operation into the fetched tensor on the
      * left hand side.
-     * Not intended for direct invocation. Use compile(expression) to
+     * Not intended for direct invocation. Use Tcc::compile(expression) to
      * generate operations.
      **/
     MoveOperation(

@@ -3,6 +3,7 @@
 #define TCC_FETCH_OPERATION_DEFINED
 
 #include <tcc/Tensor.hpp>
+#include <tcc/Costs.hpp>
 #include <util/Log.hpp>
 
 #include <memory>
@@ -14,17 +15,16 @@ namespace tcc {
     /**
      * \brief Creates a fetch operation of a tensor making it accessible
      * for subsequent move or contraction operations.
-     * Not intended for direct invocation. Use compile(expression) to
+     * Not intended for direct invocation. Use Tcc::compile(expression) to
      * generate operations.
      **/
     FetchOperation(
-      const std::shared_ptr<Tensor<F>> &tensor_,
-      const std::string &indices_,
+      const std::shared_ptr<IndexedTensor<F>> &t,
       const typename Operation<F>::ProtectedToken &
     ):
-      Operation<F>(Costs(tensor_->getElementsCount())),
-      tensor(tensor_),
-      indices(indices_)
+      Operation<F>(Costs(t->tensor->getElementsCount())),
+      tensor(t->tensor),
+      indices(t->indices)
     {
     }
     virtual ~FetchOperation() {
@@ -42,8 +42,18 @@ namespace tcc {
     }
 
   protected:
+    static std::shared_ptr<FetchOperation<F>> create(
+      const std::shared_ptr<IndexedTensor<F>> &indexedTensor
+    ) {
+      return std::make_shared<FetchOperation<F>>(
+        indexedTensor, ProtectedToken()
+      );
+    }
+
     std::shared_ptr<Tensor<F>> tensor;
     std::string indices;
+
+    friend class Tcc<F>;
   };
 }
 

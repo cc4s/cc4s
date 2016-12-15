@@ -34,11 +34,6 @@ namespace tcc {
     virtual ~Expression() {
     }
 
-    /**
-     * \brief Compile this tensor expression into an Operation.
-     **/
-    virtual std::shared_ptr<Operation<F>> compile() = 0;
-
     // FIXME: protect
     /**
      * \brief The enclosing expression using the result of this expression or

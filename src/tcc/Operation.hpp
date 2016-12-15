@@ -14,7 +14,7 @@ namespace tcc {
   class Tensor;
 
   template <typename F>
-  class ContractionOperation;
+  class Tcc;
 
   template <typename F>
   class Operation {
@@ -34,25 +34,12 @@ namespace tcc {
      **/
     Costs costs;
 
-  protected:
-    class ProtectedToken {
+    protected:
+      class ProtectedToken {
     };
 
-    friend class IndexedTensor<F>;
-    friend class Move<F>;
-    friend class Contraction<F>;
+    friend class Tcc<F>;
   };
-
-  /**
-   * \brief Compiles the given expression and returns the resulting
-   * operation. Exp needs to be a derived class of tcc::Expression.
-   **/
-  template <typename Exp>
-  inline std::shared_ptr<Operation<typename Exp::FieldType>> compile(
-    const std::shared_ptr<Exp> &expression
-  ) {
-    return expression->compile();
-  }
 }
 
 #endif

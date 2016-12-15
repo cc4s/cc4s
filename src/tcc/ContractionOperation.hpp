@@ -18,7 +18,7 @@ namespace tcc {
      * \brief Creates a contraction operation contracting the results of
      * the left and the right sub-operations where the result is to be
      * stored in the specified result tensor.
-     * Not intended for direct invocation. Use compile(expression) to
+     * Not intended for direct invocation. Use Tcc::compile(expression) to
      * generate operations.
      **/
     ContractionOperation(
@@ -51,10 +51,10 @@ namespace tcc {
       left->execute();
       right->execute();
       this->getResult()->getMachineTensor()->contract(
-        F(1),
+        alpha,
         left->getResult()->getMachineTensor(), left->getResultIndices(),
         right->getResult()->getMachineTensor(), right->getResultIndices(),
-        F(0),
+        beta,
         this->getResultIndices()
       );
     }
@@ -76,7 +76,7 @@ namespace tcc {
     std::shared_ptr<Tensor<F>> result;
     std::string resultIndices;
 
-    friend class Contraction<F>;
+    friend class Tcc<F>;
   };
 }
 

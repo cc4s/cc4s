@@ -33,7 +33,7 @@ namespace cc4s {
     ):
       tensor(
         static_cast<int>(lens.size()), lens.data(),
-        std::vector<int>(0, lens.size()).data()
+        std::vector<int>(lens.size(), 0).data()
       )
     {
       tensor.set_name(name);

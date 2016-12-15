@@ -33,12 +33,6 @@ namespace tcc {
     virtual ~IndexedTensor() {
     }
 
-    virtual std::shared_ptr<Operation<F>> compile() {
-      return std::make_shared<FetchOperation<F>>(
-        tensor, indices, typename Operation<F>::ProtectedToken()
-      );
-    }
-
     /**
      * \brief Creates an expression with named indices from a stored
      * tensor for further operations such as moves or contractions.
@@ -57,13 +51,6 @@ namespace tcc {
 
     std::shared_ptr<Tensor<F>> tensor;
     std::string indices;
-
-  protected:
-    template <typename Rhs>
-    friend std::shared_ptr<Move<typename Rhs::FieldType>> operator <<=(
-      const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
-      const std::shared_ptr<Rhs> &rhs
-    );
   };
 
   /**
@@ -78,15 +65,7 @@ namespace tcc {
     const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
     const std::shared_ptr<Rhs> &rhs
   ) {
-    auto move(
-      std::make_shared<Move<typename Rhs::FieldType>>(
-        lhs, rhs,
-        typename Expression<typename Rhs::FieldType>::ProtectedToken()
-      )
-    );
-    lhs->parent = move;
-    rhs->parent = move;
-    return move;
+    return Move<typename Rhs::FieldType>::create(lhs, rhs, 0);
   }
 
   template <typename Lhs, typename Rhs>
@@ -96,11 +75,11 @@ namespace tcc {
     static_assert(
       cc4s::TypeRelations<
         typename Lhs::FieldType, typename Rhs::FieldType
-      >::Equals,
+      >::EQUALS,
       "Move operations requires tensors of same type."
     );
     static_assert(
-      cc4s::StaticAssert<Lhs>::False,
+      cc4s::StaticAssert<Lhs>::FALSE,
       "Only indexed tensors may be used as the left hand side of a move operation."
     );
     return std::shared_ptr<Move<typename Lhs::FieldType>>();

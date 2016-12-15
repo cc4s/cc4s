@@ -36,12 +36,8 @@ void CoulombVertexFromFactors::dryRun() {
 // TMT is either CtfMachineTensor or DryMachineTensor
 template <typename T, typename MT>
 void CoulombVertexFromFactors::run(const bool dryRun) {
-  // create the MachineTensor factory for constructing intermediate results
-  shared_ptr<MachineTensorFactory<complex>> machineTensorFactory(
-    MT::Factory::create()
-  );
-  // create the tensor contraction compiler object
-  shared_ptr<Tcc<complex>> tcc(Tcc<complex>::create(machineTensorFactory));
+  auto machineTensorFactory(MT::Factory::create());
+  auto tcc(Tcc<complex>::create(machineTensorFactory));
 
 
   // Read the Coulomb vertex GammaGqr
@@ -50,32 +46,27 @@ void CoulombVertexFromFactors::run(const bool dryRun) {
 
   // for now: create tcc::Tensors from them
   // later there will only be tcc::Tensors objects stored in cc4s
-  shared_ptr<Tensor<complex>> PirR(
-    tcc->createTensor(make_shared<MT>(*ctfPirR))
-  );
-  shared_ptr<Tensor<complex>> LambdaFR(
-    tcc->createTensor(make_shared<MT>(*ctfLambdaFR))
-  );
-
+  auto PirR( tcc->createTensor(make_shared<MT>(*ctfPirR)) );
+  auto LambdaFR( tcc->createTensor(make_shared<MT>(*ctfLambdaFR)) );
+ 
   // allocate tcc::Tensor for final result
   int NF(LambdaFR->lens[0]);
   int Np(PirR->lens[0]);
-  shared_ptr<Tensor<complex>> GammaFqr(
-    tcc->createTensor(std::vector<int>({NF,Np,Np}), "Gamma")
-  );
+  auto GammaFqr( tcc->createTensor(std::vector<int>({NF,Np,Np}), "Gamma") );
 
-  // compile and execute in one
-  compile(
-    (*GammaFqr)["Fqr"] <<= (*LambdaFR)["FR"] * (*PirR)["qR"] * (*PirR)["rR"]
-  )->execute(
+  // compile
+  auto operation(
+    tcc->compile(
+      (*GammaFqr)["Fqr"] <<= (*LambdaFR)["FR"] * (*PirR)["qR"] * (*PirR)["rR"]
+    )
   );
+  // and execute
+  operation->execute();
 
   // for now: duplicate result
   // later Gamma will already be the object stored in cc4s
-  shared_ptr<MT> implementationGammaFqr(
-    std::dynamic_pointer_cast<MT>(
-      GammaFqr->getMachineTensor()
-    )
+  auto implementationGammaFqr(
+    std::dynamic_pointer_cast<MT>(GammaFqr->getMachineTensor())
   );
   allocatedTensorArgument<complex, T>(
     "CoulombVertex", new T(implementationGammaFqr->tensor)

@@ -8,39 +8,39 @@ namespace cc4s {
   template <typename T>
   class StaticAssert {
   public:
-    enum { False = false };
+    enum { FALSE = false };
   };
 
   template <typename A, typename B>
   class TypeRelations {
   public:
-    enum { Equals = false, PointerTo = false, CompatibleTo = false };
+    enum { EQUALS = false, POINTER_TO = false, CASTABLE_TO = false };
   };
   template <typename A>
   class TypeRelations<A,A> {
   public:
-    enum { Equals = true, PointerTo = false, CompatibleTo = true };
+    enum { EQUALS = true, POINTER_TO = false, CASTABLE_TO = true };
   };
   template <typename A>
   class TypeRelations<A *, A> {
   public:
-    enum { Equals = false, PointerTo = true, CompatibleTo = false };
+    enum { EQUALS = false, POINTER_TO = true, CASTABLE_TO = false };
   };
 
   template <>
   class TypeRelations<int, double> {
   public:
-    enum { Equals = false, PointerTo = false, CompatibleTo = true };
+    enum { EQUALS = false, POINTER_TO = false, CASTABLE_TO = true };
   };
   template <>
   class TypeRelations<int, complex> {
   public:
-    enum { Equals = false, PointerTo = false, CompatibleTo = true };
+    enum { EQUALS = false, POINTER_TO = false, CASTABLE_TO = true };
   };
   template <>
   class TypeRelations<double, complex> {
   public:
-    enum { Equals = false, PointerTo = false, CompatibleTo = true };
+    enum { EQUALS = false, POINTER_TO = false, CASTABLE_TO = true };
   };
 }
 
