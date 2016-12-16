@@ -2,7 +2,7 @@
 #ifndef TCC_CONTRACTION_OPERATION_DEFINED
 #define TCC_CONTRACTION_OPERATION_DEFINED
 
-#include <tcc/NonVoidOperation.hpp>
+#include <tcc/TensorResultOperation.hpp>
 #include <tcc/Costs.hpp>
 #include <tcc/Tensor.hpp>
 
@@ -11,7 +11,7 @@
 
 namespace tcc {
   template <typename F>
-  class ContractionOperation: public NonVoidOperation<F> {
+  class ContractionOperation: public TensorResultOperation<F> {
   public:
     /**
      * \brief Creates a contraction operation contracting the results of
@@ -28,7 +28,7 @@ namespace tcc {
       Costs contractionCosts,
       const typename Operation<F>::ProtectedToken &
     ):
-      NonVoidOperation<F>(
+      TensorResultOperation<F>(
         result_, resultIndices_, left_->costs + right_->costs,
         typename Operation<F>::ProtectedToken()
       ),

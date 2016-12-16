@@ -2,15 +2,15 @@
 #ifndef TCC_DEFINED
 #define TCC_DEFINED
 
-#include <tcc/Expression.hpp>
-
 #include <tcc/IndexedTensor.hpp>
 #include <tcc/Move.hpp>
 #include <tcc/Contraction.hpp>
+#include <tcc/Sequence.hpp>
 #include <tcc/Tensor.hpp>
 #include <tcc/FetchOperation.hpp>
 #include <tcc/MoveOperation.hpp>
 #include <tcc/ContractionOperation.hpp>
+#include <tcc/OperationSequence.hpp>
 #include <tcc/IndexCounts.hpp>
 
 #include <util/Log.hpp>
@@ -20,10 +20,14 @@
 #include <memory>
 
 // TODO: support comma operator for sequence of operations
+// TODO: check costs for simpel contractions and sequences
+// TODO: mixed type tensor operations
 // TODO: expression definitions with local index renaming
 // TODO: permutation and anti-permutation operator
 // TODO: common subexpression optimization
 // TODO: better heuristics for large networks
+// TODO: support hard memory limit for costs
+// TODO: support slicing and looping over indices for memory reduction
 
 namespace tcc {
   template <typename F>
@@ -81,9 +85,23 @@ namespace tcc {
     std::shared_ptr<Operation<F>> compile(
       const std::shared_ptr<Expression<F>> &expression
     ) {
+      auto sequence(std::dynamice_pointer_cast<Sequence<F>>(expression));
+      if (sequence) return compile(sequence);
       auto move(std::dynamic_pointer_cast<Move<F>>(expression));
       if (move) return compile(move);
-      throw new EXCEPTION("Move operation (<<=, +=, -=) expected.");
+      throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
+    }
+
+    std::shared_ptr<Operation<F>> compile(
+      const std::shared_ptr<Sequence<F>> &sequence
+    ) {
+      std::vector<std::shared_ptr<Operation<F>>> operations(
+        sequence->moves.size()
+      );
+      for (unsigned int i(0); i < sequence->moves.size(); ++i) {
+        operations[i] = compile(sequence->moves[i]);
+      }
+      return OperationSequence<F>::create(operations);
     }
 
     std::shared_ptr<Operation<F>> compile(
@@ -104,7 +122,7 @@ namespace tcc {
       }
       triedPossibilitiesCount = 0;
 
-      std::shared_ptr<NonVoidOperation<F>> operation;
+      std::shared_ptr<TensorResultOperation<F>> operation;
       if (operations.size() < 2) {
         operation = MoveOperation<F>::create(
           operations[0],

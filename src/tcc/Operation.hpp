@@ -13,8 +13,6 @@ namespace tcc {
   template <typename F>
   class Operation {
   public:
-    Operation(const Costs &costs_): costs(costs_) {
-    }
     virtual ~Operation() {
     }
 
@@ -29,6 +27,8 @@ namespace tcc {
     Costs costs;
 
   protected:
+    Operation(const Costs &costs_): costs(costs_) {
+    }
     class ProtectedToken {
     };
 

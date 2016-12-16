@@ -2,13 +2,13 @@
 #ifndef TCC_MOVE_OPERATION_DEFINED
 #define TCC_MOVE_OPERATION_DEFINED
 
-#include <tcc/NonVoidOperation.hpp>
+#include <tcc/TensorResultOperation.hpp>
 
 #include <memory>
 
 namespace tcc {
   template <typename F>
-  class MoveOperation: public NonVoidOperation<F> {
+  class MoveOperation: public TensorResultOperation<F> {
   public:
     /**
      * \brief Creates a move operation moving the results of
@@ -24,7 +24,7 @@ namespace tcc {
       Costs moveCosts,
       const typename Operation<F>::ProtectedToken &
     ):
-      NonVoidOperation<F>(
+      TensorResultOperation<F>(
         result_, resultIndices_,
         rhs_->costs,
         typename Operation<F>::ProtectedToken()

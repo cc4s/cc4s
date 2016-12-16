@@ -1,6 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TCC_NON_VOID_OPERATION_DEFINED
-#define TCC_NON_VOID_OPERATION_DEFINED
+#ifndef TCC_TENSOR_RESULT_OPERATION_DEFINED
+#define TCC_TENSOR_RESULT_OPERATION_DEFINED
 
 #include <tcc/Operation.hpp>
 #include <tcc/Costs.hpp>
@@ -14,7 +14,7 @@ namespace tcc {
   class Tensor;
 
   template <typename F>
-  class NonVoidOperation: public Operation<F> {
+  class TensorResultOperation: public Operation<F> {
   public:
     /**
      * \brief Creates a contraction operation contracting the results of
@@ -23,7 +23,7 @@ namespace tcc {
      * Not intended for direct invocation. Use Tcc::compile(expression) to
      * generate operations.
      **/
-    NonVoidOperation(
+    TensorResultOperation(
       const std::shared_ptr<Tensor<F>> &result_,
       const char *resultIndices_,
       const Costs &costs_,
@@ -36,7 +36,7 @@ namespace tcc {
     {
     }
 
-    virtual ~NonVoidOperation() {
+    virtual ~TensorResultOperation() {
     }
 
     virtual std::shared_ptr<Tensor<F>> getResult() {
