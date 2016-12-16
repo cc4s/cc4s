@@ -18,6 +18,8 @@ namespace tcc {
       for (unsigned int i(1); i < operations_.size(); ++i) {
         this->costs += operations_[i]->costs;
       }
+      // no elements are required by the result of a sequence
+      this->costs.elementsCount = 0;
     }
     virtual ~OperationSequence() {
     }

@@ -19,13 +19,12 @@
 #include <string>
 #include <memory>
 
-// TODO: support comma operator for sequence of operations
-// TODO: check costs for simpel contractions and sequences
+// TODO: heuristics: limit number of simultaneously considered intermediates
+// TODO: fix max memory assessment
 // TODO: mixed type tensor operations
 // TODO: expression definitions with local index renaming
 // TODO: permutation and anti-permutation operator
 // TODO: common subexpression optimization
-// TODO: better heuristics for large networks
 // TODO: support hard memory limit for costs
 // TODO: support slicing and looping over indices for memory reduction
 
