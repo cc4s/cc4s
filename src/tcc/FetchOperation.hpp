@@ -46,7 +46,7 @@ namespace tcc {
       const std::shared_ptr<IndexedTensor<F>> &indexedTensor
     ) {
       return std::make_shared<FetchOperation<F>>(
-        indexedTensor, ProtectedToken()
+        indexedTensor, typename Operation<F>::ProtectedToken()
       );
     }
 

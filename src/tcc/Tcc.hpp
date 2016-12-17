@@ -22,6 +22,7 @@
 // TODO: heuristics: limit number of simultaneously considered intermediates
 // TODO: fix max memory assessment
 // TODO: mixed type tensor operations
+// TODO: unary and binary function application
 // TODO: expression definitions with local index renaming
 // TODO: permutation and anti-permutation operator
 // TODO: common subexpression optimization
@@ -84,9 +85,9 @@ namespace tcc {
     std::shared_ptr<Operation<F>> compile(
       const std::shared_ptr<Expression<F>> &expression
     ) {
-      auto sequence(std::dynamice_pointer_cast<Sequence<F>>(expression));
+      auto sequence(dynamic_cast<std::shared_ptr<Sequence<F>>>(expression));
       if (sequence) return compile(sequence);
-      auto move(std::dynamic_pointer_cast<Move<F>>(expression));
+      auto move(dynamic_cast<std::shared_ptr<Move<F>>>(expression));
       if (move) return compile(move);
       throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
     }

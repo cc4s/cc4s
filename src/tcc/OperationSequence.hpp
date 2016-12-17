@@ -45,7 +45,7 @@ namespace tcc {
       const std::vector<std::shared_ptr<Operation<F>>> &operations_
     ) {
       return std::make_shared<OperationSequence<F>>(
-        operations_, ProtectedToken()
+        operations_, typename Operation<F>::ProtectedToken()
       );
     }
 

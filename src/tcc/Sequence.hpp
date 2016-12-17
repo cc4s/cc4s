@@ -49,8 +49,8 @@ namespace tcc {
       const std::shared_ptr<Sequence<F>> &lhs,
       const std::shared_ptr<Sequence<F>> &rhs,
       const typename Expression<F>::ProtectedToken &
-    ): alpha(lhs->alpha * rhs->alpha), factors(lhs->factors) {
-      factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
+    ): moves(lhs->moves) {
+      moves.insert(moves.end(), rhs->moves.begin(), rhs->moves.end());
     }
     /**
      * \brief Flattening constructor given a sequence on the left hand
