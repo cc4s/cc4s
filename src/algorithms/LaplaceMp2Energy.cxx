@@ -203,10 +203,15 @@ double LaplaceMp2Energy::calculateDirectTerm() {
   Tensor<complex> ChiVRSn(false, *GpRSn);
   ChiVRSn["RSn"] = (*GpRSn)["RSn"] * (*GhRSn)["SRn"];
   ChiVRSn["RTn"] = ChiVRSn["RSn"] * (*VRS)["ST"];
-  energy[""] = (*wn)["n"] * ChiVRSn["RTn"] * ChiVRSn["TRn"];
+  Tensor<complex> conjChiVRSn(false, ChiVRSn);
+  // second part of the diagram is the conjugate of the first
+  Univar_Function<complex> fConj(&conj<complex>);
+  conjChiVRSn.sum(1.0, ChiVRSn,"RTn", 0.0,"RTn", fConj);
+  energy[""] = (*wn)["n"] * ChiVRSn["RTn"] * conjChiVRSn["TRn"];
   complex e(energy.get_val());
-  LOG(1, "MP2") << "Direct energy computed from Laplace = " << e << std::endl;
-  return 2.0 * std::real(energy.get_val());
+  LOG(1, "MP2") << "Direct energy computed from Laplace = " << -e << std::endl;
+  // Imaginary time propagators give 1/(eps_a+eps_b-eps_i-eps_j), so negate it
+  return -2.0 * std::real(energy.get_val());
 }
 
 double LaplaceMp2Energy::calculateDirectTermAnalytically() {
