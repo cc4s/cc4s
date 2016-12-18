@@ -217,12 +217,13 @@ double LaplaceMp2Energy::calculateDirectTerm() {
 }
 
 double LaplaceMp2Energy::calculateExchangeTerm() {
-  auto machineTensorFactory(CtfMachineTensor<complex>::Factory::create());
+  typedef CtfMachineTensor<complex> MT;
+  auto machineTensorFactory(MT::Factory::create());
   auto tcc(tcc::Tcc<complex>::create(machineTensorFactory));
-  auto Gp(tcc->createTensor(CtfMachineTensor<complex>::create(*GpRSn)));
-  auto Gh(tcc->createTensor(CtfMachineTensor<complex>::create(*GhRSn)));
-  auto V(tcc->createTensor(CtfMachineTensor<complex>::create(*VRS)));
-  auto w(tcc->createTensor(CtfMachineTensor<complex>::create(*wn)));
+  auto Gp(tcc->createTensor(MT::create(*GpRSn)));
+  auto Gh(tcc->createTensor(MT::create(*GhRSn)));
+  auto V(tcc->createTensor(MT::create(*VRS)));
+  auto w(tcc->createTensor(MT::create(*wn)));
   auto energy(tcc->createTensor(std::vector<int>(), "energy"));
   tcc->compile(
     (*energy)[""] <<=
@@ -230,13 +231,8 @@ double LaplaceMp2Energy::calculateExchangeTerm() {
       (*V)["RS"] * (*V)["TU"] *
       (*Gp)["RTn"] * (*Gh)["TSn"] * (*Gp)["SUn"] * (*Gh)["URn"]
   )->execute();
-//  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] *
-//    GpRSn["RTn"] * GhRSn["URn"] * (*Wn)["n"];
-//  LOG(1, "MP2") << "Exchange energy computed" << std::endl;
-//  exce = -1.0 * energy.get_val();
-
   CTF::Scalar<complex> ctfEnergy;
-  ctfEnergy[""] = std::dynamic_pointer_cast<CtfMachineTensor<complex>>(
+  ctfEnergy[""] = std::dynamic_pointer_cast<MT>(
     energy->getMachineTensor()
   )->tensor[""];
   return std::real(ctfEnergy.get_val());
