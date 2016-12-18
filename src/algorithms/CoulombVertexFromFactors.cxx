@@ -47,8 +47,8 @@ void CoulombVertexFromFactors::run(const bool dryRun) {
 
   // for now: create tcc::Tensors from them
   // later there will only be tcc::Tensors objects stored in cc4s
-  auto PirR( tcc->createTensor(make_shared<MT>(*ctfPirR)) );
-  auto LambdaFR( tcc->createTensor(make_shared<MT>(*ctfLambdaFR)) );
+  auto PirR( tcc->createTensor(MT::create(*ctfPirR)) );
+  auto LambdaFR( tcc->createTensor(MT::create(*ctfLambdaFR)) );
  
   // allocate tcc::Tensor for final result
   int NF(LambdaFR->lens[0]);

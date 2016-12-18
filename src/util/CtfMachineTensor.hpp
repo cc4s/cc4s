@@ -39,7 +39,11 @@ namespace cc4s {
     }
 
     // copy constructor from CTF tensor, for compatibility
-    CtfMachineTensor(const Tensor &T): tensor(T) {
+    CtfMachineTensor(const Tensor &T, const ProtectedToken &): tensor(T) {
+    }
+
+    static std::shared_ptr<CtfMachineTensor<F>> create(const Tensor &T) {
+      return std::make_shared<CtfMachineTensor<F>>(T, ProtectedToken());
     }
 
     virtual ~CtfMachineTensor() {

@@ -40,7 +40,11 @@ namespace cc4s {
     }
 
     // copy constructor from DryTensor, for compatibility
-    DryMachineTensor(const Tensor &T): tensor(T) {
+    DryMachineTensor(const Tensor &T, const ProtectedToken &): tensor(T) {
+    }
+
+    static std::shared_ptr<DryMachineTensor<F>> create(const Tensor &T) {
+      return std::make_shared<DryMachineTensor<F>>(T, ProtectedToken());
     }
 
     virtual ~DryMachineTensor() {

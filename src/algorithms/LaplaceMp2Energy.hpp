@@ -4,6 +4,7 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
+#include <tcc/Tensor.hpp>
 
 namespace cc4s {
   /**
@@ -28,7 +29,7 @@ namespace cc4s {
 
     double calculateDirectTerm();
     double calculateExchangeTerm();
-    double calculateDirectTermAnalytically();
+    double calculateAnalytically();
   };
 }
 

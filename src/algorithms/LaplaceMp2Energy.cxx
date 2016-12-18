@@ -1,15 +1,18 @@
 #include <algorithms/LaplaceMp2Energy.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
+#include <tcc/Tcc.hpp>
 #include <tcc/DryTensor.hpp>
+#include <util/CtfMachineTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
-#include <ctf.hpp>
 #include <Options.hpp>
 
-using namespace CTF;
 using namespace cc4s;
+using namespace CTF;
+using std::shared_ptr;
+using std::make_shared;
 
 ALGORITHM_REGISTRAR_DEFINITION(LaplaceMp2Energy);
 
@@ -125,19 +128,18 @@ void LaplaceMp2Energy::run() {
   toComplexTensor(*realwn, *wn);
 
 
-  calculateDirectTermAnalytically();
-  calculateDirectTerm();
-  //  double dire(calculateDirectTerm());
-//  double exce(calculateExchangeTerm());
-//  double e(dire + exce);
+  calculateAnalytically();
+  double direct(calculateDirectTerm());
+  double exchange(calculateExchangeTerm());
+  double energy(direct + exchange);
 
 //  LOG(0, "MP2") << "e=" << e << std::endl;
 //  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
-  LOG(1, "MP2") << "MP2dLaplace=" << calculateDirectTerm() << std::endl;
-  LOG(1, "MP2") << "MP2dAnalytical=" << calculateDirectTermAnalytically() << std::endl;
+//  LOG(1, "MP2") << "MP2dLaplace=" << calculateDirectTerm() << std::endl;
+//  LOG(1, "MP2") << "MP2dAnalytical=" << calculateDirectTermAnalytically() << std::endl;
 //  LOG(1, "MP2") << "MP2x=" << exce << std::endl;
 
-//  setRealArgument("Mp2Energy", dire);
+  setRealArgument("Mp2Energy", energy);
 }
 
 void LaplaceMp2Energy::dryRun() {
@@ -207,14 +209,40 @@ double LaplaceMp2Energy::calculateDirectTerm() {
   // second part of the diagram is the conjugate of the first
   Univar_Function<complex> fConj(&conj<complex>);
   conjChiVRSn.sum(1.0, ChiVRSn,"RTn", 0.0,"RTn", fConj);
-  energy[""] = (*wn)["n"] * ChiVRSn["RTn"] * conjChiVRSn["TRn"];
-  complex e(energy.get_val());
-  LOG(1, "MP2") << "Direct energy computed from Laplace = " << -e << std::endl;
   // Imaginary time propagators give 1/(eps_a+eps_b-eps_i-eps_j), so negate it
+  energy[""] = -2.0 * (*wn)["n"] * ChiVRSn["RTn"] * conjChiVRSn["TRn"];
+  complex direct(energy.get_val());
+  LOG(1, "MP2") << "Direct energy computed from Laplace = " << direct << std::endl;
   return -2.0 * std::real(energy.get_val());
 }
 
-double LaplaceMp2Energy::calculateDirectTermAnalytically() {
+double LaplaceMp2Energy::calculateExchangeTerm() {
+  auto machineTensorFactory(CtfMachineTensor<complex>::Factory::create());
+  auto tcc(tcc::Tcc<complex>::create(machineTensorFactory));
+  auto Gp(tcc->createTensor(CtfMachineTensor<complex>::create(*GpRSn)));
+  auto Gh(tcc->createTensor(CtfMachineTensor<complex>::create(*GhRSn)));
+  auto V(tcc->createTensor(CtfMachineTensor<complex>::create(*VRS)));
+  auto w(tcc->createTensor(CtfMachineTensor<complex>::create(*wn)));
+  auto energy(tcc->createTensor(std::vector<int>(), "energy"));
+  tcc->compile(
+    (*energy)[""] <<=
+      (*w)["n"] *
+      (*V)["RS"] * (*V)["TU"] *
+      (*Gp)["RTn"] * (*Gh)["TSn"] * (*Gp)["SUn"] * (*Gh)["URn"]
+  )->execute();
+//  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] *
+//    GpRSn["RTn"] * GhRSn["URn"] * (*Wn)["n"];
+//  LOG(1, "MP2") << "Exchange energy computed" << std::endl;
+//  exce = -1.0 * energy.get_val();
+
+  CTF::Scalar<complex> ctfEnergy;
+  ctfEnergy[""] = std::dynamic_pointer_cast<CtfMachineTensor<complex>>(
+    energy->getMachineTensor()
+  )->tensor[""];
+  return std::real(ctfEnergy.get_val());
+}
+
+double LaplaceMp2Energy::calculateAnalytically() {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
@@ -248,17 +276,13 @@ double LaplaceMp2Energy::calculateDirectTermAnalytically() {
   cDabij.contract(1.0, cVabij,"abij", cDabij,"abij", 0.0,"abij", fDivide);
 
   Scalar<complex> energy(*Cc4s::world);
-  energy[""] = cDabij["abij"] * cVabij["abij"];
-  complex e(energy.get_val());
-  LOG(1, "MP2") << "Direct energy computed analytically = " << e << std::endl;
-  return 2.0 * std::real(energy.get_val());
-}
+  energy[""] = 2.0 * cDabij["abij"] * cVabij["abij"];
+  complex direct(energy.get_val());
+  LOG(1, "MP2") << "Direct energy computed analytically = " << direct << std::endl;
 
-double LaplaceMp2Energy::calculateExchangeTerm() {
-//  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] *
-//    GpRSn["RTn"] * GhRSn["URn"] * (*Wn)["n"];
-//  LOG(1, "MP2") << "Exchange energy computed" << std::endl;
-//  exce = -1.0 * energy.get_val();
-  return 0.0;
+  energy[""] = -1.0 * cDabij["abij"] * cVabij["abji"];
+  complex exchange(energy.get_val());
+  LOG(1, "MP2") << "Exchange energy computed analytically = " << exchange << std::endl;
+  return 2.0 * std::real(direct + exchange);
 }
 
