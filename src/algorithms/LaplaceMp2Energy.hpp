@@ -26,10 +26,17 @@ namespace cc4s {
 
   protected:
     CTF::Tensor<complex> *GpRSn, *GhRSn, *VRS, *wn;
+    complex *Gp, *Gh, *V, *w;
+    int NR, Nn;
 
-    double calculateDirectTerm();
-    double calculateExchangeTerm();
+    double calculateNumerically();
     double calculateAnalytically();
+    double calculateStochastically();
+    double sumNaively();
+    double sumMonteCarlo();
+    complex getPermutedSamples(int R, int S, int T, int U);
+    complex getIntegratedSamples(int R, int S, int T, int U);
+    complex getSample(int R, int S, int T, int U, int n);
   };
 }
 

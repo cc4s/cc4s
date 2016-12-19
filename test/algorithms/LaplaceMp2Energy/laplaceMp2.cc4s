@@ -1,0 +1,62 @@
+% requires test ../CoulombVertexDecomposition
+% then execute ../../resources/getImaginaryTimeGrid.sh in resources folder
+ComplexTensorReader [
+  (mode "binary")
+  (file "../../resources/FactorOrbitals.bin")
+] [
+  (Data FactorOrbitals)
+].
+ComplexTensorReader [
+  (mode "binary")
+  (file "../../resources/CoulombFactors.bin")
+] [
+  (Data CoulombFactors)
+].
+
+TensorReader [
+  (file "../../resources/HoleEigenEnergies.dat")
+] [
+  (Data HoleEigenEnergies)
+].
+TensorReader [
+  (file "../../resources/ParticleEigenEnergies.dat")
+] [
+  (Data ParticleEigenEnergies)
+].
+TensorReader [
+  (file "../../resources/ChemicalPotential.dat")
+] [
+  (Data ChemicalPotential)
+].
+
+TensorReader [
+  (file "../../resources/ImaginaryTimePoints.dat")
+] [
+  (Data ImaginaryTimePoints)
+].
+TensorReader [
+  (file "../../resources/ImaginaryTimeWeights.dat")
+] [
+  (Data ImaginaryTimeWeights)
+].
+
+ComplexTensorReader [
+  (mode "binary")
+  (file "../../resources/ComposedCoulombVertex.bin")
+] [
+  (Data ComposedCoulombVertex)
+].
+
+LaplaceMp2Energy [
+  FactorOrbitals CoulombFactors
+  HoleEigenEnergies ParticleEigenEnergies
+  ChemicalPotential
+  ImaginaryTimePoints ImaginaryTimeWeights
+  (CoulombVertex ComposedCoulombVertex)
+  (samples 12960000)
+  (naiveSum 1)
+] [
+  Mp2Energy
+].
+
+TensorWriter [(Data Mp2Energy)] [].
