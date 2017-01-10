@@ -54,7 +54,7 @@ LaplaceMp2Energy [
   ImaginaryTimePoints ImaginaryTimeWeights
   (CoulombVertex ComposedCoulombVertex)
   (samples 12960000)
-  (naiveSum 1)
+%  (naiveSum 1)
 ] [
   Mp2Energy
 ].

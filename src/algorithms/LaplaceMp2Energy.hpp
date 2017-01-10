@@ -29,6 +29,56 @@ namespace cc4s {
     complex *Gp, *Gh, *V, *w;
     int NR, Nn;
 
+    template <typename F>
+    class SampledDistribution {
+    public:
+      SampledDistribution(
+        F *values, int64_t valuesCount_
+      ):
+        valuesCount(valuesCount_),
+        cummulants(new double[valuesCount_])
+      {
+        double cummulant(0);
+        for (int64_t i(0); i < valuesCount_; ++i) {
+          cummulants[i] = cummulant;
+          cummulant += std::abs(values[i]);
+        }
+        if (cummulant > 1e-16) {
+          for (int64_t i(0); i < valuesCount_; ++i) {
+            cummulants[i] /= cummulant;
+          }
+        }
+      }
+      ~SampledDistribution() {
+        delete[] cummulants;
+      }
+      void draw(double uniform, int64_t &index, double &weight) {
+        int64_t first(0), last(valuesCount-1);
+        while (first < last) {
+          int64_t mid((first + last + 1) >> 1);
+          if (cummulants[mid] <= uniform) {
+            first = mid;
+          } else {
+            last = mid - 1;
+          }
+        }
+        index = first;
+        if (first+1 < valuesCount) {
+          if ((cummulants[first+1] - cummulants[first]) < 1e-16) {
+            throw new EXCEPTION("zero probability");
+          }
+          weight = 1 / (cummulants[first+1] - cummulants[first]);
+        } else {
+          weight = 1 / (1 - cummulants[first]);
+          if ((1 - cummulants[first]) < 1e-16) {
+            throw new EXCEPTION("zero probability");
+          }
+        }
+      }
+      int64_t valuesCount;
+      double *cummulants;
+    };
+
     double calculateNumerically();
     double calculateAnalytically();
     double calculateStochastically();

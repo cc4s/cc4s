@@ -16,6 +16,7 @@ CoulombVertexDecomposition [
   (rank 66)
   (rankFactor 2.0)
   (realFactorOrbitals 1)
+  (normalizedFactorOrbitals 1)
   % Set the number of iterations. Default is 32.
   (maxIterations 256)
   (mixer "LinearMixer")

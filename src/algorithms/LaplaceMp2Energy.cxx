@@ -112,8 +112,6 @@ void LaplaceMp2Energy::run() {
   conjLambdaGR.set_name("ConjLambdaGR");
   conjLambdaGR.sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
   (*VRS)["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
-  // FIXME: imaginary part manually discarded, should be zero
-//  VRS->sum(-0.5, *VRS,"RS", 0.5,"RS", fConj);
   LOG(1, "MP2") << "Coulomb propagator set up" << std::endl;
 
   // NOTE: the hole propagator sign is considered for the entire term, not here
@@ -326,17 +324,20 @@ double LaplaceMp2Energy::calculateStochastically() {
 }
 
 double LaplaceMp2Energy::sumNaively() {
-  complex energy(0);
+  SampledVariable<complex> energy;
   for (int R(0); R < NR; ++R) {
     for (int S(0); S < NR; ++S) {
       for (int T(0); T < NR; ++T) {
         for (int U(0); U < NR; ++U) {
-          energy += V[R+NR*S] * V[T+NR*U] * getIntegratedSamples(R,S,T,U);
+          energy.addSample(
+            V[R+NR*S] * V[T+NR*U] * getIntegratedSamples(R,S,T,U)
+          );
         }
       }
     }
   }
-  return std::real(energy);
+  LOG(1, "MC") << "standard deviation=" << 1.0*NR*NR*NR*NR*std::sqrt(energy.getVariance()) << std::endl;
+  return std::real(1.0*NR*NR*NR*NR*energy.getMean());
 }
 
 double LaplaceMp2Energy::sumMonteCarlo() {
@@ -344,21 +345,33 @@ double LaplaceMp2Energy::sumMonteCarlo() {
   RandomGenerator rand(Cc4s::world->rank);
   SampledVariable<complex> energy;
 
+  SampledDistribution<complex> VDistribution(V, NR*NR);
+
   int64_t samplesCount(getIntegerArgument("samples"));
   for (int64_t n(0); n < samplesCount; ++n) {
-    // draw RSTU
+    // draw uniform RSTU
     int R(static_cast<int>(rand.nextUniform() * NR));
     int S(static_cast<int>(rand.nextUniform() * NR));
     int T(static_cast<int>(rand.nextUniform() * NR));
     int U(static_cast<int>(rand.nextUniform() * NR));
+    // draw weighted RSTU
+    double wRS(NR*NR), wTU(NR*NR);
+/*
+    int64_t RS, TU;
+    VDistribution.draw(rand.nextUniform(), RS, wRS);
+    VDistribution.draw(rand.nextUniform(), TU, wTU);
+    int R(RS % NR), S(RS / NR);
+    int T(TU % NR), U(TU / NR);
+*/
     complex sample(getPermutedSamples(R,S,T,U));
 //    LOG(1, "MC") << "sample=" << sample << std::endl;
-    energy.addSample(sample);
+    energy.addSample(wRS * wTU * sample);
   }
 
   delete[] V; delete[] Gh; delete[] Gp; delete[] w;
-  LOG(1, "MC") << "95% confidence interval=" << 1.0*NR*NR*NR*NR*energy.getMeanStdDeviation() << std::endl;
-  return std::real(1.0*NR*NR*NR*NR*energy.getMean());
+  LOG(1, "MC") << "standard deviation=" << 1.0*NR*NR*NR*NR*std::sqrt(energy.getVariance()) << std::endl;
+  LOG(1, "MC") << "95% confidence interval=" << energy.getMeanStdDeviation() << std::endl;
+  return std::real(energy.getMean());
 }
 
 complex LaplaceMp2Energy::getPermutedSamples(int R, int S, int T, int U) {
