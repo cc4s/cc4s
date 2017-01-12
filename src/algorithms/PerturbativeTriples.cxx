@@ -19,7 +19,7 @@ PerturbativeTriples::PerturbativeTriples(
 PerturbativeTriples::~PerturbativeTriples() {
 }
 
-void PerturbativeTriples::runHelgaker() {
+void PerturbativeTriples::run() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -94,7 +94,7 @@ void PerturbativeTriples::runHelgaker() {
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
 
-void PerturbativeTriples::run() {
+void PerturbativeTriples::runPiecuch() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -162,7 +162,7 @@ void PerturbativeTriples::run() {
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
 
-void PerturbativeTriples::dryRunHelgaker() {
+void PerturbativeTriples::dryRun() {
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("HHHPCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("PPPHCoulombIntegrals");
@@ -202,7 +202,7 @@ void PerturbativeTriples::dryRunHelgaker() {
 }
 
 
-void PerturbativeTriples::dryRun() {
+void PerturbativeTriples::dryRunPiecuch() {
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("HHHPCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("PPPHCoulombIntegrals");
