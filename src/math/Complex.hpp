@@ -3,7 +3,6 @@
 
 #include <complex>
 
-
 /*
 #ifdef INTEL_COMPILER
 namespace cc4s {
@@ -28,8 +27,17 @@ namespace std {
 #else
 #endif
 */
+namespace cc4s {
+  typedef std::complex<double> complex;
 
-typedef std::complex<double> complex;
+  inline double absSqr(const double x) {
+    return x*x;
+  }
+
+  inline double absSqr(const complex z) {
+    return absSqr(z.real()) + absSqr(z.imag());
+  }
+}
 
 #endif
 

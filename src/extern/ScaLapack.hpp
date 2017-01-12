@@ -41,10 +41,10 @@ extern "C" {
   void pzheev_(
     const char *jobz, const char *upperLower,
     const int *m,
-    const complex *a, const int *ia, const int *ja, const int *desca,
+    const cc4s::complex *a, const int *ia, const int *ja, const int *desca,
     double *lambda,
-    complex *z, const int *iz, const int *jz, const int *descz,
-    complex *work, const int *lwork,
+    cc4s::complex *z, const int *iz, const int *jz, const int *descz,
+    cc4s::complex *work, const int *lwork,
     double *realWork, const int *lRealCount,
     int *info
   );
@@ -62,10 +62,10 @@ extern "C" {
   void pzheevd_(
     const char *jobz, const char *upperLower,
     const int *m,
-    const complex *a, const int *ia, const int *ja, const int *desca,
+    const cc4s::complex *a, const int *ia, const int *ja, const int *desca,
     double *lambda,
-    complex *z, const int *iz, const int *jz, const int *descz,
-    complex *work, const int *lwork,
+    cc4s::complex *z, const int *iz, const int *jz, const int *descz,
+    cc4s::complex *work, const int *lwork,
     double *realWork, const int *lRealCount,
     int *iwork, const int *liwork,
     int *info
@@ -83,11 +83,11 @@ extern "C" {
   void pzgesvd_(
     const char *jobu, const char *jobvt,
     const int *m, const int *n,
-    const complex *a, const int *ia, const int *ja, const int *desca,
+    const cc4s::complex *a, const int *ia, const int *ja, const int *desca,
     double *s,
-    complex *u, const int *iu, const int *ju, const int *descu,
-    complex *vt, const int *ivt, const int *jvt, const int *descvt,
-    complex *work, const int *lwork, double *rwork,
+    cc4s::complex *u, const int *iu, const int *ju, const int *descu,
+    cc4s::complex *vt, const int *ivt, const int *jvt, const int *descvt,
+    cc4s::complex *work, const int *lwork, double *rwork,
     int *info
   );
 
@@ -103,11 +103,11 @@ extern "C" {
   void pzgemm_(
     const char *opA, const char *opB,
     const int *m, const int *n, const int *k,
-    const complex *alpha,
-    const complex *a, const int *ia, const int *ja, const int *desca,
-    const complex *b, const int *ib, const int *jb, const int *descb,
-    const complex *beta,
-    complex *C, const int *ic, const int *jc, const int *descc
+    const cc4s::complex *alpha,
+    const cc4s::complex *a, const int *ia, const int *ja, const int *desca,
+    const cc4s::complex *b, const int *ib, const int *jb, const int *descb,
+    const cc4s::complex *beta,
+    cc4s::complex *C, const int *ic, const int *jc, const int *descc
   );
 };
 

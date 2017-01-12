@@ -1,6 +1,8 @@
 #include <algorithms/LaplaceMp2Energy.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
+#include <math/RandomGenerator.hpp>
+#include <math/SampledVariable.hpp>
 #include <tcc/Tcc.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/CtfMachineTensor.hpp>
@@ -110,8 +112,6 @@ void LaplaceMp2Energy::run() {
   conjLambdaGR.set_name("ConjLambdaGR");
   conjLambdaGR.sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
   (*VRS)["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
-  // FIXME: imaginary part manually discarded, should be zero
-//  VRS->sum(-0.5, *VRS,"RS", 0.5,"RS", fConj);
   LOG(1, "MP2") << "Coulomb propagator set up" << std::endl;
 
   // NOTE: the hole propagator sign is considered for the entire term, not here
@@ -129,11 +129,10 @@ void LaplaceMp2Energy::run() {
 
 
   calculateAnalytically();
-  double direct(calculateDirectTerm());
-  double exchange(calculateExchangeTerm());
-  double energy(direct + exchange);
+//  double energy(calculateNumerically());
+  double energy(calculateStochastically());
 
-//  LOG(0, "MP2") << "e=" << e << std::endl;
+  LOG(0, "MP2") << "e=" << energy << std::endl;
 //  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
 //  LOG(1, "MP2") << "MP2dLaplace=" << calculateDirectTerm() << std::endl;
 //  LOG(1, "MP2") << "MP2dAnalytical=" << calculateDirectTermAnalytically() << std::endl;
@@ -200,6 +199,7 @@ void LaplaceMp2Energy::dryRun() {
   DryScalar<> energy();
 }
 
+/*
 double LaplaceMp2Energy::calculateDirectTerm() {
   Scalar<complex> energy(*Cc4s::world);
   Tensor<complex> ChiVRSn(false, *GpRSn);
@@ -215,28 +215,34 @@ double LaplaceMp2Energy::calculateDirectTerm() {
   LOG(1, "MP2") << "Direct energy computed from Laplace = " << direct << std::endl;
   return -2.0 * std::real(energy.get_val());
 }
+*/
 
-double LaplaceMp2Energy::calculateExchangeTerm() {
-  auto machineTensorFactory(CtfMachineTensor<complex>::Factory::create());
+double LaplaceMp2Energy::calculateNumerically() {
+  typedef CtfMachineTensor<complex> MT;
+  auto machineTensorFactory(MT::Factory::create());
   auto tcc(tcc::Tcc<complex>::create(machineTensorFactory));
-  auto Gp(tcc->createTensor(CtfMachineTensor<complex>::create(*GpRSn)));
-  auto Gh(tcc->createTensor(CtfMachineTensor<complex>::create(*GhRSn)));
-  auto V(tcc->createTensor(CtfMachineTensor<complex>::create(*VRS)));
-  auto w(tcc->createTensor(CtfMachineTensor<complex>::create(*wn)));
+  auto Gp(tcc->createTensor(MT::create(*GpRSn)));
+  auto Gh(tcc->createTensor(MT::create(*GhRSn)));
+  auto V(tcc->createTensor(MT::create(*VRS)));
+  auto w(tcc->createTensor(MT::create(*wn)));
   auto energy(tcc->createTensor(std::vector<int>(), "energy"));
   tcc->compile(
-    (*energy)[""] <<=
-      (*w)["n"] *
-      (*V)["RS"] * (*V)["TU"] *
-      (*Gp)["RTn"] * (*Gh)["TSn"] * (*Gp)["SUn"] * (*Gh)["URn"]
+    (
+      (*energy)[""] <<=
+        -2.0 * (*w)["n"] *
+        (*V)["RS"] * (*V)["TU"] *
+        (*Gp)["RTn"] * (*Gh)["TRn"] * (*Gp)["SUn"] * (*Gh)["USn"]
+// the exchange term requires N_R^3 memory
+/*
+      (*energy)[""] +=
+        (*w)["n"] *
+        (*V)["RS"] * (*V)["TU"] *
+        (*Gp)["RTn"] * (*Gh)["TSn"] * (*Gp)["SUn"] * (*Gh)["URn"]
+*/
+    )
   )->execute();
-//  energy[""] =  VRS["RS"] * GpRSn["SUn"] * GhRSn["TSn"] * VRS["TU"] *
-//    GpRSn["RTn"] * GhRSn["URn"] * (*Wn)["n"];
-//  LOG(1, "MP2") << "Exchange energy computed" << std::endl;
-//  exce = -1.0 * energy.get_val();
-
   CTF::Scalar<complex> ctfEnergy;
-  ctfEnergy[""] = std::dynamic_pointer_cast<CtfMachineTensor<complex>>(
+  ctfEnergy[""] = std::dynamic_pointer_cast<MT>(
     energy->getMachineTensor()
   )->tensor[""];
   return std::real(ctfEnergy.get_val());
@@ -284,5 +290,110 @@ double LaplaceMp2Energy::calculateAnalytically() {
   complex exchange(energy.get_val());
   LOG(1, "MP2") << "Exchange energy computed analytically = " << exchange << std::endl;
   return 2.0 * std::real(direct + exchange);
+}
+
+double LaplaceMp2Energy::calculateStochastically() {
+  // read in propagators on all nodes
+  NR = VRS->lens[0];
+  Nn = GpRSn->lens[2];
+  Gp = new complex[NR*NR*Nn];
+  Gh = new complex[NR*NR*Nn];
+  V = new complex[NR*NR];
+  w = new complex[Nn];
+  GpRSn->read_all(Gp);
+  GhRSn->read_all(Gh);
+  VRS->read_all(V);
+  wn->read_all(w);
+
+  // check trace of V
+  Scalar<complex> Tr(*Cc4s::world);
+  Tr[""] = (*VRS)["RR"];
+  complex tr(Tr.get_val());
+  LOG(1, "MC") << "Trace(V)=" << tr << std::endl;
+  tr = 0;
+  for (int R(0); R < NR; ++R) {
+    tr += V[R+NR*R];
+  }
+  LOG(1, "MC") << "trace(V)=" << tr << std::endl;
+
+  if (getIntegerArgument("naiveSum", 0) > 0) {
+    return sumNaively();
+  } else {
+    return sumMonteCarlo();
+  }
+}
+
+double LaplaceMp2Energy::sumNaively() {
+  SampledVariable<complex> energy;
+  for (int R(0); R < NR; ++R) {
+    for (int S(0); S < NR; ++S) {
+      for (int T(0); T < NR; ++T) {
+        for (int U(0); U < NR; ++U) {
+          energy.addSample(
+            V[R+NR*S] * V[T+NR*U] * getIntegratedSamples(R,S,T,U)
+          );
+        }
+      }
+    }
+  }
+  LOG(1, "MC") << "standard deviation=" << 1.0*NR*NR*NR*NR*std::sqrt(energy.getVariance()) << std::endl;
+  return std::real(1.0*NR*NR*NR*NR*energy.getMean());
+}
+
+double LaplaceMp2Energy::sumMonteCarlo() {
+  // initialize random generator depending on the rank of the process
+  RandomGenerator rand(Cc4s::world->rank);
+  SampledVariable<complex> energy;
+
+  SampledDistribution<complex> VDistribution(V, NR*NR);
+
+  int64_t samplesCount(getIntegerArgument("samples"));
+  for (int64_t n(0); n < samplesCount; ++n) {
+    // draw uniform RSTU
+    int R(static_cast<int>(rand.nextUniform() * NR));
+    int S(static_cast<int>(rand.nextUniform() * NR));
+    int T(static_cast<int>(rand.nextUniform() * NR));
+    int U(static_cast<int>(rand.nextUniform() * NR));
+    // draw weighted RSTU
+    double wRS(NR*NR), wTU(NR*NR);
+/*
+    int64_t RS, TU;
+    VDistribution.draw(rand.nextUniform(), RS, wRS);
+    VDistribution.draw(rand.nextUniform(), TU, wTU);
+    int R(RS % NR), S(RS / NR);
+    int T(TU % NR), U(TU / NR);
+*/
+    complex sample(getPermutedSamples(R,S,T,U));
+//    LOG(1, "MC") << "sample=" << sample << std::endl;
+    energy.addSample(wRS * wTU * sample);
+  }
+
+  delete[] V; delete[] Gh; delete[] Gp; delete[] w;
+  LOG(1, "MC") << "standard deviation=" << 1.0*NR*NR*NR*NR*std::sqrt(energy.getVariance()) << std::endl;
+  LOG(1, "MC") << "95% confidence interval=" << energy.getMeanStdDeviation() << std::endl;
+  return std::real(energy.getMean());
+}
+
+complex LaplaceMp2Energy::getPermutedSamples(int R, int S, int T, int U) {
+  return 0.25 * (
+    V[R+NR*S] * V[T+NR*U] * getIntegratedSamples(R,S,T,U) +
+    V[S+NR*R] * V[T+NR*U] * getIntegratedSamples(S,R,T,U) +
+    V[R+NR*S] * V[U+NR*T] * getIntegratedSamples(R,S,U,T) +
+    V[S+NR*R] * V[U+NR*T] * getIntegratedSamples(S,R,U,T)
+  );
+}
+
+complex LaplaceMp2Energy::getIntegratedSamples(int R, int S, int T, int U) {
+  complex sample(0);
+  for (int n(0); n < Nn; ++n) {
+    sample += w[n] * getSample(R,S,T,U,n);
+  }
+  return sample;
+}
+
+complex LaplaceMp2Energy::getSample(int R, int S, int T, int U, int n) {
+  return -2.0 *
+    Gp[R+NR*(T+NR*n)] * Gh[T+NR*(R+NR*n)] *
+    Gp[S+NR*(U+NR*n)] * Gh[U+NR*(S+NR*n)];
 }
 

@@ -15,6 +15,8 @@ CoulombVertexDecomposition [
   % the decomposed tensor. Default is NR=2*NG.
   (rank 66)
   (rankFactor 2.0)
+  (realFactorOrbitals 1)
+  (normalizedFactorOrbitals 1)
   % Set the number of iterations. Default is 32.
   (maxIterations 256)
   (mixer "LinearMixer")
@@ -47,3 +49,14 @@ ComplexTensorWriter [
   (Data ComposedCoulombVertex)
 ] [
 ].
+TensorWriter [
+  (file "../../resources/HoleEigenEnergies.dat")
+  (Data HoleEigenEnergies)
+] [
+].
+TensorWriter [
+  (file "../../resources/ParticleEigenEnergies.dat")
+  (Data ParticleEigenEnergies)
+] [
+].
+
