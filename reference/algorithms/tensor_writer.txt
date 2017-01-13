@@ -1,0 +1,74 @@
+====== TensorWriter ======
+The ''TensorWriter'' algorithm writes the real tensor data given as ''Data'' argument to a file.
+===== Input arguments =====
+^  Argument((mandatory arguments start with a capital letter))  ^  Type  ^  Description  ^
+|  ''Data'' |  tensor | The data entity to write. Integer and real arguments will be converted into  a tensor of order 0.  |
+|  ''file'' |  text | the file name to write to. If omitted the file will be named after the name of the given data entity and the extension is ''.dat'' or ''.bin'' for text or binary writing mode, respectively.  |
+|  ''mode'' |  text:''"text"|"binary"'' | whether to write the data in text or binary format. The default is ''"text"''. |
+|  ''rowIndexOrder'' |  text | The index order how to write out the elements of a tensor into the rows of the text output. The default is ''"ijkl..."'', resulting in a single column output with an index order from left to right. See [[reference:algorithms:tensor_writer#index_order|index order]].  |
+|  ''columnIndexOrder'' |  text | The index order how to write out the elements of a tensor into the columns of the text output. The default is ''""'', resulting in a single column output with an index order from left to right. See [[reference:algorithms:tensor_writer#index_order|index order]].  |
+
+===== Output arguments =====
+None. This algorithm creates no further data entities.
+===== Layout =====
+==== Text format ====
+The text file contains fields separated by white spaces.
+The first lines define tensor name and shape as follows
+^  Column  ^  1  ^  2  ^  3  ^  4  ^  ...  ^
+^  Description  |  name  |  order  |  size in first dimension  |  size in second dimension  |  ...  |
+The second line specifies the order how the tensor's elements are listed:
+^  Column  ^  1  ^  2  ^
+^  Description  |  row index order in double quotes  |  column index order in double quotes  |
+
+==== Binary format ====
+
+The tensor is written in the [[reference:binary_tensor_file_format|binary tensor file format]].
+===== Index order =====
+The arguments ''rowIndexOrder'' and ''columnIndexOrder'' specify in which order the elements of
+the tensor should be given in the rows and columns of the text file, respectively.
+Binary output mode requires all elements in one column, i.e. ''(columnIndexOrder "")''.
+The letters given are sorted in alphabetical order and then denote the respective dimension.
+The following examples write the matrix $A$ in different orders, where
+\[
+A = \left(\begin{array}{rrr}
+  1 & 3 & 5 \\
+  2 & 4 & 6
+  \end{array}\right) \in \mathbb R^{2\times 3}.
+\]
+==== Column major ====
+The default order corresponds to passing all of the tensor's indices
+in alphabetical order to ''columnIndexOrder'',
+resulting in a file containing one column of 6 rows:
+<code>
+A 2 2 3
+"ij" ""
+1
+2
+3
+4
+5
+6
+</code>
+==== Row major ====
+''(columnIndexOrder "ji")'' gives
+<code>
+A 2 2 3
+"ji" ""
+1
+3
+5
+2
+4
+6
+</code>
+==== Columns as columns and rows as rows ====
+In that case the matrix' row index ''i'' must be passed to ''rowIndexOrder''
+and ''j'' is to be passed to ''columnIndexOrder'', giving
+<code>
+A 2 2 3
+"i" "j"
+1 3 5
+2 4 6
+</code>
+
+Note that some editors may be limited in the line width.
