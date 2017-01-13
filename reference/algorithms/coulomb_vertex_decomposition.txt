@@ -1,0 +1,12 @@
+====== CoulombVertexDecomposition ======
+===== Input arguments =====
+^  Argument((mandatory arguments start with a capital letter))  ^  Type  ^  Default  ^  Description  ^
+|  ''CoulombVertex'' |  complex tensor |  ---  | The coulomb vertex $\Gamma^q_{rF}$ to decompose.  |
+|  ''rank'' |  integer |  $N_F$ | The dimension $N_R$ of the [[internal:cc4s:nomenclature|factor orbitals and Coulomb factors]] to use for fitting. By default the rank is chosen according to the number of field variables $N_F$.  |
+|  ''swampingThreshold'' |  real |  1.0 | The ratio $\left\Vert A^{(n)}-A^{(n-1)}\right\Vert/\left\Vert A^{(n)}\right\Vert$ to aim for when adjusting the regularization parameter in each iteration. Larger values permit larger steps per iterations, however too large steps may lead to swamping. See the [[publications:tensor_rank_decomposition&#determining_the_regularization_parameter|article]] for more details.  |
+|  ''regularizationFriction'' |  real |  0.25 | The friction parameter $\gamma$ for adjusting the regularization parameter in each iteration. Low values result in a fast response but may lead to oscillatory behavior. See the [[publications:tensor_rank_decomposition&#determining_the_regularization_parameter|article]] for more details.  |
+
+===== Output arguments =====
+^  Argument  ^  Type  ^  Description  ^
+|   ''FactorOrbitals'' |  complex tensor | The [[internal:cc4s:nomenclature|factor orbitals]] $\Pi_{rR}$.  |
+|   ''CoulombFactors'' |  complex tensor | The [[internal:cc4s:nomenclature|Coulomb factors]] $\Lambda_{FR}$.  |
