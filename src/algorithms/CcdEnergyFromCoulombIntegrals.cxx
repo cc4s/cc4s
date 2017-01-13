@@ -151,16 +151,23 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
               Tensor<> *Fabij(sliceAmplitudesFromCoulombFactors(a, b, factorsSliceSize));
               Fabij->set_name("Fabij");
               if (a==b) {
-                Rabij["abij"] += (*Fabij)["abij"];
+		Rabij["abij"] += (*Fabij)["abij"];
+		//                Rabij["abij"] += 0.5 * (*Fabij)["abij"];
+		//                Rabij["abij"] += 0.5 * (*Fabij)["baji"];
               }
               else{
-                Rabij["abij"] += (*Fabij)["abij"];
-                Rabij["baji"] += (*Fabij)["abij"];
+		Rabij["abij"] += (*Fabij)["abij"];
+		Rabij["baji"] += (*Fabij)["abij"];
+		//                Rabij["abij"] += 0.5 * (*Fabij)["abij"];
+		//                Rabij["abij"] += 0.5 * (*Fabij)["baji"];
+		//                Rabij["baji"] += 0.5 * (*Fabij)["abij"];
+		//                Rabij["baji"] += 0.5 * (*Fabij)["baji"];
               }
               delete Fabij;
             }
           }
 
+	  
 
         }
         else {

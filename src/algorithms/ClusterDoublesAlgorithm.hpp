@@ -124,6 +124,8 @@ namespace cc4s {
      */
     CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int factorsSliceSize);
 
+    CTF::Tensor<> *sliceAmplitudesFromCoulombFactorsTcc(int a, int b, int factorsSliceSize);
+
     /**
      * \brief Dry run for sliceAmplitudesFromCoulombFactors.
      * \param[in] factorsSliceSize slicing size of NR.
