@@ -8,7 +8,7 @@ CXX=mpiicc
 OPTIONS=-openmp -DINTEL_COMPILER
 
 # optimization options (only for compiling and linking)
-OPTIMIZE=-march=core-avx2 -O3 -ipo
+OPTIMIZE=-O3 -ipo -xAVX
 
 # location of the Cyclops Tensor Framework library depends on the configuration
 CTF=modules/build/${CONFIG}/ctf
