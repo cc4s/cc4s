@@ -2,6 +2,7 @@
 ===== Input arguments =====
 ^  Argument((mandatory arguments start with a capital letter))  ^  Type  ^  Default  ^  Description  ^
 |  ''PPPPCoulombIntegrals'' |  real tensor |  ---  | The [[internal:cc4s:nomenclature|Coulomb integrals]] $V^{ab}_{cd}$, restricted to four particle indices.  |
+|  ''PPHHCoulombIntegrals'' |  real tensor |  ---  | The [[internal:cc4s:nomenclature|Coulomb integrals]] $V^{ab}_{ij}$, restricted to two particle and two hole indices.  |
 
 ===== Output arguments =====
 ^  Argument  ^  Type  ^  Description  ^
