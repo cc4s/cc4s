@@ -1,0 +1,118 @@
+====== Binary tensor file format ======
+
+  * all integers in the headers are encoded in [[https://en.wikipedia.org/wiki/Endianness|little endian]].
+
+===== Header =====
+
+^  Offset  ^  Content  ^  Type  ^  Size  ^  Description  ^
+|       +0 | "TENS"          | char  |  4 | magic  |
+|       +4 | version         | integer  |  4 | version number in hex, e.g. 1.0 = 0x00010000 = 65536 |
+|       +8 | number type  |  character |    4 | "uint", "UINT", "sint", "SINT" for unsigned or signed integers, respectively, "IEEE" for IEEE floating point numbers. Capital case integer types refer to big-, lower case to little endian encoding.  |
+|      +12 | bytes per number  | integer  |    4 | Integer numbers may be 1,2,4,8 or 16 bytes in size while IEEE floats may be 4,8 or 16 bytes referring to single,double or quadruple precision.  |
+|      +16 | numbers per tensor element   | integer  |    4 | 1,2,4 or 8 for real, complex, quaternionic or octonionic tensors  |
+|      +20 | order $N$   | integer  |    4 | the number of dimensions  |
+|      +24 | flags      | integer  |  4 | 32 bit flags defined below (0 for dense tensor) |
+|      +28 | zero       | bytes  |   4 | reserved for future use  |
+|      +32 |
+
+<note>TODO: alignment of data chunks or not</note>
+==== Tensor flags ====
+^  Bit  ^  31 - 1  ^  0  ^
+^  Flag  |  reserved for future use  |  IX  |
+
+^  Flag  ^   Description  ^
+|  IX    | data stored in (index,value) pairs  |
+
+
+===== Dimension information =====
+After the tensor header, dimension headers follow for each dimension, starting with the leftmost
+index.
+^  Offset  ^  Content  ^  Type  ^  Size  ^  Description  ^
+|       +0 | length    | integer  |    4 | the length the respective dimension   |
+|       +4 | index name  | character  |   1 | index name for later reference  |
+|       +5 | flags  | integer  |  1 | 8-bit flags of this dimension |
+|       +6 | zero  | bytes  |  2 | reserved for future use  |
+|       +8 |
+
+==== Dimension flags ====
+^  Bit  ^  7-1  ^  0  ^
+^  Flag  |  reserved for future use  |  SP  |
+
+^  Flag  ^  Description  ^
+|  SP  | whether this dimension is sparse  |
+Note that sparsity in any dimension does not require the tensor to be stored in
+the (index,value) format, although that would be the usual case.
+
+===== Variable chunks =====
+After the fixed chunks for each tensor dimension come the variable chunks providing additional information on the structure of the tensor data, such as on symmetry relations.
+Each variable chunk provides the same header information including information on its total size, such that implementations can skip ignored or unknown chunks.
+
+^  Offset  ^  Content  ^  Type  ^  Size  ^  Description  ^
+|       +0 |  magic  | characters  |  8 | identifying the respective chunk  |
+|       +8 | total size  | integer  |  8 | including all fields, must be a multiple of 8  |
+|      +16 |
+
+
+==== Symmetry chunk ====
+Symmetry information for each known symmetry operation on the tensor's index order.
+Each symmetry operation consists of a permutation $\sigma(a,b,\ldots)$ of the indices and
+a subsequent operation $s(x)$ on the elements, which leave the tensor invariant.
+For instance, anti-symmetry when interchanging
+the first two indices in a tensor of fourth order is specified by
+\[
+T_{ijkl} = s\left(T_{\sigma(i,j,k,l)}\right)\,,
+\text{ with }
+s(x) = -x
+\text{ and }
+\sigma = \left(\begin{array}{rrrr} 1&2&3&4 \\ 2&1&3&4 \end{array}\right)\,.
+\]
+^  Offset  ^  Content  ^  Type  ^  Size  ^  Description  ^
+|       +0 | "SYMMETRY"  | characters  |  8 | magic  |
+|       +8 | size of symmetry information  | integer  |  8 | including all fields, must be a multiple of 8  |
+|      +16 | flags   | integer  |  1 | 8-bit flags of this symmetry  |
+|      +17 | length $n$ of the operation code  | integer  |  1 | characters in the code of the operation $s(x)$  |
+|      +18 | symmetry operation code  | characters  |  $n$ | code of the symmetry operation, e.g. "-x" for $s(x)=-x$  |
+|  +$n$+18 | index map of $\sigma$  | characters  |  $N$ | the symmetry permutation of the index names given in the dimension information, e.g. "bacd" for a transposition of the first two indices for a tensor with the index names "abcd"  |
+|  +$N$+$n$+18 | padding zeros  | bytes  |  pad$_8(N$+$n$+18$)$ | padding to align the chunks in multiples of 4 bytes  |
+|  +align$_8(N$+$n$+18$)$ |
+where align$_a(N)=a\lceil N/a \rceil$ and pad$_a(N)=$align$_a$($N$)-$N$.
+=== Symmetry flags ===
+^  Bit  ^  7-1  ^  0  ^
+^  Flag  |  reserved for future use  |  PK  |
+
+^  Flag  ^  Description  ^
+|  PK  | whether the tensor data in this file is packed exploiting this symmetry to reduce the number of entries  |
+
+===== Tensor data =====
+The global index $I$ of each tensor value is given by
+\[
+  I=a+bN_0 + cN_0N_1 + \ldots\,,
+\]
+where $N_0,N_1,\ldots$ is the length of each dimension and $a,b,\ldots$
+is the index in each dimension in the order given in the dimension information.
+==== Sequential values ====
+If the IX flag is 0 the tensor values are given in a continuous sequence of
+ascending global index $I$.
+
+<note>TODO: define symmetry packing for a single transposition symmetry.</note>
+
+If the tensor data is packed according to more than one symmetry, only index-value
+storage is supported in version 1.0.
+
+^  Offset  ^  Content  ^  Type  ^  Size  ^  Description  ^
+|       +0 |  "DENSDATA"  | characters  |  8 | identifying the respective chunk  |
+|       +8 | total size  | integer  |  8 | including all fields, must be a multiple of 8  |
+|     +16 | $T(0)$  | tensor element  |  $\frac{\rm bytes}{\rm number}\frac{\rm numbers}{\rm element}$ | tensor value at $I=0$ |
+|  +16+$\frac{\rm bytes}{\rm number}\frac{\rm numbers}{\rm element}$ | $T(1)$  | tensor element  | $\frac{\rm bytes}{\rm number}\frac{\rm numbers}{\rm element}$ | tensor value at $I=1$  |
+|  $\vdots$  |  $\vdots$  |  tensor element  |  $\frac{\rm bytes}{\rm number}\frac{\rm numbers}{\rm element}$  |  $\vdots$  |
+
+==== Index-value storage ====
+If the IX flag is 1 the tensor values are given in pairs of index and value.
+
+^  Offset  ^  Content  ^  Type  ^  Size  ^  Description  ^
+|  +0 | number of pairs | integer  |  8 | number of non-zero pairs stored  |
+|  +8 | $I_0$  | integer  |  8 | global index of first value  |
+|  +16 | $T(I_0)$  | tensor element  |  $\frac{\rm bytes}{\rm number}\frac{\rm numbers}{\rm element}$ | value of first pair  |
+|  +$\frac{\rm bytes}{\rm number}\frac{\rm numbers}{\rm element}$+16 | $I_1$  | integer  |  8 | global index of second value  |
+|  +$\frac{\rm bytes}{\rm number}\frac{\rm numbers}{\rm element}$+24 | $T(I_1)$  | tensor element  |  $\frac{\rm bytes}{\rm number}\frac{\rm numbers}{\rm element}$ | value of second pair  |
+| $\ldots$  |

@@ -1,0 +1,67 @@
+====== Fourier Transformed Overlap Densities - Binary ======
+The ''FTODDUMP'' is one of the possible input files, providing information on the
+orbitals and the eigenenergies of the reference system.
+The file provides the Fourier transformed overlap densities $\Gamma_{q\bf G}^p$ given by
+\[
+  \Gamma_{q\bf G}^p = \int{\rm d}{\bf x}\,
+    \sqrt{\frac{4\pi}{{\bf G}^2}} {\rm e}^{{\rm i}{\bf G}\cdot{\bf r}}\,
+    \psi_p^\ast({\bf x})\psi_q({\bf x}),
+\]
+such that the Coulomb integrals $V_{sr}^{pq}$ can be decomposed into
+$V_{sr}^{pq}=\int\frac{{\rm d}{\bf G}}{(2\pi)^3}\,{\Gamma^\ast}_s^{p\bf G}\Gamma_{r\bf G}^q$.
+The file is binary.
+There is also a text version ''[[reference:fourier_transformed_overlap_densities|FTOD]]'' of this file.
+
+The file consists of chunks, each starting with a unique character sequence for identification, called magic.
+The header must come as first chunk. The order of the other chunks is arbitrary. The fields within a chunk are given by their respective offset relative to the start of the chunk.
+===== Header =====
+^ Offset ^   Content                               ^   Type     ^ Size ^
+|     +0 | "''cc4sFTOD''" (magic)                  | character  |    8 |
+|     +8 | number of occupied orbitals $n_{\rm o}$ | integer    |    4 |
+|    +12 | number of virtual orbitals $n_{\rm v}$  | integer    |    4 |
+|    +16 | number of plane waves $n_{\rm G}$       | integer    |    4 |
+|    +20 | number of spins, 1 or 2                 | integer    |    4 |
+|    +24 | number of ${\bf k}$-points              | integer    |    4 |
+|    +28 | reserved for future use                 | zero       |    4 |
+|    +32 |
+===== Data Chunks =====
+Each chunk starts with an 8 character magic and an 8 byte integer giving the size of the entire chunk, including the magic and the size field. The size is provided so that implementations can skip chunks unknown to them.
+==== Real part of $\chi$ ====
+^ Offset ^   Content                     ^   Type     ^ Size ^
+|     +0 | "''FTODreal''" (magic)        | character  |    8 |
+|     +8 | size of this chunk in bytes   | integer    |    8 |
+|    +16 | ${\rm Re}(\chi_1^1(1))$       | double     |    8 |
+|    +24 | ${\rm Re}(\chi_1^1(2))$       | double     |    8 |
+|  $\vdots$ |  $\vdots$                  | double     |    8 |
+|  +16+8$n_{\rm G}$ | ${\rm Re}(\chi_1^2(1))$ | double |   8 |
+|  $\vdots$ |  $\vdots$                  | double     |    8 |
+|  +16+8$n_{\rm G}(n_{\rm o}+n_{\rm v})^2$ |
+
+==== Imaginary part of $\chi$ ====
+Analogous to the real part chunk but with the magic "''FTODimag''".
+
+==== Real part of $\chi_i^a$ ====
+^ Offset ^   Content                     ^   Type     ^ Size ^
+|     +0 | "''FTIAreal''" (magic)        | character  |    8 |
+|     +8 | size of this chunk in bytes   | integer    |    8 |
+|    +16 | ${\rm Re}(\chi_1^1(1))$       | double     |    8 |
+|    +24 | ${\rm Re}(\chi_1^1(2))$       | double     |    8 |
+|  $\vdots$ |  $\vdots$                  | double     |    8 |
+|  +16+8$n_{\rm G}$ | ${\rm Re}(\chi_1^2(1))$ | double |   8 |
+|  $\vdots$ |  $\vdots$                  | double     |    8 |
+|  +16+8$n_{\rm G}n_{\rm v}$ | ${\rm Re}(\chi_2^1(1))$ | double |   8 |
+|  $\vdots$ |  $\vdots$                  | double     |    8 |
+|  +16+8$n_{\rm G}(n_{\rm o} n_{\rm v})$ |
+
+==== Imaginary part of $\chi_i^a$ ====
+Analogous to the real part chunk but with the magic "''FTIAimag''".
+
+
+==== Eigenenergies $\varepsilon_p$ ====
+^ Offset ^   Content                               ^   Type      ^ Size ^
+|     +0 | "''FTODepsi''" (magic)                  | character  |   8 |
+|     +8 | size of this chunk in bytes             | integer    |   8 |
+|    +16 | $\varepsilon_1$  | double |  8 |
+|    +24 | $\varepsilon_2$  | double |  8 |
+|  $\vdots$ |   $\vdots$                                | double |  8 |
+|  +16+8$(n_{\rm o}+n_{\rm v})$ |

@@ -1,0 +1,34 @@
+====== cc4s Coding Conventions ======
+The ''cc4s'' development mostly follows standard C++ coding conventions with
+a flavour of Java naming conventions to lighten up readability.
+Here the most important guidelines are summarized.
+
+===== Naming =====
+  * Class names are in ''CamelCase'', starting with an upper case character. They should have noun character.   (''AmplitudeSolver'', ''Algorithm'', not ''Solve''),
+  * Derived classes should end with the name of the super class, unless it is kind of obvious (''BinaryFtodLoader'')
+  * Methods are in ''camelCase'', starting with a lower case character. They should have verb character. (''solve'', ''normalize'', not ''loader'')
+  * Instances of classes and types are named in ''camelCase'', preferably according to the class name they are an instance of. (''Parser parser'', ''int maxIterations'')
+  * Mathematical objects, such as numbers and tensors, may additionally be named according to the mathematical symbol [[internal:cc4s:nomenclature|nomenclature]] (''int n'', ''Tensor<> Vabij'').
+  * Acronyms should be treated as a normal word. (''FtodLoader'', not ''FTODLoader'')
+  * All guides should enhance readability. Use exceptions where you think it is appropriate.
+
+===== Referencing =====
+C++ offers four ways to pass object arguments by reference in a method call. In such a call the memory
+address of the argument object will be passed without copying it, which is preferable for larger objects.
+^  memory referenced at call  ^  referenced object  ^  call  ^  declaration   ^  usage  ^
+|  implicitly  |  immutable  | ''f(s)''  | ''f(T const &t) ''  | The object will only be referenced but never changed during the course of the method call. Upon return, no reference will be kept.  |
+|  implicitly  |  mutable  | ''f(s)''  | ''f(T &t) ''  | The object will only be referenced during the course of the method call, where it may also be changed. Upon return, no reference will be kept.  |
+|  explicitly  |  immutable  | ''f(&s)''  | ''f(T const *t) ''  | The passed reference to the object will be kept after the called method returns but the content of the referenced object is not changed at any time.  |
+|  explicitly  |  mutable  | ''f(&s)''  | ''f(T *t) ''  | The passed reference to the object will be kept after the called method returns and the content of the referenced object may also be changed after return.  |
+The cases are listed in increasing order of entanglement between the caller and the called method, so use the topmost option. In the explicit cases there must be an agreement on who is responsible for deleting the referenced objects.
+Only use call-by-reference for class-type arguments, not for ''bool'', integers or numbers.
+
+==== Passing arrays ====
+The only exception to above rules is passing arrays in C-style.
+^  referenced object  ^  call  ^  declaration   ^
+|  mutable  | ''f(elements)''  | ''f(ElmenetType *elements)''  |
+|  immutable  | ''f(elements)''  | ''f(ElmenetType const *elements)''  |
+In any case the content of the array may only be accessed during the call.
+Caller and callee also have to agree on the size of the array.
+
+Prefer to use objects that encapsulate size and location of the array, such as ''std::vector<T>'' or ''std::string'' for strings.
