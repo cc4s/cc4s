@@ -24,7 +24,7 @@ The cases are listed in increasing order of entanglement between the caller and 
 Only use call-by-reference for class-type arguments, not for ''bool'', integers or numbers.
 
 <note>
-conventional pointers (*) will soon be replaced by shared pointers
+conventional pointers (*T) will soon be replaced by shared pointers ''shared_ptr<T>''
 </note>
 ==== Passing arrays ====
 The only exception to above rules is passing arrays in C-style.
