@@ -23,6 +23,9 @@ address of the argument object will be passed without copying it, which is prefe
 The cases are listed in increasing order of entanglement between the caller and the called method, so use the topmost option. In the explicit cases there must be an agreement on who is responsible for deleting the referenced objects.
 Only use call-by-reference for class-type arguments, not for ''bool'', integers or numbers.
 
+<note>
+conventional pointers (*) will soon be replaced by shared pointers
+</note>
 ==== Passing arrays ====
 The only exception to above rules is passing arrays in C-style.
 ^  referenced object  ^  call  ^  declaration   ^
