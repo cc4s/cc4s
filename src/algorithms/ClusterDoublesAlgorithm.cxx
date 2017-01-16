@@ -531,11 +531,9 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
   int Np(PirR->lens[0]);
   int NR(PirR->lens[1]);
   int NG(LambdaGR->lens[0]);
-  int Rx(std::min(factorsSliceSize, NR-a));
   int syms[] = { NS, NS, NS, NS };
 
   // Allocate and compute GammaGab from GammaGqr
-  int iStart(0), iEnd(No);
   int aStart(Np-Nv), aEnd(Np);
   int GabStart[] = {0 ,aStart,aStart};
   int GabEnd[]   = {NG,aEnd,  aEnd  };
