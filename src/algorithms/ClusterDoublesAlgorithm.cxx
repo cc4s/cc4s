@@ -5,6 +5,8 @@
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
+#include <tcc/Tcc.hpp>
+#include <util/CtfMachineTensor.hpp>
 #include <Options.hpp>
 
 using namespace CTF;
@@ -501,7 +503,6 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(int f
 
 
 Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
-                                                                        int b,
                                                                         int factorsSliceSize)
 {
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
@@ -518,18 +519,20 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
   Tensor<> *Tabij(&TabijMixer->getNext());
   Tabij->set_name("Tabij");
 
+  // Define complex conjugation function
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+
+  // Define tcc environment
+  auto machineTensorFactory(CtfMachineTensor<complex>::Factory::create());
+  auto tcc(tcc::Tcc<complex>::create(machineTensorFactory));
+
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
   int Np(PirR->lens[0]);
   int NR(PirR->lens[1]);
   int NG(LambdaGR->lens[0]);
-  int Rs(std::min(factorsSliceSize, NR-a));
-  int Rvoo[] = { Rs, Nv, No, No };
-  int vvR[]  = { Nv, Nv, Rs };
+  int Rx(std::min(factorsSliceSize, NR-a));
   int syms[] = { NS, NS, NS, NS };
-
-  Tensor<> realXRaij(4, Rvoo, syms, *PirR->wrld, "RealXRaij");
-  Tensor<> imagXRaij(4, Rvoo, syms, *PirR->wrld, "ImagXRaij");
 
   // Allocate and compute GammaGab from GammaGqr
   int iStart(0), iEnd(No);
@@ -537,6 +540,9 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
   int GabStart[] = {0 ,aStart,aStart};
   int GabEnd[]   = {NG,aEnd,  aEnd  };
   Tensor<complex> GammaGab(GammaGqr->slice(GabStart,GabEnd));
+
+  // Create tcc tensors from ctf tensors (conj)GammaGab
+  auto tccGammaGab( tcc->createTensor(CtfMachineTensor<complex>::create(GammaGab)));
 
   // Allocate and compute PiaR
   int aRStart[] = {No , 0};
@@ -551,10 +557,12 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
   Tensor<complex> leftPiaR (PiaR.slice(leftPiStart  ,  leftPiEnd));
   leftPiaR.set_name("leftPiaR");
 
-  // Split left and right PiaR into real and imaginary parts
-  Tensor<> realLeftPiaR(2, leftPiaR.lens, leftPiaR.sym, *leftPiaR.wrld, "RealLeftPiaR");
-  Tensor<> imagLeftPiaR(2, leftPiaR.lens, leftPiaR.sym, *leftPiaR.wrld, "ImagRightPiaR");
-  fromComplexTensor(leftPiaR, realLeftPiaR, imagLeftPiaR);
+  Tensor<complex> conjLeftPiaR(false, leftPiaR);
+  conjLeftPiaR.set_name("ConjLeftPiaR");
+  conjLeftPiaR.sum(1.0, leftPiaR,"aR", 0.0,"aR", fConj);
+
+  // Create tcc tensors from ctf tensors right(left)PiaR
+  auto tccConjLeftPiaR( tcc->createTensor(CtfMachineTensor<complex>::create(conjLeftPiaR)) );
 
   // Slice the respective parts from LambdaGR
   int leftLambdaStart[]  = { 0  ,                            a };
@@ -562,34 +570,48 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
   Tensor<complex> leftLambdaGR (LambdaGR->slice(leftLambdaStart , leftLambdaEnd));
   leftLambdaGR.set_name("leftLambdaGR");
 
-  // FIXME: Currently assuming GammaGqr = PirR*PirR*LambdaGR
-  //        First Pi not conjugated.
-  realXRaij["Rdij"] = (+1.0) * (*Tabij)["cdij"] * realLeftPiaR["cR"];
-  imagXRaij["Rdij"] = (-1.0) * (*Tabij)["cdij"] * imagLeftPiaR["cR"];
-  Tensor<complex> XRaij(4, Rvoo, syms, *PirR->wrld, "XRaij");
-  toComplexTensor(realXRaij, imagXRaij, XRaij);
-
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
   Tensor<complex> conjLeftLambdaGR(false, leftLambdaGR);
   conjLeftLambdaGR.set_name("ConjLeftLambdaGR");
   conjLeftLambdaGR.sum(1.0, leftLambdaGR,"GR", 0.0,"GR", fConj);
 
-  Tensor<complex> XbdR(4, vvR, syms, *PirR->wrld, "XbdR");
-  XbdR["bdR"] = GammaGab["bdG"] * conjLeftLambdaGR["GR"];
+  // Create tcc tensors from ctf tensors right(left)LambdaGR
+  auto tccConjLeftLambdaGR( tcc->createTensor(CtfMachineTensor<complex>::create(conjLeftLambdaGR)));
 
-  Tensor<complex> XRbij(4, Rvoo, syms, *PirR->wrld, "XRbij");
-  XRbij["Rbij"] = XRaij["Raij"]  * XbdR["bdR"];
+  // Create complex amplitudes tensor
+  Tensor<complex> cTabij(4, Tabij->lens, syms, *Tabij->wrld, "cTabij");
+  toComplexTensor(*Tabij, cTabij);
+
+  // Create tcc tensor from ctf tensor Tabij
+  auto tccCTabij( tcc->createTensor(CtfMachineTensor<complex>::create(cTabij)));
+
+  // Create complex amplitudes tensor
+  Tensor<complex> cXabij(false, cTabij);
+
+  // Create tcc tensor from ctf tensor Tabij
+  auto tccCXabij( tcc->createTensor(CtfMachineTensor<complex>::create(cXabij)));
+
+  // Do the tcc contraction
+  // compile
+  auto operation(
+    tcc->compile(
+      (*tccCXabij)["abij"] <<=
+        (*tccCTabij)["cdij"] *
+        (*tccGammaGab)["Gbd"] *
+        (*tccConjLeftPiaR)["cR"] * (*tccConjLeftPiaR)["aR"] *
+        (*tccConjLeftLambdaGR)["GR"]
+    )
+  );
+  // and execute
+  operation->execute();
 
   // allocate Tensor for sliced T2 amplitudes
   int vvoo[] = { Nv, Nv, No, No };
   Tensor<> *Xabij(new Tensor<>(4, vvoo, syms, *PirR->wrld, "Xabij"));
-
-  // compute sliced amplitudes
-  Tensor<> realXRbij(4, Rvoo, syms, *PirR->wrld, "RealXRbij");
-  Tensor<> imagXRbij(4, Rvoo, syms, *PirR->wrld, "ImagXRbij");
-  fromComplexTensor(XRbij, realXRbij, imagXRbij);
-  (*Xabij)["abij"] += realXRbij["Rbij"]  * realLeftPiaR["aR"];
-  (*Xabij)["abij"] += imagXRbij["Rbij"]  * imagLeftPiaR["aR"];
+  // for now: duplicate result
+  auto implementationXabij(
+    std::dynamic_pointer_cast<CtfMachineTensor<complex>>(tccCXabij->getMachineTensor())
+  );
+  fromComplexTensor(implementationXabij->tensor, *Xabij);
 
   // return sliced amplitudes
   return Xabij;

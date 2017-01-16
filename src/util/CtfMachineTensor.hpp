@@ -63,6 +63,10 @@ namespace cc4s {
       if (!ctfA) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
+      LOG(2, "TCC") << "move " <<
+        getName() << "[" << bIndices << "] <<= " <<
+        alpha << " * " << ctfA->getName() << "[" << aIndices << "] + " <<
+        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
       tensor.sum(
         alpha,
         ctfA->tensor, aIndices.c_str(),
@@ -86,6 +90,10 @@ namespace cc4s {
       if (!ctfA) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
+      LOG(2, "TCC") << "move " <<
+        getName() << "[" << bIndices << "] <<= " <<
+        alpha << " * " << ctfA->getName() << "[" << aIndices << "] + " <<
+        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
       tensor.sum(
         alpha,
         ctfA->tensor, aIndices.c_str(),
@@ -114,6 +122,11 @@ namespace cc4s {
       if (!ctfA || !ctfB) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
+      LOG(2, "TCC") << "contract " <<
+        getName() << "[" << cIndices << "] <<= g(" <<
+        alpha << " * " << ctfA->getName() << "[" << aIndices << "], " <<
+        ctfB->getName() << "[" << bIndices << "]) + " <<
+        beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
       tensor.contract(
         alpha,
         ctfA->tensor, aIndices.c_str(),
@@ -143,6 +156,11 @@ namespace cc4s {
       if (!ctfA || !ctfB) {
         throw new EXCEPTION("Passed machine tensor of wrong implementation.");
       }
+      LOG(2, "TCC") << "contract " <<
+        getName() << "[" << cIndices << "] <<= g(" <<
+        alpha << " * " << ctfA->getName() << "[" << aIndices << "], " <<
+        ctfB->getName() << "[" << bIndices << "]) + " <<
+        beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
       tensor.contract(
         alpha,
         ctfA->tensor, aIndices.c_str(),
