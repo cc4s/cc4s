@@ -242,9 +242,7 @@ double LaplaceMp2Energy::calculateNumerically() {
     )
   )->execute();
   CTF::Scalar<complex> ctfEnergy;
-  ctfEnergy[""] = std::dynamic_pointer_cast<MT>(
-    energy->getMachineTensor()
-  )->tensor[""];
+  ctfEnergy[""] = energy->getMachineTensor<MT>()->tensor[""];
   return std::real(ctfEnergy.get_val());
 }
 

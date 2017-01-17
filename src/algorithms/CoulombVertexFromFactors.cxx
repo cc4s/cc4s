@@ -66,11 +66,8 @@ void CoulombVertexFromFactors::run(const bool dryRun) {
 
   // for now: duplicate result
   // later Gamma will already be the object stored in cc4s
-  auto implementationGammaFqr(
-    std::dynamic_pointer_cast<MT>(GammaFqr->getMachineTensor())
-  );
   allocatedTensorArgument<complex, T>(
-    "CoulombVertex", new T(implementationGammaFqr->tensor)
+    "CoulombVertex", new T(GammaFqr->getMachineTensor<MT>()->tensor)
   );
 }
 

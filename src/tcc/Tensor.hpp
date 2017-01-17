@@ -68,12 +68,13 @@ namespace tcc {
       return tcc;
     }
 
-    std::shared_ptr<MachineTensor<F>> getMachineTensor() {
+    template <class ActualMachineTensor=MachineTensor<F>>
+    std::shared_ptr<ActualMachineTensor> getMachineTensor() {
       if (!machineTensor) {
         // allocate the implementation specific machine tensor upon request
         machineTensor = tcc->createMachineTensor(this->shared_from_this());
       }
-      return machineTensor;
+      return std::dynamic_pointer_cast<ActualMachineTensor>(machineTensor);
     }
 
     /**

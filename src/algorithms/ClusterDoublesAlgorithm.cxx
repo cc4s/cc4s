@@ -606,10 +606,9 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
   int vvoo[] = { Nv, Nv, No, No };
   Tensor<> *Xabij(new Tensor<>(4, vvoo, syms, *PirR->wrld, "Xabij"));
   // for now: duplicate result
-  auto implementationXabij(
-    std::dynamic_pointer_cast<CtfMachineTensor<complex>>(tccCXabij->getMachineTensor())
+  fromComplexTensor(
+    tccCXabij->getMachineTensor<CtfMachineTensor<complex>>()->tensor, *Xabij
   );
-  fromComplexTensor(implementationXabij->tensor, *Xabij);
 
   // return sliced amplitudes
   return Xabij;
