@@ -14,6 +14,7 @@ docs/*
 *.bz
 *.zip
 *.dat
+*.bin
 
 # C++ STUFF
 
