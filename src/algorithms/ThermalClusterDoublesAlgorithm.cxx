@@ -54,7 +54,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   beta = 1 / getRealArgument("Temperature");
   LOG(1, abbreviation) << "beta=" << beta << std::endl;
 
-  double dire, exce;
+  double dire(0), exce(0);
   samples = getIntegerArgument("samples", DEFAULT_SAMPLES);
   int n;
   for (n = 0; n < samples; ++n) {
