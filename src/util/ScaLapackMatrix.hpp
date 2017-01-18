@@ -19,7 +19,7 @@ namespace cc4s {
     // is actually not part of the scalapack descriptor
   };
   
-  template <typename F>
+  template <typename F=double>
   class ScaLapackMatrix: public ScaLapackDescriptor {
   public:
     /**
@@ -33,6 +33,16 @@ namespace cc4s {
      */
     ScaLapackMatrix(
       CTF::Matrix<F> &A, BlacsWorld *blacsWorld, int blockSize = 64
+    );
+    /**
+     * \brief Contructs a ScaLapack matrix from the matricized content of a
+     * CTF::Tensor in the given BlacsWorld by copying each entry of the tensor
+     * into the matrix with the same respective global index, i.e.:
+     * matrix[I + lens[0]*J] = A[i + A.lens[0]*j + A.lens[0]*A.lens[1]*k + ...]
+     * The caller is responsible for compatible shapes.
+     */
+    ScaLapackMatrix(
+      CTF::Tensor<F> &A, int lens[2], BlacsWorld *blacsWorld, int blockSize = 64
     );
     /**
      * \brief Frees all resources associated with the ScaLapack matrix on
@@ -69,6 +79,13 @@ namespace cc4s {
      * CTF::Matrix. The CTF::Matrix must be allocated in the correct shape.
      */
     void write(CTF::Matrix<F> &A);
+    /**
+     * \brief Writes the matricized content of the ScaLapackMatrix to the
+     * given CTF::Tensor, i.e.:
+     * A[i + A.lens[0]*j + A.lens[0]*A.lens[1]*k + ...] = matrix[I + lens[0]*J]
+     * The caller is responsible for compatible shapes.
+     */
+    void write(CTF::Tensor<F> &A);
 
   protected:
     /**
