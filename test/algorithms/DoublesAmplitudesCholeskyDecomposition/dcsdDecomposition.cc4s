@@ -33,11 +33,37 @@ DcsdEnergyFromCoulombIntegrals [
 
 DoublesAmplitudesSingularVectors [
   (DoublesAmplitudes DcsdDoublesAmplitudes)
+  (reduction 3)
 ] [
-  DoublesAmplitudesEigenValues
+  DoublesAmplitudesVertex
+].
+
+ComplexTensorWriter [
+  (Data DoublesAmplitudesVertex)
+] [
+].
+
+ParticleHoleCoulombIntegrals [
+  (ParticleHoleCoulombVertex DoublesAmplitudesVertex)
+] [
+  (PPHHCoulombIntegrals ComposedDoublesAmplitudes)
+].
+
+TensorSum [
+  (A DcsdDoublesAmplitudes) (AIndex "abij") (AFactor 1)
+  (B ComposedDoublesAmplitudes) (BIndex "abij") (BFactor -1)
+  (ResultIndex "abij")
+] [
+  (Result DcsdDoublesAmplitudes)
+].
+
+TensorNorm [
+  (A DcsdDoublesAmplitudes)
+] [
+  Norm
 ].
 
 TensorWriter [
-  (Data DoublesAmplitudesEigenValues)
+  (Data Norm)
 ] [
 ].
