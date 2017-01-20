@@ -1,0 +1,69 @@
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+].
+
+DcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 32)
+] [
+  (DcsdEnergy DcsdEnergy) 
+  (DcsdSinglesAmplitudes DcsdSinglesAmplitudes)
+  (DcsdDoublesAmplitudes DcsdDoublesAmplitudes)
+].
+
+DoublesAmplitudesSingularVectors [
+  (DoublesAmplitudes DcsdDoublesAmplitudes)
+  (reduction 3)
+] [
+  DoublesAmplitudesVertex
+].
+
+ComplexTensorWriter [
+  (Data DoublesAmplitudesVertex)
+] [
+].
+
+ParticleHoleCoulombIntegrals [
+  (ParticleHoleCoulombVertex DoublesAmplitudesVertex)
+] [
+  (PPHHCoulombIntegrals ComposedDoublesAmplitudes)
+].
+
+TensorSum [
+  (A DcsdDoublesAmplitudes) (AIndex "abij") (AFactor 1)
+  (B ComposedDoublesAmplitudes) (BIndex "abij") (BFactor -1)
+  (ResultIndex "abij")
+] [
+  (Result DcsdDoublesAmplitudes)
+].
+
+TensorNorm [
+  (A DcsdDoublesAmplitudes)
+] [
+  Norm
+].
+
+TensorWriter [
+  (Data Norm)
+] [
+].

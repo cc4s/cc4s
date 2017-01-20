@@ -88,6 +88,39 @@ ScaLapackMatrix<complex>::ScaLapackMatrix(
 
 
 template <typename F>
+ScaLapackMatrix<F>::ScaLapackMatrix(
+  CTF::Tensor<F> &A, int lens_[2], BlacsWorld *blacsWorld_, int blockSize
+):
+  ScaLapackDescriptor(blacsWorld_, lens_, blockSize),
+  blacsWorld(blacsWorld_)
+{
+  // allocate local data
+  localValues = new F[localLens[0]*localLens[1]];
+  localIndices = new int64_t[localLens[0]*localLens[1]];
+  // determine global indices of local data in block cyclic distribution scheme
+  int64_t index(0);
+  for (int localJ(0); localJ < localLens[1]; ++localJ) {
+    int64_t j(getGlobalIndex(localJ, 1));
+    for (int localI(0); localI < localLens[0]; ++localI) {
+      int64_t i(getGlobalIndex(localI, 0));
+      localIndices[index++] = i + lens[0]*j;
+    }
+  }
+  A.read(index, localIndices, localValues);
+}
+
+// instantiate
+template
+ScaLapackMatrix<double>::ScaLapackMatrix(
+  CTF::Tensor<double> &A, int lens_[2], BlacsWorld *blacsWorld, int blockSize
+);
+template
+ScaLapackMatrix<complex>::ScaLapackMatrix(
+  CTF::Tensor<complex> &A, int lens_[2], BlacsWorld *blacsWorld, int blockSize
+);
+
+
+template <typename F>
 ScaLapackMatrix<F>::~ScaLapackMatrix() {
   delete[] localValues;
   delete[] localIndices;
@@ -107,11 +140,23 @@ void ScaLapackMatrix<F>::write(CTF::Matrix<F> &A) {
   A.write(localLens[0]*localLens[1], localIndices, localValues);
 }
 
+template <typename F>
+void ScaLapackMatrix<F>::write(CTF::Tensor<F> &A) {
+  // wait for all processes to finish pending operations
+  blacsWorld->barrier();
+  A.write(localLens[0]*localLens[1], localIndices, localValues);
+}
+
 // instantiate
 template
 void ScaLapackMatrix<double>::write(CTF::Matrix<double> &A);
 template
 void ScaLapackMatrix<complex>::write(CTF::Matrix<complex> &A);
+
+template
+void ScaLapackMatrix<double>::write(CTF::Tensor<double> &A);
+template
+void ScaLapackMatrix<complex>::write(CTF::Tensor<complex> &A);
 
 
 template <typename F>

@@ -142,13 +142,13 @@ int main(int argumentCount, char **arguments) {
   );
   Log::setLogStream(&logStream);
 
-//  try {
+  try {
     Cc4s cc4s;
     if (Cc4s::options->dryRun) cc4s.dryRun();
     else cc4s.run();
-//  } catch (DetailedException *cause) {
-//    LOG(0) << std::endl << cause->getMessage() << std::endl;
-//  }
+  } catch (DetailedException *cause) {
+    LOG(0) << std::endl << cause->getMessage() << std::endl;
+  }
   MPI_Finalize();
   return 0;
 }
