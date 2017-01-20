@@ -68,4 +68,4 @@ build/${CONFIG}/obj/algorithms/Delete.o \
 build/${CONFIG}/obj/algorithms/PerturbativeTriples.o \
 build/${CONFIG}/obj/algorithms/LaplaceMp2Energy.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexFromFactors.o \
-build/${CONFIG}/obj/algorithms/DoublesAmplitudesSingularVectors.o \
+build/${CONFIG}/obj/algorithms/DoublesAmplitudesCholeskyDecomposition.o \
