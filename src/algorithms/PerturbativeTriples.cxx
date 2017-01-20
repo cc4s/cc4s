@@ -94,7 +94,7 @@ void PerturbativeTriples::runHelgaker() {
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
 
-void PerturbativeTriples::run() {
+void PerturbativeTriples::runPiecuch() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -162,7 +162,7 @@ void PerturbativeTriples::run() {
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
 
-void PerturbativeTriples::runPiecuch() {
+void PerturbativeTriples::run() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -210,15 +210,15 @@ void PerturbativeTriples::runPiecuch() {
   Xabcijk["abcijk"] +=    (-2.0) * Zabcijk["acbijk"];
   Xabcijk["abcijk"] += (2.0/3.0) * Zabcijk["bcaijk"];
 
-  Rabcijk["abcijk"] += (  8.0) * Yabcijk["abcijk"];
-  Rabcijk["abcijk"] += (-12.0) * Yabcijk["acbijk"];
-  Rabcijk["abcijk"] +=   (4.0) * Yabcijk["bcaijk"];
+  Rabcijk["abcijk"] += (4.0/3.0) * Tabcijk["abcijk"];
+  Rabcijk["abcijk"] +=    (-2.0) * Tabcijk["acbijk"];
+  Rabcijk["abcijk"] += (2.0/3.0) * Tabcijk["bcaijk"];
 
   double e, triplese;
   double ccsde(getRealArgument("CcsdEnergy"));
 
-  energy[""]  = Xabcijk["abcijk"] * Tabcijk["abcijk"];
-  energy[""] += Rabcijk["abcijk"] * Tabcijk["abcijk"];
+  energy[""]  =         Xabcijk["abcijk"] * Tabcijk["abcijk"];
+  energy[""] += (6.0) * Rabcijk["abcijk"] * Yabcijk["abcijk"];
   triplese = energy.get_val();
   e = triplese + ccsde;
 
