@@ -193,15 +193,6 @@ void PerturbativeTriples::run() {
   Tabcijk["abcijk"] += Yabcijk["cabkij"];
   Tabcijk["abcijk"] += Yabcijk["bcajki"];
 
-  Zabcijk["abcijk"]  = (*epsi)["i"];
-  Zabcijk["abcijk"] += (*epsi)["j"];
-  Zabcijk["abcijk"] += (*epsi)["k"];
-  Zabcijk["abcijk"] -= (*epsa)["a"];
-  Zabcijk["abcijk"] -= (*epsa)["b"];
-  Zabcijk["abcijk"] -= (*epsa)["c"];
-  Bivar_Function<> fDivide(&divide<double>);
-  Tabcijk.contract(1.0, Tabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
-
   Zabcijk["abcijk"]  = ( 1.0) * (*Tai)["ai"] * (*Vabij)["bcjk"];
   Zabcijk["abcijk"] += ( 1.0) * (*Tai)["bj"] * (*Vabij)["acik"];
   Zabcijk["abcijk"] += ( 1.0) * (*Tai)["ck"] * (*Vabij)["abij"];
@@ -217,8 +208,20 @@ void PerturbativeTriples::run() {
   double e, triplese;
   double ccsde(getRealArgument("CcsdEnergy"));
 
+  Zabcijk["abcijk"]  = (*epsi)["i"];
+  Zabcijk["abcijk"] += (*epsi)["j"];
+  Zabcijk["abcijk"] += (*epsi)["k"];
+  Zabcijk["abcijk"] -= (*epsa)["a"];
+  Zabcijk["abcijk"] -= (*epsa)["b"];
+  Zabcijk["abcijk"] -= (*epsa)["c"];
+  Bivar_Function<> fDivide(&divide<double>);
+
+  Tabcijk.contract(1.0, Tabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
+  Rabcijk.contract(1.0, Rabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
+
   energy[""]  =         Xabcijk["abcijk"] * Tabcijk["abcijk"];
   energy[""] += (6.0) * Rabcijk["abcijk"] * Yabcijk["abcijk"];
+
   triplese = energy.get_val();
   e = triplese + ccsde;
 
