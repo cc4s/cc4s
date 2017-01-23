@@ -7,6 +7,8 @@
 #include <extern/ScaLapack.hpp>
 #include <util/Exception.hpp>
 
+#include <memory>
+
 namespace cc4s {
   // base template
   template <typename F=double>
@@ -17,8 +19,8 @@ namespace cc4s {
   class ScaLapackHermitianEigenSystemDc<double> {
   public:
     ScaLapackHermitianEigenSystemDc(
-      ScaLapackMatrix<double> const *A_,
-      ScaLapackMatrix<double> *U_
+      const std::shared_ptr<ScaLapackMatrix<double>> &A_,
+      const std::shared_ptr<ScaLapackMatrix<double>> &U_
     ):
       A(A_), U(U_),
       workCount(-1), integerWorkCount(-1),
@@ -74,8 +76,7 @@ namespace cc4s {
       }
     }
   protected:
-    ScaLapackMatrix<double> const *A;
-    ScaLapackMatrix<double> *U;
+    std::shared_ptr<ScaLapackMatrix<double>> A, U;
     int workCount, integerWorkCount;
     double *work;
     int *integerWork;
@@ -86,8 +87,8 @@ namespace cc4s {
   class ScaLapackHermitianEigenSystemDc<complex> {
   public:
     ScaLapackHermitianEigenSystemDc(
-      ScaLapackMatrix<complex> const *A_,
-      ScaLapackMatrix<complex> *U_
+      const std::shared_ptr<ScaLapackMatrix<complex>> &A_,
+      const std::shared_ptr<ScaLapackMatrix<complex>> &U_
     ):
       A(A_), U(U_),
       workCount(-1), realWorkCount(-1), integerWorkCount(-1),
@@ -151,8 +152,7 @@ namespace cc4s {
       }
     }
   protected:
-    ScaLapackMatrix<complex> const *A;
-    ScaLapackMatrix<complex> *U;
+    std::shared_ptr<ScaLapackMatrix<complex>> A, U;
     int workCount, realWorkCount, integerWorkCount;
     complex *work;
     double *realWork;

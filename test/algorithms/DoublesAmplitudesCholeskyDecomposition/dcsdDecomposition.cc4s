@@ -24,24 +24,25 @@ DcsdEnergyFromCoulombIntegrals [
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
-  (maxIterations 32)
+  (maxIterations 16)
+%  (mixingRatio 0.5381186091710739)
+  (mixingRatio 1.556329220888963)
 ] [
   (DcsdEnergy DcsdEnergy) 
   (DcsdSinglesAmplitudes DcsdSinglesAmplitudes)
   (DcsdDoublesAmplitudes DcsdDoublesAmplitudes)
 ].
 
-DoublesAmplitudesSingularVectors [
+DoublesAmplitudesCholeskyDecomposition [
   (DoublesAmplitudes DcsdDoublesAmplitudes)
-  (reduction 3)
+  (reduction 10)
 ] [
   DoublesAmplitudesVertex
+  DoublesAmplitudesEigenValues
 ].
 
-ComplexTensorWriter [
-  (Data DoublesAmplitudesVertex)
-] [
-].
+TensorWriter [(Data DoublesAmplitudesEigenValues)] [].
+ComplexTensorWriter [(Data DoublesAmplitudesVertex)] [].
 
 ParticleHoleCoulombIntegrals [
   (ParticleHoleCoulombVertex DoublesAmplitudesVertex)
@@ -50,20 +51,15 @@ ParticleHoleCoulombIntegrals [
 ].
 
 TensorSum [
-  (A DcsdDoublesAmplitudes) (AIndex "abij") (AFactor 1)
-  (B ComposedDoublesAmplitudes) (BIndex "abij") (BFactor -1)
+  (A ComposedDoublesAmplitudes)
+  (AFactor 1.0) (AIndex "abij")
+  (B DcsdDoublesAmplitudes)
+  (BFactor -1.0) (BIndex "abij")
   (ResultIndex "abij")
 ] [
-  (Result DcsdDoublesAmplitudes)
+  (Result ComposedDoublesAmplitudes)
 ].
 
-TensorNorm [
-  (A DcsdDoublesAmplitudes)
-] [
-  Norm
-].
+TensorNorm [(A ComposedDoublesAmplitudes)] [Norm].
 
-TensorWriter [
-  (Data Norm)
-] [
-].
+TensorWriter [(Data Norm)] [].

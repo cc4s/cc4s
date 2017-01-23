@@ -8,9 +8,12 @@
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
+#include <memory>
 
 using namespace CTF;
 using namespace cc4s;
+using std::shared_ptr;
+using std::make_shared;
 
 ALGORITHM_REGISTRAR_DEFINITION(CoulombVertexSingularVectors);
 
@@ -43,9 +46,9 @@ void CoulombVertexSingularVectors::run() {
 
   // use ScaLapack routines to diagonalise the USSUT matrix, i.e. find U
   BlacsWorld world(USSUT.wrld->rank, USSUT.wrld->np);
-  ScaLapackMatrix<complex> scaUSSUT(USSUT, &world);
-  ScaLapackMatrix<complex> scaU(scaUSSUT);
-  ScaLapackHermitianEigenSystemDc<complex> eigenSystem(&scaUSSUT, &scaU);
+  auto scaUSSUT(make_shared<ScaLapackMatrix<complex>>(USSUT, &world));
+  auto scaU(make_shared<ScaLapackMatrix<complex>>(*scaUSSUT));
+  ScaLapackHermitianEigenSystemDc<complex> eigenSystem(scaUSSUT, scaU);
   double *SS(new double[NG]);
   eigenSystem.solve(SS);
 
@@ -59,7 +62,7 @@ void CoulombVertexSingularVectors::run() {
 
   // write singular vectors back to CTF
   Matrix<complex> U(USSUT);
-  scaU.write(U);
+  scaU->write(U);
   // slice singular vectors U corresponding to NF largest singular values S
   int start[] = {0, NG-NF}, end[] = {NG, NG};
   allocatedTensorArgument<complex>(
