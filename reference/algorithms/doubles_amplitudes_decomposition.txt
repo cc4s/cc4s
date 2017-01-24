@@ -1,0 +1,21 @@
+====== DoublesAmplitudesDecomposition ======
+Performs a decompositions of the doubles amplitudes into a contraction of
+two complex valued tensors of third order of the form
+\[
+  T^{ab}_{ij} \approx \sum_{F=1}^{N_L} Y^a_{iL} Y^b_{jL}\,.
+\]
+The tensor $Y^a_{iL}$ is referred to as //(doubles) amplitudes vertex//.
+The number of field variables $N_L$ scales for linearly for most systems
+and can be either directly given or specified in terms of multiples of the
+number of virtual orbitals.
+
+===== Input arguments =====
+^  Argument((mandatory arguments start with a capital letter))  ^  Type  ^  Default  ^  Description  ^
+|  ''DoublesAmplitudes'' |  real tensor |  ---  | The converged doubles doubles ampltidues $T^{ab}_{cd}$ computed by an algorithm of choice, such as [[reference:algorithms:ccsd_energy_from_coulomb_integrals|CCSD]] |
+|  ''fieldVariables'' |  integer |  0  | If positive, specifies the number of field variables $N_L$. |
+|  ''reduction'' |  real |  2  | If ''fieldVariables'' is non-positive the number of field variables $N_L$ is given by ''reduction*''$N_v$. |
+===== Output arguments =====
+^  Argument  ^  Type  ^  Description  ^
+|   ''DoublesAmplitudesEigenValues'' |  real vector | The $N_vN_o$ eigenvalues $\lambda_L$ of the matricized doubles amplitudes. Note that the eigenvalues with small magnitude may be left undetermined and will be reported to be zero. |
+|   ''DoublesAmplitudesVertex'' |  complex tensor | The doubles amplitudes vertex $Y^a_{iL}$. |
+
