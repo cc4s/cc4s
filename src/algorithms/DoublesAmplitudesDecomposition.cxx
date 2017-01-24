@@ -1,4 +1,4 @@
-#include <algorithms/DoublesAmplitudesCholeskyDecomposition.hpp>
+#include <algorithms/DoublesAmplitudesDecomposition.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
 #include <tcc/DryTensor.hpp>
@@ -11,27 +11,26 @@
 
 using namespace CTF;
 using namespace cc4s;
-using std::shared_ptr;
 using std::make_shared;
 
-ALGORITHM_REGISTRAR_DEFINITION(DoublesAmplitudesCholeskyDecomposition);
+ALGORITHM_REGISTRAR_DEFINITION(DoublesAmplitudesDecomposition);
 
-DoublesAmplitudesCholeskyDecomposition::DoublesAmplitudesCholeskyDecomposition(
+DoublesAmplitudesDecomposition::DoublesAmplitudesDecomposition(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-DoublesAmplitudesCholeskyDecomposition::
-  ~DoublesAmplitudesCholeskyDecomposition()
+DoublesAmplitudesDecomposition::
+  ~DoublesAmplitudesDecomposition()
 {
 }
 
-void DoublesAmplitudesCholeskyDecomposition::run() {
+void DoublesAmplitudesDecomposition::run() {
   diagonlizeAmplitudes();
   sliceLargestEigenValues();
 }
 
-void DoublesAmplitudesCholeskyDecomposition::dryRun() {
+void DoublesAmplitudesDecomposition::dryRun() {
   // Read the Coulomb vertex GammaGai
   DryTensor<> *Tabij(
     getTensorArgument<double, DryTensor<>>("DoublesAmplitudes")
@@ -47,7 +46,7 @@ void DoublesAmplitudesCholeskyDecomposition::dryRun() {
   }
 }
 
-void DoublesAmplitudesCholeskyDecomposition::diagonlizeAmplitudes() {
+void DoublesAmplitudesDecomposition::diagonlizeAmplitudes() {
   Tensor<> *Tabij(getTensorArgument<>("DoublesAmplitudes"));
 
   // reorder to Taibj
@@ -97,7 +96,7 @@ void DoublesAmplitudesCholeskyDecomposition::diagonlizeAmplitudes() {
   allocatedTensorArgument<>("DoublesAmplitudesEigenValues", LambdaF);
 }
 
-void DoublesAmplitudesCholeskyDecomposition::sliceLargestEigenValues() {
+void DoublesAmplitudesDecomposition::sliceLargestEigenValues() {
   // get number of field variables
   NF = getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES);
   // if fieldVariables not given use reduction
@@ -117,7 +116,7 @@ void DoublesAmplitudesCholeskyDecomposition::sliceLargestEigenValues() {
     }
   }
   delete[] lambdas;
-  LOG(1, "DoublesAmplitudesCholeskyDecomposition") <<
+  LOG(1, "DoublesAmplitudesDecomposition") <<
     "taken values: 0<=i<" << lower << " and " << upper+1 << "<=i<" << NvNo <<
     std::endl;
 
@@ -168,7 +167,7 @@ void DoublesAmplitudesCholeskyDecomposition::sliceLargestEigenValues() {
   toComplexTensor(*Tabij, cTabij);
   cTabij["abij"] += (-1.0) * (*LFai)["Fai"] * (*LFai)["Fbj"];
   double dNorm(frobeniusNorm(cTabij));
-  LOG(1, "DoublesAmplitudesCholeskyDecomposition") << "|T-L.L|/|T|=" <<
+  LOG(1, "DoublesAmplitudesDecomposition") << "|T-L.L|/|T|=" <<
     dNorm/tNorm << std::endl;
 }
 
