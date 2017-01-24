@@ -201,9 +201,13 @@ void PerturbativeTriples::run() {
   Xabcijk["abcijk"] +=    (-2.0) * Zabcijk["acbijk"];
   Xabcijk["abcijk"] += (2.0/3.0) * Zabcijk["bcaijk"];
 
-  Rabcijk["abcijk"] += (4.0/3.0) * Tabcijk["abcijk"];
-  Rabcijk["abcijk"] +=    (-2.0) * Tabcijk["acbijk"];
-  Rabcijk["abcijk"] += (2.0/3.0) * Tabcijk["bcaijk"];
+  // TODO: Here we should enter the correct factors which Felix will compute
+  Rabcijk["abcijk"]  = (+8.0) * Tabcijk["abcijk"];
+  Rabcijk["abcijk"] += (-4.0) * Tabcijk["acbijk"];
+  Rabcijk["abcijk"] += (-4.0) * Tabcijk["bacijk"];
+  Rabcijk["abcijk"] += (+2.0) * Tabcijk["bcaijk"];
+  Rabcijk["abcijk"] += (+2.0) * Tabcijk["cabijk"];
+  Rabcijk["abcijk"] += (-4.0) * Tabcijk["cbaijk"];
 
   double e, triplese;
   double ccsde(getRealArgument("CcsdEnergy"));
@@ -219,8 +223,8 @@ void PerturbativeTriples::run() {
   Tabcijk.contract(1.0, Tabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
   Rabcijk.contract(1.0, Rabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
 
-  energy[""]  =         Xabcijk["abcijk"] * Tabcijk["abcijk"];
-  energy[""] += (6.0) * Rabcijk["abcijk"] * Yabcijk["abcijk"];
+  energy[""]  =  Xabcijk["abcijk"] * Tabcijk["abcijk"];
+  energy[""] +=  Rabcijk["abcijk"] * Yabcijk["abcijk"];
 
   triplese = energy.get_val();
   e = triplese + ccsde;
