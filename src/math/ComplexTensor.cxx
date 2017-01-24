@@ -95,7 +95,7 @@ void cc4s::toComplexTensor(
 //        c.real() = r;
 //#else
         c.real(r);
-	c.imag(0);
+        c.imag(0);
 //#endif
       }
     )
