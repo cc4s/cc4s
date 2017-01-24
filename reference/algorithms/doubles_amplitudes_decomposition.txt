@@ -11,11 +11,14 @@ number of virtual orbitals.
 
 ===== Input arguments =====
 ^  Argument((mandatory arguments start with a capital letter))  ^  Type  ^  Default  ^  Description  ^
-|  ''DoublesAmplitudes'' |  real tensor |  ---  | The converged doubles doubles ampltidues $T^{ab}_{cd}$ computed by an algorithm of choice, such as [[reference:algorithms:ccsd_energy_from_coulomb_integrals|CCSD]] |
+|  ''DoublesAmplitudes'' |  real tensor |  ---  | The converged doubles doubles amplitudes $T^{ab}_{ij}$ computed by an algorithm of choice, such as [[reference:algorithms:ccsd_energy_from_coulomb_integrals|CCSD]]. The index order is $(a,b,i,j)$. |
 |  ''fieldVariables'' |  integer |  0  | If positive, specifies the number of field variables $N_L$. |
-|  ''reduction'' |  real |  2  | If ''fieldVariables'' is non-positive the number of field variables $N_L$ is given by ''reduction*''$N_v$. |
+|  ''reduction'' |  real |  2  | If ''fieldVariables'' is non-positive the number of field variables $N_L$ is given by $\lfloor$''reduction*''$N_v+0.5\rfloor$. |
 ===== Output arguments =====
 ^  Argument  ^  Type  ^  Description  ^
 |   ''DoublesAmplitudesEigenValues'' |  real vector | The $N_vN_o$ eigenvalues $\lambda_L$ of the matricized doubles amplitudes. Note that the eigenvalues with small magnitude may be left undetermined and will be reported to be zero. |
-|   ''DoublesAmplitudesVertex'' |  complex tensor | The doubles amplitudes vertex $Y^a_{iL}$. |
+|   ''DoublesAmplitudesVertex'' |  complex tensor | The doubles amplitudes vertex $Y^a_{iL}$ with the index order $(L,a,i)$. |
 
+===== Complexity =====
+Currently a full diagonalization is done, requiring $\mathcal O(N_v^3N_o^3)$ operations. In the future a Lanczos algorithm should be employed to retrieve only the eigenvectors associated to the $N_L$ largest eigenvalues in magnitude, which reduces the scaling to the desired behavior of $\mathcal O(N_v^3N_o^2)$.
+The storage of the amplitudes as matrix requires memory scaling like $\mathcal O(N_v^2N_o^2)$.
