@@ -73,7 +73,7 @@ class FiniteSizeCorrection::Momentum {
 void FiniteSizeCorrection::calculateStructureFactor() {
 //Definition of the variables
   Tensor<complex> *GammaGai(
-	getTensorArgument<complex>("ParticleHoleCoulombVertex")
+        getTensorArgument<complex>("ParticleHoleCoulombVertex")
   );
 
 // local allocation
@@ -109,9 +109,9 @@ void FiniteSizeCorrection::calculateStructureFactor() {
     //Define operation inverse square root
     class InvSqrt {
     public:
-	double operator ()(double x){
-		return std::sqrt(1.0 / x);
-	}
+        double operator ()(double x){
+                return std::sqrt(1.0 / x);
+        }
     };
 
   //Get the inverted square root of VG
