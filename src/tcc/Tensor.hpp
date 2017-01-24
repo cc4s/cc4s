@@ -68,7 +68,7 @@ namespace tcc {
       return tcc;
     }
 
-    template <class ActualMachineTensor=MachineTensor<F>>
+    template <typename ActualMachineTensor=MachineTensor<F>>
     std::shared_ptr<ActualMachineTensor> getMachineTensor() {
       if (!machineTensor) {
         // allocate the implementation specific machine tensor upon request

@@ -3,6 +3,7 @@
 #define DOUBLES_AMPLITUDES_CHOLESKY_DECOMPOSITION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <memory>
 
 namespace cc4s {
   class DoublesAmplitudesCholeskyDecomposition: public Algorithm {
@@ -25,6 +26,19 @@ namespace cc4s {
 
     static double constexpr DEFAULT_REDUCTION = 2.0;
     static int64_t constexpr DEFAULT_FIELD_VARIABLES = -1;
+
+  protected:
+    void diagonlizeAmplitudes();
+    void sliceLargestEigenValues();
+
+    int Nv, No, NvNo, NF, lower, upper;
+    double *lambdas;
+    complex *sqrtLambdas;
+    int64_t lambdasCount, *lambdaIndices;
+
+    std::shared_ptr<CTF::Tensor<>> Taibj, UaiF;
+    std::shared_ptr<CTF::Tensor<complex>> LFai, sqrtLambdaF;
+    CTF::Tensor<> *LambdaF;
   };
 }
 

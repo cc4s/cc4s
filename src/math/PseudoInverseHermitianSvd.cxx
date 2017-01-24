@@ -5,9 +5,11 @@
 #include <util/ScaLapackMatrix.hpp>
 #include <util/ScaLapackHermitianEigenSystemDc.hpp>
 #include <util/Log.hpp>
+#include <memory>
 
 using namespace cc4s;
 using namespace CTF;
+using std::make_shared;
 
 
 template <typename F>
@@ -18,12 +20,12 @@ PseudoInverseHermitianSvd<F>::PseudoInverseHermitianSvd(
 {
   // convert CTF matrices into ScaLapack matrices
   BlacsWorld blacsWorld(A.wrld->rank, A.wrld->np);
-  ScaLapackMatrix<F> ScaA(A, &blacsWorld);
-  ScaLapackMatrix<F> ScaU(ScaA);
+  auto scaA(make_shared<ScaLapackMatrix<F>>(A, &blacsWorld));
+  auto scaU(make_shared<ScaLapackMatrix<F>>(*scaA));
 
   // solve hermitian eigenvectors problem using ScaLapack
-  ScaLapackHermitianEigenSystemDc<F> eigenSystem(&ScaA, &ScaU);
-  double *lambda(new double[ScaA.lens[0]]);
+  ScaLapackHermitianEigenSystemDc<F> eigenSystem(scaA, scaU);
+  double *lambda(new double[scaA->lens[0]]);
   eigenSystem.solve(lambda);
 
   Vector<F> D(A.lens[0], *A.wrld, "Lambda");
@@ -42,7 +44,7 @@ PseudoInverseHermitianSvd<F>::PseudoInverseHermitianSvd(
   }
   D.write(localLambdaCount, lambdaIndices, lambdaValues);
   Matrix<F> U(A);
-  ScaU.write(U);
+  scaU->write(U);
   delete[] lambdaIndices; delete[] lambdaValues;
   delete[] lambda;
 

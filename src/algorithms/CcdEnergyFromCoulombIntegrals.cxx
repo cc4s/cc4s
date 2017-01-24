@@ -144,9 +144,9 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
                            ("factorsSliceSize",NR));
 
 
-	  // Allocate Tensor for T2 amplitudes
-	  Tensor<> Sabij(false, *Vabij);
-	  Sabij.set_name("Sabij");
+          // Allocate Tensor for T2 amplitudes
+          Tensor<> Sabij(false, *Vabij);
+          Sabij.set_name("Sabij");
     
           // Slice loop starts here
             for (int a(0); a < NR; a += factorsSliceSize) {
@@ -154,11 +154,11 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
                                    << a << std::endl;
               Tensor<> *Fabij(sliceAmplitudesFromCoulombFactorsTcc(a, factorsSliceSize));
               Fabij->set_name("Fabij");
-	      Sabij["abij"] += (*Fabij)["abij"];
+              Sabij["abij"] += (*Fabij)["abij"];
               delete Fabij;
             }
-	  Rabij["abij"] += 0.5 * Sabij["abij"];
-	  Rabij["abij"] += 0.5 * Sabij["baji"];
+          Rabij["abij"] += 0.5 * Sabij["abij"];
+          Rabij["abij"] += 0.5 * Sabij["baji"];
         }
 
         else {
