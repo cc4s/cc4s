@@ -147,13 +147,13 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
-  //Get EMp2
+  //Get energy from amplitudes
   Scalar<> EMp2(*CGai.wrld);
   EMp2[""] = (*realSG)["G"] * (*realVG)["G"];
   double DEMp2(std::real(EMp2.get_val()));
-  setRealArgument("EMp2", DEMp2);  
+  setRealArgument("EnergyFromAmplitudes", DEMp2);  
 
-  allocatedTensorArgument<>("VG", realVG);
+  //  allocatedTensorArgument<>("VG", realVG);
   VofG = new double[NG];
   realVG->read_all(VofG);
   structureFactors = new double[NG];
@@ -206,21 +206,23 @@ void FiniteSizeCorrection::interpolation3D() {
     GC = a.length();
   }
 
-  LOG(1, "GridSearch") << "b1=#2" << std::endl;
+  LOG(2, "GridSearch") << "b1=#2" << std::endl;
   //the 0th and 1st elements are 0, avoid it.
   int j=3;
   //a and b should not be parallel;
   while ((a.cross(momentumGrid[j].v)).length() < 1e-8) ++j;
   cc4s::Vector<> b(momentumGrid[j].v);
-  LOG(1, "GridSearch") << "b2=#" << j << std::endl;
+  LOG(2, "GridSearch") << "b2=#" << j << std::endl;
   ++j;
   //a, b and c should not be on the same plane;
   while (abs((a.cross(b)).dot(momentumGrid[j].v)) < 1e-8) ++j;
   cc4s::Vector<> c(momentumGrid[j].v);
-  LOG(1, "GridSearch") << "b3=#" << j << std::endl;
-  LOG(1, "GridSearch") << "b1=" << a << std::endl;
-  LOG(1, "GridSearch") << "b2=" << b << std::endl;
-  LOG(1, "GridSearch") << "b3=" << c << std::endl;
+  LOG(2, "GridSearch") << "b3=#" << j << std::endl;
+
+  // print the basis vectors
+  LOG(2, "GridSearch") << "b1=" << a << std::endl;
+  LOG(2, "GridSearch") << "b2=" << b << std::endl;
+  LOG(2, "GridSearch") << "b3=" << c << std::endl;
   
   //construct the transformation matrix  
   cc4s::Vector<> *T(new cc4s::Vector<>[3]);
@@ -357,21 +359,25 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   Int1d.cubicSpline(0., 0., "M");
   double x=0.;
   for (int i(1); i<1000; i++){
-    LOG(1, "IntTest") << x << " " << Int1d.getValue(x) << std::endl;
+    LOG(2, "Interpolation") << x << " " << Int1d.getValue(x) << std::endl;
     x = i*0.001;
   }
   for (int i(0); i<numBins; i++){
-    LOG(1, "SGTest") << lengthG[i] << " " << aveSG[i] << std::endl;
+    LOG(2, "StructureFactor") << lengthG[i] << " " << aveSG[i] << std::endl;
   }
   int kpoints(getIntegerArgument("kpoints"));
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
-  double r1 = integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
-  double sumSGVG(0.);
-  double sumSGVG1(0.);
+  // the factor 2 is only needed when half of the G grid is provided (this is the case
+  // for a Gamma point calculation in vasp).
+  double r1 = 2*integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
+  double  sumSGVG(0.);
   for (int d(0); d < NG; ++d){
-    sumSGVG1 += VofG[d] * structureFactors[d];
+    sumSGVG += VofG[d] * structureFactors[d];
   }
-  LOG(1,"integrate") << r1 << " sum= " << sumSGVG << " sum1= "
-   << sumSGVG1<< " GC=" << GC << std::endl;
+  LOG(1,"FiniteSize") << "Uncorrected e="  << sumSGVG       << std::endl;
+  LOG(1,"FiniteSize") << "Correction  e="  << r1            << std::endl;
+  LOG(1,"FiniteSize") << "Corrected   e="  << sumSGVG + r1  << std::endl;
+
+  setRealArgument("CorrectedEnergy"  , sumSGVG + r1);
 }
