@@ -35,6 +35,20 @@ TensorWriter [(Data CcsdEnergy)] [].
 
 CcsdEnergyFromCoulombIntegrals [
   CoulombVertex
+  PPHHCoulombIntegrals
+  (startingSinglesAmplitudes CcsdSinglesAmplitudes)
+  (startingDoublesAmplitudes CcsdDoublesAmplitudes)
+  (maxIterations 0)
+] [
+  (CcsdEnergy ReevaluatedCcsdEnergy) 
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
+].
+
+TensorWriter [(Data ReevaluatedCcsdEnergy)] [].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
