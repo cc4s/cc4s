@@ -9,6 +9,7 @@ ${RUN_COMMAND} ${CC4S_PATH} -file ccsd.cc4s
 
 
 ENERGY=$(readScalar CcsdEnergy.dat)
+ENERGY_REEVALUATED=$(readScalar CcsdEnergyReevaluated.dat)
 ENERGYSLICE=$(readScalar CcsdEnergySlice.dat)
 ENERGYFACTORS=$(readScalar CcsdEnergyFactors.dat)
 COMPARE_ENERGY_VERTEX=$COULOMBVERTEX_CCSD
@@ -28,5 +29,6 @@ EOF
 )
 
 echoDebug Energy from Integrals: $ENERGY
+echoDebug Energy reevaluated from given amplitudes: $ENERGY_REEVALUATED
 echoDebug Energy from sliced Integrals: $ENERGYSLICE
 echoDebug Energy from Coulomb Factors: $ENERGYFACTORS

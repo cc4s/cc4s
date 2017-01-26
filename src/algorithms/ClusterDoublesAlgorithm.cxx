@@ -34,22 +34,19 @@ void ClusterDoublesAlgorithm::run() {
     throw new EXCEPTION(stringStream.str());
   }
 
-  {
+  if (isArgumentGiven("startingDoublesAmplitudes")) {
+    Tensor<> *Tabij(getTensorArgument("startingDoublesAmplitudes"));
+    TabijMixer->append(*Tabij);
+  } else {
     // Allocate the doubles amplitudes and append it to the mixer
     int No(Vabij->lens[2]);
     int Nv(Vabij->lens[0]);
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
-    if (isArgumentGiven("StartingDoublesAmplitudes")) {
-      Tensor<> Tabij(getTensorArgument("StartingDoublesAmplitudes"));
-      TabijMixer->append(Tabij);
-    }
-    else {
-      Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
-      TabijMixer->append(Tabij);
-    }
-    // The amplitudes will from now on be managed by the mixer
+    Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
+    TabijMixer->append(Tabij);
   }
+  // The amplitudes will from now on be managed by the mixer
 
   // Allocate the energy e
   Scalar<> energy(*Vabij->wrld);
@@ -157,6 +154,33 @@ void ClusterDoublesAlgorithm::dryRun() {
 void ClusterDoublesAlgorithm::dryIterate() {
   LOG(0, "CluserDoubles") << "Dry run for iteration not given for "
     << getAbbreviation() << std::endl;
+}
+
+
+double ClusterDoublesAlgorithm::calculateEnergy() {
+  // get the Coulomb integrals to compute the energy
+  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+
+  // allocate energy
+  Scalar<> energy(*Vabij->wrld);
+  energy.set_name("energy");
+
+  // get amplitudes from the mixer
+  Tensor<> *Tabij(&TabijMixer->getNext());
+  Tabij->set_name("Tabij");
+
+  // direct term
+  energy[""] = +2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
+  double dire(energy.get_val());
+  // exchange term
+  energy[""] = -1.0 * (*Tabij)["abij"] * (*Vabij)["baij"];
+  double exce(energy.get_val());
+  double e(dire + exce);
+  LOG(0, abbreviation) << "e=" << e << std::endl;
+  LOG(1, abbreviation) << "dir=" << dire << std::endl;
+  LOG(1, abbreviation) << "exc=" << exce << std::endl;
+
+  return e;
 }
 
 void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(

@@ -1,4 +1,4 @@
-#include <algorithms/CoulombVertexFromFactors.hpp>
+#include <algorithms/ParticleHoleCoulombVertexFromFactors.hpp>
 #include <math/Complex.hpp>
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
@@ -15,49 +15,52 @@ using namespace cc4s;
 using namespace tcc;
 using std::make_shared;
 
-ALGORITHM_REGISTRAR_DEFINITION(CoulombVertexFromFactors);
+ALGORITHM_REGISTRAR_DEFINITION(ParticleHoleCoulombVertexFromFactors);
 
-CoulombVertexFromFactors::CoulombVertexFromFactors(
+ParticleHoleCoulombVertexFromFactors::ParticleHoleCoulombVertexFromFactors(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-CoulombVertexFromFactors::~CoulombVertexFromFactors() {
+ParticleHoleCoulombVertexFromFactors::~ParticleHoleCoulombVertexFromFactors() {
 }
 
-void CoulombVertexFromFactors::run() {
+void ParticleHoleCoulombVertexFromFactors::run() {
   run<CTF::Tensor<complex>, CtfMachineTensor<complex>>(false);
 }
 
-void CoulombVertexFromFactors::dryRun() {
+void ParticleHoleCoulombVertexFromFactors::dryRun() {
   run<DryTensor<complex>, DryMachineTensor<complex>>(true);
 }
 
 // TMT is either CtfMachineTensor or DryMachineTensor
 template <typename T, typename MT>
-void CoulombVertexFromFactors::run(const bool dryRun) {
+void ParticleHoleCoulombVertexFromFactors::run(const bool dryRun) {
   auto machineTensorFactory(MT::Factory::create());
   auto tcc(Tcc<complex>::create(machineTensorFactory));
 
 
   // Read the Coulomb vertex GammaGqr
-  T *ctfPirR( getTensorArgument<complex, T>("FactorOrbitals") );
+  T *ctfPiiR( getTensorArgument<complex, T>("HoleFactorOrbitals") );
+  T *ctfPiaR( getTensorArgument<complex, T>("ParticleFactorOrbitals") );
   T *ctfLambdaFR( getTensorArgument<complex, T>("CoulombFactors") );
 
   // for now: create tcc::Tensors from them
   // later there will only be tcc::Tensors objects stored in cc4s
-  auto PirR( tcc->createTensor(MT::create(*ctfPirR)) );
+  auto PiiR( tcc->createTensor(MT::create(*ctfPiiR)) );
+  auto PiaR( tcc->createTensor(MT::create(*ctfPiaR)) );
   auto LambdaFR( tcc->createTensor(MT::create(*ctfLambdaFR)) );
  
   // allocate tcc::Tensor for final result
   int NF(LambdaFR->lens[0]);
-  int Np(PirR->lens[0]);
-  auto GammaFqr( tcc->createTensor(std::vector<int>({NF,Np,Np}), "Gamma") );
+  int Nv(PiaR->lens[0]);
+  int No(PiiR->lens[0]);
+  auto GammaFai( tcc->createTensor(std::vector<int>({NF,Nv,No}), "GammaFai") );
 
   // compile
   auto operation(
     tcc->compile(
-      (*GammaFqr)["Fqr"] <<= (*LambdaFR)["FR"] * (*PirR)["qR"] * (*PirR)["rR"]
+      (*GammaFai)["Fai"] <<= (*LambdaFR)["FR"] * (*PiaR)["aR"] * (*PiiR)["iR"]
     )
   );
   // and execute
@@ -66,7 +69,8 @@ void CoulombVertexFromFactors::run(const bool dryRun) {
   // for now: duplicate result
   // later Gamma will already be the object stored in cc4s
   allocatedTensorArgument<complex, T>(
-    "CoulombVertex", new T(GammaFqr->template getMachineTensor<MT>()->tensor)
+    "ParticleHoleCoulombVertex",
+    new T(GammaFai->template getMachineTensor<MT>()->tensor)
   );
 }
 
