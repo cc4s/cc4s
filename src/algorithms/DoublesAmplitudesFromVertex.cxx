@@ -35,6 +35,7 @@ void DoublesAmplitudesFromVertex::run() {
   // split YLai into real and imaginary parts
   Tensor<> realYLai(3, YLai->lens, YLai->sym, *YLai->wrld, "realYLai");
   Tensor<> imagYLai(3, YLai->lens, YLai->sym, *YLai->wrld, "imagYLai");
+  fromComplexTensor(*YLai, realYLai, imagYLai);
 
   (*Tabij)["abij"]  = realYLai["Lai"] * realYLai["Lbj"];
   (*Tabij)["abij"] -= imagYLai["Lai"] * imagYLai["Lbj"];
@@ -56,6 +57,7 @@ void DoublesAmplitudesFromVertex::dryRun() {
   int syms[] = { NS, NS, NS, NS };
   int vvoo[] = { Nv, Nv, No, No };
   DryTensor<> *Tabij(new DryTensor<>(4, vvoo, syms, SOURCE_LOCATION));
+  Tabij->use();
 
   // split YLai into real and imaginary parts
   DryTensor<> realYLai(3, YLai->lens.data(), YLai->syms.data(),SOURCE_LOCATION);
