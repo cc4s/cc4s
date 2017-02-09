@@ -60,10 +60,10 @@ class FiniteSizeCorrection::Momentum {
       return 0;
     }
 
-    static bool sortbyl (Momentum const &n, Momentum const &m) {
+    static bool sortByLength (Momentum const &n, Momentum const &m) {
       return n.l < m.l;
     }
-    static bool sortbyv (Momentum const &n, Momentum const &m) {
+    static bool sortByVector (Momentum const &n, Momentum const &m) {
       return n.v < m.v;
     }
 };
@@ -182,21 +182,27 @@ void FiniteSizeCorrection::constructFibonacciGrid(double R) {
 
 void FiniteSizeCorrection::interpolation3D() {
   Tensor<> *momenta(getTensorArgument<>("Momenta"));
-  cc4s::Vector<> *regularGrid(new cc4s::Vector<>[NG]);
-  momenta->read_all(&(regularGrid[0][0]));
-  momentumGrid = new Momentum[2*NG];
+  cc4s::Vector<> *cartesianMomenta(new cc4s::Vector<>[NG]);
+  momenta->read_all(&cartesianMomenta[0][0]);
 
+  // FIXME: give direct or reciprocal grid and calaculate all properties
+  // from it.
+  cartesianGrid = new Momentum[2*NG];
   // complete momentum grid in a Gamma only calculation
   for (int g(0); g<NG; ++g) {
-    momentumGrid[g] = Momentum(regularGrid[g], structureFactors[g], VofG[g]);
-    momentumGrid[g+NG] = Momentum(regularGrid[g]*(-1.), structureFactors[g], VofG[g]);
+    cartesianGrid[g] = Momentum(
+      cartesianMomenta[g], structureFactors[g], VofG[g]
+    );
+    cartesianGrid[g+NG] = Momentum(
+      cartesianMomenta[g]*(-1.), structureFactors[g], VofG[g]
+    );
   }
 
   // sort according to vector length.
-  std::sort(momentumGrid, &momentumGrid[2*NG], Momentum::sortbyl);
+  std::sort(cartesianGrid, &cartesianGrid[2*NG], Momentum::sortByLength);
 
   // get the 3 unit vectors;
-  cc4s::Vector<> a(momentumGrid[2].v);
+  cc4s::Vector<> a(cartesianGrid[2].v);
 
   // GC is the shortest vector.
   if (isArgumentGiven("shortestGvector")) {
@@ -210,13 +216,13 @@ void FiniteSizeCorrection::interpolation3D() {
   // the 0th and 1st elements are 0, avoid it.
   int j=3;
   //a and b should not be parallel;
-  while ((a.cross(momentumGrid[j].v)).length() < 1e-8) ++j;
-  cc4s::Vector<> b(momentumGrid[j].v);
+  while ((a.cross(cartesianGrid[j].v)).length() < 1e-8) ++j;
+  cc4s::Vector<> b(cartesianGrid[j].v);
   LOG(2, "GridSearch") << "b2=#" << j << std::endl;
   ++j;
   //a, b and c should not be on the same plane;
-  while (abs((a.cross(b)).dot(momentumGrid[j].v)) < 1e-8) ++j;
-  cc4s::Vector<> c(momentumGrid[j].v);
+  while (abs((a.cross(b)).dot(cartesianGrid[j].v)) < 1e-8) ++j;
+  cc4s::Vector<> c(cartesianGrid[j].v);
   LOG(2, "GridSearch") << "b3=#" << j << std::endl;
 
   // print the basis vectors
@@ -230,28 +236,62 @@ void FiniteSizeCorrection::interpolation3D() {
   T[0] = b.cross(c)/Omega;
   T[1] = c.cross(a)/Omega;
   T[2] = a.cross(b)/Omega;
-  double x, y, z;
-  for (int d(0); d<2*NG; ++d){
-    x = T[0].dot(momentumGrid[d].v);
-    y = T[1].dot(momentumGrid[d].v);
-    z = T[2].dot(momentumGrid[d].v);
-    momentumGrid[d].v[0] = (abs(x) < 1e-8) ? 0 : x;
-    momentumGrid[d].v[1] = (abs(y) < 1e-8) ? 0 : y;
-    momentumGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
+
+  // determine bounding box in direct (reciprocal) coordinates
+  Vector<> directMin, directMax;
+  for (int g(0); g < 2*NG; ++g) {
+    for (int d(0); d < 3; ++d) {
+      double directComponent(T[d].dot(cartesianGrid[g].v));
+      directMin[d] = std::min(directMin[d], directComponent);
+      directMax[d] = std::max(directMax[d], directComponent);
+    }
   }
 
-  // TODO: transform points and define orthorhombic bounding box containing
-  // all grid points
-
-  // TODO: determine spherically averaged avgSG(lengthG) in bins
-  std::sort(regularGrid, &regularGrid[NG], Vector<double,3>::sortByLength);
-  numBins=1;
-  for (int d(1); d < NG; ++d) {
-    if (abs(regularGrid[d].length()-regularGrid[d-1].length()) < 1e-3) continue;
-    else ++numBins;
+  // build grid for the entire bounding box
+  int boxDimensions[3], boxOrigin[3];
+  int64_t boxSize(1);
+  for (int d(0); d < 3; ++d) {
+    boxSize *=
+      boxDimensions[d] = static_cast<int>(directMax[d] - directMin[d] + 0.5);
+    boxOrigin[d] = static_cast<int>(directMin[d] + 0.5);
   }
-  aveSG = new double[numBins];
-  lengthG = new double[numBins];
+  // allocate and initialize regular grid
+  double *regularSG(new double[boxSize]);
+  for (int64_t g(0); g < boxSize; ++g) regularSG[g] = 0;
+  // enter known Sq values
+  for (int g(0); g < 2*NG; ++g) {
+    int64_t index(0);
+    for (int d(2); d >= 0; --d) {
+      int directComponent(static_cast<int>(T[d].dot(cartesianGrid[g].v) + 0.5));
+      index *= boxDimensions[d];
+      index += directComponent - boxOrigin[d];
+    }
+    regularSG[index] = cartesianGrid[g].s;
+  }
+
+  // TODO: create trilinear or tricubic interpolator
+
+  // spherically sample
+  double lastLength(0);
+  averageSGs.clear(); GLengths.clear();
+  for (int g(1); g < 2*NG; ++g) {
+    double length(cartesianGrid[g].l);
+    if (abs(length - lastLength) > 1e-3) {
+      constructFibonacciGrid(length);
+      double averageSG(0);
+      for (int f(0); f < N; ++f) {
+        Vector<> sampledDirect;
+        for (int d(0); d < 3; ++d) {
+          sampledDirect[d] = T[d].dot(fibonacciGrid[f].v);
+        }
+        // TODO: lookup interpolated value in direct coordinates
+        averageSG += 0;
+      }
+      averageSGs.push_back(averageSG / N);
+      GLengths.push_back(length);
+    }
+    lastLength = length;
+  }
 }
 
 double FiniteSizeCorrection::integrate(
@@ -279,7 +319,9 @@ double FiniteSizeCorrection::SGxVG(
 }
 
 void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
-  cc4s::Inter1D<double> Int1d(numBins, lengthG, aveSG);
+  cc4s::Inter1D<double> Int1d(
+    GLengths.size(), GLengths.data(), averageSGs.data()
+  );
   //double xx[200], yy[200];
   //for (int j(0); j < 200; j++) {
   //  xx[j] = j*0.01;
@@ -292,8 +334,8 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
     LOG(2, "Interpolation") << x << " " << Int1d.getValue(x) << std::endl;
     x = i*0.001;
   }
-  for (int i(0); i<numBins; i++){
-    LOG(2, "StructureFactor") << lengthG[i] << " " << aveSG[i] << std::endl;
+  for (unsigned int i(0); i < GLengths.size(); ++i){
+    LOG(2, "StructureFactor") << GLengths[i] << " " << averageSGs[i] << std::endl;
   }
   int kpoints(getIntegerArgument("kpoints", 1));
   double volume(getRealArgument("volume"));

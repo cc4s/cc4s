@@ -16,15 +16,14 @@ namespace cc4s {
   protected:
     int NG;
     const int  N=128;//The # of points on the fibonacciGrid, fixed #.
-    int numBins;
-    double *lengthG;
-    double *avgSG;
+    std::vector<double> GLengths;
+    std::vector<double> averageSGs;
     double *structureFactors;
     double *VofG;
     double GC;
     class Momentum;
     Momentum *fibonacciGrid;
-    Momentum *momentumGrid;
+    Momentum *cartesianGrid;
     void calculateStructureFactor();
     void constructFibonacciGrid(double R);
     void interpolation3D();
