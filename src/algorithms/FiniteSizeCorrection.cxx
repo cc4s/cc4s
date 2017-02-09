@@ -240,7 +240,10 @@ void FiniteSizeCorrection::interpolation3D() {
     momentumGrid[d].v[2] = (abs(z) < 1e-8) ? 0 : z;
   }
 
-  //Determine the radii at which to construct the fibonacciGrids.
+  // TODO: transform points and define orthorhombic bounding box containing
+  // all grid points
+
+  // TODO: determine spherically averaged avgSG(lengthG) in bins
   std::sort(regularGrid, &regularGrid[NG], Vector<double,3>::sortByLength);
   numBins=1;
   for (int d(1); d < NG; ++d) {
@@ -249,79 +252,6 @@ void FiniteSizeCorrection::interpolation3D() {
   }
   aveSG = new double[numBins];
   lengthG = new double[numBins];
-  aveSG[0]=0.;
-  lengthG[0]=0.;
-  numBins = 1;
-  for (int d(1); d < NG; ++d) {
-    if (abs(regularGrid[d].length()-regularGrid[d-1].length()) < 1e-3)
-      continue;
-    constructFibonacciGrid(regularGrid[d].length());
-    for (int g(0); g<N; ++g){
-      x = T[0].dot(fibonacciGrid[g].v);
-      y = T[1].dot(fibonacciGrid[g].v);
-      z = T[2].dot(fibonacciGrid[g].v);
-      fibonacciGrid[g].v[0] = (abs(x) < 1e-8) ? 0 : x;
-      fibonacciGrid[g].v[1] = (abs(y) < 1e-8) ? 0 : y;
-      fibonacciGrid[g].v[2] = (abs(z) < 1e-8) ? 0 : z;
-    }
-
-    //Trilinear interpolation on each point
-    Momentum vertex[8];
-    double average=0.;
-    for (int t(0); t < N; ++t) {
-      int xmin=std::floor(fibonacciGrid[t].v[0]);
-      int xmax=std::ceil(fibonacciGrid[t].v[0]);
-      int ymin=std::floor(fibonacciGrid[t].v[1]);
-      int ymax=std::ceil(fibonacciGrid[t].v[1]);
-      int zmin=std::floor(fibonacciGrid[t].v[2]);
-      int zmax=std::ceil(fibonacciGrid[t].v[2]);
-      vertex[0].v[0] = xmin;
-      vertex[0].v[1] = ymin;
-      vertex[0].v[2] = zmin;
-      vertex[1].v[0] = xmin;
-      vertex[1].v[1] = ymax;
-      vertex[1].v[2] = zmin;
-      vertex[2].v[0] = xmin;
-      vertex[2].v[1] = ymin;
-      vertex[2].v[2] = zmax;
-      vertex[3].v[0] = xmin;
-      vertex[3].v[1] = ymax;
-      vertex[3].v[2] = zmax;
-      vertex[4].v[0] = xmax;
-      vertex[4].v[1] = ymin;
-      vertex[4].v[2] = zmin;
-      vertex[5].v[0] = xmax;
-      vertex[5].v[1] = ymax;
-      vertex[5].v[2] = zmin;
-      vertex[6].v[0] = xmax;
-      vertex[6].v[1] = ymin;
-      vertex[6].v[2] = zmax;
-      vertex[7].v[0] = xmax;
-      vertex[7].v[1] = ymax;
-      vertex[7].v[2] = zmax;
-
-      double x[3] = {
-        fibonacciGrid[t].v[0]-xmin, fibonacciGrid[t].v[1]-ymin,
-        fibonacciGrid[t].v[2]-zmin
-                    };
-
-      double v[8] = {
-        vertex[0].locate(momentumGrid,2*NG),vertex[1].locate(momentumGrid,2*NG),
-        vertex[2].locate(momentumGrid,2*NG),vertex[3].locate(momentumGrid,2*NG),
-        vertex[4].locate(momentumGrid,2*NG),vertex[5].locate(momentumGrid,2*NG),
-        vertex[6].locate(momentumGrid,2*NG),vertex[7].locate(momentumGrid,2*NG)
-                    };
-
-      cc4s::Inter3D<double> intp;
-      fibonacciGrid[t].s = intp.Trilinear(x,v);
-      average += fibonacciGrid[t].s;
-    }
-    average = average / N;
-    aveSG[numBins] = average;
-    lengthG[numBins] =  regularGrid[d].length();
-    numBins++;
-
-  }
 }
 
 double FiniteSizeCorrection::integrate(
@@ -365,7 +295,7 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   for (int i(0); i<numBins; i++){
     LOG(2, "StructureFactor") << lengthG[i] << " " << aveSG[i] << std::endl;
   }
-  int kpoints(getIntegerArgument("kpoints"));
+  int kpoints(getIntegerArgument("kpoints", 1));
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
   // the factor 2 is only needed when half of the G grid is provided (this is the case

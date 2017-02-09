@@ -4,6 +4,9 @@
 #include <math/MathFunctions.hpp>
 #include <iostream>
 #include <string>
+
+// TODO: unify interpolation routines
+
 namespace cc4s {
   template<typename F=double>
   class Inter3D{
@@ -44,6 +47,7 @@ namespace cc4s {
       return Linear(target[0], v_prime);
     }
   };
+
   template<typename F=double>
   class Inter1D{
   public:
@@ -135,4 +139,6 @@ namespace cc4s {
     return stream;
   }
 }
+
 #endif
+

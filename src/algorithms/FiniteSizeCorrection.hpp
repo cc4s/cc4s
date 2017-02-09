@@ -18,7 +18,7 @@ namespace cc4s {
     const int  N=128;//The # of points on the fibonacciGrid, fixed #.
     int numBins;
     double *lengthG;
-    double *aveSG;
+    double *avgSG;
     double *structureFactors;
     double *VofG;
     double GC;
