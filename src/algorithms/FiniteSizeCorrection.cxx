@@ -4,7 +4,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/Vector.hpp>
 #include <math/Interpolation.hpp>
-#include <gte/TrilinearInterpolation.hpp>
+#include <gte/TricubicInterpolation.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -310,10 +310,11 @@ void FiniteSizeCorrection::interpolation3D() {
 
   // create trilinear or tricubic interpolator
   // TODO: use factory to select different interpolators, similar to mixers
-  gte::IntpTrilinear3<double> interpolatedSG(
+  gte::IntpTricubic3<double> interpolatedSG(
     boxDimensions[0], boxDimensions[1], boxDimensions[2],
     boxOrigin[0], 1, boxOrigin[1], 1, boxOrigin[2], 1,
-    regularSG
+    regularSG,
+    true
   );
 
   // spherically sample
