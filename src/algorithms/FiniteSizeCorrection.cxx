@@ -247,15 +247,20 @@ void FiniteSizeCorrection::interpolation3D() {
       directMax[d] = std::max(directMax[d], directComponent);
     }
   }
+  LOG(2, "FiniteSizeInterpolation") << "directMin=" << directMin <<
+    ", directMax=" << directMax << std::endl;
 
   // build grid for the entire bounding box
-  int boxDimensions[3], boxOrigin[3];
+  Vector<int> boxDimensions, boxOrigin;
   int64_t boxSize(1);
   for (int d(0); d < 3; ++d) {
     boxSize *=
-      boxDimensions[d] = static_cast<int>(directMax[d] - directMin[d] + 1.5);
-    boxOrigin[d] = static_cast<int>(directMin[d] + 0.5);
+      boxDimensions[d] = std::floor(directMax[d] - directMin[d] + 1.5);
+    boxOrigin[d] = std::floor(directMin[d] + 0.5);
   }
+  LOG(2, "FiniteSizeInterpolation") << "boxOrigin=" << boxOrigin <<
+    " boxDimensions=" << boxDimensions << std::endl;
+
   // allocate and initialize regular grid
   double *regularSG(new double[boxSize]);
   for (int64_t g(0); g < boxSize; ++g) regularSG[g] = 0;
@@ -266,20 +271,13 @@ void FiniteSizeCorrection::interpolation3D() {
     for (int d(2); d >= 0; --d) {
       directG[d] = T[d].dot(cartesianGrid[g].v);
       index *= boxDimensions[d];
-      index += static_cast<int>(directG[d] + 0.5) - boxOrigin[d];
-    }
-    LOG(2, "FiniteSizeGrid") << "G_direct,index: " << directG << " " <<
-      index << std::endl;
-    if (index < 0 || boxSize <= index) {
-      LOG(2, "FiniteSizeInterpolation") << "Wrong index=" << index <<
-        " at G_direct=" << directG << std::endl;
+      index += std::floor(directG[d] + 0.5) - boxOrigin[d];
     }
     if (regularSG[index] != 0.0) {
       LOG(2, "FiniteSizeInterpolation") <<
         "Overwriting previous grid value G_direct=" << directG <<
         ", index=" << index << std::endl;
     }
-    // FIXME: check why 3 distinct points get index 239!
     regularSG[index] = cartesianGrid[g].s;
   }
 
@@ -306,7 +304,7 @@ void FiniteSizeCorrection::interpolation3D() {
       }
     }
   }
-  LOG(2, "FiniteSizeInterpolation") << "Number momentum points inside cutoff=" <<
+  LOG(2, "FiniteSizeInterpolation") << "Number of momentum points inside cutoff=" <<
     interiorPointsCount << ", Number of momentum points on boundary=" <<
     boundaryPointsCount << std::endl;
 
@@ -319,10 +317,9 @@ void FiniteSizeCorrection::interpolation3D() {
   );
 
   // spherically sample
-  double lastLength(0);
+  double lastLength(-1);
   averageSGs.clear(); GLengths.clear();
-  // skip G=0
-  for (int g(1); g < 2*NG; ++g) {
+  for (int g(0); g < 2*NG; ++g) {
     double length(cartesianGrid[g].l);
     if (abs(length - lastLength) > 1e-3) {
       constructFibonacciGrid(length);
