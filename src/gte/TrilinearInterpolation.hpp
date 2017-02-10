@@ -441,3 +441,5 @@ Real IntpTrilinear3<Real>::operator()(int xOrder, int yOrder, int zOrder,
 
 }
 
+#endif
+

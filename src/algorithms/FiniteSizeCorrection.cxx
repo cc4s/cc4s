@@ -4,6 +4,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/Vector.hpp>
 #include <math/Interpolation.hpp>
+#include <gte/TrilinearInterpolation.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -185,8 +186,8 @@ void FiniteSizeCorrection::interpolation3D() {
   cc4s::Vector<> *cartesianMomenta(new cc4s::Vector<>[NG]);
   momenta->read_all(&cartesianMomenta[0][0]);
 
-  // FIXME: give direct or reciprocal grid and calaculate all properties
-  // from it.
+  // FIXME: give direct or reciprocal grid and calaculate all properties,
+  // such as a,b,c and omega from it.
   cartesianGrid = new Momentum[2*NG];
   // complete momentum grid in a Gamma only calculation
   for (int g(0); g<NG; ++g) {
@@ -252,7 +253,7 @@ void FiniteSizeCorrection::interpolation3D() {
   int64_t boxSize(1);
   for (int d(0); d < 3; ++d) {
     boxSize *=
-      boxDimensions[d] = static_cast<int>(directMax[d] - directMin[d] + 0.5);
+      boxDimensions[d] = static_cast<int>(directMax[d] - directMin[d] + 1.5);
     boxOrigin[d] = static_cast<int>(directMin[d] + 0.5);
   }
   // allocate and initialize regular grid
@@ -269,28 +270,63 @@ void FiniteSizeCorrection::interpolation3D() {
     regularSG[index] = cartesianGrid[g].s;
   }
 
-  // TODO: create trilinear or tricubic interpolator
+  // check number of points in the interior and on the boundary
+  int64_t interiorPointsCount(0), boundaryPointsCount(0);
+  for (int z(1); z < boxDimensions[2]; ++z) {
+    for (int y(1); y < boxDimensions[1]; ++y) {
+      for (int x(1); x < boxDimensions[0]; ++x) {
+        int64_t index(x + boxDimensions[0] * (y + boxDimensions[1]*z));
+        bool inside(true);
+        for (int dz(-1); dz <= 1; ++dz) {
+          for (int dy(-1); dy <= 1; ++dy) {
+            for (int dx(-1); dx <= 1; ++dx) {
+              int64_t offset(dx + boxDimensions[0]*(dy + boxDimensions[1]*dz));
+              inside &= regularSG[index+offset] != 0.0;
+              if (!inside) break;
+            }
+            if (!inside) break;
+          }
+          if (!inside) break;
+        }
+        interiorPointsCount += inside ? 1 : 0;
+        boundaryPointsCount += regularSG[index] != 0.0 && !inside ? 1 : 0;
+      }
+    }
+  }
+  LOG(2, "FiniteSizeInterpolation") << "Number momentum points inside cutoff=" <<
+    interiorPointsCount << ", Number of momentum points on boundary=" <<
+    boundaryPointsCount << std::endl;
+
+  // create trilinear or tricubic interpolator
+  // TODO: use factory to select different interpolators, similar to mixers
+  gte::IntpTrilinear3<double> interpolatedSG(
+    boxDimensions[0], boxDimensions[1], boxDimensions[2],
+    boxOrigin[0], 1, boxOrigin[1], 1, boxOrigin[2], 1,
+    regularSG
+  );
 
   // spherically sample
   double lastLength(0);
   averageSGs.clear(); GLengths.clear();
+  // skip G=0
   for (int g(1); g < 2*NG; ++g) {
     double length(cartesianGrid[g].l);
     if (abs(length - lastLength) > 1e-3) {
       constructFibonacciGrid(length);
-      double averageSG(0);
+      double sumSG(0);
+      // TODO: use parameter instead of fixed Fibonacci grid size
       for (int f(0); f < N; ++f) {
-        Vector<> sampledDirect;
+        Vector<> directG;
         for (int d(0); d < 3; ++d) {
-          sampledDirect[d] = T[d].dot(fibonacciGrid[f].v);
+          directG[d] = T[d].dot(fibonacciGrid[f].v);
         }
-        // TODO: lookup interpolated value in direct coordinates
-        averageSG += 0;
+        // lookup interpolated value in direct coordinates
+        sumSG += interpolatedSG(directG[0], directG[1], directG[2]);
       }
-      averageSGs.push_back(averageSG / N);
+      averageSGs.push_back(sumSG / N);
       GLengths.push_back(length);
+      lastLength = length;
     }
-    lastLength = length;
   }
 }
 
