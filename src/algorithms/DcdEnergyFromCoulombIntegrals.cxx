@@ -144,25 +144,24 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
           int factorsSliceSize(getIntegerArgument
                            ("factorsSliceSize",NR));
 
+
+          // Allocate Tensor for T2 amplitudes
+          Tensor<> Sabij(false, *Vabij);
+          Sabij.set_name("Sabij");
+    
           // Slice loop starts here
-          for (int b(0); b < NR; b += factorsSliceSize) {
-            for (int a(b); a < NR; a += factorsSliceSize) {
+            for (int a(0); a < NR; a += factorsSliceSize) {
               LOG(1, abbreviation) << "Evaluting residuum from coulomb factors at R=" 
-                                   << a << ", S=" << b << std::endl;
-              Tensor<> *Fabij(sliceAmplitudesFromCoulombFactors(a, b, factorsSliceSize));
+                                   << a << std::endl;
+              Tensor<> *Fabij(sliceAmplitudesFromCoulombFactorsTcc(a, factorsSliceSize));
               Fabij->set_name("Fabij");
-              if (a==b) {
-                Rabij["abij"] += (*Fabij)["abij"];
-              }
-              else{
-                Rabij["abij"] += (*Fabij)["abij"];
-                Rabij["baji"] += (*Fabij)["abij"];
-              }
+              Sabij["abij"] += (*Fabij)["abij"];
               delete Fabij;
             }
-          }
-
+          Rabij["abij"] += 0.5 * Sabij["abij"];
+          Rabij["abij"] += 0.5 * Sabij["baji"];
         }
+	
         else {
           // Read the integralsSliceSize. If not provided use No
           int integralsSliceSize(getIntegerArgument
