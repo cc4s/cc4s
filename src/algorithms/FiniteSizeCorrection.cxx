@@ -259,14 +259,27 @@ void FiniteSizeCorrection::interpolation3D() {
   // allocate and initialize regular grid
   double *regularSG(new double[boxSize]);
   for (int64_t g(0); g < boxSize; ++g) regularSG[g] = 0;
-  // enter known Sq values
+  // enter known SG values
   for (int g(0); g < 2*NG; ++g) {
     int64_t index(0);
+    Vector<> directG;
     for (int d(2); d >= 0; --d) {
-      int directComponent(static_cast<int>(T[d].dot(cartesianGrid[g].v) + 0.5));
+      directG[d] = T[d].dot(cartesianGrid[g].v);
       index *= boxDimensions[d];
-      index += directComponent - boxOrigin[d];
+      index += static_cast<int>(directG[d] + 0.5) - boxOrigin[d];
     }
+    LOG(2, "FiniteSizeGrid") << "G_direct,index: " << directG << " " <<
+      index << std::endl;
+    if (index < 0 || boxSize <= index) {
+      LOG(2, "FiniteSizeInterpolation") << "Wrong index=" << index <<
+        " at G_direct=" << directG << std::endl;
+    }
+    if (regularSG[index] != 0.0) {
+      LOG(2, "FiniteSizeInterpolation") <<
+        "Overwriting previous grid value G_direct=" << directG <<
+        ", index=" << index << std::endl;
+    }
+    // FIXME: check why 3 distinct points get index 239!
     regularSG[index] = cartesianGrid[g].s;
   }
 
