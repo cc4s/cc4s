@@ -1,18 +1,18 @@
 /*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef DOUBLES_AMPLITUDES_CHOLESKY_DECOMPOSITION_DEFINED
-#define DOUBLES_AMPLITUDES_CHOLESKY_DECOMPOSITION_DEFINED
+#ifndef DOUBLES_AMPLITUDES_DECOMPOSITION_DEFINED
+#define DOUBLES_AMPLITUDES_DECOMPOSITION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 #include <memory>
 
 namespace cc4s {
-  class DoublesAmplitudesCholeskyDecomposition: public Algorithm {
+  class DoublesAmplitudesDecomposition: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(DoublesAmplitudesCholeskyDecomposition);
-    DoublesAmplitudesCholeskyDecomposition(
+    ALGORITHM_REGISTRAR_DECLARATION(DoublesAmplitudesDecomposition);
+    DoublesAmplitudesDecomposition(
       std::vector<Argument> const &argumentList
     );
-    virtual ~DoublesAmplitudesCholeskyDecomposition();
+    virtual ~DoublesAmplitudesDecomposition();
     /**
      * \brief Calculates left singular vectors of the particle-hole Coulomb vertex
      * \f$\tilde\Gamma^a_{iG}\f$.

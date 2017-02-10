@@ -1,4 +1,4 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef COULOMB_VERTEX_FROM_FACTORS_DEFINED
 #define COULOMB_VERTEX_FROM_FACTORS_DEFINED
 

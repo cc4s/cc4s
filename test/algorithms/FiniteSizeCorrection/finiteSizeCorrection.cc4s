@@ -42,8 +42,7 @@ FiniteSizeCorrection [
 % used
   (shortestGvector 0.02351)
 ] [
-  EnergyCorrection
+  CorrectedEnergy
   StructureFactor
-  VG
-  EMp2
+  EnergyFromAmplitudes
 ].

@@ -1,4 +1,4 @@
-#include <algorithms/DoublesAmplitudesCholeskyDecomposition.hpp>
+#include <algorithms/DoublesAmplitudesDecomposition.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
 #include <tcc/DryTensor.hpp>
@@ -11,27 +11,26 @@
 
 using namespace CTF;
 using namespace cc4s;
-using std::shared_ptr;
 using std::make_shared;
 
-ALGORITHM_REGISTRAR_DEFINITION(DoublesAmplitudesCholeskyDecomposition);
+ALGORITHM_REGISTRAR_DEFINITION(DoublesAmplitudesDecomposition);
 
-DoublesAmplitudesCholeskyDecomposition::DoublesAmplitudesCholeskyDecomposition(
+DoublesAmplitudesDecomposition::DoublesAmplitudesDecomposition(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-DoublesAmplitudesCholeskyDecomposition::
-  ~DoublesAmplitudesCholeskyDecomposition()
+DoublesAmplitudesDecomposition::
+  ~DoublesAmplitudesDecomposition()
 {
 }
 
-void DoublesAmplitudesCholeskyDecomposition::run() {
+void DoublesAmplitudesDecomposition::run() {
   diagonlizeAmplitudes();
-//  sliceLargestEigenValues();
+  sliceLargestEigenValues();
 }
 
-void DoublesAmplitudesCholeskyDecomposition::dryRun() {
+void DoublesAmplitudesDecomposition::dryRun() {
   // Read the Coulomb vertex GammaGai
   DryTensor<> *Tabij(
     getTensorArgument<double, DryTensor<>>("DoublesAmplitudes")
@@ -47,7 +46,7 @@ void DoublesAmplitudesCholeskyDecomposition::dryRun() {
   }
 }
 
-void DoublesAmplitudesCholeskyDecomposition::diagonlizeAmplitudes() {
+void DoublesAmplitudesDecomposition::diagonlizeAmplitudes() {
   Tensor<> *Tabij(getTensorArgument<>("DoublesAmplitudes"));
 
   // reorder to Taibj
@@ -55,14 +54,14 @@ void DoublesAmplitudesCholeskyDecomposition::diagonlizeAmplitudes() {
   int lens[] = { Nv,No, Nv,No };
   Taibj = make_shared<Tensor<>>(4, lens, Tabij->sym, *Tabij->wrld, "Taibj");
   (*Taibj)["aibj"] = (*Tabij)["abij"];
-  // release unneeded resources early
-  // Taibj.reset();
 
   // T(ai)(bj) = U.Lambda.U^T, seen as a matrix with compound indices
   BlacsWorld world(Taibj->wrld->rank, Taibj->wrld->np);
   NvNo = Nv*No;
   int scaTLens[2] = { NvNo, NvNo };
   auto scaTaibj(make_shared<ScaLapackMatrix<>>(*Taibj, scaTLens, &world));
+  // release unneeded resources early
+  Taibj.reset();
 
   // use ScaLapack routines to diagonalise the matrix U.Lambda.U^T
   auto scaU(make_shared<ScaLapackMatrix<>>(*scaTaibj));
@@ -83,7 +82,7 @@ void DoublesAmplitudesCholeskyDecomposition::diagonlizeAmplitudes() {
   sqrtLambdas = new complex[lambdasCount];
   for (int64_t i(0); i < lambdasCount; ++i) {
     lambdaIndices[i] = i;
-    sqrtLambdas[i] = conj(sqrt(complex(lambdas[i])));
+    sqrtLambdas[i] = sqrt(complex(lambdas[i]));
   }
   sqrtLambdaF = make_shared<Tensor<complex>>(1, &NvNo, UaiF->sym, *UaiF->wrld);
   sqrtLambdaF->set_name("sqrtLambda");
@@ -93,33 +92,11 @@ void DoublesAmplitudesCholeskyDecomposition::diagonlizeAmplitudes() {
   LambdaF->write(lambdasCount, lambdaIndices, lambdas);
   delete[] lambdaIndices;
   delete[] sqrtLambdas;
+
   allocatedTensorArgument<>("DoublesAmplitudesEigenValues", LambdaF);
-
-
-  // test with the complex tensors
-  Tensor<complex> cTaibj(4, Taibj->lens, Taibj->sym, *Taibj->wrld, "cTaibj");
-  toComplexTensor(*Taibj, cTaibj);
-
-  // recompose Taibj for testing
-  (*Taibj)["aibj"] += (-1.0) * (*UaiF)["aiF"] * (*LambdaF)["F"] * (*UaiF)["bjF"];
-  double norm(frobeniusNorm(*Taibj));
-  LOG(1, "DoublesAmplitudesCholeskyDecomposition") << "|T-U.Lambda.U*|=" << norm <<
-    std::endl;
-
-  Tensor<complex> cUaiF(3, UaiF->lens, UaiF->sym, *UaiF->wrld, "cUaiF");
-  toComplexTensor(*UaiF, cUaiF);
-  Tensor<complex> conjSqrtLambdaF(false, *sqrtLambdaF);
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  conjSqrtLambdaF.sum(1.0, *sqrtLambdaF,"F", 0.0,"F", fConj);
-  cTaibj["aibj"] +=
-    (1.0) * cUaiF["aiF"] * conjSqrtLambdaF["F"] *
-    (*sqrtLambdaF)["F"] * cUaiF["bjF"];
-  double cNorm(frobeniusNorm(cTaibj));
-  LOG(1, "DoublesAmplitudesCholeskyDecomposition") << "|T-L*.L|=" << cNorm <<
-    std::endl;
 }
 
-void DoublesAmplitudesCholeskyDecomposition::sliceLargestEigenValues() {
+void DoublesAmplitudesDecomposition::sliceLargestEigenValues() {
   // get number of field variables
   NF = getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES);
   // if fieldVariables not given use reduction
@@ -139,7 +116,7 @@ void DoublesAmplitudesCholeskyDecomposition::sliceLargestEigenValues() {
     }
   }
   delete[] lambdas;
-  LOG(1, "DoublesAmplitudesCholeskyDecomposition") <<
+  LOG(1, "DoublesAmplitudesDecomposition") <<
     "taken values: 0<=i<" << lower << " and " << upper+1 << "<=i<" << NvNo <<
     std::endl;
 
@@ -183,14 +160,14 @@ void DoublesAmplitudesCholeskyDecomposition::sliceLargestEigenValues() {
 
   allocatedTensorArgument<complex>("DoublesAmplitudesVertex", LFai);
 
-  // and now from the complex tensors
-  Tensor<complex> cTaibj(4, Taibj->lens, Taibj->sym, *Taibj->wrld, "cTaibj");
-  toComplexTensor(*Taibj, cTaibj);
-  Tensor<complex> conjLFai(false, *LFai);
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  conjLFai.sum(1.0, *LFai,"Fai", 0.0,"Fai", fConj);
-  cTaibj["aibj"] += (-1.0) * conjLFai["Fai"] * (*LFai)["Fbj"];
-  double cNorm(frobeniusNorm(cTaibj));
-  LOG(1, "DoublesAmplitudesCholeskyDecomposition") << "|T-L*.L|=" << cNorm <<
-    std::endl;
+  // recompose for testing
+  Tensor<> *Tabij(getTensorArgument<>("DoublesAmplitudes"));
+  double tNorm(frobeniusNorm(*Tabij));
+  Tensor<complex> cTabij(4, Tabij->lens, Tabij->sym, *Tabij->wrld, "cTabij");
+  toComplexTensor(*Tabij, cTabij);
+  cTabij["abij"] += (-1.0) * (*LFai)["Fai"] * (*LFai)["Fbj"];
+  double dNorm(frobeniusNorm(cTabij));
+  LOG(1, "DoublesAmplitudesDecomposition") << "|T-L.L|/|T|=" <<
+    dNorm/tNorm << std::endl;
 }
+

@@ -26,8 +26,9 @@ namespace cc4s {
      */
     virtual void run();
     /**
-     * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCSD",
-     * "DCSD"
+     * \brief Returns the abbreviation of the concrete algorithm in camel case,
+     * e.g. "Ccsd", "Dcsd". They will constitute the first part of the
+     * resulting tensors, such as "CcsdDoublesAmplitudes".
      */
     virtual std::string getAbbreviation() = 0;
     /**
@@ -46,6 +47,12 @@ namespace cc4s {
      * \brief Performs one iteration of the concrete algorithm.
      */
     virtual void iterate(int i) = 0;
+
+    /**
+     * \brief Calculates the energy from the amplitudes currently contained
+     * in the mixers. Overrides ClusterDoublesAlgorithm method.
+     **/
+    virtual double calculateEnergy();
 
     /**
      * \brief Calculates the singles amplitudes from the current residuum and

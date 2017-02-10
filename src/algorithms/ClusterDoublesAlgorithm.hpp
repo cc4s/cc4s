@@ -31,8 +31,8 @@ namespace cc4s {
      */
     virtual void dryRun();
     /**
-     * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCD",
-     * "DCD"
+     * \brief Returns the abbreviation of the concrete algorithm, e.g. "Ccd",
+     * "Dcd".
      */
     virtual std::string getAbbreviation() = 0;
 
@@ -42,6 +42,11 @@ namespace cc4s {
     static int constexpr DEFAULT_MAX_ITERATIONS = 16;
 
   protected:
+    /**
+     * \brief The abbreviation of the algorithm in capital letters.
+     **/
+    std::string abbreviation;
+
     /**
      * \brief The mixer for the doubles amplitudes.
      */
@@ -59,6 +64,12 @@ namespace cc4s {
      * that.
      */
     virtual void dryIterate();
+
+    /**
+     * \brief Calculates the energy from the amplitudes currently contained
+     * in the mixer.
+     **/
+    virtual double calculateEnergy();
 
     /**
      * \brief Calculates the amplitudes from the current residuum and

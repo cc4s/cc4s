@@ -20,12 +20,19 @@ ClusterSinglesDoublesAlgorithm::~ClusterSinglesDoublesAlgorithm() {
 }
 
 void ClusterSinglesDoublesAlgorithm::run() {
-  // Read the Coulomb Integrals Vabij required for the energy
+  // get the upper case abbreviation for logging
+  abbreviation = getAbbreviation();
+  std::transform(
+    abbreviation.begin(), abbreviation.end(),
+    abbreviation.begin(), ::toupper
+  );
+
+  // The amplitudes have the same shape as the PPHH integrals
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
   
   // Compute the No,Nv
-  int No(Vabij->lens[2]);
   int Nv(Vabij->lens[0]);
+  int No(Vabij->lens[2]);
 
   // TODO: factor out code common with ClusterDoublesAlgorithm
   // instantiate mixer for the doubles amplitudes, by default use the linear one
@@ -38,72 +45,48 @@ void ClusterSinglesDoublesAlgorithm::run() {
   }
   // create another mixer for the singles, this time it must exists
   TaiMixer = MixerFactory<double>::create(mixerName, this);
-  {
-    // Allocate the singles amplitudes and append it to the mixer
+
+  if (isArgumentGiven("startingSinglesAmplitudes")) {
+    TaiMixer->append(*getTensorArgument("startingSinglesAmplitudes"));
+    LOG(0, abbreviation) << "starting singles amplitudes provided." << std::endl;
+  } else {
     int syms[] = { NS, NS };
     int vo[] = { Nv, No };
     Tensor<> Tai(2, vo, syms, *Vabij->wrld, "Tai");
     TaiMixer->append(Tai);
-    // the amplitudes will from now on be managed by the mixer
   }
-  {
-    // Allocate the doubles amplitudes and append it to the mixer
+  // Allocate the doubles amplitudes and append it to the mixer
+  if (isArgumentGiven("startingDoublesAmplitudes")) {
+    TabijMixer->append(*getTensorArgument("startingDoublesAmplitudes"));
+    LOG(0, abbreviation) << "starting doubles amplitudes provided." << std::endl;
+  } else {
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
-    if (isArgumentGiven("StartingDoublesAmplitudes")) {
-      Tensor<> Tabij(getTensorArgument("StartingDoublesAmplitudes"));
-      TabijMixer->append(Tabij);
-    }
-    else {
-      Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
-      TabijMixer->append(Tabij);
-    }
-    // The amplitudes will from now on be managed by the mixer
+    Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
+    TabijMixer->append(Tabij);
   }
-
-  // Allocate the energy e
-  Scalar<> energy(*Vabij->wrld);
-  energy.set_name("energy");
-  double e(0), dire, exce;
-
-  std::string abbreviation(getAbbreviation());
-  std::transform(abbreviation.begin(), abbreviation.end(), 
-                 abbreviation.begin(), ::toupper);
+  // The amplitudes will from now on be managed by the mixer
 
   // Iteration for determining the amplitudes Tai and Tabij
   // and the energy e
-  int maxIterationsCount(getIntegerArgument("maxIterations", 
-                                            DEFAULT_MAX_ITERATIONS));
+  int maxIterationsCount(
+    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
+  );
 
+  double e(0);
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
     // Call the iterate of the actual algorithm, which is still left open here
     iterate(i);
-    Tensor<> *Tai(&TaiMixer->getNext());
-    Tai->set_name("Tai");
-    Tensor<> *Tabij(&TabijMixer->getNext());
-    Tabij->set_name("Tabij");
-
-    // Intermediate tensor Xabij=T2+T1*T1
-    Tensor<> Xabij(Tabij);
-    Xabij.set_name("Xabij");
-    Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
-
-    // Direct term
-    energy[""] = 2.0 * Xabij["abij"] * (*Vabij)["abij"];
-    // Compute direct energy
-    dire = energy.get_val();
-    // Doubles exchange term
-    energy[""] = Xabij["abij"] * (*Vabij)["baij"];
-    // Compute exchange energy
-    exce = -1.0 * energy.get_val();
-    // Compute total energy
-    e = dire + exce;
-    LOG(0, abbreviation) << "e=" << e << std::endl;
-    LOG(1, abbreviation) << "dir=" << dire << std::endl;
-    LOG(1, abbreviation) << "exc=" << exce << std::endl;
+    e = calculateEnergy();
+  }
+  if (maxIterationsCount < 1) {
+    LOG(0, abbreviation) << "calculating energy from given amplitudes" <<
+      std::endl;
+    e = calculateEnergy();
   }
 
+  // pass doubles amplitudes to cc4s
   std::stringstream doublesAmplitudesName;
   doublesAmplitudesName << getAbbreviation() << "DoublesAmplitudes";
   if (isArgumentGiven(doublesAmplitudesName.str())) {
@@ -112,6 +95,7 @@ void ClusterSinglesDoublesAlgorithm::run() {
     );
   }
 
+  // pass singles amplitudes to cc4s
   std::stringstream singlesAmplitudesName;
   singlesAmplitudesName << getAbbreviation() << "SinglesAmplitudes";
   if (isArgumentGiven(singlesAmplitudesName.str())) {
@@ -120,6 +104,7 @@ void ClusterSinglesDoublesAlgorithm::run() {
     );
   }
 
+  // pass energy to cc4s
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";
   setRealArgument(energyName.str(), e);
@@ -151,7 +136,7 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
   if (mixerName != "LinearMixer") {
     LOG(0, abbreviation)
       << "Warning: dry run not implemented for " << mixerName
-      << ", assuming the same memory usage." << std::endl;
+      << ", assuming the memory usage of LinearMixer." << std::endl;
   }
 
   {
@@ -185,6 +170,40 @@ void ClusterSinglesDoublesAlgorithm::dryRun() {
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";
   setRealArgument(energyName.str(), 0.0);
+}
+
+
+double ClusterSinglesDoublesAlgorithm::calculateEnergy() {
+  // get the Coulomb integrals to compute the energy
+  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+
+  // allocate energy
+  Scalar<> energy(*Vabij->wrld);
+  energy.set_name("energy");
+
+  // get amplitudes from the mixers
+  Tensor<> *Tai(&TaiMixer->getNext());
+  Tai->set_name("Tai");
+  Tensor<> *Tabij(&TabijMixer->getNext());
+  Tabij->set_name("Tabij");
+
+  // Intermediate tensor Xabij=T2+T1*T1
+  Tensor<> Xabij(*Tabij);
+  Xabij.set_name("Xabij");
+  Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+
+  // direct term
+  energy[""] = +2.0 * Xabij["abij"] * (*Vabij)["abij"];
+  double dire(energy.get_val());
+  // exchange term
+  energy[""] = -1.0 * Xabij["abij"] * (*Vabij)["baij"];
+  double exce(energy.get_val());
+  double e(dire + exce);
+  LOG(0, abbreviation) << "e=" << e << std::endl;
+  LOG(1, abbreviation) << "dir=" << dire << std::endl;
+  LOG(1, abbreviation) << "exc=" << exce << std::endl;
+
+  return e;
 }
 
 void ClusterSinglesDoublesAlgorithm::singlesAmplitudesFromResiduum(

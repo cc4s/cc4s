@@ -41,7 +41,7 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
 
     LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
-    if (i == 0 && !isArgumentGiven("StartingDoublesAmplitudes") ) {
+    if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
       // For first iteration compute only the MP2 amplitudes 
       // Since Tabij = 0, Vabij is the only non-zero term
       Rabij["abij"] += (*Vabij)["abij"];
