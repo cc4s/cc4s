@@ -339,6 +339,79 @@ void FiniteSizeCorrection::interpolation3D() {
       lastLength = length;
     }
   }
+  //Define the 3D zone close to the Gamma point which needed to be integrated over. Find the vectors which define it. Small BZ
+  for (int t(0); t < 20; t++){
+    LOG(0,"G vectors by length") << cartesianGrid[t].v << std::endl;
+  }
+
+  std::vector<Vector<>> smallBZ;
+  smallBZ.push_back(cartesianGrid[2].v);
+  for (int t(3); t<2*NG; t++){
+      if (IsInSmallBZ(cartesianGrid[t].v,smallBZ)){
+        smallBZ.push_back(cartesianGrid[t].v);
+        }
+  }
+
+  LOG(0,"FiniteSize") << "Size of vectors="  << smallBZ.size() << std::endl;
+  for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
+    LOG(1,"interpolation3D") << "smallBZ basis vector: " << smallBZ[i] << std::endl;
+    }
+
+  //integration in 3D
+  int kpoints(getIntegerArgument("kpoints", 1));
+  double volume(getRealArgument("volume"));
+  double constantFactor(getRealArgument("constantFactor"));
+  int N0(100), N1(100), N2(100);
+  double inter3D(0.);
+  for (int t0(-N0); t0 < N0+1; ++t0){
+    for (int t1(-N1); t1 < N1+1; ++t1){
+      for (int t2(-N2); t2 < N2+1; ++t2){
+        if (t0 == 0 && t1==0 && t2 ==0) continue;
+        Vector<double> directg;
+        Vector<double> ga(((a/double(N0))*double(t0)));
+        Vector<double> gb(((b/double(N1))*double(t1)));
+        Vector<double> gc(((c/double(N2))*double(t2)));
+        Vector<double> g(ga+gb+gc);
+        //LOG(0,"interpolation3D") << "t0= " << t0 << " t1= " << t1 << " t2= "<< t2 << std::endl;
+        //LOG(0,"interpolation3D") << "ga vector= " << ga << std::endl;
+        //LOG(0,"interpolation3D") << "gb vector= " << gb << std::endl;
+        //LOG(0,"interpolation3D") << "gc vector= " << gc << std::endl;
+        //LOG(0,"interpolation3D") << "g vector= " << g << std::endl;
+        //LOG(0,"interpolation3D") << "is in smallBZ " << IsInSmallBZ(g, smallBZ)<< std::endl;
+        if (IsInSmallBZ(g, smallBZ)){
+          for (int d(0); d <3; ++d){
+            directg[d]=T[d].dot(g);
+            }
+            inter3D += kpoints/double(2*N0+1)/double(2*N1+1)/double(2*N2+1)*interpolatedSG(directg[0], directg[1],
+                   directg[2])*constantFactor/g.length()/g.length();
+
+          }
+        }
+    }
+  }
+ LOG(0, "interpolation3D") << "integral in 3D= " << inter3D/2. << std::endl;
+}
+
+
+bool FiniteSizeCorrection::IsInSmallBZ(
+  Vector<> point, std::vector<Vector<>> smallBZ
+){
+  std::vector<int>::size_type countVector(0);
+  for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
+    if (abs(abs(smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length() -1.0)) < 1e-7 ||  smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length() -1.0 < 0.) {
+      countVector++;
+        //LOG(0,"FiniteSize") << "condition "  <<abs(smallBZ[i].dot(point))/smallBZ[i].length() << std::endl;
+        //LOG(1,"FiniteSize") << "countVector "  << countVector << std::endl;
+        //LOG(1,"FiniteSize") << "size of smallBZ "  << smallBZ.size() << std::endl;
+      }
+    else{
+      break;
+      }
+    }
+    if (countVector == smallBZ.size()){
+      return true;
+      }
+    return false;
 }
 
 double FiniteSizeCorrection::integrate(
@@ -387,9 +460,9 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   int kpoints(getIntegerArgument("kpoints", 1));
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
-  // the factor 2 is only needed when half of the G grid is provided (this is the case
+  // the factor 1/2 is only needed when half of the G grid is provided (this is the case
   // for a Gamma point calculation in vasp).
-  double r1 = 2*integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
+  double r1 = 1./2.*integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
   double  sumSGVG(0.);
   for (int d(0); d < NG; ++d){
     sumSGVG += VofG[d] * structureFactors[d];

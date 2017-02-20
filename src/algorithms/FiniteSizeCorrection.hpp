@@ -4,6 +4,7 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <math/Interpolation.hpp>
+#include <math/Vector.hpp>
 namespace cc4s {
   class FiniteSizeCorrection: public Algorithm {
   public:
@@ -27,6 +28,9 @@ namespace cc4s {
     void calculateStructureFactor();
     void constructFibonacciGrid(double R);
     void interpolation3D();
+    bool IsInSmallBZ(
+      Vector<double> point, std::vector<cc4s::Vector<double>> smallBZ
+    );
     double SGxVG(cc4s::Inter1D<double> Int1d, double x);
     double integrate(
       cc4s::Inter1D<double> Int1d,
@@ -41,4 +45,3 @@ namespace cc4s {
 }
 
 #endif
-
