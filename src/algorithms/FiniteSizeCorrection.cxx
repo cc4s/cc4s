@@ -335,13 +335,11 @@ void FiniteSizeCorrection::interpolation3D() {
   true
   );
   /**
-  if (fTricubic == 0){
     gte::IntpTrilinear3<double> interpolatedSG(
     boxDimensions[0], boxDimensions[1], boxDimensions[2],
     boxOrigin[0], 1, boxOrigin[1], 1, boxOrigin[2], 1,
     regularSG
     );
-  }
   **/
   // spherically sample
   double lastLength(-1);
