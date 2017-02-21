@@ -5,6 +5,7 @@
 #include <math/Vector.hpp>
 #include <math/Interpolation.hpp>
 #include <gte/TricubicInterpolation.hpp>
+#include <gte/TrilinearInterpolation.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -29,7 +30,10 @@ FiniteSizeCorrection::~FiniteSizeCorrection() {
 }
 
 void FiniteSizeCorrection::run() {
-  calculateStructureFactor();
+  int fReadFromFile(getIntegerArgument("fReadFromFile", 0));
+  LOG(0,"run") << "fReadFromFile= " << fReadFromFile << std::endl;
+  if (fReadFromFile == 1) readFromFile();
+  else calculateStructureFactor();
   //constructFibonacciGrid();
   interpolation3D();
   calculateFiniteSizeCorrection();
@@ -69,9 +73,22 @@ class FiniteSizeCorrection::Momentum {
     }
 };
 
-
+void FiniteSizeCorrection::readFromFile(){
+  LOG(0,"readFromFile") << "reading " << std::endl;
+  Tensor<> *realVG(getTensorArgument<>("CoulombKernel"));
+  Tensor<> *realSG(getTensorArgument<>("StructureFactor"));
+  LOG(0,"readFromFile") << "success\n Loading into Vectors " << std::endl;
+  NG=realVG->lens[0];
+  VofG = new double[NG];
+  realVG->read_all(VofG);
+  LOG(0,"readFromFile") << "VofG Finished" << std::endl;
+  structureFactors = new double[NG];
+  realSG->read_all(structureFactors);
+  LOG(0,"readFromFile") << "Finished" << std::endl;
+}
 
 void FiniteSizeCorrection::calculateStructureFactor() {
+
 //Definition of the variables
   Tensor<complex> *GammaGai(
         getTensorArgument<complex>("ParticleHoleCoulombVertex")
@@ -310,13 +327,22 @@ void FiniteSizeCorrection::interpolation3D() {
 
   // create trilinear or tricubic interpolator
   // TODO: use factory to select different interpolators, similar to mixers
+  //int fTricubic(getIntegerArgument("fTricubic", 1));
   gte::IntpTricubic3<double> interpolatedSG(
+  boxDimensions[0], boxDimensions[1], boxDimensions[2],
+  boxOrigin[0], 1, boxOrigin[1], 1, boxOrigin[2], 1,
+  regularSG,
+  true
+  );
+  /**
+  if (fTricubic == 0){
+    gte::IntpTrilinear3<double> interpolatedSG(
     boxDimensions[0], boxDimensions[1], boxDimensions[2],
     boxOrigin[0], 1, boxOrigin[1], 1, boxOrigin[2], 1,
-    regularSG,
-    true
-  );
-
+    regularSG
+    );
+  }
+  **/
   // spherically sample
   double lastLength(-1);
   averageSGs.clear(); GLengths.clear();
@@ -389,7 +415,11 @@ void FiniteSizeCorrection::interpolation3D() {
         }
     }
   }
- LOG(0, "interpolation3D") << "integral in 3D= " << inter3D/2. << std::endl;
+  int fReadFromFile(getIntegerArgument("fReadFromFile", 0));
+  if (fReadFromFile ==1)
+  LOG(0, "interpolation3D") << "integral in 3D= " << inter3D << std::endl;
+  else
+  LOG(0, "interpolation3D") << "integral in 3D= " << inter3D/2. << std::endl;
 }
 
 
@@ -464,6 +494,8 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   // for a Gamma point calculation in vasp).
   double r1 = 1./2.*integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
   double  sumSGVG(0.);
+  int fReadFromFile(getIntegerArgument("fReadFromFile", 0));
+  if (fReadFromFile == 1) r1=r1*2.;
   for (int d(0); d < NG; ++d){
     sumSGVG += VofG[d] * structureFactors[d];
   }

@@ -25,6 +25,7 @@ namespace cc4s {
     class Momentum;
     Momentum *fibonacciGrid;
     Momentum *cartesianGrid;
+    void readFromFile();
     void calculateStructureFactor();
     void constructFibonacciGrid(double R);
     void interpolation3D();
