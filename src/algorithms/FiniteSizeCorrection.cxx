@@ -389,6 +389,7 @@ void FiniteSizeCorrection::interpolation3D() {
   int N0(100), N1(100), N2(100);
   inter3D = 0.;
   int countNO(0);
+  double cutOffRadius(getRealArgument("cutOffRadius"));
   for (int t0(-N0); t0 < N0+1; ++t0){
     for (int t1(-N1); t1 < N1+1; ++t1){
       for (int t2(-N2); t2 < N2+1; ++t2){
@@ -398,19 +399,18 @@ void FiniteSizeCorrection::interpolation3D() {
         Vector<double> gb(((b/double(N1))*double(t1)));
         Vector<double> gc(((c/double(N2))*double(t2)));
         Vector<double> g(ga+gb+gc);
-        //LOG(0,"interpolation3D") << "t0= " << t0 << " t1= " << t1 << " t2= "<< t2 << std::endl;
-        //LOG(0,"interpolation3D") << "ga vector= " << ga << std::endl;
-        //LOG(0,"interpolation3D") << "gb vector= " << gb << std::endl;
-        //LOG(0,"interpolation3D") << "gc vector= " << gc << std::endl;
-        //LOG(0,"interpolation3D") << "g vector= " << g << std::endl;
-        //LOG(0,"interpolation3D") << "is in smallBZ " << IsInSmallBZ(g, smallBZ)<< std::endl;
         if (IsInSmallBZ(g, 2, smallBZ)){
-          countNO++;
-          for (int d(0); d <3; ++d){
-            directg[d]=T[d].dot(g);
-            }
-            inter3D += interpolatedSG(directg[0], directg[1],
+          for (int i(0); i < NG; ++i){
+            if ((cartesianMomenta[i].length()-cutOffRadius) < -1e-7){
+              g += cartesianMomenta[i];
+              countNO++;
+              for (int d(0); d <3; ++d){
+                directg[d]=T[d].dot(g);
+                }
+              inter3D += interpolatedSG(directg[0], directg[1],
                    directg[2])*constantFactor/g.length()/g.length();
+              }
+            }
           }
         }
       }
@@ -424,7 +424,7 @@ bool FiniteSizeCorrection::IsInSmallBZ(
 ){
   std::vector<int>::size_type countVector(0);
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
-    if (abs(abs(smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length()*scale -1.0)) < 1e-7 ||  smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length()*scale -1.0 < 0.) {
+    if (abs(abs(smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length()*scale -1.0)) < 1e-7 ||  smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length()*scale -1.0 < -1e-7) {
       countVector++;
       }
     else{
