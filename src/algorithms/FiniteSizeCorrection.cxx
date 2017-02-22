@@ -406,7 +406,7 @@ void FiniteSizeCorrection::interpolation3D() {
           for (int d(0); d <3; ++d){
             directg[d]=T[d].dot(g);
             }
-            inter3D += kpoints/double(2*N0+1)/double(2*N1+1)/double(2*N2+1)*interpolatedSG(directg[0], directg[1],
+            inter3D += 1./double(2*N0+1)/double(2*N1+1)/double(2*N2+1)*interpolatedSG(directg[0], directg[1],
                    directg[2])*constantFactor/g.length()/g.length();
 
           }
@@ -496,7 +496,7 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   if (fReadFromFile == 1) r1=r1*2.;
   for (int d(0); d < NG; ++d){
     sumSGVG += VofG[d] * structureFactors[d];
-  }
+    }
   LOG(1,"FiniteSize") << "Uncorrected e="  << sumSGVG       << std::endl;
   LOG(1,"FiniteSize") << "Correction  e="  << r1            << std::endl;
   LOG(1,"FiniteSize") << "Corrected   e="  << sumSGVG + r1  << std::endl;
