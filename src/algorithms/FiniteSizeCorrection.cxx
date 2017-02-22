@@ -385,36 +385,45 @@ void FiniteSizeCorrection::interpolation3D() {
   int kpoints(getIntegerArgument("kpoints", 1));
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
-  double region(getIntegerArgument("region", 0));
+  double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
   int N0(100), N1(100), N2(100);
   inter3D = 0.;
   int countNO(0);
-  double cutOffRadius(getRealArgument("cutOffRadius"));
+  int countNOg(0);
+  double sum3D(0.);
+  for (int i(0); i < 2*NG; ++i) {
+    if ((cartesianGrid[i].l-cutOffRadius) < -1e-7 && cartesianGrid[i].l > 1e-7){
+      sum3D += constantFactor/cartesianGrid[i].l/cartesianGrid[i].l
+               *cartesianGrid[i].s;
+      }
+    }
   for (int t0(-N0); t0 < N0+1; ++t0){
     for (int t1(-N1); t1 < N1+1; ++t1){
       for (int t2(-N2); t2 < N2+1; ++t2){
-        if (t0 == 0 && t1==0 && t2 ==0) continue;
         Vector<double> directg;
         Vector<double> ga(((a/double(N0))*double(t0)));
         Vector<double> gb(((b/double(N1))*double(t1)));
         Vector<double> gc(((c/double(N2))*double(t2)));
         Vector<double> g(ga+gb+gc);
-        if (IsInSmallBZ(g, 2, smallBZ)){
-          for (int i(0); i < NG; ++i){
-            if ((cartesianMomenta[i].length()-cutOffRadius) < -1e-7){
-              g += cartesianMomenta[i];
-              countNO++;
+        if (IsInSmallBZ(g, 2, smallBZ)){  
+          countNO++;
+          for (int i(0); i < 2*NG; ++i){
+            if ((cartesianGrid[i].l-cutOffRadius) < -1e-7){
+              g += cartesianGrid[i].v;
               for (int d(0); d <3; ++d){
                 directg[d]=T[d].dot(g);
                 }
+              if (g.length() > 1e-7)
               inter3D += interpolatedSG(directg[0], directg[1],
                    directg[2])*constantFactor/g.length()/g.length();
-              }
+              } 
             }
           }
         }
       }
     }
+  sum3D = sum3D/2.;
+  LOG(0, "interpolation3D") << "sum3D= " << sum3D << std::endl;
   inter3D=inter3D/countNO;
   LOG(0,"interpolation3D") << "Number of points in smallBZ="<< countNO << std::endl;
 }
