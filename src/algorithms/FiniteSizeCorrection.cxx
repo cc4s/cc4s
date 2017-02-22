@@ -371,7 +371,7 @@ void FiniteSizeCorrection::interpolation3D() {
   std::vector<Vector<>> smallBZ;
   smallBZ.push_back(cartesianGrid[2].v);
   for (int t(3); t<2*NG; t++){
-      if (IsInSmallBZ(cartesianGrid[t].v,smallBZ)){
+      if (IsInSmallBZ(cartesianGrid[t].v,1.,smallBZ)){
         smallBZ.push_back(cartesianGrid[t].v);
         }
   }
@@ -385,8 +385,10 @@ void FiniteSizeCorrection::interpolation3D() {
   int kpoints(getIntegerArgument("kpoints", 1));
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
+  double region(getIntegerArgument("region", 0));
   int N0(100), N1(100), N2(100);
-  double inter3D(0.);
+  inter3D = 0.;
+  int countNO(0);
   for (int t0(-N0); t0 < N0+1; ++t0){
     for (int t1(-N1); t1 < N1+1; ++t1){
       for (int t2(-N2); t2 < N2+1; ++t2){
@@ -402,35 +404,27 @@ void FiniteSizeCorrection::interpolation3D() {
         //LOG(0,"interpolation3D") << "gc vector= " << gc << std::endl;
         //LOG(0,"interpolation3D") << "g vector= " << g << std::endl;
         //LOG(0,"interpolation3D") << "is in smallBZ " << IsInSmallBZ(g, smallBZ)<< std::endl;
-        if (IsInSmallBZ(g, smallBZ)){
+        if (IsInSmallBZ(g, 2, smallBZ)){
+          countNO++;
           for (int d(0); d <3; ++d){
             directg[d]=T[d].dot(g);
             }
             inter3D += 1./double(2*N0+1)/double(2*N1+1)/double(2*N2+1)*interpolatedSG(directg[0], directg[1],
-                   directg[2])*constantFactor/g.length()/g.length();
-
+                   directg[2]);//*constantFactor/g.length()/g.length();
           }
         }
+      }
     }
-  }
-  int fReadFromFile(getIntegerArgument("fReadFromFile", 0));
-  if (fReadFromFile ==1)
-  LOG(0, "interpolation3D") << "integral in 3D= " << inter3D << std::endl;
-  else
-  LOG(0, "interpolation3D") << "integral in 3D= " << inter3D/2. << std::endl;
+  LOG(0,"interpolation3D") << "Number of points in smallBZ="<< countNO << std::endl;
 }
 
-
 bool FiniteSizeCorrection::IsInSmallBZ(
-  Vector<> point, std::vector<Vector<>> smallBZ
+  Vector<> point, double scale, std::vector<Vector<>> smallBZ
 ){
   std::vector<int>::size_type countVector(0);
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
-    if (abs(abs(smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length() -1.0)) < 1e-7 ||  smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length() -1.0 < 0.) {
+    if (abs(abs(smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length()*scale -1.0)) < 1e-7 ||  smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length()*scale -1.0 < 0.) {
       countVector++;
-        //LOG(0,"FiniteSize") << "condition "  <<abs(smallBZ[i].dot(point))/smallBZ[i].length() << std::endl;
-        //LOG(1,"FiniteSize") << "countVector "  << countVector << std::endl;
-        //LOG(1,"FiniteSize") << "size of smallBZ "  << smallBZ.size() << std::endl;
       }
     else{
       break;
@@ -494,12 +488,18 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   double  sumSGVG(0.);
   int fReadFromFile(getIntegerArgument("fReadFromFile", 0));
   if (fReadFromFile == 1) r1=r1*2.;
+  //TODO:Exclude the integrated region from the summation.
   for (int d(0); d < NG; ++d){
     sumSGVG += VofG[d] * structureFactors[d];
     }
-  LOG(1,"FiniteSize") << "Uncorrected e="  << sumSGVG       << std::endl;
-  LOG(1,"FiniteSize") << "Correction  e="  << r1            << std::endl;
-  LOG(1,"FiniteSize") << "Corrected   e="  << sumSGVG + r1  << std::endl;
+  if (fReadFromFile != 1) inter3D = inter3D/2.;
+  LOG(1,"FiniteSize") << "Uncorrected e="   << sumSGVG         << std::endl;
+  LOG(1,"FiniteSize") << "Integral in 3D= " << inter3D         << std::endl;
+  LOG(1,"FiniteSize") << "3D Corrected e= " << sumSGVG+inter3D << std::endl;
+  LOG(1,"FiniteSize") << "Spherical Averaging Correction  e="  <<
+  r1              << std::endl;
+  LOG(1,"FiniteSize") << "Spherical Averaging Corrected   e="  << sumSGVG +
+  r1    << std::endl;
 
   setRealArgument("CorrectedEnergy"  , sumSGVG + r1);
 }

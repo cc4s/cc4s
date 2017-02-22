@@ -22,6 +22,7 @@ namespace cc4s {
     double *structureFactors;
     double *VofG;
     double GC;
+    double inter3D;
     class Momentum;
     Momentum *fibonacciGrid;
     Momentum *cartesianGrid;
@@ -30,7 +31,7 @@ namespace cc4s {
     void constructFibonacciGrid(double R);
     void interpolation3D();
     bool IsInSmallBZ(
-      Vector<double> point, std::vector<cc4s::Vector<double>> smallBZ
+      Vector<double> point, double scale, std::vector<cc4s::Vector<double>> smallBZ
     );
     double SGxVG(cc4s::Inter1D<double> Int1d, double x);
     double integrate(
