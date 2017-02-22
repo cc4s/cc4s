@@ -410,7 +410,7 @@ void FiniteSizeCorrection::interpolation3D() {
             directg[d]=T[d].dot(g);
             }
             inter3D += 1./double(2*N0+1)/double(2*N1+1)/double(2*N2+1)*interpolatedSG(directg[0], directg[1],
-                   directg[2]);//*constantFactor/g.length()/g.length();
+                   directg[2])*constantFactor/g.length()/g.length();
           }
         }
       }
