@@ -409,12 +409,13 @@ void FiniteSizeCorrection::interpolation3D() {
           for (int d(0); d <3; ++d){
             directg[d]=T[d].dot(g);
             }
-            inter3D += 1./double(2*N0+1)/double(2*N1+1)/double(2*N2+1)*interpolatedSG(directg[0], directg[1],
+            inter3D += interpolatedSG(directg[0], directg[1],
                    directg[2])*constantFactor/g.length()/g.length();
           }
         }
       }
     }
+  inter3D=inter3D/countNO;
   LOG(0,"interpolation3D") << "Number of points in smallBZ="<< countNO << std::endl;
 }
 
