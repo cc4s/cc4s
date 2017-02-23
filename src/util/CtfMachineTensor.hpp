@@ -12,7 +12,7 @@ namespace cc4s {
   template <typename F=double>
   class CtfMachineTensorFactory;
 
-  template <typename F>
+  template <typename F=double>
   class CtfMachineTensor: public tcc::MachineTensor<F> {
   protected:
     class ProtectedToken {
