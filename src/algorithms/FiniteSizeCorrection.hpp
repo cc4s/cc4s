@@ -23,6 +23,7 @@ namespace cc4s {
     double *VofG;
     double GC;
     double inter3D;
+    double sum3D;
     class Momentum;
     Momentum *fibonacciGrid;
     Momentum *cartesianGrid;

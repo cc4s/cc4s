@@ -364,9 +364,9 @@ void FiniteSizeCorrection::interpolation3D() {
     }
   }
   //Define the 3D zone close to the Gamma point which needed to be integrated over. Find the vectors which define it. Small BZ
-  for (int t(0); t < 20; t++){
-    LOG(0,"G vectors by length") << cartesianGrid[t].v << std::endl;
-  }
+  //for (int t(0); t < 20; t++){
+  //  LOG(0,"G vectors by length") << cartesianGrid[t].v << std::endl;
+  //}
 
   std::vector<Vector<>> smallBZ;
   smallBZ.push_back(cartesianGrid[2].v);
@@ -386,11 +386,11 @@ void FiniteSizeCorrection::interpolation3D() {
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
   double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
-  int N0(99), N1(99), N2(99);
+  int N0(50), N1(50), N2(50);
   inter3D = 0.;
+  sum3D   = 0.;
   int countNO(0);
   int countNOg(0);
-  double sum3D(0.);
   std::vector<Vector<>> gridWithinRadius;
   for (int i(0); i < 2*NG; ++i) {
     if ((cartesianGrid[i].l-cutOffRadius) < -1e-7){
@@ -401,6 +401,13 @@ void FiniteSizeCorrection::interpolation3D() {
       sum3D += constantFactor/cartesianGrid[i].l/cartesianGrid[i].l
                *cartesianGrid[i].s;
       gridWithinRadius.push_back(cartesianGrid[i].v);
+      //LOG(0, "interpolation3D") << "original SG= " << cartesianGrid[i].s << std::endl;
+      //Vector<double> tmp;
+      //for (int d(0); d <3; ++d){
+      //  tmp[d]=T[d].dot(cartesianGrid[i].v);
+      //  }
+      //LOG(0, "cartesianGrid") << "Inteped SG= " << interpolatedSG(tmp[0], tmp[1], tmp[2]) << std::endl;
+      //
       }
     }
   for (int t0(-N0); t0 < N0+1; ++t0){
@@ -411,13 +418,17 @@ void FiniteSizeCorrection::interpolation3D() {
         Vector<double> gb(((b/double(N1))*double(t1)));
         Vector<double> gc(((c/double(N2))*double(t2)));
         Vector<double> g(ga+gb+gc);
-        if (IsInSmallBZ(g, 2, smallBZ)){  
-          countNO++;
+        if (IsInSmallBZ(g, 2, smallBZ)){
+          countNOg++;
           for (std::vector<int>::size_type i = 0; i != gridWithinRadius.size(); i++){
+              g=ga+gb+gc;
+              //LOG(0, "interpolation3D") << "g= " << g << std::endl;
               g += gridWithinRadius[i];
+              //LOG(0, "interpolation3D") << "g+G= " << g << std::endl;
               for (int d(0); d <3; ++d){
                 directg[d]=T[d].dot(g);
                 }
+              countNO++;
               if (g.length() > 1e-7)
               inter3D += interpolatedSG(directg[0], directg[1],
                    directg[2])*constantFactor/g.length()/g.length();
@@ -426,10 +437,11 @@ void FiniteSizeCorrection::interpolation3D() {
         }
       }
     }
-  sum3D = sum3D/2.;
+  LOG(0,"integration3D") << "countNOg= " << countNOg <<std::endl;
+  sum3D = sum3D/2.; //Both readFromFile=0 and 1 needs to be divided by 2
   LOG(0, "interpolation3D") << "sum3D= " << sum3D << std::endl;
-  inter3D=inter3D/countNO;
-  LOG(0,"interpolation3D") << "Number of points in smallBZ="<< countNO << std::endl;
+  inter3D=inter3D/countNOg;
+  LOG(0,"interpolation3D") << "Number of points in summation="<< countNO << std::endl;
 }
 
 bool FiniteSizeCorrection::IsInSmallBZ(
@@ -437,7 +449,12 @@ bool FiniteSizeCorrection::IsInSmallBZ(
 ){
   std::vector<int>::size_type countVector(0);
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
-    if (abs(abs(smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length()*scale -1.0)) < 1e-7 ||  smallBZ[i].dot(point)/smallBZ[i].length()/smallBZ[i].length()*scale -1.0 < -1e-7) {
+    if
+    (abs(abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()
+    *scale -1.0) < 1e-9 ||
+    abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale
+    -1.0 < -1e-9) {
+      //LOG(0,"IsInSmallBZ") << "condtion= " << abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale -1.0 << std::endl;
       countVector++;
       }
     else{
@@ -457,7 +474,7 @@ double FiniteSizeCorrection::integrate(
   double s = 0;
   double h = (end-start)/steps;
   for (int i = 0; i < steps; ++i)
-    s += simpson(Int1d, start + h*i, h);
+  s += simpson(Int1d, start + h*i, h);
   return h*s;
 }
 
@@ -509,7 +526,7 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   if (fReadFromFile != 1) inter3D = inter3D/2.;
   LOG(1,"FiniteSize") << "Uncorrected e="   << sumSGVG         << std::endl;
   LOG(1,"FiniteSize") << "Integral in 3D= " << inter3D         << std::endl;
-  LOG(1,"FiniteSize") << "3D Corrected e= " << sumSGVG+inter3D << std::endl;
+  LOG(1,"FiniteSize") << "3D Corrected e= " << sumSGVG+inter3D-sum3D << std::endl;
   LOG(1,"FiniteSize") << "Spherical Averaging Correction  e="  <<
   r1              << std::endl;
   LOG(1,"FiniteSize") << "Spherical Averaging Corrected   e="  << sumSGVG +
