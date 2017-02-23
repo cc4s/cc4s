@@ -40,6 +40,9 @@ void DrccdDensities::run() {
     (*ctfDabij)["abij"]
   );
   run<CTF::Tensor<>, CtfMachineTensor<>>(ctfDabij, false);
+  auto Ni(getTensorArgument<>("DrccdHoleOccupancies"));
+  (*Ni)["i"] -= 2.0;
+  (*Ni)["i"] *= -1.0;
 }
 
 void DrccdDensities::dryRun() {
@@ -68,19 +71,20 @@ void DrccdDensities::run(T *ctfDabij, const bool dry) {
   auto Dabij( tcc->createTensor(MT::create(*ctfDabij)) );
   delete ctfDabij;
 
-  // create Lambda operator amplitudes of same shape as doubles amplitudes
+  // create Lambda amplitudes and residuum of same shape as doubles amplitudes
   auto Labij( tcc->createTensor(Tabij, "Labij") );
+  auto Rabij( tcc->createTensor(Tabij, "Rabij") );
 
   // compile Lambda equation iteration
   auto iterationOperation(
     tcc->compile( (
-      (*Labij)["abij"] <<= (*Vabij)["abij"],
-      (*Labij)["abij"] += (*Vabij)["abij"],
-      (*Labij)["abij"] += 2 * (*Labij)["acik"] * (*Vabij)["cbkj"],
-      (*Labij)["abij"] += 2 * (*Vabij)["acik"] * (*Labij)["cbkj"],
-      (*Labij)["abij"] += 4*(*Labij)["acik"]*(*Tabij)["cdkl"]*(*Vabij)["dblj"],
-      (*Labij)["abij"] += 4*(*Vabij)["acik"]*(*Tabij)["cdkl"]*(*Labij)["dblj"],
-      (*Labij)["abij"] <<= (*Labij)["abij"] * (*Dabij)["abij"]
+      (*Rabij)["abij"] <<= (*Vabij)["abij"],
+      (*Rabij)["abij"] += (*Vabij)["abij"],
+      (*Rabij)["abij"] += 2 * (*Labij)["acik"] * (*Vabij)["cbkj"],
+      (*Rabij)["abij"] += 2 * (*Vabij)["acik"] * (*Labij)["cbkj"],
+      (*Rabij)["abij"] += 4*(*Labij)["acik"]*(*Tabij)["cdkl"]*(*Vabij)["dblj"],
+      (*Rabij)["abij"] += 4*(*Vabij)["acik"]*(*Tabij)["cdkl"]*(*Labij)["dblj"],
+      (*Labij)["abij"] <<= (*Rabij)["abij"] * (*Dabij)["abij"]
     ) )
   );
 
