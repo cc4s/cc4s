@@ -523,7 +523,7 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   for (int d(0); d < NG; ++d){
     sumSGVG += VofG[d] * structureFactors[d];
     }
-  if (fReadFromFile != 1) inter3D = inter3D/2.;
+  inter3D = inter3D/2.;//both read or not from file should divide by 2
   LOG(1,"FiniteSize") << "Uncorrected e="   << sumSGVG         << std::endl;
   LOG(1,"FiniteSize") << "Integral in 3D= " << inter3D         << std::endl;
   LOG(1,"FiniteSize") << "3D Corrected e= " << sumSGVG+inter3D-sum3D << std::endl;
