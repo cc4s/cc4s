@@ -27,6 +27,9 @@ DrccdDensities [
   (maxIterations 64)
 ] [
   DrccdLambdaDoublesAmplitudes
-  DrccdOneBodyDensity
+  DrccdOneBodyHHDensity DrccdOneBodyPPDensity
+  DrccdHoleOccupancies DrccdParticleOccupancies
 ].
 
+TensorWriter [(Data DrccdHoleOccupancies)] [].
+TensorWriter [(Data DrccdParticleOccupancies)] [].

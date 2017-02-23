@@ -95,5 +95,33 @@ void DrccdDensities::run(T *ctfDabij, const bool dry) {
     "DrccdLambdaDoublesAmplitudes",
     new T(Labij->template getMachineTensor<MT>()->tensor)
   );
+
+  // build reduced one body density matrix
+  // additionally, build number operator expectation values
+  int Nv(Labij->lens[0]), No(Labij->lens[2]);
+  auto Dij( tcc->createTensor(std::vector<int>({No,No}), "Dij") );
+  auto Dab( tcc->createTensor(std::vector<int>({Nv,Nv}), "Dab") );
+  auto Ni( tcc->createTensor(std::vector<int>({No}), "Ni") );
+  auto Na( tcc->createTensor(std::vector<int>({Nv}), "Na") );
+  tcc->compile(
+    (
+      (*Dij)["ij"] <<= 2 * (*Tabij)["cdkj"] * (*Labij)["cdki"],
+      (*Dab)["ab"] <<= 2 * (*Tabij)["cbkl"] * (*Labij)["cakl"],
+      (*Ni)["i"] <<= 2 * (*Dij)["ii"],
+      (*Na)["a"] <<= 2 * (*Dab)["aa"]
+    )
+  )->execute();
+  allocatedTensorArgument<double, T>(
+    "DrccdOneBodyHHDensity", new T(Dij->template getMachineTensor<MT>()->tensor)
+  );
+  allocatedTensorArgument<double, T>(
+    "DrccdOneBodyPPDensity", new T(Dab->template getMachineTensor<MT>()->tensor)
+  );
+  allocatedTensorArgument<double, T>(
+    "DrccdHoleOccupancies", new T(Ni->template getMachineTensor<MT>()->tensor)
+  );
+  allocatedTensorArgument<double, T>(
+    "DrccdParticleOccupancies",new T(Na->template getMachineTensor<MT>()->tensor)
+  );
 }
 
