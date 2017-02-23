@@ -386,15 +386,21 @@ void FiniteSizeCorrection::interpolation3D() {
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
   double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
-  int N0(100), N1(100), N2(100);
+  int N0(99), N1(99), N2(99);
   inter3D = 0.;
   int countNO(0);
   int countNOg(0);
   double sum3D(0.);
+  std::vector<Vector<>> gridWithinRadius;
   for (int i(0); i < 2*NG; ++i) {
-    if ((cartesianGrid[i].l-cutOffRadius) < -1e-7 && cartesianGrid[i].l > 1e-7){
+    if ((cartesianGrid[i].l-cutOffRadius) < -1e-7){
+      if (cartesianGrid[i].l < 1e-7) {
+        gridWithinRadius.push_back(cartesianGrid[i].v);
+        continue;
+        }
       sum3D += constantFactor/cartesianGrid[i].l/cartesianGrid[i].l
                *cartesianGrid[i].s;
+      gridWithinRadius.push_back(cartesianGrid[i].v);
       }
     }
   for (int t0(-N0); t0 < N0+1; ++t0){
@@ -407,16 +413,14 @@ void FiniteSizeCorrection::interpolation3D() {
         Vector<double> g(ga+gb+gc);
         if (IsInSmallBZ(g, 2, smallBZ)){  
           countNO++;
-          for (int i(0); i < 2*NG; ++i){
-            if ((cartesianGrid[i].l-cutOffRadius) < -1e-7){
-              g += cartesianGrid[i].v;
+          for (std::vector<int>::size_type i = 0; i != gridWithinRadius.size(); i++){
+              g += gridWithinRadius[i];
               for (int d(0); d <3; ++d){
                 directg[d]=T[d].dot(g);
                 }
               if (g.length() > 1e-7)
               inter3D += interpolatedSG(directg[0], directg[1],
                    directg[2])*constantFactor/g.length()/g.length();
-              } 
             }
           }
         }
