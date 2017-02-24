@@ -39,7 +39,13 @@ void DrccdDensities::run() {
   ) (
     (*ctfDabij)["abij"]
   );
+
+  // call generic (dry and non-dry) run method
   run<CTF::Tensor<>, CtfMachineTensor<>>(ctfDabij, false);
+
+  // convert hole occupancies from particle/hole operator N'_i = i^\dagger i
+  // to electron N_i - c_i^\dagger c_i, where i^\dagger = c_i
+  // TODO: implement below operations in tcc
   auto Ni(getTensorArgument<>("DrccdHoleOccupancies"));
   (*Ni)["i"] -= 2.0;
   (*Ni)["i"] *= -1.0;
