@@ -8,7 +8,6 @@
 
 using namespace cc4s;
 using namespace tcc;
-using std::shared_ptr;
 
 ALGORITHM_REGISTRAR_DEFINITION(DrccdDensities);
 
@@ -73,8 +72,6 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   auto Vabij( tcc->createTensor(MT::create(*ctfVabij)) );
   T *ctfVaibj( getTensorArgument<double, T>("PHPHCoulombIntegrals") );
   auto Vaibj( tcc->createTensor(MT::create(*ctfVaibj)) );
-  T *ctfVaijb( getTensorArgument<double, T>("PHHPCoulombIntegrals") );
-  auto Vaijb( tcc->createTensor(MT::create(*ctfVaijb)) );
   T *ctfVijkl( getTensorArgument<double, T>("HHHHCoulombIntegrals") );
   auto Vijkl( tcc->createTensor(MT::create(*ctfVijkl)) );
 
@@ -94,7 +91,6 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   auto iterationOperation(
     tcc->compile( (
       (*Rabij)["abij"] <<= (*Vabij)["abij"],
-      (*Rabij)["abij"] += (*Vabij)["abij"],
       (*Rabij)["abij"] += 2 * (*Labij)["acik"] * (*Vabij)["cbkj"],
       (*Rabij)["abij"] += 2 * (*Vabij)["acik"] * (*Labij)["cbkj"],
       (*Rabij)["abij"] += 4*(*Labij)["acik"]*(*Tabij)["cdkl"]*(*Vabij)["dblj"],
@@ -155,7 +151,7 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
       (*Veei)["i"] <<= 2 * (*Vijkl)["ijij"],
       (*Veei)["i"] -= (*Vijkl)["ijji"],
       (*Veea)["a"] <<= 2 * (*Vaibj)["ajaj"],
-      (*Veea)["a"] -= (*Vaijb)["ajja"],
+      (*Veea)["a"] -= (*Vabij)["aajj"],
       (*ei)["i"] <<= (*epsi)["i"],
       (*ei)["i"] -= (*Veei)["i"],
       (*ea)["a"] <<= (*epsa)["a"],
@@ -187,16 +183,16 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
     (
       // from Gamma^ab_ij
       (*Gabij)["abij"] <<= (*Tabij)["abij"],
-      (*Gabij)["abij"] += (*Tabij)["acik"] * (*Labij)["cdkl"] * (*Tabij)["dblj"],
+      (*Gabij)["abij"] += 4*(*Tabij)["acik"]*(*Labij)["cdkl"]*(*Tabij)["dblj"],
       // from Gamma^aj_ib
-      (*Gabij)["abij"] += (*Tabij)["acik"] * (*Labij)["bcjk"],
+      (*Gabij)["abij"] += 2 * (*Tabij)["acik"] * (*Labij)["bcjk"],
       // from Gamma^ib_aj
-      (*Gabij)["abij"] += (*Tabij)["cbkj"] * (*Labij)["caki"],
+      (*Gabij)["abij"] += 2 * (*Tabij)["cbkj"] * (*Labij)["caki"],
       // from Gamma ^ij_ab
       (*Gabij)["abij"] += (*Labij)["abij"],
       // calcualte Coulomb energy beyond first order
       (*Vee)[""] <<= 2 * (*Gabij)["abij"] * (*Vabij)["abij"],
-      // the last ineraction is exchanged: i.e. <0|1 V T|0>
+      // the last ineraction is also exchanged in drCCD: i.e. <0|1 V T|0>
       (*Vee)[""] -= (*Tabij)["abij"] * (*Vabij)["abji"]
     )
   )->execute();

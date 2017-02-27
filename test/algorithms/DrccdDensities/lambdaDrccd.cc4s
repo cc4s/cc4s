@@ -42,6 +42,9 @@ DrccdDensities [
   DrccdCoulombExpectationValue
 ].
 
+TensorWriter [(Data HoleEigenEnergies)] [].
+TensorWriter [(Data ParticleEigenEnergies)] [].
+
 TensorWriter [(Data DrccdHoleOccupancies)] [].
 TensorWriter [(Data DrccdParticleOccupancies)] [].
 
