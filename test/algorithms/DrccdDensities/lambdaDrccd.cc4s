@@ -8,6 +8,9 @@ CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ] [
   PPHHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PHHPCoulombIntegrals
+  HHHHCoulombIntegrals
 ].
 
 DrccdEnergyFromCoulombIntegrals [
@@ -16,6 +19,7 @@ DrccdEnergyFromCoulombIntegrals [
   (maxIterations 64)
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
+  
 ].
 
 TensorWriter [(Data DrccdEnergy)] [].
@@ -23,13 +27,27 @@ TensorWriter [(Data DrccdEnergy)] [].
 DrccdDensities [
   DrccdDoublesAmplitudes
   PPHHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PHHPCoulombIntegrals
+  HHHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 64)
 ] [
   DrccdLambdaDoublesAmplitudes
   DrccdOneBodyHHDensity DrccdOneBodyPPDensity
   DrccdHoleOccupancies DrccdParticleOccupancies
+  DrccdOneBodyCoulombHoleEnergies DrccdOneBodyCoulombParticleEnergies
+  DrccdOneBodyHoleEnergies DrccdOneBodyParticleEnergies
+  DrccdTwoBodyPPHHDensiy
+  DrccdCoulombExpectationValue
 ].
 
 TensorWriter [(Data DrccdHoleOccupancies)] [].
 TensorWriter [(Data DrccdParticleOccupancies)] [].
+
+TensorWriter [(Data DrccdOneBodyHoleEnergies)] [].
+TensorWriter [(Data DrccdOneBodyParticleEnergies)] [].
+TensorWriter [(Data DrccdOneBodyCoulombHoleEnergies)] [].
+TensorWriter [(Data DrccdOneBodyCoulombParticleEnergies)] [].
+
+TensorWriter [(Data DrccdCoulombExpectationValue)] [].

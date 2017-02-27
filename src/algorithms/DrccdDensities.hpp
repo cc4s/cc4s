@@ -23,7 +23,7 @@ namespace cc4s {
 
   protected:
     template<typename T, typename MT>
-    void run(T *ctfDabij, const bool dry = false);
+    void run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool dry = false);
 
     static constexpr int DEFAULT_MAX_ITERATIONS = 16;
   };

@@ -41,7 +41,7 @@ void DrccdDensities::run() {
   );
 
   // call generic (dry and non-dry) run method
-  run<CTF::Tensor<>, CtfMachineTensor<>>(ctfDabij, false);
+  run<CTF::Tensor<>, CtfMachineTensor<>>(epsi, epsa, ctfDabij, false);
 
   // convert hole occupancies from particle/hole operator N'_i = i^\dagger i
   // to electron N_i - c_i^\dagger c_i, where i^\dagger = c_i
@@ -56,25 +56,35 @@ void DrccdDensities::dryRun() {
       *getTensorArgument<double, DryTensor<>>("DrccdDoublesAmplitudes")
     )
   );
-  run<DryTensor<>, DryMachineTensor<>>(dryDabij, true);
+  run<DryTensor<>, DryMachineTensor<>>(dryDabij, nullptr, nullptr, true);
 }
 
 template <typename T, typename MT>
-void DrccdDensities::run(T *ctfDabij, const bool dry) {
+void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   auto machineTensorFactory(MT::Factory::create());
   auto tcc(Tcc<double>::create(machineTensorFactory));
 
-  // Read the particle/hole Coulomb integrals Vabij
+  // Read the Drccd doubles amplitudes Tabij
   T *ctfTabij( getTensorArgument<double, T>("DrccdDoublesAmplitudes") );
   auto Tabij( tcc->createTensor(MT::create(*ctfTabij)) );
 
-  // Read the Drccd doubles amplitudes Tabij
+  // Read the required Coulomb integrals Vabij
   T *ctfVabij( getTensorArgument<double, T>("PPHHCoulombIntegrals") );
   auto Vabij( tcc->createTensor(MT::create(*ctfVabij)) );
+  T *ctfVaibj( getTensorArgument<double, T>("PHPHCoulombIntegrals") );
+  auto Vaibj( tcc->createTensor(MT::create(*ctfVaibj)) );
+  T *ctfVaijb( getTensorArgument<double, T>("PHHPCoulombIntegrals") );
+  auto Vaijb( tcc->createTensor(MT::create(*ctfVaijb)) );
+  T *ctfVijkl( getTensorArgument<double, T>("HHHHCoulombIntegrals") );
+  auto Vijkl( tcc->createTensor(MT::create(*ctfVijkl)) );
 
   // convert energy denominators tensor into tcc tensor
   auto Dabij( tcc->createTensor(MT::create(*ctfDabij)) );
   delete ctfDabij;
+  // same for the HF eigenvalues
+  auto epsi( tcc->createTensor(MT::create(*ctfEpsi)) );
+  auto epsa( tcc->createTensor(MT::create(*ctfEpsa)) );
+
 
   // create Lambda amplitudes and residuum of same shape as doubles amplitudes
   auto Labij( tcc->createTensor(Tabij, "Labij") );
@@ -132,6 +142,71 @@ void DrccdDensities::run(T *ctfDabij, const bool dry) {
   );
   allocatedTensorArgument<double, T>(
     "DrccdParticleOccupancies",new T(Na->template getMachineTensor<MT>()->tensor)
+  );
+
+  // build single particle energies (eigenvalues of HF - effective interaction)
+  // this lets T + V_ne = Np*ep
+  auto ei( tcc->createTensor(epsi, "ei") );
+  auto ea( tcc->createTensor(epsa, "ea") );
+  auto Veei( tcc->createTensor(epsi, "Veei") );
+  auto Veea( tcc->createTensor(epsa, "Veea") );
+  tcc->compile(
+    (
+      (*Veei)["i"] <<= 2 * (*Vijkl)["ijij"],
+      (*Veei)["i"] -= (*Vijkl)["ijji"],
+      (*Veea)["a"] <<= 2 * (*Vaibj)["ajaj"],
+      (*Veea)["a"] -= (*Vaijb)["ajja"],
+      (*ei)["i"] <<= (*epsi)["i"],
+      (*ei)["i"] -= (*Veei)["i"],
+      (*ea)["a"] <<= (*epsa)["a"],
+      (*ea)["a"] -= (*Veea)["a"]
+    )
+  )->execute();
+  allocatedTensorArgument<double, T>(
+    "DrccdOneBodyCoulombHoleEnergies",
+    new T(Veei->template getMachineTensor<MT>()->tensor)
+  );
+  allocatedTensorArgument<double, T>(
+    "DrccdOneBodyCoulombParticleEnergies",
+    new T(Veea->template getMachineTensor<MT>()->tensor)
+  );
+  allocatedTensorArgument<double, T>(
+    "DrccdOneBodyHoleEnergies",
+    new T(ei->template getMachineTensor<MT>()->tensor)
+  );
+  allocatedTensorArgument<double, T>(
+    "DrccdOneBodyParticleEnergies",
+    new T(ea->template getMachineTensor<MT>()->tensor)
+  );
+
+  // build reduced two body density matrix
+  // additionally, evaluate V_ee
+  auto Gabij( tcc->createTensor(Vabij, "Gabij") );
+  auto Vee( tcc->createTensor(std::vector<int>(), "Vee") );
+  tcc-> compile(
+    (
+      // from Gamma^ab_ij
+      (*Gabij)["abij"] <<= (*Tabij)["abij"],
+      (*Gabij)["abij"] += (*Tabij)["acik"] * (*Labij)["cdkl"] * (*Tabij)["dblj"],
+      // from Gamma^aj_ib
+      (*Gabij)["abij"] += (*Tabij)["acik"] * (*Labij)["bcjk"],
+      // from Gamma^ib_aj
+      (*Gabij)["abij"] += (*Tabij)["cbkj"] * (*Labij)["caki"],
+      // from Gamma ^ij_ab
+      (*Gabij)["abij"] += (*Labij)["abij"],
+      // calcualte Coulomb energy beyond first order
+      (*Vee)[""] <<= 2 * (*Gabij)["abij"] * (*Vabij)["abij"],
+      // the last ineraction is exchanged: i.e. <0|1 V T|0>
+      (*Vee)[""] -= (*Tabij)["abij"] * (*Vabij)["abji"]
+    )
+  )->execute();
+  allocatedTensorArgument<double, T>(
+    "DrccdTwoBodyPPHHDensiy",
+    new T(Gabij->template getMachineTensor<MT>()->tensor)
+  );
+  allocatedTensorArgument<double, T>(
+    "DrccdCoulombExpectationValue",
+    new T(Vee->template getMachineTensor<MT>()->tensor)
   );
 }
 
