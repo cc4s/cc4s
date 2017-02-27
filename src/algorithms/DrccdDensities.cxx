@@ -45,10 +45,9 @@ void DrccdDensities::run() {
 
   // convert hole occupancies from particle/hole operator N'_i = i^\dagger i
   // to electron N_i - c_i^\dagger c_i, where i^\dagger = c_i
-  // TODO: implement below operations in tcc
+  // TODO: implement below operation in tcc
   auto Ni(getTensorArgument<>("DrccdHoleOccupancies"));
-  (*Ni)["i"] -= 2.0;
-  (*Ni)["i"] *= -1.0;
+  (*Ni)["i"] += 2.0;
 }
 
 void DrccdDensities::dryRun() {
@@ -115,8 +114,9 @@ void DrccdDensities::run(T *ctfDabij, const bool dry) {
   auto Na( tcc->createTensor(std::vector<int>({Nv}), "Na") );
   tcc->compile(
     (
-      (*Dij)["ij"] <<= 2 * (*Tabij)["cdkj"] * (*Labij)["cdki"],
-      (*Dab)["ab"] <<= 2 * (*Tabij)["cbkl"] * (*Labij)["cakl"],
+      // note the sign from breaking up a hole line
+      (*Dij)["ij"] <<= -2 * (*Tabij)["cdkj"] * (*Labij)["cdki"],
+      (*Dab)["ab"] <<= +2 * (*Tabij)["cbkl"] * (*Labij)["cakl"],
       (*Ni)["i"] <<= 2 * (*Dij)["ii"],
       (*Na)["a"] <<= 2 * (*Dab)["aa"]
     )
