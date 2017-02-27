@@ -1,3 +1,6 @@
+# Configuration for intel without optimization for debugging
+# and faster compile times.
+
 # main target
 TARGET=Cc4s
 
