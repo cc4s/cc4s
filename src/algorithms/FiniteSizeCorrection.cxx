@@ -207,6 +207,7 @@ void FiniteSizeCorrection::interpolation3D() {
   // such as a,b,c and omega from it.
   cartesianGrid = new Momentum[2*NG];
   // complete momentum grid in a Gamma only calculation
+  // TODO: detect if grid needs to be doubled
   for (int g(0); g<NG; ++g) {
     cartesianGrid[g] = Momentum(
       cartesianMomenta[g], structureFactors[g], VofG[g]
@@ -234,12 +235,12 @@ void FiniteSizeCorrection::interpolation3D() {
   // the 0th and 1st elements are 0, avoid it.
   int j=3;
   //a and b should not be parallel;
-  while ((a.cross(cartesianGrid[j].v)).length() < 1e-8) ++j;
+  while ((a.cross(cartesianGrid[j].v)).length() < 1e-9) ++j;
   cc4s::Vector<> b(cartesianGrid[j].v);
   LOG(2, "GridSearch") << "b2=#" << j << std::endl;
   ++j;
   //a, b and c should not be on the same plane;
-  while (abs((a.cross(b)).dot(cartesianGrid[j].v)) < 1e-8) ++j;
+  while (abs((a.cross(b)).dot(cartesianGrid[j].v)) < 1e-9) ++j;
   cc4s::Vector<> c(cartesianGrid[j].v);
   LOG(2, "GridSearch") << "b3=#" << j << std::endl;
 
@@ -300,9 +301,9 @@ void FiniteSizeCorrection::interpolation3D() {
 
   // check number of points in the interior and on the boundary
   int64_t interiorPointsCount(0), boundaryPointsCount(0);
-  for (int z(1); z < boxDimensions[2]; ++z) {
-    for (int y(1); y < boxDimensions[1]; ++y) {
-      for (int x(1); x < boxDimensions[0]; ++x) {
+  for (int z(1); z < boxDimensions[2]-1; ++z) {
+    for (int y(1); y < boxDimensions[1]-1; ++y) {
+      for (int x(1); x < boxDimensions[0]-1; ++x) {
         int64_t index(x + boxDimensions[0] * (y + boxDimensions[1]*z));
         bool inside(true);
         for (int dz(-1); dz <= 1; ++dz) {
@@ -364,14 +365,15 @@ void FiniteSizeCorrection::interpolation3D() {
     }
   }
   //Define the 3D zone close to the Gamma point which needed to be integrated over. Find the vectors which define it. Small BZ
-  //for (int t(0); t < 20; t++){
-  //  LOG(0,"G vectors by length") << cartesianGrid[t].v << std::endl;
-  //}
+  for (int t(0); t < 20; t++){
+    LOG(0,"G vectors by length") << cartesianGrid[t].v << std::endl;
+  }
 
   std::vector<Vector<>> smallBZ;
   smallBZ.push_back(cartesianGrid[2].v);
   for (int t(3); t<2*NG; t++){
-      if (IsInSmallBZ(cartesianGrid[t].v,1.,smallBZ)){
+    //LOG(0,"find basis smallBZ") << "t= " << t << " 2NG= " << 2*NG << std::endl;
+      if (IsInSmallBZ(cartesianGrid[t].v, 1., smallBZ)){
         smallBZ.push_back(cartesianGrid[t].v);
         }
   }
@@ -386,7 +388,7 @@ void FiniteSizeCorrection::interpolation3D() {
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
   double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
-  int N0(50), N1(50), N2(50);
+  int N0(51), N1(51), N2(51);
   inter3D = 0.;
   sum3D   = 0.;
   int countNO(0);
@@ -410,6 +412,7 @@ void FiniteSizeCorrection::interpolation3D() {
       //
       }
     }
+  int tmp(0);
   for (int t0(-N0); t0 < N0+1; ++t0){
     for (int t1(-N1); t1 < N1+1; ++t1){
       for (int t2(-N2); t2 < N2+1; ++t2){
@@ -418,8 +421,12 @@ void FiniteSizeCorrection::interpolation3D() {
         Vector<double> gb(((b/double(N1))*double(t1)));
         Vector<double> gc(((c/double(N2))*double(t2)));
         Vector<double> g(ga+gb+gc);
+        tmp++;
+        //LOG(0,"countNOg") << countNOg << " tmp= " << tmp << std::endl;
         if (IsInSmallBZ(g, 2, smallBZ)){
+          //LOG(0, "interpolation3D") << "inside of smallBZ g= " << g << std::endl;
           countNOg++;
+          //LOG(0,"size gridWithinRadius") << gridWithinRadius.size() << std::endl;
           for (std::vector<int>::size_type i = 0; i != gridWithinRadius.size(); i++){
               g=ga+gb+gc;
               //LOG(0, "interpolation3D") << "g= " << g << std::endl;
@@ -449,18 +456,21 @@ bool FiniteSizeCorrection::IsInSmallBZ(
 ){
   std::vector<int>::size_type countVector(0);
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
+    //LOG(0,"IsInSmallBZ") << "i= " << i << " size smallBZ= " << smallBZ.size() << std::endl;
+    //LOG(0, "IsInSmallBZ") << "point= " << point << std::endl;
+    //LOG(0, "IsInSmallBZ") << "passed" << std::endl;
     if
     (abs(abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()
     *scale -1.0) < 1e-9 ||
     abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale
     -1.0 < -1e-9) {
-      //LOG(0,"IsInSmallBZ") << "condtion= " << abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale -1.0 << std::endl;
       countVector++;
       }
     else{
       break;
       }
     }
+    //LOG(0,"IsInSmallBZ") << "countVector= " << countVector << "size= " << smallBZ.size() << std::endl;
     if (countVector == smallBZ.size()){
       return true;
       }
