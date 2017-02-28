@@ -15,6 +15,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
+#include "mpi.h"
 
 using namespace cc4s;
 using namespace CTF;
@@ -230,17 +231,19 @@ void FiniteSizeCorrection::interpolation3D() {
   else {
     GC = a.length();
   }
+  // determine a small length on the scale of the cell
+  const double epsilon(1e-9*a.length());
 
   LOG(2, "GridSearch") << "b1=#2" << std::endl;
   // the 0th and 1st elements are 0, avoid it.
   int j=3;
   //a and b should not be parallel;
-  while ((a.cross(cartesianGrid[j].v)).length() < 1e-9) ++j;
+  while ((a.cross(cartesianGrid[j].v)).length() < epsilon) ++j;
   cc4s::Vector<> b(cartesianGrid[j].v);
   LOG(2, "GridSearch") << "b2=#" << j << std::endl;
   ++j;
   //a, b and c should not be on the same plane;
-  while (abs((a.cross(b)).dot(cartesianGrid[j].v)) < 1e-9) ++j;
+  while (abs((a.cross(b)).dot(cartesianGrid[j].v)) < epsilon) ++j;
   cc4s::Vector<> c(cartesianGrid[j].v);
   LOG(2, "GridSearch") << "b3=#" << j << std::endl;
 
@@ -395,14 +398,12 @@ void FiniteSizeCorrection::interpolation3D() {
   int countNOg(0);
   std::vector<Vector<>> gridWithinRadius;
   for (int i(0); i < 2*NG; ++i) {
-    if ((cartesianGrid[i].l-cutOffRadius) < -1e-7){
-      if (cartesianGrid[i].l < 1e-7) {
-        gridWithinRadius.push_back(cartesianGrid[i].v);
-        continue;
-        }
-      sum3D += constantFactor/cartesianGrid[i].l/cartesianGrid[i].l
-               *cartesianGrid[i].s;
+    if (cartesianGrid[i].l < cutOffRadius) {
       gridWithinRadius.push_back(cartesianGrid[i].v);
+      if (cartesianGrid[i].l > epsilon) {
+        sum3D += constantFactor/cartesianGrid[i].l/cartesianGrid[i].l
+                 *cartesianGrid[i].s;
+      }
       //LOG(0, "interpolation3D") << "original SG= " << cartesianGrid[i].s << std::endl;
       //Vector<double> tmp;
       //for (int d(0); d <3; ++d){
@@ -410,44 +411,58 @@ void FiniteSizeCorrection::interpolation3D() {
       //  }
       //LOG(0, "cartesianGrid") << "Inteped SG= " << interpolatedSG(tmp[0], tmp[1], tmp[2]) << std::endl;
       //
-      }
     }
-  int tmp(0);
-  for (int t0(-N0); t0 < N0+1; ++t0){
-    for (int t1(-N1); t1 < N1+1; ++t1){
-      for (int t2(-N2); t2 < N2+1; ++t2){
-        Vector<double> directg;
-        Vector<double> ga(((a/double(N0))*double(t0)));
-        Vector<double> gb(((b/double(N1))*double(t1)));
-        Vector<double> gc(((c/double(N2))*double(t2)));
-        Vector<double> g(ga+gb+gc);
-        tmp++;
-        //LOG(0,"countNOg") << countNOg << " tmp= " << tmp << std::endl;
-        if (IsInSmallBZ(g, 2, smallBZ)){
-          //LOG(0, "interpolation3D") << "inside of smallBZ g= " << g << std::endl;
-          countNOg++;
-          //LOG(0,"size gridWithinRadius") << gridWithinRadius.size() << std::endl;
-          for (std::vector<int>::size_type i = 0; i != gridWithinRadius.size(); i++){
+  }
+
+  MPI_Barrier(Cc4s::world->comm);
+  for (int t0(-N0); t0 <= N0; ++t0) {
+    for (int t1(-N1); t1 <= N1; ++t1) {
+      for (int t2(-N2); t2 <= N2; ++t2) {
+        if ((std::abs(t0+t1+t2)) % Cc4s::world->np == Cc4s::world->rank) {
+          Vector<double> directg;
+          Vector<double> ga(((a/double(N0))*double(t0)));
+          Vector<double> gb(((b/double(N1))*double(t1)));
+          Vector<double> gc(((c/double(N2))*double(t2)));
+          Vector<double> g(ga+gb+gc);
+          if (IsInSmallBZ(g, 2, smallBZ)){
+            //LOG(0, "interpolation3D") << "inside of smallBZ g= " << g << std::endl;
+            countNOg++;
+            //LOG(0,"size gridWithinRadius") << gridWithinRadius.size() << std::endl;
+            for (std::vector<int>::size_type i = 0; i != gridWithinRadius.size(); ++i) {
               g=ga+gb+gc;
               //LOG(0, "interpolation3D") << "g= " << g << std::endl;
               g += gridWithinRadius[i];
               //LOG(0, "interpolation3D") << "g+G= " << g << std::endl;
               for (int d(0); d <3; ++d){
                 directg[d]=T[d].dot(g);
-                }
+              }
               countNO++;
-              if (g.length() > 1e-7)
-              inter3D += interpolatedSG(directg[0], directg[1],
-                   directg[2])*constantFactor/g.length()/g.length();
+              if (g.length() > epsilon) {
+                inter3D += interpolatedSG(
+                  directg[0], directg[1],
+                  directg[2]
+                ) * constantFactor/g.length()/g.length();
+              }
             }
           }
         }
       }
     }
-  LOG(0,"integration3D") << "countNOg= " << countNOg <<std::endl;
+  }
+  double totalInter3D(0);
+  int totalCountNOg(0);
+  MPI_Allreduce(
+    &inter3D, &totalInter3D, 1, MPI_DOUBLE, MPI_SUM, Cc4s::world->comm
+  );
+  MPI_Allreduce(
+    &countNOg, &totalCountNOg, 1, MPI_INT, MPI_SUM, Cc4s::world->comm
+  );
+  MPI_Barrier(Cc4s::world->comm);
+
+  LOG(0,"integration3D") << "countNOg= " << totalCountNOg <<std::endl;
   sum3D = sum3D/2.; //Both readFromFile=0 and 1 needs to be divided by 2
   LOG(0, "interpolation3D") << "sum3D= " << sum3D << std::endl;
-  inter3D=inter3D/countNOg;
+  inter3D=totalInter3D/totalCountNOg;
   LOG(0,"interpolation3D") << "Number of points in summation="<< countNO << std::endl;
 }
 
@@ -459,6 +474,7 @@ bool FiniteSizeCorrection::IsInSmallBZ(
     //LOG(0,"IsInSmallBZ") << "i= " << i << " size smallBZ= " << smallBZ.size() << std::endl;
     //LOG(0, "IsInSmallBZ") << "point= " << point << std::endl;
     //LOG(0, "IsInSmallBZ") << "passed" << std::endl;
+    // FIXME: use an epsilon instead of 1e-9
     if
     (abs(abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()
     *scale -1.0) < 1e-9 ||
