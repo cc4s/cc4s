@@ -19,7 +19,7 @@ PerturbativeTriples::PerturbativeTriples(
 PerturbativeTriples::~PerturbativeTriples() {
 }
 
-void PerturbativeTriples::runHelgaker() {
+void PerturbativeTriples::run() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -162,7 +162,7 @@ void PerturbativeTriples::runPiecuch() {
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
 
-void PerturbativeTriples::run() {
+void PerturbativeTriples::runPiecuchFactorized() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -201,7 +201,7 @@ void PerturbativeTriples::run() {
   Xabcijk["abcijk"] +=    (-2.0) * Zabcijk["acbijk"];
   Xabcijk["abcijk"] += (2.0/3.0) * Zabcijk["bcaijk"];
 
-  // TODO: Here we should enter the correct factors which Felix will compute
+  // Correct factorization to avoid permutation
   Rabcijk["abcijk"]  = (+8.0) * Tabcijk["abcijk"];
   Rabcijk["abcijk"] += (-4.0) * Tabcijk["acbijk"];
   Rabcijk["abcijk"] += (-4.0) * Tabcijk["bacijk"];
@@ -236,7 +236,7 @@ void PerturbativeTriples::run() {
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
 
-void PerturbativeTriples::dryRunHelgaker() {
+void PerturbativeTriples::dryRun() {
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("HHHPCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("PPPHCoulombIntegrals");
@@ -276,7 +276,7 @@ void PerturbativeTriples::dryRunHelgaker() {
 }
 
 
-void PerturbativeTriples::dryRun() {
+void PerturbativeTriples::dryRunPiecuch() {
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("HHHPCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("PPPHCoulombIntegrals");

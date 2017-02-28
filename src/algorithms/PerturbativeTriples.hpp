@@ -16,7 +16,7 @@ namespace cc4s {
     /**
      * \brief Calculates perturbative triples correction. Routine based on Helgaker book.
      */
-    virtual void runHelgaker();
+    virtual void run();
     /**
      * \brief Calculates perturbative triples correction. Routine based on Piecuch paper.
      */
@@ -24,15 +24,15 @@ namespace cc4s {
     /**
      * \brief Calculates perturbative triples correction. Routine based on Piecuch paper.
      */
-    virtual void run();
+    virtual void runPiecuchFactorized();
     /**
      * \brief Dry run for perturbative triples correction based on Helgaker book.
      */
-    virtual void dryRunHelgaker();
+    virtual void dryRun();
     /**
      * \brief Dry run for perturbative triples correction based on Piecuch paper.
      */
-    virtual void dryRun();
+    virtual void dryRunPiecuch();
   };
 }
 
