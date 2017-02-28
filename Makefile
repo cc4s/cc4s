@@ -1,5 +1,5 @@
 # default configuration, override with
-#   make all CONFIG=(icc|gcc)
+#   make all CONFIG=(icc|gxx|icc-debug|icc-local|icc-debug-local)
 CONFIG=gxx
 
 include config.${CONFIG}

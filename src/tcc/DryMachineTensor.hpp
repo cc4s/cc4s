@@ -14,7 +14,7 @@ namespace cc4s {
   template <typename F=double>
   class DryMachineTensorFactory;
 
-  template <typename F>
+  template <typename F=double>
   class DryMachineTensor: public tcc::MachineTensor<F> {
   protected:
     class ProtectedToken {
