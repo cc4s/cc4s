@@ -32,11 +32,18 @@ FiniteSizeCorrection::~FiniteSizeCorrection() {
 
 void FiniteSizeCorrection::run() {
   int fReadFromFile(getIntegerArgument("fReadFromFile", 0));
-  LOG(0,"run") << "fReadFromFile= " << fReadFromFile << std::endl;
-  if (fReadFromFile == 1) readFromFile();
-  else calculateStructureFactor();
+  if (fReadFromFile == 1) {
+    LOG(0,"FiniteSize") << "Reading structure factor from file" << std::endl;
+    readFromFile();
+  }
+  else {
+    LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
+    calculateStructureFactor();
+  }
   //constructFibonacciGrid();
+  LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
   interpolation3D();
+  LOG(0,"FiniteSize") << "Caclulating finite size correction" << std::endl;
   calculateFiniteSizeCorrection();
 }
 
@@ -78,14 +85,14 @@ void FiniteSizeCorrection::readFromFile(){
   LOG(0,"readFromFile") << "reading " << std::endl;
   Tensor<> *realVG(getTensorArgument<>("CoulombKernel"));
   Tensor<> *realSG(getTensorArgument<>("StructureFactor"));
-  LOG(0,"readFromFile") << "success\n Loading into Vectors " << std::endl;
+  LOG(1,"readFromFile") << "success\n Loading into Vectors " << std::endl;
   NG=realVG->lens[0];
   VofG = new double[NG];
   realVG->read_all(VofG);
-  LOG(0,"readFromFile") << "VofG Finished" << std::endl;
+  LOG(1,"readFromFile") << "VofG Finished" << std::endl;
   structureFactors = new double[NG];
   realSG->read_all(structureFactors);
-  LOG(0,"readFromFile") << "Finished" << std::endl;
+  LOG(1,"readFromFile") << "Finished" << std::endl;
 }
 
 void FiniteSizeCorrection::calculateStructureFactor() {
@@ -155,6 +162,16 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   );
   toComplexTensor(*realTabij, Tabij);
 
+  if (isArgumentGiven("SinglesAmplitudes") ) {
+    //Get Tai
+    Tensor<> *realTai(getTensorArgument("SinglesAmplitudes"));
+    Tensor<complex> Tai(
+      2, realTai->lens, realTai->sym, *realTai->wrld, "Tai"
+    );
+    toComplexTensor(*realTai, Tai);
+    Tabij["abij"] += Tai["ai"] * Tai["bj"];
+  }
+
   //construct SG
   NG = CGai.lens[0];
   CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
@@ -166,11 +183,12 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
+
   //Get energy from amplitudes
-  Scalar<> EMp2(*CGai.wrld);
-  EMp2[""] = (*realSG)["G"] * (*realVG)["G"];
-  double DEMp2(std::real(EMp2.get_val()));
-  setRealArgument("EnergyFromAmplitudes", DEMp2);
+  //  Scalar<> EMp2(*CGai.wrld);
+  //  EMp2[""] = (*realSG)["G"] * (*realVG)["G"];
+  //  double DEMp2(std::real(EMp2.get_val()));
+  //  setRealArgument("EnergyFromAmplitudes", DEMp2);
 
   //  allocatedTensorArgument<>("VG", realVG);
   VofG = new double[NG];
@@ -367,24 +385,24 @@ void FiniteSizeCorrection::interpolation3D() {
       lastLength = length;
     }
   }
+
   //Define the 3D zone close to the Gamma point which needed to be integrated over. Find the vectors which define it. Small BZ
-  for (int t(0); t < 20; t++){
-    LOG(0,"G vectors by length") << cartesianGrid[t].v << std::endl;
-  }
+  //  for (int t(0); t < 20; t++){
+  //    LOG(0,"G vectors by length") << cartesianGrid[t].v << std::endl;
+  //  }
 
   std::vector<Vector<>> smallBZ;
   smallBZ.push_back(cartesianGrid[2].v);
   for (int t(3); t<2*NG; t++){
-    //LOG(0,"find basis smallBZ") << "t= " << t << " 2NG= " << 2*NG << std::endl;
-      if (IsInSmallBZ(cartesianGrid[t].v, 1., smallBZ)){
-        smallBZ.push_back(cartesianGrid[t].v);
-        }
+    if (IsInSmallBZ(cartesianGrid[t].v, 1., smallBZ)){
+      smallBZ.push_back(cartesianGrid[t].v);
+    }
   }
 
   LOG(0,"FiniteSize") << "Size of vectors="  << smallBZ.size() << std::endl;
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
-    LOG(1,"interpolation3D") << "smallBZ basis vector: " << smallBZ[i] << std::endl;
-    }
+    LOG(2,"interpolation3D") << "smallBZ basis vector: " << smallBZ[i] << std::endl;
+  }
 
   //integration in 3D
   int kpoints(getIntegerArgument("kpoints", 1));
@@ -404,13 +422,6 @@ void FiniteSizeCorrection::interpolation3D() {
         sum3D += constantFactor/cartesianGrid[i].l/cartesianGrid[i].l
                  *cartesianGrid[i].s;
       }
-      //LOG(0, "interpolation3D") << "original SG= " << cartesianGrid[i].s << std::endl;
-      //Vector<double> tmp;
-      //for (int d(0); d <3; ++d){
-      //  tmp[d]=T[d].dot(cartesianGrid[i].v);
-      //  }
-      //LOG(0, "cartesianGrid") << "Inteped SG= " << interpolatedSG(tmp[0], tmp[1], tmp[2]) << std::endl;
-      //
     }
   }
 
@@ -425,14 +436,10 @@ void FiniteSizeCorrection::interpolation3D() {
           Vector<double> gc(((c/double(N2))*double(t2)));
           Vector<double> g(ga+gb+gc);
           if (IsInSmallBZ(g, 2, smallBZ)){
-            //LOG(0, "interpolation3D") << "inside of smallBZ g= " << g << std::endl;
             countNOg++;
-            //LOG(0,"size gridWithinRadius") << gridWithinRadius.size() << std::endl;
             for (std::vector<int>::size_type i = 0; i != gridWithinRadius.size(); ++i) {
               g=ga+gb+gc;
-              //LOG(0, "interpolation3D") << "g= " << g << std::endl;
               g += gridWithinRadius[i];
-              //LOG(0, "interpolation3D") << "g+G= " << g << std::endl;
               for (int d(0); d <3; ++d){
                 directg[d]=T[d].dot(g);
               }
@@ -459,38 +466,37 @@ void FiniteSizeCorrection::interpolation3D() {
   );
   MPI_Barrier(Cc4s::world->comm);
 
-  LOG(0,"integration3D") << "countNOg= " << totalCountNOg <<std::endl;
+  LOG(2,"integration3D") << "countNOg= " << totalCountNOg <<std::endl;
   sum3D = sum3D/2.; //Both readFromFile=0 and 1 needs to be divided by 2
-  LOG(0, "interpolation3D") << "sum3D= " << sum3D << std::endl;
+  LOG(2, "interpolation3D") << "sum3D= " << sum3D << std::endl;
   inter3D=totalInter3D/totalCountNOg;
-  LOG(0,"interpolation3D") << "Number of points in summation="<< countNO << std::endl;
+  LOG(2,"interpolation3D") << "Number of points in summation="<< countNO << std::endl;
 }
 
 bool FiniteSizeCorrection::IsInSmallBZ(
   Vector<> point, double scale, std::vector<Vector<>> smallBZ
-){
+)
+{
   std::vector<int>::size_type countVector(0);
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
-    //LOG(0,"IsInSmallBZ") << "i= " << i << " size smallBZ= " << smallBZ.size() << std::endl;
-    //LOG(0, "IsInSmallBZ") << "point= " << point << std::endl;
-    //LOG(0, "IsInSmallBZ") << "passed" << std::endl;
     // FIXME: use an epsilon instead of 1e-9
-    if
-    (abs(abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()
-    *scale -1.0) < 1e-9 ||
-    abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale
-    -1.0 < -1e-9) {
+    if (
+      abs(abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()
+       *scale -1.0) < 1e-9 ||
+      abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale
+       -1.0 < -1e-9
+    ) {
       countVector++;
-      }
-    else{
-      break;
-      }
     }
-    //LOG(0,"IsInSmallBZ") << "countVector= " << countVector << "size= " << smallBZ.size() << std::endl;
-    if (countVector == smallBZ.size()){
-      return true;
-      }
-    return false;
+    else {
+      break;
+    }
+  }
+
+  if (countVector == smallBZ.size()){
+    return true;
+  }
+  return false;
 }
 
 double FiniteSizeCorrection::integrate(
@@ -521,12 +527,6 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   cc4s::Inter1D<double> Int1d(
     GLengths.size(), GLengths.data(), averageSGs.data()
   );
-  //double xx[200], yy[200];
-  //for (int j(0); j < 200; j++) {
-  //  xx[j] = j*0.01;
-  //  yy[j] = sin(xx[j]);
-  //}
-  //cc4s::Inter1D<double> Int1d(200, xx, yy);
   Int1d.cubicSpline(0., 0., "M");
   double x=0.;
   for (int i(1); i<1000; i++){
@@ -550,13 +550,15 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
     sumSGVG += VofG[d] * structureFactors[d];
     }
   inter3D = inter3D/2.;//both read or not from file should divide by 2
-  LOG(1,"FiniteSize") << "Uncorrected e="   << sumSGVG         << std::endl;
-  LOG(1,"FiniteSize") << "Integral in 3D= " << inter3D         << std::endl;
-  LOG(1,"FiniteSize") << "3D Corrected e= " << sumSGVG+inter3D-sum3D << std::endl;
-  LOG(1,"FiniteSize") << "Spherical Averaging Correction  e="  <<
-  r1              << std::endl;
-  LOG(1,"FiniteSize") << "Spherical Averaging Corrected   e="  << sumSGVG +
-  r1    << std::endl;
 
-  setRealArgument("CorrectedEnergy"  , sumSGVG + r1);
+  LOG(0,"FiniteSize") << "Uncorrected e="  << sumSGVG               << std::endl;
+  LOG(0,"FiniteSize") << "Corrected   e= " << sumSGVG+inter3D-sum3D << std::endl;
+
+  LOG(1,"FiniteSize") << "Integral within cutoff radius= " << inter3D         << std::endl;
+  LOG(1,"FiniteSize") << "Sumation within cutoff radius= " << sum3D         << std::endl;
+
+  LOG(1,"FiniteSize") << "Spherical Averaging Correction  e="  <<           r1 << std::endl;
+  LOG(1,"FiniteSize") << "Spherical Averaging Corrected   e="  << sumSGVG + r1 << std::endl;
+
+  setRealArgument("CorrectedEnergy"  , sumSGVG+inter3D-sum3D);
 }
