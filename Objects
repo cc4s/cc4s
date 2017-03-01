@@ -71,3 +71,4 @@ build/${CONFIG}/obj/algorithms/CoulombVertexFromFactors.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexFromFactors.o \
 build/${CONFIG}/obj/algorithms/DoublesAmplitudesDecomposition.o \
 build/${CONFIG}/obj/algorithms/DoublesAmplitudesFromVertex.o \
+build/${CONFIG}/obj/algorithms/DrccdDensities.o \

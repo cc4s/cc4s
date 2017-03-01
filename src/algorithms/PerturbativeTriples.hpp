@@ -22,6 +22,10 @@ namespace cc4s {
      */
     virtual void runPiecuch();
     /**
+     * \brief Calculates perturbative triples correction. Routine based on Piecuch paper.
+     */
+    virtual void runPiecuchFactorized();
+    /**
      * \brief Dry run for perturbative triples correction based on Helgaker book.
      */
     virtual void dryRun();

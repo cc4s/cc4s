@@ -56,7 +56,7 @@ namespace tcc {
      * Symmetryies are not supported at the moment.
      * Note that tensor objects should only be created by the Tcc object
      * which specifies the environment the tensor lives in.
-     */
+     **/
     std::shared_ptr<Tensor<F>> createTensor(
       const std::vector<int> &lens,
       const std::string &name
@@ -65,6 +65,17 @@ namespace tcc {
         lens, name, this->shared_from_this(),
         typename Tensor<F>::ProtectedToken()
       );
+    }
+
+    /**
+     * \brief Create an empty tensor of identical shape as the given tensor.
+     * The name, however, should differ.
+     **/
+    std::shared_ptr<Tensor<F>> createTensor(
+      const std::shared_ptr<Tensor<F>> &tensor,
+      const std::string &name
+    ) {
+      return createTensor(tensor->lens, name);
     }
 
     std::shared_ptr<Tensor<F>> createTensor(

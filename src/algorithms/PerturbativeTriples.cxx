@@ -122,7 +122,7 @@ void PerturbativeTriples::runPiecuch() {
   Tabcijk["abcijk"] += Xabcijk["bcajki"];
 
   {
-    Tensor<> Zabcijk(false, Xabcijk);
+    Tensor<> Zabcijk(6, vvvooo, syms, *Vabij->wrld, "Zabcijk");
     Zabcijk["abcijk"]  = ( 1.0) * (*Tai)["ai"] * (*Vabij)["bcjk"];
     Zabcijk["abcijk"] += ( 1.0) * (*Tai)["bj"] * (*Vabij)["acik"];
     Zabcijk["abcijk"] += ( 1.0) * (*Tai)["ck"] * (*Vabij)["abij"];
@@ -152,6 +152,80 @@ void PerturbativeTriples::runPiecuch() {
   double ccsde(getRealArgument("CcsdEnergy"));
 
   energy[""]  = Xabcijk["abcijk"] * Tabcijk["abcijk"];
+  triplese = energy.get_val();
+  e = triplese + ccsde;
+
+  LOG(0, "PerturbativeTriples") << "e=" << e << std::endl;
+  LOG(1, "PerturbativeTriples") << "ccsd=" << ccsde << std::endl;
+  LOG(1, "PerturbativeTriples") << "triples=" << triplese << std::endl;
+
+  setRealArgument("PerturbativeTriplesEnergy", e);
+}
+
+void PerturbativeTriples::runPiecuchFactorized() {
+  Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
+  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+  Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
+  Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
+  Tensor<> *Tabij(getTensorArgument("CcsdDoublesAmplitudes"));
+  Tensor<>   *Tai(getTensorArgument("CcsdSinglesAmplitudes"));
+  
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+
+  int vvvooo[] = { Nv, Nv , Nv , No , No , No };
+  int   syms[] = { NS, NS,  NS , NS , NS , NS };
+  Tensor<> Tabcijk(6, vvvooo, syms, *Vabij->wrld, "Tabcijk");
+  Tensor<> Xabcijk(6, vvvooo, syms, *Vabij->wrld, "Xabcijk");
+  Tensor<> Yabcijk(6, vvvooo, syms, *Vabij->wrld, "Yabcijk");
+  Scalar<> energy(*Cc4s::world);
+  Tensor<> Zabcijk(6, vvvooo, syms, *Vabij->wrld, "Zabcijk");
+  Tensor<> Rabcijk(6, vvvooo, syms, *Vabij->wrld, "Zabcijk");
+
+  Tabcijk["abcijk"]  = (*Vabci)["bcek"] * (*Tabij)["aeij"];
+  Tabcijk["abcijk"] -= (*Vijka)["jkmc"] * (*Tabij)["abim"];
+
+  Yabcijk["abcijk"]  = Tabcijk["abcijk"];
+  Tabcijk["abcijk"] += Yabcijk["bacjik"];
+  Tabcijk["abcijk"] += Yabcijk["acbikj"];
+  Tabcijk["abcijk"] += Yabcijk["cbakji"];
+  Tabcijk["abcijk"] += Yabcijk["cabkij"];
+  Tabcijk["abcijk"] += Yabcijk["bcajki"];
+
+  Zabcijk["abcijk"]  = ( 1.0) * (*Tai)["ai"] * (*Vabij)["bcjk"];
+  Zabcijk["abcijk"] += ( 1.0) * (*Tai)["bj"] * (*Vabij)["acik"];
+  Zabcijk["abcijk"] += ( 1.0) * (*Tai)["ck"] * (*Vabij)["abij"];
+
+  Xabcijk["abcijk"]  = (4.0/3.0) * Zabcijk["abcijk"];
+  Xabcijk["abcijk"] +=    (-2.0) * Zabcijk["acbijk"];
+  Xabcijk["abcijk"] += (2.0/3.0) * Zabcijk["bcaijk"];
+
+  // Correct factorization to avoid permutation
+  Rabcijk["abcijk"]  = (+8.0) * Tabcijk["abcijk"];
+  Rabcijk["abcijk"] += (-4.0) * Tabcijk["acbijk"];
+  Rabcijk["abcijk"] += (-4.0) * Tabcijk["bacijk"];
+  Rabcijk["abcijk"] += (+2.0) * Tabcijk["bcaijk"];
+  Rabcijk["abcijk"] += (+2.0) * Tabcijk["cabijk"];
+  Rabcijk["abcijk"] += (-4.0) * Tabcijk["cbaijk"];
+
+  double e, triplese;
+  double ccsde(getRealArgument("CcsdEnergy"));
+
+  Zabcijk["abcijk"]  = (*epsi)["i"];
+  Zabcijk["abcijk"] += (*epsi)["j"];
+  Zabcijk["abcijk"] += (*epsi)["k"];
+  Zabcijk["abcijk"] -= (*epsa)["a"];
+  Zabcijk["abcijk"] -= (*epsa)["b"];
+  Zabcijk["abcijk"] -= (*epsa)["c"];
+  Bivar_Function<> fDivide(&divide<double>);
+
+  Tabcijk.contract(1.0, Tabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
+  Rabcijk.contract(1.0, Rabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
+
+  energy[""]  =  Xabcijk["abcijk"] * Tabcijk["abcijk"];
+  energy[""] +=  Rabcijk["abcijk"] * Yabcijk["abcijk"];
+
   triplese = energy.get_val();
   e = triplese + ccsde;
 
@@ -226,10 +300,11 @@ void PerturbativeTriples::dryRunPiecuch() {
   int vvvooo[] = { Nv, Nv , Nv , No , No , No };
   int   syms[] = { NS, NS,  NS , NS , NS , NS };
   DryTensor<> Tabcijk(6, vvvooo, syms, SOURCE_LOCATION);
-  DryTensor<> Xabcijk(6, vvvooo, syms, SOURCE_LOCATION);
+  DryTensor<> Yabcijk(6, vvvooo, syms, SOURCE_LOCATION);
 
   {
     DryTensor<> Zabcijk(6, vvvooo, syms, SOURCE_LOCATION);
+    DryTensor<> Xabcijk(6, vvvooo, syms, SOURCE_LOCATION);
   }
 
   DryScalar<> energy();

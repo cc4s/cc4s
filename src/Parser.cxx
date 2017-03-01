@@ -107,7 +107,10 @@ std::string Parser::parseData() {
   } else if (character == '"') {
     return parseText()->getName();
   } else {
-    throw new EXCEPTION("Constant or symbol expression expected");
+    throw new DetailedException(
+      "Constant or symbol expression expected",
+      stream.getSource(), stream.getLine(), stream.getColumn()
+    );
   }
 }
 
@@ -151,7 +154,12 @@ NumericData *Parser::parseNumber() {
     stream.get();
   }
   // the next character must be a digit
-  if (!isdigit(stream.peek())) throw new EXCEPTION("Digit expected");
+  if (!isdigit(stream.peek())) {
+    throw new DetailedException(
+      "Digit expected",
+      stream.getSource(), stream.getLine(), stream.getColumn()
+    );
+  }
   int64_t integer(stream.get() - '0');
   while (isdigit(stream.peek())) {
     integer *= 10;
