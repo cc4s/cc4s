@@ -7,17 +7,31 @@ CoulombVertexReader [
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ] [
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
   PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
 ].
 
-DrccdEnergyFromCoulombIntegrals [
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
   PPHHCoulombIntegrals
-  HoleEigenEnergies ParticleEigenEnergies
-  (maxIterations 1)
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 24)
 ] [
-  (DrccdEnergy Mp2Energy)
-  (DrccdDoublesAmplitudes DoublesAmplitudes)
+  (CcsdEnergy CcsdEnergy) 
+  (CcsdSinglesAmplitudes SinglesAmplitudes)
+  (CcsdDoublesAmplitudes DoublesAmplitudes)
 ].
+
+TensorWriter [(Data CcsdEnergy)] [].
 
 SliceCoulombVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
@@ -32,6 +46,7 @@ FiniteSizeCorrection [
   ParticleHoleCoulombVertex
   CoulombKernel
   DoublesAmplitudes
+  SinglesAmplitudes
   Momenta
 % Set the number of kpoints, the volume of the simulation cell, and the
 % constantFactor
