@@ -551,14 +551,20 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
     }
   inter3D = inter3D/2.;//both read or not from file should divide by 2
 
-  LOG(0,"FiniteSize") << "Uncorrected e="  << sumSGVG               << std::endl;
-  LOG(0,"FiniteSize") << "Corrected   e= " << sumSGVG+inter3D-sum3D << std::endl;
+  LOG(0,"FiniteSize") << "Uncorrected e="  << std::setprecision(10) << sumSGVG
+    << std::endl;
+  LOG(0,"FiniteSize") << "Corrected   e= " << std::setprecision(10) 
+    << sumSGVG+inter3D-sum3D << std::endl;
 
-  LOG(1,"FiniteSize") << "Integral within cutoff radius= " << inter3D         << std::endl;
-  LOG(1,"FiniteSize") << "Sumation within cutoff radius= " << sum3D         << std::endl;
+  LOG(1,"FiniteSize") << "Integral within cutoff radius= " 
+    << std::setprecision(10) << inter3D    << std::endl;
+  LOG(1,"FiniteSize") << "Sumation within cutoff radius= " 
+    << std::setprecision(10) << sum3D      << std::endl;
 
-  LOG(1,"FiniteSize") << "Spherical Averaging Correction  e="  <<           r1 << std::endl;
-  LOG(1,"FiniteSize") << "Spherical Averaging Corrected   e="  << sumSGVG + r1 << std::endl;
+  LOG(1,"FiniteSize") << "Spherical Averaging Correction  e="
+    << std::setprecision(10)  << r1        << std::endl;
+  LOG(1,"FiniteSize") << "Spherical Averaging Corrected   e="
+    << std::setprecision(10)  << sumSGVG + r1 << std::endl;
 
   setRealArgument("CorrectedEnergy"  , sumSGVG+inter3D-sum3D);
 }
