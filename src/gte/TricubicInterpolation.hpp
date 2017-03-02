@@ -90,9 +90,9 @@ IntpTricubic3<Real>::IntpTricubic3(int xBound, int yBound, int zBound,
     // At least a 4x4x4 block of data points are needed to construct the
     // tricubic interpolation.
     Assert(mXBound >= 4 && mYBound >= 4 && mZBound >= 4 && mF,
-        "Invalid input.");
+        "Invalid input Bound.");
     Assert(mXSpacing > (Real)0 && mYSpacing > (Real)0 &&
-        mZSpacing > (Real)0, "Invalid input.");
+        mZSpacing > (Real)0, "Invalid input Spacing.");
 
     mXMax = mXMin + mXSpacing * static_cast<Real>(mXBound - 1);
     mInvXSpacing = ((Real)1) / mXSpacing;
