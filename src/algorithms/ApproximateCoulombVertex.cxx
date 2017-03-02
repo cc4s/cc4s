@@ -1,4 +1,5 @@
 #include <algorithms/ApproximateCoulombVertex.hpp>
+#include <math/ComplexTensor.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
@@ -25,6 +26,8 @@ void ApproximateCoulombVertex::run() {
   Tensor<complex> *UGF(
     getTensorArgument<complex>("CoulombVertexSingularVectors")
   );
+  Tensor<complex> UTGF(*UGF);
+  conjugate(UTGF);
   int lens[] = { UGF->lens[1], GammaGqr->lens[1], GammaGqr->lens[2] };
   int syms[] = { NS, NS, NS };
   Tensor<complex> *GammaFqr = new Tensor<complex>(
@@ -33,7 +36,7 @@ void ApproximateCoulombVertex::run() {
   allocatedTensorArgument<complex>(
     "CoulombVertex", GammaFqr
   );
-  (*GammaFqr)["Fqr"] = (*GammaGqr)["Gqr"] * (*UGF)["GF"];
+  (*GammaFqr)["Fqr"] = (*GammaGqr)["Gqr"] * UTGF["GF"];
 }
 
 void ApproximateCoulombVertex::dryRun() {
@@ -45,6 +48,7 @@ void ApproximateCoulombVertex::dryRun() {
       "CoulombVertexSingularVectors"
     )
   );
+  DryTensor<complex> UTGF(*UGF);
   int lens[] = { UGF->lens[1], GammaGqr->lens[1], GammaGqr->lens[2] };
   int syms[] = { NS, NS, NS };
   DryTensor<complex> *GammaFqr = new DryTensor<complex>(

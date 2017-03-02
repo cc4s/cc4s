@@ -98,9 +98,24 @@ void FiniteSizeCorrection::readFromFile(){
 void FiniteSizeCorrection::calculateStructureFactor() {
 
 //Definition of the variables
-  Tensor<complex> *GammaGai(
-        getTensorArgument<complex>("ParticleHoleCoulombVertex")
+  Tensor<complex> *GammaFai(
+    getTensorArgument<complex>("ParticleHoleCoulombVertex")
   );
+
+  Tensor<complex> *GammaGai;
+
+  if (isArgumentGiven("CoulombVertexSingularVectors")) {
+    Tensor<complex> *UGF(
+      getTensorArgument<complex>("CoulombVertexSingularVectors")
+    );
+    int lens[]= {UGF->lens[0], GammaFai->lens[1], GammaFai->lens[2]};
+    GammaGai = new Tensor<complex>(
+      3, lens, GammaFai->sym, *GammaFai->wrld, "GammaGai"
+    );
+    (*GammaGai)["Gai"] = (*GammaFai)["Fai"] * (*UGF)["GF"];
+  } else {
+    GammaGai = GammaFai;
+  }
 
 // local allocation
 //  int a(7);

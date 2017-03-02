@@ -63,6 +63,7 @@ void CoulombVertexSingularVectors::run() {
   // write singular vectors back to CTF
   Matrix<complex> U(USSUT);
   scaU->write(U);
+  conjugate(U);
   // slice singular vectors U corresponding to NF largest singular values S
   int start[] = {0, NG-NF}, end[] = {NG, NG};
   allocatedTensorArgument<complex>(
