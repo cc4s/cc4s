@@ -34,7 +34,7 @@ CcsdEnergyFromCoulombIntegrals [
 
 TensorWriter [(Data CcsdEnergy)] [].
 
-PerturbativeTriples [
+CcsdPerturbativeTriples [
   PPPHCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
@@ -44,7 +44,9 @@ PerturbativeTriples [
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
   (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
 ] [
-  PerturbativeTriplesEnergy
+  CcsdPerturbativeTriplesEnergy
 ].
 
-TensorWriter [(Data PerturbativeTriplesEnergy)] [].
+TensorWriter [(Data CcsdPerturbativeTriplesEnergy)] [].
+TensorWriter [(Data HoleEigenEnergies)] [].
+TensorWriter [(Data ParticleEigenEnergies)] [].

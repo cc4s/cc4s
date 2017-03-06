@@ -25,10 +25,6 @@ namespace cc4s {
      */
     virtual void runPiecuch();
     /**
-     * \brief Calculates perturbative triples correction. Routine based on Piecuch paper.
-     */
-    virtual void runPiecuchFactorizedInMemory();
-    /**
      * \brief Dry run for perturbative triples correction based on Helgaker book.
      */
     virtual void dryRun();
@@ -36,13 +32,6 @@ namespace cc4s {
      * \brief Dry run for perturbative triples correction based on Piecuch paper.
      */
     virtual void dryRunPiecuch();
-
-  protected:
-    int No, Nv;
-    CTF::Tensor<> *SVabc, *DVabc;
-    CTF::Tensor<> &getSinglesContribution(int i, int j, int k);
-    CTF::Tensor<> &getDoublesContribution(int i, int j, int k);
-    CTF::Tensor<> &getEnergyDenominator(int i, int j, int k);
   };
 }
 
