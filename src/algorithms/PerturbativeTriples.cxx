@@ -19,60 +19,112 @@ PerturbativeTriples::PerturbativeTriples(
 PerturbativeTriples::~PerturbativeTriples() {
 }
 
-void PerturbativeTriples::run() {
-  Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
+Tensor<> &PerturbativeTriples::getSinglesContribution(int i, int j, int k) {
+  Tensor<> *Tai(getTensorArgument("CcsdSinglesAmplitudes"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+  int TaiStart[] = { 0, i }, TaiEnd[] = { Nv, i+1 };
+  int VbcjkStart[] = { 0, 0, j, k }, VbcjkEnd[] = { Nv, Nv, j+1, k+1 };
+  (*SVabc)["abc"] =
+    0.5 * Tai->slice(TaiStart,TaiEnd)["ai"]
+    * Vabij->slice(VbcjkStart,VbcjkEnd)["bcjk"];
+  return *SVabc;
+}
+
+Tensor<> &PerturbativeTriples::getDoublesContribution(int i, int j, int k) {
+  Tensor<> *Tabij(getTensorArgument("CcsdDoublesAmplitudes"));
   Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
   Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
-  Tensor<> *Tabij(getTensorArgument("CcsdDoublesAmplitudes"));
-  Tensor<>   *Tai(getTensorArgument("CcsdSinglesAmplitudes"));
-  
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
+  int TadijStart[] = { 0, 0, i, j }, TadijEnd[] = { Nv, Nv, i+1, j+1 };
+  int VbcdkStart[] = { 0, 0, 0, k }, VbcdkEnd[] = { Nv, Nv, Nv, k+1 };
+  (*DVabc)["abc"] =
+    Tabij->slice(TadijStart,TadijEnd)["adij"]
+    * Vabci->slice(VbcdkStart,VbcdkEnd)["bcdk"];
 
-  int vvvooo[] = { Nv, Nv , Nv , No , No , No };
-  int   syms[] = { NS, NS,  NS , NS , NS , NS };
-  Tensor<> DVabcijk(6, vvvooo, syms, *Vabij->wrld, "DVabcijk");
-  DVabcijk["abcijk"]  = (*Vabci)["bcek"] * (*Tabij)["aeij"];
-  DVabcijk["abcijk"] -= (*Vijka)["jkmc"] * (*Tabij)["abim"];
+  int TabilStart[] = { 0, 0, i, 0 }, TabilEnd[] = { Nv, Nv, i+1, No };
+  int VjklcStart[] = { j, k, 0, 0 }, VjklcEnd[] = { j+1, k+1, No, Nv };
+  (*DVabc)["abc"] -=
+    Tabij->slice(TabilStart,TabilEnd)["abil"]
+    * Vijka->slice(VjklcStart,VjklcEnd)["jklc"];
 
-  Tensor<> SVabcijk(6, vvvooo, syms, *Vabij->wrld, "SVabcijk");
-  SVabcijk["abcijk"]  = 0.5 * (*Tai)["ai"] * (*Vabij)["bcjk"];
+  return *DVabc;
+}
 
-  Tensor<> Tabcijk(6, vvvooo, syms, *Vabij->wrld, "Tabcijk");
-  Tabcijk["abcijk"]  = (+8.0) * DVabcijk["abcijk"];
-  Tabcijk["abcijk"] += (-4.0) * DVabcijk["acbijk"];
-  Tabcijk["abcijk"] += (-4.0) * DVabcijk["bacijk"];
-  Tabcijk["abcijk"] += (+2.0) * DVabcijk["bcaijk"];
-  Tabcijk["abcijk"] += (+2.0) * DVabcijk["cabijk"];
-  Tabcijk["abcijk"] += (-4.0) * DVabcijk["cbaijk"];
+Tensor<> &PerturbativeTriples::getEnergyDenominator(int i, int j, int k) {
+  // reuse SVabc to hold the energy denominator
+  Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
+  int epsiStart[] = { i }, epsiEnd[] = { i+1 };
+  (*SVabc)["abc"]  = epsi->slice(epsiStart,epsiEnd)["i"];
+  int epsjStart[] = { j }, epsjEnd[] = { j+1 };
+  (*SVabc)["abc"] += epsi->slice(epsjStart,epsjEnd)["j"];
+  int epskStart[] = { k }, epskEnd[] = { k+1 };
+  (*SVabc)["abc"] += epsi->slice(epskStart,epskEnd)["k"];
+  (*SVabc)["abc"] -= (*epsa)["a"];
+  (*SVabc)["abc"] -= (*epsa)["b"];
+  (*SVabc)["abc"] -= (*epsa)["c"];
+  return *SVabc;
+}
 
-  Tabcijk["abcijk"] += (+8.0) * SVabcijk["abcijk"];
-  Tabcijk["abcijk"] += (-4.0) * SVabcijk["acbijk"];
-  Tabcijk["abcijk"] += (-4.0) * SVabcijk["bacijk"];
-  Tabcijk["abcijk"] += (+2.0) * SVabcijk["bcaijk"];
-  Tabcijk["abcijk"] += (+2.0) * SVabcijk["cabijk"];
-  Tabcijk["abcijk"] += (-4.0) * SVabcijk["cbaijk"];
-
-  SVabcijk["abcijk"]  = (*epsi)["i"];
-  SVabcijk["abcijk"] += (*epsi)["j"];
-  SVabcijk["abcijk"] += (*epsi)["k"];
-  SVabcijk["abcijk"] -= (*epsa)["a"];
-  SVabcijk["abcijk"] -= (*epsa)["b"];
-  SVabcijk["abcijk"] -= (*epsa)["c"];
-  Bivar_Function<> fDivide(&divide<double>);
-  Tabcijk.contract(
-    1.0, Tabcijk,"abcijk", SVabcijk,"abcijk", 0.0,"abcijk", fDivide
-  );
+void PerturbativeTriples::runPiecuchFactorizedInMemory() {
+  Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
+  No = epsi->lens[0];
+  Nv = epsa->lens[0];
+  int vvv[] = { Nv, Nv , Nv };
+  int syms[] = { NS, NS,  NS };
+  // doubles amplitudes contracted with V for current i,j,k
+  DVabc = new Tensor<>(3, vvv, syms, *epsi->wrld, "DVabc");
+  // unconnected singles amplitudes and V for current i,j,k
+  SVabc = new Tensor<>(3, vvv, syms, *epsi->wrld, "SVabc");
+  // triples amplitudes considering all permutations of a,b,c for given i,j,k
+  Tensor<> Tabc(3, vvv, syms, *epsi->wrld, "Tabc");
 
   Scalar<> energy(*Cc4s::world);
-  energy[""]  = DVabcijk["abcijk"] * Tabcijk["abcijk"];
-  energy[""] += DVabcijk["bacjik"] * Tabcijk["abcijk"];
-  energy[""] += DVabcijk["acbikj"] * Tabcijk["abcijk"];
-  energy[""] += DVabcijk["cbakji"] * Tabcijk["abcijk"];
-  energy[""] += DVabcijk["cabkij"] * Tabcijk["abcijk"];
-  energy[""] += DVabcijk["bcajki"] * Tabcijk["abcijk"];
+  for (int i(0); i < No; ++i) {
+    for (int j(0); j < No; ++j) {
+      for (int k(0); k < No; ++k) {
+        // get DV in respective permutation of i,j,k where a,b,c is
+        // attached left to right to DV
+        Tabc["abc"]  = (-4.0) * getDoublesContribution(i,k,j)["abc"];
+        Tabc["abc"] += (-4.0) * getDoublesContribution(j,i,k)["abc"];
+        Tabc["abc"] += (+2.0) * getDoublesContribution(j,k,i)["abc"];
+        Tabc["abc"] += (+2.0) * getDoublesContribution(k,i,j)["abc"];
+        Tabc["abc"] += (-4.0) * getDoublesContribution(k,j,i)["abc"];
+        Tabc["abc"] += (+8.0) * getDoublesContribution(i,j,k)["abc"];
+        // Note: the order i,j,k is done last since it is needed for ket states
+        // it is kept in DVabc
+
+        // get SV in respective permutation of i,j,k where a,b,c is
+        // attached left to right to SV
+        // TODO: consider symmetry of SV
+        Tabc["abc"] += (+8.0) * getSinglesContribution(i,j,k)["abc"];
+        Tabc["abc"] += (-4.0) * getSinglesContribution(i,k,j)["abc"];
+        Tabc["abc"] += (-4.0) * getSinglesContribution(j,i,k)["abc"];
+        Tabc["abc"] += (+2.0) * getSinglesContribution(j,k,i)["abc"];
+        Tabc["abc"] += (+2.0) * getSinglesContribution(k,i,j)["abc"];
+        Tabc["abc"] += (-4.0) * getSinglesContribution(k,j,i)["abc"];
+
+        Bivar_Function<> fDivide(&divide<double>);
+        Tabc.contract(
+          1.0, Tabc,"abc", getEnergyDenominator(i,j,k),"abc", 0.0,"abc", fDivide
+        );
+
+        // DVabc is in standard order, i.e. i,j,k and a,b,c are both attached
+        // left to right to the contraction D.V
+        // permute a,b,c and i,j,k together into SVabc
+        (*SVabc)["abc"]  = (*DVabc)["abc"];
+        (*SVabc)["abc"] += (*DVabc)["acb"];
+        (*SVabc)["abc"] += (*DVabc)["bac"];
+        (*SVabc)["abc"] += (*DVabc)["bca"];
+        (*SVabc)["abc"] += (*DVabc)["cab"];
+        (*SVabc)["abc"] += (*DVabc)["cba"];
+
+        // contract
+        energy[""] += (*SVabc)["abc"] * Tabc["abc"];
+      }
+    }
+  }
+  delete DVabc; delete SVabc;
 
   double eTriples(energy.get_val());
   double eCcsd(getRealArgument("CcsdEnergy"));
@@ -227,7 +279,7 @@ void PerturbativeTriples::runPiecuch() {
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
 
-void PerturbativeTriples::runPiecuchFactorizedInMemory() {
+void PerturbativeTriples::run() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -241,62 +293,53 @@ void PerturbativeTriples::runPiecuchFactorizedInMemory() {
 
   int vvvooo[] = { Nv, Nv , Nv , No , No , No };
   int   syms[] = { NS, NS,  NS , NS , NS , NS };
+  Tensor<> DVabcijk(6, vvvooo, syms, *Vabij->wrld, "DVabcijk");
+  DVabcijk["abcijk"]  = (*Vabci)["bcdk"] * (*Tabij)["adij"];
+  DVabcijk["abcijk"] -= (*Vijka)["jklc"] * (*Tabij)["abil"];
+
+  Tensor<> SVabcijk(6, vvvooo, syms, *Vabij->wrld, "SVabcijk");
+  SVabcijk["abcijk"]  = 0.5 * (*Tai)["ai"] * (*Vabij)["bcjk"];
+
   Tensor<> Tabcijk(6, vvvooo, syms, *Vabij->wrld, "Tabcijk");
-  Tensor<> Xabcijk(6, vvvooo, syms, *Vabij->wrld, "Xabcijk");
-  Tensor<> Yabcijk(6, vvvooo, syms, *Vabij->wrld, "Yabcijk");
-  Scalar<> energy(*Cc4s::world);
-  Tensor<> Zabcijk(6, vvvooo, syms, *Vabij->wrld, "Zabcijk");
-  Tensor<> Rabcijk(6, vvvooo, syms, *Vabij->wrld, "Zabcijk");
+  Tabcijk["abcijk"]  = (+8.0) * DVabcijk["abcijk"];
+  Tabcijk["abcijk"] += (-4.0) * DVabcijk["acbijk"];
+  Tabcijk["abcijk"] += (-4.0) * DVabcijk["bacijk"];
+  Tabcijk["abcijk"] += (+2.0) * DVabcijk["bcaijk"];
+  Tabcijk["abcijk"] += (+2.0) * DVabcijk["cabijk"];
+  Tabcijk["abcijk"] += (-4.0) * DVabcijk["cbaijk"];
 
-  Tabcijk["abcijk"]  = (*Vabci)["bcek"] * (*Tabij)["aeij"];
-  Tabcijk["abcijk"] -= (*Vijka)["jkmc"] * (*Tabij)["abim"];
+  Tabcijk["abcijk"] += (+8.0) * SVabcijk["abcijk"];
+  Tabcijk["abcijk"] += (-4.0) * SVabcijk["acbijk"];
+  Tabcijk["abcijk"] += (-4.0) * SVabcijk["bacijk"];
+  Tabcijk["abcijk"] += (+2.0) * SVabcijk["bcaijk"];
+  Tabcijk["abcijk"] += (+2.0) * SVabcijk["cabijk"];
+  Tabcijk["abcijk"] += (-4.0) * SVabcijk["cbaijk"];
 
-  Yabcijk["abcijk"]  = Tabcijk["abcijk"];
-  Tabcijk["abcijk"] += Yabcijk["bacjik"];
-  Tabcijk["abcijk"] += Yabcijk["acbikj"];
-  Tabcijk["abcijk"] += Yabcijk["cbakji"];
-  Tabcijk["abcijk"] += Yabcijk["cabkij"];
-  Tabcijk["abcijk"] += Yabcijk["bcajki"];
-
-  Zabcijk["abcijk"]  = ( 1.0) * (*Tai)["ai"] * (*Vabij)["bcjk"];
-  Zabcijk["abcijk"] += ( 1.0) * (*Tai)["bj"] * (*Vabij)["acik"];
-  Zabcijk["abcijk"] += ( 1.0) * (*Tai)["ck"] * (*Vabij)["abij"];
-
-  Xabcijk["abcijk"]  = (4.0/3.0) * Zabcijk["abcijk"];
-  Xabcijk["abcijk"] +=    (-2.0) * Zabcijk["acbijk"];
-  Xabcijk["abcijk"] += (2.0/3.0) * Zabcijk["bcaijk"];
-
-  // Correct factorization to avoid permutation
-  Rabcijk["abcijk"]  = (+8.0) * Tabcijk["abcijk"];
-  Rabcijk["abcijk"] += (-4.0) * Tabcijk["acbijk"];
-  Rabcijk["abcijk"] += (-4.0) * Tabcijk["bacijk"];
-  Rabcijk["abcijk"] += (+2.0) * Tabcijk["bcaijk"];
-  Rabcijk["abcijk"] += (+2.0) * Tabcijk["cabijk"];
-  Rabcijk["abcijk"] += (-4.0) * Tabcijk["cbaijk"];
-
-  double e, triplese;
-  double ccsde(getRealArgument("CcsdEnergy"));
-
-  Zabcijk["abcijk"]  = (*epsi)["i"];
-  Zabcijk["abcijk"] += (*epsi)["j"];
-  Zabcijk["abcijk"] += (*epsi)["k"];
-  Zabcijk["abcijk"] -= (*epsa)["a"];
-  Zabcijk["abcijk"] -= (*epsa)["b"];
-  Zabcijk["abcijk"] -= (*epsa)["c"];
+  SVabcijk["abcijk"]  = (*epsi)["i"];
+  SVabcijk["abcijk"] += (*epsi)["j"];
+  SVabcijk["abcijk"] += (*epsi)["k"];
+  SVabcijk["abcijk"] -= (*epsa)["a"];
+  SVabcijk["abcijk"] -= (*epsa)["b"];
+  SVabcijk["abcijk"] -= (*epsa)["c"];
   Bivar_Function<> fDivide(&divide<double>);
+  Tabcijk.contract(
+    1.0, Tabcijk,"abcijk", SVabcijk,"abcijk", 0.0,"abcijk", fDivide
+  );
 
-  Tabcijk.contract(1.0, Tabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
-  Rabcijk.contract(1.0, Rabcijk,"abcijk", Zabcijk,"abcijk", 0.0,"abcijk", fDivide);
+  Scalar<> energy(*Cc4s::world);
+  energy[""]  = DVabcijk["abcijk"] * Tabcijk["abcijk"];
+  energy[""] += DVabcijk["bacjik"] * Tabcijk["abcijk"];
+  energy[""] += DVabcijk["acbikj"] * Tabcijk["abcijk"];
+  energy[""] += DVabcijk["cbakji"] * Tabcijk["abcijk"];
+  energy[""] += DVabcijk["cabkij"] * Tabcijk["abcijk"];
+  energy[""] += DVabcijk["bcajki"] * Tabcijk["abcijk"];
 
-  energy[""]  =  Xabcijk["abcijk"] * Tabcijk["abcijk"];
-  energy[""] +=  Rabcijk["abcijk"] * Yabcijk["abcijk"];
-
-  triplese = energy.get_val();
-  e = triplese + ccsde;
-
+  double eTriples(energy.get_val());
+  double eCcsd(getRealArgument("CcsdEnergy"));
+  double e(eCcsd + eTriples);
   LOG(0, "PerturbativeTriples") << "e=" << e << std::endl;
-  LOG(1, "PerturbativeTriples") << "ccsd=" << ccsde << std::endl;
-  LOG(1, "PerturbativeTriples") << "triples=" << triplese << std::endl;
+  LOG(1, "PerturbativeTriples") << "ccsd=" << eCcsd << std::endl;
+  LOG(1, "PerturbativeTriples") << "triples=" << eTriples << std::endl;
 
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
