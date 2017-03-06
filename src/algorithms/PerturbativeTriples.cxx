@@ -302,18 +302,18 @@ void PerturbativeTriples::run() {
 
   Tensor<> Tabcijk(6, vvvooo, syms, *Vabij->wrld, "Tabcijk");
   Tabcijk["abcijk"]  = (+8.0) * DVabcijk["abcijk"];
-  Tabcijk["abcijk"] += (-4.0) * DVabcijk["acbijk"];
-  Tabcijk["abcijk"] += (-4.0) * DVabcijk["bacijk"];
-  Tabcijk["abcijk"] += (+2.0) * DVabcijk["bcaijk"];
-  Tabcijk["abcijk"] += (+2.0) * DVabcijk["cabijk"];
-  Tabcijk["abcijk"] += (-4.0) * DVabcijk["cbaijk"];
+  Tabcijk["abcijk"] += (-4.0) * DVabcijk["abcikj"];
+  Tabcijk["abcijk"] += (-4.0) * DVabcijk["abcjik"];
+  Tabcijk["abcijk"] += (+2.0) * DVabcijk["abcjki"];
+  Tabcijk["abcijk"] += (+2.0) * DVabcijk["abckij"];
+  Tabcijk["abcijk"] += (-4.0) * DVabcijk["abckji"];
 
   Tabcijk["abcijk"] += (+8.0) * SVabcijk["abcijk"];
-  Tabcijk["abcijk"] += (-4.0) * SVabcijk["acbijk"];
-  Tabcijk["abcijk"] += (-4.0) * SVabcijk["bacijk"];
-  Tabcijk["abcijk"] += (+2.0) * SVabcijk["bcaijk"];
-  Tabcijk["abcijk"] += (+2.0) * SVabcijk["cabijk"];
-  Tabcijk["abcijk"] += (-4.0) * SVabcijk["cbaijk"];
+  Tabcijk["abcijk"] += (-4.0) * SVabcijk["abcikj"];
+  Tabcijk["abcijk"] += (-4.0) * SVabcijk["abcjik"];
+  Tabcijk["abcijk"] += (+2.0) * SVabcijk["abcjki"];
+  Tabcijk["abcijk"] += (+2.0) * SVabcijk["abckij"];
+  Tabcijk["abcijk"] += (-4.0) * SVabcijk["abckji"];
 
   SVabcijk["abcijk"]  = (*epsi)["i"];
   SVabcijk["abcijk"] += (*epsi)["j"];
