@@ -36,17 +36,17 @@ Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(int i, int j, int k) {
   Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
   int TadijStart[] = { 0, 0, i, j }, TadijEnd[] = { Nv, Nv, i+1, j+1 };
   int VbcdkStart[] = { 0, 0, 0, k }, VbcdkEnd[] = { Nv, Nv, Nv, k+1 };
-  (*DVabc)["abc"] =
+  (*SVabc)["abc"] =
     Tabij->slice(TadijStart,TadijEnd)["adij"]
     * Vabci->slice(VbcdkStart,VbcdkEnd)["bcdk"];
 
   int TabilStart[] = { 0, 0, i, 0 }, TabilEnd[] = { Nv, Nv, i+1, No };
   int VjklcStart[] = { j, k, 0, 0 }, VjklcEnd[] = { j+1, k+1, No, Nv };
-  (*DVabc)["abc"] -=
+  (*SVabc)["abc"] -=
     Tabij->slice(TabilStart,TabilEnd)["abil"]
     * Vijka->slice(VjklcStart,VjklcEnd)["jklc"];
 
-  return *DVabc;
+  return *SVabc;
 }
 
 Tensor<> &CcsdPerturbativeTriples::getEnergyDenominator(int i, int j, int k) {
@@ -84,11 +84,39 @@ void CcsdPerturbativeTriples::run() {
   // triples amplitudes considering all permutations of a,b,c for given i,j,k
   Tensor<> Tabc(3, vvv, syms, *epsi->wrld, "Tabc");
 
+  const int perms[][] = {
+    { 0, 1, 2}, { 0, 2, 1}, { 1, 0, 2}, { 1, 2, 0}, { 2, 0, 1}, { 2, 1, 0}
+  };
+  const char *permIndices[6] = {
+    "abc", "acb", "bac", "bca", "cab", "cba"
+  };
+  const double permParticleFactors[6] = {
+    +8.0, -4.0, -4.0, +2.0, +2.0, -4.0
+  };
+  Tensor<> *permDVabc[6];
+  for (int p(0); p < 6; ++p) {
+    perDVabc = new Tensor<>(3, vvv, syms, *epsi->wrld, "perDVabc");
+  }
+
   Scalar<> energy(*Cc4s::world);
   energy[""] = 0.0;
-  for (int i(0); i < No; ++i) {
-    for (int j(0); j < No; ++j) {
-      for (int k(0); k < No; ++k) {
+  int i[3];
+  // go through all distinct orders 0 <= i[0] <= i[1] <= i[2] < No
+  for (i[0] = 0; i[0] < No; ++i[0]) {
+    for (i[1] = i[0]; i[1] < No; ++i[1]) {
+      for (i[2] = i[1]; i[2] < No; ++i[2]) {
+        // get DV in all permuations of i,j,k
+        // and build sum over all permutations of i,jk together with a,b,c
+        (*DVabc)["abc"] = 0.0;
+        for (int p(0); p < 6; ++p) {
+          (*perDVabc[p])["abc"] = getDoublesContribution(
+            i[perms[p][0]], i[perms[p][1]], i[perms[p][2]]
+          )["abc"];
+          (*DVabc)["abc"] += (*perDVabc[p])[perAbc[p]];
+        }
+        for (int p(0); p < 6; ++p) {
+          Tabc["abc"] = 0.0;
+          for (int q(0); q < 6; ++q) {
         // get DV in respective permutation of a,b,k where i,j,k is
         // attached left to right to D.V
         getDoublesContribution(i,j,k);
@@ -101,7 +129,6 @@ void CcsdPerturbativeTriples::run() {
 
         // get SV in respective permutation of i,j,k where a,b,c is
         // attached left to right to S.V
-        // TODO: consider symmetry of SV
         getSinglesContribution(i,j,k);
         Tabc["abc"] += (+8.0) * (*SVabc)["abc"];
         Tabc["abc"] += (-4.0) * (*SVabc)["acb"];
@@ -116,7 +143,7 @@ void CcsdPerturbativeTriples::run() {
         );
 
         // permute a,b,c and i,j,k together into SVabc
-        (*SVabc)["abc"]  = getDoublesContribution(i,j,k)["abc"];
+        (*SVabc)["abc"]  = (*DVabc)["abc"];
         (*SVabc)["abc"] += getDoublesContribution(i,k,j)["acb"];
         (*SVabc)["abc"] += getDoublesContribution(j,i,k)["bac"];
         (*SVabc)["abc"] += getDoublesContribution(j,k,i)["bca"];
@@ -124,11 +151,17 @@ void CcsdPerturbativeTriples::run() {
         (*SVabc)["abc"] += getDoublesContribution(k,j,i)["cba"];
 
         // contract
-        energy[""] += (*SVabc)["abc"] * Tabc["abc"];
+        Scalar<> contribution(*Cc4s::world);
+        contribution[""] += (*SVabc)["abc"] * Tabc["abc"];
+        LOG(1, "CcsdPerturbativeTriples") <<
+          "e[" << i << "," << j << "," << k << "]=" <<
+          contribution.get_val() << std::endl;
+        energy[""] += contribution[""];
       }
     }
   }
   delete DVabc; delete SVabc;
+  for (int p(0); p < 6; ++p) delete perDVabc[p];
 
   double eTriples(energy.get_val());
   double eCcsd(getRealArgument("CcsdEnergy"));

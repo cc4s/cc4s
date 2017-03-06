@@ -19,7 +19,7 @@ PerturbativeTriples::PerturbativeTriples(
 PerturbativeTriples::~PerturbativeTriples() {
 }
 
-void PerturbativeTriples::run() {
+void PerturbativeTriples::runInMemory() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
@@ -162,7 +162,7 @@ void PerturbativeTriples::runPiecuch() {
   setRealArgument("PerturbativeTriplesEnergy", e);
 }
 
-void PerturbativeTriples::runInMemory() {
+void PerturbativeTriples::run() {
   Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
