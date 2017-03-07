@@ -1,4 +1,6 @@
 #include <algorithms/CcsdPerturbativeTriples.hpp>
+#include <math/Complex.hpp>
+#include <math/ComplexTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
@@ -33,12 +35,52 @@ Tensor<> &CcsdPerturbativeTriples::getSinglesContribution(int i, int j, int k) {
 Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(int i, int j, int k) {
   Tensor<> *Tabij(getTensorArgument("CcsdDoublesAmplitudes"));
   Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
-  Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
+
+  Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
+  // Allocate and compute GammaGbd,GammaGck from GammaGqr
+  int NG(GammaGqr->lens[0]);
+  int Np(GammaGqr->lens[1]);
+  int     iStart(k), iEnd(k+1);
+  int aStart(Np-Nv),  aEnd(Np);
+  int GckStart[] = {0 ,aStart,iStart};
+  int   GckEnd[] = {NG,aEnd,  iEnd  };
+  int GbdStart[] = {0 ,aStart,aStart};
+  int   GbdEnd[] = {NG,aEnd,  aEnd  };
+  Tensor<complex> GammaGck(GammaGqr->slice(GckStart,GckEnd));
+  Tensor<complex> GammaGbd(GammaGqr->slice(GbdStart,GbdEnd));
+  // Split GammaGbd,GammaGck into real and imaginary parts
+  Tensor<> realGammaGck(
+    3, GammaGck.lens, GammaGck.sym, *GammaGck.wrld, "RealGammaGck"
+  );
+  Tensor<> imagGammaGck(
+    3, GammaGck.lens, GammaGck.sym, *GammaGck.wrld, "ImagGammaGck"
+  );
+  fromComplexTensor(GammaGck, realGammaGck, imagGammaGck);
+
+  Tensor<> realGammaGbd(
+    3, GammaGbd.lens, GammaGbd.sym, *GammaGbd.wrld, "RealGammaGbd"
+  );
+  Tensor<> imagGammaGbd(
+    3, GammaGbd.lens, GammaGbd.sym, *GammaGbd.wrld, "ImagGammaGbd"
+  );
+  fromComplexTensor(GammaGbd, realGammaGbd, imagGammaGbd);
+
   int TadijStart[] = { 0, 0, i, j }, TadijEnd[] = { Nv, Nv, i+1, j+1 };
+
+  (*SVabc)["abc"]  =
+    Tabij->slice(TadijStart,TadijEnd)["adij"]
+    * realGammaGbd["Gbd"] * realGammaGck["Gck"];
+  (*SVabc)["abc"] +=
+    Tabij->slice(TadijStart,TadijEnd)["adij"]
+    * imagGammaGbd["Gbd"] * imagGammaGck["Gck"];;
+
+  /*
+  Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
   int VbcdkStart[] = { 0, 0, 0, k }, VbcdkEnd[] = { Nv, Nv, Nv, k+1 };
   (*SVabc)["abc"] =
     Tabij->slice(TadijStart,TadijEnd)["adij"]
     * Vabci->slice(VbcdkStart,VbcdkEnd)["bcdk"];
+    */
 
   int TabilStart[] = { 0, 0, i, 0 }, TabilEnd[] = { Nv, Nv, i+1, No };
   int VjklcStart[] = { j, k, 0, 0 }, VjklcEnd[] = { j+1, k+1, No, Nv };
