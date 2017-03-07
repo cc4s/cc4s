@@ -190,14 +190,14 @@ void PerturbativeTriples::run() {
   Tabcijk["abcijk"] += (+2.0) * DVabcijk["bcaijk"];
   Tabcijk["abcijk"] += (+2.0) * DVabcijk["cabijk"];
   Tabcijk["abcijk"] += (-4.0) * DVabcijk["cbaijk"];
-/*
+
   Tabcijk["abcijk"] += (+8.0) * SVabcijk["abcijk"];
   Tabcijk["abcijk"] += (-4.0) * SVabcijk["acbijk"];
   Tabcijk["abcijk"] += (-4.0) * SVabcijk["bacijk"];
   Tabcijk["abcijk"] += (+2.0) * SVabcijk["bcaijk"];
   Tabcijk["abcijk"] += (+2.0) * SVabcijk["cabijk"];
   Tabcijk["abcijk"] += (-4.0) * SVabcijk["cbaijk"];
-*/
+
   SVabcijk["abcijk"]  = (*epsi)["i"];
   SVabcijk["abcijk"] += (*epsi)["j"];
   SVabcijk["abcijk"] += (*epsi)["k"];

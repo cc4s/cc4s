@@ -119,14 +119,10 @@ void CcsdPerturbativeTriples::run() {
             if (d == 3) break;
           }
           if (q < p) {
-            LOG(1,"CcsdPerturbativeTriples") << "p=" << p << " eq. q=" << q <<
-              " for " << i[0] << "," << i[1] << "," << i[2] << std::endl;
             // permutation p equivalent to a previous q for the given i,j,k
             symmetryPerm[p] = true;
             (*permDVabc[p])["abc"] = (*permDVabc[q])["abc"];
           } else {
-            LOG(1,"CcsdPerturbativeTriples") << "p=" << p << " neq. q=" << q <<
-              " for " << i[0] << "," << i[1] << "," << i[2] << std::endl;
             symmetryPerm[p] = false;
             // non-equivalent: calculate for given i,j,k
             (*permDVabc[p])["abc"] = getDoublesContribution(
@@ -156,8 +152,10 @@ void CcsdPerturbativeTriples::run() {
               // get D.V in permutation q.p of a,b,k and permutation p of i,j,k
               Tabc["abc"] += permParticleFactors[q] * (*permDVabc[p])[indices];
 
-              // TODO:
               // get S.V in permutation q.p of a,b,k and permutation p of i,j,k
+              Tabc["abc"] += permParticleFactors[q] * getSinglesContribution(
+                i[perms[p][0]], i[perms[p][1]], i[perms[p][2]]
+              )[indices];
             }
             // contract
             Scalar<> contribution(*Cc4s::world);
