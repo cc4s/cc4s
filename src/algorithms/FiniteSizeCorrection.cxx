@@ -420,8 +420,6 @@ void FiniteSizeCorrection::interpolation3D() {
   }
 
   //integration in 3D
-  int kpoints(getIntegerArgument("kpoints", 1));
-  double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
   double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
   int N0(51), N1(51), N2(51);
