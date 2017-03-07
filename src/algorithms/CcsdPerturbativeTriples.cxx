@@ -195,24 +195,27 @@ void CcsdPerturbativeTriples::dryRun() {
   );
 
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
-  );
   DryTensor<> *epsa(
     getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
   );
   
   // Compute the No,Nv
-  int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
 
   // Allocate the doubles amplitudes
-  int vvvooo[] = { Nv, Nv , Nv , No , No , No };
-  int   syms[] = { NS, NS,  NS , NS , NS , NS };
-  DryTensor<> Tabcijk(6, vvvooo, syms, SOURCE_LOCATION);
+  int vvv[] = { Nv, Nv, Nv };
+  int   syms[] = { NS, NS, NS };
+  DryTensor<> SVabcijk(3, vvv, syms, SOURCE_LOCATION);
+  DryTensor<> DVabcijk(3, vvv, syms, SOURCE_LOCATION);
+  DryTensor<> DV0abcijk(3, vvv, syms, SOURCE_LOCATION);
+  DryTensor<> DV1abcijk(3, vvv, syms, SOURCE_LOCATION);
+  DryTensor<> DV2abcijk(3, vvv, syms, SOURCE_LOCATION);
+  DryTensor<> DV3abcijk(3, vvv, syms, SOURCE_LOCATION);
+  DryTensor<> DV4abcijk(3, vvv, syms, SOURCE_LOCATION);
+  DryTensor<> DV5abcijk(3, vvv, syms, SOURCE_LOCATION);
 
   {
-    DryTensor<> Zabcijk(6, vvvooo, syms, SOURCE_LOCATION);
+    DryTensor<> Tabcijk(3, vvv, syms, SOURCE_LOCATION);
   }
 
   DryTensor<> Zai(*Tai, SOURCE_LOCATION);
