@@ -84,8 +84,8 @@ void CcsdPerturbativeTriples::run() {
   // triples amplitudes considering all permutations of a,b,c for given i,j,k
   Tensor<> Tabc(3, vvv, syms, *epsi->wrld, "Tabc");
 
-  const int perms[][] = {
-    { 0, 1, 2}, { 0, 2, 1}, { 1, 0, 2}, { 1, 2, 0}, { 2, 0, 1}, { 2, 1, 0}
+  const int perms[6][3] = {
+    {0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}
   };
   const char *permIndices[6] = {
     "abc", "acb", "bac", "bca", "cab", "cba"
@@ -95,8 +95,9 @@ void CcsdPerturbativeTriples::run() {
   };
   Tensor<> *permDVabc[6];
   for (int p(0); p < 6; ++p) {
-    perDVabc = new Tensor<>(3, vvv, syms, *epsi->wrld, "perDVabc");
+    permDVabc[p] = new Tensor<>(3, vvv, syms, *epsi->wrld, "permDVabc");
   }
+  bool symmetryPerm[6];
 
   Scalar<> energy(*Cc4s::world);
   energy[""] = 0.0;
@@ -106,62 +107,72 @@ void CcsdPerturbativeTriples::run() {
     for (i[1] = i[0]; i[1] < No; ++i[1]) {
       for (i[2] = i[1]; i[2] < No; ++i[2]) {
         // get DV in all permuations of i,j,k
-        // and build sum over all permutations of i,jk together with a,b,c
+        // and build sum over all permutations of i,j,k together with a,b,c
         (*DVabc)["abc"] = 0.0;
         for (int p(0); p < 6; ++p) {
-          (*perDVabc[p])["abc"] = getDoublesContribution(
-            i[perms[p][0]], i[perms[p][1]], i[perms[p][2]]
-          )["abc"];
-          (*DVabc)["abc"] += (*perDVabc[p])[perAbc[p]];
+          int q;
+          for (q = 0; q < p; ++q) {
+            int d;
+            for (d = 0; d < 3; ++d) {
+              if (i[perms[p][d]] != i[perms[q][d]]) break;
+            }
+            if (d == 3) break;
+          }
+          if (q < p) {
+            LOG(1,"CcsdPerturbativeTriples") << "p=" << p << " eq. q=" << q <<
+              " for " << i[0] << "," << i[1] << "," << i[2] << std::endl;
+            // permutation p equivalent to a previous q for the given i,j,k
+            symmetryPerm[p] = true;
+            (*permDVabc[p])["abc"] = (*permDVabc[q])["abc"];
+          } else {
+            LOG(1,"CcsdPerturbativeTriples") << "p=" << p << " neq. q=" << q <<
+              " for " << i[0] << "," << i[1] << "," << i[2] << std::endl;
+            symmetryPerm[p] = false;
+            // non-equivalent: calculate for given i,j,k
+            (*permDVabc[p])["abc"] = getDoublesContribution(
+              i[perms[p][0]], i[perms[p][1]], i[perms[p][2]]
+            )["abc"];
+          }
+          (*DVabc)["abc"] += (*permDVabc[p])[permIndices[p]];
         }
-        for (int p(0); p < 6; ++p) {
-          Tabc["abc"] = 0.0;
-          for (int q(0); q < 6; ++q) {
-        // get DV in respective permutation of a,b,k where i,j,k is
-        // attached left to right to D.V
-        getDoublesContribution(i,j,k);
-        Tabc["abc"]  = (+8.0) * (*DVabc)["abc"];
-        Tabc["abc"] += (-4.0) * (*DVabc)["acb"];
-        Tabc["abc"] += (-4.0) * (*DVabc)["bac"];
-        Tabc["abc"] += (+2.0) * (*DVabc)["bca"];
-        Tabc["abc"] += (+2.0) * (*DVabc)["cab"];
-        Tabc["abc"] += (-4.0) * (*DVabc)["cba"];
-
-        // get SV in respective permutation of i,j,k where a,b,c is
-        // attached left to right to S.V
-        getSinglesContribution(i,j,k);
-        Tabc["abc"] += (+8.0) * (*SVabc)["abc"];
-        Tabc["abc"] += (-4.0) * (*SVabc)["acb"];
-        Tabc["abc"] += (-4.0) * (*SVabc)["bac"];
-        Tabc["abc"] += (+2.0) * (*SVabc)["bca"];
-        Tabc["abc"] += (+2.0) * (*SVabc)["cab"];
-        Tabc["abc"] += (-4.0) * (*SVabc)["cba"];
 
         Bivar_Function<> fDivide(&divide<double>);
-        Tabc.contract(
-          1.0, Tabc,"abc", getEnergyDenominator(i,j,k),"abc", 0.0,"abc", fDivide
+        DVabc->contract(
+          1.0, *DVabc,"abc",
+          getEnergyDenominator(i[0],i[1],i[2]),"abc",
+          0.0,"abc", fDivide
         );
 
-        // permute a,b,c and i,j,k together into SVabc
-        (*SVabc)["abc"]  = (*DVabc)["abc"];
-        (*SVabc)["abc"] += getDoublesContribution(i,k,j)["acb"];
-        (*SVabc)["abc"] += getDoublesContribution(j,i,k)["bac"];
-        (*SVabc)["abc"] += getDoublesContribution(j,k,i)["bca"];
-        (*SVabc)["abc"] += getDoublesContribution(k,i,j)["cab"];
-        (*SVabc)["abc"] += getDoublesContribution(k,j,i)["cba"];
+        for (int p(0); p < 6; ++p) {
+          if (!symmetryPerm[p]) {
+            Tabc["abc"] = 0.0;
+            for (int q(0); q < 6; ++q) {
+              // get index names of permutation q.p
+              char indices[4];
+              for (int d(0); d < 3; ++d) {
+                indices[d] = permIndices[p][perms[q][d]];
+              }
+              indices[3] = 0;
+              // get D.V in permutation q.p of a,b,k and permutation p of i,j,k
+              Tabc["abc"] += permParticleFactors[q] * (*permDVabc[p])[indices];
 
-        // contract
-        Scalar<> contribution(*Cc4s::world);
-        contribution[""] += (*SVabc)["abc"] * Tabc["abc"];
-        LOG(1, "CcsdPerturbativeTriples") <<
-          "e[" << i << "," << j << "," << k << "]=" <<
-          contribution.get_val() << std::endl;
-        energy[""] += contribution[""];
+              // TODO:
+              // get S.V in permutation q.p of a,b,k and permutation p of i,j,k
+            }
+            // contract
+            Scalar<> contribution(*Cc4s::world);
+            contribution[""] += (*DVabc)["abc"] * Tabc["abc"];
+            LOG(1, "CcsdPerturbativeTriples") <<
+              "p=" << p << ", e[" << i[perms[p][0]] << "," << i[perms[p][1]] << "," << i[perms[p][2]] << "]=" <<
+              contribution.get_val() << std::endl;
+            energy[""] += contribution[""];
+          }
+        }
       }
     }
   }
   delete DVabc; delete SVabc;
-  for (int p(0); p < 6; ++p) delete perDVabc[p];
+  for (int p(0); p < 6; ++p) delete permDVabc[p];
 
   double eTriples(energy.get_val());
   double eCcsd(getRealArgument("CcsdEnergy"));
