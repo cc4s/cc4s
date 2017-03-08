@@ -23,24 +23,23 @@ CcsdPerturbativeTriples::~CcsdPerturbativeTriples() {
 }
 
 template <int N>
-std::string operator *(const std::string &s, const Permutation<N> pi) {
-  Assert(s.length() == N, "Only strings of length N can be permuted.");
+std::string operator *(const char s[N+1], const Permutation<N> &pi) {
   std::string t(N);
   for (int i(0); i < N; ++i) t[i] = s[pi(i)];
 }
 
-Tensor<> &CcsdPerturbativeTriples::getSinglesContribution(int i, int j, int k) {
+Tensor<> &CcsdPerturbativeTriples::getSinglesContribution(const Map<3> &i) {
   Tensor<> *Tai(getTensorArgument("CcsdSinglesAmplitudes"));
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-  int TaiStart[] = { 0, i }, TaiEnd[] = { Nv, i+1 };
-  int VbcjkStart[] = { 0, 0, j, k }, VbcjkEnd[] = { Nv, Nv, j+1, k+1 };
+  int TaiStart[] = { 0, i(0) }, TaiEnd[] = { Nv, i(0)+1 };
+  int VbcjkStart[] = { 0,0, i(1),i(2) }, VbcjkEnd[] = { Nv,Nv, i(1)+1,i(2)+1 };
   (*SVabc)["abc"] =
     0.5 * Tai->slice(TaiStart,TaiEnd)["ai"]
     * Vabij->slice(VbcjkStart,VbcjkEnd)["bcjk"];
   return *SVabc;
 }
 
-Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(int i, int j, int k) {
+Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(const Map<3> &i) {
   Tensor<> *Tabij(getTensorArgument("CcsdDoublesAmplitudes"));
   Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
 
@@ -48,7 +47,7 @@ Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(int i, int j, int k) {
   // Allocate and compute GammaGbd,GammaGck from GammaGqr
   int NG(GammaGqr->lens[0]);
   int Np(GammaGqr->lens[1]);
-  int     iStart(k), iEnd(k+1);
+  int iStart(i(2)), iEnd(i(2)+1);
   int aStart(Np-Nv),  aEnd(Np);
   int GckStart[] = {0 ,aStart,iStart};
   int   GckEnd[] = {NG,aEnd,  iEnd  };
@@ -73,7 +72,7 @@ Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(int i, int j, int k) {
   );
   fromComplexTensor(GammaGbd, realGammaGbd, imagGammaGbd);
 
-  int TadijStart[] = { 0, 0, i, j }, TadijEnd[] = { Nv, Nv, i+1, j+1 };
+  int TadijStart[] = { 0,0, i(0),i(1) }, TadijEnd[] = { Nv,Nv, i(0)+1,i(1)+1 };
 
   (*SVabc)["abc"]  =
     Tabij->slice(TadijStart,TadijEnd)["adij"]
@@ -90,8 +89,8 @@ Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(int i, int j, int k) {
     * Vabci->slice(VbcdkStart,VbcdkEnd)["bcdk"];
     */
 
-  int TabilStart[] = { 0, 0, i, 0 }, TabilEnd[] = { Nv, Nv, i+1, No };
-  int VjklcStart[] = { j, k, 0, 0 }, VjklcEnd[] = { j+1, k+1, No, Nv };
+  int TabilStart[] = { 0, 0, i(0), 0 }, TabilEnd[] = { Nv, Nv, i(0)+1, No };
+  int VjklcStart[] = { i(1),i(2), 0,0 }, VjklcEnd[] = { i(1)+1,i(2)+1, No,Nv };
   (*SVabc)["abc"] -=
     Tabij->slice(TabilStart,TabilEnd)["abil"]
     * Vijka->slice(VjklcStart,VjklcEnd)["jklc"];
@@ -99,19 +98,19 @@ Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(int i, int j, int k) {
   return *SVabc;
 }
 
-Tensor<> &CcsdPerturbativeTriples::getEnergyDenominator(int i, int j, int k) {
+Tensor<> &CcsdPerturbativeTriples::getEnergyDenominator(const Map<3> &i) {
   // reuse SVabc to hold the energy denominator
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
   // NOTE: due to a bug we first to feed the sliced vector into a scalar
   Scalar<> eps(*epsi->wrld);
-  int epsiStart[] = { i }, epsiEnd[] = { i+1 };
+  int epsiStart[] = { i(0) }, epsiEnd[] = { i(0)+1 };
   eps[""] = epsi->slice(epsiStart,epsiEnd)["i"];
   (*SVabc)["abc"]  = eps.get_val();
-  int epsjStart[] = { j }, epsjEnd[] = { j+1 };
+  int epsjStart[] = { i(1) }, epsjEnd[] = { i(1)+1 };
   eps[""] = epsi->slice(epsjStart,epsjEnd)["j"];
   (*SVabc)["abc"] += eps.get_val();
-  int epskStart[] = { k }, epskEnd[] = { k+1 };
+  int epskStart[] = { i(2) }, epskEnd[] = { i(2)+1 };
   eps[""] = epsi->slice(epskStart,epskEnd)["k"];
   (*SVabc)["abc"] += eps.get_val();
   (*SVabc)["abc"] -= (*epsa)["a"];
@@ -134,84 +133,77 @@ void CcsdPerturbativeTriples::run() {
   // triples amplitudes considering all permutations of a,b,c for given i,j,k
   Tensor<> Tabc(3, vvv, syms, *epsi->wrld, "Tabc");
 
-  const int perms[6][3] = {
-    {0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}
-  };
-  const char *permIndices[6] = {
-    "abc", "acb", "bac", "bca", "cab", "cba"
-  };
-  const double permParticleFactors[6] = {
-    +8.0, -4.0, -4.0, +2.0, +2.0, -4.0
-  };
-  Tensor<> *permDVabc[6];
-  for (int p(0); p < 6; ++p) {
-    permDVabc[p] = new Tensor<>(3, vvv, syms, *epsi->wrld, "permDVabc");
+  Tensor<> *piDVabc[Permutation<3>::ORDER];
+  for (int p(0); p < Permutation<3>::ORDER; ++p) {
+    piDVabc[p] = new Tensor<>(3, vvv, syms, *epsi->wrld, "piDVabc");
   }
-  bool symmetryPerm[6];
+  // spin factors and Fermion sign depending on the number of
+  // invariant indices between the when permuting a,b,c keeping i,j,k fixed.
+  // having 2 invariant indices is impossible
+  double spinAndFermiFactors[] = { +2.0, -4.0, 0.0, +8.0 };
+
+  // true if the permutation Pi leaves the current indices i,j,k invariant
+  bool ijkInvariantUnderPi[Permutation<3>::ORDER];
 
   Scalar<> energy(*Cc4s::world);
   energy[""] = 0.0;
-  int i[3];
-  // go through all distinct orders 0 <= i[0] <= i[1] <= i[2] < No
-  for (i[0] = 0; i[0] < No; ++i[0]) {
-    for (i[1] = i[0]; i[1] < No; ++i[1]) {
-      for (i[2] = i[1]; i[2] < No; ++i[2]) {
+  // indices i,j,k as map with 3 elements i(0),...,i(2)
+  Map<3> i;
+  // go through all distinct orders 0 <= i(0) <= i(1) <= i(2) < No
+  for (i(0) = 0; i(0) < No; ++i(0)) {
+    for (i(1) = i(0); i(1) < No; ++i(1)) {
+      for (i(2) = i(1); i(2) < No; ++i(2)) {
         // get DV in all permuations of i,j,k
         // and build sum over all permutations of i,j,k together with a,b,c
         (*DVabc)["abc"] = 0.0;
-        for (int p(0); p < 6; ++p) {
+        for (int p(0); p < Permutation<3>::ORDER; ++p) {
+          Permutation<3> pi(p);
           int q;
-          for (q = 0; q < p; ++q) {
-            int d;
-            for (d = 0; d < 3; ++d) {
-              if (i[perms[p][d]] != i[perms[q][d]]) break;
-            }
-            if (d == 3) break;
-          }
+          // check whether i after previsous permutation q leaves i invariant
+          for (q = 0; q < p; ++q) if (i * Permutation<3>(q) == i) break;
           if (q < p) {
             // permutation p equivalent to a previous q for the given i,j,k
-            symmetryPerm[p] = true;
-            (*permDVabc[p])["abc"] = (*permDVabc[q])["abc"];
+            ijkInvariantUnderPi[p] = true;
+            // use previously calculated permutation
+            (*piDVabc[p])["abc"] = (*piDVabc[q])["abc"];
           } else {
-            symmetryPerm[p] = false;
+            ijkInvariantUnderPi[p] = false;
             // non-equivalent: calculate for given i,j,k
-            (*permDVabc[p])["abc"] = getDoublesContribution(
-              i[perms[p][0]], i[perms[p][1]], i[perms[p][2]]
-            )["abc"];
+            (*piDVabc[p])["abc"] = getDoublesContribution(i*pi)["abc"];
           }
-          (*DVabc)["abc"] += (*permDVabc[p])[permIndices[p]];
+          // aggregate all simultaneous permutations of i,j,k and a,b,c
+          (*DVabc)["abc"] += (*piDVabc[p])["abc"*pi];
         }
 
+        // energy denominator is invariant under all permutations
         Bivar_Function<> fDivide(&divide<double>);
         DVabc->contract(
-          1.0, *DVabc,"abc",
-          getEnergyDenominator(i[0],i[1],i[2]),"abc",
-          0.0,"abc", fDivide
+          1.0, *DVabc,"abc", getEnergyDenominator(i),"abc", 0.0,"abc", fDivide
         );
 
-        for (int p(0); p < 6; ++p) {
-          if (!symmetryPerm[p]) {
+        for (int p(0); p < Permutation<3>::ORDER; ++p) {
+          if (!ijkInvariantUnderPi[p]) {
+            // go through all permutation pi of i,j,k together with a,b,c
+            Permutation<3> pi(p);
             Tabc["abc"] = 0.0;
-            for (int q(0); q < 6; ++q) {
-              // get index names of permutation q.p
-              char indices[4];
-              for (int d(0); d < 3; ++d) {
-                indices[d] = permIndices[p][perms[q][d]];
-              }
-              indices[3] = 0;
-              // get D.V in permutation q.p of a,b,k and permutation p of i,j,k
-              Tabc["abc"] += permParticleFactors[q] * (*permDVabc[p])[indices];
+            for (int s(0); s < Permutation<3>::ORDER; ++s) {
+              // after pi, permute a,b,c with sigma leaving i,j,k fixed.
+              Permutation<3> sigma(s);
+              // the spin factors and the Fermion sign only depends on sigma
+              double sf(spinAndFermiFactors[sigma.invariantElementsCount()]);
+              // get D.V in
+              // permutation sigma*pi of a,b,k and in permutation pi of i,j,k
+              Tabc["abc"] += sf * (*piDVabc[p])["abc"*sigma*pi];
 
-              // get S.V in permutation q.p of a,b,k and permutation p of i,j,k
-              Tabc["abc"] += permParticleFactors[q] * getSinglesContribution(
-                i[perms[p][0]], i[perms[p][1]], i[perms[p][2]]
-              )[indices];
+              // get D.V in
+              // permutation sigma*pi of a,b,k and in permutation pi of i,j,k
+              Tabc["abc"] += sf * getSinglesContribution(i*pi)["abc"*sigma*pi];
             }
             // contract
             Scalar<> contribution(*Cc4s::world);
             contribution[""] += (*DVabc)["abc"] * Tabc["abc"];
             LOG(1, "CcsdPerturbativeTriples") <<
-              "p=" << p << ", e[" << i[perms[p][0]] << "," << i[perms[p][1]] << "," << i[perms[p][2]] << "]=" <<
+              "pi=" << pi << ", e" << i*pi << "=" <<
               contribution.get_val() << std::endl;
             energy[""] += contribution[""];
           }
@@ -220,7 +212,7 @@ void CcsdPerturbativeTriples::run() {
     }
   }
   delete DVabc; delete SVabc;
-  for (int p(0); p < 6; ++p) delete permDVabc[p];
+  for (int p(0); p < Permutation<3>::ORDER; ++p) delete piDVabc[p];
 
   double eTriples(energy.get_val());
   double eCcsd(getRealArgument("CcsdEnergy"));

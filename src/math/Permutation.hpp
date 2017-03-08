@@ -66,6 +66,12 @@ template <int N>
       }
     }
 
+    int invariantElementsCount() const {
+      int count(0);
+      for (int i(0); i < N; ++i) count += images[i] == i;
+      return count;
+    }
+
     static constexpr int64_t ORDER = N * Permutation<N-1>::ORDER;
   private:
     Permutation() {

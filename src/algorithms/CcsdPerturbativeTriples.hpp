@@ -3,6 +3,7 @@
 #define CCSD_PERTURBATIVE_TRIPLES_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <math/Permutation.hpp>
 
 namespace cc4s {
   /**
@@ -26,9 +27,9 @@ namespace cc4s {
   protected:
     int No, Nv;
     CTF::Tensor<> *SVabc, *DVabc;
-    CTF::Tensor<> &getSinglesContribution(int i, int j, int k);
-    CTF::Tensor<> &getDoublesContribution(int i, int j, int k);
-    CTF::Tensor<> &getEnergyDenominator(int i, int j, int k);
+    CTF::Tensor<> &getSinglesContribution(const Map<3> &);
+    CTF::Tensor<> &getDoublesContribution(const Map<3> &);
+    CTF::Tensor<> &getEnergyDenominator(const Map<3> &);
   };
 }
 
