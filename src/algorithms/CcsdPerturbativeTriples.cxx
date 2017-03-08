@@ -2,6 +2,7 @@
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
 #include <math/MathFunctions.hpp>
+#include <math/Permutation.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -19,6 +20,13 @@ CcsdPerturbativeTriples::CcsdPerturbativeTriples(
 }
 
 CcsdPerturbativeTriples::~CcsdPerturbativeTriples() {
+}
+
+template <int N>
+std::string operator *(const std::string &s, const Permutation<N> pi) {
+  Assert(s.length() == N, "Only strings of length N can be permuted.");
+  std::string t(N);
+  for (int i(0); i < N; ++i) t[i] = s[pi(i)];
 }
 
 Tensor<> &CcsdPerturbativeTriples::getSinglesContribution(int i, int j, int k) {
