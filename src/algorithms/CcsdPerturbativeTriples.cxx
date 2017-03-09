@@ -215,7 +215,7 @@ void CcsdPerturbativeTriples::run() {
         }
         ++n;
         LOG(1, "CcsdPerturbativeTriples") << n << "/" << N <<
-          " distinct indices calculaed, ETA=" <<
+          " distinct indices calculated, ETA=" <<
           (Time::getCurrentRealTime()-startTime)*(static_cast<double>(N)/n-1) <<
           " s" << std::endl;
       }
