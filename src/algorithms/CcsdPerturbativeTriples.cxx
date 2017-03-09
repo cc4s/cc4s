@@ -22,10 +22,15 @@ CcsdPerturbativeTriples::CcsdPerturbativeTriples(
 CcsdPerturbativeTriples::~CcsdPerturbativeTriples() {
 }
 
-template <int N>
-std::string operator *(const char s[N+1], const Permutation<N> &pi) {
-  std::string t(N);
-  for (int i(0); i < N; ++i) t[i] = s[pi(i)];
+namespace cc4s {
+  template <int N>
+  inline std::string operator *(
+    const std::string &s, const cc4s::Permutation<N> &pi
+  ) {
+    std::string sPi(s);
+    for (int i(0); i < N; ++i) sPi[i] = s[pi(i)];
+    return sPi;
+  }
 }
 
 Tensor<> &CcsdPerturbativeTriples::getSinglesContribution(const Map<3> &i) {
@@ -160,7 +165,7 @@ void CcsdPerturbativeTriples::run() {
           Permutation<3> pi(p);
           int q;
           // check whether i after previsous permutation q leaves i invariant
-          for (q = 0; q < p; ++q) if (i * Permutation<3>(q) == i) break;
+          for (q = 0; q < p; ++q) if (i*Permutation<3>(q) == i*pi) break;
           if (q < p) {
             // permutation p equivalent to a previous q for the given i,j,k
             ijkInvariantUnderPi[p] = true;
@@ -172,7 +177,7 @@ void CcsdPerturbativeTriples::run() {
             (*piDVabc[p])["abc"] = getDoublesContribution(i*pi)["abc"];
           }
           // aggregate all simultaneous permutations of i,j,k and a,b,c
-          (*DVabc)["abc"] += (*piDVabc[p])["abc"*pi];
+          (*DVabc)["abc"] += (*piDVabc[p])[("abc"*pi).c_str()];
         }
 
         // energy denominator is invariant under all permutations
@@ -193,11 +198,12 @@ void CcsdPerturbativeTriples::run() {
               double sf(spinAndFermiFactors[sigma.invariantElementsCount()]);
               // get D.V in
               // permutation sigma*pi of a,b,k and in permutation pi of i,j,k
-              Tabc["abc"] += sf * (*piDVabc[p])["abc"*sigma*pi];
+              Tabc["abc"] += sf * (*piDVabc[p])[("abc"*sigma*pi).c_str()];
 
               // get D.V in
               // permutation sigma*pi of a,b,k and in permutation pi of i,j,k
-              Tabc["abc"] += sf * getSinglesContribution(i*pi)["abc"*sigma*pi];
+              Tabc["abc"] +=
+                sf * getSinglesContribution(i*pi)[("abc"*sigma*pi).c_str()];
             }
             // contract
             Scalar<> contribution(*Cc4s::world);

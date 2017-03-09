@@ -68,7 +68,7 @@ template <int N>
 
     int invariantElementsCount() const {
       int count(0);
-      for (int i(0); i < N; ++i) count += images[i] == i;
+      for (int i(0); i < N; ++i) count += this->images[i] == i;
       return count;
     }
 
