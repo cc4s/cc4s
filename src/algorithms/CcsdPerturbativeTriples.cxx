@@ -148,7 +148,7 @@ void CcsdPerturbativeTriples::run() {
   double spinAndFermiFactors[] = { +2.0, -4.0, 0.0, +8.0 };
 
   // true if the permutation Pi leaves the current indices i,j,k invariant
-  bool ijkInvariantUnderPi[Permutation<3>::ORDER];
+  bool givesDistinctIndexPermutation[Permutation<3>::ORDER];
 
   Scalar<> energy(*Cc4s::world);
   energy[""] = 0.0;
@@ -164,15 +164,15 @@ void CcsdPerturbativeTriples::run() {
         for (int p(0); p < Permutation<3>::ORDER; ++p) {
           Permutation<3> pi(p);
           int q;
-          // check whether i after previsous permutation q leaves i invariant
+          // check if previsous permutation q permutes current i,j,k same as pi
           for (q = 0; q < p; ++q) if (i*Permutation<3>(q) == i*pi) break;
           if (q < p) {
             // permutation p equivalent to a previous q for the given i,j,k
-            ijkInvariantUnderPi[p] = true;
+            givesDistinctIndexPermutation[p] = false;
             // use previously calculated permutation
             (*piDVabc[p])["abc"] = (*piDVabc[q])["abc"];
           } else {
-            ijkInvariantUnderPi[p] = false;
+            givesDistinctIndexPermutation[p] = true;
             // non-equivalent: calculate for given i,j,k
             (*piDVabc[p])["abc"] = getDoublesContribution(i*pi)["abc"];
           }
@@ -187,7 +187,7 @@ void CcsdPerturbativeTriples::run() {
         );
 
         for (int p(0); p < Permutation<3>::ORDER; ++p) {
-          if (!ijkInvariantUnderPi[p]) {
+          if (givesDistinctIndexPermutation[p]) {
             // go through all permutation pi of i,j,k together with a,b,c
             Permutation<3> pi(p);
             Tabc["abc"] = 0.0;
