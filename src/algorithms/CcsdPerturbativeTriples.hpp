@@ -4,6 +4,7 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <math/Permutation.hpp>
+#include <util/SlicedCtfTensor.hpp>
 
 namespace cc4s {
   /**
@@ -27,6 +28,10 @@ namespace cc4s {
   protected:
     int No, Nv;
     CTF::Tensor<> *SVabc, *DVabc;
+    CTF::Tensor<> *realGammaFab, *imagGammaFab;
+    SlicedCtfTensor<> *Tai, *Tabij, *Tabil;
+    SlicedCtfTensor<> *Vabij, *Vijla, *realGammaFai,*imagGammaFai;
+    void sliceTensors();
     CTF::Tensor<> &getSinglesContribution(const Map<3> &);
     CTF::Tensor<> &getDoublesContribution(const Map<3> &);
     CTF::Tensor<> &getEnergyDenominator(const Map<3> &);

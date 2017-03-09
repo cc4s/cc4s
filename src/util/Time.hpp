@@ -6,6 +6,7 @@
 #include <ostream>
 #include <iomanip>
 #include <sstream>
+#include <cmath>
 
 namespace cc4s {
   /**
@@ -76,6 +77,11 @@ namespace cc4s {
     Time result(t1);
     result -= t2;
     return result;
+  }
+
+  inline Time operator *(const Time &difference, const double factor) {
+    double d(difference.getFractionalSeconds() * factor);
+    return Time(std::floor(d), std::round((d-std::floor(d)) * Time::FRACTIONS));
   }
 
   inline std::ostream &operator <<(std::ostream &stream, Time const &t) {

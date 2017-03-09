@@ -33,73 +33,73 @@ namespace cc4s {
   }
 }
 
+
+void CcsdPerturbativeTriples::sliceTensors() {
+  // slice Tai in dimension 1, i.e. in i
+  Tai = new SlicedCtfTensor<>(
+    *getTensorArgument("CcsdSinglesAmplitudes"), {1}
+  );
+  // slice Tabij in dimension 2&3, i.e. in i,j
+  Tabij = new SlicedCtfTensor<>(
+    *getTensorArgument("CcsdDoublesAmplitudes"), {2,3}
+  );
+  // slice Tabil in dimension 2
+  Tabil = new SlicedCtfTensor<>(
+    *getTensorArgument("CcsdDoublesAmplitudes"), {2}
+  );
+  // slice Vabij in dimension 2&3, i.e. in i,j
+  Vabij = new SlicedCtfTensor<>(
+    *getTensorArgument("PPHHCoulombIntegrals"), {2,3}
+  );
+  // slice Vijla in dimension 0&1, i.e. in i,j
+  Vijla = new SlicedCtfTensor<>(
+    *getTensorArgument("HHHPCoulombIntegrals"), {0,1}
+  );
+
+  Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
+  // Allocate and compute GammaFab,GammaFai from GammaFqr
+  int NF(GammaFqr->lens[0]);
+  int Np(GammaFqr->lens[1]);
+  int iStart(0), iEnd(No);
+  int aStart(Np-Nv), aEnd(Np);
+  int FaiStart[] = { 0, aStart, iStart};
+  int FaiEnd[] = { NF, aEnd, iEnd };
+  int FabStart[] = { 0, aStart, aStart };
+  int FabEnd[] = { NF, aEnd, aEnd };
+  Tensor<complex> GammaFai(GammaFqr->slice(FaiStart,FaiEnd));
+  Tensor<complex> GammaFab(GammaFqr->slice(FabStart,FabEnd));
+  // Split GammaFai,GammaFab into real and imaginary parts
+  Tensor<> unslicedRealGammaFai(
+    3, GammaFai.lens, GammaFai.sym, *GammaFai.wrld, "RealGammaFai"
+  );
+  Tensor<> unslicedImagGammaFai(unslicedRealGammaFai);
+  fromComplexTensor(GammaFai, unslicedRealGammaFai, unslicedImagGammaFai);
+  // slice real and imag GammaFai in dimension 2, i.e. in i
+  realGammaFai = new SlicedCtfTensor<>(unslicedRealGammaFai, {2});
+  imagGammaFai = new SlicedCtfTensor<>(unslicedImagGammaFai, {2});
+
+  realGammaFab = new Tensor<>(
+    3, GammaFab.lens, GammaFab.sym, *GammaFab.wrld, "RealGammaFab"
+  );
+  imagGammaFab = new Tensor<>(*realGammaFab);
+  fromComplexTensor(GammaFab, *realGammaFab, *imagGammaFab);
+}
+
 Tensor<> &CcsdPerturbativeTriples::getSinglesContribution(const Map<3> &i) {
-  Tensor<> *Tai(getTensorArgument("CcsdSinglesAmplitudes"));
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-  int TaiStart[] = { 0, i(0) }, TaiEnd[] = { Nv, i(0)+1 };
-  int VbcjkStart[] = { 0,0, i(1),i(2) }, VbcjkEnd[] = { Nv,Nv, i(1)+1,i(2)+1 };
   (*SVabc)["abc"] =
-    0.5 * Tai->slice(TaiStart,TaiEnd)["ai"]
-    * Vabij->slice(VbcjkStart,VbcjkEnd)["bcjk"];
+    0.5 * (*Tai)({i(0)})["ai"] * (*Vabij)({i(1),i(2)})["bcjk"];
   return *SVabc;
 }
 
 Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(const Map<3> &i) {
-  Tensor<> *Tabij(getTensorArgument("CcsdDoublesAmplitudes"));
-  Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
-
-  Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
-  // Allocate and compute GammaGbd,GammaGck from GammaGqr
-  int NG(GammaGqr->lens[0]);
-  int Np(GammaGqr->lens[1]);
-  int iStart(i(2)), iEnd(i(2)+1);
-  int aStart(Np-Nv),  aEnd(Np);
-  int GckStart[] = {0 ,aStart,iStart};
-  int   GckEnd[] = {NG,aEnd,  iEnd  };
-  int GbdStart[] = {0 ,aStart,aStart};
-  int   GbdEnd[] = {NG,aEnd,  aEnd  };
-  Tensor<complex> GammaGck(GammaGqr->slice(GckStart,GckEnd));
-  Tensor<complex> GammaGbd(GammaGqr->slice(GbdStart,GbdEnd));
-  // Split GammaGbd,GammaGck into real and imaginary parts
-  Tensor<> realGammaGck(
-    3, GammaGck.lens, GammaGck.sym, *GammaGck.wrld, "RealGammaGck"
-  );
-  Tensor<> imagGammaGck(
-    3, GammaGck.lens, GammaGck.sym, *GammaGck.wrld, "ImagGammaGck"
-  );
-  fromComplexTensor(GammaGck, realGammaGck, imagGammaGck);
-
-  Tensor<> realGammaGbd(
-    3, GammaGbd.lens, GammaGbd.sym, *GammaGbd.wrld, "RealGammaGbd"
-  );
-  Tensor<> imagGammaGbd(
-    3, GammaGbd.lens, GammaGbd.sym, *GammaGbd.wrld, "ImagGammaGbd"
-  );
-  fromComplexTensor(GammaGbd, realGammaGbd, imagGammaGbd);
-
-  int TadijStart[] = { 0,0, i(0),i(1) }, TadijEnd[] = { Nv,Nv, i(0)+1,i(1)+1 };
-
-  (*SVabc)["abc"]  =
-    Tabij->slice(TadijStart,TadijEnd)["adij"]
-    * realGammaGbd["Gbd"] * realGammaGck["Gck"];
-  (*SVabc)["abc"] +=
-    Tabij->slice(TadijStart,TadijEnd)["adij"]
-    * imagGammaGbd["Gbd"] * imagGammaGck["Gck"];;
-
-  /*
-  Tensor<> *Vabci(getTensorArgument("PPPHCoulombIntegrals"));
-  int VbcdkStart[] = { 0, 0, 0, k }, VbcdkEnd[] = { Nv, Nv, Nv, k+1 };
   (*SVabc)["abc"] =
-    Tabij->slice(TadijStart,TadijEnd)["adij"]
-    * Vabci->slice(VbcdkStart,VbcdkEnd)["bcdk"];
-    */
+    (*Tabij)({i(0),i(1)})["adij"] *
+    (*realGammaFab)["Fbd"] * (*realGammaFai)({i(2)})["Fck"];
+  (*SVabc)["abc"] +=
+    (*Tabij)({i(0),i(1)})["adij"] *
+    (*imagGammaFab)["Fbd"] * (*imagGammaFai)({i(2)})["Fck"];
 
-  int TabilStart[] = { 0, 0, i(0), 0 }, TabilEnd[] = { Nv, Nv, i(0)+1, No };
-  int VjklcStart[] = { i(1),i(2), 0,0 }, VjklcEnd[] = { i(1)+1,i(2)+1, No,Nv };
-  (*SVabc)["abc"] -=
-    Tabij->slice(TabilStart,TabilEnd)["abil"]
-    * Vijka->slice(VjklcStart,VjklcEnd)["jklc"];
-
+  (*SVabc)["abc"] -= (*Tabil)({i(0)})["abil"] * (*Vijla)({i(1),i(2)})["jklc"];
   return *SVabc;
 }
 
@@ -138,6 +138,8 @@ void CcsdPerturbativeTriples::run() {
   // triples amplitudes considering all permutations of a,b,c for given i,j,k
   Tensor<> Tabc(3, vvv, syms, *epsi->wrld, "Tabc");
 
+  sliceTensors();
+
   Tensor<> *piDVabc[Permutation<3>::ORDER];
   for (int p(0); p < Permutation<3>::ORDER; ++p) {
     piDVabc[p] = new Tensor<>(3, vvv, syms, *epsi->wrld, "piDVabc");
@@ -154,7 +156,9 @@ void CcsdPerturbativeTriples::run() {
   energy[""] = 0.0;
   // indices i,j,k as map with 3 elements i(0),...,i(2)
   Map<3> i;
-  // go through all distinct orders 0 <= i(0) <= i(1) <= i(2) < No
+  // go through all N distinct orders 0 <= i(0) <= i(1) <= i(2) < No
+  int n(0); const int N(No*(No+1)*(No+2) / 6);
+  Time startTime(Time::getCurrentRealTime());
   for (i(0) = 0; i(0) < No; ++i(0)) {
     for (i(1) = i(0); i(1) < No; ++i(1)) {
       for (i(2) = i(1); i(2) < No; ++i(2)) {
@@ -188,7 +192,7 @@ void CcsdPerturbativeTriples::run() {
 
         for (int p(0); p < Permutation<3>::ORDER; ++p) {
           if (givesDistinctIndexPermutation[p]) {
-            // go through all permutation pi of i,j,k together with a,b,c
+            // all distinct permutation pi of i,j,k together with a,b,c
             Permutation<3> pi(p);
             Tabc["abc"] = 0.0;
             for (int s(0); s < Permutation<3>::ORDER; ++s) {
@@ -206,19 +210,23 @@ void CcsdPerturbativeTriples::run() {
                 sf * getSinglesContribution(i*pi)[("abc"*sigma*pi).c_str()];
             }
             // contract
-            Scalar<> contribution(*Cc4s::world);
-            contribution[""] += (*DVabc)["abc"] * Tabc["abc"];
-            LOG(1, "CcsdPerturbativeTriples") <<
-              "pi=" << pi << ", e" << i*pi << "=" <<
-              contribution.get_val() << std::endl;
-            energy[""] += contribution[""];
+            energy[""] += (*DVabc)["abc"] * Tabc["abc"];
           }
         }
+        ++n;
+        LOG(1, "CcsdPerturbativeTriples") << n << "/" << N <<
+          " distinct indices calculaed, ETA=" <<
+          (Time::getCurrentRealTime()-startTime)*(static_cast<double>(N)/n-1) <<
+          " s" << std::endl;
       }
     }
   }
+
   delete DVabc; delete SVabc;
   for (int p(0); p < Permutation<3>::ORDER; ++p) delete piDVabc[p];
+  delete realGammaFab; delete imagGammaFab;
+  delete Tai; delete Tabij; delete Tabil;
+  delete Vabij; delete Vijla; delete realGammaFai; delete imagGammaFai;
 
   double eTriples(energy.get_val());
   double eCcsd(getRealArgument("CcsdEnergy"));
