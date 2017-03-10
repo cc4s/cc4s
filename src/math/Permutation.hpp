@@ -1,11 +1,11 @@
 #ifndef PERMUTATION_DEFINED
 #define PERMUTATION_DEFINED
 
-namespace cc4s {
 #include <iostream>
 #include <initializer_list>
 
-template <int N>
+namespace cc4s {
+  template <int N>
   class Map {
   public:
     Map() {
