@@ -86,8 +86,7 @@ void CcsdPerturbativeTriples::sliceTensors() {
 }
 
 Tensor<> &CcsdPerturbativeTriples::getSinglesContribution(const Map<3> &i) {
-  (*SVabc)["abc"] =
-    0.5 * (*Tai)({i(0)})["ai"] * (*Vabij)({i(1),i(2)})["bcjk"];
+  (*SVabc)["abc"] = 0.5 * (*Tai)({i(0)})["ai"] * (*Vabij)({i(1),i(2)})["bcjk"];
   return *SVabc;
 }
 
@@ -140,12 +139,13 @@ void CcsdPerturbativeTriples::run() {
 
   sliceTensors();
 
+  // D.V for all permutations of a,b,c together with i,j,k
   Tensor<> *piDVabc[Permutation<3>::ORDER];
   for (int p(0); p < Permutation<3>::ORDER; ++p) {
     piDVabc[p] = new Tensor<>(3, vvv, syms, *epsi->wrld, "piDVabc");
   }
   // spin factors and Fermion sign depending on the number of
-  // invariant indices between the when permuting a,b,c keeping i,j,k fixed.
+  // invariant indices when permuting a,b,c keeping i,j,k fixed.
   // having 2 invariant indices is impossible
   double spinAndFermiFactors[] = { +2.0, -4.0, 0.0, +8.0 };
 
@@ -162,7 +162,7 @@ void CcsdPerturbativeTriples::run() {
   for (i(0) = 0; i(0) < No; ++i(0)) {
     for (i(1) = i(0); i(1) < No; ++i(1)) {
       for (i(2) = i(1); i(2) < No; ++i(2)) {
-        // get DV in all permuations of i,j,k
+        // get D.V in all permuations of i,j,k
         // and build sum over all permutations of i,j,k together with a,b,c
         (*DVabc)["abc"] = 0.0;
         for (int p(0); p < Permutation<3>::ORDER; ++p) {
@@ -198,7 +198,7 @@ void CcsdPerturbativeTriples::run() {
             for (int s(0); s < Permutation<3>::ORDER; ++s) {
               // after pi, permute a,b,c with sigma leaving i,j,k fixed.
               Permutation<3> sigma(s);
-              // the spin factors and the Fermion sign only depends on sigma
+              // the spin factors and the Fermion sign only depend on sigma
               double sf(spinAndFermiFactors[sigma.invariantElementsCount()]);
               // get D.V in
               // permutation sigma*pi of a,b,k and in permutation pi of i,j,k
