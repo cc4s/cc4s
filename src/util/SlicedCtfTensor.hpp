@@ -21,7 +21,7 @@ namespace cc4s {
     SlicedCtfTensor(
       CTF::Tensor<F> &T, Iterator begin, Iterator end
     ) {
-      create(T, std::vector<int>(begin, end);
+      create(T, std::vector<int>(begin, end));
     }
     void create(
       CTF::Tensor<F> &T, const std::vector<int> &slicedDims
@@ -58,7 +58,7 @@ namespace cc4s {
       }
     }
     ~SlicedCtfTensor() {
-      for (int64_t i(0); i < slices.size(); ++i) {
+      for (uint64_t i(0); i < slices.size(); ++i) {
         if (slices[i]) delete slices[i];
         slices[i] = nullptr;
       }
