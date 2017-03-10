@@ -241,7 +241,6 @@ void CcsdPerturbativeTriples::run() {
 void CcsdPerturbativeTriples::dryRun() {
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
   getTensorArgument<double, DryTensor<double>>("HHHPCoulombIntegrals");
-  getTensorArgument<double, DryTensor<double>>("PPPHCoulombIntegrals");
 
   DryTensor<> *Tai(
     getTensorArgument<double, DryTensor<double>>("CcsdSinglesAmplitudes")
