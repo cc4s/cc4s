@@ -13,7 +13,16 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~FiniteSizeCorrection();
+
+    /**
+     * \brief Calculates the finite size correction
+     */
     virtual void run();
+
+    /**
+     * \brief Performs a Dry Run
+     */
+    virtual void dryRun();
   protected:
     int NG;
     const int  N=128;//The # of points on the fibonacciGrid, fixed #.
@@ -44,6 +53,10 @@ namespace cc4s {
       double x, double h
       );
     void calculateFiniteSizeCorrection();
+
+    void dryCalculateStructureFactor();
+    void dryInterpolation3D();
+    void dryCalculateFiniteSizeCorrection();
   };
 }
 

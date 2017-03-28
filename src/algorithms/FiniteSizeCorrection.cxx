@@ -1,6 +1,7 @@
 #include <algorithms/FiniteSizeCorrection.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/Vector.hpp>
 #include <math/Interpolation.hpp>
@@ -35,8 +36,7 @@ void FiniteSizeCorrection::run() {
   if (fReadFromFile == 1) {
     LOG(0,"FiniteSize") << "Reading structure factor from file" << std::endl;
     readFromFile();
-  }
-  else {
+  } else {
     LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
     calculateStructureFactor();
   }
@@ -45,6 +45,21 @@ void FiniteSizeCorrection::run() {
   interpolation3D();
   LOG(0,"FiniteSize") << "Caclulating finite size correction" << std::endl;
   calculateFiniteSizeCorrection();
+}
+
+void FiniteSizeCorrection::dryRun() {
+  int fReadFromFile(getIntegerArgument("fReadFromFile", 0));
+  if (fReadFromFile == 1) {
+    LOG(0,"FiniteSize") << "Reading structure factor from file" << std::endl;
+  } else {
+    LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
+    dryCalculateStructureFactor();
+  }
+  //constructFibonacciGrid();
+  LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
+  dryInterpolation3D();
+  LOG(0,"FiniteSize") << "Caclulating finite size correction" << std::endl;
+  dryCalculateFiniteSizeCorrection();
 }
 
 
@@ -210,6 +225,64 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   realVG->read_all(VofG);
   structureFactors = new double[NG];
   realSG->read_all(structureFactors);
+}
+
+void FiniteSizeCorrection::dryCalculateStructureFactor() {
+
+//Definition of the variables
+  DryTensor<complex> *GammaFai(
+    getTensorArgument<complex, DryTensor<complex>>("ParticleHoleCoulombVertex")
+  );
+
+  int syms[] = { NS, NS, NS, };
+
+  DryTensor<complex> *GammaGai;
+
+  if (isArgumentGiven("CoulombVertexSingularVectors")) {
+    DryTensor<complex> *UGF(
+      getTensorArgument<complex, DryTensor<complex>>("CoulombVertexSingularVectors")
+    );
+    int lens[]= {UGF->lens[0], GammaFai->lens[1], GammaFai->lens[2]};
+    GammaGai = new DryTensor<complex>(4, lens, syms, SOURCE_LOCATION);
+  } else {
+    GammaGai = GammaFai;
+  }
+
+  DryTensor<> *realInfVG(
+    getTensorArgument<double, DryTensor<double>>("CoulombKernel")
+  );
+  DryTensor<> realVG(*realInfVG);
+  DryTensor<> VG(realVG);
+  DryTensor<> realInvSqrtVG(realVG);
+  DryTensor<> invSqrtVG(*realInfVG);
+
+  //Define CGai
+  DryTensor<complex> CGai(*GammaGai);
+
+  //Conjugate of CGai
+  DryTensor<complex> conjCGai(CGai);
+
+  //Get Tabij
+  DryTensor<> *realTabij(
+    getTensorArgument<double, DryTensor<double>>("DoublesAmplitudes")
+  );
+  //Define complex Tabij
+  DryTensor<> rTabij(*realTabij);
+  DryTensor<> iTabij(*realTabij);
+
+  if (isArgumentGiven("SinglesAmplitudes") ) {
+    //Get Tai
+    DryTensor<> *realTai(
+      getTensorArgument<double, DryTensor<double>>("SinglesAmplitudes")
+    );
+    //Define complex Tai
+    DryTensor<> rTai(*realTai);
+    DryTensor<> iTai(*realTai);
+  }
+
+  int NG=GammaGai->lens[0];
+  int len[]={NG,1};
+  allocatedTensorArgument("StructureFactor", new DryTensor<>(2, len, syms, SOURCE_LOCATION));
 }
 
 
@@ -486,6 +559,21 @@ void FiniteSizeCorrection::interpolation3D() {
   LOG(2,"interpolation3D") << "Number of points in summation="<< countNO << std::endl;
 }
 
+void FiniteSizeCorrection::dryInterpolation3D() {
+  DryTensor<> *momenta(
+    getTensorArgument<double, DryTensor<double>>("Momenta")
+  );
+
+  // GC is the shortest vector.
+  if (isArgumentGiven("shortestGvector")) {
+    GC = getRealArgument("shortestGvector");
+  }
+
+  //integration in 3D
+  double constantFactor(getRealArgument("constantFactor"));
+  double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
+}
+
 bool FiniteSizeCorrection::IsInSmallBZ(
   Vector<> point, double scale, std::vector<Vector<>> smallBZ
 )
@@ -580,4 +668,12 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
     << std::setprecision(10)  << sumSGVG + r1 << std::endl;
 
   setRealArgument("CorrectedEnergy"  , sumSGVG+inter3D-sum3D);
+}
+
+void FiniteSizeCorrection::dryCalculateFiniteSizeCorrection() {
+  int kpoints(getIntegerArgument("kpoints", 1));
+  double volume(getRealArgument("volume"));
+  double constantFactor(getRealArgument("constantFactor"));
+
+  setRealArgument("CorrectedEnergy", 0.0);
 }
