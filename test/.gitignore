@@ -1,4 +1,5 @@
-test.out
+*.out
+*.err
 *.log
 *.dat
 *.bin

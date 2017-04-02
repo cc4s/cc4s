@@ -73,3 +73,4 @@ build/${CONFIG}/obj/algorithms/DoublesAmplitudesDecomposition.o \
 build/${CONFIG}/obj/algorithms/DoublesAmplitudesFromVertex.o \
 build/${CONFIG}/obj/algorithms/DrccdDensities.o \
 build/${CONFIG}/obj/algorithms/CcsdPerturbativeTriples.o \
+build/${CONFIG}/obj/algorithms/experimental/StochasticContraction.o \
