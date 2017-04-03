@@ -3,6 +3,7 @@
 
 #include "mpi.h"
 #include <math/Complex.hpp>
+#include <math/Vector.hpp>
 
 namespace cc4s {
   // base template for type traits
@@ -13,7 +14,7 @@ namespace cc4s {
   class MpiCommunicator {
   public:
     MpiCommunicator(
-      int rank_, int processes_, int comm_ = MPI_COMM_WORLD
+      int rank_, int processes_, MPI_Comm comm_ = MPI_COMM_WORLD
     ): rank(rank_), processes(processes_), comm(comm_) {
     }
     ~MpiCommunicator() {
@@ -40,9 +41,24 @@ namespace cc4s {
     }
 
   protected:
-    int rank, processes, comm;
+    int rank, processes;
+    MPI_Comm comm;
   };
 
+
+  template <>
+  class MpiTypeTraits<int> {
+  public:
+    static constexpr MPI_Datatype ElementType = MPI_INT;
+    static constexpr int ElementCount = 1;
+  };
+
+  template <>
+  class MpiTypeTraits<int64_t> {
+  public:
+    static constexpr MPI_Datatype ElementType = MPI_INTEGER8;
+    static constexpr int ElementCount = 1;
+  };
 
   template <>
   class MpiTypeTraits<uint64_t> {
@@ -63,6 +79,13 @@ namespace cc4s {
   public:
     static constexpr MPI_Datatype ElementType = MPI_DOUBLE_COMPLEX;
     static constexpr int ElementCount = 1;
+  };
+
+  template <typename F, int D>
+  class MpiTypeTraits<Vector<F, D>> {
+  public:
+    static constexpr MPI_Datatype ElementType = MpiTypeTraits<F>::ElementType;
+    static constexpr int ElementCount = D;
   };
 }
 
