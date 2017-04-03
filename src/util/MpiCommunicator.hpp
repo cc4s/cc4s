@@ -25,6 +25,15 @@ namespace cc4s {
     }
 
     template <typename F>
+    void reduce(const F &src, F &dst, int rootRank = 0) {
+      MPI_Reduce(
+        &src, &dst,
+        MpiTypeTraits<F>::ElementCount, MpiTypeTraits<F>::ElementType,
+        MPI_SUM, rootRank, comm
+      );
+    }
+
+    template <typename F>
     void allReduce(const F &src, F &dst) {
       MPI_Allreduce(
         &src, &dst,

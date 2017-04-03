@@ -6,6 +6,7 @@
 #include <util/Timer.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/FlopsCounter.hpp>
+#include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
@@ -117,8 +118,9 @@ void Cc4s::printStatistics(
     << ", virtual memory: " << vsize / 1e9 << " GB/core" << std::endl;
 
   int64_t globalVSize, globalRss;
-  MPI_Reduce(&vsize, &globalVSize, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
-  MPI_Reduce(&rss, &globalRss, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
+  MpiCommunicator communicator(world->rank, world->np, world->comm);
+  communicator.reduce(vsize, globalVSize);
+  communicator.reduce(rss, globalRss);
   LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
     << std::endl;
   LOG(0, "root") << "overall physical memory="

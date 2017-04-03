@@ -7,6 +7,7 @@
 #include <math/Interpolation.hpp>
 #include <gte/TricubicInterpolation.hpp>
 #include <gte/TrilinearInterpolation.hpp>
+#include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -16,7 +17,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
-#include "mpi.h"
 
 using namespace cc4s;
 using namespace CTF;
@@ -511,7 +511,10 @@ void FiniteSizeCorrection::interpolation3D() {
     }
   }
 
-  MPI_Barrier(Cc4s::world->comm);
+  MpiCommunicator communicator(
+    Cc4s::world->rank, Cc4s::world->np, Cc4s::world->comm
+  );
+  communicator.barrier();
   for (int t0(-N0); t0 <= N0; ++t0) {
     for (int t1(-N1); t1 <= N1; ++t1) {
       for (int t2(-N2); t2 <= N2; ++t2) {
@@ -544,13 +547,8 @@ void FiniteSizeCorrection::interpolation3D() {
   }
   double totalInter3D(0);
   int totalCountNOg(0);
-  MPI_Allreduce(
-    &inter3D, &totalInter3D, 1, MPI_DOUBLE, MPI_SUM, Cc4s::world->comm
-  );
-  MPI_Allreduce(
-    &countNOg, &totalCountNOg, 1, MPI_INT, MPI_SUM, Cc4s::world->comm
-  );
-  MPI_Barrier(Cc4s::world->comm);
+  communicator.allReduce(inter3D, totalInter3D);
+  communicator.allReduce(countNOg, totalCountNOg);
 
   LOG(2,"integration3D") << "countNOg= " << totalCountNOg <<std::endl;
   sum3D = sum3D/2.; //Both readFromFile=0 and 1 needs to be divided by 2
