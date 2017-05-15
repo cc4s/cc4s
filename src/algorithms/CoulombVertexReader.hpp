@@ -51,6 +51,8 @@ namespace cc4s {
     };
   protected:
     void handleUnrestricted();
+    void unrestrictVertex();
+    void unrestrictEigenEnergies(const std::string &name);
   };
 }
 
