@@ -12,6 +12,7 @@
 
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
+  (unrestricted 1)
 ] [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
@@ -24,6 +25,7 @@ CoulombIntegralsFromVertex [
 
 Mp2EnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
+  (unrestricted 1)
 ] [
   Mp2Energy
 ].

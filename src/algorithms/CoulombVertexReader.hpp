@@ -49,6 +49,8 @@ namespace cc4s {
       static char const *IMAGSIA_MAGIC;
       static char const *EPSILONS_MAGIC;
     };
+  protected:
+    void handleUnrestricted();
   };
 }
 

@@ -1,5 +1,6 @@
 #include <algorithms/CoulombVertexReader.hpp>
 #include <math/ComplexTensor.hpp>
+#include <math/MathFunctions.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -102,6 +103,8 @@ void CoulombVertexReader::run() {
 
   // Combine to complex tensor
   toComplexTensor(realGammaGqr, imagGammaGqr, *GammaGqr);
+
+  handleUnrestricted();
 }
 
 void CoulombVertexReader::dryRun() {
@@ -149,3 +152,35 @@ void CoulombVertexReader::dryRun() {
   //  realGammaGqr.use();
 }
 
+void CoulombVertexReader::handleUnrestricted() {
+  int unrestricted(getIntegerArgument("unrestricted", 0));
+  // FIXME: This should be integer
+  setRealArgument("unrestricted", unrestricted);
+  if (unrestricted) {
+    auto GammaGqr(getTensorArgument<complex>("CoulombVertex"));
+    // The field variable remains the same
+    int vertexLens[] = {
+      GammaGqr->lens[0], 2*GammaGqr->lens[1], 2*GammaGqr->lens[2]
+    };
+    auto uGammaGqr(
+      new Tensor<complex>(
+        3, vertexLens, GammaGqr->sym, *Cc4s::world, "uGammaGqr"
+      )
+    );
+    int upUp[] = {0, 0, 0};
+    int downDown[] = {0, GammaGqr->lens[1], GammaGqr->lens[2]};
+    uGammaGqr->slice(
+      upUp, GammaGqr->lens, 0.0, *GammaGqr, upUp, GammaGqr->lens, 1.0
+    );
+    uGammaGqr->slice(
+      downDown, uGammaGqr->lens, 0.0, *GammaGqr, upUp, GammaGqr->lens, 1.0
+    );
+    allocatedTensorArgument<complex>(
+      "CoulombVertex", uGammaGqr
+    );
+    complex GammaGqrNorm(frobeniusNorm(*GammaGqr));
+    complex uGammaGqrNorm(frobeniusNorm(*uGammaGqr));
+    LOG(1, "Reader") << "|GammaGqr| = " << GammaGqrNorm << std::endl;
+    LOG(1, "Reader") << "|uGammaGqr| = " << uGammaGqrNorm << std::endl;
+  }
+}
