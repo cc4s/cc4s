@@ -182,21 +182,22 @@ void CoulombVertexReader::unrestrictVertex() {
     downDown, uGammaGqr->lens, 1.0, *GammaGqr, upUp, GammaGqr->lens, 1.0
   );
 */
-  int *upRestrictedStates(new int[uGammaGqr->lens[1]]);
-  for (int i(0); i < uGammaGqr->lens[1]; ++i) {
-    upRestrictedStates[i] = (i & 1) ? -1 : i >> 1;
-  }
-  int *upUp[] = { nullptr, upRestrictedStates, upRestrictedStates };
-  uGammaGqr->permute(1.0, *GammaGqr, upUp, 1.0);
-  delete upRestrictedStates;
 
-  int *downRestrictedStates(new int[uGammaGqr->lens[1]]);
-  for (int i(0); i < uGammaGqr->lens[1]; ++i) {
-    downRestrictedStates[i] = (i & 1) ? i >> 1 : -1;
+  int *upUnrestrictedStates(new int[GammaGqr->lens[1]]);
+  for (int i(0); i < GammaGqr->lens[1]; ++i) {
+    upUnrestrictedStates[i] = 2*i;
   }
-  int *downDown[] = { nullptr, downRestrictedStates, downRestrictedStates };
+  int *upUp[] = { nullptr, upUnrestrictedStates, upUnrestrictedStates };
+  uGammaGqr->permute(1.0, *GammaGqr, upUp, 1.0);
+  delete upUnrestrictedStates;
+
+  int *downUnrestrictedStates(new int[GammaGqr->lens[1]]);
+  for (int i(0); i < GammaGqr->lens[1]; ++i) {
+    downUnrestrictedStates[i] = 2*i+1;
+  }
+  int *downDown[] = { nullptr, downUnrestrictedStates, downUnrestrictedStates };
   uGammaGqr->permute(1.0, *GammaGqr, downDown, 1.0);
-  delete downRestrictedStates;
+  delete downUnrestrictedStates;
 
   double GammaGqrNorm(frobeniusNorm(*GammaGqr));
   double uGammaGqrNorm(frobeniusNorm(*uGammaGqr));
@@ -215,9 +216,21 @@ void CoulombVertexReader::unrestrictEigenEnergies(const std::string &name) {
       1, lens, eps->sym, *Cc4s::world, ("u" + name + "EigenEnergies").c_str()
     )
   );
-  int zero(0);
-  uEps->slice(&zero, eps->lens, 1.0, *eps, &zero, eps->lens, 1.0);
-  uEps->slice(eps->lens, uEps->lens, 1.0, *eps, &zero, eps->lens, 1.0);
+
+  int *upUnrestrictedStates(new int[eps->lens[0]]);
+  for (int i(0); i < eps->lens[0]; ++i) {
+    upUnrestrictedStates[i] = 2*i;
+  }
+  uEps->permute(1.0, *eps, &upUnrestrictedStates, 1.0);
+  delete upUnrestrictedStates;
+
+  int *downUnrestrictedStates(new int[eps->lens[0]]);
+  for (int i(0); i < eps->lens[0]; ++i) {
+    downUnrestrictedStates[i] = 2*i + 1;
+  }
+  uEps->permute(1.0, *eps, &downUnrestrictedStates, 1.0);
+  delete downUnrestrictedStates;
+
   allocatedTensorArgument<>(name + "EigenEnergies", uEps);
 }
 
