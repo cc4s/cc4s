@@ -1,5 +1,6 @@
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
+  (unrestricted 1)
 ] [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ].
@@ -17,6 +18,7 @@ DrccdEnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 64)
+  (unrestricted 1)
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
   
@@ -32,6 +34,7 @@ DrccdDensities [
   HHHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 64)
+  (unrestricted 1)
 ] [
   DrccdLambdaDoublesAmplitudes
   DrccdOneBodyHHDensity DrccdOneBodyPPDensity
