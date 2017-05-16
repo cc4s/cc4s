@@ -59,7 +59,7 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
       Tensor<> Cabij(false, *Vabij);
       Cabij["abij"]  = spins * (*Vabij)["cbkj"] * (*Tabij)["acik"];
       Rabij["abij"] += Cabij["abij"];
-      Ra spins * Cabij["acik"] * (*Tabij)["cbkj"];
+      Rabij["abij"] += spins * Cabij["acik"] * (*Tabij)["cbkj"];
     }
   }
 
