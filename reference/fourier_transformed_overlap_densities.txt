@@ -1,0 +1,33 @@
+====== Fourier Transformed Overlap Densities ======
+The ''FTOD'' is one of the possible input files, providing information on the
+orbitals and the eigenenergies of the reference system.
+The file provides the Fourier transformed overlap densities $\chi_q^p({\bf G})$ given by
+\[
+  \chi_q^p({\bf G}) = \int{\rm d}{\bf x}\,
+    \sqrt{\frac{4\pi}{{\bf G}^2}} {\rm e}^{{\rm i}{\bf G}\cdot{\bf r}}\,
+    \psi_p^\ast({\bf x})\psi_q({\bf x}),
+\]
+such that the Coulomb integrals $V_{sr}^{pq}$ can be decomposed into
+$V_{sr}^{pq}=\int\frac{{\rm d}{\bf G}}{(2\pi)^3}\,\chi_s^p({\bf G}){\chi_q^r}^\ast({\bf G})$.
+The file is a line based text file of the following structure
+
+There is also a binary version ''[[reference:fourier_transformed_overlap_densities_binary|FTODDUMP]]'' of this file.
+===== Header =====
+  * The first line is reserved for comments. It is ignored by cc4s
+  * The second line provides information on the size of the system. The columns are white-space separated and they specify
+    - the number of occupied orbitals $n_{\rm o}$
+    - the number of virtual orbitals $n_{\rm v}$
+    - the number of plane waves $n_{\rm G}$
+    - the number of spins per orbital, 1 or 2
+    - the number of ${\bf k}$ points per orbital.
+  * The third is line is again reserved for comments usually explaining the structure of the data to follow.
+===== Overlap densities =====
+The rest of the file contains lines of at least 6 numbers, again in white-space separated columns:
+  - The real part of the overlap density, ${\rm Re}\left(\chi_q^p({\bf G})\right)$, if the plane wave index $G$, contained in the third column, is non-zero,\\ the eigenenergy $\varepsilon_p$, otherwise.
+  - The imaginary part of the overlap density, ${\rm Im}\left(\chi_q^p({\bf G})\right)$, if the plane wave index in non-zero. It is ignored otherwise.
+  - The plane wave index $G$ ranging from 1 to $n_{\rm G}$
+  - The orbital index $p$, ranging from 1 to $n_{\rm o}+n_{\rm v}$
+  - The orbital index $q$, ranging from 1 to $n_{\rm o}+n_{\rm v}$
+  - The spin index, which is currently ignored.
+There is no order required by cc4s but it could be beneficial to list all overlap densities before all eigenenergies for future or other implementations.
+Overlap densities that are not listed in the file are assumed to be zero.

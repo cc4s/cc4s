@@ -6,9 +6,10 @@
 #include <sstream>
 #include <iostream>
 
-#define Exception(message) DetailedException((message), __FILE__, __LINE__)
+#define EXCEPTION(message) \
+  cc4s::DetailedException((message), __FILE__, __LINE__)
 #define Assert(condition, message) \
-  if (!(condition)) throw new Exception(message);
+  if (!(condition)) throw new EXCEPTION(message);
 
 namespace cc4s{
   class Exception {
@@ -30,6 +31,8 @@ namespace cc4s{
     DetailedException(
        std::stringstream const &stream_, std::string const &file_, int line_
     ): message(stream_.str()), file(file_), line(line_) {
+    }
+    virtual ~DetailedException() {
     }
     virtual std::string getMessage() {
       std::stringstream sStream;

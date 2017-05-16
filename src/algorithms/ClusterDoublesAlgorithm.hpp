@@ -1,4 +1,4 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CLUSTER_DOUBLES_ALGORITHM_DEFINED 
 #define CLUSTER_DOUBLES_ALGORITHM_DEFINED
 
@@ -6,7 +6,7 @@
 #include <mixers/Mixer.hpp>
 #include <string>
 #include <ctf.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 
 namespace cc4s {
   /**
@@ -26,22 +26,13 @@ namespace cc4s {
      */
     virtual void run();
 
-    /** \brief The occupied orbital energies  */
-    CTF::Tensor<> *epsi;
-    /** \brief The virtual orbital energies  */
-    CTF::Tensor<> *epsa;
-    /** \brief The Coulomb integrals Vabij  */
-    CTF::Tensor<> *Vabij;
-    /** \brief The Coulomb Vertex GammaGpq  */
-    CTF::Tensor<complex> *GammaGpq;
-
     /**
      * \brief Performs a Dry Run
      */
     virtual void dryRun();
     /**
-     * \brief Returns the abbreviation of the concrete algorithm, e.g. "CCD",
-     * "DCD"
+     * \brief Returns the abbreviation of the concrete algorithm, e.g. "Ccd",
+     * "Dcd".
      */
     virtual std::string getAbbreviation() = 0;
 
@@ -51,6 +42,11 @@ namespace cc4s {
     static int constexpr DEFAULT_MAX_ITERATIONS = 16;
 
   protected:
+    /**
+     * \brief The abbreviation of the algorithm in capital letters.
+     **/
+    std::string abbreviation;
+
     /**
      * \brief The mixer for the doubles amplitudes.
      */
@@ -70,10 +66,16 @@ namespace cc4s {
     virtual void dryIterate();
 
     /**
+     * \brief Calculates the energy from the amplitudes currently contained
+     * in the mixer.
+     **/
+    virtual double calculateEnergy();
+
+    /**
      * \brief Calculates the amplitudes from the current residuum and
      * returns them in-place.
      * Usually this is done by calculating
-     * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_b-\varepsilon_b)\f$,
+     * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)\f$,
      * but other methods, such as level shifting may be used.
      * \param[in] Rabij Residuum Tensor.
      */
@@ -93,19 +95,19 @@ namespace cc4s {
      * result tensor. 
      * \param[in] a 1st sliced dimension (x).
      * \param[in] b 2nd sliced dimension (y).
-     * \param[in] sliceRank slicing rank.
+     * \param[in] integralsSliceSize slicing size.
      * \param[out] Vxycd sliced Coulomb integrals Vabcd
      */
-    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b, int sliceRank);
+    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b, int integralsSliceSize);
 
     /**
      * \brief Dry run for sliceCoulombIntegrals.
      * \param[in] a 1st sliced dimension (x).
      * \param[in] b 2nd sliced dimension (y).
-     * \param[in] sliceRank slicing rank.
+     * \param[in] integralsSliceSize slicing size.
      * \param[out] Vxycd sliced Coulomb integrals Vabcd
      */
-    cc4s::DryTensor<> *drySliceCoulombIntegrals(int sliceRank);
+    cc4s::DryTensor<> *drySliceCoulombIntegrals(int integralsSliceSize);
 
     /**
      * \brief Adds the given slice of the residuum tensor Rxyij to the
@@ -120,14 +122,33 @@ namespace cc4s {
     );
 
     /**
-     * \brief Prints the energy from the residuum.
-     * \param[in] Rabij the residuum.
-     * \param[in] previousEnergy double that holds the previous energy.
-     * \param[in] contraction string with the name of the contraction.
+     * \brief Calculates and returns one slice Xabij of the residuum
+     * from the Coulomb factors. The slice is computed from
+     * Rx and Ry and are restricted to the
+     * range {a, ..., factorsSliceSize+a-1} and {b, ..., factorsSliceSize+b-1}, respectively.
+     * The caller is responsible for deleting the dynamically allocated
+     * result tensor. 
+     * \param[in] a 1st sliced dimension (Rx).
+     * \param[in] b 2nd sliced dimension (Ry).
+     * \param[in] factorsSliceSize slicing size of NR.
+     * \param[out] Fabij sliced Residuum
      */
-    void printEnergyFromResiduum(CTF::Tensor<> &Rabij,
-				 double &previousEnergy,
-				 std::string contraction);
+    CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int factorsSliceSize);
+
+    CTF::Tensor<> *sliceAmplitudesFromCoulombFactorsTcc(int a, int factorsSliceSize);
+
+    /**
+     * \brief Dry run for sliceAmplitudesFromCoulombFactors.
+     * \param[in] factorsSliceSize slicing size of NR.
+     * \param[out] Fabij dry tensor of sliced residuum.
+     */
+    cc4s::DryTensor<> *drySliceAmplitudesFromCoulombFactors(int factorsSliceSize);
+
+    /**
+     * \brief Prints the energy from the residuum Rabij.
+     * \param[in] Rabij the residuum.
+     */
+    void printEnergyFromResiduum(CTF::Tensor<> &Rabij);
 
   };
 }

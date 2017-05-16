@@ -1,6 +1,3 @@
-%% MP2 execution plan %%
-
-% Uncomment next two algorithms if the ParticleHoleCoulombVertex is used %%
 %ParticleHoleCoulombVertexReader [
 %  (file "../../resources/ParticleHoleCoulombVertex.bin")
 %] [
@@ -12,9 +9,7 @@
 %] [
 %  PPHHCoulombIntegrals
 %].
-%
 
-% Uncomment next two algorithms if full CoulombVertex is used %%
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [

@@ -2,6 +2,7 @@
 
 #include <math/MathFunctions.hpp>
 #include <math/RandomTensor.hpp>
+#include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <complex>
 #include <limits>
@@ -65,9 +66,9 @@ void IterativePseudoInverse<F>::iterate(double accuracy) {
   }
   if (n >= 10000) {
     // failed to convege
-    LOG(4, "PseudoInverse") << "failed to converge, remainder=" << remainder
+    LOG(0, "PseudoInverse") << "failed to converge, remainder=" << remainder
       << ", minRemainder=" << minRemainder << std::endl;
-    logMatrix(4, inverse);
+    throw new EXCEPTION("Failed to converge iterative pseudo inverse.");
   }
 }
 
@@ -94,9 +95,9 @@ void IterativePseudoInverse<F>::iterateQuadratically(double accuracy) {
   }
   if (n >= 10000) {
     // failed to convege
-    LOG(4, "PseudoInverse") << "failed to converge, remainder=" << remainder
+    LOG(0, "PseudoInverse") << "failed to converge, remainder=" << remainder
       << ", minRemainder=" << minRemainder << std::endl;
-    logMatrix(4, inverse);
+    throw new EXCEPTION("Failed to converge iterative pseudo inverse.");
   }
 }
 
@@ -142,7 +143,6 @@ void IterativePseudoInverse<F>::test(World *world) {
     generateHilbertMatrix(m);
     IterativePseudoInverse pseudoInverse(m);
     Matrix<F> im(pseudoInverse.get());
-    logMatrix(2, im);
     im["ij"] = m["ik"] * im["kj"];
     im["ii"] += -1.0;
     Scalar<F> s(*world);
@@ -154,7 +154,6 @@ void IterativePseudoInverse<F>::test(World *world) {
     setRandomTensor(m);
     IterativePseudoInverse pseudoInverse(m);
     Matrix<F> im(pseudoInverse.get());
-    logMatrix(2, im);
     im["ij"] = m["ik"] * im["kj"];
     im["ii"] += -1.0;
     Scalar<F> s(*world);

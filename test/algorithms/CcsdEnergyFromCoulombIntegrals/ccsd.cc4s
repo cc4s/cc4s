@@ -24,8 +24,7 @@ CcsdEnergyFromCoulombIntegrals [
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
-  % Sets maximum iterations. Default is 16.
-  (maxIterations 64)
+  (maxIterations 32)
 ] [
   (CcsdEnergy CcsdEnergy) 
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
@@ -33,3 +32,71 @@ CcsdEnergyFromCoulombIntegrals [
 ].
 
 TensorWriter [(Data CcsdEnergy)] [].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PPHHCoulombIntegrals
+  (startingSinglesAmplitudes CcsdSinglesAmplitudes)
+  (startingDoublesAmplitudes CcsdDoublesAmplitudes)
+  (maxIterations 0)
+] [
+  (CcsdEnergy ReevaluatedCcsdEnergy) 
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
+].
+
+TensorWriter [(Data ReevaluatedCcsdEnergy)] [].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 32)
+  (integralsSliceSize 13)
+] [
+  (CcsdEnergy CcsdEnergySlice)
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudesSlice)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudesSlice)
+].
+
+TensorWriter [(Data CcsdEnergySlice)] [].
+
+CoulombVertexDecomposition [
+  CoulombVertex
+  % Set the rank or the rankFactor (relative to NG) of
+  % the decomposed tensor and the number of iterations.
+  % If both are given, rank is taken into account.
+  (rank 99)
+  (rankFactor 3.0)
+  (maxIterations 64)
+  (mixer "LinearMixer")
+  (mixingRatio 0.8)
+] [
+  FactorOrbitals CoulombFactors
+  % Returns (if given) the Coulomb Vertex from the decomposed tensors.
+  ComposedCoulombVertex
+].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  FactorOrbitals CoulombFactors
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 32)
+  (integralsSliceSize 13)
+  (factorsSliceSize 33)
+% (mixer "LinearMixer")
+% (mixingRatio 1.5)
+] [
+  (CcsdEnergy CcsdEnergyFactors)
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudesFactors)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudesFactors)
+].
+
+TensorWriter [(Data CcsdEnergyFactors)] [].

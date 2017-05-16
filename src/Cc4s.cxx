@@ -4,8 +4,9 @@
 #include <Parser.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <util/Timer.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/FlopsCounter.hpp>
+#include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
@@ -30,7 +31,7 @@ void Cc4s::run() {
     "execution plan read, steps=" << algorithms.size() << std::endl;
 
   int64_t rootFlops, totalFlops;
-  double totalTime;
+  Time totalTime;
   {
     FlopsCounter rootCounter(&rootFlops);
     FlopsCounter totalCounter(&totalFlops, world->comm);
@@ -40,7 +41,7 @@ void Cc4s::run() {
       LOG(0, "root") << "step=" << (i+1) << ", " << algorithms[i]->getName() << std::endl;
 
       int64_t flops;
-      double time;
+      Time time;
       {
         FlopsCounter flopsCounter(&flops);
         Timer timer(&time);
@@ -50,7 +51,7 @@ void Cc4s::run() {
 
       LOG(1, "root") << "step=" << (i+1) << ", realtime=" << time << " s"
         << ", operations=" << flops / 1e9 << " GFLOPS/core"
-        << ", speed=" << flops / 1e9 / time << " GFLOPS/s/core" << std::endl;
+        << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
     }
   }
 
@@ -94,7 +95,7 @@ void Cc4s::printBanner() {
 }
 
 void Cc4s::printStatistics(
-  int64_t rootFlops, int64_t totalFlops, double totalTime
+  int64_t rootFlops, int64_t totalFlops, Time const &totalTime
 ) {
   std::string pid, comm, state, ppid, pgrp, session, ttyNr,
     tpgid, flags, minflt, cminflt, majflt, cmajflt,
@@ -112,13 +113,14 @@ void Cc4s::printStatistics(
   int64_t pageSize = sysconf(_SC_PAGE_SIZE);
   LOG(0, "root") << "total realtime=" << totalTime << " s" << std::endl;
   LOG(0, "root") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
-    << " speed=" << rootFlops/1e9 / totalTime << " GFLOPS/s/core" << std::endl;
+    << " speed=" << rootFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
   LOG(0, "root") << "physical memory=" << rss * pageSize / 1e9 << " GB/core"
     << ", virtual memory: " << vsize / 1e9 << " GB/core" << std::endl;
 
   int64_t globalVSize, globalRss;
-  MPI_Reduce(&vsize, &globalVSize, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
-  MPI_Reduce(&rss, &globalRss, 1, MPI_LONG_LONG, MPI_SUM, 0, world->comm);
+  MpiCommunicator communicator(world->rank, world->np, world->comm);
+  communicator.reduce(vsize, globalVSize);
+  communicator.reduce(rss, globalRss);
   LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
     << std::endl;
   LOG(0, "root") << "overall physical memory="
@@ -137,7 +139,9 @@ int main(int argumentCount, char **arguments) {
   Cc4s::world = new World(argumentCount, arguments);
   Cc4s::options = new Options(argumentCount, arguments);
   Log::setRank(Cc4s::world->rank);
-  LogStream logStream(Cc4s::options->logFile, Cc4s::options->logLevel);
+  LogStream logStream(
+    Cc4s::options->logFile, Cc4s::options->logLevel
+  );
   Log::setLogStream(&logStream);
 
   try {

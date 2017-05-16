@@ -1,0 +1,65 @@
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 16)
+%  (mixingRatio 0.5381186091710739)
+  (mixingRatio 1.556329220888963)
+] [
+  CcsdEnergy 
+  CcsdSinglesAmplitudes
+  CcsdDoublesAmplitudes
+].
+
+TensorWriter [(Data CcsdEnergy)] [].
+
+DoublesAmplitudesDecomposition [
+  (DoublesAmplitudes CcsdDoublesAmplitudes)
+  (reduction 2)
+] [
+  DoublesAmplitudesVertex
+  DoublesAmplitudesEigenValues
+].
+
+TensorWriter [(Data DoublesAmplitudesEigenValues)] [].
+ComplexTensorWriter [(Data DoublesAmplitudesVertex)] [].
+
+% recompose and compute energy from composed amplitudes
+DoublesAmplitudesFromVertex [
+  DoublesAmplitudesVertex
+] [
+  DoublesAmplitudes
+].
+
+CcsdEnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals
+  (startingSinglesAmplitudes CcsdSinglesAmplitudes)
+  (startingDoublesAmplitudes DoublesAmplitudes)
+  (maxIterations 0)
+] [
+  (CcsdEnergy ComposedCcsdEnergy)
+].
+
+TensorWriter [(Data ComposedCcsdEnergy)] [].

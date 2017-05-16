@@ -1,6 +1,6 @@
 # Here the class of this test case is defined
-# @CLASS=essential,ccsd
-TEST_DESCRIPTION="CCSD energy from Integrals: check if the energy is within tolerance"
+# @CLASS=essential,ccd,trd
+TEST_DESCRIPTION="CCSD energy: check if the energy is within tolerance"
 
 
 # RUN_COMMAND and CC4S_PATH path are globally
@@ -9,17 +9,26 @@ ${RUN_COMMAND} ${CC4S_PATH} -file ccsd.cc4s
 
 
 ENERGY=$(readScalar CcsdEnergy.dat)
-COMPARE_ENERGY=$COULOMBVERTEX_CCSD
+ENERGY_REEVALUATED=$(readScalar CcsdEnergyReevaluated.dat)
+ENERGYSLICE=$(readScalar CcsdEnergySlice.dat)
+ENERGYFACTORS=$(readScalar CcsdEnergyFactors.dat)
+COMPARE_ENERGY_VERTEX=$COULOMBVERTEX_CCSD
+COMPARE_ENERGY_FACTORS=$COULOMBFACTORS_CCSD
 TOLERANCE=1e-11
-
-#echo ${ENERGY} >&2
-#echo ${COMPARE_ENERGY} >&2
 
 # If the test succeeds then TEST_RESULT=0
 # If the test fails then    TEST_RESULT=1
 
 TEST_RESULT=$(
-python -c "print(0 if (abs(${ENERGY} - ${COMPARE_ENERGY})<${TOLERANCE}) else 1)"
+python <<EOF 
+if abs(${ENERGY} - ${COMPARE_ENERGY_VERTEX})<${TOLERANCE} and abs(${ENERGYSLICE} - ${COMPARE_ENERGY_VERTEX})<${TOLERANCE} and abs(${ENERGYFACTORS} - ${COMPARE_ENERGY_FACTORS})<${TOLERANCE}:
+    print(0)
+else:
+    print(1)
+EOF
 )
 
 echoDebug Energy from Integrals: $ENERGY
+echoDebug Energy reevaluated from given amplitudes: $ENERGY_REEVALUATED
+echoDebug Energy from sliced Integrals: $ENERGYSLICE
+echoDebug Energy from Coulomb Factors: $ENERGYFACTORS

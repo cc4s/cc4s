@@ -3,7 +3,7 @@
 #include <algorithms/Algorithm.hpp>
 #include <Data.hpp>
 #include <math/Complex.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <iostream>
@@ -38,15 +38,15 @@ Data *Algorithm::getArgumentData(std::string const &name) {
   if (dataIterator == arguments.end()) {
     std::stringstream sStream;
     sStream << "Missing argument: " << name;
-//    throw new Exception(std::stringstream() << "Missing argument: " << name);
-    throw new Exception(sStream.str());
+//    throw new EXCEPTION(std::stringstream() << "Missing argument: " << name);
+    throw new EXCEPTION(sStream.str());
   }
   Data *data = Data::get(dataIterator->second);
   if (!data) {
     std::stringstream sStream;
     sStream << "Missing data: " << dataIterator->second;
-//    throw new Exception(std::stringstream() << "Missing data: " << dataIterator->second);
-    throw new Exception(sStream.str());
+//    throw new EXCEPTION(std::stringstream() << "Missing data: " << dataIterator->second);
+    throw new EXCEPTION(sStream.str());
   }
   return data;
 }
@@ -58,7 +58,7 @@ std::string Algorithm::getTextArgument(std::string const &name) {
     std::stringstream sstream;
     sstream << "Incompatible type for argument: " << name << ". "
       << "Excpected Text, found " << data->getTypeName() << ".";
-    throw new Exception(sstream.str());
+    throw new EXCEPTION(sstream.str());
   }
   return textData->value;
 }
@@ -75,7 +75,7 @@ int64_t Algorithm::getIntegerArgument(std::string const &name) {
     std::stringstream sstream;
     sstream << "Incompatible type for argument: " << name << ". "
       << "Excpected Integer, found " << data->getTypeName() << ".";
-    throw new Exception(sstream.str());
+    throw new EXCEPTION(sstream.str());
   }
   return integerData->value;
 }
@@ -91,13 +91,12 @@ double Algorithm::getRealArgument(std::string const &name) {
   if (realData) return realData->value;
   IntegerData *integerData(dynamic_cast<IntegerData *>(data));
   if (integerData) return getRealArgumentFromInteger(integerData);
-  return realData ? realData->value : getRealArgumentFromInteger(integerData);
   TensorData<double> *tensorData(dynamic_cast<TensorData<double> *>(data));
   if (tensorData) return getRealArgumentFromTensor(tensorData);
   std::stringstream sstream;
   sstream << "Incompatible type for argument: " << name << ". "
     << "Excpected Real, found " << data->getTypeName() << ".";
-  throw new Exception(sstream.str());
+  throw new EXCEPTION(sstream.str());
 }
 double Algorithm::getRealArgument(
   std::string const &name, double const defaultValue
@@ -135,7 +134,7 @@ T *Algorithm::getTensorArgument(std::string const &name) {
   sStream << "Incompatible type for argument: " << name << ". "
     << "Excpected tensor of " << TypeTraits<F>::getName()
     << ", found " << data->getTypeName() << ".";
-  throw new Exception(sStream.str());
+  throw new EXCEPTION(sStream.str());
 }
 // instantiate
 template

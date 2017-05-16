@@ -2,11 +2,12 @@
 #ifndef LOG_DEFINED
 #define LOG_DEFINED
 
+#include <util/Time.hpp>
+
 #include <string>
 #include <iostream>
 #include <streambuf>
 #include <fstream>
-#include <ctf.hpp>
 
 namespace cc4s {
   class LogBuffer: public std::streambuf {
@@ -43,7 +44,7 @@ namespace cc4s {
 
     std::ostream &prepare(
       int const rank,
-      std::string const &fileName,
+      std::string const &sourceFileName,
       int const level,
       std::string const &category = ""
     );
@@ -62,6 +63,8 @@ namespace cc4s {
      * By default a tab character will be used.
      */
     std::string indent;
+
+    Time startTime;
   };
 
   /**
@@ -70,7 +73,7 @@ namespace cc4s {
    */
   class Log {
   public:
-    static void setRank(int const rank);
+    static void setRank(const int rank);
     static int getRank();
     static void setLogStream(LogStream *logStream);
     static LogStream &getLogStream();
@@ -78,9 +81,6 @@ namespace cc4s {
     static int rank;
     static LogStream *logStream;
   };
-
-  template <typename F>
-  void logMatrix(int level, CTF::Matrix<F> &matrix);
 }
 
 // TODO: return output stream for all processes, including those

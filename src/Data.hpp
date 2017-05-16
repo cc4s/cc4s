@@ -51,7 +51,7 @@ namespace cc4s {
     virtual ~Data() {
       dataMap[name] = nullptr;
     }
-    std::string getName() const { return name; }
+    std::string   getName() const { return name; }
     std::string getTypeName() const { return typeName; }
     Stage getStage() const { return stage; }
 
@@ -73,7 +73,7 @@ namespace cc4s {
         } else {
           LOG(1,"Data") << "overwriting existing data: " << name_ << std::endl;
           delete mentionedData;
-	  //          throw new Exception("Trying to overwrite existing data");
+//          throw new EXCEPTION("Trying to overwrite existing data");
         }
       }
       dataMap[name_] = this;

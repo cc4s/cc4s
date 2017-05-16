@@ -3,8 +3,8 @@
 #include <math/RegularizedAlternatingLeastSquares.hpp>
 #include <math/CanonicalPolyadicDecomposition.hpp>
 #include <math/MathFunctions.hpp>
-#include <math/IterativePseudoInverse.hpp>
-#include <util/DryTensor.hpp>
+#include <math/PseudoInverseSvd.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 
@@ -30,7 +30,7 @@ void cc4s::fitAlternatingLeastSquaresFactor(
   gramian["SR"] = C["kR"] * conjC["kS"];
   gramian["SR"] *= BB["SR"];
   LOG(4, "ALS") << "inverting Gramian..." << std::endl;
-  IterativePseudoInverse<F> gramianInverse(gramian);
+  PseudoInverseSvd<F> gramianInverse(gramian);
 
   contractWithCanonicalPolyadicDecompositionTensors(
     T, indicesT, conjB, idxB, conjC, idxC, A, idxA
@@ -78,7 +78,7 @@ void cc4s::fitRegularizedAlternatingLeastSquaresFactor(
   gramian["SR"] *= BB["SR"];
   gramian["RR"] += lambda;
   LOG(4, "RALS") << "inverting Gramian..." << std::endl;
-  IterativePseudoInverse<F> gramianInverse(gramian);
+  PseudoInverseSvd<F> gramianInverse(gramian);
 
   Tensor<F> previousA(A);
   contractWithCanonicalPolyadicDecompositionTensors(
@@ -130,7 +130,7 @@ void cc4s::dryFitRegularizedAlternatingLeastSquaresFactor(
   DryMatrix<F> gramian(B.lens[1], B.lens[1], NS);
   LOG(4, "RALS") << "building Gramian..." << std::endl;
   LOG(4, "RALS") << "inverting Gramian..." << std::endl;
-  DryIterativePseudoInverse<F> gramianInverse(gramian);
+  DryPseudoInverseSvd<F> gramianInverse(gramian);
 
   DryTensor<F> previousA(A);
   dryContractWithCanonicalPolyadicDecompositionTensors(

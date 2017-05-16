@@ -2,7 +2,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
@@ -29,7 +29,7 @@ void DrccdEnergyFromCoulombVertex::iterate(int i) {
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+                 abbreviation.begin(), ::toupper);
 
   LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
@@ -47,13 +47,13 @@ void DrccdEnergyFromCoulombVertex::iterate(int i) {
 
       // Read coulomb vertex GammaGai
       Tensor<complex> *GammaGai(getTensorArgument<complex>
-				("ParticleHoleCoulombVertex"));
+                                ("ParticleHoleCoulombVertex"));
 
       // Allocate real and imag part of GammaGai
       Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
-			    *GammaGai->wrld, "RealGammaGai");
+                            *GammaGai->wrld, "RealGammaGai");
       Tensor<> imagGammaGai(3, GammaGai->lens, GammaGai->sym, 
-			    *GammaGai->wrld, "ImagGammaGai");
+                            *GammaGai->wrld, "ImagGammaGai");
 
       // Split into real and imaginary parts
       fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
@@ -86,12 +86,12 @@ void DrccdEnergyFromCoulombVertex::dryIterate() {
     // TODO: the Mixer should provide a DryTensor in the future
     // Read the DRCCD amplitudes Tabij
     DryTensor<> *Tabij(getTensorArgument<double, DryTensor<double>>
-		     ("DrccdDoublesAmplitudes"));
+                     ("DrccdDoublesAmplitudes"));
 
     // Read the Coulomb Vertex GammaGai
     DryTensor<complex> *GammaGai(getTensorArgument<complex, 
-				 DryTensor<complex>>
-				 ("ParticleHoleCoulombVertex"));
+                                 DryTensor<complex>>
+                                 ("ParticleHoleCoulombVertex"));
 
     // Compute the No,Nv,NG,Np
     int NG(GammaGai->lens[0]);

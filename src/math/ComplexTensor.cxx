@@ -80,11 +80,11 @@ void cc4s::toComplexTensor(
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
       [](double i, complex & c) {
-#ifdef INTEL_COMPILER
-        c.imag() = i;
-#else
+//#ifdef INTEL_COMPILER
+//        c.imag() = i;
+//#else
         c.imag(i);
-#endif
+//#endif
       }
     )
   ) (
@@ -102,11 +102,12 @@ void cc4s::toComplexTensor(
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
       [](double r, complex & c) {
-#ifdef INTEL_COMPILER
-        c.real() = r;
-#else
+//#ifdef INTEL_COMPILER
+//        c.real() = r;
+//#else
         c.real(r);
-#endif
+        c.imag(0);
+//#endif
       }
     )
   ) (

@@ -1,21 +1,21 @@
 #ifndef TIMER_DEFINED
 #define TIMER_DEFINED
 
-#include <ctime>
+#include <util/Time.hpp>
 
 namespace cc4s {
   /**
-   * Timer class prividing timing functionality.
+   * Timer class providing timing functionality.
    * The object can be created in a scope whose lifetime
    * is then measured.
    */
   class Timer {
   public:
-    Timer(double *seconds);
+    Timer(Time *time);
     ~Timer();
   protected:
-    double *seconds;
-    timespec start;
+    Time *time;
+    Time start;
   };
 }
 

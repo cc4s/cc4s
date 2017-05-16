@@ -1,6 +1,6 @@
 #include <algorithms/ParticleHoleCoulombVertexReader.hpp>
 #include <math/ComplexTensor.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -31,20 +31,33 @@ ParticleHoleCoulombVertexReader::~ParticleHoleCoulombVertexReader() {
 void ParticleHoleCoulombVertexReader::run() {
   std::string fileName(getTextArgument("file"));
   LOG(0, "Reader") <<
-    "Reading particle hole Coulomb vertex from file " << fileName << " ...";
-  std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
-  if (!file.is_open()) throw new Exception("Failed to open file");
-  // read header
+    "Reading Coulomb vertex from file " << fileName << std::endl;
+  MPI_File file;
+  int mpiError(
+    MPI_File_open(
+      Cc4s::world->comm, fileName.c_str(), MPI_MODE_RDONLY,
+      MPI_INFO_NULL, &file
+    )
+  );
+  if (mpiError) throw new EXCEPTION("Failed to open file");
+  // Read header: obtain NG,No,Nv,Np
   Header header;
-  file.read(reinterpret_cast<char *>(&header), sizeof(header));
+  MPI_Status status;
+  MPI_File_read(file, &header, sizeof(header), MPI_BYTE, &status);
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
-  NG = header.NG;
-  No = header.No;
-  Nv = header.Nv;
-  Np = No + Nv;
+    throw new EXCEPTION("Invalid file format");
+  int NG(header.NG);
+  int No(header.No);
+  int Nv(header.Nv);
+  int Np(No + Nv);
+  
+  // Print NG, No, Nv, Np
+  LOG(1, "Reader") << "NG=" << NG << std::endl;
+  LOG(1, "Reader") << "No=" << No << std::endl;
+  LOG(1, "Reader") << "Nv=" << Nv << std::endl;
+  LOG(1, "Reader") << "Np=" << Np << std::endl;
 
-  // allocate output tensors
+  // Allocate output tensors
   int vertexLens[] = { NG, Nv, No };
   int vertexSyms[] = { NS, NS, NS };
   Tensor<> *epsi(new Vector<>(No, *Cc4s::world, "epsi"));
@@ -54,12 +67,13 @@ void ParticleHoleCoulombVertexReader::run() {
       3, vertexLens, vertexSyms, *Cc4s::world, "GammaGai"
     )
   );
-  // enter the allocated data (and by that type the output data to tensors)
+
+  // Enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
   allocatedTensorArgument<complex>("ParticleHoleCoulombVertex", GammaGai);
 
-  // real and imaginary parts are read in seperately
+  // Real and imaginary parts are read in seperately
   Tensor<> realGammaGai(
     3, vertexLens, vertexSyms, *Cc4s::world, "RealGammaGai"
   );
@@ -67,28 +81,36 @@ void ParticleHoleCoulombVertexReader::run() {
     3, vertexLens, vertexSyms, *Cc4s::world, "ImagGammaGai"
   );
 
+  int64_t offset(sizeof(header));
+  MPI_Offset fileSize;
+  MPI_File_get_size(file, &fileSize);
   Chunk chunk;
-  while (file.read(reinterpret_cast<char *>(&chunk), sizeof(chunk))) {
+  while (offset < fileSize) {
+    MPI_File_read_at(file, offset, &chunk, sizeof(chunk), MPI_BYTE, &status);
     if (strncmp(chunk.magic, Chunk::REALSIA_MAGIC, sizeof(chunk.magic)) == 0) {
-      readGammaGaiChunkBlocked(file, &realGammaGai);
+      // NOTE: dirty fix for bug in particle hole FTODDUMP
+      chunk.size = sizeof(chunk) + sizeof(double) * Nv*No*NG;
+      LOG(1, "Reader") << "reading " << realGammaGai.get_name() << std::endl;
+      realGammaGai.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::IMAGSIA_MAGIC, sizeof(chunk.magic)) == 0) {
-      readGammaGaiChunkBlocked(file, &imagGammaGai);
+      // NOTE: dirty fix for bug in particle hole FTODDUMP
+      chunk.size = sizeof(chunk) + sizeof(double) * Nv*No*NG;
+      LOG(1, "Reader") << "reading " << imagGammaGai.get_name() << std::endl;
+      imagGammaGai.read_dense_from_file(file, offset+sizeof(chunk));
     } else
     if (strncmp(chunk.magic, Chunk::EPSILONS_MAGIC, sizeof(chunk.magic)) == 0) {
-      readEpsChunk(file, epsi, epsa);
+      LOG(1, "Reader") << "reading " << epsi->get_name() << ", "
+        << epsa->get_name() << std::endl;
+      epsi->read_dense_from_file(file, offset+sizeof(chunk));
+      epsa->read_dense_from_file(file, offset+sizeof(chunk)+No*sizeof(double));
     }
+    offset += chunk.size;
   }
-  file.close();
-  // combine to complex tensor
-  toComplexTensor(realGammaGai, imagGammaGai, *GammaGai);
-  LOG(0, "Reader") << " OK" << std::endl;
+  MPI_File_close(&file);
 
-  // print the number of NG's, Nv's, No's, and Np's at the level of LOG(1)
-  LOG(1, "Reader") << "NG=" << NG << std::endl;
-  LOG(1, "Reader") << "Nv=" << Nv << std::endl;
-  LOG(1, "Reader") << "No=" << No << std::endl;
-  LOG(1, "Reader") << "Np=" << Np << std::endl;
+  // Combine to complex tensor
+  toComplexTensor(realGammaGai, imagGammaGai, *GammaGai);
 }
 
 void ParticleHoleCoulombVertexReader::dryRun() {
@@ -96,104 +118,41 @@ void ParticleHoleCoulombVertexReader::dryRun() {
   LOG(0, "Reader") <<
     "Reading particle hole Coulomb vertex from file " << fileName << std::endl;
   std::ifstream file(fileName.c_str(), std::ios::binary|std::ios::in);
-  if (!file.is_open()) throw new Exception("Failed to open file");
-  // read header
+  if (!file.is_open()) throw new EXCEPTION("Failed to open file");
+  // Read header
   Header header;
   file.read(reinterpret_cast<char *>(&header), sizeof(header));
   if (strncmp(header.magic, Header::MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
+    throw new EXCEPTION("Invalid file format");
   file.close();
-  NG = header.NG;
-  No = header.No;
-  Nv = header.Nv;
-  Np = No + Nv;
 
-  // allocate output tensors
+  int NG(header.NG);
+  int No(header.No);
+  int Nv(header.Nv);
+  int Np(No + Nv);
+  
+  // Print NG, No, Nv, Np
+  LOG(1, "Reader") << "NG=" << NG << std::endl;
+  LOG(1, "Reader") << "No=" << No << std::endl;
+  LOG(1, "Reader") << "Nv=" << Nv << std::endl;
+  LOG(1, "Reader") << "Np=" << Np << std::endl;
+
+  // Allocate output tensors
   int vertexLens[] = { NG, Nv, No };
   int vertexSyms[] = { NS, NS, NS };
-  DryTensor<> *epsi(new DryVector<>(No));
-  DryTensor<> *epsa(new DryVector<>(Nv));
+  DryTensor<> *epsi(new DryVector<>(No, SOURCE_LOCATION));
+  DryTensor<> *epsa(new DryVector<>(Nv, SOURCE_LOCATION));
   DryTensor<complex> *GammaGai(
-    new DryTensor<complex>(3, vertexLens, vertexSyms)
+    new DryTensor<complex>(3, vertexLens, vertexSyms, SOURCE_LOCATION)
   );
-  // enter the allocated data (and by that type the output data to tensors)
+  // Enter the allocated data (and by that type the output data to tensors)
   allocatedTensorArgument("HoleEigenEnergies", epsi);
   allocatedTensorArgument("ParticleEigenEnergies", epsa);
-  allocatedTensorArgument<complex>("ParticleHoleCoulombVertex", GammaGai);
-
-  // real and imaginary parts are read in seperately
-  DryTensor<> realGammaGai(3, vertexLens, vertexSyms);
-  DryTensor<> imagGammaGai(3, vertexLens, vertexSyms);
-  dryReadGammaGaiChunkBlocked(&realGammaGai);
-  dryReadGammaGaiChunkBlocked(&imagGammaGai);
-
-  // print the number of NG's, Nv's, No's, and Np's at the level of LOG(1)
-  LOG(1, "Reader") << "NG=" << NG << std::endl;
-  LOG(1, "Reader") << "Nv=" << Nv << std::endl;
-  LOG(1, "Reader") << "No=" << No << std::endl;
-  LOG(1, "Reader") << "Np=" << Np << std::endl;
-}
-
-
-// TODO: use several write calls instead of one big to reduce int64 requirement
-void ParticleHoleCoulombVertexReader::readGammaGaiChunkBlocked(
-  std::ifstream &file, Tensor<> *GammaGai
-) {
-  // TODO: separate distribution from reading
-  // allocate local indices and values of the chi tensors
-  int64_t NvPerNode(Nv / Cc4s::world->np);
-  int64_t NvLocal(
-    Cc4s::world->rank+1 < Cc4s::world->np ?
-      NvPerNode : Nv - Cc4s::world->rank * NvPerNode
+  allocatedTensorArgument<complex, DryTensor<complex>>(
+    "ParticleHoleCoulombVertex", GammaGai
   );
-  int64_t NvToSkipBefore(Cc4s::world->rank * NvPerNode);
-  int64_t NvToSkipAfter(Nv - (NvToSkipBefore + NvLocal));
-  double *values(new double[NvLocal*No*NG]);
-  int64_t *indices(new int64_t[NvLocal*No*NG]);
-  file.seekg(sizeof(double)*NvToSkipBefore*No*NG, file.cur);
-  file.read(reinterpret_cast<char *>(values), sizeof(double)*NvLocal*No*NG);
-  file.seekg(sizeof(double)*NvToSkipAfter*No*NG, file.cur);
-  for (int64_t i(0); i < NvLocal*No*NG; ++i) {
-    indices[i] = i + NvToSkipBefore*No*NG;
-  }
-  GammaGai->write(NvLocal*No*NG, indices, values);
-  delete[] values; delete[] indices;
+
+  // Real and imaginary parts are read in seperately
+  DryTensor<> realGammaGai(3, vertexLens, vertexSyms, SOURCE_LOCATION);
+  DryTensor<> imagGammaGai(3, vertexLens, vertexSyms, SOURCE_LOCATION);
 }
-
-void ParticleHoleCoulombVertexReader::dryReadGammaGaiChunkBlocked(
-  DryTensor<> *GammaGai
-) {
-  int64_t elements(Nv*No*NG);
-  // values array
-  DryMemory::allocate(sizeof(double)*elements);
-  // indices array
-  DryMemory::allocate(sizeof(int64_t)*elements);
-  DryMemory::free(sizeof(int64_t)*elements);
-  DryMemory::free(sizeof(double)*elements);
-}
-
-void ParticleHoleCoulombVertexReader::readEpsChunk(
-  std::ifstream &file, Tensor<> *epsi, Tensor<> *epsa
-) {
-  // allocate local indices and values of eigenenergies
-  double *iValues(new double[No]);
-  double *aValues(new double[Nv]);
-  int64_t *iIndices(new int64_t[No]);
-  int64_t *aIndices(new int64_t[Nv]);
-
-  if (Cc4s::world->rank == 0) {
-    file.read(reinterpret_cast<char *>(iValues), No*sizeof(double));
-    for (int i(0); i < No; ++i) iIndices[i] = i;
-    file.read(reinterpret_cast<char *>(aValues), Nv*sizeof(double));
-    for (int a(0); a < Nv; ++a) aIndices[a] = a;
-  } else {
-    // skip the data otherwise
-    file.seekg(sizeof(double)*Np, file.cur);
-  }
-  int64_t iValuesCount(Cc4s::world->rank == 0 ? No : 0);
-  int64_t aValuesCount(Cc4s::world->rank == 0 ? Nv : 0);
-  epsi->write(iValuesCount, iIndices, iValues);
-  epsa->write(aValuesCount, aIndices, aValues);
-  delete[] iValues; delete[] aValues;
-}
-

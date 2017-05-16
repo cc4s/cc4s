@@ -7,6 +7,7 @@
 #include <util/Exception.hpp>
 #include <sstream>
 #include <istream>
+#include <cstring>
 
 namespace cc4s {
   class Scanner {

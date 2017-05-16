@@ -1,7 +1,7 @@
 #include <algorithms/ParticleHoleCoulombIntegrals.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
@@ -23,13 +23,13 @@ ParticleHoleCoulombIntegrals::~ParticleHoleCoulombIntegrals() {
 void ParticleHoleCoulombIntegrals::run() {
   // read coulomb vertex GammaGai
   Tensor<complex> *GammaGai(getTensorArgument<complex>
-			    ("ParticleHoleCoulombVertex"));
+                            ("ParticleHoleCoulombVertex"));
 
   // allocate real and imag part of GammaGai
   Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
-			*GammaGai->wrld, "RealGammaGai");
+                        *GammaGai->wrld, "RealGammaGai");
   Tensor<> imagGammaGai(3, GammaGai->lens, GammaGai->sym, 
-			*GammaGai->wrld, "ImagGammaGai");
+                        *GammaGai->wrld, "ImagGammaGai");
 
   // split into real and imaginary parts
   fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
@@ -47,8 +47,8 @@ void ParticleHoleCoulombIntegrals::run() {
 
 void ParticleHoleCoulombIntegrals::dryRun() {
   DryTensor<complex> *GammaGai(getTensorArgument<complex, 
-			       DryTensor<complex>>
-			       ("ParticleHoleCoulombVertex"));
+                               DryTensor<complex>>
+                               ("ParticleHoleCoulombVertex"));
 
   // Compute the No,Nv,NG,Np
   int NG(GammaGai->lens[0]);

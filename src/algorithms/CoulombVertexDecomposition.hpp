@@ -3,7 +3,7 @@
 #define COULOMB_VERTEX_DECOMPOSITION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <math/Complex.hpp>
 #include <math/RegularizedAlternatingLeastSquares.hpp>
 #include <ctf.hpp>
@@ -33,6 +33,10 @@ namespace cc4s {
      * \brief The rank \f$N_R\f$ of the tensor rank decomposition
      */
     int64_t rank;
+
+    static int64_t constexpr DEFAULT_RANK = -1;
+
+    static double constexpr DEFAULT_RANK_FACTOR = 2.0;
 
     /**
      * \brief The Frobenius norm of the difference between
@@ -67,7 +71,7 @@ namespace cc4s {
     /**
      * \brief The fit \f${\Pi^\ast}^{qR}\Pi_{rR}\Lambda_{GR}\f$.
      */
-    CTF::Tensor<complex> *Gamma0Gqr;
+    CTF::Tensor<complex> *composedGammaGqr;
     /**
      * \brief The conjugated factor orbitals
      * \f${\Pi^\ast}^{qR} = (\Pi_{qR})^\ast\f$.
@@ -112,7 +116,7 @@ namespace cc4s {
       DryTensor<complex> *GammaGqr,
       DryTensor<complex> *PiqR, DryTensor<complex> *PirR,
       DryTensor<complex> *LambdaGR,
-      DryTensor<complex> *Gamma0Gqr
+      DryTensor<complex> *composedGammaGqr
     );
     /**
      * \brief Normalizes the given factor orbitals, such that

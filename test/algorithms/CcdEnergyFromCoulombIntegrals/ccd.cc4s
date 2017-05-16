@@ -19,12 +19,58 @@ CcdEnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
-  % Sets maximum iterations. Default is 16.
-  (maxIterations 64)
+  (maxIterations 32)
 ] [
   (CcdEnergy CcdEnergy) 
   (CcdDoublesAmplitudes CcdDoublesAmplitudes)
 ].
 
-
 TensorWriter [(Data CcdEnergy)] [].
+
+CcdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 32)
+  (integralsSliceSize 13)
+] [
+  (CcdEnergy CcdEnergySlice)
+  (CcdDoublesAmplitudes CcdDoublesAmplitudesSlice)
+].
+
+TensorWriter [(Data CcdEnergySlice)] [].
+
+CoulombVertexDecomposition [
+  CoulombVertex
+  % Set the rank or the rankFactor (relative to NG) of
+  % the decomposed tensor and the number of iterations.
+  % If both are given, rank is taken into account.
+  (rank 99)
+  (rankFactor 3.0)
+  (maxIterations 64)
+  (mixer "LinearMixer")
+  (mixingRatio 0.8)
+] [
+  FactorOrbitals CoulombFactors
+  % Returns (if given) the Coulomb Vertex from the decomposed tensors.
+  ComposedCoulombVertex
+].
+
+CcdEnergyFromCoulombIntegrals [
+  FactorOrbitals CoulombFactors
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 32)
+  (factorsSliceSize 33)
+% (mixer "LinearMixer")
+% (mixingRatio 1.5)
+] [
+  (CcdEnergy CcdEnergyFactors)
+  (CcdDoublesAmplitudes CcdDoublesAmplitudesFactors)
+].
+
+TensorWriter [(Data CcdEnergyFactors)] [].

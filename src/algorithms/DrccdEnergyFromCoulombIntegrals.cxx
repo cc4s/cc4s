@@ -1,6 +1,6 @@
 #include <algorithms/DrccdEnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
@@ -30,7 +30,7 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
-		 abbreviation.begin(), ::toupper);
+                 abbreviation.begin(), ::toupper);
 
   int linearized(getIntegerArgument("linearized", 0));
   if (linearized) {
@@ -47,14 +47,14 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
   } 
   else {
     // For the rest iterations compute the DRCCD amplitudes
-    Rabij["abij"] = (*Vabij)["abij"];
+    Rabij["abij"]  = (*Vabij)["abij"];
     Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
     if (linearized) {
       Rabij["abij"] += 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
     } else {
       // Construct intermediates
       Tensor<> Cabij(false, *Vabij);
-      Cabij["abij"] =  2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
+      Cabij["abij"]  = 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
       Rabij["abij"] += Cabij["abij"];
       Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
     }

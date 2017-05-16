@@ -1,0 +1,60 @@
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  (CoulombVertex FullCoulombVertex)
+  HoleEigenEnergies ParticleEigenEnergies
+].
+
+SliceCoulombVertex [
+  (CoulombVertex FullCoulombVertex)
+  HoleEigenEnergies ParticleEigenEnergies
+] [
+  (ParticleHoleCoulombVertex FullParticleHoleCoulombVertex)
+].
+
+ParticleHoleCoulombIntegrals [
+  (ParticleHoleCoulombVertex FullParticleHoleCoulombVertex)
+] [
+  (PPHHCoulombIntegrals FullPPHHCoulombIntegrals)
+].
+
+Mp2EnergyFromCoulombIntegrals [
+  (PPHHCoulombIntegrals FullPPHHCoulombIntegrals)
+  HoleEigenEnergies ParticleEigenEnergies
+] [
+  (Mp2Energy FullMp2Energy)
+].
+
+TensorWriter [(Data FullMp2Energy)] [].
+
+% and now approximated:
+
+ParticleHoleCoulombVertexSingularVectors [
+  FullParticleHoleCoulombVertex
+  (fieldVariables 8)
+  (reduction 0.5)
+] [
+  ParticleHoleCoulombVertexSingularVectors
+].
+
+ApproximateParticleHoleCoulombVertex [
+  FullParticleHoleCoulombVertex
+  ParticleHoleCoulombVertexSingularVectors
+] [
+  ParticleHoleCoulombVertex
+].
+
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+  PPHHCoulombIntegrals
+].
+
+Mp2EnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+] [
+  Mp2Energy
+].
+
+TensorWriter [(Data Mp2Energy)] [].

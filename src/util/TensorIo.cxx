@@ -11,8 +11,8 @@
 using namespace CTF;
 using namespace cc4s;
 
-template <typename F>
-Tensor<F> *TensorIo::readBinary(std::string const &fileName) {
+template <typename F, typename T>
+T *TensorIo::readBinary(std::string const &fileName) {
   // open the file
   MPI_File file;
   int mpiError(
@@ -21,36 +21,10 @@ Tensor<F> *TensorIo::readBinary(std::string const &fileName) {
       MPI_INFO_NULL, &file
     )
   );
-  if (mpiError) throw new Exception("Failed to open file");
+  if (mpiError) throw new EXCEPTION("Failed to open file");
 
   int64_t offset(0);
-  MPI_Status status;
-  // reade header
-  BinaryTensorHeader header;
-  MPI_File_read_at(file, offset, &header, sizeof(header), MPI_BYTE, &status);
-  offset += sizeof(header);
-  if (strncmp(header.magic, header.MAGIC, sizeof(header.magic)) != 0)
-    throw new Exception("Invalid file format");
-  if (header.version > header.VERSION)
-    throw new Exception("Incompatible file format version");
-
-  // read dimension headers
-  int lens[header.order];
-  int syms[header.order];
-  for (int dim(0); dim < header.order; ++dim) {
-    BinaryTensorDimensionHeader dimensionHeader;
-    MPI_File_read_at(
-      file, offset, &dimensionHeader, sizeof(dimensionHeader), MPI_BYTE, &status
-    );
-    offset += sizeof(dimensionHeader);
-    lens[dim] = dimensionHeader.length;
-    syms[dim] = NS;
-  }
-
-  // allocate tensor
-  Tensor<F> *A(
-    new Tensor<F>(header.order, lens, syms, *Cc4s::world)
-  );
+  T *A(readBinaryHeader<F,T>(file, offset));
 
   // read dense data
   A->read_dense_from_file(file, offset);
@@ -60,33 +34,29 @@ Tensor<F> *TensorIo::readBinary(std::string const &fileName) {
   return A;
 }
 
-template <typename F>
-Tensor<F> *TensorIo::readText(
+template <typename F, typename T>
+T *TensorIo::readText(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize
 ) {
-  int order;
-  int *lens;
-  int *syms;
-
   std::ifstream stream(fileName.c_str());
   Scanner scanner(&stream);
   std::string name(scanner.nextLine(' '));
   std::stringstream lineStream(scanner.nextLine());
+  int order;
   lineStream >> order;
-  lens = new int[order];
-  syms = new int[order];
-  int64_t indexCount(1);
+  int lens[order];
+  int syms[order];
   for (int dim(0); dim < order; ++dim) {
     lineStream >> lens[dim];
     syms[dim] = NS;
-    indexCount *= lens[dim];
   }
+
   std::string rowIndexOrder(scanner.nextLine(' '));
   std::string columnIndexOrder(scanner.nextLine());
 
-  int *storedLens(new int[order]);
+  int storedLens[order];
   int storedIndex(0);
   for (unsigned int dim(0); dim < columnIndexOrder.length(); ++dim) {
     // FIXME: i,j,k ... assumed in indexOrder strings
@@ -98,11 +68,18 @@ Tensor<F> *TensorIo::readText(
     ++storedIndex;
   }
 
-  Tensor<F> *B(new Tensor<F> (order, storedLens, syms, *Cc4s::world, "B"));
+  T *B(new T(order, storedLens, syms, *Cc4s::world, name.c_str()));
+
+  int64_t indexCount(1);
+  for (int dim(0); dim < B->order; ++dim) {
+    indexCount *= B->lens[dim];
+  }
+
+  // read the values only on root
   int64_t localBufferSize(B->wrld->rank == 0 ? bufferSize : 0);
   int64_t *indices(new int64_t[localBufferSize]);
   F *values(new F[localBufferSize]);
-  // read the values only on root
+
   int64_t index(0);
   LOG(1, "TensorReader") << "indexCount=" << indexCount << std::endl;
   NumberScanner<F> numberScanner(&scanner);
@@ -122,25 +99,24 @@ Tensor<F> *TensorIo::readText(
   delete[] indices;
   delete[] values;
 
-  char indexOrder[order + 1];
-  for (int dim(0); dim < order; ++dim) {
+  char indexOrder[B->order + 1];
+  for (int dim(0); dim < B->order; ++dim) {
     indexOrder[dim] = 'i' + dim;
   }
-  indexOrder[order] = 0;
+  indexOrder[B->order] = 0;
   std::string storedIndexOrder(columnIndexOrder + rowIndexOrder);
   if (std::string(indexOrder) != storedIndexOrder) {
-    Tensor<F> *A(new Tensor<F>(order, lens, syms, *B->wrld, name.c_str()));
+    T *A(new T(order, lens, syms, *B->wrld, B->get_name()));
     (*A)[indexOrder] = (*B)[storedIndexOrder.c_str()];
     delete B;
     return A;
   } else {
-    B->set_name(name.c_str());
     return B;
   }
 }
 
-template <typename F>
-void TensorIo::writeBinary(std::string const &fileName, Tensor<F> &A) {
+template <typename F, typename T>
+void TensorIo::writeBinary(std::string const &fileName, T &A) {
   MPI_File file;
   MPI_Status status;
   MPI_File_open(
@@ -173,9 +149,9 @@ void TensorIo::writeBinary(std::string const &fileName, Tensor<F> &A) {
   MPI_File_close(&file);
 }
 
-template <typename F>
+template <typename F, typename T>
 void TensorIo::writeText(
-  std::string const &fileName, Tensor<F> &A,
+  std::string const &fileName, T &A,
   std::string const &givenRowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 ) {
@@ -210,7 +186,7 @@ void TensorIo::writeText(
     rowElementsCount *= lens[columnOrder+dim];
   }
   indexOrder[A.order] = 0;
-  Tensor<F> B(A.order, lens, syms, *A.wrld, "DataOrdered");
+  T B(A.order, lens, syms, *A.wrld, "DataOrdered");
   // reorder indices for writing:
   B[indexOrder] = A[defaultIndexOrder];
   int64_t valuesCount;
@@ -249,20 +225,51 @@ void TensorIo::writeText(
   free(values);
 }
 
+template <typename F, typename T>
+T *TensorIo::readBinaryHeader(MPI_File &file, int64_t &offset) {
+  MPI_Status status;
+  // reade header
+  BinaryTensorHeader header;
+  MPI_File_read_at(file, offset, &header, sizeof(header), MPI_BYTE, &status);
+  offset += sizeof(header);
+  if (strncmp(header.magic, header.MAGIC, sizeof(header.magic)) != 0)
+    throw new EXCEPTION("Invalid file format");
+  if (header.version > header.VERSION)
+    throw new EXCEPTION("Incompatible file format version");
+
+  // read dimension headers
+  int lens[header.order];
+  int syms[header.order];
+  for (int dim(0); dim < header.order; ++dim) {
+    BinaryTensorDimensionHeader dimensionHeader;
+    MPI_File_read_at(
+      file, offset, &dimensionHeader, sizeof(dimensionHeader), MPI_BYTE, &status
+    );
+    offset += sizeof(dimensionHeader);
+    lens[dim] = dimensionHeader.length;
+    syms[dim] = NS;
+  }
+
+  // allocate tensor
+  return new T(header.order, lens, syms, *Cc4s::world);
+}
+
+
+
 // instantiate
 template
-Tensor<double> *TensorIo::readBinary(std::string const &fileName);
+Tensor<double> *TensorIo::readBinary<double>(std::string const &fileName);
 template
-Tensor<complex> *TensorIo::readBinary(std::string const &fileName);
+Tensor<complex> *TensorIo::readBinary<complex>(std::string const &fileName);
 
 template
-Tensor<double> *TensorIo::readText(
+Tensor<double> *TensorIo::readText<double>(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize
 );
 template
-Tensor<complex> *TensorIo::readText(
+Tensor<complex> *TensorIo::readText<complex>(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize

@@ -1,7 +1,7 @@
 #include <algorithms/PolarizabilityFromCoulombVertex.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
-#include <util/DryTensor.hpp>
+#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>

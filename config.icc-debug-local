@@ -1,0 +1,27 @@
+# Configuration for intel on local machines rather than cluster machines
+# without optimization for debugging and faster compile times.
+
+# main target
+TARGET=Cc4s
+
+# compiler and linker
+CXX=mpiicc
+
+# general and language options (for preprocessing, compiling and linking)
+OPTIONS=-openmp -DINTEL_COMPILER -g
+
+# optimization options (only for compiling and linking)
+OPTIMIZE=-O0
+
+# location of the Cyclops Tensor Framework library depends on the configuration
+CTF=modules/build/icc-local/ctf
+
+# additional include directories for header files
+INCLUDE=-I${CTF}/include
+
+# additional library paths and libraries to link to
+LIBS=-L${CTF}/lib -lctf -mkl -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64
+
+# destination path for installation
+INSTALL=~/bin/cc4s/${CONFIG}
+

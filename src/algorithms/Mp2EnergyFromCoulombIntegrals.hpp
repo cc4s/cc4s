@@ -5,6 +5,9 @@
 #include <algorithms/Algorithm.hpp>
 
 namespace cc4s {
+  /**
+   * \brief Caclulates MP2 energy from the Coulomb Integrals \f$V_{ij}^{ab}.
+   */
   class Mp2EnergyFromCoulombIntegrals: public Algorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(Mp2EnergyFromCoulombIntegrals);
