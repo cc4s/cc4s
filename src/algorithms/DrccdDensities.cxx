@@ -87,14 +87,16 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   auto Labij( tcc->createTensor(Tabij, "Labij") );
   auto Rabij( tcc->createTensor(Tabij, "Rabij") );
 
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+
   // compile Lambda equation iteration
   auto iterationOperation(
     tcc->compile( (
       (*Rabij)["abij"] <<= (*Vabij)["abij"],
-      (*Rabij)["abij"] += 2 * (*Labij)["acik"] * (*Vabij)["cbkj"],
-      (*Rabij)["abij"] += 2 * (*Vabij)["acik"] * (*Labij)["cbkj"],
-      (*Rabij)["abij"] += 4*(*Labij)["acik"]*(*Tabij)["cdkl"]*(*Vabij)["dblj"],
-      (*Rabij)["abij"] += 4*(*Vabij)["acik"]*(*Tabij)["cdkl"]*(*Labij)["dblj"],
+      (*Rabij)["abij"] += spins * (*Labij)["acik"] * (*Vabij)["cbkj"],
+      (*Rabij)["abij"] += spins * (*Vabij)["acik"] * (*Labij)["cbkj"],
+      (*Rabij)["abij"] += spins*spins*(*Labij)["acik"]*(*Tabij)["cdkl"]*(*Vabij)["dblj"],
+      (*Rabij)["abij"] += spins*spins*(*Vabij)["acik"]*(*Tabij)["cdkl"]*(*Labij)["dblj"],
       (*Labij)["abij"] <<= (*Rabij)["abij"] * (*Dabij)["abij"]
     ) )
   );
@@ -121,10 +123,10 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   tcc->compile(
     (
       // note the sign from breaking up a hole line
-      (*Dij)["ij"] <<= -2 * (*Tabij)["cdkj"] * (*Labij)["cdki"],
-      (*Dab)["ab"] <<= +2 * (*Tabij)["cbkl"] * (*Labij)["cakl"],
-      (*Ni)["i"] <<= 2 * (*Dij)["ii"],
-      (*Na)["a"] <<= 2 * (*Dab)["aa"]
+      (*Dij)["ij"] <<= -spins * (*Tabij)["cdkj"] * (*Labij)["cdki"],
+      (*Dab)["ab"] <<= +spins * (*Tabij)["cbkl"] * (*Labij)["cakl"],
+      (*Ni)["i"] <<= spins * (*Dij)["ii"],
+      (*Na)["a"] <<= spins * (*Dab)["aa"]
     )
   )->execute();
   allocatedTensorArgument<double, T>(
@@ -148,10 +150,10 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   auto Veea( tcc->createTensor(epsa, "Veea") );
   tcc->compile(
     (
-      (*Veei)["i"] <<= 2 * (*Vijkl)["ijij"],
-      (*Veei)["i"] -= (*Vijkl)["ijji"],
-      (*Veea)["a"] <<= 2 * (*Vaibj)["ajaj"],
-      (*Veea)["a"] -= (*Vabij)["aajj"],
+      (*Veei)["i"] <<= 0.5*spins*spins * (*Vijkl)["ijij"],
+      (*Veei)["i"] -= 0.5*spins * (*Vijkl)["ijji"],
+      (*Veea)["a"] <<= 0.5*spins*spins * (*Vaibj)["ajaj"],
+      (*Veea)["a"] -= 0.5*spins * (*Vabij)["aajj"],
       (*ei)["i"] <<= (*epsi)["i"],
       (*ei)["i"] -= (*Veei)["i"],
       (*ea)["a"] <<= (*epsa)["a"],
@@ -183,17 +185,17 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
     (
       // from Gamma^ab_ij
       (*Gabij)["abij"] <<= (*Tabij)["abij"],
-      (*Gabij)["abij"] += 4*(*Tabij)["acik"]*(*Labij)["cdkl"]*(*Tabij)["dblj"],
+      (*Gabij)["abij"] += spins*spins * (*Tabij)["acik"]*(*Labij)["cdkl"]*(*Tabij)["dblj"],
       // from Gamma^aj_ib
-      (*Gabij)["abij"] += 2 * (*Tabij)["acik"] * (*Labij)["bcjk"],
+      (*Gabij)["abij"] += spins * (*Tabij)["acik"] * (*Labij)["bcjk"],
       // from Gamma^ib_aj
-      (*Gabij)["abij"] += 2 * (*Tabij)["cbkj"] * (*Labij)["caki"],
+      (*Gabij)["abij"] += spins * (*Tabij)["cbkj"] * (*Labij)["caki"],
       // from Gamma ^ij_ab
       (*Gabij)["abij"] += (*Labij)["abij"],
       // calcualte Coulomb energy beyond first order
-      (*Vee)[""] <<= 2 * (*Gabij)["abij"] * (*Vabij)["abij"],
+      (*Vee)[""] <<= 0.5*spins*spins * (*Gabij)["abij"] * (*Vabij)["abij"],
       // the last ineraction is also exchanged in drCCD: i.e. <0|1 V T|0>
-      (*Vee)[""] -= (*Tabij)["abij"] * (*Vabij)["abji"]
+      (*Vee)[""] -= 0.5*spins * (*Tabij)["abij"] * (*Vabij)["abji"]
     )
   )->execute();
   allocatedTensorArgument<double, T>(
