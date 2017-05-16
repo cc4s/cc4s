@@ -40,13 +40,13 @@ void CoulombIntegralsFromVertex::run() {
   int Np(GammaGqr->lens[1]);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
-  syms = std::array<int,4>({ NS, NS, NS, NS });
-  vvvv = std::array<int,4>({ Nv, Nv, Nv, Nv });
-  vovo = std::array<int,4>({ Nv, No, Nv, No });
-  vvoo = std::array<int,4>({ Nv, Nv, No, No });
-  oooo = std::array<int,4>({ No, No, No, No });
-  ooov = std::array<int,4>({ No, No, No, Nv });
-  vvvo = std::array<int,4>({ Nv, Nv, Nv, No });
+  syms = std::array<int,4>{{ NS, NS, NS, NS }};
+  vvvv = std::array<int,4>{{ Nv, Nv, Nv, Nv }};
+  vovo = std::array<int,4>{{ Nv, No, Nv, No }};
+  vvoo = std::array<int,4>{{ Nv, Nv, No, No }};
+  oooo = std::array<int,4>{{ No, No, No, No }};
+  ooov = std::array<int,4>{{ No, No, No, Nv }};
+  vvvo = std::array<int,4>{{ Nv, Nv, Nv, No }};
 
   Tensor<complex> diffGammaGqr(*GammaGqr);
   diffGammaGqr["Gqr"] -= (*GammaGqr)["Grq"];

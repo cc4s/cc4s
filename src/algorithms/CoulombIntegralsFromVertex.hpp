@@ -3,6 +3,7 @@
 #define COULOMB_INTEGRALS_FROM_VERTEX_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <array>
 
 namespace cc4s {
   /**
