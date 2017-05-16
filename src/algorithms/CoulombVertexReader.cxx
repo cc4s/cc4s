@@ -172,39 +172,29 @@ void CoulombVertexReader::unrestrictVertex() {
   auto uGammaGqr(
     new Tensor<complex>(3, vertexLens, GammaGqr->sym, *Cc4s::world, "uGammaGqr")
   );
-/*
-  int upUp[] = { 0, 0, 0 };
-  int downDown[] = { 0, GammaGqr->lens[1], GammaGqr->lens[2] };
-  uGammaGqr->slice(
-    upUp, GammaGqr->lens, 1.0, *GammaGqr, upUp, GammaGqr->lens, 1.0
-  );
-  uGammaGqr->slice(
-    downDown, uGammaGqr->lens, 1.0, *GammaGqr, upUp, GammaGqr->lens, 1.0
-  );
-*/
 
   int *upUnrestrictedStates(new int[GammaGqr->lens[1]]);
-  for (int i(0); i < GammaGqr->lens[1]; ++i) {
-    upUnrestrictedStates[i] = 2*i;
+  for (int q(0); q < GammaGqr->lens[1]; ++q) {
+    upUnrestrictedStates[q] = 2*q;
   }
   int *upUp[] = { nullptr, upUnrestrictedStates, upUnrestrictedStates };
+  // do uGammaGqr[G, upUn[q], upUn[r]] = GammaGqr[G,q,r] with upUn[q] = 2q.
+  // NOTE: the behavior of all below permute calls is documented differently
+  // in v1.4.1
   uGammaGqr->permute(1.0, *GammaGqr, upUp, 1.0);
   delete upUnrestrictedStates;
 
   int *downUnrestrictedStates(new int[GammaGqr->lens[1]]);
-  for (int i(0); i < GammaGqr->lens[1]; ++i) {
-    downUnrestrictedStates[i] = 2*i+1;
+  for (int q(0); q < GammaGqr->lens[1]; ++q) {
+    downUnrestrictedStates[q] = 2*q+1;
   }
   int *downDown[] = { nullptr, downUnrestrictedStates, downUnrestrictedStates };
+  // do uGammaGqr[G, dnUn[q], dnUn[r]] = GammaGqr[G,q,r] with dnUn[q] = 2q+1.
   uGammaGqr->permute(1.0, *GammaGqr, downDown, 1.0);
   delete downUnrestrictedStates;
 
-  double GammaGqrNorm(frobeniusNorm(*GammaGqr));
-  double uGammaGqrNorm(frobeniusNorm(*uGammaGqr));
-  LOG(1, "Reader") << "|GammaGqr| = " << GammaGqrNorm << std::endl;
-  LOG(1, "Reader") << "|uGammaGqr| = " << uGammaGqrNorm << std::endl;
-
-  // permute the indices
+  // overwrite restricted vertex
+  // FIXME: vertex should be given after handleUnrestricted
   allocatedTensorArgument<complex>("CoulombVertex", uGammaGqr);
 }
 
@@ -221,6 +211,7 @@ void CoulombVertexReader::unrestrictEigenEnergies(const std::string &name) {
   for (int i(0); i < eps->lens[0]; ++i) {
     upUnrestrictedStates[i] = 2*i;
   }
+  // do uEps[upUn[i]] = eps[i] with upUn[i] = 2i
   uEps->permute(1.0, *eps, &upUnrestrictedStates, 1.0);
   delete upUnrestrictedStates;
 
@@ -228,9 +219,12 @@ void CoulombVertexReader::unrestrictEigenEnergies(const std::string &name) {
   for (int i(0); i < eps->lens[0]; ++i) {
     downUnrestrictedStates[i] = 2*i + 1;
   }
+  // do uEps[dnUn[i]] = eps[i] with dnUn[i] = 2i+1
   uEps->permute(1.0, *eps, &downUnrestrictedStates, 1.0);
   delete downUnrestrictedStates;
 
+  // overwrite restricted eigen energies
+  // FIXME: eigen energies should be given after handleUnrestricted
   allocatedTensorArgument<>(name + "EigenEnergies", uEps);
 }
 
