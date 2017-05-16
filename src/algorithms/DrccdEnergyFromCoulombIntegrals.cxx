@@ -21,12 +21,15 @@ DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
   // Read the DRCCD amplitudes Tabij
   Tensor<> *Tabij(&TabijMixer->getNext());
-  
+
   // Read Vabij
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
   // Construct intermediate Amplitudes
   Tensor<> Rabij(false, *Tabij);
+
+  // Check for spin polarization
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -44,19 +47,19 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
     // Since Tabij = 0, Vabij is the only non-zero term
 
     Rabij["abij"] += (*Vabij)["abij"];
-  } 
+  }
   else {
     // For the rest iterations compute the DRCCD amplitudes
     Rabij["abij"]  = (*Vabij)["abij"];
-    Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
+    Rabij["abij"] += spins * (*Vabij)["acik"] * (*Tabij)["cbkj"];
     if (linearized) {
-      Rabij["abij"] += 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
+      Rabij["abij"] += spins * (*Vabij)["cbkj"] * (*Tabij)["acik"];
     } else {
       // Construct intermediates
       Tensor<> Cabij(false, *Vabij);
-      Cabij["abij"]  = 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
+      Cabij["abij"]  = spins * (*Vabij)["cbkj"] * (*Tabij)["acik"];
       Rabij["abij"] += Cabij["abij"];
-      Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
+      Ra spins * Cabij["acik"] * (*Tabij)["cbkj"];
     }
   }
 

@@ -61,6 +61,10 @@ void ClusterDoublesAlgorithm::run() {
   // and the energy e
   int maxIterationsCount(getIntegerArgument("maxIterations", 
                                             DEFAULT_MAX_ITERATIONS));
+
+  // Check for spin polarization
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
     // call the iterate of the actual algorithm, which is still left open here
@@ -68,10 +72,10 @@ void ClusterDoublesAlgorithm::run() {
     Tensor<> *Tabij(&TabijMixer->getNext());
     Tabij->set_name("Tabij");
     // Direct term
-    energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
+    energy[""] = 0.5 * spins * spins * (*Tabij)["abij"] * (*Vabij)["abij"];
     dire = energy.get_val();
     // Exchange term
-    energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
+    energy[""] = 0.5 * spins * (*Tabij)["abji"] * (*Vabij)["abij"];
     exce = -1.0 * energy.get_val();
     // Total energy
     e = dire + exce;
