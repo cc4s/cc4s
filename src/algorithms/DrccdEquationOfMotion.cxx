@@ -1,6 +1,8 @@
 #include <algorithms/DrccdEquationOfMotion.hpp>
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
+#include <math/MathFunctions.hpp>
+#include <math/RandomTensor.hpp>
 #include <util/CtfMachineTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -42,7 +44,7 @@ void DrccdEquationOfMotion::run() {
   auto epsa( tcc->createTensor(MT::create(*ctfEpsa)) );
 
   // convert energy denominators tensor into tcc tensor
-  auto Dabij( tcc->createTensor(Tabij, "Dabij") );
+ auto Dabij( tcc->createTensor(Tabij, "Dabij") );
 
   tcc->compile( (
     (*Dabij)["abij"] <<= (*epsa)["a"],
@@ -51,10 +53,17 @@ void DrccdEquationOfMotion::run() {
     (*Dabij)["abij"]  -= (*epsi)["j"]
   ) )->execute();
 
-  // create Right eigenvector amplitudes Rabij and residuum Xabij of same shape
-  // as doubles amplitudes
+  // create Right and Left eigenvector amplitudes Rabij, Labij and itermediate
+  // Xabij of same shape as doubles amplitudes
   auto Rabij( tcc->createTensor(Tabij, "Rabij") );
+  auto Labij( tcc->createTensor(Tabij, "Labij") );
   auto Xabij( tcc->createTensor(Tabij, "Xabij") );
+
+  auto ctfRabij(&Rabij->getMachineTensor<MT>()->tensor);
+  auto ctfLabij(&Labij->getMachineTensor<MT>()->tensor);
+
+  setRandomTensor(*ctfRabij);
+  setRandomTensor(*ctfLabij);
 
   // Similarity transformed hamiltonian, e^{-T} H e^{T}
   auto Habij( tcc->createTensor(Tabij, "Habij") );
@@ -68,25 +77,79 @@ void DrccdEquationOfMotion::run() {
     (*Habij)["abij"]  += spins * (*Vabij)["acik"] * (*Tabij)["cbkj"]
   ) )->execute();
 
+  determineEnergyShift();
+
   // Build \bar H R
-  auto iterationOperation(
+  auto rightIterationOperation(
     tcc->compile( (
       (*Xabij)["abij"] <<= (*Dabij)["abij"] * (*Rabij)["abij"],
-      (*Xabij)["abij"]  += (*Rabij)["acik"] * (*Habij)["cbkj"],
-      (*Xabij)["abij"]  += (*Habij)["caki"] * (*Rabij)["bcjk"]
+      (*Xabij)["abij"]  += spins * (*Rabij)["acik"] * (*Habij)["cbkj"],
+      (*Xabij)["abij"]  += spins * (*Habij)["caki"] * (*Rabij)["bcjk"],
+      (*Xabij)["abij"]  -= energyShift * (*Rabij)["abij"]
+    ) )
+  );
+
+  // Build L \bar H
+  auto leftIterationOperation(
+    tcc->compile( (
+      (*Xabij)["abij"] <<= (*Vabij)["abij"],
+      (*Xabij)["abij"]  += (*Dabij)["abij"] * (*Labij)["abij"],
+      (*Xabij)["abij"]  += spins * (*Vabij)["acik"] * (*Habij)["cbkj"],
+      (*Xabij)["abij"]  += spins * (*Habij)["caki"] * (*Labij)["bcjk"],
+      (*Xabij)["abij"]  -= energyShift * (*Labij)["abij"]
     ) )
   );
 
   // execute iterations
   int maxIterations(getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS));
   for (int i(0); i < maxIterations; ++i) {
-    LOG(0, "R_EquationOfMotion") << "Iteration " << i << "..." << std::endl;
-    iterationOperation->execute();
+    LOG(0, "DrccdEOM") << "Iteration " << i << "..." << std::endl;
+
+    rightIterationOperation->execute();
+    double rNorm(frobeniusNorm(Xabij->getMachineTensor<MT>()->tensor));
+    LOG(1, "DrccdEOM") << "|HR| " << rNorm << std::endl;
+    tcc->compile(
+      (*Rabij)["abij"] <<= (1/rNorm) * (*Xabij)["abij"]
+    )->execute();
+
+    leftIterationOperation->execute();
+    double lNorm(frobeniusNorm(Xabij->getMachineTensor<MT>()->tensor));
+    LOG(1, "DrccdEOM") << "|LH| " << lNorm << std::endl;
+    tcc->compile(
+      (*Labij)["abij"] <<= (1/lNorm) * (*Xabij)["abij"]
+    )->execute();
+
+
   }
 
-  //allocatedTensorArgument<double, T>(
-    //"DrccdLambdaDoublesAmplitudes",
-    //new T(Labij->template getMachineTensor<MT>()->tensor)
-  //);
+  CTF::Scalar<> biNorm;
+  biNorm[""] = (*ctfRabij)["abij"] * (*ctfLabij)["abij"];
 
+  double biNormValue(biNorm.get_val());
+  LOG(1, "DrccdEOM") << "|LR| " << biNormValue << std::endl;
+
+  (*ctfRabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfRabij)["abij"];
+  (*ctfLabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfLabij)["abij"];
+
+}
+
+void DrccdEquationOfMotion::determineEnergyShift() {
+  typedef CTF::Tensor<> T;
+
+  // Read energies
+  T *epsi( getTensorArgument<>("HoleEigenEnergies") );
+  T *epsa( getTensorArgument<>("ParticleEigenEnergies") );
+
+  int64_t indicesCount;
+  double *energies;
+
+  // Get all data from epsi
+  epsi->read_all(&indicesCount, &energies);
+  energyShift = -energies[0];
+  free(energies);
+
+  // Get all data from epsa
+  epsa->read_all(&indicesCount, &energies);
+  energyShift += energies[indicesCount-1];
+  free(energies);
 }
