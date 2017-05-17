@@ -48,7 +48,7 @@ void DrccdEquationOfMotion::run() {
     (*Dabij)["abij"] <<= (*epsa)["a"],
     (*Dabij)["abij"]  += (*epsa)["b"],
     (*Dabij)["abij"]  -= (*epsi)["i"],
-    (*Dabij)["abij"]  -= (*epsj)["j"]
+    (*Dabij)["abij"]  -= (*epsi)["j"]
   ) )->execute();
 
   // create Right eigenvector amplitudes Rabij and residuum Xabij of same shape
@@ -84,9 +84,9 @@ void DrccdEquationOfMotion::run() {
     iterationOperation->execute();
   }
 
-  allocatedTensorArgument<double, T>(
-    "DrccdLambdaDoublesAmplitudes",
-    new T(Labij->template getMachineTensor<MT>()->tensor)
-  );
+  //allocatedTensorArgument<double, T>(
+    //"DrccdLambdaDoublesAmplitudes",
+    //new T(Labij->template getMachineTensor<MT>()->tensor)
+  //);
 
 }

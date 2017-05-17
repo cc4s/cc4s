@@ -21,8 +21,6 @@ namespace cc4s {
     virtual void run();
 
   protected:
-    void run();
-
     static constexpr int DEFAULT_MAX_ITERATIONS = 16;
   };
 }
