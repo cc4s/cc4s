@@ -1,0 +1,32 @@
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+  (unrestricted 1)
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
+DrccdEnergyFromCoulombIntegrals [
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (maxIterations 64)
+  (unrestricted 1)
+] [
+  DrccdEnergy DrccdDoublesAmplitudes
+].
+
+TensorWriter [(Data DrccdEnergy)] [].
+
+DrccdEquationOfMotion [
+  DrccdDoublesAmplitudes
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (maxIterations 64)
+  (unrestricted 1)
+] [
+].
