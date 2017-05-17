@@ -22,6 +22,9 @@ namespace cc4s {
 
   protected:
     static constexpr int DEFAULT_MAX_ITERATIONS = 16;
+    double energyShift;
+
+    void determineEnergyShift();
   };
 }
 

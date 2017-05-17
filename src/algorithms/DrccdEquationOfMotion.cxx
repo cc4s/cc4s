@@ -63,7 +63,7 @@ void DrccdEquationOfMotion::run() {
   auto ctfLabij(&Labij->getMachineTensor<MT>()->tensor);
 
   setRandomTensor(*ctfRabij);
-  setRandomTensor(*ctfLabij);
+  //setRandomTensor(*ctfLabij);
 
   // Similarity transformed hamiltonian, e^{-T} H e^{T}
   auto Habij( tcc->createTensor(Tabij, "Habij") );
@@ -103,7 +103,7 @@ void DrccdEquationOfMotion::run() {
   // execute iterations
   int maxIterations(getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS));
   for (int i(0); i < maxIterations; ++i) {
-    LOG(0, "DrccdEOM") << "Iteration " << i << "..." << std::endl;
+    LOG(0, "Right DrccdEOM") << "Iteration " << i << "..." << std::endl;
 
     rightIterationOperation->execute();
     double rNorm(frobeniusNorm(Xabij->getMachineTensor<MT>()->tensor));
@@ -111,6 +111,12 @@ void DrccdEquationOfMotion::run() {
     tcc->compile(
       (*Rabij)["abij"] <<= (1/rNorm) * (*Xabij)["abij"]
     )->execute();
+  }
+
+  (*ctfLabij)["abij"] = (*ctfRabij)["abij"];
+
+  for (int i(0); i < maxIterations; ++i) {
+    LOG(0, "Left DrccdEOM") << "Iteration " << i << "..." << std::endl;
 
     leftIterationOperation->execute();
     double lNorm(frobeniusNorm(Xabij->getMachineTensor<MT>()->tensor));
@@ -118,8 +124,6 @@ void DrccdEquationOfMotion::run() {
     tcc->compile(
       (*Labij)["abij"] <<= (1/lNorm) * (*Xabij)["abij"]
     )->execute();
-
-
   }
 
   CTF::Scalar<> biNorm;
