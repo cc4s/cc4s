@@ -67,9 +67,6 @@ void DrccdEquationOfMotion::run() {
   auto ctfRabij(&Rabij->getMachineTensor<MT>()->tensor);
   auto ctfLabij(&Labij->getMachineTensor<MT>()->tensor);
 
-  // TODO: initialize L
-  setRandomTensor(*ctfRabij);
-
   // Similarity transformed hamiltonian, e^{-T} H e^{T}
   auto Habij( tcc->createTensor(Tabij, "Habij") );
 
@@ -108,13 +105,14 @@ void DrccdEquationOfMotion::run() {
 
   auto buildNewR(
     tcc->compile( (
-      (*prevRabij)["abij"] <<= -1*(*beta)[""] * (*prevRabij)["abij"],
-      (*prevRabij)["abij"]  += (*Xabij)["abij"],
-      (*prevRabij)["abij"]  -= (*energy)[""] * (*Rabij)["abij"],
+      (*prevRabij)["abij"]  <<= (*Xabij)["abij"]
+      //(*prevRabij)["abij"] <<= -1.0*(*beta)[""] * (*prevRabij)["abij"]
+      //(*prevRabij)["abij"]  += (*Xabij)["abij"]
+      //(*prevRabij)["abij"]  -= (*energy)[""] * (*Rabij)["abij"]
       // TODO: Swap pointers instead of values
-      (*Xabij)["abij"] <<= (*prevRabij)["abij"],
-      (*prevRabij)["abij"] <<= (*Rabij)["abij"],
-      (*Rabij)["abij"] <<= (*Xabij)["abij"]
+      //(*Xabij)["abij"] <<= (*prevRabij)["abij"],
+      //(*prevRabij)["abij"] <<= (*Rabij)["abij"],
+      //(*Rabij)["abij"] <<= (*Xabij)["abij"]
     ) )
   );
 
@@ -146,6 +144,13 @@ void DrccdEquationOfMotion::run() {
       (*beta)[""]  -= 0.5*spins*(*Labij)["abij"] * (*Rabij)["abji"]
     ) )
   );
+
+  setRandomTensor(*ctfRabij);
+
+  (*ctfLabij)["abij"] = (*ctfRabij)["abij"];
+  buildBeta->execute();
+  ctfBeta[""] = beta->getMachineTensor<MT>()->tensor[""];
+  (*ctfLabij)["abij"] = ( 1 / ctfBeta.get_val() ) * (*ctfLabij)["abij"];
 
   // execute iterations
   int maxIterations(getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS));
