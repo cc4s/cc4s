@@ -2,7 +2,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
 #include <math/RandomGenerator.hpp>
-#include <math/SampledVariable.hpp>
+#include <util/DistributedSampledVariable.hpp>
 #include <tcc/Tcc.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/CtfMachineTensor.hpp>
@@ -323,13 +323,20 @@ double LaplaceMp2Energy::calculateStochastically() {
 
 double LaplaceMp2Energy::sumNaively() {
   SampledVariable<complex> energy;
-  for (int R(0); R < NR; ++R) {
-    for (int S(0); S < NR; ++S) {
-      for (int T(0); T < NR; ++T) {
-        for (int U(0); U < NR; ++U) {
-          energy.addSample(
-            V[R+NR*S] * V[T+NR*U] * getIntegratedSamples(R,S,T,U)
-          );
+  MpiCommunicator comm(*Cc4s::world);
+  {
+    DistributedSampledVariable<complex> distributedEnergy(&energy, &comm);
+    for (int R(0); R < NR; ++R) {
+      if (R % Cc4s::world->np == Cc4s::world->rank) {
+        for (int S(0); S < NR; ++S) {
+          LOG(1, "MC") << "R=" << R << ", S=" << S << std::endl;
+          for (int T(0); T < NR; ++T) {
+            for (int U(0); U < NR; ++U) {
+              distributedEnergy.addSample(
+                V[R+NR*S] * V[T+NR*U] * getIntegratedSamples(R,S,T,U)
+              );
+            }
+          }
         }
       }
     }

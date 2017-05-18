@@ -511,9 +511,7 @@ void FiniteSizeCorrection::interpolation3D() {
     }
   }
 
-  MpiCommunicator communicator(
-    Cc4s::world->rank, Cc4s::world->np, Cc4s::world->comm
-  );
+  MpiCommunicator communicator(*Cc4s::world);
   communicator.barrier();
   for (int t0(-N0); t0 <= N0; ++t0) {
     for (int t1(-N1); t1 <= N1; ++t1) {
