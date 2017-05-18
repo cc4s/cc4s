@@ -13,6 +13,9 @@ using namespace tcc;
 
 ALGORITHM_REGISTRAR_DEFINITION(DrccdEquationOfMotion);
 
+// TODO: Study the requirements to treat the problem with real numbers or
+// complex
+
 DrccdEquationOfMotion::DrccdEquationOfMotion(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
@@ -54,17 +57,22 @@ void DrccdEquationOfMotion::run() {
   ) )->execute();
 
   // create Right and Left eigenvector amplitudes Rabij, Labij and itermediate
-  // Xabij of same shape as doubles amplitudes
+  // prevRabij of same shape as doubles amplitudes
   auto Rabij( tcc->createTensor(Tabij, "Rabij") );
   auto Labij( tcc->createTensor(Tabij, "Labij") );
+  auto prevRabij( tcc->createTensor(Tabij, "prevRabij") );
+  auto prevLabij( tcc->createTensor(Tabij, "prevLabij") );
   auto Xabij( tcc->createTensor(Tabij, "Xabij") );
 
   auto ctfRabij(&Rabij->getMachineTensor<MT>()->tensor);
   auto ctfLabij(&Labij->getMachineTensor<MT>()->tensor);
+
+  auto ctfPrevRabij(&prevRabij->getMachineTensor<MT>()->tensor);
+  auto ctfPrevLabij(&prevLabij->getMachineTensor<MT>()->tensor);
+
   auto ctfXabij(&Xabij->getMachineTensor<MT>()->tensor);
 
   setRandomTensor(*ctfRabij);
-  //setRandomTensor(*ctfLabij);
 
   // Similarity transformed hamiltonian, e^{-T} H e^{T}
   auto Habij( tcc->createTensor(Tabij, "Habij") );
@@ -80,8 +88,21 @@ void DrccdEquationOfMotion::run() {
 
   determineEnergyShift();
 
-  // Build \bar H R
-  auto rightIterationOperation(
+  auto ctfBeta(
+    std::dynamic_pointer_cast<T>(std::make_shared<CTF::Scalar<>>())
+  );
+  auto ctfDelta(
+    std::dynamic_pointer_cast<T>(std::make_shared<CTF::Scalar<>>())
+  );
+  auto ctfEnergy(
+    std::dynamic_pointer_cast<T>(std::make_shared<CTF::Scalar<>>())
+  );
+
+  auto beta(tcc->createTensor(ctfBeta));
+  auto delta(tcc->createTensor(ctfDelta));
+  auto energy(tcc->createTensor(ctfEnergy));
+
+  auto buildHbarR(
     tcc->compile( (
       (*Xabij)["abij"] <<= (*Dabij)["abij"] * (*Rabij)["abij"],
       (*Xabij)["abij"]  += spins * (*Rabij)["acik"] * (*Habij)["cbkj"],
@@ -90,8 +111,26 @@ void DrccdEquationOfMotion::run() {
     ) )
   );
 
-  // Build L \bar H
-  auto leftIterationOperation(
+  auto buildLHbarR(
+    tcc->complile( (
+      (*energy)[""] <<= 0.5*spins*spins * (*Xabij)["abij"] * (*Labij)["abij"],
+      (*energy)[""]  -= 0.5 * spins * (*Xabij)["abij"] * (*Labij)["abji"]
+    ) )
+  );
+
+  auto buildNewR(
+    tcc->compile( (
+      (*prevRabij)["abij"] <<= -1*(*beta)[""] * (*prevRabij)["abij"],
+      (*prevRabij)["abij"]  += (*Xabij)["abij"],
+      (*prevRabij)["abij"]  -= (*alpha)[""] * (*Rabij)["abij"],
+      // TODO: Swap pointers instead of values
+      (*Xabij)["abij"] <<= (*prevRabij)["abij"],
+      (*prevRabij)["abij"] <<= (*Rabij)["abij"],
+      (*Rabij)["abij"] <<= (*Xabij)["abij"]
+    ) )
+  );
+
+  auto buildLHbar(
     tcc->compile( (
       (*Xabij)["abij"] <<= (*Vabij)["abij"],
       (*Xabij)["abij"]  += (*Dabij)["abij"] * (*Labij)["abij"],
@@ -101,53 +140,72 @@ void DrccdEquationOfMotion::run() {
     ) )
   );
 
+  auto buildNewL(
+    tcc->compile( (
+      (*prevLabij)["abij"] <<= -1*(*beta)[""] * (*prevLabij)["abij"],
+      (*prevLabij)["abij"]  += (*Xabij)["abij"],
+      (*prevLabij)["abij"]  -= (*alpha)[""] * (*Labij)["abij"],
+      // TODO: Swap pointers instead of values
+      (*Xabij)["abij"] <<= (*prevLabij)["abij"],
+      (*prevLabij)["abij"] <<= (*Labij)["abij"],
+      (*Labij)["abij"] <<= (*Xabij)["abij"]
+    ) )
+  );
+
+  auto buildBeta(
+    tcc->compile( (
+      (*beta)[""] <<= 0.5*spins*spins*(*Labij)["abij"] * (*Rabij)["abij"],
+      (*beta)[""]  -= 0.5*spins*(*Labij)["abij"] * (*Rabij)["abji"]
+    ) )
+  );
+
   // execute iterations
   int maxIterations(getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS));
   for (int i(0); i < maxIterations; ++i) {
-    LOG(0, "Right DrccdEOM") << "Iteration " << i << "..." << std::endl;
+    LOG(0, "DrccdEOM") << "Iteration " << i << "..." << std::endl;
 
-    rightIterationOperation->execute();
-    double rNorm(frobeniusNorm(*ctfXabij));
-    LOG(1, "DrccdEOM") << "|H'R|-Delta=" << rNorm-energyShift << std::endl;
-    tcc->compile(
-      (*Rabij)["abij"] <<= (1/rNorm) * (*Xabij)["abij"]
-    )->execute();
+    buildHbarR->execute();
+    buildLHbarR->execute();
+    buildNewR->execute();
+    buildLHbar->execute();
+    buildNewL->execute();
+
+    // Build coefficients
+    buildBeta->execute();
+    ctfDelta->set_val(std::sqrt(std::abs(ctfBeta->get_val())));
+    ctfBeta->set_val(
+      ctfBeta->get_val() / ctfDelta->get_val()
+    );
+
+    ctfRabij["abij"] = ( 1 / ctfBeta->get_val() ) * ctfRabij["abij"];
+    ctfLabij["abij"] = ( 1 / ctfDelta->get_val() ) * ctfLabij["abij"];
+
+    double e(ctfEnergy->get_val());
+
+    LOG(0, "DrccdEOM") << "e= " << e << std::endl;
+
   }
 
-  (*ctfLabij)["abij"] = (*ctfRabij)["abij"];
+  //CTF::Scalar<> biNorm;
+  //biNorm[""] = (*ctfRabij)["abij"] * (*ctfLabij)["abij"];
 
-  for (int i(0); i < maxIterations; ++i) {
-    LOG(0, "Left DrccdEOM") << "Iteration " << i << "..." << std::endl;
+  //double biNormValue(biNorm.get_val());
+  //LOG(1, "DrccdEOM") << "|LR| " << biNormValue << std::endl;
 
-    leftIterationOperation->execute();
-    double lNorm(frobeniusNorm(*ctfXabij));
-    LOG(1, "DrccdEOM") << "|LH'|-Delta=" << lNorm-energyShift << std::endl;
-    tcc->compile(
-      (*Labij)["abij"] <<= (1/lNorm) * (*Xabij)["abij"]
-    )->execute();
-  }
+  //double lNorm(ctfLabij->norm1());
+  //double rNorm(ctfRabij->norm1());
+  //LOG(1, "DrccdEOM") << "|L| " << lNorm << std::endl;
+  //LOG(1, "DrccdEOM") << "|R| " << rNorm << std::endl;
 
-  CTF::Scalar<> biNorm;
-  biNorm[""] = (*ctfRabij)["abij"] * (*ctfLabij)["abij"];
+  //(*ctfRabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfRabij)["abij"];
+  //(*ctfLabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfLabij)["abij"];
 
-  double biNormValue(biNorm.get_val());
-  LOG(1, "DrccdEOM") << "|LR| " << biNormValue << std::endl;
+  //// Compute prevRabij with the binormalized L
+  //LHbar->execute();
 
-  (*ctfRabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfRabij)["abij"];
-  (*ctfLabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfLabij)["abij"];
+  //(*ctfPrevRabij)["abij"] += energyShift * (*ctfLabij)["abij"];
 
-  // Compute Xabij with the binormalized L
-  leftIterationOperation->execute();
-
-  (*ctfXabij)["abij"] += energyShift * (*ctfLabij)["abij"];
-
-  CTF::Scalar<> energy;
-
-  energy[""] = 0.5 * spins * spins * (*ctfXabij)["abij"] * (*ctfRabij)["abij"];
-  energy[""] -= 0.5 * spins * (*ctfXabij)["abij"] * (*ctfRabij)["abji"];
-
-  //double e(ctfEnergy->get_val());
-  LOG(0, "DrccdEOM") << "e= " << energy << std::endl;
+  //LOG(0, "DrccdEOM") << "e= " << energy << std::endl;
 
 }
 
