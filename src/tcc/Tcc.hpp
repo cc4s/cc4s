@@ -78,6 +78,10 @@ namespace tcc {
       return createTensor(tensor->lens, name);
     }
 
+    /**
+     * \brief Create a tcc tensor that uses a given machine tensor as its
+     * machine tensor for representing the tensor data.
+     **/
     std::shared_ptr<Tensor<F>> createTensor(
       const std::shared_ptr<MachineTensor<F>> &machineTensor
     ) {
