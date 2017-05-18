@@ -74,7 +74,8 @@ void CoulombVertexSingularVectors::run() {
   int64_t SIndicesCount(GammaGqr->wrld->rank == 0 ? NG : 0);
   int64_t *SIndices(new int64_t[SIndicesCount]);
   for (int64_t index(0); index < SIndicesCount; ++index) { SIndices[index] = index; }
-  Tensor<> *singularValues(new Vector<>(NG, *GammaGqr->wrld, "singularValues"));
+  int sym[]={NS};
+  Tensor<> *singularValues(new Tensor<>(1,&NG,sym, *GammaGqr->wrld, "singularValues"));
   singularValues->write(SIndicesCount, SIndices, SS);
   allocatedTensorArgument("CoulombVertexSingularValues", singularValues);
   delete[] SIndices;
