@@ -118,8 +118,7 @@ namespace tcc {
     std::shared_ptr<Operation<F>> compile(
       const std::shared_ptr<Move<F>> &move
     ) {
-      LOG(0, "TCC") << "compiling contraction..." << std::endl;
-      LOG(2, "TCC") << "building index counts..." << std::endl;
+      LOG(2, "TCC") << "compiling contraction..." << std::endl;
 
       indexCounts = IndexCounts();
       indexCounts.add(move->lhs->indices);
