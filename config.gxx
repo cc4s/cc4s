@@ -8,7 +8,7 @@ CXX=mpicxx
 OPTIONS=-fopenmp
 
 # optimization options (only for compiling and linking)
-OPTIMIZE=-O3
+OPTIMIZE=-Ofast -march=native -flto
 
 # location of the Cyclops Tensor Framework library depends on the configuration
 CTF=modules/build/${CONFIG}/ctf
