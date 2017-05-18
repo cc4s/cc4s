@@ -61,6 +61,7 @@ void DrccdEquationOfMotion::run() {
 
   auto ctfRabij(&Rabij->getMachineTensor<MT>()->tensor);
   auto ctfLabij(&Labij->getMachineTensor<MT>()->tensor);
+  auto ctfXabij(&Xabij->getMachineTensor<MT>()->tensor);
 
   setRandomTensor(*ctfRabij);
   //setRandomTensor(*ctfLabij);
@@ -106,8 +107,8 @@ void DrccdEquationOfMotion::run() {
     LOG(0, "Right DrccdEOM") << "Iteration " << i << "..." << std::endl;
 
     rightIterationOperation->execute();
-    double rNorm(frobeniusNorm(Xabij->getMachineTensor<MT>()->tensor));
-    LOG(1, "DrccdEOM") << "|HR| " << rNorm << std::endl;
+    double rNorm(frobeniusNorm(*ctfXabij));
+    LOG(1, "DrccdEOM") << "|H'R|-Delta=" << rNorm-energyShift << std::endl;
     tcc->compile(
       (*Rabij)["abij"] <<= (1/rNorm) * (*Xabij)["abij"]
     )->execute();
@@ -119,8 +120,8 @@ void DrccdEquationOfMotion::run() {
     LOG(0, "Left DrccdEOM") << "Iteration " << i << "..." << std::endl;
 
     leftIterationOperation->execute();
-    double lNorm(frobeniusNorm(Xabij->getMachineTensor<MT>()->tensor));
-    LOG(1, "DrccdEOM") << "|LH| " << lNorm << std::endl;
+    double lNorm(frobeniusNorm(*ctfXabij));
+    LOG(1, "DrccdEOM") << "|LH'|-Delta=" << lNorm-energyShift << std::endl;
     tcc->compile(
       (*Labij)["abij"] <<= (1/lNorm) * (*Xabij)["abij"]
     )->execute();
@@ -156,4 +157,12 @@ void DrccdEquationOfMotion::determineEnergyShift() {
   epsa->read_all(&indicesCount, &energies);
   energyShift += energies[indicesCount-1];
   free(energies);
+
+  // many-body system can have No times single body excitation energies
+  energyShift *= 2*epsi->lens[0];
+
+  // allow manual override
+  energyShift = getRealArgument("energyShift", energyShift);
+
+  LOG(1, "DrccdEOM") << "H'=H-Delta with Delta=" << energyShift << std::endl;
 }
