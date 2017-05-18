@@ -106,12 +106,12 @@ void DrccdEquationOfMotion::run() {
   auto buildNewR(
     tcc->compile( (
       (*prevRabij)["abij"] <<= -1.0*(*prevRabij)["abij"],
-      //(*prevRabij)["abij"] <<= -1.0*(*beta)[""] * (*prevRabij)["abij"],
-      //(*prevRabij)["abij"] <<= (*beta)[""] * (*prevRabij)["abij"],
+      (*prevRabij)["abij"] <<= -1.0*(*beta)[""] * (*prevRabij)["abij"],
+      (*prevRabij)["abij"] <<= (*beta)[""] * (*prevRabij)["abij"],
       (*prevRabij)["abij"]  += (*Xabij)["abij"],
-      //(*prevRabij)["abij"]  -= (*energy)[""] * (*Rabij)["abij"],
+      (*prevRabij)["abij"]  -= (*energy)[""] * (*Rabij)["abij"],
       (*prevRabij)["abij"]  -= (*Rabij)["abij"],
-       //TODO: Swap pointers instead of values
+      //TODO: Swap pointers instead of values
       (*Xabij)["abij"] <<= (*prevRabij)["abij"],
       (*prevRabij)["abij"] <<= (*Rabij)["abij"],
       (*Rabij)["abij"] <<= (*Xabij)["abij"]
@@ -131,9 +131,9 @@ void DrccdEquationOfMotion::run() {
   auto buildNewL(
     tcc->compile( (
       (*prevLabij)["abij"] <<= -1.0*(*prevLabij)["abij"],
-      //(*prevLabij)["abij"] <<= -1*(*beta)[""] * (*prevLabij)["abij"],
+      (*prevLabij)["abij"] <<= -1*(*beta)[""] * (*prevLabij)["abij"],
       (*prevLabij)["abij"]  += (*Xabij)["abij"],
-      //(*prevLabij)["abij"]  -= (*energy)[""] * (*Labij)["abij"],
+      (*prevLabij)["abij"]  -= (*energy)[""] * (*Labij)["abij"],
       (*prevLabij)["abij"]  -= (*Labij)["abij"],
       // TODO: Swap pointers instead of values
       (*Xabij)["abij"] <<= (*prevLabij)["abij"],
