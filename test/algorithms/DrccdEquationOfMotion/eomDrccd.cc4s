@@ -14,7 +14,7 @@ CoulombIntegralsFromVertex [
 DrccdEnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
-  (maxIterations 64)
+  (maxIterations 32)
   (unrestricted 1)
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
@@ -26,7 +26,7 @@ DrccdEquationOfMotion [
   DrccdDoublesAmplitudes
   PPHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
-  (maxIterations 64)
+  (maxIterations 128)
   (unrestricted 1)
 ] [
 ].
