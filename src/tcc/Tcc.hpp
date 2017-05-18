@@ -149,7 +149,7 @@ namespace tcc {
       operation->alpha = contraction->alpha;
       operation->beta = move->beta;
 
-      LOG(1, "TCC") <<
+      LOG(2, "TCC") <<
         "possibilites tried=" << triedPossibilitiesCount <<
         ", FLOPS=" <<
           operation->costs.multiplicationsCount +
