@@ -136,7 +136,21 @@ void DrccdEquationOfMotion::run() {
   (*ctfRabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfRabij)["abij"];
   (*ctfLabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfLabij)["abij"];
 
+  // Compute Xabij with the binormalized L
+  leftIterationOperation->execute();
+
+  (*ctfXabij)["abij"] += energyShift * (*ctfLabij)["abij"];
+
+  CTF::Scalar<> energy;
+
+  energy[""] = 0.5 * spins * spins * (*ctfXabij)["abij"] * (*ctfRabij)["abij"];
+  energy[""] -= 0.5 * spins * (*ctfXabij)["abij"] * (*ctfRabij)["abji"];
+
+  //double e(ctfEnergy->get_val());
+  LOG(0, "DrccdEOM") << "e= " << energy << std::endl;
+
 }
+
 
 void DrccdEquationOfMotion::determineEnergyShift() {
   typedef CTF::Tensor<> T;
@@ -159,7 +173,7 @@ void DrccdEquationOfMotion::determineEnergyShift() {
   free(energies);
 
   // many-body system can have No times single body excitation energies
-  energyShift *= 2*epsi->lens[0];
+  energyShift *= epsi->lens[0];
 
   // allow manual override
   energyShift = getRealArgument("energyShift", energyShift);
