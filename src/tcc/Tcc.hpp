@@ -306,8 +306,12 @@ namespace tcc {
       }
       uniqueIndices[u] = 0;
 
-      // skip contractions with no common indices
-      if (commonIndicesCount == 0) {
+      // skip contractions with no common indices unless one of them is scalar
+      if (
+        commonIndicesCount == 0 &&
+        a->getResultIndices().length() > 0 &&
+        b->getResultIndices().length() > 0
+      ) {
         return std::shared_ptr<ContractionOperation<F>>();
       }
 
