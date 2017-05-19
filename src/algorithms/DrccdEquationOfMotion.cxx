@@ -63,7 +63,9 @@ void DrccdEquationOfMotion::run() {
   auto prevRabij( tcc->createTensor(Tabij, "prevRabij") );
   auto prevLabij( tcc->createTensor(Tabij, "prevLabij") );
   auto Xabij( tcc->createTensor(Tabij, "Xabij") );
+  auto Yabij( tcc->createTensor(Tabij, "Yabij") );
 
+  auto ctfXabij(&Xabij->getMachineTensor<MT>()->tensor);
   auto ctfRabij(&Rabij->getMachineTensor<MT>()->tensor);
   auto ctfLabij(&Labij->getMachineTensor<MT>()->tensor);
 
@@ -106,13 +108,12 @@ void DrccdEquationOfMotion::run() {
 
   auto buildNewR(
     tcc->compile( (
-      (*prevRabij)["abij"] <<= -1.0*(*beta)[""] * (*prevRabij)["abij"],
-      (*prevRabij)["abij"]  += (*Xabij)["abij"],
-      (*prevRabij)["abij"]  -= (*energy)[""] * (*Rabij)["abij"],
+      (*Yabij)["abij"] <<= -1.0*(*beta)[""] * (*prevRabij)["abij"],
+      (*Yabij)["abij"]  += (*Xabij)["abij"],
+      (*Yabij)["abij"]  -= (*energy)[""] * (*Rabij)["abij"],
       //TODO: Swap pointers instead of values
-      (*Xabij)["abij"] <<= (*prevRabij)["abij"],
       (*prevRabij)["abij"] <<= (*Rabij)["abij"],
-      (*Rabij)["abij"] <<= (*Xabij)["abij"]
+      (*Rabij)["abij"] <<= (*Yabij)["abij"]
     ) )
   );
 
@@ -128,13 +129,12 @@ void DrccdEquationOfMotion::run() {
 
   auto buildNewL(
     tcc->compile( (
-      (*prevLabij)["abij"] <<= -1.0*(*delta)[""] * (*prevLabij)["abij"],
-      (*prevLabij)["abij"]  += (*Xabij)["abij"],
-      (*prevLabij)["abij"]  -= (*energy)[""] * (*Labij)["abij"],
-      // TODO: Swap pointers instead of values
-      (*Xabij)["abij"] <<= (*prevLabij)["abij"],
+      (*Yabij)["abij"] <<= -1.0*(*delta)[""] * (*prevLabij)["abij"],
+      (*Yabij)["abij"]  += (*Xabij)["abij"],
+      (*Yabij)["abij"]  -= (*energy)[""] * (*Labij)["abij"],
+      //TODO: Swap pointers instead of values
       (*prevLabij)["abij"] <<= (*Labij)["abij"],
-      (*Labij)["abij"] <<= (*Xabij)["abij"]
+      (*Labij)["abij"] <<= (*Yabij)["abij"]
     ) )
   );
 
@@ -180,27 +180,6 @@ void DrccdEquationOfMotion::run() {
 
     LOG(0, "DrccdEOM") << "e= " << e+energyShift << std::endl;
   }
-
-  //CTF::Scalar<> biNorm;
-  //biNorm[""] = (*ctfRabij)["abij"] * (*ctfLabij)["abij"];
-
-  //double biNormValue(biNorm.get_val());
-  //LOG(1, "DrccdEOM") << "|LR| " << biNormValue << std::endl;
-
-  //double lNorm(ctfLabij->norm1());
-  //double rNorm(ctfRabij->norm1());
-  //LOG(1, "DrccdEOM") << "|L| " << lNorm << std::endl;
-  //LOG(1, "DrccdEOM") << "|R| " << rNorm << std::endl;
-
-  //(*ctfRabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfRabij)["abij"];
-  //(*ctfLabij)["abij"] = ( 1 / std::sqrt(biNormValue) ) * (*ctfLabij)["abij"];
-
-  //// Compute prevRabij with the binormalized L
-  //LHbar->execute();
-
-  //(*ctfPrevRabij)["abij"] += energyShift * (*ctfLabij)["abij"];
-
-  //LOG(0, "DrccdEOM") << "e= " << energy << std::endl;
 
 }
 
