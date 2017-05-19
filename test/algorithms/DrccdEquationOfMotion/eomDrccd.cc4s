@@ -1,8 +1,27 @@
 CoulombVertexReader [
-  (file "../../resources/CoulombVertex.bin")
+  (file "../../resources/4alex/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.74")
   (unrestricted 1)
 ] [
-  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (CoulombVertex FullCoulombVertex)
+  HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombVertexSingularVectors [
+  FullCoulombVertex
+  (fieldVariables 100)
+  (reduction 0.5)
+] [
+  CoulombVertexSingularVectors
+  CoulombVertexSingularValues
+].
+
+TensorWriter [(Data CoulombVertexSingularValues)] [].
+
+ApproximateCoulombVertex [
+  FullCoulombVertex
+  CoulombVertexSingularVectors
+] [
+  CoulombVertex
 ].
 
 CoulombIntegralsFromVertex [
