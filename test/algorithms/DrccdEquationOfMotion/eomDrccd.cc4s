@@ -45,7 +45,27 @@ DrccdEquationOfMotion [
   DrccdDoublesAmplitudes
   PPHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
-  (maxIterations 128)
+  (fullDiagonalization 1)
+  (maxIterations 10)
   (unrestricted 1)
 ] [
+  SimlarityTransformedHamiltonian22
+  SimlarityTransformedHamiltonian20
+  EnergyDenominators
 ].
+
+TensorWriter [
+  (Data SimlarityTransformedHamiltonian22)
+  (rowIndexOrder "ijkl")
+  (columnIndexOrder "mnop")
+] [].
+
+TensorWriter [
+  (Data SimlarityTransformedHamiltonian20)
+  (columnIndexOrder "ijkl")
+  (rowIndexOrder "")
+] [].
+
+TensorWriter [ (Data ParticleEigenEnergies) ] [].
+TensorWriter [ (Data HoleEigenEnergies) ] [].
+TensorWriter [ (Data EnergyDenominators) ] [].
