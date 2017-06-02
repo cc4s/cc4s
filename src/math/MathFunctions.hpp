@@ -3,6 +3,7 @@
 
 #include <math/Complex.hpp>
 #include <cmath>
+#include <string>
 #include <ctf.hpp>
 
 namespace cc4s {
@@ -56,6 +57,12 @@ namespace cc4s {
     s.contract(1.0, t,indices, t,indices, 0.0,"", fRealDot);
     return std::sqrt(std::real(s.get_val()));
   }
+
+  /**
+   * \brief Calculate the sign of a permutation of strings, e.g.
+   * sign("abcd", "bacd") = -1
+   */
+  int permutationSign(std::string original, std::string permuted);
 }
 
 #endif
