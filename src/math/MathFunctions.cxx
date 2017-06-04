@@ -1,6 +1,7 @@
 #include <math/MathFunctions.hpp>
 #include <cmath>
 
+// TODO: Create a unit test specialized logger
 int cc4s::permutationSign(std::string original, std::string permuted) {
     std::cout << "======================================" << std::endl;
     // Number of permutations
@@ -51,5 +52,6 @@ int cc4s::permutationSign(std::string original, std::string permuted) {
     }
     std::cout << "P ( " << original << " -> " << permuted << " ) "
               << "  =>  (-1)^" << permutations <<  std::endl;
+    std::cout <<  pow(-1, permutations) <<  std::endl;
     return pow(-1, permutations);
 }
