@@ -41,4 +41,8 @@ TEST_CASE( "Test sign of permutation up to degree 4", "[math]" ) {
   REQUIRE( -1 == cc4s::permutationSign("abcd", "dcab") );
   REQUIRE(  1 == cc4s::permutationSign("abcd", "dcba") );
 
+  // S_4 repeating
+  REQUIRE(   1 == cc4s::permutationSign("aacd", "aacd") );
+  REQUIRE(  -1 == cc4s::permutationSign("aacd", "aadc") );
+
 }
