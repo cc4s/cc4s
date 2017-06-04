@@ -63,6 +63,19 @@ namespace cc4s {
    * sign("abcd", "bacd") = -1
    */
   int permutationSign(std::string original, std::string permuted);
+
+  /**
+   * \brief Apply a permutation operator and antisymmetrize accordingly, e.g.
+   *  antiSymmetrize(X, "abcd", "abdc") is replaced by
+   *  -1 X["abcd"] = X["abcd"] + sign(abcd -> abdc) X["abdc"]
+   *
+   */
+  template <typename F>
+  inline void antiSymmetrize(std::string indices, std::string permuted,
+      CTF::Tensor<F> &t) {
+    double sign(permutationSign(indices, permuted));
+    t[indices.c_str()] += sign * t[permuted.c_str()];
+  }
 }
 
 #endif

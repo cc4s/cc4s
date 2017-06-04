@@ -77,5 +77,6 @@ build/${CONFIG}/obj/algorithms/experimental/StochasticContraction.o \
 build/${CONFIG}/obj/algorithms/DrccdEquationOfMotion.o \
 
 TESTS_OBJECTS = \
+build/${CONFIG}/obj/math/tests/Antisymmetrize.o \
 build/${CONFIG}/obj/math/tests/PermutationSign.o \
 build/${CONFIG}/obj/test/main.o  \
