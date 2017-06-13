@@ -1,0 +1,56 @@
+CoulombVertexReader [
+  (file "../../resources/4alex/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.74")
+  (unrestricted 1)
+] [
+  (CoulombVertex FullCoulombVertex)
+  HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombVertexSingularVectors [
+  FullCoulombVertex
+  (fieldVariables 100)
+  (reduction 0.5)
+] [
+  CoulombVertexSingularVectors
+  CoulombVertexSingularValues
+].
+
+TensorWriter [(Data CoulombVertexSingularValues)] [].
+
+ApproximateCoulombVertex [
+  FullCoulombVertex
+  CoulombVertexSingularVectors
+] [
+  CoulombVertex
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+].
+
+Mp2EquationOfMotion [
+  Mp2DoublesAmplitudes
+  PPHHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (unrestricted 1)
+] [
+  SimlarityTransformedHamiltonianSD
+].
+
+TensorWriter [
+  (Data SimlarityTransformedHamiltonianSD)
+  (rowIndexOrder "i")
+  (columnIndexOrder "n")
+] [].
+
+% TensorWriter [
+%   (Data SimlarityTransformedHamiltonian20)
+%   (columnIndexOrder "ijkl")
+%   (rowIndexOrder "")
+% ] [].
+% 
+% TensorWriter [ (Data ParticleEigenEnergies) ] [].
+% TensorWriter [ (Data HoleEigenEnergies) ] [].
+% TensorWriter [ (Data EnergyDenominators) ] [].
