@@ -63,26 +63,70 @@ void Mp2EquationOfMotion::run() {
   T Rabij(false, Vabij);
   T *Rai( new CTF::Tensor<>(2, oneBodyLens, oneBodySyms, *Cc4s::world, "Rai") );
 
-  int hLens[] = {totalDimension, totalDimension};
+  //The totalDimension should be totalDimension, but the zero-particle part is
+  //zero, so we restrict the hamiltonian to the space spanned by the singles
+  //and doubles excitations
+  int hLens[] = {totalDimension-1, totalDimension-1};
   int hSyms[] = {NS, NS};
   T *Hpq( new CTF::Tensor<>(2, hLens, hSyms, *Cc4s::world, "Lai") );
 
-  auto H20(new CTF::Tensor<>(*Vabij));
-  auto Habij(new CTF::Tensor<>(*Vabij));
+  double energy;
 
-  (*H20)["abij"] -= (*Vabij)["abji"];
+  for (int64_t i = 0 ; i < totalDimension-1 ; i++) {
+      getCanonicalPerturbationBasis(*Lai, Labij, i);
+    for (int64_t j = 0 ; j < totalDimension-1; j++) {
+      //getCanonicalPerturbationBasis(*Rai, Rabij, i);
 
-  // cdkl are row indices and abij are column indices
-  int lens[] = {Nv,Nv,No,No, Nv,Nv,No,No};
-  int syms[] = {NS,NS,NS,NS, NS,NS,NS,NS};
-  auto H22( new CTF::Tensor<>(8, lens, syms, *Cc4s::world, "H22cdklabij") );
-  // diagonal elements
-  (*H22)["abijabij"] = Dabij["abij"];
-  (*H22)["cbkjabij"] += (*Habij)["acik"];
-  (*H22)["adilabij"] += (*Habij)["bdjl"];
+    }
+  }
 
-  allocatedTensorArgument("SimlarityTransformedHamiltonian22", H22);
-  allocatedTensorArgument("SimlarityTransformedHamiltonian20", H20);
-  allocatedTensorArgument("EnergyDenominators", new CTF::Tensor<>(Dabij));
+/*
+ *  auto H20(new CTF::Tensor<>(*Vabij));
+ *  auto Habij(new CTF::Tensor<>(*Vabij));
+ *
+ *  (*H20)["abij"] -= (*Vabij)["abji"];
+ *
+ *  // cdkl are row indices and abij are column indices
+ *  int lens[] = {Nv,Nv,No,No, Nv,Nv,No,No};
+ *  int syms[] = {NS,NS,NS,NS, NS,NS,NS,NS};
+ *  auto H22( new CTF::Tensor<>(8, lens, syms, *Cc4s::world, "H22cdklabij") );
+ *  // diagonal elements
+ *  (*H22)["abijabij"] = Dabij["abij"];
+ *  (*H22)["cbkjabij"] += (*Habij)["acik"];
+ *  (*H22)["adilabij"] += (*Habij)["bdjl"];
+ *
+ *  allocatedTensorArgument("SimlarityTransformedHamiltonian22", H22);
+ *  allocatedTensorArgument("SimlarityTransformedHamiltonian20", H20);
+ *  allocatedTensorArgument("EnergyDenominators", new CTF::Tensor<>(Dabij));
+ */
 
 }
+
+template <typename F>
+void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
+    CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, int64_t i) {
+  int oneBodyLength(Tai.lens[0] * Tai.lens[1]);
+  int twoBodyLength(
+      Tabij.lens[0] * Tabij.lens[1] * Tabij.lens[2] *  Tabij.lens[3]
+  );
+  int64_t indices[] = {i};
+  F values[] = {1.0};
+
+  Tabij["abij"] = 0;
+  Tai["ai"] = 0;
+
+  if (i+1 <= oneBodyLength) { // One body regime
+    Tai.write(1, indices, values);
+  } else { // Two body regime
+    indices[0] -= oneBodyLength;
+    Tabij.write(1, indices, values);
+  }
+  Tai.print();
+  Tabij.print();
+
+}
+
+// instantiate
+template
+void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
+    CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, int64_t i);
