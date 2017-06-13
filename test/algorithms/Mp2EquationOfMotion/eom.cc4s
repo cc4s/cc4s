@@ -42,15 +42,6 @@ Mp2EquationOfMotion [
 TensorWriter [
   (Data SimlarityTransformedHamiltonianSD)
   (rowIndexOrder "i")
-  (columnIndexOrder "n")
+  (columnIndexOrder "j")
 ] [].
 
-% TensorWriter [
-%   (Data SimlarityTransformedHamiltonian20)
-%   (columnIndexOrder "ijkl")
-%   (rowIndexOrder "")
-% ] [].
-% 
-% TensorWriter [ (Data ParticleEigenEnergies) ] [].
-% TensorWriter [ (Data HoleEigenEnergies) ] [].
-% TensorWriter [ (Data EnergyDenominators) ] [].
