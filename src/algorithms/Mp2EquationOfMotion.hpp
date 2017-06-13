@@ -1,6 +1,6 @@
 /*Copyright (c) 2017, Andreas Grueneis, Felix Hummel and Alejandro Gallo, all rights reserved.*/
-#ifndef DRCCD_DENSITIES_DEFINED
-#define DRCCD_DENSITIES_DEFINED
+#ifndef MP2_EOM_DEFINED
+#define MP2_EOM_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 

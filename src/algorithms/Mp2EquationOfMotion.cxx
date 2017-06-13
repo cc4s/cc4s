@@ -63,6 +63,10 @@ void Mp2EquationOfMotion::run() {
   T Rabij(false, Vabij);
   T *Rai( new CTF::Tensor<>(2, oneBodyLens, oneBodySyms, *Cc4s::world, "Rai") );
 
+  int hLens[] = {totalDimension, totalDimension};
+  int hSyms[] = {NS, NS};
+  T *Hpq( new CTF::Tensor<>(2, hLens, hSyms, *Cc4s::world, "Lai") );
+
   auto H20(new CTF::Tensor<>(*Vabij));
   auto Habij(new CTF::Tensor<>(*Vabij));
 
