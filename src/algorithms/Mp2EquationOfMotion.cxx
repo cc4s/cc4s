@@ -59,9 +59,19 @@ void Mp2EquationOfMotion::run() {
   int oneBodyLens[] = {Nv, No};
   int oneBodySyms[] = {NS, NS};
   T Labij(false, Vabij);
-  T *Lai( new CTF::Tensor<>(2, oneBodyLens, oneBodySyms, *Cc4s::world, "Lai") );
+  T Lai( new CTF::Tensor<>(2, oneBodyLens, oneBodySyms, *Cc4s::world, "Lai") );
   T Rabij(false, Vabij);
-  T *Rai( new CTF::Tensor<>(2, oneBodyLens, oneBodySyms, *Cc4s::world, "Rai") );
+  T Rai( new CTF::Tensor<>(2, oneBodyLens, oneBodySyms, *Cc4s::world, "Rai") );
+
+  // kinetic terms
+  int kineticLensVirtual[] = {Nv, Nv};
+  int kineticSyms[] = {NS, NS};
+  T Fab( new CTF::Tensor<>(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab") );
+  int kineticLensOccupied[] = {No, No};
+  T Fij( new CTF::Tensor<>(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij") );
+
+  Fab["aa"] = (*epsa)["a"];
+  Fij["ii"] = (*epsi)["i"];
 
   //The totalDimension should be totalDimension, but the zero-particle part is
   //zero, so we restrict the hamiltonian to the space spanned by the singles
@@ -70,13 +80,38 @@ void Mp2EquationOfMotion::run() {
   int hSyms[] = {NS, NS};
   T *Hpq( new CTF::Tensor<>(2, hLens, hSyms, *Cc4s::world, "Lai") );
 
-  double energy;
+  CTF::Scalar<> energy(0.0);
 
   for (int64_t i = 0 ; i < totalDimension-1 ; i++) {
-      getCanonicalPerturbationBasis(*Lai, Labij, i);
+    getCanonicalPerturbationBasis(Lai, Labij, i);
     for (int64_t j = 0 ; j < totalDimension-1; j++) {
-      //getCanonicalPerturbationBasis(*Rai, Rabij, i);
-
+      getCanonicalPerturbationBasis(Rai, Rabij, i);
+      energy[""]  = ( + 0.5 ) * Lai["ib"] *  (*Vabij)["klie"] * Rabij["ebkl"];
+      energy[""] += ( + 0.5 ) * Lai["ib"] *  (*Vabij)["kbde"] * Rabij["deki"];
+      energy[""] += ( - 1.0 ) * Labij ["ijcd"] * Fij["mi"] * Rabij["cdmj"];
+      energy[""] += ( + 1.0 ) * Labij ["ijcd"] * Fij["mj"] * Rabij["cdmi"];
+      energy[""] += ( - 1.0 ) * Labij["ijdc"] * Fab["de"] * Rabij["ecij"];
+      energy[""] += ( + 1.0 ) * Labij["ijdc"] * Fab["ce"] * Rabij["edij"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * (*Vabij)["mdif"] * Rabij["fcmj"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Vabij)["mcif"] * Rabij["fdmj"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Vabij)["mdjf"] * Rabij["fcmi"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * (*Vabij)["mcjf"] * Rabij["fdmi"];
+      energy[""] += ( + 0.5 ) * Labij["ijcd"] * Tabij["edij"] * (*Vabij)["noeh"] * Rabij["hcno"];
+      energy[""] += ( - 0.5 ) * Labij["ijcd"] * Tabij["ecij"] * (*Vabij)["noeh"] * Rabij["hdno"];
+      energy[""] += ( - 0.5 ) * Labij["ijcd"] * Tabij["cdmi"] * (*Vabij)["mngh"] * Rabij["ghnj"];
+      energy[""] += ( + 0.5 ) * Labij["ijcd"] * Tabij["cdmj"] * (*Vabij)["mngh"] * Rabij["ghni"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["edni"] * (*Vabij)["noeh"] * Rabij["hcoj"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ecni"] * (*Vabij)["noeh"] * Rabij["hdoj"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ednj"] * (*Vabij)["noeh"] * Rabij["hcoi"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["ecnj"] * (*Vabij)["noeh"] * Rabij["hdoi"];
+      energy[""] += ( - 0.5 ) * Labij["ijcd"] * Tabij["efoi"] * (*Vabij)["opef"] * Rabij["cdpj"];
+      energy[""] += ( + 0.5 ) * Labij["ijcd"] * Tabij["efoj"] * (*Vabij)["opef"] * Rabij["cdpi"];
+      energy[""] += ( + 0.5 ) * Labij["ijcd"] * Tabij["edno"] * (*Vabij)["noeh"] * Rabij["hcij"];
+      energy[""] += ( - 0.5 ) * Labij["ijcd"] * Tabij["ecno"] * (*Vabij)["noeh"] * Rabij["hdij"];
+      energy[""] += ( + 0.5 )  * Labij["ijcd"] * (*Vabij)["mnij"] * Rabij["cdmn"];
+      energy[""] += ( + 0.5 )  * Labij["ijcd"] * (*Vabij)["cdef"] * Rabij["efij"];
+      energy[""] += ( + 0.25 ) * Labij["ijcd"] * Tabij["efij"] * (*Vabij)["opef"] * Rabij["cdop"];
+      energy[""] += ( + 0.25 ) * Labij["ijcd"] * Tabij["cdmn"] * (*Vabij)["mngh"] * Rabij["ghij"];
     }
   }
 
@@ -121,8 +156,8 @@ void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
     indices[0] -= oneBodyLength;
     Tabij.write(1, indices, values);
   }
-  Tai.print();
-  Tabij.print();
+  //Tai.print();
+  //Tabij.print();
 
 }
 
