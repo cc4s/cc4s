@@ -3,7 +3,6 @@
 
 // TODO: Create a unit test specialized logger
 int cc4s::permutationSign(std::string original, std::string permuted) {
-    std::cout << "======================================" << std::endl;
     // Number of permutations
     int permutations = 0;
     int length = original.length();
