@@ -87,13 +87,13 @@ void Mp2EquationOfMotion::run() {
   for (int64_t i = 0 ; i < totalDimension-1 ; i++) {
     getCanonicalPerturbationBasis(*Lai, Labij, i);
     for (int64_t j = 0 ; j < totalDimension-1; j++) {
-      getCanonicalPerturbationBasis(*Rai, Rabij, i);
-      energy[""]  = ( + 0.5 ) * (*Lai)["ib"] *  (*Vabij)["klie"] * Rabij["ebkl"];
-      energy[""] += ( + 0.5 ) * (*Lai)["ib"] *  (*Vabij)["kbde"] * Rabij["deki"];
-      energy[""] += ( - 1.0 ) * Labij ["ijcd"] * Fij["mi"] * Rabij["cdmj"];
+      getCanonicalPerturbationBasis(*Rai, Rabij, j);
+      //energy[""]  = ( + 0.5 ) * (*Lai)["ib"] *  (*Vabij)["klie"] * Rabij["ebkl"];
+      //energy[""] += ( + 0.5 ) * (*Lai)["ib"] *  (*Vabij)["kbde"] * Rabij["deki"];
+      energy[""]  = ( - 1.0 ) * Labij ["ijcd"] * Fij["mi"] * Rabij["cdmj"];
       energy[""] += ( + 1.0 ) * Labij ["ijcd"] * Fij["mj"] * Rabij["cdmi"];
-      energy[""] += ( - 1.0 ) * Labij["ijdc"] * Fab["de"] * Rabij["ecij"];
-      energy[""] += ( + 1.0 ) * Labij["ijdc"] * Fab["ce"] * Rabij["edij"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Fab["de"] * Rabij["ecij"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Fab["ce"] * Rabij["edij"];
       energy[""] += ( + 1.0 ) * Labij["ijcd"] * (*Vabij)["mdif"] * Rabij["fcmj"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Vabij)["mcif"] * Rabij["fdmj"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Vabij)["mdjf"] * Rabij["fcmi"];
