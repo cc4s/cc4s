@@ -86,11 +86,45 @@ void Mp2EquationOfMotion::run() {
 
   for (int64_t i = 0 ; i < totalDimension-1 ; i++) {
     getCanonicalPerturbationBasis(*Lai, Labij, i);
+    Labij["aaij"] = 0.0;
+    Labij["abii"] = 0.0;
     for (int64_t j = 0 ; j < totalDimension-1; j++) {
       getCanonicalPerturbationBasis(*Rai, Rabij, j);
-      //energy[""]  = ( + 0.5 ) * (*Lai)["ib"] *  (*Vabij)["klie"] * Rabij["ebkl"];
-      //energy[""] += ( + 0.5 ) * (*Lai)["ib"] *  (*Vabij)["kbde"] * Rabij["deki"];
-      energy[""]  = ( - 1.0 ) * Labij ["ijcd"] * Fij["mi"] * Rabij["cdmj"];
+      Rabij["abii"] = 0.0;
+      Rabij["aaij"] = 0.0;
+
+      // From ccd - eom
+      energy[""] = ( - 1.0 ) * (*Lai)["ib"] *  Fij["ki"]     * (*Rai)["bk"];
+      energy[""] += ( + 1.0 ) * (*Lai)["ib"] *  Fab["bc"]     * (*Rai)["ci"];
+      energy[""] += ( - 1.0 ) * (*Lai)["ib"] *  (*Vabij)["kbid"] * (*Rai)["dk"];
+      energy[""] += ( + 1.0 ) * (*Lai)["ib"] *  Tabij["cbli"] * (*Vabij)["lmcf"] * (*Rai)["fm"];
+      energy[""] += ( - 0.5 ) * (*Lai)["ib"] *  Tabij["cdmi"] * (*Vabij)["mncd"] * (*Rai)["bn"];
+      energy[""] += ( - 0.5 ) * (*Lai)["ib"] *  Tabij["cblm"] * (*Vabij)["lmcf"] * (*Rai)["fi"];
+      energy[""] += ( + 0.5 ) * (*Lai)["ib"] *  (*Vabij)["klie"] * Rabij["ebkl"];
+      energy[""] += ( + 0.5 ) * (*Lai)["ib"] *  (*Vabij)["kbde"] * Rabij["deki"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Vabij)["mdij"] * (*Rai)["cm"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * (*Vabij)["mcij"] * (*Rai)["dm"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * (*Vabij)["cdie"] * (*Rai)["ej"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Vabij)["cdje"] * (*Rai)["ei"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["cdmj"] * (*Vabij)["mnig"] * (*Rai)["gn"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["cdmj"] * (*Vabij)["mnig"] * (*Rai)["gn"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ednj"] * (*Vabij)["noie"] * (*Rai)["co"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["ecnj"] * (*Vabij)["noie"] * (*Rai)["do"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["edni"] * (*Vabij)["noje"] * (*Rai)["co"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ecni"] * (*Vabij)["noje"] * (*Rai)["do"];
+      energy[""] += ( + 0.5 ) * Labij["ijcd"] * Tabij["cdmn"] * (*Vabij)["mnig"] * (*Rai)["gj"];
+      energy[""] += ( - 0.5 ) * Labij["ijcd"] * Tabij["cdmn"] * (*Vabij)["mnjg"] * (*Rai)["gi"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ecij"] * (*Vabij)["ndeg"] * (*Rai)["gn"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["edij"] * (*Vabij)["nceg"] * (*Rai)["gn"];
+      energy[""] += ( - 0.5 ) * Labij["ijcd"] * Tabij["efij"] * (*Vabij)["odef"] * (*Rai)["co"];
+      energy[""] += ( + 0.5 ) * Labij["ijcd"] * Tabij["efij"] * (*Vabij)["ocef"] * (*Rai)["do"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ecni"] * (*Vabij)["ndeg"] * (*Rai)["gj"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["edni"] * (*Vabij)["nceg"] * (*Rai)["gj"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["ecnj"] * (*Vabij)["ndeg"] * (*Rai)["gi"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ednj"] * (*Vabij)["nceg"] * (*Rai)["gi"];
+
+      // From ccd - eomd
+      energy[""] += ( - 1.0 ) * Labij ["ijcd"] * Fij["mi"] * Rabij["cdmj"];
       energy[""] += ( + 1.0 ) * Labij ["ijcd"] * Fij["mj"] * Rabij["cdmi"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * Fab["de"] * Rabij["ecij"];
       energy[""] += ( + 1.0 ) * Labij["ijcd"] * Fab["ce"] * Rabij["edij"];
@@ -114,6 +148,7 @@ void Mp2EquationOfMotion::run() {
       energy[""] += ( + 0.5 )  * Labij["ijcd"] * (*Vabij)["cdef"] * Rabij["efij"];
       energy[""] += ( + 0.25 ) * Labij["ijcd"] * Tabij["efij"] * (*Vabij)["opef"] * Rabij["cdop"];
       energy[""] += ( + 0.25 ) * Labij["ijcd"] * Tabij["cdmn"] * (*Vabij)["mngh"] * Rabij["ghij"];
+
       energy_val = energy.get_val();
       hValues[0] = energy_val;
       hIndices[0] = i + j * (totalDimension - 1);
