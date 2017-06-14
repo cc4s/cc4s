@@ -133,18 +133,33 @@ void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
   int twoBodyLength(
       Tabij.lens[0] * Tabij.lens[1] * Tabij.lens[2] *  Tabij.lens[3]
   );
-  int64_t indices[] = {i};
-  F values[] = {1.0};
 
   Tabij["abij"] = 0;
   Tai["ai"] = 0;
+  int64_t *indices;
+  F *values;
+  int arrayCount;
+
+  if (Tabij.wrld->rank == 0) {
+    arrayCount = 1;
+    values = (F*) malloc(arrayCount);
+    indices = (int64_t*) malloc(arrayCount);
+    indices[0] = i;
+    values[0] = 1.0;
+  } else {
+    arrayCount = 0;
+    values = (F*) malloc(arrayCount);
+    indices = (int64_t*) malloc(arrayCount);
+  }
 
   if (i+1 <= oneBodyLength) { // One body regime
-    Tai.write(1, indices, values);
+    Tai.write(arrayCount, indices, values);
   } else { // Two body regime
-    indices[0] -= oneBodyLength;
-    Tabij.write(1, indices, values);
+    indices[0] = i - oneBodyLength;
+    Tabij.write(arrayCount, indices, values);
   }
+  //Tai.print();
+  //Tabij.print();
 
 }
 
