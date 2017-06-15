@@ -90,14 +90,11 @@ void Mp2EquationOfMotion::run() {
     getCanonicalPerturbationBasis(*Lai, Labij, i);
     Labij["aaij"] = 0.0;
     Labij["abii"] = 0.0;
-    //(*Lai)["aa"] = 0.0;
     for (int64_t j = 0 ; j < totalDimension-1; j++) {
       getCanonicalPerturbationBasis(*Rai, Rabij, j);
       Rabij["abii"] = 0.0;
       Rabij["aaij"] = 0.0;
-      //(*Rai)["aa"] = 0.0;
 
-      // From ccd - eom
       energy[""] = ( - 1.0 )  *  (*Lai)["ib"]  *  Fij["ki"]        *  (*Rai)["bk"];
       energy[""] += ( + 1.0 ) *  (*Lai)["ib"]  *  Fab["bc"]        *  (*Rai)["ci"];
       energy[""] += ( - 1.0 ) *  (*Lai)["ib"]  *  (*Vabij)["kbid"] *  (*Rai)["dk"];
