@@ -38,15 +38,61 @@ void Mp2EquationOfMotion::run() {
   LOG(1, "MP2_EOM") << "Problem dimension " << totalDimension << std::endl;
 
   // Get couloumb integrals (these shoul not be antisymmetrized)
-  T *Vabij(getTensorArgument<double, T>("PPHHCoulombIntegrals"));
   T *Vijkl(getTensorArgument<double, T>("HHHHCoulombIntegrals"));
+  T *Vabcd(getTensorArgument<double, T>("PPPPCoulombIntegrals")); 
+
+  T *Vabij(getTensorArgument<double, T>("PPHHCoulombIntegrals"));
+  // T *Vijab(getTensorArgument<double, T>("HHPPCoulombIntegrals")); // swap PPHH (done)
+
   T *Vijka(getTensorArgument<double, T>("HHHPCoulombIntegrals"));
-  T *Vijab(getTensorArgument<double, T>("HHPPCoulombIntegrals"));
-  T *Viajk(getTensorArgument<double, T>("HPHHCoulombIntegrals"));
-  T *Viajb(getTensorArgument<double, T>("HPHPCoulombIntegrals"));
-  T *Viabc(getTensorArgument<double, T>("HPPPCoulombIntegrals"));
-  T *Vabic(getTensorArgument<double, T>("PPHPCoulombIntegrals"));
-  T *Vabcd(getTensorArgument<double, T>("PPPPCoulombIntegrals"));
+  // T *Viajk(getTensorArgument<double, T>("HPHHCoulombIntegrals")); // swap HHHP (done)
+
+  T *Vaibj(getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
+  //T *Viajb(getTensorArgument<double, T>("HPHPCoulombIntegrals")); // swap PHPH (done)
+
+  T *Vabci(getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
+  //T *Viabc(getTensorArgument<double, T>("HPPPCoulombIntegrals")); // swap PPPH (done)
+  //T *Vabic(getTensorArgument<double, T>("PPHPCoulombIntegrals")); // swap PPPH (done)
+
+  int syms[] = {NS, NS, NS, NS};
+
+  //  Vijab
+  int oovv[] = { No, No, Nv, Nv };
+  T *Vijab(
+    new T(4, oovv, syms, *Cc4s::world, "Vijab")
+  );
+  (*Vijab)["ijab"] =  (*Vabij)["abij"];
+
+  //  Viajk
+  int ovoo[] = { No, Nv, No, No };
+  T *Viajk(
+    new T(4, ovoo, syms, *Cc4s::world, "Viajk")
+  );
+  (*Viajk)["iajk"] =  (*Vijka)["ijka"];
+
+  // Viajb
+  int ovov[] = { No, Nv, No, Nv };
+  T *Viajb(
+    new T(4, ovov, syms, *Cc4s::world, "Viajb")
+  );
+  (*Viajb)["iajb"] =  (*Vaibj)["aibj"];
+
+  // Viabc
+  int ovvv[] = { No, Nv, Nv, Nv };
+  T *Viabc(
+    new T(4, ovvv, syms, *Cc4s::world, "Viabc")
+  );
+  (*Viabc)["iabc"] =  (*Vabci)["abci"];
+
+  // Vabic
+  int vvov[] = { Nv, Nv, No, Nv };
+  T *Vabic(
+    new T(4, vvov, syms, *Cc4s::world, "Vabic")
+  );
+  (*Vabic)["abic"] =  (*Vabci)["abci"];
+
+
+
 
   LOG(1, "MP2_EOM") << "Antisymmetrizing Vabij " << std::endl;
   (*Vabij)["abij"] -= (*Vabij)["abji"];
@@ -63,22 +109,23 @@ void Mp2EquationOfMotion::run() {
   Tabij.contract(1.0, (*Vabij),"abij", Tabij,"abij", 0.0,"abij", fDivide);
 
   // Create L and R
-  int oneBodyLens[] = {Nv, No};
   int oneBodySyms[] = {NS, NS};
-  T *Lai( new T(2, oneBodyLens, oneBodySyms, *Cc4s::world, "Lai") );
-  T Labij(false, Vabij);
-  T *Rai( new T(2, oneBodyLens, oneBodySyms, *Cc4s::world, "Rai") );
+  int oneBodyLensL[] = {No, Nv};
+  T *Lai( new T(2, oneBodyLensL, oneBodySyms, *Cc4s::world, "Lai") );
+  T Labij(false, Vijab);
+  int oneBodyLensR[] = {Nv, No};
+  T *Rai( new T(2, oneBodyLensR, oneBodySyms, *Cc4s::world, "Rai") );
   T Rabij(false, Vabij);
 
   // kinetic terms
   int kineticLensVirtual[] = {Nv, Nv};
   int kineticSyms[] = {NS, NS};
-  T Fab( new T(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab") );
+  T *Fab( new T(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab") );
   int kineticLensOccupied[] = {No, No};
-  T Fij( new T(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij") );
+  T *Fij( new T(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij") );
 
-  Fab["aa"] = (*epsa)["a"];
-  Fij["ii"] = (*epsi)["i"];
+  (*Fab)["aa"] = (*epsa)["a"];
+  (*Fij)["ii"] = (*epsi)["i"];
 
   //The totalDimension should be totalDimension, but the zero-particle part is
   //zero, so we restrict the hamiltonian to the space spanned by the singles
@@ -96,15 +143,15 @@ void Mp2EquationOfMotion::run() {
 
   for (int64_t i = 0 ; i < totalDimension-1 ; i++) {
     getCanonicalPerturbationBasis(*Lai, Labij, i);
-    Labij["aaij"] = 0.0;
-    Labij["abii"] = 0.0;
+    //Labij["aaij"] = 0.0;
+    //Labij["abii"] = 0.0;
     for (int64_t j = 0 ; j < totalDimension-1; j++) {
       getCanonicalPerturbationBasis(*Rai, Rabij, j);
-      Rabij["abii"] = 0.0;
-      Rabij["aaij"] = 0.0;
+      //Rabij["abii"] = 0.0;
+      //Rabij["aaij"] = 0.0;
 
-      energy[""]  = ( - 1.0 ) * (*Lai)["ib"] * Fij["ki"] * (*Rai)["bk"];
-      energy[""] += ( + 1.0 ) * (*Lai)["ib"] * Fab["bc"] * (*Rai)["ci"];
+      energy[""]  = ( - 1.0 ) * (*Lai)["ib"] * (*Fij)["ki"] * (*Rai)["bk"];
+      energy[""] += ( + 1.0 ) * (*Lai)["ib"] * (*Fab)["bc"] * (*Rai)["ci"];
       energy[""] += ( - 1.0 ) * (*Lai)["ib"] * (*Viajb)["kbid"] * (*Rai)["dk"];
       energy[""] += ( + 1.0 ) * (*Lai)["ib"] * Tabij["cbli"] * (*Vijab)["lmcf"] * (*Rai)["fm"];
       energy[""] += ( - 0.5 ) * (*Lai)["ib"] * Tabij["cdmi"] * (*Vijab)["mncd"] * (*Rai)["bn"];
@@ -131,10 +178,10 @@ void Mp2EquationOfMotion::run() {
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["edni"] * (*Viabc)["nceg"] * (*Rai)["gj"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["ecnj"] * (*Viabc)["ndeg"] * (*Rai)["gi"];
       energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ednj"] * (*Viabc)["nceg"] * (*Rai)["gi"];
-      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Fij["mi"] * Rabij["cdmj"];
-      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Fij["mj"] * Rabij["cdmi"];
-      energy[""] += ( - 1.0 ) * Labij["ijdc"] * Fab["de"] * Rabij["ecij"];
-      energy[""] += ( + 1.0 ) * Labij["ijdc"] * Fab["ce"] * Rabij["edij"];
+      energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Fij)["mi"] * Rabij["cdmj"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * (*Fij)["mj"] * Rabij["cdmi"];
+      energy[""] += ( - 1.0 ) * Labij["ijdc"] * (*Fab)["de"] * Rabij["ecij"];
+      energy[""] += ( + 1.0 ) * Labij["ijdc"] * (*Fab)["ce"] * Rabij["edij"];
       energy[""] += ( + 1.0 ) * Labij["ijcd"] * (*Viajb)["mdif"] * Rabij["fcmj"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Viajb)["mcif"] * Rabij["fdmj"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Viajb)["mdjf"] * Rabij["fcmi"];
