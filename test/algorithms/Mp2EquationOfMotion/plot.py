@@ -19,6 +19,8 @@ try:
 except:
     det = 0
 
+print("Determinant    %s" % det)
+
 if det:
     eigva, eigve = numpy.linalg.eig(data)
 
@@ -26,9 +28,9 @@ if det:
     for e in eigva:
         print(e)
 
-    # print("\n\nEigenvalues(sorted)")
-    # for e in eigva.sort():
-        # print(e)
+    print("\n\nEigenvalues(sorted)")
+    for e in numpy.sort(eigva):
+        print(e)
 
     print("\n\nEigenvectors")
     for ev in eigve:
