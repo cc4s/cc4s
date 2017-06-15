@@ -28,6 +28,15 @@ CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ] [
   PPHHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  HHPPCoulombIntegrals
+  HPHHCoulombIntegrals
+  HPHPCoulombIntegrals
+  HPPPCoulombIntegrals
+  PPHPCoulombIntegrals
+  PPPPCoulombIntegrals
 ].
 
 Mp2EquationOfMotion [
