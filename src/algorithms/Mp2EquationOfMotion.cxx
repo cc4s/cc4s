@@ -56,46 +56,50 @@ void Mp2EquationOfMotion::run() {
 
   int syms[] = {NS, NS, NS, NS};
 
+  LOG(1, "MP2_EOM") << "Antisymmetrizing Vpqrs " << std::endl;
+
   //  Vijab
   int oovv[] = { No, No, Nv, Nv };
   T *Vijab(
     new T(4, oovv, syms, *Cc4s::world, "Vijab")
   );
-  (*Vijab)["ijab"] =  (*Vabij)["abij"];
+  (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
 
   //  Viajk
   int ovoo[] = { No, Nv, No, No };
   T *Viajk(
     new T(4, ovoo, syms, *Cc4s::world, "Viajk")
   );
-  (*Viajk)["iajk"] =  (*Vijka)["ijka"];
+  (*Viajk)["iajk"] =  (*Vijka)["ijka"]  - (*Vijka)["ikja"];
 
   // Viajb
   int ovov[] = { No, Nv, No, Nv };
   T *Viajb(
     new T(4, ovov, syms, *Cc4s::world, "Viajb")
   );
-  (*Viajb)["iajb"] =  (*Vaibj)["aibj"];
+  (*Viajb)["iajb"] =  (*Vaibj)["aibj"] - (*Vaibj)["aijb"];
 
   // Viabc
   int ovvv[] = { No, Nv, Nv, Nv };
   T *Viabc(
     new T(4, ovvv, syms, *Cc4s::world, "Viabc")
   );
-  (*Viabc)["iabc"] =  (*Vabci)["abci"];
+  (*Viabc)["iabc"] =  (*Vabci)["abci"] - (*Vabci)["acbi"];
 
   // Vabic
   int vvov[] = { Nv, Nv, No, Nv };
   T *Vabic(
     new T(4, vvov, syms, *Cc4s::world, "Vabic")
   );
-  (*Vabic)["abic"] =  (*Vabci)["abci"];
+  (*Vabic)["abic"] =  (*Vabci)["abci"] - (*Vabci)["abic"];
 
-
-
-
-  LOG(1, "MP2_EOM") << "Antisymmetrizing Vabij " << std::endl;
+  // Antisymmetrize integrals that are read in
+  (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
+  (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
   (*Vabij)["abij"] -= (*Vabij)["abji"];
+  (*Vijka)["ijka"] -= (*Vijka)["ijak"];
+  (*Vaibj)["aibj"] -= (*Vaibj)["aijb"];
+  (*Vabci)["abci"] -= (*Vabci)["abic"];
 
   T Tabij(false, Vabij);
   Tabij["abij"] =  (*epsi)["i"];
@@ -107,6 +111,15 @@ void Mp2EquationOfMotion::run() {
     "Creating doubles amplitudes" << totalDimension << std::endl;
   CTF::Bivar_Function<> fDivide(&divide<double>);
   Tabij.contract(1.0, (*Vabij),"abij", Tabij,"abij", 0.0,"abij", fDivide);
+
+  CTF::Scalar<> energy(0.0);
+  double energy_val(0.0);
+
+  // test MP2 energy
+  energy[""] = ( 0.25 ) * Tabij["abij"] * (*Vabij)["abij"];
+  energy_val = energy.get_val();
+  LOG(1, "MP2 Energy") << " = " << energy_val << std::endl;
+
 
   // Create L and R
   int oneBodySyms[] = {NS, NS};
@@ -137,9 +150,6 @@ void Mp2EquationOfMotion::run() {
   int64_t hIndices[1];
   double hValues[1];
 
-  CTF::Scalar<> energy(0.0);
-  double energy_val(0.0);
-
 
   for (int64_t i = 0 ; i < totalDimension-1 ; i++) {
     getCanonicalPerturbationBasis(*Lai, Labij, i);
@@ -163,7 +173,7 @@ void Mp2EquationOfMotion::run() {
       energy[""] += ( + 1.0 ) * Labij["ijcd"] * (*Vabic)["cdie"] * (*Rai)["ej"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * (*Vabic)["cdje"] * (*Rai)["ei"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["cdmj"] * (*Vijka)["mnig"] * (*Rai)["gn"];
-      energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["cdmj"] * (*Vijka)["mnig"] * (*Rai)["gn"];
+      energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["cdmi"] * (*Vijka)["mnjg"] * (*Rai)["gn"];
       energy[""] += ( + 1.0 ) * Labij["ijcd"] * Tabij["ednj"] * (*Vijka)["noie"] * (*Rai)["co"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["ecnj"] * (*Vijka)["noie"] * (*Rai)["do"];
       energy[""] += ( - 1.0 ) * Labij["ijcd"] * Tabij["edni"] * (*Vijka)["noje"] * (*Rai)["co"];
