@@ -39,6 +39,14 @@ void Mp2EquationOfMotion::run() {
 
   // Get couloumb integrals (these shoul not be antisymmetrized)
   T *Vabij(getTensorArgument<double, T>("PPHHCoulombIntegrals"));
+  T *Vijkl(getTensorArgument<double, T>("HHHHCoulombIntegrals"));
+  T *Vijka(getTensorArgument<double, T>("HHHPCoulombIntegrals"));
+  T *Vijab(getTensorArgument<double, T>("HHPPCoulombIntegrals"));
+  T *Viajk(getTensorArgument<double, T>("HPHHCoulombIntegrals"));
+  T *Viajb(getTensorArgument<double, T>("HPHPCoulombIntegrals"));
+  T *Viabc(getTensorArgument<double, T>("HPPPCoulombIntegrals"));
+  T *Vabic(getTensorArgument<double, T>("PPHPCoulombIntegrals"));
+  T *Vabcd(getTensorArgument<double, T>("PPPPCoulombIntegrals"));
 
   LOG(1, "MP2_EOM") << "Antisymmetrizing Vabij " << std::endl;
   (*Vabij)["abij"] -= (*Vabij)["abji"];
