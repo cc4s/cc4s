@@ -50,13 +50,14 @@ namespace cc4s {
     /**
      * \brief The mixer for the doubles amplitudes.
      */
-    Mixer<double> *TabijMixer;
+//    Mixer<double> *TabijMixer;
 
     /**
      * \brief Performs one iteration of the concrete algorithm.
      * \param[in] i Iteration number
      */
-    virtual void iterate(int i) = 0;
+    virtual void iterate(int i, Mixer<double> *mixer) = 0;
+    virtual void iterate(int i, Mixer<complex> *mixer) = 0;
 
     /**
      * \brief Performs a dry run of one iteration of the concrete algorithm.
@@ -79,7 +80,8 @@ namespace cc4s {
      * but other methods, such as level shifting may be used.
      * \param[in] Rabij Residuum Tensor.
      */
-    void doublesAmplitudesFromResiduum(CTF::Tensor<> &Rabij);
+    template <typename F>
+    void doublesAmplitudesFromResiduum(CTF::Tensor<F> &Rabij);
 
     /**
      * \brief Dry run for doublesAmplitudesFromResiduum.
