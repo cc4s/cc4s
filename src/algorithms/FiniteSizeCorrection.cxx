@@ -339,7 +339,7 @@ void FiniteSizeCorrection::interpolation3D() {
   std::sort(cartesianGrid, &cartesianGrid[NG], Momentum::sortByLength);
 
   // get the 3 unit vectors;
-  cc4s::Vector<> a(cartesianGrid[2].v);
+  cc4s::Vector<> a(cartesianGrid[1].v);
 
   // GC is the shortest vector.
   if (isArgumentGiven("shortestGvector")) {
@@ -351,9 +351,8 @@ void FiniteSizeCorrection::interpolation3D() {
   // determine a small length on the scale of the cell
   const double epsilon(1e-9*a.length());
 
-  LOG(2, "GridSearch") << "b1=#2" << std::endl;
-  // the 0th and 1st elements are 0, avoid it.
-  int j=3;
+  LOG(2, "GridSearch") << "b1=#1" << std::endl;
+  int j=2;
   //a and b should not be parallel;
   while ((a.cross(cartesianGrid[j].v)).length() < epsilon) ++j;
   cc4s::Vector<> b(cartesianGrid[j].v);
@@ -492,8 +491,8 @@ void FiniteSizeCorrection::interpolation3D() {
   //  }
 
   std::vector<Vector<>> smallBZ;
-  smallBZ.push_back(cartesianGrid[2].v);
-  for (int t(3); t<NG; t++){
+  smallBZ.push_back(cartesianGrid[1].v);
+  for (int t(2); t<NG; t++){
     if (IsInSmallBZ(cartesianGrid[t].v, 1., smallBZ)){
       smallBZ.push_back(cartesianGrid[t].v);
     }
