@@ -311,7 +311,10 @@ void FiniteSizeCorrection::interpolation3D() {
     << check_grid.length() << std::endl;
   if (check_grid.length() > 1e-10){
     LOG(1, "interpolation3D")<< 
-      "Working with half G grid, completing the other half..." << std::endl;
+      "Working with half G grid, completing the other half..."<< std::endl;
+    LOG(1, "interpolation3D")<< 
+      "!!! Always check if you are indeed working with half G grid !!!"
+      << std::endl;
     cartesianGrid = new Momentum[(2*NG-1)];
     cartesianGrid[0] = Momentum(
       cartesianMomenta[0], 0.5*structureFactors[0], VofG[0]
@@ -328,6 +331,9 @@ void FiniteSizeCorrection::interpolation3D() {
   }
   else {
     LOG(1, "interpolation3D")<< "Working with full G grid." << std::endl;
+    LOG(1, "interpolation3D")<< 
+      "!!! Always check if you are indeed working with full G grid !!!"
+      << std::endl;
     cartesianGrid = new Momentum[NG];
     for (int g(0); g<NG; ++g)
       cartesianGrid[g] = Momentum(
@@ -506,7 +512,9 @@ void FiniteSizeCorrection::interpolation3D() {
 
   //integration in 3D
   double constantFactor(getRealArgument("constantFactor"));
-  double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
+  //cutOffRadius is set to a big default value 100 to ensure
+  //the integration is over the whole G grid. 
+  double cutOffRadius(getRealArgument("cutOffRadius", 100));
   int N0(51), N1(51), N2(51);
   inter3D = 0.;
   sum3D   = 0.;
@@ -536,10 +544,16 @@ void FiniteSizeCorrection::interpolation3D() {
           Vector<double> gb(((b/double(N1))*double(t1)));
           Vector<double> gc(((c/double(N2))*double(t2)));
           Vector<double> g(ga+gb+gc);
+          //for each g that is within smallBZ, add its contribution 
+          //and that of all its 
+          //periodic images that differ only in a reciprocal lattice
+          //to inter3D
           if (IsInSmallBZ(g, 2, smallBZ)){
             countNOg++;
             for (std::vector<int>::size_type i = 0; i != gridWithinRadius.size(); ++i) {
+              //reset g to the vector that is within the first smallBZ.
               g=ga+gb+gc;
+              //add an reciprocal lattice vector to g to get a periodic image of it.
               g += gridWithinRadius[i];
               for (int d(0); d <3; ++d){
                 directg[d]=T[d].dot(g);
@@ -589,6 +603,11 @@ void FiniteSizeCorrection::dryInterpolation3D() {
   //  );
 }
 
+//scale=1 is used to search for the vectors which
+//define smallBZ; scale = 2 is used to tell if a vector is
+//within the smallBZ or not. For a vector that is within the smallBZ,
+//its projection on any vectors which define smallBZ must be less 
+//than 1/2.
 bool FiniteSizeCorrection::IsInSmallBZ(
   Vector<> point, double scale, std::vector<Vector<>> smallBZ
 )
@@ -596,11 +615,12 @@ bool FiniteSizeCorrection::IsInSmallBZ(
   std::vector<int>::size_type countVector(0);
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
     // FIXME: use an epsilon instead of 1e-9
+    double epsilon(smallBZ[0].length() * 1e-10);
     if (
       abs(abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()
-       *scale -1.0) < 1e-9 ||
-      abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale
-       -1.0 < -1e-9
+       *scale -1.0) < epsilon
+       || abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale
+       -1.0 < -epsilon
     ) {
       countVector++;
     }
