@@ -21,7 +21,7 @@ except:
 
 print("Determinant    %s" % det)
 
-if det:
+if det or True:
     eigva, eigve = numpy.linalg.eig(data)
 
     print("\n\nEigenvalues")
@@ -29,12 +29,12 @@ if det:
         print(e)
 
     print("\n\nEigenvalues(sorted)")
-    for e in numpy.sort(eigva):
-        print(e)
+    for j,e in enumerate(numpy.sort(eigva)):
+        print("%s.  %s" % (j, e))
 
-    print("\n\nEigenvectors")
-    for ev in eigve:
-        print(ev)
+    # print("\n\nEigenvectors")
+    # for ev in eigve:
+        # print(ev)
 
 plt.savefig(folder+"/matrix.pdf")
 plt.savefig("matrix.pdf")
