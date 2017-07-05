@@ -115,10 +115,10 @@ void Mp2EquationOfMotion::run() {
   CTF::Scalar<> energy(0.0);
   double energy_val(0.0);
 
-  // test MP2 energy
+  LOG(2, "MP2_EOM") << "Calculating MP2 energy" << std::endl;
   energy[""] = ( 0.25 ) * Tabij["abij"] * (*Vabij)["abij"];
   energy_val = energy.get_val();
-  LOG(1, "MP2 Energy") << " = " << energy_val << std::endl;
+  LOG(1, "MP2_EOM") << " Mp2 energy = " << energy_val << std::endl;
 
 
   // Create L and R
@@ -215,16 +215,16 @@ void Mp2EquationOfMotion::run() {
       energy[""] += ( + 0.5 ) * Labij["ijcd"] * Tabij["edno"] * (*Vijab)["noeh"] * Rabij["hcij"];
       energy[""] += ( - 0.5 ) * Labij["ijcd"] * Tabij["ecno"] * (*Vijab)["noeh"] * Rabij["hdij"];
 
+      energy_val = energy.get_val();
+
       if (Hpq->wrld->rank == 0) {
           hValues = (double*) malloc(1);
           hIndices = (int64_t*) malloc(1);
-          energy_val = energy.get_val();
           hValues[0] = energy_val;
           hIndices[0] = i + j * (totalDimension - 1);
       } else {
           hValues = (double*) malloc(0);
           hIndices = (int64_t*) malloc(0);
-          energy_val = energy.get_val();
       }
 
       (*Hpq).write(1, hIndices, hValues);
