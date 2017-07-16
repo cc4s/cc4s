@@ -22,7 +22,7 @@ ClusterDoublesAlgorithm::~ClusterDoublesAlgorithm() {
 }
 
 template <typename F>
-void runTemplate() {
+void ClusterDoublesAlgorithm::runTemplate() {
   // Read the Coulomb Integrals Vabij required for the energy
   Tensor<F> *Vabij(getTensorArgument<Tensor<F>>("PPHHCoulombIntegrals"));
 
