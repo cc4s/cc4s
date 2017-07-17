@@ -1,7 +1,7 @@
 #include <algorithms/experimental/StochasticContraction.hpp>
 #include <math/RandomGenerator.hpp>
 #include <math/SampledVariable.hpp>
-#include <math/DistributedSampledVariable.hpp>
+#include <util/DistributedSampledVariable.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
@@ -26,7 +26,7 @@ complex StochasticContraction::drawUniformWeight() {
 
 void StochasticContraction::run() {
   // initialize random generator depending on the rank of the process
-  MpiCommunicator comm(Cc4s::world->rank, Cc4s::world->np);
+  MpiCommunicator comm(*Cc4s::world);
   rand = new RandomGenerator(Cc4s::world->rank);
   SampledVariable<complex> product;
 

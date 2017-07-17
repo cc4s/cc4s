@@ -1,10 +1,8 @@
-/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DISTRIBUTED_SAMPLED_VARIABLE_DEFINED
 #define DISTRIBUTED_SAMPLED_VARIABLE_DEFINED
 
 #include <math/SampledVariable.hpp>
 #include <util/MpiCommunicator.hpp>
-#include "mpi.h"
 
 namespace cc4s {
   template <typename F=double>
@@ -18,7 +16,6 @@ namespace cc4s {
       globalSampledVariable(globalSampledVariable_),
       communicator(communicator_)
     {
-      communicator->barrier();
     }
     ~DistributedSampledVariable() {
       communicator->allReduce(this->s, globalSampledVariable->s);
