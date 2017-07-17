@@ -21,6 +21,7 @@ INCLUDE=-I${CTF}/include
 
 # additional library paths and libraries to link to
 LIBS=-L${SCA} -lscalapack -lreflapack -lrefblas -lgfortran -L${CTF}/lib -lctf
+#LIBS=-L${CTF}/lib -lctf -lblas -llapack -lblacs-openmpi -lblacsCinit-openmpi -lscalapack-openmpi
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
