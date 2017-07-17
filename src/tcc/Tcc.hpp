@@ -78,6 +78,10 @@ namespace tcc {
       return createTensor(tensor->lens, name);
     }
 
+    /**
+     * \brief Create a tcc tensor that uses a given machine tensor as its
+     * machine tensor for representing the tensor data.
+     **/
     std::shared_ptr<Tensor<F>> createTensor(
       const std::shared_ptr<MachineTensor<F>> &machineTensor
     ) {
@@ -118,8 +122,7 @@ namespace tcc {
     std::shared_ptr<Operation<F>> compile(
       const std::shared_ptr<Move<F>> &move
     ) {
-      LOG(0, "TCC") << "compiling contraction..." << std::endl;
-      LOG(2, "TCC") << "building index counts..." << std::endl;
+      LOG(2, "TCC") << "compiling contraction..." << std::endl;
 
       indexCounts = IndexCounts();
       indexCounts.add(move->lhs->indices);
@@ -150,7 +153,7 @@ namespace tcc {
       operation->alpha = contraction->alpha;
       operation->beta = move->beta;
 
-      LOG(1, "TCC") <<
+      LOG(2, "TCC") <<
         "possibilites tried=" << triedPossibilitiesCount <<
         ", FLOPS=" <<
           operation->costs.multiplicationsCount +
@@ -303,8 +306,12 @@ namespace tcc {
       }
       uniqueIndices[u] = 0;
 
-      // skip contractions with no common indices
-      if (commonIndicesCount == 0) {
+      // skip contractions with no common indices unless one of them is scalar
+      if (
+        commonIndicesCount == 0 &&
+        a->getResultIndices().length() > 0 &&
+        b->getResultIndices().length() > 0
+      ) {
         return std::shared_ptr<ContractionOperation<F>>();
       }
 

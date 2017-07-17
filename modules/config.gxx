@@ -1,1 +1,1 @@
-CTF_CONFIG='CXX=mpicxx'
+CTF_CONFIG='CXX=mpicxx --blas="-L/usr/local/lib/scalapack -lrefblas -lgfortran" --scalapack="-L/usr/local/lib/scalapack -lreflapack -lscalapack" CXXFLAGS="-Ofast -march=native -flto -fopenmp"'

@@ -4,6 +4,7 @@
 #include "mpi.h"
 #include <math/Complex.hpp>
 #include <math/Vector.hpp>
+#include <ctf.hpp>
 
 namespace cc4s {
   // base template for type traits
@@ -16,6 +17,10 @@ namespace cc4s {
     MpiCommunicator(
       int rank_, int processes_, MPI_Comm comm_ = MPI_COMM_WORLD
     ): rank(rank_), processes(processes_), comm(comm_) {
+    }
+    MpiCommunicator(
+      const CTF::World &world
+    ): rank(world.rank), processes(world.np), comm(world.comm) {     
     }
     ~MpiCommunicator() {
     }
