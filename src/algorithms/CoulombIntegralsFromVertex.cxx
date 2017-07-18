@@ -48,20 +48,22 @@ void CoulombIntegralsFromVertex::run() {
   ooov = std::array<int,4>{{ No, No, No, Nv }};
   vvvo = std::array<int,4>{{ Nv, Nv, Nv, No }};
 
+  /*
   Tensor<complex> diffGammaGqr(*GammaGqr);
   diffGammaGqr["Gqr"] -= (*GammaGqr)["Grq"];
   double diffGamma(frobeniusNorm(diffGammaGqr));
   LOG(1, "CoulombIntegrals") << "|GammaGqr-GammaGrq|=" << diffGamma
-    << std::endl;
+  << std::endl;
+  */
 
   // diffGamma = 0 iff orbitals are real valued
-  double const threshold(1e-10);
-  bool realIntegrals(diffGamma < threshold);
+  //  double const threshold(1e-10);
+  //  bool realIntegrals(diffGamma < threshold);
+
+  bool realIntegrals = !getIntegerArgument("complex", 0);
   LOG(0, "CoulombIntegrals") << "Using "
     << (realIntegrals ? "real" : "complex") << " Coulomb integrals"
     << std::endl;
-  // override to use complex integrals if desired by user
-  realIntegrals &= !getIntegerArgument("complex", 0);
 
   int aStart(Np-Nv), aEnd(Np);
   int iStart(0), iEnd(No);
@@ -265,21 +267,55 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
       nullptr
   );
 
-  Tensor<complex> conjTransposeGammaGai(false, *GammaGai);
+  Tensor<complex> *Vaibj(
+    isArgumentGiven("PHPHCoulombIntegrals") ?
+      new Tensor<complex>(4, vovo.data(), syms.data(), *Cc4s::world, "Vabij") :
+      nullptr
+  );
+
+  Tensor<complex> *Vaijb(
+    isArgumentGiven("PHHPCoulombIntegrals") ?
+      new Tensor<complex>(4, vovo.data(), syms.data(), *Cc4s::world, "Vabij") :
+      nullptr
+  );
+
   Univar_Function<complex> fConj(conj<complex>);
+
+  Tensor<complex> conjTransposeGammaGai(false, *GammaGai);
   conjTransposeGammaGai.sum(1.0,*GammaGia,"Gia", 0.0,"Gai", fConj);
 
-  (*Vabij)["abij"] = conjTransposeGammaGai["Gai"] * (*GammaGai)["Gbj"];
-  // force to be real valued
-  Vabij->sum(0.5,*Vabij,"abij", 0.5,"abij", fConj);
+  Tensor<complex> conjGammaGab(false, *GammaGab);
+  conjGammaGab.sum(1.0,*GammaGib,"Gab", 0.0,"Gab", fConj);
+
+  if (Vabij) {
+    (*Vabij)["abij"] = conjTransposeGammaGai["Gai"] * (*GammaGai)["Gbj"];
+  }
+
+  if (Vaibj) {
+    (*Vaibj)["aibj"] = conjGammaGab["Gab"] * (*GammaGai)["Gij"];
+  }
+
+  if (Vaijb) {
+    (*Vaijb)["aijb"] = conjTransposeGammaGai["Gaj"] * (*GammaGia)["Gib"];
+  }
+
+  /*
   Tensor<> realVabij(4, Vabij->lens, Vabij->sym, *Vabij->wrld, "realVabij");
   Tensor<> imagVabij(4, Vabij->lens, Vabij->sym, *Vabij->wrld, "imagVabij");
   fromComplexTensor(*Vabij, realVabij, imagVabij);
   double r(frobeniusNorm(realVabij));
   double i(frobeniusNorm(imagVabij));
   LOG(1, "CoulombIntegrals") << "|Re(Vabij)|=" << r << ", |Im(Vabij)|=" << i << std::endl;
+  */
+
   if (Vabij) {
     allocatedTensorArgument<complex>("PPHHCoulombIntegrals", Vabij);
+  }
+  if (Vaibj) {
+    allocatedTensorArgument<complex>("PPHHCoulombIntegrals", Vaibj);
+  }
+  if (Vaijb) {
+    allocatedTensorArgument<complex>("PHHPCoulombIntegrals", Vaijb);
   }
 }
 
