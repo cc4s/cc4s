@@ -1,16 +1,20 @@
 import numpy
-import matplotlib.pyplot as plt
 import os
 
-folder = os.path.dirname(__file__)
+folder = os.path.dirname(__file__) or "."
 print(folder)
 
 file_name = folder+"/"+"SimlarityTransformedHamiltonianSD.dat"
 data = numpy.loadtxt(file_name, skiprows=2)
-# print(data)
-plt.matshow(data)
-fig = plt.gcf()
-plt.colorbar()
+
+plot = False
+if plot:
+    import matplotlib.pyplot as plt
+    plt.matshow(data)
+    fig = plt.gcf()
+    plt.colorbar()
+    plt.savefig(folder+"/matrix.pdf")
+    plt.savefig("matrix.pdf")
 
 
 # print("Determinant")
@@ -36,8 +40,6 @@ if det or True:
     # for ev in eigve:
         # print(ev)
 
-plt.savefig(folder+"/matrix.pdf")
-plt.savefig("matrix.pdf")
 
+#vim-run: python3 %
 #vim-run: python % && mupdf matrix.pdf
-#vim-run: python %
