@@ -1,0 +1,59 @@
+CoulombVertexReader [
+  (file "../../resources/4alex/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.74")
+  (unrestricted 1)
+] [
+  CoulombVertex
+  HoleEigenEnergies
+  ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 32)
+  (unrestricted 1)
+] [
+  (CcsdEnergy CcsdEnergy)
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
+].
+
+CcsdEquationOfMotion [
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+  CcsdEnergy
+  CcsdSinglesAmplitudes
+  CcsdDoublesAmplitudes
+  HoleEigenEnergies
+  ParticleEigenEnergies
+  (unrestricted 1)
+] [
+  SimlarityTransformedHamiltonianSD
+].
+
+TensorWriter [
+  (Data SimlarityTransformedHamiltonianSD)
+  (rowIndexOrder "i")
+  (columnIndexOrder "j")
+] [].
