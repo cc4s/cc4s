@@ -76,6 +76,7 @@ build/${CONFIG}/obj/algorithms/CcsdPerturbativeTriples.o \
 build/${CONFIG}/obj/algorithms/experimental/StochasticContraction.o \
 build/${CONFIG}/obj/algorithms/DrccdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/Mp2EquationOfMotion.o \
+build/${CONFIG}/obj/algorithms/CcdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/CcsdEquationOfMotion.o \
 
 TESTS_OBJECTS = \
