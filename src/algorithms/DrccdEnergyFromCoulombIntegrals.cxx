@@ -18,15 +18,21 @@ DrccdEnergyFromCoulombIntegrals::DrccdEnergyFromCoulombIntegrals(
 DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 }
 
-void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
-  // Read the DRCCD amplitudes Tabij
-  Tensor<> *Tabij(&TabijMixer->getNext());
-  
+void DrccdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
+  iterateTemplate<double>(int i, mixer);
+}
+void DrccdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
+  iterateTemplate<complex>(int i, mixer);
+}
+
+template <typename F>
+void DrccdEnergyFromCoulombIntegrals::iterateTemplate(int i, Mixer<F> *mixer) {
+  Tensor<F> *Tabij(&mixer->getNext());
   // Read Vabij
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+  Tensor<F> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
   // Construct intermediate Amplitudes
-  Tensor<> Rabij(false, *Tabij);
+  Tensor<F> Rabij(false, *Tabij);
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -53,7 +59,7 @@ void DrccdEnergyFromCoulombIntegrals::iterate(int i) {
       Rabij["abij"] += 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
     } else {
       // Construct intermediates
-      Tensor<> Cabij(false, *Vabij);
+      Tensor<F> Cabij(false, *Vabij);
       Cabij["abij"]  = 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
       Rabij["abij"] += Cabij["abij"];
       Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];

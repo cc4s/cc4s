@@ -21,13 +21,14 @@ ClusterDoublesAlgorithm::~ClusterDoublesAlgorithm() {
   if (TabijMixer) delete TabijMixer;
 }
 
-void ClusterDoublesAlgorithm::run() {
+template <typename F>
+void ClusterDoublesAlgorithm::runTemplate() {
   // Read the Coulomb Integrals Vabij required for the energy
-  Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
+  Tensor<F> *Vabij(getTensorArgument<Tensor<F>>("PPHHCoulombIntegrals"));
 
   // Instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-  TabijMixer = MixerFactory<double>::create(mixerName, this);
+  Mixer<F> TabijMixer( MixerFactory<F>::create(mixerName, this));
   if (!TabijMixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
@@ -35,7 +36,7 @@ void ClusterDoublesAlgorithm::run() {
   }
 
   if (isArgumentGiven("startingDoublesAmplitudes")) {
-    Tensor<> *Tabij(getTensorArgument("startingDoublesAmplitudes"));
+    Tensor<F> *Tabij(getTensorArgument("startingDoublesAmplitudes"));
     TabijMixer->append(*Tabij);
   } else {
     // Allocate the doubles amplitudes and append it to the mixer
@@ -43,15 +44,15 @@ void ClusterDoublesAlgorithm::run() {
     int Nv(Vabij->lens[0]);
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
-    Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
+    Tensor<F> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
     TabijMixer->append(Tabij);
   }
   // The amplitudes will from now on be managed by the mixer
 
   // Allocate the energy e
-  Scalar<> energy(*Vabij->wrld);
+  Scalar<F> energy(*Vabij->wrld);
   energy.set_name("energy");
-  double e(0), dire, exce;
+  F e(0), dire, exce;
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -64,11 +65,11 @@ void ClusterDoublesAlgorithm::run() {
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
     // call the iterate of the actual algorithm, which is still left open here
-    iterate(i);
-    Tensor<> *Tabij(&TabijMixer->getNext());
+    iterate(i, TabijMixer);
+    Tensor<F> *Tabij(&TabijMixer->getNext());
     Tabij->set_name("Tabij");
-    // Direct term
     energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
+    // Direct term
     dire = energy.get_val();
     // Exchange term
     energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
@@ -91,6 +92,15 @@ void ClusterDoublesAlgorithm::run() {
   std::stringstream energyName;
   energyName << getAbbreviation() << "Energy";
   setRealArgument(energyName.str(), e);
+}
+
+void ClusterDoublesAlgorithm::run() {
+  if (complexValued) {
+    runTemplate<complex>()
+  } else {
+    runTemplate<double>()
+  }
+
 }
 
 void ClusterDoublesAlgorithm::dryRun() {
@@ -182,6 +192,7 @@ double ClusterDoublesAlgorithm::calculateEnergy() {
 
   return e;
 }
+
 
 void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   CTF::Tensor<> &Rabij
