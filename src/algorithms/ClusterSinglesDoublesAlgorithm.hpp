@@ -15,7 +15,7 @@ namespace cc4s {
    * \f$T_{a}^{i}\f$ and \f$T_{ab}^{ij}\f$ and the Coulomb integrals \f$V_{ij}^{ab}\f$. For
    * calculating the amplitudes it calls the iteration routine of the actual algorithm.
    */
-  class ClusterSinglesDoublesAlgorithm: public ClusterDoublesAlgorithm {
+  class ClusterSinglesDoublesAlgorithm: public LegacyClusterDoublesAlgorithm {
   public:
     ClusterSinglesDoublesAlgorithm(
       std::vector<Argument> const &argumentList

@@ -18,16 +18,16 @@ ClusterDoublesAlgorithm::ClusterDoublesAlgorithm(
 }
 
 ClusterDoublesAlgorithm::~ClusterDoublesAlgorithm() {
+  if (TabijMixer) delete TabijMixer;
 }
 
-template <typename F>
-F ClusterDoublesAlgorithm::evaluate() {
+void ClusterDoublesAlgorithm::run() {
   // Read the Coulomb Integrals Vabij required for the energy
-  Tensor<F> *Vabij(getTensorArgument<Tensor<F>>("PPHHCoulombIntegrals"));
+  Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
 
   // Instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-  Mixer<F> TabijMixer( MixerFactory<F>::create(mixerName, this));
+  TabijMixer = MixerFactory<double>::create(mixerName, this);
   if (!TabijMixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
@@ -35,7 +35,7 @@ F ClusterDoublesAlgorithm::evaluate() {
   }
 
   if (isArgumentGiven("startingDoublesAmplitudes")) {
-    Tensor<F> *Tabij(getTensorArgument("startingDoublesAmplitudes"));
+    Tensor<> *Tabij(getTensorArgument("startingDoublesAmplitudes"));
     TabijMixer->append(*Tabij);
   } else {
     // Allocate the doubles amplitudes and append it to the mixer
@@ -43,10 +43,15 @@ F ClusterDoublesAlgorithm::evaluate() {
     int Nv(Vabij->lens[0]);
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
-    Tensor<F> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
+    Tensor<> Tabij(4, vvoo, syms, *Vabij->wrld, "Tabij");
     TabijMixer->append(Tabij);
   }
   // The amplitudes will from now on be managed by the mixer
+
+  // Allocate the energy e
+  Scalar<> energy(*Vabij->wrld);
+  energy.set_name("energy");
+  double e(0), dire, exce;
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -56,34 +61,31 @@ F ClusterDoublesAlgorithm::evaluate() {
   // and the energy e
   int maxIterationsCount(getIntegerArgument("maxIterations", 
                                             DEFAULT_MAX_ITERATIONS));
-  F e(0);
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, abbreviation) << "iteration: " << i+1 << std::endl;
     // call the iterate of the actual algorithm, which is still left open here
-    iterate(i, TabijMixer);
-    e = calculateEnergy(TabijMixer);
+    iterate(i);
+    Tensor<> *Tabij(&TabijMixer->getNext());
+    Tabij->set_name("Tabij");
+    // Direct term
+    energy[""] = 2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
+    dire = energy.get_val();
+    // Exchange term
+    energy[""] = (*Tabij)["abji"] * (*Vabij)["abij"];
+    exce = -1.0 * energy.get_val();
+    // Total energy
+    e = dire + exce;
+    LOG(0, abbreviation) << "e=" << e << std::endl;
+    LOG(1, abbreviation) << "dir=" << dire << std::endl;
+    LOG(1, abbreviation) << "exc=" << exce << std::endl;
   }
-  // FIXME: support energy calculation from given amplitdues.
 
   std::stringstream amplitudesName;
   amplitudesName << getAbbreviation() << "DoublesAmplitudes";
   if (isArgumentGiven(amplitudesName.str())) {
     allocatedTensorArgument(
-      amplitudesName.str(), new Tensor<F>(TabijMixer->getNext())
+      amplitudesName.str(), new Tensor<>(TabijMixer->getNext())
     );
-  }
-
-  return e;
-}
-
-void ClusterDoublesAlgorithm::run() {
-  Data *Vabij(getArgumentData("PPHHCoulombIntegrals"));
-  TensorData<double> *realVabij(dynamic_cast<TensorData<double> *>(Vabij));
-  double e(0.0);
-  if (realVabij) {
-    e = evaluate<double>();
-  } else {
-    e = std::real( evaluate<complex>() );
   }
 
   std::stringstream energyName;
@@ -149,102 +151,37 @@ void ClusterDoublesAlgorithm::dryRun() {
   setRealArgument(energyName.str(), 0.0);
 }
 
-template <typename F>
-void ClusterDoublesAlgorithm::dryEvaluate() {
-  // Read the Coulomb Integrals Vabij required for the energy
-  getTensorArgument<F, DryTensor<F>>("PPHHCoulombIntegrals");
-
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<F> *epsi(
-    getTensorArgument<F, DryTensor<F>>("HoleEigenEnergies")
-  );
-  DryTensor<F> *epsa(
-    getTensorArgument<F, DryTensor<F>>("ParticleEigenEnergies")
-  );
-
-  std::string abbreviation(getAbbreviation());
-  std::transform(
-    abbreviation.begin(), abbreviation.end(), abbreviation.begin(),
-    ::toupper
-  );
-  std::stringstream amplitudesName;
-  amplitudesName << getAbbreviation() << "DoublesAmplitudes";
-
-  // Instantiate mixer for the doubles amplitudes, by default use the linear one
-  std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-  TabijMixer = MixerFactory<F>::create(mixerName, this);
-  if (!TabijMixer) {
-    std::stringstream stringStream;
-    stringStream << "Mixer not implemented: " << mixerName;
-    throw new EXCEPTION(stringStream.str());
-  }
-  // TODO: implement DryTensor in mixers
-  if (mixerName != "LinearMixer") {
-    LOG(0, abbreviation)
-      << "Warning: dry run not implemented for " << mixerName
-      << ", assuming the same memory usage." << std::endl;
-  }
-
-  {
-    // Allocate the doubles amplitudes and append it to the mixer
-    int No(epsi->lens[0]);
-    int Nv(epsa->lens[0]);
-    int syms[] = { NS, NS, NS, NS };
-    int vvoo[] = { Nv, Nv, No, No };
-    DryTensor<F> Tabij(4, vvoo, syms, SOURCE_LOCATION);
-    allocatedTensorArgument(
-      amplitudesName.str(), new DryTensor<F>(Tabij, SOURCE_LOCATION)
-    );
-  }
-
-  // Allocate the energy e
-  DryScalar<F> energy(SOURCE_LOCATION);
-
-  getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS);
-
-  // Call the dry iterate of the actual algorithm, which is left open here
-  dryIterate();
-
-  std::stringstream energyName;
-  energyName << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), 0.0);
-}
-
-void ClusterDoublesAlgorithm::dryIterate(
-  Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-) {
+void ClusterDoublesAlgorithm::dryIterate() {
   LOG(0, "CluserDoubles") << "Dry run for iteration not given for "
     << getAbbreviation() << std::endl;
 }
 
 
-template <typename F>
-F ClusterDoublesAlgorithm::calculateEnergy(Mixer<F> *TabijMixer) {
+double ClusterDoublesAlgorithm::calculateEnergy() {
   // get the Coulomb integrals to compute the energy
-  Tensor<F> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
   // allocate energy
-  Scalar<F> energy(*Vabij->wrld);
+  Scalar<> energy(*Vabij->wrld);
   energy.set_name("energy");
 
   // get amplitudes from the mixer
-  Tensor<F> *Tabij(&TabijMixer->getNext());
+  Tensor<> *Tabij(&TabijMixer->getNext());
   Tabij->set_name("Tabij");
 
   // direct term
   energy[""] = +2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
-  F dire(energy.get_val());
+  double dire(energy.get_val());
   // exchange term
   energy[""] = -1.0 * (*Tabij)["abij"] * (*Vabij)["baij"];
-  F exce(energy.get_val());
-  F e(dire + exce);
+  double exce(energy.get_val());
+  double e(dire + exce);
   LOG(0, abbreviation) << "e=" << e << std::endl;
   LOG(1, abbreviation) << "dir=" << dire << std::endl;
   LOG(1, abbreviation) << "exc=" << exce << std::endl;
 
   return e;
 }
-
 
 void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   CTF::Tensor<> &Rabij
@@ -293,9 +230,7 @@ void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
 }
 
 
-Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(
-  int a, int b, int integralsSliceSize
-) {
+Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int integralsSliceSize) {
   Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
@@ -333,9 +268,7 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(
   return Vxycd;
 }
 
-DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(
-  int integralsSliceSize
-) {
+DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integralsSliceSize) {
   // Read the Coulomb vertex GammaGqr
   DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
                                DryTensor<complex>>("CoulombVertex"));
@@ -395,7 +328,8 @@ void ClusterDoublesAlgorithm::sliceIntoResiduum(
   }
 }
 
-void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij) {
+void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij)
+{
   // Read the Coulomb Integrals Vabij required for the energy
   Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
 
@@ -424,9 +358,10 @@ void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij) {
   LOG(2, abbreviation) << "Energy=" << e << std::endl;
 }
 
-Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(
-  int a, int b, int factorsSliceSize
-) {
+Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(int a,
+                                                                     int b,
+                                                                     int factorsSliceSize)
+{
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
   PirR->set_name("PirR");
   Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
@@ -493,8 +428,8 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(
   Tensor<complex> rightLambdaGR (LambdaGR->slice(rightLambdaStart , rightLambdaEnd));
   rightLambdaGR.set_name("rightLambdaGR");
 
-  // NOTE: Assuming GammaGqr = PirR*PirR*LambdaGR
-  //       First Pi not conjugated.
+  // FIXME: Currently assuming GammaGqr = PirR*PirR*LambdaGR
+  //        First Pi not conjugated.
   realXRaij["Rdij"] = (+1.0) * (*Tabij)["cdij"] * realLeftPiaR["cR"];
   imagXRaij["Rdij"] = (-1.0) * (*Tabij)["cdij"] * imagLeftPiaR["cR"];
   Tensor<complex> XRaij(4, Rvoo, syms, *PirR->wrld, "XRaij");
@@ -525,9 +460,8 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(
   return Xabij;
 }
 
-DryTensor<> *ClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(
-  int factorsSliceSize
-) {
+DryTensor<> *ClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(int factorsSliceSize)
+{
   getTensorArgument<complex,DryTensor<complex>>("FactorOrbitals");
   DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
                                DryTensor<complex>>("CoulombFactors"));
@@ -592,9 +526,9 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(
 }
 
 
-Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(
-  int a, int factorsSliceSize
-) {
+Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
+                                                                        int factorsSliceSize)
+{
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
   PirR->set_name("PirR");
   Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));

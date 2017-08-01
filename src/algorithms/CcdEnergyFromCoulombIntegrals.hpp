@@ -15,7 +15,7 @@ namespace cc4s {
    * V_{kl}^{ij}\f$, and \f$V_{cd}^{ab}\f$ (if given, else slicing and the Coulomb
    * Vertex \f$\Gamma_{pG}^q\f$  is used).
    */
-  class CcdEnergyFromCoulombIntegrals: public ClusterDoublesAlgorithm {
+  class CcdEnergyFromCoulombIntegrals: public LegacyClusterDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(CcdEnergyFromCoulombIntegrals);
     CcdEnergyFromCoulombIntegrals(

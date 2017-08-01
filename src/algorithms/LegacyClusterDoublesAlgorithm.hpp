@@ -50,22 +50,13 @@ namespace cc4s {
     /**
      * \brief The mixer for the doubles amplitudes.
      */
-    // TODO: is it really the best option when using complex and real mixers
-    // to pass all mixers to the iterate method rather than having it as
-    // field variables, as it was before?
-//    Mixer<double> *TabijMixer;
-//    Mixer<complex> *TabijMixer;
+    Mixer<double> *TabijMixer;
 
     /**
      * \brief Performs one iteration of the concrete algorithm.
      * \param[in] i Iteration number
      */
-    virtual void iterate(
-      int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-    ) = 0;
-    virtual void iterate(
-      int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
-    ) = 0;
+    virtual void iterate(int i) = 0;
 
     /**
      * \brief Performs a dry run of one iteration of the concrete algorithm.
@@ -78,11 +69,7 @@ namespace cc4s {
      * \brief Calculates the energy from the amplitudes currently contained
      * in the mixer.
      **/
-    template <typename F>
-    F calculateEnergy(Mixer<F> *TabijMixer);
-
-    template <typename F>
-    F evaluate();
+    virtual double calculateEnergy();
 
     /**
      * \brief Calculates the amplitudes from the current residuum and
@@ -92,8 +79,7 @@ namespace cc4s {
      * but other methods, such as level shifting may be used.
      * \param[in] Rabij Residuum Tensor.
      */
-    template <typename F>
-    void doublesAmplitudesFromResiduum(CTF::Tensor<F> &Rabij);
+    void doublesAmplitudesFromResiduum(CTF::Tensor<> &Rabij);
 
     /**
      * \brief Dry run for doublesAmplitudesFromResiduum.
