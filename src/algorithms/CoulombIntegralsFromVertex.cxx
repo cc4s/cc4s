@@ -44,6 +44,7 @@ void CoulombIntegralsFromVertex::run() {
   vvvv = std::array<int,4>{{ Nv, Nv, Nv, Nv }};
   vovo = std::array<int,4>{{ Nv, No, Nv, No }};
   vvoo = std::array<int,4>{{ Nv, Nv, No, No }};
+  oovv = std::array<int,4>{{ No, No, Nv, Nv }};
   oooo = std::array<int,4>{{ No, No, No, No }};
   ooov = std::array<int,4>{{ No, No, No, Nv }};
   vvvo = std::array<int,4>{{ Nv, Nv, Nv, No }};
@@ -267,15 +268,15 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
       nullptr
   );
 
-  Tensor<complex> *Vaibj(
-    isArgumentGiven("PHPHCoulombIntegrals") ?
-      new Tensor<complex>(4, vovo.data(), syms.data(), *Cc4s::world, "Vabij") :
+  Tensor<complex> *Vijab(
+    isArgumentGiven("HHPPCoulombIntegrals") ?
+      new Tensor<complex>(4, oovv.data(), syms.data(), *Cc4s::world, "Vijab") :
       nullptr
   );
 
   Tensor<complex> *Vaijb(
     isArgumentGiven("PHHPCoulombIntegrals") ?
-      new Tensor<complex>(4, vovo.data(), syms.data(), *Cc4s::world, "Vabij") :
+      new Tensor<complex>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaijb") :
       nullptr
   );
 
@@ -284,19 +285,19 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   Tensor<complex> conjTransposeGammaGai(false, *GammaGai);
   conjTransposeGammaGai.sum(1.0,*GammaGia,"Gia", 0.0,"Gai", fConj);
 
-  Tensor<complex> conjGammaGab(false, *GammaGab);
-  conjGammaGab.sum(1.0,*GammaGib,"Gab", 0.0,"Gab", fConj);
+  Tensor<complex> conjTransposeGammaGia(false, *GammaGia);
+  conjTransposeGammaGia.sum(1.0,*GammaGai,"Gai", 0.0,"Gia", fConj);
 
   if (Vabij) {
     (*Vabij)["abij"] = conjTransposeGammaGai["Gai"] * (*GammaGai)["Gbj"];
   }
 
-  if (Vaibj) {
-    (*Vaibj)["aibj"] = conjGammaGab["Gab"] * (*GammaGai)["Gij"];
-  }
-
   if (Vaijb) {
     (*Vaijb)["aijb"] = conjTransposeGammaGai["Gaj"] * (*GammaGia)["Gib"];
+  }
+
+  if (Vijab) {
+    (*Vijab)["ijab"] = conjTransposeGammaGia["Gia"] * (*GammaGia)["Gjb"];
   }
 
   /*
@@ -311,11 +312,11 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   if (Vabij) {
     allocatedTensorArgument<complex>("PPHHCoulombIntegrals", Vabij);
   }
-  if (Vaibj) {
-    allocatedTensorArgument<complex>("PPHHCoulombIntegrals", Vaibj);
-  }
   if (Vaijb) {
     allocatedTensorArgument<complex>("PHHPCoulombIntegrals", Vaijb);
+  }
+  if (Vijab) {
+    allocatedTensorArgument<complex>("HHPPCoulombIntegrals", Vijab);
   }
 }
 

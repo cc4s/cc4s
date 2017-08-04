@@ -1,4 +1,4 @@
-#include <algorithms/ClusterDoublesAlgorithm.hpp>
+#include <algorithms/LegacyClusterDoublesAlgorithm.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
 #include <tcc/DryTensor.hpp>
@@ -12,16 +12,16 @@
 using namespace CTF;
 using namespace cc4s;
 
-ClusterDoublesAlgorithm::ClusterDoublesAlgorithm(
+LegacyClusterDoublesAlgorithm::LegacyClusterDoublesAlgorithm(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-ClusterDoublesAlgorithm::~ClusterDoublesAlgorithm() {
+LegacyClusterDoublesAlgorithm::~LegacyClusterDoublesAlgorithm() {
   if (TabijMixer) delete TabijMixer;
 }
 
-void ClusterDoublesAlgorithm::run() {
+void LegacyClusterDoublesAlgorithm::run() {
   // Read the Coulomb Integrals Vabij required for the energy
   Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
 
@@ -93,7 +93,7 @@ void ClusterDoublesAlgorithm::run() {
   setRealArgument(energyName.str(), e);
 }
 
-void ClusterDoublesAlgorithm::dryRun() {
+void LegacyClusterDoublesAlgorithm::dryRun() {
   // Read the Coulomb Integrals Vabij required for the energy
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
 
@@ -151,13 +151,13 @@ void ClusterDoublesAlgorithm::dryRun() {
   setRealArgument(energyName.str(), 0.0);
 }
 
-void ClusterDoublesAlgorithm::dryIterate() {
+void LegacyClusterDoublesAlgorithm::dryIterate() {
   LOG(0, "CluserDoubles") << "Dry run for iteration not given for "
     << getAbbreviation() << std::endl;
 }
 
 
-double ClusterDoublesAlgorithm::calculateEnergy() {
+double LegacyClusterDoublesAlgorithm::calculateEnergy() {
   // get the Coulomb integrals to compute the energy
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
@@ -183,7 +183,7 @@ double ClusterDoublesAlgorithm::calculateEnergy() {
   return e;
 }
 
-void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
+void LegacyClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   CTF::Tensor<> &Rabij
 ) {
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
@@ -222,7 +222,7 @@ void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
 */
 }
 
-void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
+void LegacyClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
   cc4s::DryTensor<> &Rabij
 ) {
   // Build Dabij
@@ -230,7 +230,7 @@ void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
 }
 
 
-Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int integralsSliceSize) {
+Tensor<> *LegacyClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int integralsSliceSize) {
   Tensor<complex> *GammaGqr(getTensorArgument<complex>("CoulombVertex"));
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
@@ -268,7 +268,7 @@ Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(int a, int b, int integ
   return Vxycd;
 }
 
-DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integralsSliceSize) {
+DryTensor<> *LegacyClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integralsSliceSize) {
   // Read the Coulomb vertex GammaGqr
   DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
                                DryTensor<complex>>("CoulombVertex"));
@@ -303,7 +303,7 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceCoulombIntegrals(int integralsSlic
   return Vxycd;
 }
 
-void ClusterDoublesAlgorithm::sliceIntoResiduum(
+void LegacyClusterDoublesAlgorithm::sliceIntoResiduum(
   Tensor<> &Rxyij, int a, int b, Tensor<> &Rabij
 ) {
   int Nx(Rxyij.lens[0]);
@@ -328,7 +328,7 @@ void ClusterDoublesAlgorithm::sliceIntoResiduum(
   }
 }
 
-void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij)
+void LegacyClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij)
 {
   // Read the Coulomb Integrals Vabij required for the energy
   Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
@@ -358,7 +358,7 @@ void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij)
   LOG(2, abbreviation) << "Energy=" << e << std::endl;
 }
 
-Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(int a,
+Tensor<> *LegacyClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(int a,
                                                                      int b,
                                                                      int factorsSliceSize)
 {
@@ -460,7 +460,7 @@ Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactors(int a,
   return Xabij;
 }
 
-DryTensor<> *ClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(int factorsSliceSize)
+DryTensor<> *LegacyClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(int factorsSliceSize)
 {
   getTensorArgument<complex,DryTensor<complex>>("FactorOrbitals");
   DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
@@ -526,7 +526,7 @@ DryTensor<> *ClusterDoublesAlgorithm::drySliceAmplitudesFromCoulombFactors(int f
 }
 
 
-Tensor<> *ClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
+Tensor<> *LegacyClusterDoublesAlgorithm::sliceAmplitudesFromCoulombFactorsTcc(int a,
                                                                         int factorsSliceSize)
 {
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));

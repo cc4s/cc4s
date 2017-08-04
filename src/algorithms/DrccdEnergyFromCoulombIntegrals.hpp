@@ -32,11 +32,16 @@ namespace cc4s {
      * \brief Implements the iterate method with the DRCCD iteration.
      * \param[in] i Iteration number
      */
-    virtual void iterate(int i);
-    /**
-     * \brief Implements the dry iterate method with the DRCCD iteration.
-     */
-    virtual void dryIterate();
+    virtual void iterate(
+      int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
+    );
+
+    virtual void iterate(
+      int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
+    );
+
+    template <typename F>
+    void iterateTemplate(int i, Mixer<F> *TabijMixer);
   };
 }
 

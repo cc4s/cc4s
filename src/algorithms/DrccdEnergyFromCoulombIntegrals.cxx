@@ -18,18 +18,26 @@ DrccdEnergyFromCoulombIntegrals::DrccdEnergyFromCoulombIntegrals(
 DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 }
 
-void DrccdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
-  iterateTemplate<double>(int i, mixer);
+void DrccdEnergyFromCoulombIntegrals::iterate(
+  int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
+) {
+  iterateTemplate(i, TabijMixer);
 }
-void DrccdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
-  iterateTemplate<complex>(int i, mixer);
+void DrccdEnergyFromCoulombIntegrals::iterate(
+  int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
+) {
+  iterateTemplate(i, TabijMixer);
 }
 
 template <typename F>
-void DrccdEnergyFromCoulombIntegrals::iterateTemplate(int i, Mixer<F> *mixer) {
-  Tensor<F> *Tabij(&mixer->getNext());
-  // Read Vabij
-  Tensor<F> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+void DrccdEnergyFromCoulombIntegrals::iterateTemplate(
+  int i, Mixer<F> *TabijMixer
+) {
+  Tensor<F> *Tabij(&TabijMixer->getNext());
+  // Read all required integrals
+  Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
+  Tensor<F> *Vaijb(getTensorArgument<F>("PHHPCoulombIntegrals"));
+  Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
 
   // Construct intermediate Amplitudes
   Tensor<F> Rabij(false, *Tabij);
@@ -54,15 +62,13 @@ void DrccdEnergyFromCoulombIntegrals::iterateTemplate(int i, Mixer<F> *mixer) {
   else {
     // For the rest iterations compute the DRCCD amplitudes
     Rabij["abij"]  = (*Vabij)["abij"];
-    Rabij["abij"] += 2.0 * (*Vabij)["acik"] * (*Tabij)["cbkj"];
-    if (linearized) {
-      Rabij["abij"] += 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
-    } else {
+    Rabij["abij"] += 2.0 * (*Vaijb)["akic"] * (*Tabij)["cbkj"];
+    Rabij["abij"] += 2.0 * (*Vaijb)["bkjc"] * (*Tabij)["acik"];
+    if (!linearized) {
       // Construct intermediates
-      Tensor<F> Cabij(false, *Vabij);
-      Cabij["abij"]  = 2.0 * (*Vabij)["cbkj"] * (*Tabij)["acik"];
-      Rabij["abij"] += Cabij["abij"];
-      Rabij["abij"] += 2.0 * Cabij["acik"] * (*Tabij)["cbkj"];
+      Tensor<F> Calid(false, *Vaijb);
+      Calid["alid"]  = 2.0 * (*Vijab)["klcd"] * (*Tabij)["acik"];
+      Rabij["abij"] += 2.0 * Calid["alid"] * (*Tabij)["dblj"];
     }
   }
 
@@ -70,29 +76,5 @@ void DrccdEnergyFromCoulombIntegrals::iterateTemplate(int i, Mixer<F> *mixer) {
   doublesAmplitudesFromResiduum(Rabij);
   // And append them to the mixer
   TabijMixer->append(Rabij);
-}
-
-
-void DrccdEnergyFromCoulombIntegrals::dryIterate() {
-  {
-    // TODO: the Mixer should provide a DryTensor in the future
-    // Read the DRCCD amplitudes Tabij
-    //DryTensor<> *Tabij(
-    getTensorArgument<double, DryTensor<double>>("DrccdDoublesAmplitudes");
-    //);
-
-    // Read the Coulomb Integrals Vabij
-    DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
-  
-    // Allocate Tensors for T2 amplitudes
-    DryTensor<> Rabij(*Vabij);
-
-    // Define intermediates
-    DryTensor<> Cabij(*Vabij);
-
-    // TODO: implment dryDoublesAmplitudesFromResiduum
-    // at the moment, assume usage of Dabij
-    DryTensor<> Dabij(*Vabij);
-  }
 }
 

@@ -2,7 +2,7 @@
 #ifndef CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED 
 #define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
 
-#include <algorithms/ClusterDoublesAlgorithm.hpp>
+#include <algorithms/LegacyClusterDoublesAlgorithm.hpp>
 #include <mixers/Mixer.hpp>
 #include <string>
 #include <ctf.hpp>

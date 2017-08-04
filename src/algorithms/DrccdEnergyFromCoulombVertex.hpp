@@ -2,7 +2,7 @@
 #ifndef DRCCD_ENERGY_FROM_COULOMB_VERTEX_DEFINED 
 #define DRCCD_ENERGY_FROM_COULOMB_VERTEX_DEFINED
 
-#include <algorithms/ClusterDoublesAlgorithm.hpp>
+#include <algorithms/LegacyClusterDoublesAlgorithm.hpp>
 
 namespace cc4s {
   // this algorithm is now based on the ClusterDoublesAlgorithm
@@ -14,7 +14,7 @@ namespace cc4s {
    * amplitudes \f$T_{ab}^{ij}\f$ from the Coulomb vertex \f$ \Gamma^{a}_{iG} \f$
    * in a \f$ \mathcal{O}(N^{5}) \f$ implementation.
    */
-  class DrccdEnergyFromCoulombVertex: public ClusterDoublesAlgorithm {
+  class DrccdEnergyFromCoulombVertex: public LegacyClusterDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(DrccdEnergyFromCoulombVertex);
     DrccdEnergyFromCoulombVertex(

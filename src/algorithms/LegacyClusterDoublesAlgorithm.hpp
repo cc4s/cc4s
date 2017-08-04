@@ -1,6 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef CLUSTER_DOUBLES_ALGORITHM_DEFINED 
-#define CLUSTER_DOUBLES_ALGORITHM_DEFINED
+#ifndef LEGACY_CLUSTER_DOUBLES_ALGORITHM_DEFINED 
+#define LEGACY_CLUSTER_DOUBLES_ALGORITHM_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 #include <mixers/Mixer.hpp>
@@ -15,14 +15,14 @@ namespace cc4s {
    * \f$T_{ab}^{ij}\f$ and the Coulomb integrals \f$V_{ij}^{ab}\f$. For
    * calculating the amplitudes it calls the iteration routine of the actual algorithm.
    */
-  class ClusterDoublesAlgorithm: public Algorithm {
+  class LegacyClusterDoublesAlgorithm: public Algorithm {
   public:
-    ClusterDoublesAlgorithm(
+    LegacyClusterDoublesAlgorithm(
       std::vector<Argument> const &argumentList
     );
-    virtual ~ClusterDoublesAlgorithm();
+    virtual ~LegacyClusterDoublesAlgorithm();
     /**
-     * \brief Calculates the energy of a ClusterDoubles algorithm
+     * \brief Calculates the energy of a LegacyClusterDoubles algorithm
      */
     virtual void run();
 

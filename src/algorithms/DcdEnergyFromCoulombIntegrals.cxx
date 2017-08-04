@@ -12,7 +12,7 @@ ALGORITHM_REGISTRAR_DEFINITION(DcdEnergyFromCoulombIntegrals);
 
 DcdEnergyFromCoulombIntegrals::DcdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
-): ClusterDoublesAlgorithm(argumentList) {
+): LegacyClusterDoublesAlgorithm(argumentList) {
 }
 
 DcdEnergyFromCoulombIntegrals::~DcdEnergyFromCoulombIntegrals() {

@@ -14,7 +14,7 @@ ALGORITHM_REGISTRAR_DEFINITION(DrccdEnergyFromCoulombVertex);
 
 DrccdEnergyFromCoulombVertex::DrccdEnergyFromCoulombVertex(
   std::vector<Argument> const &argumentList
-): ClusterDoublesAlgorithm(argumentList) {
+): LegacyClusterDoublesAlgorithm(argumentList) {
 }
 
 DrccdEnergyFromCoulombVertex::~DrccdEnergyFromCoulombVertex() {

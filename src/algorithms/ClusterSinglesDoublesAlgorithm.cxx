@@ -12,7 +12,7 @@ using namespace cc4s;
 
 ClusterSinglesDoublesAlgorithm::ClusterSinglesDoublesAlgorithm(
   std::vector<Argument> const &argumentList
-): ClusterDoublesAlgorithm(argumentList) {
+): LegacyClusterDoublesAlgorithm(argumentList) {
 }
 
 ClusterSinglesDoublesAlgorithm::~ClusterSinglesDoublesAlgorithm() {
@@ -34,7 +34,7 @@ void ClusterSinglesDoublesAlgorithm::run() {
   int Nv(Vabij->lens[0]);
   int No(Vabij->lens[2]);
 
-  // TODO: factor out code common with ClusterDoublesAlgorithm
+  // TODO: factor out code common with LegacyClusterDoublesAlgorithm
   // instantiate mixer for the doubles amplitudes, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
   TabijMixer = MixerFactory<double>::create(mixerName, this);

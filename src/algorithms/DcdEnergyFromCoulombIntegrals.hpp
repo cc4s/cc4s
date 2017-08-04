@@ -2,7 +2,7 @@
 #ifndef DCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
 #define DCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
-#include <algorithms/ClusterDoublesAlgorithm.hpp>
+#include <algorithms/LegacyClusterDoublesAlgorithm.hpp>
 
 namespace cc4s {
   // this algorithm is now based on the ClusterDoublesAlgorithm

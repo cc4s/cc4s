@@ -57,22 +57,67 @@ namespace cc4s {
 //    Mixer<complex> *TabijMixer;
 
     /**
-     * \brief Performs one iteration of the concrete algorithm.
+     * \brief Evaluates and returns the energy according to the respective
+     * ClusterDoubles algorithm. An instantiation of this method
+     * is called from the run method with typename F being either double
+     * or complex, depending on which type of integrals are present.
+     **/
+    template <typename F>
+    F evaluate();
+
+    /**
+     * \brief Evaluates a dry run and returns 0 according to the respective
+     * ClusterDoubles algorithm. An instantiation of this method
+     * is called from the dryRun method with typename F being either double
+     * or complex, depending on which type of integrals are present.
+     **/
+    template <typename F>
+    F dryEvaluate();
+
+    /**
+     * \brief Performs one iteration of the concrete algorithm
+     * when operating with real valued Coulomb integrals.
      * \param[in] i Iteration number
+     * \param[in] TaiMixer Mixer for the singles amplitudes, may be null
+     * \param[in] TabijMixer Mixer for the doubles amplitudes.
      */
     virtual void iterate(
       int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
     ) = 0;
+    /**
+     * \brief Performs one iteration of the concrete algorithm
+     * when operating with complex valued Coulomb integrals.
+     * \param[in] i Iteration number
+     * \param[in] TaiMixer Mixer for the singles amplitudes, may be null
+     * \param[in] TabijMixer Mixer for the doubles amplitudes.
+     */
     virtual void iterate(
       int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
     ) = 0;
 
     /**
-     * \brief Performs a dry run of one iteration of the concrete algorithm.
+     * \brief Performs a dry run of one iteration of the concrete algorithm
+     * when operating with real valued Coulomb integrals.
      * The base class does not perform accounting and writes a warning about
      * that.
+     * Note that there is no DryMixer currently.
+     * \param[in] TaiMixer singles amplitudes, may be null
+     * \param[in] TabijMixer doubles amplitudes.
      */
-    virtual void dryIterate();
+    virtual void dryIterate(
+      DryTensor<double> *TaiMixer, DryTensor<double> *TabijMixer
+    );
+    /**
+     * \brief Performs a dry run of one iteration of the concrete algorithm
+     * when operating with complex valued Coulomb integrals.
+     * The base class does not perform accounting and writes a warning about
+     * that.
+     * \param[in] TaiMixer Mixer for the singles amplitudes, may be null
+     * \param[in] TabijMixer Mixer for the doubles amplitudes.
+     */
+    virtual void dryIterate(
+      DryTensor<complex> *TaiMixer, DryTensor<complex> *TabijMixer
+    );
 
     /**
      * \brief Calculates the energy from the amplitudes currently contained
@@ -80,9 +125,6 @@ namespace cc4s {
      **/
     template <typename F>
     F calculateEnergy(Mixer<F> *TabijMixer);
-
-    template <typename F>
-    F evaluate();
 
     /**
      * \brief Calculates the amplitudes from the current residuum and
@@ -147,16 +189,20 @@ namespace cc4s {
      * \param[in] factorsSliceSize slicing size of NR.
      * \param[out] Fabij sliced Residuum
      */
-    CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int factorsSliceSize);
+// TODO: translate to template methods
+//    CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int factorsSliceSize);
 
-    CTF::Tensor<> *sliceAmplitudesFromCoulombFactorsTcc(int a, int factorsSliceSize);
+// TODO: translate to template methods
+//    CTF::Tensor<> *sliceAmplitudesFromCoulombFactorsTcc(int a, int factorsSliceSize);
 
     /**
      * \brief Dry run for sliceAmplitudesFromCoulombFactors.
      * \param[in] factorsSliceSize slicing size of NR.
      * \param[out] Fabij dry tensor of sliced residuum.
      */
-    cc4s::DryTensor<> *drySliceAmplitudesFromCoulombFactors(int factorsSliceSize);
+// TODO: translate to template methods
+//    cc4s::DryTensor<> *drySliceAmplitudesFromCoulombFactors(int factorsSliceSize);
+
 
     /**
      * \brief Prints the energy from the residuum Rabij.
