@@ -20,6 +20,37 @@ ClusterDoublesAlgorithm::ClusterDoublesAlgorithm(
 ClusterDoublesAlgorithm::~ClusterDoublesAlgorithm() {
 }
 
+void ClusterDoublesAlgorithm::run() {
+  Data *Vabij(getArgumentData("PPHHCoulombIntegrals"));
+  TensorData<double> *realVabij(dynamic_cast<TensorData<double> *>(Vabij));
+  double e(0.0);
+  if (realVabij) {
+    e = evaluate<double>();
+  } else {
+    e = std::real( evaluate<complex>() );
+  }
+
+  std::stringstream energyName;
+  energyName << getAbbreviation() << "Energy";
+  setRealArgument(energyName.str(), e);
+}
+
+void ClusterDoublesAlgorithm::dryRun() {
+  Data *Vabij(getArgumentData("PPHHCoulombIntegrals"));
+  TensorData<double> *realVabij(dynamic_cast<TensorData<double> *>(Vabij));
+  double e(0.0);
+  if (realVabij) {
+    e = dryEvaluate<double>();
+  } else {
+    e = std::real( dryEvaluate<complex>() );
+  }
+
+  std::stringstream energyName;
+  energyName << getAbbreviation() << "Energy";
+  setRealArgument(energyName.str(), e);
+}
+
+
 template <typename F>
 F ClusterDoublesAlgorithm::evaluate() {
   // Read the Coulomb Integrals Vabij required for the energy
@@ -69,7 +100,7 @@ F ClusterDoublesAlgorithm::evaluate() {
   std::stringstream amplitudesName;
   amplitudesName << getAbbreviation() << "DoublesAmplitudes";
   if (isArgumentGiven(amplitudesName.str())) {
-    allocatedTensorArgument(
+    allocatedTensorArgument<F>(
       amplitudesName.str(), new Tensor<F>(TabijMixer->getNext())
     );
   }
@@ -77,35 +108,6 @@ F ClusterDoublesAlgorithm::evaluate() {
   return e;
 }
 
-void ClusterDoublesAlgorithm::run() {
-  Data *Vabij(getArgumentData("PPHHCoulombIntegrals"));
-  TensorData<double> *realVabij(dynamic_cast<TensorData<double> *>(Vabij));
-  double e(0.0);
-  if (realVabij) {
-    e = evaluate<double>();
-  } else {
-    e = std::real( evaluate<complex>() );
-  }
-
-  std::stringstream energyName;
-  energyName << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), e);
-}
-
-void ClusterDoublesAlgorithm::dryRun() {
-  Data *Vabij(getArgumentData("PPHHCoulombIntegrals"));
-  TensorData<double> *realVabij(dynamic_cast<TensorData<double> *>(Vabij));
-  double e(0.0);
-  if (realVabij) {
-    e = dryEvaluate<double>();
-  } else {
-    e = std::real( dryEvaluate<complex>() );
-  }
-
-  std::stringstream energyName;
-  energyName << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), e);
-}
 
 template <typename F>
 F ClusterDoublesAlgorithm::dryEvaluate() {
@@ -151,7 +153,7 @@ F ClusterDoublesAlgorithm::dryEvaluate() {
     int syms[] = { NS, NS, NS, NS };
     int vvoo[] = { Nv, Nv, No, No };
     Tabij = new DryTensor<F>(4, vvoo, syms, SOURCE_LOCATION);
-    allocatedTensorArgument(amplitudesName.str(), Tabij);
+    allocatedTensorArgument<F>(amplitudesName.str(), Tabij);
     // FIXME: no dry mixer exists yet
 //    TabijMixer->append(Tabij);
   }
@@ -168,6 +170,8 @@ F ClusterDoublesAlgorithm::dryEvaluate() {
   return 0;
 }
 
+
+// default dryIterate
 void ClusterDoublesAlgorithm::dryIterate(
   DryTensor<double> *Tai, DryTensor<double> *Tabij
 ) {
@@ -214,7 +218,7 @@ template <typename F>
 void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   CTF::Tensor<F> &Rabij
 ) {
-  Tensor<F> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+  Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
@@ -244,6 +248,17 @@ void ClusterDoublesAlgorithm::dryDoublesAmplitudesFromResiduum(
   // Build Dabij
   DryTensor<> Dabij(Rabij, SOURCE_LOCATION);
 }
+
+// instantiate
+template
+void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
+  CTF::Tensor<double> &Rabij
+);
+
+template
+void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
+  CTF::Tensor<complex> &Rabij
+);
 
 
 Tensor<> *ClusterDoublesAlgorithm::sliceCoulombIntegrals(

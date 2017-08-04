@@ -44,6 +44,7 @@ void CoulombIntegralsFromVertex::run() {
   vvvv = std::array<int,4>{{ Nv, Nv, Nv, Nv }};
   vovo = std::array<int,4>{{ Nv, No, Nv, No }};
   vvoo = std::array<int,4>{{ Nv, Nv, No, No }};
+  voov = std::array<int,4>{{ Nv, No, No, Nv }};
   oovv = std::array<int,4>{{ No, No, Nv, Nv }};
   oooo = std::array<int,4>{{ No, No, No, No }};
   ooov = std::array<int,4>{{ No, No, No, Nv }};
@@ -276,7 +277,7 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
 
   Tensor<complex> *Vaijb(
     isArgumentGiven("PHHPCoulombIntegrals") ?
-      new Tensor<complex>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaijb") :
+      new Tensor<complex>(4, voov.data(), syms.data(), *Cc4s::world, "Vaijb") :
       nullptr
   );
 

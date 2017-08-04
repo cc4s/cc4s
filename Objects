@@ -21,6 +21,7 @@ build/${CONFIG}/obj/mixers/Mixer.o \
 build/${CONFIG}/obj/mixers/LinearMixer.o \
 build/${CONFIG}/obj/algorithms/Algorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterDoublesAlgorithm.o \
+build/${CONFIG}/obj/algorithms/LegacyClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterSinglesDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/SliceCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexDecomposition.o \

@@ -18,12 +18,13 @@ CoulombVertexReader [
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (complex 1)
 ] [
-  PPHHCoulombIntegrals
+  PPHHCoulombIntegrals PHHPCoulombIntegrals HHPPCoulombIntegrals
 ].
 
 DrccdEnergyFromCoulombIntegrals [
-  PPHHCoulombIntegrals
+  PPHHCoulombIntegrals PHHPCoulombIntegrals HHPPCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 64)
 ] [
