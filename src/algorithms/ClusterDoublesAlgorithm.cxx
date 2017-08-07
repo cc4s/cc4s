@@ -190,10 +190,10 @@ void ClusterDoublesAlgorithm::dryIterate(
 template <typename F>
 F ClusterDoublesAlgorithm::calculateEnergy(Mixer<F> *TabijMixer) {
   // get the Coulomb integrals to compute the energy
-  Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
+  Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
 
   // allocate energy
-  Scalar<F> energy(*Vabij->wrld);
+  Scalar<F> energy(*Vijab->wrld);
   energy.set_name("energy");
 
   // get amplitudes from the mixer
@@ -201,16 +201,15 @@ F ClusterDoublesAlgorithm::calculateEnergy(Mixer<F> *TabijMixer) {
   Tabij->set_name("Tabij");
 
   // direct term
-  energy[""] = +2.0 * (*Tabij)["abij"] * (*Vabij)["abij"];
+  energy[""] = +2.0 * (*Tabij)["abij"] * (*Vijab)["ijab"];
   F dire(energy.get_val());
   // exchange term
-  energy[""] = -1.0 * (*Tabij)["abij"] * (*Vabij)["baij"];
+  energy[""] = -1.0 * (*Tabij)["abij"] * (*Vijab)["ijba"];
   F exce(energy.get_val());
   F e(dire + exce);
-  LOG(0, abbreviation) << "e=" << e << std::endl;
-  LOG(1, abbreviation) << "dir=" << dire << std::endl;
-  LOG(1, abbreviation) << "exc=" << exce << std::endl;
-
+  LOG(0, getCapitalizedAbbreviation()) << "e=" << e << std::endl;
+  LOG(1, getCapitalizedAbbreviation()) << "dir=" << dire << std::endl;
+  LOG(1, getCapitalizedAbbreviation()) << "exc=" << exce << std::endl;
   return e;
 }
 
@@ -222,23 +221,31 @@ void ClusterDoublesAlgorithm::doublesAmplitudesFromResiduum(
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
-  // create (real) excitation energy matrix
-  Matrix<> Dai(Vabij->lens[0], Vabij->lens[2], NS, *Vabij->wrld, "Dai");
-  Dai["ai"] =  (*epsi)["i"];
-  Dai["ai"] -= (*epsa)["a"];
+  Tensor<F> Fepsi(1, &epsi->lens[0], epsi->sym, *epsi->wrld, "Fepsi");
+  toComplexTensor(*epsi, Fepsi);
+  Tensor<F> Fepsa(1, &epsa->lens[0], epsa->sym, *epsa->wrld, "Fepsa");
+  toComplexTensor(*epsa, Fepsa);
+
+  // create excitation energy matrix
+  Tensor<F> Dabij(false, *Vabij);
+  Dabij.set_name("Dabij");
+  Dabij["abij"] =  Fepsi["i"];
+  Dabij["abij"] += Fepsi["j"];
+  Dabij["abij"] -= Fepsa["a"];
+  Dabij["abij"] -= Fepsa["b"];
 
   // TODO:
   // levelshifting can be implemented here
 
-  // use transform to divide real/complex Tabij by real Dabij = Dai+Dbj
-  CTF::Transform<double, double, F>(
-    std::function<void(double, double, F &)>(
-      [](double dai, double dbj, F &t) {
-        t = conj(t / (dai + dbj));
+  // use transform to divide Tabij by Dabij
+  CTF::Transform<F, F>(
+    std::function<void(F, F &)>(
+      [](F dabij, F &t) {
+        t = t / dabij;
       }
     )
   ) (
-    Dai["ai"], Dai["bj"], Rabij["abij"]
+    Dabij["abij"], Rabij["abij"]
   );
 }
 
@@ -363,33 +370,13 @@ void ClusterDoublesAlgorithm::sliceIntoResiduum(
   }
 }
 
-void ClusterDoublesAlgorithm::printEnergyFromResiduum(CTF::Tensor<> &Rabij) {
-  // Read the Coulomb Integrals Vabij required for the energy
-  Tensor<> *Vabij(getTensorArgument<>("PPHHCoulombIntegrals"));
-
-  Tensor<> Eabij(Rabij);
-  Eabij.set_name("Eabij");
-
-  doublesAmplitudesFromResiduum(Eabij);
-
-  // Allocate the energy e
-  Scalar<> energy(*Vabij->wrld);
-  energy.set_name("energy");
-  double e(0), dire, exce;
-
-  std::string abbreviation(getAbbreviation());
-  std::transform(abbreviation.begin(), abbreviation.end(), 
-                 abbreviation.begin(), ::toupper);
-
-  // Direct term
-  energy[""] = 2.0 * Eabij["abij"] * (*Vabij)["abij"];
-  dire  = energy.get_val();
-  // Exchange term
-  energy[""] = Eabij["abji"] * (*Vabij)["abij"];
-  exce  = -1.0 * energy.get_val();
-  // Total energy
-  e = dire + exce;
-  LOG(2, abbreviation) << "Energy=" << e << std::endl;
+std::string ClusterDoublesAlgorithm::getCapitalizedAbbreviation() {
+  std::string capitalizedAbbreviation(getAbbreviation());
+  std::transform(
+    capitalizedAbbreviation.begin(), capitalizedAbbreviation.end(),
+    capitalizedAbbreviation.begin(), ::toupper
+  );
+  return capitalizedAbbreviation;
 }
 
 // TODO: translate to template classes

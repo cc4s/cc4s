@@ -45,7 +45,7 @@ namespace cc4s {
     /**
      * \brief The abbreviation of the algorithm in capital letters.
      **/
-    std::string abbreviation;
+    std::string getCapitalizedAbbreviation();
 
     /**
      * \brief The mixer for the doubles amplitudes.
@@ -122,18 +122,19 @@ namespace cc4s {
     /**
      * \brief Calculates the energy from the amplitudes currently contained
      * in the mixer.
+     * \param[in] TabijMixer doubles amplitudes mixer.
      **/
     template <typename F>
     F calculateEnergy(Mixer<F> *TabijMixer);
 
     /**
-     * \brief Calculates the amplitudes from the current residuum and
-     * returns them in-place.
+     * \brief Calculates the doubles amplitudes from the given doubles residuum
+     * and returns them in place of the residuum tensor.
      * Usually this is done by calculating
      * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)\f$,
      * but other methods, such as level shifting may be used.
-     * \param[in] Rabij Residuum Tensor.
-     */
+     * \param[in] Rabij doubles amplitudes mixer.
+     **/
     template <typename F>
     void doublesAmplitudesFromResiduum(CTF::Tensor<F> &Rabij);
 
