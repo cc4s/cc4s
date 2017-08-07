@@ -63,6 +63,35 @@ template <typename F>
 F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
   Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+
+  // convert to type F (either complex or double)
+  Tensor<F> Fepsi(1, &epsi->lens[0], epsi->sym, *epsi->wrld, "Fepsi");
+  // NOTE: just copies if both arguments are real
+  toComplexTensor(*epsi, Fepsi);
+  Tensor<F> Fepsa(1, &epsa->lens[0], epsa->sym, *epsa->wrld, "Fepsa");
+  toComplexTensor(*epsa, Fepsa);
+
+  // create excitation energy
+  Tensor<F> Tabij(false, Vabij);
+  Tabij.set_name("Tabij");
+  Tabij["abij"] =  Fepsi["i"];
+  Tabij["abij"] += Fepsi["j"];
+  Tabij["abij"] -= Fepsa["a"];
+  Tabij["abij"] -= Fepsa["b"];
+
+  // use transform to divide Vabij by Tabij and store in Tabij
+  CTF::Transform<F, F>(
+    std::function<void(F, F &)>(
+      [](F vabij, F &tabij) {
+        tabij = conj(vabij / tabij);
+      }
+    )
+  ) (
+    Vabij["abij"], Tabij["abij"]
+  );
+
+// TODO: below method requires less memory but does not work with current CTF
+/*
   Matrix<> Dai(Vabij.lens[0], Vabij.lens[2], NS, *Vabij.wrld, "Dai");
   Dai["ai"] =  (*epsi)["i"];
   Dai["ai"] -= (*epsa)["a"];
@@ -78,6 +107,7 @@ F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
   ) (
     Dai["ai"], Dai["bj"], Tabij["abij"]
   );
+*/
 
   Scalar<F> energy(*Cc4s::world);
   F dire, exce;

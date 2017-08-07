@@ -270,6 +270,7 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   );
 
   Tensor<complex> *Vijab(
+    // TODO: HHPP is always conj(PPHH)
     isArgumentGiven("HHPPCoulombIntegrals") ?
       new Tensor<complex>(4, oovv.data(), syms.data(), *Cc4s::world, "Vijab") :
       nullptr
