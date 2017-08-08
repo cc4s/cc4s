@@ -92,6 +92,76 @@ namespace cc4s {
     void storeAmplitudes(Mixer<F> *mixer, const std::string &type);
 
     /**
+     * \brief Calculates and returns one slice Xxycd of the Coulomb integrals \f$V_{cd}^{ab}\f$
+     * coupled to the singles amplitudes.
+     * The indices x and y are restricted to the
+     * range {No+a, ..., No+a+No-1} and {No+b, ..., No+b+No-1}, respectively.
+     * The caller is responsible for deleting the dynamically allocated
+     * result tensor. 
+     * \param[in] a 1st sliced dimension (x).
+     * \param[in] b 2nd sliced dimension (y).
+     * \param[in] integralsSliceSize slicing rank.
+     * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
+     */
+    CTF::Tensor<double> *sliceCoupledCoulombIntegrals(
+      Mixer<double> *TaiMixer, int a, int b, int integralsSliceSize
+    );
+
+    CTF::Tensor<complex> *sliceCoupledCoulombIntegrals(
+      Mixer<complex> *TaiMixer, int a, int b, int integralsSliceSize
+    );
+
+
+    /**
+     * \brief Calculates and returns one slice Fabij of the residuum
+     * from the dressed Coulomb factors. The slice is computed from
+     * Rx and Ry and are restricted to the
+     * range {a, ..., factorsSliceSize+a-1} and {b, ..., factorsSliceSize+b-1}, respectively.
+     * The caller is responsible for deleting the dynamically allocated
+     * result tensor. 
+     * \param[in] a 1st sliced dimension (Rx).
+     * \param[in] b 2nd sliced dimension (Ry).
+     * \param[in] factorsSliceSize slicing rank of NR.
+     * \param[out] Fabij sliced Residuum
+     */
+    CTF::Tensor<double> *sliceAmplitudesFromCoupledCoulombFactors(
+      Mixer<double> *TaiMixer, Mixer<double> *TabijMixer,
+      int a, int b, int factorsSliceSize
+    );
+    CTF::Tensor<complex> *sliceAmplitudesFromCoupledCoulombFactors(
+      Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer,
+      int a, int b, int factorsSliceSize
+    );
+
+    /**
+     * \brief Calculates and returns tensor Fabij of the residuum
+     * from the dressed Coulomb factors. 
+     * The caller is responsible for deleting the dynamically allocated
+     * result tensor. 
+     * \param[out] Fabij sliced Residuum
+     */
+    CTF::Tensor<double> *amplitudesFromCoupledCoulombFactors(
+      Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
+    );
+    CTF::Tensor<complex> *amplitudesFromCoupledCoulombFactors(
+      Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
+    );
+
+    /**
+     * \brief Adds the given slice of the residuum tensor Rxyij to the
+     * entire residuum tensor Rabij at the respective index range.
+     * \param[in] a0 1st sliced dimension (x).
+     * \param[in] b0 2nd sliced dimension (y).
+     * \param[in] Rxyij sliced residuum
+     * \param[in] Rabij entire residuum.
+     */
+    template <typename F>
+    void sliceIntoResiduum(
+      CTF::Tensor<F> &Rxyij, int a0, int b0, CTF::Tensor<F> &Rabij
+    );
+
+
+    /**
      * \brief The abbreviation of the algorithm in capital letters.
      **/
     std::string getCapitalizedAbbreviation();
