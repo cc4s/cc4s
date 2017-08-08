@@ -44,14 +44,9 @@ namespace cc4s {
     );
 
     template <typename F>
-    virtual void iterate(
+    void iterate(
       int i, Mixer<F> *TaiMixer, Mixer<F> *TabijMixer
     );
-
-    /**
-     * \brief Implements the dry iterate method with the CCSD iteration.
-     */
-    virtual void dryIterate();
   };
 }
 
