@@ -23,6 +23,7 @@ build/${CONFIG}/obj/algorithms/Algorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/LegacyClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterSinglesDoublesAlgorithm.o \
+build/${CONFIG}/obj/algorithms/LegacyClusterSinglesDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/SliceCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexDecomposition.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexDecomposition.o \

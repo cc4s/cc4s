@@ -20,6 +20,18 @@ CcsdEnergyFromCoulombIntegrals::CcsdEnergyFromCoulombIntegrals(
 CcsdEnergyFromCoulombIntegrals::~CcsdEnergyFromCoulombIntegrals() {
 }
 
+void CcsdEnergyFromCoulombIntegrals::iterate(
+  int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
+) {
+  iterate<double>(i, TaiMixer, TabijMixer);
+}
+
+void CcsdEnergyFromCoulombIntegrals::iterate(
+  int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
+) {
+  iterate<complex>(i, TaiMixer, TabijMixer);
+}
+
 //////////////////////////////////////////////////////////////////////
 // Hirata iteration routine for the CCSD amplitudes Tabij and Tai from
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)

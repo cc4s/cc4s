@@ -41,7 +41,7 @@ namespace cc4s {
     );
 
     template <typename F>
-    void iterateTemplate(int i, Mixer<F> *TabijMixer);
+    void iterate(int i, Mixer<F> *TabijMixer);
   };
 }
 

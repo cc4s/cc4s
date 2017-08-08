@@ -2,7 +2,7 @@
 #ifndef DCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
 #define DCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
-#include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
+#include <algorithms/LegacyClusterSinglesDoublesAlgorithm.hpp>
 
 namespace cc4s {
   // this algorithm is now based on the ClusterSinglesDoublesAlgorithm
@@ -16,7 +16,9 @@ namespace cc4s {
    * V_{kl}^{ij}, V_{ka}^{ij}, V_{ci}^{ab}\f$ and \f$V_{cd}^{ab}\f$ (if given, else slicing and the Coulomb
    * Vertex \f$\Gamma_{pG}^q\f$  is used).
    */
-  class DcsdEnergyFromCoulombIntegrals: public ClusterSinglesDoublesAlgorithm {
+  class DcsdEnergyFromCoulombIntegrals:
+    public LegacyClusterSinglesDoublesAlgorithm
+  {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(DcsdEnergyFromCoulombIntegrals);
     DcsdEnergyFromCoulombIntegrals(
