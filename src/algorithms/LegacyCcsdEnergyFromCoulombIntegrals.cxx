@@ -183,7 +183,7 @@ void LegacyCcsdEnergyFromCoulombIntegrals::iterate(int i) {
           }
 
           Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
-          Rabij["abij"] += ( 1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
+          Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
           
           // Build Xakic
           if (Vabci) {
