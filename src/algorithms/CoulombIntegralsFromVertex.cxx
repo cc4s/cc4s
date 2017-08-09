@@ -48,6 +48,7 @@ void CoulombIntegralsFromVertex::run() {
   oovv = std::array<int,4>{{ No, No, Nv, Nv }};
   oooo = std::array<int,4>{{ No, No, No, No }};
   ooov = std::array<int,4>{{ No, No, No, Nv }};
+  vooo = std::array<int,4>{{ Nv, No, No, No }};
   vvvo = std::array<int,4>{{ Nv, Nv, Nv, No }};
 
   /*
@@ -282,6 +283,32 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
       nullptr
   );
 
+  
+  Tensor<complex> *Vaibj(
+    isArgumentGiven("PHPHCoulombIntegrals") ?
+      new Tensor<complex>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaibj") :
+      nullptr
+  );
+
+  Tensor<complex> *Vijkl(
+    isArgumentGiven("HHHHCoulombIntegrals") ?
+      new Tensor<complex>(4, oooo.data(), syms.data(), *Cc4s::world, "Vijkl") :
+      nullptr
+  );
+  
+  Tensor<complex> *Vijka(
+    isArgumentGiven("HHHPCoulombIntegrals") ?
+      new Tensor<complex>(4, ooov.data(), syms.data(), *Cc4s::world, "Vijka") :
+      nullptr
+  );
+
+  Tensor<complex> *Vaijk(
+    // TODO: PHHH is always conj(Permute(HHHP))
+    isArgumentGiven("PHHHCoulombIntegrals") ?
+      new Tensor<complex>(4, vooo.data(), syms.data(), *Cc4s::world, "Vaijk") :
+      nullptr
+  );
+
   Univar_Function<complex> fConj(conj<complex>);
 
   Tensor<complex> conjTransposeGammaGai(false, *GammaGai);
@@ -289,6 +316,9 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
 
   Tensor<complex> conjTransposeGammaGia(false, *GammaGia);
   conjTransposeGammaGia.sum(1.0,*GammaGai,"Gai", 0.0,"Gia", fConj);
+
+  Tensor<complex> conjTransposeGammaGij(false, *GammaGij);
+  conjTransposeGammaGij.sum(1.0,*GammaGij,"Gji", 0.0,"Gij", fConj);
 
   if (Vabij) {
     (*Vabij)["abij"] = conjTransposeGammaGai["Gai"] * (*GammaGai)["Gbj"];
@@ -300,6 +330,22 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
 
   if (Vijab) {
     (*Vijab)["ijab"] = conjTransposeGammaGia["Gia"] * (*GammaGia)["Gjb"];
+  }
+
+  if (Vaibj) {
+    (*Vaibj)["aibj"] = conjTransposeGammaGai["Gai"] * (*GammaGai)["Gbj"];
+  }
+
+  if (Vijkl) {
+    (*Vijkl)["ijkl"] = conjTransposeGammaGij["Gik"] * (*GammaGij)["Gjl"];
+  }
+
+  if (Vijka) {
+    (*Vijka)["ijka"] = conjTransposeGammaGij["Gik"] * (*GammaGia)["Gja"];
+  }
+
+  if (Vaijk) {
+    (*Vaijk)["aijk"] = conjTransposeGammaGai["Gaj"] * (*GammaGij)["Gik"];
   }
 
   /*
@@ -319,6 +365,18 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   }
   if (Vijab) {
     allocatedTensorArgument<complex>("HHPPCoulombIntegrals", Vijab);
+  }
+  if (Vaibj) {
+    allocatedTensorArgument<complex>("PHPHCoulombIntegrals", Vaibj);
+  }
+  if (Vijkl) {
+    allocatedTensorArgument<complex>("HHHHCoulombIntegrals", Vijkl);
+  }
+  if (Vijka) {
+    allocatedTensorArgument<complex>("HHHPCoulombIntegrals", Vijka);
+  }
+  if (Vaijk) {
+    allocatedTensorArgument<complex>("PHHHCoulombIntegrals", Vaijk);
   }
 }
 
