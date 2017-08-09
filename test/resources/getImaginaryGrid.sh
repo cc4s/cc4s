@@ -27,7 +27,7 @@ R_FACTOR=$(echo $R_SCIENTIFIC | awk 'BEGIN {FS="e"} {print $1+0}')
 R_EXPONENT=$(echo $R_SCIENTIFIC | awk 'BEGIN {FS="e"} {print $2+0}')
 
 # list suitable files
-FILE=reciprocalApproximation/1_xk${N0}.${R_FACTOR}_${R_EXPONENT}
+FILE=${0%/*}/reciprocalApproximation/1_xk${N0}.${R_FACTOR}_${R_EXPONENT}
 if test ! -e $FILE
 then
 	echo "No samples available for the system, try larger N"
