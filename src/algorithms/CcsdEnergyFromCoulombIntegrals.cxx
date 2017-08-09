@@ -125,7 +125,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   //***********************  T2 amplitude equations  *******************************
   //********************************************************************************
 
-  LOG(1, abbreviation) << "Solving T1 Amplitude Equations" << std::endl;
+  LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
   if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
     // For first iteration compute only the MP2 amplitudes 

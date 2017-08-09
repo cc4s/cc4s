@@ -165,9 +165,12 @@ void ClusterSinglesDoublesAlgorithm::amplitudesFromResiduum(
   // create excitation energy tensor
   Tensor<F> D(false, R);
   D.set_name("D");
-  for (int p(0); p < D.order/2; ++p) {
-    D[indices.c_str()] += Fepsi["i" + p];
-    D[indices.c_str()] -= Fepsa["a" + p];
+  int excitationLevel(D.order/2);
+  for (int p(0); p < excitationLevel; ++p) {
+    char epsiIndex[2] = {indices[excitationLevel+p], 0};
+    D[indices.c_str()] += Fepsi[epsiIndex];
+    char epsaIndex[2] = {indices[p], 0};
+    D[indices.c_str()] -= Fepsa[epsaIndex];
   }
 
   // TODO:
