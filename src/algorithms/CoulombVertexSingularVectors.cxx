@@ -41,8 +41,7 @@ void CoulombVertexSingularVectors::run() {
   LOG(1, "CoulombVertexSingularVectors")
     << "Contracting over orbitals of " << GammaGqr->get_name() 
     << " to get U.Sigma^2.U*, with NG=" << NG << std::endl;
-  // FIXME: shouldn't it be Grq? doesn't matter with real orbitals
-  USSUT["GH"] = conjGammaGqr["Gqr"] * (*GammaGqr)["Hqr"];
+  USSUT["GH"] = conjGammaGqr["Grq"] * (*GammaGqr)["Hqr"];
 
   // use ScaLapack routines to diagonalise the USSUT matrix, i.e. find U
   BlacsWorld world(USSUT.wrld->rank, USSUT.wrld->np);
