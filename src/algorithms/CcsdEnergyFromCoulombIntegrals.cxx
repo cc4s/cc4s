@@ -5,7 +5,9 @@
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
+#include <Cc4s.hpp>
 #include <ctf.hpp>
+#include <array>
 
 using namespace CTF;
 using namespace cc4s;
@@ -41,7 +43,9 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   int i, Mixer<F> *TaiMixer, Mixer<F> *TabijMixer
 ) {
   Tensor<F> *Tabij(&TabijMixer->getNext());
+  Tabij->set_name("Tabij");
   Tensor<F> *Tai(&TaiMixer->getNext());
+  Tai->set_name("Tai");
   // Read all required integrals
   Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
   Tensor<F> *Vaijb(getTensorArgument<F>("PHHPCoulombIntegrals"));
@@ -120,6 +124,8 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   //********************************************************************************
   //***********************  T2 amplitude equations  *******************************
   //********************************************************************************
+
+  LOG(1, abbreviation) << "Solving T1 Amplitude Equations" << std::endl;
 
   if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
     // For first iteration compute only the MP2 amplitudes 
@@ -221,7 +227,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
         Tensor<complex> DressedGammaGij(GammaGij);
         DressedGammaGij.set_name("DressedGammaGij");
         
-        conjTransposeDressedGammaGab["Gac"] += (-1.0) * conjTransposeGammaGab["Glc"] * (*Tai)["al"];
+        conjTransposeDressedGammaGab["Gac"] += (-1.0) * conjTransposeGammaGia["Glc"] * (*Tai)["al"];
 
         DressedGammaGij["Gki"] += ( 1.0) * (*GammaGia)["Gkd"] * (*Tai)["di"];
             
