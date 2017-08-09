@@ -177,9 +177,9 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
         Rabij["abij"] += (-1.0) * (*Vaijk)["akij"] * (*Tai)["bk"];
         Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vaijb)["akic"] * (*Tai)["cj"];
-        }
+      }
         
-        {
+      {
         // Build Xakic
         Tensor<F> Xakic(4, voov.data(), syms.data(), *Vabij->wrld, "Xakic");
 
