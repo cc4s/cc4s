@@ -295,8 +295,67 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   Mixer<complex> *TaiMixer,
   int a, int b, int integralsSliceSize
 ) {
-  // FIXME: implement me for complex amplitudes...
-  return nullptr;
+  // Read the amplitudes Tai
+  Tensor<complex> *Tai(&TaiMixer->getNext());
+  Tai->set_name("Tai");
+
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+  GammaGqr->set_name("GammaGqr");
+
+  // Compute No,Nv,NG,Np
+  int No(Tai->lens[1]);
+  int Nv(Tai->lens[0]);
+  int NG(GammaGqr->lens[0]);
+  int Np(No+Nv);
+
+  int aStart(Np-Nv), aEnd(Np);
+  int iStart(0), iEnd(No);
+  int GiaStart[] = {0, iStart,aStart};
+  int GiaEnd[]   = {NG,iEnd,  aEnd};
+  int GaiStart[] = {0, aStart,iStart};
+  int GaiEnd[]   = {NG,aEnd,  iEnd};
+  int GabStart[] = {0, aStart,aStart};
+  int GabEnd[]   = {NG,aEnd,  aEnd};
+  auto GammaGia( new Tensor<complex>(GammaGqr->slice(GiaStart, GiaEnd)) );
+  auto GammaGai( new Tensor<complex>(GammaGqr->slice(GaiStart, GaiEnd)) );
+  auto GammaGab( new Tensor<complex>(GammaGqr->slice(GabStart, GabEnd)) );
+
+  Univar_Function<complex> fConj(conj<complex>);
+
+  Tensor<complex> conjTransposeGammaGia(false, *GammaGia);
+  conjTransposeGammaGia.sum(1.0,*GammaGai,"Gai", 0.0,"Gia", fConj);
+  Tensor<complex> conjTransposeGammaGab(false, *GammaGab);
+  conjTransposeGammaGab.sum(1.0,*GammaGab,"Gba", 0.0,"Gab", fConj);
+
+  // Construct dressed Coulomb vertex GammaGab
+  Tensor<complex> DressedGammaGab(GammaGab);
+  DressedGammaGab.set_name("DressedGammaGab");
+  DressedGammaGab["Gab"] += (-1.0) * (*GammaGia)["Gkb"] * (*Tai)["ak"];
+
+  Tensor<complex> conjTransposeDressedGammaGab(conjTransposeGammaGab);
+  conjTransposeDressedGammaGab.set_name("conjTransposeDressedGammaGab");
+  conjTransposeDressedGammaGab["Gab"] += (-1.0) * conjTransposeGammaGia["Gkb"] * (*Tai)["ak"];
+
+  // Slice the respective parts from the dressed Coulomb vertex GammaGab
+  int leftGammaStart[] = { 0, a, 0 };
+  int leftGammaEnd[] = { NG, std::min(a+integralsSliceSize, Nv), Nv };
+  int rightGammaStart[] = { 0, b, 0 };
+  int rightGammaEnd[] = { NG, std::min(b+integralsSliceSize, Nv), Nv };
+
+  Tensor<complex> leftGamma(conjTransposeDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
+  Tensor<complex> rightGamma(DressedGammaGab.slice(rightGammaStart, rightGammaEnd));
+
+  // Allocate sliced Coulomb integrals
+  int lens[] = {
+    leftGamma.lens[1], rightGamma.lens[1], leftGamma.lens[2], rightGamma.lens[2]
+  };
+  int syms[] = { NS, NS, NS, NS };
+  Tensor<complex> *Vxycd(new Tensor<complex>(4, lens, syms, *GammaGqr->wrld, "Vxycd"));
+
+  // Contract left and right slices of the dressed Coulomb vertices
+  (*Vxycd)["xycd"]  = leftGamma["Gxc"] * rightGamma["Gyd"];
+  return Vxycd;
 }
 
 
@@ -454,8 +513,122 @@ Tensor<complex> *
   Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer,
   int a, int b, int factorsSliceSize
 ) {
-  // FIXME: implement me for complex amplitudes...
-  return nullptr;
+  Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
+  PirR->set_name("PirR");
+  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+  LambdaGR->set_name("LambdaGR");
+
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+
+  // Read the doubles amplitudes Tabij
+  Tensor<complex> *Tabij(&TabijMixer->getNext());
+  Tabij->set_name("Tabij");
+  Tensor<complex> *Tai(&TaiMixer->getNext());
+  Tai->set_name("Tai");
+
+  // Intermediate tensor Iabij=T2+T1*T1
+  Tensor<complex> Iabij(Tabij);
+  Iabij.set_name("Iabij");
+  Iabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(PirR->lens[0]);
+  int NR(PirR->lens[1]);
+  int NG(LambdaGR->lens[0]);
+  int Rx(std::min(factorsSliceSize, NR-a));
+  int Ry(std::min(factorsSliceSize, NR-b));
+  int Rvoo[] = { Rx, Nv, No, No };
+  int RRoo[] = { Rx, Ry, No, No };
+  int RR[] = { Rx, Ry };
+  int syms[] = { NS, NS, NS, NS };
+
+  Tensor<complex> VRS(2, RR, syms, *PirR->wrld, "VRS");
+
+  Tensor<complex> XRaij(4, Rvoo, syms, *PirR->wrld, "XRaij");
+
+  // Allocate and compute PiaR
+  int aRStart[] = {No , 0};
+  int aREnd[]   = {Np ,NR};
+  Tensor<complex> PiaR(PirR->slice(aRStart,aREnd));
+  PiaR.set_name("PiaR");
+
+  // Slice the respective parts from PiaR
+  int leftPiStart[]  = { 0 ,                                a };
+  int leftPiEnd[]    = { Nv, std::min(a+factorsSliceSize, NR) };
+  int rightPiStart[] = { 0 ,                                b };
+  int rightPiEnd[]   = { Nv, std::min(b+factorsSliceSize, NR) };
+
+  Tensor<complex> leftPiaR (PiaR.slice(leftPiStart  ,  leftPiEnd));
+  leftPiaR.set_name("leftPiaR");
+  Tensor<complex> rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
+  rightPiaR.set_name("rightPiaR");
+
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  Tensor<complex> conjLeftPiaR(false, leftPiaR);
+  conjLeftPiaR.set_name("ConjLeftPiaR");
+  conjLeftPiaR.sum(1.0, leftPiaR,"aR", 0.0,"aR", fConj);
+  
+  // Slice the respective parts from LambdaGR
+  int leftLambdaStart[]  = { 0  ,                                a };
+  int leftLambdaEnd[]    = { NG , std::min(a+factorsSliceSize, NR) };
+  Tensor<complex> leftLambdaGR (LambdaGR->slice(leftLambdaStart , leftLambdaEnd));
+  leftLambdaGR.set_name("leftLambdaGR");
+
+  int rightLambdaStart[]  = { 0  ,                                b };
+  int rightLambdaEnd[]    = { NG , std::min(b+factorsSliceSize, NR) };
+  Tensor<complex> rightLambdaGR (LambdaGR->slice(rightLambdaStart , rightLambdaEnd));
+  rightLambdaGR.set_name("rightLambdaGR");
+
+  // TODO: specify how the vertex should be computed
+  // assuming GammaGqr = PirR*PirR*LambdaGR (first Pi not conjugated)
+  XRaij["Rdij"] = (+1.0) * Iabij["cdij"] * conjLeftPiaR["cR"];
+
+  Tensor<complex> XRSij(4, RRoo, syms, *PirR->wrld, "XRSij");
+  XRSij["RSij"] = XRaij["Rdij"] * rightPiaR["dS"];
+
+  Tensor<complex> conjLeftLambdaGR(false, leftLambdaGR);
+  conjLeftLambdaGR.set_name("ConjLeftLambdaGR");
+  conjLeftLambdaGR.sum(1.0, leftLambdaGR,"GR", 0.0,"GR", fConj);
+  VRS["RS"] = conjLeftLambdaGR["GR"] * rightLambdaGR["GS"];
+
+  XRSij["RSij"] = XRSij["RSij"]  * VRS["RS"];
+
+  // Allocate and compute PiiR
+  int iRStart[] = {0 , 0};
+  int iREnd[]   = {No ,NR};
+  Tensor<complex> PiiR(PirR->slice(iRStart,iREnd));
+  PiiR.set_name("PiiR");
+
+  // Initialize dressedPiaR
+  Tensor<complex> dressedPiaR(PiaR);
+  dressedPiaR.set_name("dressedPiaR");
+
+  // Construct dressedPiaR
+  dressedPiaR["aR"] += (-1.0) * PiiR["kR"] * (*Tai)["ak"];
+
+  // Slice the respective parts from dressedPiaR
+  Tensor<complex> dressedLeftPiaR (dressedPiaR.slice(leftPiStart  ,  leftPiEnd));
+  dressedLeftPiaR.set_name("dressedLeftPiaR");
+  Tensor<complex> dressedRightPiaR(dressedPiaR.slice(rightPiStart , rightPiEnd));
+  dressedRightPiaR.set_name("dressedRightPiaR");
+
+  XRaij["Rbij"] = XRSij["RSij"]  * dressedRightPiaR["bS"];
+
+  // allocate Tensor for sliced T2 amplitudes
+  int vvoo[] = { Nv, Nv, No, No };
+  Tensor<complex> *Fabij(new Tensor<complex>(4, vvoo, syms, *PirR->wrld, "Fabij"));
+
+  Tensor<complex> conjDressedLeftPiaR(false, dressedLeftPiaR);
+  conjDressedLeftPiaR.set_name("ConjDressedLeftPiaR");
+  conjDressedLeftPiaR.sum(1.0, dressedLeftPiaR,"aR", 0.0,"aR", fConj);
+
+  // compute sliced amplitudes
+  (*Fabij)["abij"]  = XRaij["Rbij"]  * conjDressedLeftPiaR["aR"];
+
+  // return sliced amplitudes
+  return Fabij;
 }
 
 
