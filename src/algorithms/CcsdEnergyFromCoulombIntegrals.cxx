@@ -156,8 +156,8 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       // Build Lac
       Lac["ac"]  = Kac["ac"];
-      Lac["ac"] += ( 2.0) * conjTransposeGammaGab["Gca"] * (*GammaGai)["Gdk"] * (*Tai)["dk"];
-      Lac["ac"] += (-1.0) * conjTransposeGammaGai["Gck"] * (*GammaGab)["Gda"] * (*Tai)["dk"];
+      Lac["ac"] += ( 2.0) * conjTransposeGammaGab["Gac"] * (*GammaGia)["Gkd"] * (*Tai)["dk"];
+      Lac["ac"] += (-1.0) * conjTransposeGammaGab["Gad"] * (*GammaGia)["Gkc"] * (*Tai)["dk"];
 
       // Build Kki
       Kki["ki"]  = ( 2.0) * (*Vijab)["klcd"] * Xabij["cdil"];

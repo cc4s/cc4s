@@ -320,6 +320,10 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   Tensor<complex> conjTransposeGammaGij(false, *GammaGij);
   conjTransposeGammaGij.sum(1.0,*GammaGij,"Gji", 0.0,"Gij", fConj);
 
+  Tensor<complex> conjTransposeGammaGab(false, *GammaGab);
+  conjTransposeGammaGab.sum(1.0,*GammaGab,"Gba", 0.0,"Gab", fConj);
+
+
   if (Vabij) {
     (*Vabij)["abij"] = conjTransposeGammaGai["Gai"] * (*GammaGai)["Gbj"];
   }
@@ -333,7 +337,7 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   }
 
   if (Vaibj) {
-    (*Vaibj)["aibj"] = conjTransposeGammaGai["Gai"] * (*GammaGai)["Gbj"];
+    (*Vaibj)["aibj"] = conjTransposeGammaGab["Gab"] * (*GammaGij)["Gij"];
   }
 
   if (Vijkl) {
