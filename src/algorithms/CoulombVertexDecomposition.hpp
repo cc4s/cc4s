@@ -34,9 +34,9 @@ namespace cc4s {
      */
     int64_t rank;
 
-    static int64_t constexpr DEFAULT_RANK = -1;
+    static int64_t constexpr DEFAULT_RANK_SIZE = -1;
 
-    static double constexpr DEFAULT_RANK_FACTOR = 2.0;
+    static double constexpr DEFAULT_RANK_FACTOR = 3.0;
 
     /**
      * \brief The Frobenius norm of the difference between

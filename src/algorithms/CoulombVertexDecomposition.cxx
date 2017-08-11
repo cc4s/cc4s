@@ -37,8 +37,8 @@ void CoulombVertexDecomposition::run() {
   int Np(GammaGqr->lens[1]);
 
   // calculate decomposition rank
-  rank = getIntegerArgument("rank", DEFAULT_RANK);
-  // if rank is not given use rank factors (if they are not given use rankFactors=2.0)
+  rank = getIntegerArgument("rank", DEFAULT_RANK_SIZE);
+  // if rank is not given use rank factors (if they are not given use rankFactors=3.0)
   if (rank == -1) {
     double rankFactor(getRealArgument("rankFactor", DEFAULT_RANK_FACTOR));
     rank = NG * rankFactor;
@@ -136,7 +136,7 @@ void CoulombVertexDecomposition::dryRun() {
 
 
   // calculate decomposition rank
-  rank = getIntegerArgument("rank", DEFAULT_RANK);
+  rank = getIntegerArgument("rankSize", DEFAULT_RANK_SIZE);
   // if rank is not given use rank factors (if they are not given use rankFactors=2.0)
   if (rank == -1) {
     double rankFactor(getRealArgument("rankFactor", DEFAULT_RANK_FACTOR));

@@ -273,44 +273,51 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       if (isArgumentGiven("CoulombFactors")) {
 
-	// Read the factorsSliceSize.
-	Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
-	LambdaGR->set_name("LambdaGR");
+        // Read the factorsSliceSize.
+        Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+        LambdaGR->set_name("LambdaGR");
 
-	int NR(LambdaGR->lens[1]);
-
-	//	factorsSliceSize = getIntegerArgument("factorsSliceSize", NR);
-
-	// calculate decomposition rank
-	// if rank is not given use rank factors (if they are not given use rankFactors=2.0)
-	//	if (factorsSliceSize == -1) {
-	//	  double factorsSliceFactor(getRealArgument("factorsSliceFactor", 1.0));
-	//	  rank = NG * rankFactor;
-	//	}
+        int NR(LambdaGR->lens[1]);
                 
-	int factorsSliceSize(
-	  getIntegerArgument("factorsSliceSize", NR)
-	);
+        int factorsSliceSize(
+          getIntegerArgument("factorsSliceSize", DEFAULT_SLICE_SIZE)
+        );
+        if (factorsSliceSize == -1) {
+          if (isArgumentGiven("factorsSliceFactor")) {
+            double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
+            factorsSliceSize = NR * factorsSliceFactor;
+          } else {
+            factorsSliceSize = Nv;
+          }
+        }
 
-	// Slice loop starts here
-	for (int b(0); b < NR; b += factorsSliceSize) {
-	  for (int a(0); a < NR; a += factorsSliceSize) {
-	    LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
-	    Tensor<F> *Fabij(
+        // Slice loop starts here
+        for (int b(0); b < NR; b += factorsSliceSize) {
+          for (int a(0); a < NR; a += factorsSliceSize) {
+            LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+            Tensor<F> *Fabij(
               sliceAmplitudesFromCoupledCoulombFactors(
               TaiMixer, TabijMixer, a, b, factorsSliceSize
               )
             );
-	    Fabij->set_name("Fabij");
-	    Rabij["abij"] += (*Fabij)["abij"];
-	    delete Fabij;
-	  }
-	}
+            Fabij->set_name("Fabij");
+            Rabij["abij"] += (*Fabij)["abij"];
+            delete Fabij;
+          }
+        }
       }
       else {
         // Read the integralsSliceSize. If not provided use No
-        int integralsSliceSize(getIntegerArgument("integralsSliceSize",No));
-
+        int integralsSliceSize(getIntegerArgument("integralsSliceSize",DEFAULT_SLICE_SIZE));
+        if (integralsSliceSize == -1) {
+          if (isArgumentGiven("integralsSliceFactor")) {
+            double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
+            integralsSliceSize = Nv * integralsSliceFactor;
+          } else {
+            integralsSliceSize = No;
+          }
+        }
+        
         // Slice loop starts here
         for (int b(0); b < Nv; b += integralsSliceSize) {
           for (int a(b); a < Nv; a += integralsSliceSize) {

@@ -30,6 +30,8 @@ namespace cc4s {
      */
     virtual std::string getAbbreviation() { return "Ccsd"; }
 
+    static int64_t constexpr DEFAULT_SLICE_SIZE = -1;
+
   protected:
     /**
      * \brief Implements the iterate method with the CCSD iteration. Iteration

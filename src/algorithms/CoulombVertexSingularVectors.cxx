@@ -52,10 +52,10 @@ void CoulombVertexSingularVectors::run() {
   eigenSystem.solve(SS);
 
   // get number of field variables
-  int NF(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES));
+  int NF(getIntegerArgument("fieldVariablesSize", DEFAULT_FIELD_VARIABLES_SIZE));
   // if fieldVariables not given use reduction
-  if (NF == DEFAULT_FIELD_VARIABLES) {
-    double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
+  if (NF == DEFAULT_FIELD_VARIABLES_SIZE) {
+    double reduction(getRealArgument("fieldVariablesRank", DEFAULT_FIELD_VARIABLES_RANK));
     NF = static_cast<int>(NG * reduction + 0.5);
   }
 
@@ -91,10 +91,10 @@ void CoulombVertexSingularVectors::dryRun() {
 
   int NG(GammaGqr->lens[0]);
   // get number of field variables
-  int NF(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES));
+  int NF(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES_SIZE));
   // if fieldVariables not given use reduction
-  if (NF == DEFAULT_FIELD_VARIABLES) {
-    double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
+  if (NF == DEFAULT_FIELD_VARIABLES_SIZE) {
+    double reduction(getRealArgument("reduction", DEFAULT_FIELD_VARIABLES_RANK));
     NF = static_cast<int>(NG * reduction + 0.5);
   }
 
