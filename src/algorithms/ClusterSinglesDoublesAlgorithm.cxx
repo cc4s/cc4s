@@ -547,6 +547,8 @@ Tensor<complex> *
   int RR[] = { Rx, Ry };
   int syms[] = { NS, NS, NS, NS };
 
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+
   Tensor<complex> VRS(2, RR, syms, *PirR->wrld, "VRS");
 
   Tensor<complex> XRaij(4, Rvoo, syms, *PirR->wrld, "XRaij");
@@ -556,6 +558,9 @@ Tensor<complex> *
   int aREnd[]   = {Np ,NR};
   Tensor<complex> PiaR(PirR->slice(aRStart,aREnd));
   PiaR.set_name("PiaR");
+  Tensor<complex> conjPiaR(false, PiaR);
+  conjPiaR.set_name("ConjPiaR");
+  conjPiaR.sum(1.0, PiaR,"aR", 0.0,"aR", fConj);
 
   // Slice the respective parts from PiaR
   int leftPiStart[]  = { 0 ,                                a };
@@ -567,11 +572,6 @@ Tensor<complex> *
   leftPiaR.set_name("leftPiaR");
   Tensor<complex> rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
   rightPiaR.set_name("rightPiaR");
-
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  Tensor<complex> conjLeftPiaR(false, leftPiaR);
-  conjLeftPiaR.set_name("ConjLeftPiaR");
-  conjLeftPiaR.sum(1.0, leftPiaR,"aR", 0.0,"aR", fConj);
   
   // Slice the respective parts from LambdaGR
   int leftLambdaStart[]  = { 0  ,                                a };
@@ -579,21 +579,22 @@ Tensor<complex> *
   Tensor<complex> leftLambdaGR (LambdaGR->slice(leftLambdaStart , leftLambdaEnd));
   leftLambdaGR.set_name("leftLambdaGR");
 
+  Tensor<complex> conjLeftLambdaGR(false, leftLambdaGR);
+  conjLeftLambdaGR.set_name("ConjLeftLambdaGR");
+  conjLeftLambdaGR.sum(1.0, leftLambdaGR,"GR", 0.0,"GR", fConj);
+
   int rightLambdaStart[]  = { 0  ,                                b };
   int rightLambdaEnd[]    = { NG , std::min(b+factorsSliceSize, NR) };
   Tensor<complex> rightLambdaGR (LambdaGR->slice(rightLambdaStart , rightLambdaEnd));
   rightLambdaGR.set_name("rightLambdaGR");
 
   // TODO: specify how the vertex should be computed
-  // assuming GammaGqr = PirR*PirR*LambdaGR (first Pi not conjugated)
-  XRaij["Rdij"] = (+1.0) * Iabij["cdij"] * conjLeftPiaR["cR"];
+  // assuming GammaGqr = (PiqR*)*(PirR)*(LambdaGR) (first Pi conjugated)
+  XRaij["Rdij"] = (+1.0) * Iabij["cdij"] * leftPiaR["cR"];
 
   Tensor<complex> XRSij(4, RRoo, syms, *PirR->wrld, "XRSij");
   XRSij["RSij"] = XRaij["Rdij"] * rightPiaR["dS"];
 
-  Tensor<complex> conjLeftLambdaGR(false, leftLambdaGR);
-  conjLeftLambdaGR.set_name("ConjLeftLambdaGR");
-  conjLeftLambdaGR.sum(1.0, leftLambdaGR,"GR", 0.0,"GR", fConj);
   VRS["RS"] = conjLeftLambdaGR["GR"] * rightLambdaGR["GS"];
 
   XRSij["RSij"] = XRSij["RSij"]  * VRS["RS"];
@@ -603,13 +604,16 @@ Tensor<complex> *
   int iREnd[]   = {No ,NR};
   Tensor<complex> PiiR(PirR->slice(iRStart,iREnd));
   PiiR.set_name("PiiR");
+  Tensor<complex> conjPiiR(false, PiiR);
+  conjPiiR.set_name("ConjPiiR");
+  conjPiiR.sum(1.0, PiiR,"iR", 0.0,"iR", fConj);
 
   // Initialize dressedPiaR
-  Tensor<complex> dressedPiaR(PiaR);
+  Tensor<complex> dressedPiaR(conjPiaR);
   dressedPiaR.set_name("dressedPiaR");
 
   // Construct dressedPiaR
-  dressedPiaR["aR"] += (-1.0) * PiiR["kR"] * (*Tai)["ak"];
+  dressedPiaR["aR"] += (-1.0) * conjPiiR["kR"] * (*Tai)["ak"];
 
   // Slice the respective parts from dressedPiaR
   Tensor<complex> dressedLeftPiaR (dressedPiaR.slice(leftPiStart  ,  leftPiEnd));
@@ -623,12 +627,8 @@ Tensor<complex> *
   int vvoo[] = { Nv, Nv, No, No };
   Tensor<complex> *Fabij(new Tensor<complex>(4, vvoo, syms, *PirR->wrld, "Fabij"));
 
-  Tensor<complex> conjDressedLeftPiaR(false, dressedLeftPiaR);
-  conjDressedLeftPiaR.set_name("ConjDressedLeftPiaR");
-  conjDressedLeftPiaR.sum(1.0, dressedLeftPiaR,"aR", 0.0,"aR", fConj);
-
   // compute sliced amplitudes
-  (*Fabij)["abij"]  = XRaij["Rbij"]  * conjDressedLeftPiaR["aR"];
+  (*Fabij)["abij"]  = XRaij["Rbij"]  * dressedLeftPiaR["aR"];
 
   // return sliced amplitudes
   return Fabij;

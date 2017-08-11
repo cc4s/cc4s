@@ -274,7 +274,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     throw new EXCEPTION(stringStream.str());
   }
 
-//  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
   // initial guess
   double quadraticDelta(getDelta());
   fitAlternatingLeastSquaresFactor(
@@ -284,7 +284,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   if (normalizedFactorOrbitals) normalizePi(*PirR);
   mixer->append(*PirR);
   // (*PiqR)["qR"] = (*PirR)["qR"];
-  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR");
+  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR",fConj);
   if (writeSubIterations) {
     LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << 0 << ")"
       << "Pi^(" << (i+1) << "," << 0 << ")"
@@ -314,7 +314,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     }
     (*PirR)["qR"] = mixer->getNext()["qR"];
     // (*PiqR)["qR"] = (*PirR)["qR"];
-    PiqR->sum(1.0, *PirR,"qR", 0.0,"qR");
+    PiqR->sum(1.0, *PirR,"qR", 0.0,"qR",fConj);
     quadraticDelta = getDelta();
     if (writeSubIterations) {
       LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
