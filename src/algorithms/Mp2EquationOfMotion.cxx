@@ -158,7 +158,7 @@ void Mp2EquationOfMotion::run() {
       Rabij.lens[0] * Rabij.lens[1] * Rabij.lens[2] *  Rabij.lens[3]
   );
 
-  LOG(1,"Right EOM Vectors Lengths") << " Lengths= "
+  LOG(1,"Right EOM Vectors Lengths BEGIN ") << " Lengths= "
     << oneBodyLength << " " << twoBodyLength << std::endl;
 
 
