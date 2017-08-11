@@ -408,18 +408,21 @@ void CcsdEquationOfMotion::run() {
       energy[""]  = (*LHia)["ia"] * (*HRai)["ai"];
       energy[""] += LHijab["ijab"] * HRabij["abij"];
       energy_val = energy.get_val();
+      int Hpq_data_size;
 
       if (Hpq->wrld->rank == 0) {
-          hValues = (double*) malloc(1);
-          hIndices = (int64_t*) malloc(1);
-          hValues[0] = energy_val;
-          hIndices[0] = i + j * (totalDimension - 1);
+        Hpq_data_size = 1;
+        hValues = (double*) malloc(1);
+        hIndices = (int64_t*) malloc(1);
+        hValues[0] = energy_val;
+        hIndices[0] = i + j * (totalDimension - 1);
       } else {
-          hValues = (double*) malloc(0);
-          hIndices = (int64_t*) malloc(0);
+        Hpq_data_size = 0;
+        hValues = (double*) malloc(0);
+        hIndices = (int64_t*) malloc(0);
       }
 
-      (*Hpq).write(1, hIndices, hValues);
+      (*Hpq).write(Hpq_data_size, hIndices, hValues);
       LOG(1, "CCSD_EOM") << "< " << i << " |H| " <<  j << " >"  << " = "
                         << energy_val << std::endl;
     }
