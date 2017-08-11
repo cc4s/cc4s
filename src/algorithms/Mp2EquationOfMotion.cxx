@@ -153,11 +153,98 @@ void Mp2EquationOfMotion::run() {
 
   int64_t *hIndices;
   double *hValues;
+  int oneBodyLength((*Lia).lens[0] * (*Lia).lens[1]);
+  int twoBodyLength(
+      Rabij.lens[0] * Rabij.lens[1] * Rabij.lens[2] *  Rabij.lens[3]
+  );
+
+  LOG(1,"Right EOM Vectors Lengths") << " Lengths= "
+    << oneBodyLength << " " << twoBodyLength << std::endl;
+
+
+  for (int64_t j = 0 ; j < totalDimension-1; j++) {
+    getCanonicalPerturbationBasis(*Rai, Rabij, j);
+
+    // Contruct HR (one body part)
+    (*HRai)["bi"]  = 0.0;
+    (*HRai)["bi"] += ( - 1.0 ) * (*Fij)["ki"] * (*Rai)["bk"];
+    (*HRai)["bi"] += ( + 1.0 ) * (*Fab)["bc"] * (*Rai)["ci"];
+    (*HRai)["bi"] += ( - 1.0 ) * (*Viajb)["kbid"] * (*Rai)["dk"];
+    (*HRai)["bi"] += ( + 0.5 ) * (*Vijka)["klie"] * Rabij["ebkl"];
+    (*HRai)["bi"] += ( + 0.5 ) * (*Viabc)["kbde"] * Rabij["deki"];
+    (*HRai)["bi"] += ( + 1.0 ) * Tabij["cbli"] * (*Vijab)["lmcf"] * (*Rai)["fm"];
+    (*HRai)["bi"] += ( - 0.5 ) * Tabij["cdmi"] * (*Vijab)["mncd"] * (*Rai)["bn"];
+    (*HRai)["bi"] += ( - 0.5 ) * Tabij["cblm"] * (*Vijab)["lmcf"] * (*Rai)["fi"];
+
+    // Contruct HR (two body part)
+    HRabij["cdij"]  = 0.0;
+    HRabij["cdij"] += ( - 1.0 ) * (*Viajk)["mdij"] * (*Rai)["cm"];
+    HRabij["cdij"] += ( + 1.0 ) * (*Viajk)["mcij"] * (*Rai)["dm"];
+    HRabij["cdij"] += ( + 1.0 ) * (*Vabic)["cdie"] * (*Rai)["ej"];
+    HRabij["cdij"] += ( - 1.0 ) * (*Vabic)["cdje"] * (*Rai)["ei"];
+    HRabij["cdij"] += ( - 1.0 ) * (*Fij)["mi"] * Rabij["cdmj"];
+    HRabij["cdij"] += ( + 1.0 ) * (*Fij)["mj"] * Rabij["cdmi"];
+    HRabij["cdij"] += ( - 1.0 ) * (*Fab)["de"] * Rabij["ecij"];
+    HRabij["cdij"] += ( + 1.0 ) * (*Fab)["ce"] * Rabij["edij"];
+    HRabij["cdij"] += ( + 0.5 ) * (*Vijkl)["mnij"] * Rabij["cdmn"];
+    HRabij["cdij"] += ( + 1.0 ) * (*Viajb)["mdif"] * Rabij["fcmj"];
+    HRabij["cdij"] += ( - 1.0 ) * (*Viajb)["mcif"] * Rabij["fdmj"];
+    HRabij["cdij"] += ( - 1.0 ) * (*Viajb)["mdjf"] * Rabij["fcmi"];
+    HRabij["cdij"] += ( + 1.0 ) * (*Viajb)["mcjf"] * Rabij["fdmi"];
+    HRabij["cdij"] += ( + 0.5 ) * (*Vabcd)["cdef"] * Rabij["efij"];
+    HRabij["cdij"] += ( - 1.0 ) * Tabij["cdmj"] * (*Vijka)["mnig"] * (*Rai)["gn"];
+    HRabij["cdij"] += ( + 1.0 ) * Tabij["cdmi"] * (*Vijka)["mnjg"] * (*Rai)["gn"];
+    HRabij["cdij"] += ( + 1.0 ) * Tabij["ednj"] * (*Vijka)["noie"] * (*Rai)["co"];
+    HRabij["cdij"] += ( - 1.0 ) * Tabij["ecnj"] * (*Vijka)["noie"] * (*Rai)["do"];
+    HRabij["cdij"] += ( - 1.0 ) * Tabij["edni"] * (*Vijka)["noje"] * (*Rai)["co"];
+    HRabij["cdij"] += ( + 1.0 ) * Tabij["ecni"] * (*Vijka)["noje"] * (*Rai)["do"];
+    HRabij["cdij"] += ( + 0.5 ) * Tabij["cdmn"] * (*Vijka)["mnig"] * (*Rai)["gj"];
+    HRabij["cdij"] += ( - 0.5 ) * Tabij["cdmn"] * (*Vijka)["mnjg"] * (*Rai)["gi"];
+    HRabij["cdij"] += ( + 1.0 ) * Tabij["ecij"] * (*Viabc)["ndeg"] * (*Rai)["gn"];
+    HRabij["cdij"] += ( - 1.0 ) * Tabij["edij"] * (*Viabc)["nceg"] * (*Rai)["gn"];
+    HRabij["cdij"] += ( - 0.5 ) * Tabij["efij"] * (*Viabc)["odef"] * (*Rai)["co"];
+    HRabij["cdij"] += ( + 0.5 ) * Tabij["efij"] * (*Viabc)["ocef"] * (*Rai)["do"];
+    HRabij["cdij"] += ( + 1.0 ) * Tabij["ecni"] * (*Viabc)["ndeg"] * (*Rai)["gj"];
+    HRabij["cdij"] += ( - 1.0 ) * Tabij["edni"] * (*Viabc)["nceg"] * (*Rai)["gj"];
+    HRabij["cdij"] += ( - 1.0 ) * Tabij["ecnj"] * (*Viabc)["ndeg"] * (*Rai)["gi"];
+    HRabij["cdij"] += ( + 1.0 ) * Tabij["ednj"] * (*Viabc)["nceg"] * (*Rai)["gi"];
+    HRabij["cdij"] += ( + 0.5 ) * Tabij["edij"] * (*Vijab)["noeh"] * Rabij["hcno"];
+    HRabij["cdij"] += ( - 0.5 ) * Tabij["ecij"] * (*Vijab)["noeh"] * Rabij["hdno"];
+    HRabij["cdij"] += ( + 0.25 ) * Tabij["efij"] * (*Vijab)["opef"] * Rabij["cdop"];
+    HRabij["cdij"] += ( - 0.5 ) * Tabij["cdmi"] * (*Vijab)["mngh"] * Rabij["ghnj"];
+    HRabij["cdij"] += ( + 0.5 ) * Tabij["cdmj"] * (*Vijab)["mngh"] * Rabij["ghni"];
+    HRabij["cdij"] += ( - 1.0 ) * Tabij["edni"] * (*Vijab)["noeh"] * Rabij["hcoj"];
+    HRabij["cdij"] += ( + 1.0 ) * Tabij["ecni"] * (*Vijab)["noeh"] * Rabij["hdoj"];
+    HRabij["cdij"] += ( + 1.0 ) * Tabij["ednj"] * (*Vijab)["noeh"] * Rabij["hcoi"];
+    HRabij["cdij"] += ( - 1.0 ) * Tabij["ecnj"] * (*Vijab)["noeh"] * Rabij["hdoi"];
+    HRabij["cdij"] += ( - 0.5 ) * Tabij["efoi"] * (*Vijab)["opef"] * Rabij["cdpj"];
+    HRabij["cdij"] += ( + 0.5 ) * Tabij["efoj"] * (*Vijab)["opef"] * Rabij["cdpi"];
+    HRabij["cdij"] += ( + 0.25 ) * Tabij["cdmn"] * (*Vijab)["mngh"] * Rabij["ghij"];
+    HRabij["cdij"] += ( + 0.5 ) * Tabij["edno"] * (*Vijab)["noeh"] * Rabij["hcij"];
+    HRabij["cdij"] += ( - 0.5 ) * Tabij["ecno"] * (*Vijab)["noeh"] * Rabij["hdij"];
+
+    writeEOMVectors(*HRai, 2);
+    writeEOMVectors(HRabij, 4);
+    bool new_line(false);
+    if (HRai->wrld->rank == 0) {
+      new_line = true;
+    }
+    if (new_line) {
+      std::cout  << std::endl;
+    }
+
+  }
+
+  LOG(1,"Right EOM END") << ' ' << std::endl;
+
+  allocatedTensorArgument("SimlarityTransformedHamiltonianSD", Hpq);
+
+  LOG(1,"Left EOM Vectors Lengths BEGIN") << " Lengths= "
+    << oneBodyLength << " " << twoBodyLength << std::endl;
 
   for (int64_t i = 0 ; i < totalDimension-1 ; i++) {
-    getCanonicalPerturbationBasis(*Lia, Lijab, i);
-    //Lijab["aaij"] = 0.0;
-    //Lijab["abii"] = 0.0;
+
+     getCanonicalPerturbationBasis(*Lia, Lijab, i);
 
     // Contruct LH (one body part)
     (*LHia)["ja"]  = 0.0;
@@ -209,95 +296,63 @@ void Mp2EquationOfMotion::run() {
     LHijab["klab"] += ( - 0.5 ) * Tabij["efop"] * (*Vijab)["opfb"] * Lijab["klea"];
     LHijab["klab"] += ( + 0.5 ) * Tabij["efop"] * (*Vijab)["opfa"] * Lijab["kleb"];
 
-    for (int64_t j = 0 ; j < totalDimension-1; j++) {
-      getCanonicalPerturbationBasis(*Rai, Rabij, j);
-      //Rabij["abii"] = 0.0;
-      //Rabij["aaij"] = 0.0;
-
-      // Contruct HR (one body part)
-      (*HRai)["bi"]  = 0.0;
-      (*HRai)["bi"] += ( - 1.0 ) * (*Fij)["ki"] * (*Rai)["bk"];
-      (*HRai)["bi"] += ( + 1.0 ) * (*Fab)["bc"] * (*Rai)["ci"];
-      (*HRai)["bi"] += ( - 1.0 ) * (*Viajb)["kbid"] * (*Rai)["dk"];
-      (*HRai)["bi"] += ( + 0.5 ) * (*Vijka)["klie"] * Rabij["ebkl"];
-      (*HRai)["bi"] += ( + 0.5 ) * (*Viabc)["kbde"] * Rabij["deki"];
-      (*HRai)["bi"] += ( + 1.0 ) * Tabij["cbli"] * (*Vijab)["lmcf"] * (*Rai)["fm"];
-      (*HRai)["bi"] += ( - 0.5 ) * Tabij["cdmi"] * (*Vijab)["mncd"] * (*Rai)["bn"];
-      (*HRai)["bi"] += ( - 0.5 ) * Tabij["cblm"] * (*Vijab)["lmcf"] * (*Rai)["fi"];
-
-      // Contruct HR (two body part)
-      HRabij["cdij"]  = 0.0;
-      HRabij["cdij"] += ( - 1.0 ) * (*Viajk)["mdij"] * (*Rai)["cm"];
-      HRabij["cdij"] += ( + 1.0 ) * (*Viajk)["mcij"] * (*Rai)["dm"];
-      HRabij["cdij"] += ( + 1.0 ) * (*Vabic)["cdie"] * (*Rai)["ej"];
-      HRabij["cdij"] += ( - 1.0 ) * (*Vabic)["cdje"] * (*Rai)["ei"];
-      HRabij["cdij"] += ( - 1.0 ) * (*Fij)["mi"] * Rabij["cdmj"];
-      HRabij["cdij"] += ( + 1.0 ) * (*Fij)["mj"] * Rabij["cdmi"];
-      HRabij["cdij"] += ( - 1.0 ) * (*Fab)["de"] * Rabij["ecij"];
-      HRabij["cdij"] += ( + 1.0 ) * (*Fab)["ce"] * Rabij["edij"];
-      HRabij["cdij"] += ( + 0.5 ) * (*Vijkl)["mnij"] * Rabij["cdmn"];
-      HRabij["cdij"] += ( + 1.0 ) * (*Viajb)["mdif"] * Rabij["fcmj"];
-      HRabij["cdij"] += ( - 1.0 ) * (*Viajb)["mcif"] * Rabij["fdmj"];
-      HRabij["cdij"] += ( - 1.0 ) * (*Viajb)["mdjf"] * Rabij["fcmi"];
-      HRabij["cdij"] += ( + 1.0 ) * (*Viajb)["mcjf"] * Rabij["fdmi"];
-      HRabij["cdij"] += ( + 0.5 ) * (*Vabcd)["cdef"] * Rabij["efij"];
-      HRabij["cdij"] += ( - 1.0 ) * Tabij["cdmj"] * (*Vijka)["mnig"] * (*Rai)["gn"];
-      HRabij["cdij"] += ( + 1.0 ) * Tabij["cdmi"] * (*Vijka)["mnjg"] * (*Rai)["gn"];
-      HRabij["cdij"] += ( + 1.0 ) * Tabij["ednj"] * (*Vijka)["noie"] * (*Rai)["co"];
-      HRabij["cdij"] += ( - 1.0 ) * Tabij["ecnj"] * (*Vijka)["noie"] * (*Rai)["do"];
-      HRabij["cdij"] += ( - 1.0 ) * Tabij["edni"] * (*Vijka)["noje"] * (*Rai)["co"];
-      HRabij["cdij"] += ( + 1.0 ) * Tabij["ecni"] * (*Vijka)["noje"] * (*Rai)["do"];
-      HRabij["cdij"] += ( + 0.5 ) * Tabij["cdmn"] * (*Vijka)["mnig"] * (*Rai)["gj"];
-      HRabij["cdij"] += ( - 0.5 ) * Tabij["cdmn"] * (*Vijka)["mnjg"] * (*Rai)["gi"];
-      HRabij["cdij"] += ( + 1.0 ) * Tabij["ecij"] * (*Viabc)["ndeg"] * (*Rai)["gn"];
-      HRabij["cdij"] += ( - 1.0 ) * Tabij["edij"] * (*Viabc)["nceg"] * (*Rai)["gn"];
-      HRabij["cdij"] += ( - 0.5 ) * Tabij["efij"] * (*Viabc)["odef"] * (*Rai)["co"];
-      HRabij["cdij"] += ( + 0.5 ) * Tabij["efij"] * (*Viabc)["ocef"] * (*Rai)["do"];
-      HRabij["cdij"] += ( + 1.0 ) * Tabij["ecni"] * (*Viabc)["ndeg"] * (*Rai)["gj"];
-      HRabij["cdij"] += ( - 1.0 ) * Tabij["edni"] * (*Viabc)["nceg"] * (*Rai)["gj"];
-      HRabij["cdij"] += ( - 1.0 ) * Tabij["ecnj"] * (*Viabc)["ndeg"] * (*Rai)["gi"];
-      HRabij["cdij"] += ( + 1.0 ) * Tabij["ednj"] * (*Viabc)["nceg"] * (*Rai)["gi"];
-      HRabij["cdij"] += ( + 0.5 ) * Tabij["edij"] * (*Vijab)["noeh"] * Rabij["hcno"];
-      HRabij["cdij"] += ( - 0.5 ) * Tabij["ecij"] * (*Vijab)["noeh"] * Rabij["hdno"];
-      HRabij["cdij"] += ( + 0.25 ) * Tabij["efij"] * (*Vijab)["opef"] * Rabij["cdop"];
-      HRabij["cdij"] += ( - 0.5 ) * Tabij["cdmi"] * (*Vijab)["mngh"] * Rabij["ghnj"];
-      HRabij["cdij"] += ( + 0.5 ) * Tabij["cdmj"] * (*Vijab)["mngh"] * Rabij["ghni"];
-      HRabij["cdij"] += ( - 1.0 ) * Tabij["edni"] * (*Vijab)["noeh"] * Rabij["hcoj"];
-      HRabij["cdij"] += ( + 1.0 ) * Tabij["ecni"] * (*Vijab)["noeh"] * Rabij["hdoj"];
-      HRabij["cdij"] += ( + 1.0 ) * Tabij["ednj"] * (*Vijab)["noeh"] * Rabij["hcoi"];
-      HRabij["cdij"] += ( - 1.0 ) * Tabij["ecnj"] * (*Vijab)["noeh"] * Rabij["hdoi"];
-      HRabij["cdij"] += ( - 0.5 ) * Tabij["efoi"] * (*Vijab)["opef"] * Rabij["cdpj"];
-      HRabij["cdij"] += ( + 0.5 ) * Tabij["efoj"] * (*Vijab)["opef"] * Rabij["cdpi"];
-      HRabij["cdij"] += ( + 0.25 ) * Tabij["cdmn"] * (*Vijab)["mngh"] * Rabij["ghij"];
-      HRabij["cdij"] += ( + 0.5 ) * Tabij["edno"] * (*Vijab)["noeh"] * Rabij["hcij"];
-      HRabij["cdij"] += ( - 0.5 ) * Tabij["ecno"] * (*Vijab)["noeh"] * Rabij["hdij"];
-
-      energy[""]  = (*LHia)["ia"] * (*HRai)["ai"];
-      energy[""] += LHijab["ijab"] * HRabij["abij"];
-      energy_val = energy.get_val();
-      int Hpq_data_size;
-
-      if (Hpq->wrld->rank == 0) {
-        Hpq_data_size = 1;
-        hValues = (double*) malloc(1);
-        hIndices = (int64_t*) malloc(1);
-        hValues[0] = energy_val;
-        hIndices[0] = i + j * (totalDimension - 1);
-      } else {
-        Hpq_data_size = 0;
-        hValues = (double*) malloc(0);
-        hIndices = (int64_t*) malloc(0);
-      }
-
-      (*Hpq).write(Hpq_data_size, hIndices, hValues);
-      LOG(1, "MP2_EOM") << "< " << i << " |H| " <<  j << " >"  << " = "
-                        << energy_val << std::endl;
+    writeEOMVectors(*LHia, 2);
+    writeEOMVectors(LHijab, 4);
+    bool new_line(false);
+    if (LHia->wrld->rank == 0) {
+      new_line = true;
     }
+    if (new_line) {
+      std::cout  << std::endl;
+    }
+
   }
 
-  allocatedTensorArgument("SimlarityTransformedHamiltonianSD", Hpq);
+  LOG(1,"Left EOM END") << ' ' << std::endl;
 
 }
+
+template <typename F>
+void Mp2EquationOfMotion::writeEOMVectors(
+    CTF::Tensor<F> &T,
+    unsigned int rank
+  ) {
+
+  int nBodyLength(1);
+  int arrayCount;
+  int64_t *indices;
+  F *values;
+
+  for (int i = 0; i < rank; ++i) {
+    nBodyLength *= T.lens[i];
+  }
+
+  if (T.wrld->rank == 0) {
+    arrayCount = nBodyLength;
+  } else {
+    arrayCount = 0;
+  }
+
+  indices = new int64_t[arrayCount];
+  values = new F[arrayCount];
+  for (int64_t i = 0 ; i < arrayCount; i++) {
+     indices[i] = i;
+  }
+
+  T.read(arrayCount, indices, values);
+
+  for (int64_t i = 0 ; i < arrayCount; i++) {
+     std::cout  << " " << values[i];
+  }
+}
+
+// instantiate
+template
+void Mp2EquationOfMotion::writeEOMVectors(
+  CTF::Tensor<double> &T,
+  unsigned int rank
+);
+
 
 template <typename F>
 void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
@@ -330,8 +385,6 @@ void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
   } else { // Two body regime
     Tabij.write(arrayCount, indices, values);
   }
-  //Tai.print();
-  //Tabij.print();
 
 }
 
@@ -339,3 +392,5 @@ void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
 template
 void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
     CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, int64_t i);
+
+
