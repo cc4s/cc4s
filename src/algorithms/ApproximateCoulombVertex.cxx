@@ -23,6 +23,7 @@ void ApproximateCoulombVertex::run() {
   Tensor<complex> *GammaGqr(
     getTensorArgument<complex>("FullCoulombVertex")
   );
+  GammaGqr->set_name("GammaGqr");
   Tensor<complex> *UGF(
     getTensorArgument<complex>("CoulombVertexSingularVectors")
   );
@@ -36,6 +37,9 @@ void ApproximateCoulombVertex::run() {
   allocatedTensorArgument<complex>(
     "CoulombVertex", GammaFqr
   );
+  LOG(1, "ApproximateCoulombVertex")
+    << "Using NF=" << UGF->lens[1] << " field variables to build " << GammaFqr->get_name()
+    << " from " << GammaGqr->get_name() << " with NG=" << UGF->lens[0] << " grid points" << std::endl;
   (*GammaFqr)["Fqr"] = (*GammaGqr)["Gqr"] * UTGF["GF"];
 }
 

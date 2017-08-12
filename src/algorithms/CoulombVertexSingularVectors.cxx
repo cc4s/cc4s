@@ -64,6 +64,9 @@ void CoulombVertexSingularVectors::run() {
   scaU->write(U);
   conjugate(U);
   // slice singular vectors U corresponding to NF largest singular values S
+  LOG(1, "CoulombVertexSingularVectors")
+    << "Using NF=" << NF << " field variables to approximate NG="
+    << NG << " grid points" << std::endl;
   int start[] = {0, NG-NF}, end[] = {NG, NG};
   allocatedTensorArgument<complex>(
     "CoulombVertexSingularVectors", new Tensor<complex>(U.slice(start, end))
