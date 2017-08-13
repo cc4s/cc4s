@@ -38,6 +38,7 @@ void FiniteSizeCorrection::run() {
     readFromFile();
   } else {
     LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
+    bool complex = !getIntegerArgument("complex", 0);
     if (complex) {
       calculateStructureFactorComplex();
     } else {
@@ -215,6 +216,114 @@ void FiniteSizeCorrection::calculateStructureFactorReal() {
   structureFactors = new double[NG];
   realSG->read_all(structureFactors);
 }
+
+
+void FiniteSizeCorrection::calculateStructureFactorComplex() {
+  Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
+  Tensor<> *realVG(new Tensor<>(false, *realInfVG));
+  // Define take out inf funciton
+  class TakeOutInf {
+  public:
+    double operator ()(double x){
+      return std::isinf(x) ? 0.0 : x;
+    }
+  };
+  // Take out the inf from realVG.
+  TakeOutInf takeOutInf;
+  Univar_Function<> fTakeOutInf(takeOutInf);
+  realVG->sum(1.0, *realInfVG, "G", 0.0, "G", fTakeOutInf);
+  realVG->set_name("realVG");
+  Tensor<complex> VG(
+    1, realVG->lens, realVG->sym, *realVG->wrld, "VG"
+  );
+  toComplexTensor(*realVG, VG);
+  Tensor<> realInvSqrtVG(false, *realVG);
+  Tensor<complex> invSqrtVG(
+    1, realInvSqrtVG.lens, realInvSqrtVG.sym,
+     *realInvSqrtVG.wrld, "invSqrtVG"
+  );
+
+  //Starting a new space whose memory will be erased after operation
+  //Define operation inverse square root
+  class InvSqrt {
+  public:
+    double operator ()(double x){
+      return std::sqrt(1.0 / x);
+    }
+  };
+
+  //Get the inverted square root of VG
+  InvSqrt invSqrt;
+  Univar_Function<> fInvSqrt(invSqrt);
+  realInvSqrtVG.sum(1.0, *realInfVG, "G", 0.0, "G", fInvSqrt);
+  toComplexTensor(realInvSqrtVG, invSqrtVG);
+
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaFqr( getTensorArgument<complex>("CoulombVertex"));
+  Tensor<complex> *GammaGqr;
+
+  // Read the Particle/Hole Eigenenergies
+  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+
+  if (isArgumentGiven("CoulombVertexSingularVectors")) {
+    Tensor<complex> *UGF(
+      getTensorArgument<complex>("CoulombVertexSingularVectors")
+    );
+    int lens[]= {UGF->lens[0], GammaFqr->lens[1], GammaFqr->lens[2]};
+    GammaGqr = new Tensor<complex>(
+      3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaFqr"
+    );
+    (*GammaGqr)["Gqr"] = (*GammaFqr)["Fqr"] * (*UGF)["GF"];
+  } else {
+    GammaGqr = GammaFqr;
+  }
+
+  // Compute the No,Nv,NG,Np
+  int NG(GammaGqr->lens[0]);
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(GammaGqr->lens[1]);
+
+  int aStart(Np-Nv), aEnd(Np);
+  int iStart(0), iEnd(No);
+  int GiaStart[] = {0, iStart,aStart};
+  int GiaEnd[]   = {NG,iEnd,  aEnd};
+  int GaiStart[] = {0, aStart,iStart};
+  int GaiEnd[]   = {NG,aEnd,  iEnd};
+  //  GammaGia = new Tensor<complex>(GammaGqr->slice(GiaStart, GiaEnd));
+  //  GammaGai = new Tensor<complex>(GammaGqr->slice(GaiStart, GaiEnd));
+  Tensor<complex> GammaGia(GammaGqr->slice(GiaStart, GiaEnd));
+  Tensor<complex> GammaGai(GammaGqr->slice(GaiStart, GaiEnd));
+
+  //Define CGai
+  Tensor<complex> CGai(GammaGai);
+  CGai["Gai"] *= invSqrtVG["G"];
+
+  Tensor<complex> conjCGai(false, GammaGai);
+  Univar_Function<complex> fConj(conj<complex>);
+  conjCGai.sum(1.0,GammaGia,"Gia", 0.0,"Gai", fConj);
+  conjCGai["Gai"] *= invSqrtVG["G"];
+
+  //Get Tabij
+  Tensor<complex> *Tabij(getTensorArgument<complex>("DoublesAmplitudes"));
+
+  //construct SG
+  NG = CGai.lens[0];
+  CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
+  (*SG)["G"] =   2.0 * conjCGai["Gai"] * CGai["Gbj"] * (*Tabij)["abij"];
+  (*SG)["G"] += -1.0 * conjCGai["Gaj"] * CGai["Gbi"] * (*Tabij)["abij"];
+
+  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
+  fromComplexTensor(*SG, *realSG);
+  allocatedTensorArgument<>("StructureFactor", realSG);
+
+  VofG = new double[NG];
+  realVG->read_all(VofG);
+  structureFactors = new double[NG];
+  realSG->read_all(structureFactors);
+}
+
 
 void FiniteSizeCorrection::dryCalculateStructureFactor() {
 
