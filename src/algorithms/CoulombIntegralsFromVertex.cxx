@@ -184,25 +184,6 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
   Tensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
     new Tensor<>(4, vvvo.data(), syms.data(), *Cc4s::world, "Vabci") : nullptr);
 
-  if (Vabcd) {
-    allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
-  }
-  if (Vaibj) {
-    allocatedTensorArgument("PHPHCoulombIntegrals", Vaibj);
-  }
-  if (Vabij) {
-    allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
-  }
-  if (Vijkl) {
-    allocatedTensorArgument("HHHHCoulombIntegrals", Vijkl);
-  }
-  if (Vijka) {
-    allocatedTensorArgument("HHHPCoulombIntegrals", Vijka);
-  }
-  if (Vabci) {
-    allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
-  }
-
   // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
   Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
                         *GammaGai->wrld, "RealGammaGai");
@@ -224,42 +205,46 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
 
   // Compute the integrals Vabij Vaibj Vaijb Vijkl Vabcd
   if (Vabcd) {
-    LOG(1, "CoulombIntegrals") << "Evaluating " 
+    LOG(1, "CoulombIntegrals") << "Evaluating "
                                << Vabcd->get_name() << std::endl;
     (*Vabcd)["abcd"]  = realGammaGab["Gac"] * realGammaGab["Gbd"];
     (*Vabcd)["abcd"] += imagGammaGab["Gac"] * imagGammaGab["Gbd"];
+    allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
   }
   if (Vaibj) {
-    LOG(1, "CoulombIntegrals") << "Evaluating " 
+    LOG(1, "CoulombIntegrals") << "Evaluating "
                                << Vaibj->get_name() << std::endl;
     (*Vaibj)["aibj"]  = realGammaGab["Gab"] * realGammaGij["Gij"];
     (*Vaibj)["aibj"] += imagGammaGab["Gab"] * imagGammaGij["Gij"];
+    allocatedTensorArgument("PHPHCoulombIntegrals", Vaibj);
   }
   if (Vabij) {
-    LOG(1, "CoulombIntegrals") << "Evaluating " 
+    LOG(1, "CoulombIntegrals") << "Evaluating "
                                << Vabij->get_name() << std::endl;
     (*Vabij)["abij"]  = realGammaGai["Gai"] * realGammaGai["Gbj"];
     (*Vabij)["abij"] += imagGammaGai["Gai"] * imagGammaGai["Gbj"];
-    double r(frobeniusNorm(*Vabij));
-    LOG(1, "CoulombIntegrals") << "|Vabij|=" << r << std::endl;
+    allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
   }
   if (Vijkl) {
-    LOG(1, "CoulombIntegrals") << "Evaluating " 
+    LOG(1, "CoulombIntegrals") << "Evaluating "
                                << Vijkl->get_name() << std::endl;
     (*Vijkl)["ijkl"]  = realGammaGij["Gik"] * realGammaGij["Gjl"];
     (*Vijkl)["ijkl"] += imagGammaGij["Gik"] * imagGammaGij["Gjl"];
+    allocatedTensorArgument("HHHHCoulombIntegrals", Vijkl);
   }
   if (Vijka) {
-    LOG(1, "CoulombIntegrals") << "Evaluating " 
+    LOG(1, "CoulombIntegrals") << "Evaluating "
                                << Vijka->get_name() << std::endl;
     (*Vijka)["ijka"]  = realGammaGij["Gik"] * realGammaGai["Gaj"];
     (*Vijka)["ijka"] += imagGammaGij["Gik"] * imagGammaGai["Gaj"];
+    allocatedTensorArgument("HHHPCoulombIntegrals", Vijka);
   }
   if (Vabci) {
-    LOG(1, "CoulombIntegrals") << "Evaluating " 
+    LOG(1, "CoulombIntegrals") << "Evaluating "
                                << Vabci->get_name() << std::endl;
     (*Vabci)["abci"]  = realGammaGab["Gac"] * realGammaGai["Gbi"];
     (*Vabci)["abci"] += imagGammaGab["Gac"] * imagGammaGai["Gbi"];
+    allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
   }
 }
 
@@ -282,7 +267,6 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
       new Tensor<complex>(4, voov.data(), syms.data(), *Cc4s::world, "Vaijb") :
       nullptr
   );
-
   
   Tensor<complex> *Vaibj(
     isArgumentGiven("PHPHCoulombIntegrals") ?
@@ -323,64 +307,52 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   Tensor<complex> conjTransposeGammaGab(false, *GammaGab);
   conjTransposeGammaGab.sum(1.0,*GammaGab,"Gba", 0.0,"Gab", fConj);
 
-
   if (Vabij) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vabij->get_name() << std::endl;
     (*Vabij)["abij"] = conjTransposeGammaGai["Gai"] * (*GammaGai)["Gbj"];
-  }
-
-  if (Vaijb) {
-    (*Vaijb)["aijb"] = conjTransposeGammaGai["Gaj"] * (*GammaGia)["Gib"];
-  }
-
-  if (Vijab) {
-    (*Vijab)["ijab"] = conjTransposeGammaGia["Gia"] * (*GammaGia)["Gjb"];
-  }
-
-  if (Vaibj) {
-    (*Vaibj)["aibj"] = conjTransposeGammaGab["Gab"] * (*GammaGij)["Gij"];
-  }
-
-  if (Vijkl) {
-    (*Vijkl)["ijkl"] = conjTransposeGammaGij["Gik"] * (*GammaGij)["Gjl"];
-  }
-
-  if (Vijka) {
-    (*Vijka)["ijka"] = conjTransposeGammaGij["Gik"] * (*GammaGia)["Gja"];
-  }
-
-  if (Vaijk) {
-    (*Vaijk)["aijk"] = conjTransposeGammaGai["Gaj"] * (*GammaGij)["Gik"];
-  }
-
-  /*
-  Tensor<> realVabij(4, Vabij->lens, Vabij->sym, *Vabij->wrld, "realVabij");
-  Tensor<> imagVabij(4, Vabij->lens, Vabij->sym, *Vabij->wrld, "imagVabij");
-  fromComplexTensor(*Vabij, realVabij, imagVabij);
-  double r(frobeniusNorm(realVabij));
-  double i(frobeniusNorm(imagVabij));
-  LOG(1, "CoulombIntegrals") << "|Re(Vabij)|=" << r << ", |Im(Vabij)|=" << i << std::endl;
-  */
-
-  if (Vabij) {
     allocatedTensorArgument<complex>("PPHHCoulombIntegrals", Vabij);
   }
+
   if (Vaijb) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vaijb->get_name() << std::endl;
+    (*Vaijb)["aijb"] = conjTransposeGammaGai["Gaj"] * (*GammaGia)["Gib"];
     allocatedTensorArgument<complex>("PHHPCoulombIntegrals", Vaijb);
   }
+
   if (Vijab) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vijab->get_name() << std::endl;
+    (*Vijab)["ijab"] = conjTransposeGammaGia["Gia"] * (*GammaGia)["Gjb"];
     allocatedTensorArgument<complex>("HHPPCoulombIntegrals", Vijab);
   }
+
   if (Vaibj) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vaibj->get_name() << std::endl;
+    (*Vaibj)["aibj"] = conjTransposeGammaGab["Gab"] * (*GammaGij)["Gij"];
     allocatedTensorArgument<complex>("PHPHCoulombIntegrals", Vaibj);
   }
+
   if (Vijkl) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vijkl->get_name() << std::endl;
+    (*Vijkl)["ijkl"] = conjTransposeGammaGij["Gik"] * (*GammaGij)["Gjl"];
     allocatedTensorArgument<complex>("HHHHCoulombIntegrals", Vijkl);
   }
+
   if (Vijka) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vijka->get_name() << std::endl;
+    (*Vijka)["ijka"] = conjTransposeGammaGij["Gik"] * (*GammaGia)["Gja"];
     allocatedTensorArgument<complex>("HHHPCoulombIntegrals", Vijka);
   }
+
   if (Vaijk) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vaijk->get_name() << std::endl;
+    (*Vaijk)["aijk"] = conjTransposeGammaGai["Gaj"] * (*GammaGij)["Gik"];
     allocatedTensorArgument<complex>("PHHHCoulombIntegrals", Vaijk);
   }
 }
-

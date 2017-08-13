@@ -38,9 +38,13 @@ void FiniteSizeCorrection::run() {
     readFromFile();
   } else {
     LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
-    calculateStructureFactor();
+    if (complex) {
+      calculateStructureFactorComplex();
+    } else {
+      calculateStructureFactorReal();
+    }
   }
-  //constructFibonacciGrid();
+
   LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
   interpolation3D();
   LOG(0,"FiniteSize") << "Caclulating finite size correction" << std::endl;
@@ -110,8 +114,7 @@ void FiniteSizeCorrection::readFromFile(){
   LOG(1,"readFromFile") << "Finished" << std::endl;
 }
 
-void FiniteSizeCorrection::calculateStructureFactor() {
-
+void FiniteSizeCorrection::calculateStructureFactorReal() {
   //Definition of the variables
   Tensor<complex> *GammaFai(
     getTensorArgument<complex>("ParticleHoleCoulombVertex")
