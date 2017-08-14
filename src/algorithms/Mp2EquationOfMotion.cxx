@@ -77,7 +77,7 @@ void Mp2EquationOfMotion::run() {
   T *Viajb(
     new T(4, ovov, syms, *Cc4s::world, "Viajb")
   );
-  (*Viajb)["iajb"] =  (*Vaibj)["aibj"] - (*Vaibj)["aijb"];
+  (*Viajb)["iajb"] =  (*Vaibj)["aibj"] - (*Vabij)["abji"];
 
   // Viabc
   int ovvv[] = { No, Nv, Nv, Nv };
@@ -91,15 +91,15 @@ void Mp2EquationOfMotion::run() {
   T *Vabic(
     new T(4, vvov, syms, *Cc4s::world, "Vabic")
   );
-  (*Vabic)["abic"] =  (*Vabci)["abci"] - (*Vabci)["abic"];
+  (*Vabic)["abic"] =  (*Vabci)["abci"] - (*Vabci)["baci"];
 
   // Antisymmetrize integrals that are read in
   (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
   (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
+  (*Vijka)["ijka"] -= (*Vijka)["jika"];
+  (*Vaibj)["aibj"] -= (*Vabij)["baij"];
+  (*Vabci)["abci"] -= (*Vabci)["baci"];
   (*Vabij)["abij"] -= (*Vabij)["abji"];
-  (*Vijka)["ijka"] -= (*Vijka)["ijak"];
-  (*Vaibj)["aibj"] -= (*Vaibj)["aijb"];
-  (*Vabci)["abci"] -= (*Vabci)["abic"];
 
   T Tabij(false, Vabij);
   Tabij["abij"] =  (*epsi)["i"];
