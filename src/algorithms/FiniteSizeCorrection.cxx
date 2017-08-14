@@ -308,6 +308,12 @@ void FiniteSizeCorrection::calculateStructureFactorComplex() {
   //Get Tabij
   Tensor<complex> *Tabij(getTensorArgument<complex>("DoublesAmplitudes"));
 
+  if (isArgumentGiven("SinglesAmplitudes") ) {
+    //Get Tai
+    Tensor<complex> *Tai(getTensorArgument<complex>("SinglesAmplitudes"));
+    (*Tabij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+  }
+
   //construct SG
   NG = CGai.lens[0];
   CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
