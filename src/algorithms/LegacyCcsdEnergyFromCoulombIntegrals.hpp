@@ -1,8 +1,8 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef CCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
-#define CCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
+#ifndef LEGACY_CCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
+#define LEGACY_CCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
-#include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
+#include <algorithms/LegacyClusterSinglesDoublesAlgorithm.hpp>
 
 namespace cc4s {
   // this algorithm is now based on the ClusterSinglesDoublesAlgorithm
@@ -16,13 +16,15 @@ namespace cc4s {
    * V_{kl}^{ij}, V_{ka}^{ij}, V_{ci}^{ab}\f$ and \f$V_{cd}^{ab}\f$ (if given, else slicing and the Coulomb
    * Vertex \f$\Gamma_{pG}^q\f$  is used).
    */
-  class CcsdEnergyFromCoulombIntegrals: public ClusterSinglesDoublesAlgorithm {
+  class LegacyCcsdEnergyFromCoulombIntegrals:
+    public LegacyClusterSinglesDoublesAlgorithm
+  {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CcsdEnergyFromCoulombIntegrals);
-    CcsdEnergyFromCoulombIntegrals(
+    ALGORITHM_REGISTRAR_DECLARATION(LegacyCcsdEnergyFromCoulombIntegrals);
+    LegacyCcsdEnergyFromCoulombIntegrals(
       std::vector<Argument> const &argumentList
     );
-    virtual ~CcsdEnergyFromCoulombIntegrals();
+    virtual ~LegacyCcsdEnergyFromCoulombIntegrals();
 
     /**
      * \brief Returns the abbreviation of the routine (CCSD).
@@ -30,25 +32,17 @@ namespace cc4s {
      */
     virtual std::string getAbbreviation() { return "Ccsd"; }
 
-    static int64_t constexpr DEFAULT_SLICE_SIZE = -1;
-
   protected:
     /**
      * \brief Implements the iterate method with the CCSD iteration. Iteration
      * routine taken from So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001).
      * \param[in] i Iteration number
      */
-    virtual void iterate(
-      int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-    );
-    virtual void iterate(
-      int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
-    );
-
-    template <typename F>
-    void iterate(
-      int i, Mixer<F> *TaiMixer, Mixer<F> *TabijMixer
-    );
+    virtual void iterate(int i);
+    /**
+     * \brief Implements the dry iterate method with the CCSD iteration.
+     */
+    virtual void dryIterate();
   };
 }
 

@@ -161,7 +161,7 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
           Rabij["abij"] += 0.5 * Sabij["abij"];
           Rabij["abij"] += 0.5 * Sabij["baji"];
         }
-	
+        
         else {
           // Read the integralsSliceSize. If not provided use No
           int integralsSliceSize(getIntegerArgument

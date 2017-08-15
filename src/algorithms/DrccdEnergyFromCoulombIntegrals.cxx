@@ -21,16 +21,16 @@ DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 void DrccdEnergyFromCoulombIntegrals::iterate(
   int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
 ) {
-  iterateTemplate(i, TabijMixer);
+  iterate<double>(i, TabijMixer);
 }
 void DrccdEnergyFromCoulombIntegrals::iterate(
   int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
 ) {
-  iterateTemplate(i, TabijMixer);
+  iterate<complex>(i, TabijMixer);
 }
 
 template <typename F>
-void DrccdEnergyFromCoulombIntegrals::iterateTemplate(
+void DrccdEnergyFromCoulombIntegrals::iterate(
   int i, Mixer<F> *TabijMixer
 ) {
   Tensor<F> *Tabij(&TabijMixer->getNext());

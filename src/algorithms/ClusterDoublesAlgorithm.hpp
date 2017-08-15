@@ -43,27 +43,13 @@ namespace cc4s {
 
   protected:
     /**
-     * \brief The abbreviation of the algorithm in capital letters.
-     **/
-    std::string abbreviation;
-
-    /**
-     * \brief The mixer for the doubles amplitudes.
-     */
-    // TODO: is it really the best option when using complex and real mixers
-    // to pass all mixers to the iterate method rather than having it as
-    // field variables, as it was before?
-//    Mixer<double> *TabijMixer;
-//    Mixer<complex> *TabijMixer;
-
-    /**
      * \brief Evaluates and returns the energy according to the respective
      * ClusterDoubles algorithm. An instantiation of this method
      * is called from the run method with typename F being either double
      * or complex, depending on which type of integrals are present.
      **/
     template <typename F>
-    F evaluate();
+    F run();
 
     /**
      * \brief Evaluates a dry run and returns 0 according to the respective
@@ -72,7 +58,7 @@ namespace cc4s {
      * or complex, depending on which type of integrals are present.
      **/
     template <typename F>
-    F dryEvaluate();
+    F dryRun();
 
     /**
      * \brief Performs one iteration of the concrete algorithm
@@ -119,21 +105,28 @@ namespace cc4s {
       DryTensor<complex> *TaiMixer, DryTensor<complex> *TabijMixer
     );
 
+    template <typename F>
+    Mixer<F> *createDoublesMixer();
+
+    template <typename F>
+    void storeDoublesAmplitudes(Mixer<F> *TabijMixer);
+
     /**
      * \brief Calculates the energy from the amplitudes currently contained
      * in the mixer.
+     * \param[in] TabijMixer doubles amplitudes mixer.
      **/
     template <typename F>
     F calculateEnergy(Mixer<F> *TabijMixer);
 
     /**
-     * \brief Calculates the amplitudes from the current residuum and
-     * returns them in-place.
+     * \brief Calculates the doubles amplitudes from the given doubles residuum
+     * and returns them in place of the residuum tensor.
      * Usually this is done by calculating
      * \f$T_{ij}^{ab} = R_{ij}^{ab} / (\varepsilon_i+\varepsilon_j-\varepsilon_a-\varepsilon_b)\f$,
      * but other methods, such as level shifting may be used.
-     * \param[in] Rabij Residuum Tensor.
-     */
+     * \param[in] Rabij doubles amplitudes mixer.
+     **/
     template <typename F>
     void doublesAmplitudesFromResiduum(CTF::Tensor<F> &Rabij);
 
@@ -144,72 +137,14 @@ namespace cc4s {
     void dryDoublesAmplitudesFromResiduum(cc4s::DryTensor<> &Rabij);
 
     /**
-     * \brief Calculates and returns one slice Vxycd of the Coulomb integrals
-     * from the Coulomb vertex. The indices x and y are restricted to the
-     * range {No+a, ..., No+a+No-1} and {No+b, ..., No+b+No-1}, respectively.
-     * The caller is responsible for deleting the dynamically allocated
-     * result tensor. 
-     * \param[in] a 1st sliced dimension (x).
-     * \param[in] b 2nd sliced dimension (y).
-     * \param[in] integralsSliceSize slicing size.
-     * \param[out] Vxycd sliced Coulomb integrals Vabcd
-     */
-    CTF::Tensor<> *sliceCoulombIntegrals(int a, int b, int integralsSliceSize);
+     * \brief The abbreviation of the algorithm in capital letters.
+     **/
+    std::string getCapitalizedAbbreviation();
 
     /**
-     * \brief Dry run for sliceCoulombIntegrals.
-     * \param[in] a 1st sliced dimension (x).
-     * \param[in] b 2nd sliced dimension (y).
-     * \param[in] integralsSliceSize slicing size.
-     * \param[out] Vxycd sliced Coulomb integrals Vabcd
-     */
-    cc4s::DryTensor<> *drySliceCoulombIntegrals(int integralsSliceSize);
-
-    /**
-     * \brief Adds the given slice of the residuum tensor Rxyij to the
-     * entire residuum tensor Rabij at the respective index range.
-     * \param[in] a0 1st sliced dimension (x).
-     * \param[in] b0 2nd sliced dimension (y).
-     * \param[in] Rxyij sliced residuum
-     * \param[in] Rabij entire residuum.
-     */
-    void sliceIntoResiduum(
-      CTF::Tensor<> &Rxyij, int a0, int b0, CTF::Tensor<> &Rabij
-    );
-
-    /**
-     * \brief Calculates and returns one slice Xabij of the residuum
-     * from the Coulomb factors. The slice is computed from
-     * Rx and Ry and are restricted to the
-     * range {a, ..., factorsSliceSize+a-1} and {b, ..., factorsSliceSize+b-1}, respectively.
-     * The caller is responsible for deleting the dynamically allocated
-     * result tensor. 
-     * \param[in] a 1st sliced dimension (Rx).
-     * \param[in] b 2nd sliced dimension (Ry).
-     * \param[in] factorsSliceSize slicing size of NR.
-     * \param[out] Fabij sliced Residuum
-     */
-// TODO: translate to template methods
-//    CTF::Tensor<> *sliceAmplitudesFromCoulombFactors(int a, int b, int factorsSliceSize);
-
-// TODO: translate to template methods
-//    CTF::Tensor<> *sliceAmplitudesFromCoulombFactorsTcc(int a, int factorsSliceSize);
-
-    /**
-     * \brief Dry run for sliceAmplitudesFromCoulombFactors.
-     * \param[in] factorsSliceSize slicing size of NR.
-     * \param[out] Fabij dry tensor of sliced residuum.
-     */
-// TODO: translate to template methods
-//    cc4s::DryTensor<> *drySliceAmplitudesFromCoulombFactors(int factorsSliceSize);
-
-
-    /**
-     * \brief Prints the energy from the residuum Rabij.
-     * \param[in] Rabij the residuum.
-     */
-    void printEnergyFromResiduum(CTF::Tensor<> &Rabij);
-
+     * \brief Constructs the doubles amplitudes name from the abbreviation.
+     **/
+    std::string getDoublesAmplitudesName();
   };
 }
 

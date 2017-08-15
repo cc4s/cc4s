@@ -41,7 +41,6 @@ void CoulombVertexSingularVectors::run() {
   LOG(1, "CoulombVertexSingularVectors")
     << "Contracting over orbitals of " << GammaGqr->get_name() 
     << " to get U.Sigma^2.U*, with NG=" << NG << std::endl;
-  // FIXME: shouldn't it be Grq? doesn't matter with real orbitals
   USSUT["GH"] = conjGammaGqr["Gqr"] * (*GammaGqr)["Hqr"];
 
   // use ScaLapack routines to diagonalise the USSUT matrix, i.e. find U
@@ -53,10 +52,10 @@ void CoulombVertexSingularVectors::run() {
   eigenSystem.solve(SS);
 
   // get number of field variables
-  int NF(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES));
+  int NF(getIntegerArgument("fieldVariablesSize", DEFAULT_FIELD_VARIABLES_SIZE));
   // if fieldVariables not given use reduction
-  if (NF == DEFAULT_FIELD_VARIABLES) {
-    double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
+  if (NF == DEFAULT_FIELD_VARIABLES_SIZE) {
+    double reduction(getRealArgument("fieldVariablesRank", DEFAULT_FIELD_VARIABLES_RANK));
     NF = static_cast<int>(NG * reduction + 0.5);
   }
 
@@ -65,6 +64,9 @@ void CoulombVertexSingularVectors::run() {
   scaU->write(U);
   conjugate(U);
   // slice singular vectors U corresponding to NF largest singular values S
+  LOG(1, "CoulombVertexSingularVectors")
+    << "Using NF=" << NF << " field variables to approximate NG="
+    << NG << " grid points" << std::endl;
   int start[] = {0, NG-NF}, end[] = {NG, NG};
   allocatedTensorArgument<complex>(
     "CoulombVertexSingularVectors", new Tensor<complex>(U.slice(start, end))
@@ -92,10 +94,10 @@ void CoulombVertexSingularVectors::dryRun() {
 
   int NG(GammaGqr->lens[0]);
   // get number of field variables
-  int NF(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES));
+  int NF(getIntegerArgument("fieldVariables", DEFAULT_FIELD_VARIABLES_SIZE));
   // if fieldVariables not given use reduction
-  if (NF == DEFAULT_FIELD_VARIABLES) {
-    double reduction(getRealArgument("reduction", DEFAULT_REDUCTION));
+  if (NF == DEFAULT_FIELD_VARIABLES_SIZE) {
+    double reduction(getRealArgument("reduction", DEFAULT_FIELD_VARIABLES_RANK));
     NF = static_cast<int>(NG * reduction + 0.5);
   }
 

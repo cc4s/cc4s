@@ -1,8 +1,8 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED 
 #define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
 
-#include <algorithms/LegacyClusterDoublesAlgorithm.hpp>
+#include <algorithms/ClusterDoublesAlgorithm.hpp>
 #include <mixers/Mixer.hpp>
 #include <string>
 #include <ctf.hpp>
@@ -14,8 +14,8 @@ namespace cc4s {
    * singles and doubles amplitudes. It calculates the energy from the amplitudes
    * \f$T_{a}^{i}\f$ and \f$T_{ab}^{ij}\f$ and the Coulomb integrals \f$V_{ij}^{ab}\f$. For
    * calculating the amplitudes it calls the iteration routine of the actual algorithm.
-   */
-  class ClusterSinglesDoublesAlgorithm: public LegacyClusterDoublesAlgorithm {
+   **/
+  class ClusterSinglesDoublesAlgorithm: public Algorithm {
   public:
     ClusterSinglesDoublesAlgorithm(
       std::vector<Argument> const &argumentList
@@ -25,50 +25,71 @@ namespace cc4s {
      * \brief Calculates the energy of a ClusterSinglesDoubles algorithm
      */
     virtual void run();
+
+    // TODO: dryRun
+
     /**
-     * \brief Returns the abbreviation of the concrete algorithm in camel case,
-     * e.g. "Ccsd", "Dcsd". They will constitute the first part of the
-     * resulting tensors, such as "CcsdDoublesAmplitudes".
+     * \brief Returns the abbreviation of the concrete algorithm, e.g. "Ccd",
+     * "Dcd".
      */
     virtual std::string getAbbreviation() = 0;
+
     /**
-     * \brief Performs a Dry Run
+     * \brief Defines the default number of iterations (16).
      */
-    virtual void dryRun();
+    static int constexpr DEFAULT_MAX_ITERATIONS = 16;
 
   protected:
-    /**
-     * \brief The mixer for the singles amplitudes, additionally to those
-     * of the inheritided doubles amplitudes TabijMixer
-     */
-    Mixer<double> *TaiMixer;
+    template <typename F>
+    F run();
 
     /**
      * \brief Performs one iteration of the concrete algorithm.
-     */
-    virtual void iterate(int i) = 0;
+     **/
+    virtual void iterate(
+      int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
+    ) = 0;
+
+    /**
+     * \brief Performs one iteration of the concrete algorithm.
+     **/
+    virtual void iterate(
+      int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
+    ) = 0;
 
     /**
      * \brief Calculates the energy from the amplitudes currently contained
      * in the mixers. Overrides ClusterDoublesAlgorithm method.
      **/
-    virtual double calculateEnergy();
+    template <typename F>
+    F calculateEnergy(Mixer<F> *TaiMixer, Mixer<F> *TabijMixer);
 
     /**
-     * \brief Calculates the singles amplitudes from the current residuum and
+     * \brief Calculates the amplitudes from the current residuum and
      * returns them in-place.
      * Usually this is done by calculating
-     * \f$T_{i}^{a} = R_{i}^{a} / (\varepsilon_i-\varepsilon_a)\f$,
+     * \f$T_{ij\ldots}^{ab\ldots} = R_{ij\ldots}^{a\ldots} / (\varepsilon_i+\ldots-\varepsilon_a-\ldots)\f$,
      * but other methods, such as level shifting may be used.
-     * \param[in] Rai Residuum Tensor.
-     */
-    void singlesAmplitudesFromResiduum(CTF::Tensor<> &Rai);
+     * \param[in] R residuum tensor.
+     * \param[in] indices indices into residuum tensor, e.g. "abij".
+     **/
+    template <typename F>
+    void amplitudesFromResiduum(
+      CTF::Tensor<F> &R, const std::string &indices
+    );
 
     /**
-     * \brief Dry run for singlesAmplitudesFromResiduum.
-     * \param[in] Rai Residuum Tensor.
-     */
-    void drySinglesAmplitudesFromResiduum(cc4s::DryTensor<> &Rai);
+     * \brief Dry run for amplitudesFromResiduum.
+     * \param[in] R residuum tensor.
+     **/
+    template <typename F>
+    void dryAmplitudesFromResiduum(cc4s::DryTensor<F> &R);
+
+    template <typename F>
+    Mixer<F> *createMixer(const std::string &type, std::vector<int> shape);
+
+    template <typename F>
+    void storeAmplitudes(Mixer<F> *mixer, const std::string &type);
 
     /**
      * \brief Calculates and returns one slice Xxycd of the Coulomb integrals \f$V_{cd}^{ab}\f$
@@ -82,15 +103,14 @@ namespace cc4s {
      * \param[in] integralsSliceSize slicing rank.
      * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
      */
-    CTF::Tensor<> *sliceCoupledCoulombIntegrals(int a, int b, int integralsSliceSize);
+    CTF::Tensor<double> *sliceCoupledCoulombIntegrals(
+      Mixer<double> *TaiMixer, int a, int b, int integralsSliceSize
+    );
 
-    /**
-     * \brief Dry run for sliceCoupledCoulombIntegrals. 
-     * \param[in] a 1st sliced dimension (x).
-     * \param[in] b 2nd sliced dimension (y).
-     * \param[in] integralsSliceSize slicing rank.
-     */
-    cc4s::DryTensor<> *drySliceCoupledCoulombIntegrals(int integralsSliceSize);
+    CTF::Tensor<complex> *sliceCoupledCoulombIntegrals(
+      Mixer<complex> *TaiMixer, int a, int b, int integralsSliceSize
+    );
+
 
     /**
      * \brief Calculates and returns one slice Fabij of the residuum
@@ -104,7 +124,14 @@ namespace cc4s {
      * \param[in] factorsSliceSize slicing rank of NR.
      * \param[out] Fabij sliced Residuum
      */
-    CTF::Tensor<> *sliceAmplitudesFromCoupledCoulombFactors(int a, int b, int factorsSliceSize);
+    CTF::Tensor<double> *sliceAmplitudesFromCoupledCoulombFactors(
+      Mixer<double> *TaiMixer, Mixer<double> *TabijMixer,
+      int a, int b, int factorsSliceSize
+    );
+    CTF::Tensor<complex> *sliceAmplitudesFromCoupledCoulombFactors(
+      Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer,
+      int a, int b, int factorsSliceSize
+    );
 
     /**
      * \brief Calculates and returns tensor Fabij of the residuum
@@ -113,14 +140,33 @@ namespace cc4s {
      * result tensor. 
      * \param[out] Fabij sliced Residuum
      */
-    CTF::Tensor<> *amplitudesFromCoupledCoulombFactors();
+    CTF::Tensor<double> *amplitudesFromCoupledCoulombFactors(
+      Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
+    );
+    CTF::Tensor<complex> *amplitudesFromCoupledCoulombFactors(
+      Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
+    );
 
     /**
-     * \brief Dry run for sliceAmplitudesFromCoupledCoulombFactors.
-     * \param[in] factorsSliceSize slicing rank of NR.
-     * \param[out] Fabij sliced Residuum
+     * \brief Adds the given slice of the residuum tensor Rxyij to the
+     * entire residuum tensor Rabij at the respective index range.
+     * \param[in] a0 1st sliced dimension (x).
+     * \param[in] b0 2nd sliced dimension (y).
+     * \param[in] Rxyij sliced residuum
+     * \param[in] Rabij entire residuum.
      */
-    cc4s::DryTensor<> *drySliceAmplitudesFromCoupledCoulombFactors(int factorsSliceSize);
+    template <typename F>
+    void sliceIntoResiduum(
+      CTF::Tensor<F> &Rxyij, int a0, int b0, CTF::Tensor<F> &Rabij
+    );
+
+
+    /**
+     * \brief The abbreviation of the algorithm in capital letters.
+     **/
+    std::string getCapitalizedAbbreviation();
+
+    std::string getDataName(const std::string &type, const std::string &data);
   };
 }
 

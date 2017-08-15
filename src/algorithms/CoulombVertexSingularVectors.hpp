@@ -21,8 +21,8 @@ namespace cc4s {
      */
     virtual void dryRun();
 
-    static double constexpr DEFAULT_REDUCTION = 0.5;
-    static int64_t constexpr DEFAULT_FIELD_VARIABLES = -1;
+    static double constexpr DEFAULT_FIELD_VARIABLES_RANK = 0.5;
+    static int64_t constexpr DEFAULT_FIELD_VARIABLES_SIZE = -1;
   };
 }
 

@@ -23,6 +23,7 @@ build/${CONFIG}/obj/algorithms/Algorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/LegacyClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterSinglesDoublesAlgorithm.o \
+build/${CONFIG}/obj/algorithms/LegacyClusterSinglesDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/SliceCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexDecomposition.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexDecomposition.o \
@@ -51,6 +52,7 @@ build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
+build/${CONFIG}/obj/algorithms/LegacyCcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexSingularVectors.o \

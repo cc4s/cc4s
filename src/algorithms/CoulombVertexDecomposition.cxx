@@ -37,8 +37,8 @@ void CoulombVertexDecomposition::run() {
   int Np(GammaGqr->lens[1]);
 
   // calculate decomposition rank
-  rank = getIntegerArgument("rank", DEFAULT_RANK);
-  // if rank is not given use rank factors (if they are not given use rankFactors=2.0)
+  rank = getIntegerArgument("rank", DEFAULT_RANK_SIZE);
+  // if rank is not given use rank factors (if they are not given use rankFactors=3.0)
   if (rank == -1) {
     double rankFactor(getRealArgument("rankFactor", DEFAULT_RANK_FACTOR));
     rank = NG * rankFactor;
@@ -136,7 +136,7 @@ void CoulombVertexDecomposition::dryRun() {
 
 
   // calculate decomposition rank
-  rank = getIntegerArgument("rank", DEFAULT_RANK);
+  rank = getIntegerArgument("rankSize", DEFAULT_RANK_SIZE);
   // if rank is not given use rank factors (if they are not given use rankFactors=2.0)
   if (rank == -1) {
     double rankFactor(getRealArgument("rankFactor", DEFAULT_RANK_FACTOR));
@@ -274,7 +274,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     throw new EXCEPTION(stringStream.str());
   }
 
-//  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
   // initial guess
   double quadraticDelta(getDelta());
   fitAlternatingLeastSquaresFactor(
@@ -284,7 +284,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   if (normalizedFactorOrbitals) normalizePi(*PirR);
   mixer->append(*PirR);
   // (*PiqR)["qR"] = (*PirR)["qR"];
-  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR");
+  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR",fConj);
   if (writeSubIterations) {
     LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << 0 << ")"
       << "Pi^(" << (i+1) << "," << 0 << ")"
@@ -314,7 +314,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     }
     (*PirR)["qR"] = mixer->getNext()["qR"];
     // (*PiqR)["qR"] = (*PirR)["qR"];
-    PiqR->sum(1.0, *PirR,"qR", 0.0,"qR");
+    PiqR->sum(1.0, *PirR,"qR", 0.0,"qR",fConj);
     quadraticDelta = getDelta();
     if (writeSubIterations) {
       LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
