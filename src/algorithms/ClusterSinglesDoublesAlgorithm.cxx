@@ -545,6 +545,8 @@ Tensor<complex> *
   int Rvoo[] = { Rx, Nv, No, No };
   int RRoo[] = { Rx, Ry, No, No };
   int RR[] = { Rx, Ry };
+  int vRx[] = { Nv , Rx };
+  int vRy[] = { Nv , Ry };
   int syms[] = { NS, NS, NS, NS };
 
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
@@ -568,8 +570,14 @@ Tensor<complex> *
   int rightPiStart[] = { 0 ,                                b };
   int rightPiEnd[]   = { Nv, std::min(b+factorsSliceSize, NR) };
 
-  Tensor<complex> leftPiaR (PiaR.slice(leftPiStart  ,  leftPiEnd));
-  leftPiaR.set_name("leftPiaR");
+  int quadratic(0);
+  
+  Tensor<complex> leftPiaR(2, vRx, syms, *PirR->wrld, "leftPiaR");
+  if (quadratic) {
+    leftPiaR=conjPiaR.slice(leftPiStart  ,  leftPiEnd);
+  } else {
+    leftPiaR=    PiaR.slice(leftPiStart  ,  leftPiEnd);
+  }
   Tensor<complex> rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
   rightPiaR.set_name("rightPiaR");
   
@@ -608,18 +616,24 @@ Tensor<complex> *
   conjPiiR.set_name("ConjPiiR");
   conjPiiR.sum(1.0, PiiR,"iR", 0.0,"iR", fConj);
 
-  // Initialize dressedPiaR
-  Tensor<complex> dressedPiaR(conjPiaR);
-  dressedPiaR.set_name("dressedPiaR");
-
   // Construct dressedPiaR
+  Tensor<complex> dressedPiaR(PiaR);
+  dressedPiaR.set_name("dressedPiaR");
+  dressedPiaR["aR"] += (-1.0) * PiiR["kR"] * (*Tai)["ak"];
+
+  Tensor<complex> conjDressedPiaR(conjPiaR);
+  dressedPiaR.set_name("dressedPiaR");
   dressedPiaR["aR"] += (-1.0) * conjPiiR["kR"] * (*Tai)["ak"];
 
   // Slice the respective parts from dressedPiaR
-  Tensor<complex> dressedLeftPiaR (dressedPiaR.slice(leftPiStart  ,  leftPiEnd));
+  Tensor<complex> dressedLeftPiaR (conjDressedPiaR.slice(leftPiStart  ,  leftPiEnd));
   dressedLeftPiaR.set_name("dressedLeftPiaR");
-  Tensor<complex> dressedRightPiaR(dressedPiaR.slice(rightPiStart , rightPiEnd));
-  dressedRightPiaR.set_name("dressedRightPiaR");
+  Tensor<complex> dressedRightPiaR(2, vRy, syms, *PirR->wrld, "leftPiaR");
+  if (quadratic) {
+    dressedRightPiaR=dressedPiaR.slice(rightPiStart , rightPiEnd);
+  } else {
+    dressedRightPiaR=conjDressedPiaR.slice(rightPiStart , rightPiEnd);
+  }    
 
   XRaij["Rbij"] = XRSij["RSij"]  * dressedRightPiaR["bS"];
 
