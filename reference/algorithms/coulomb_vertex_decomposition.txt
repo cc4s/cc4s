@@ -3,10 +3,18 @@
 ^  Argument((mandatory arguments start with a capital letter))  ^  Type  ^  Default  ^  Description  ^
 |  ''CoulombVertex'' |  complex tensor |  ---  | The coulomb vertex $\Gamma^q_{rF}$ to decompose.  |
 |  ''rank'' |  integer |  $N_F$ | The dimension $N_R$ of the [[internal:cc4s:nomenclature|factor orbitals and Coulomb factors]] to use for fitting. By default the rank is chosen according to the number of field variables $N_F$.  |
+|  ''ansatz'' |  text  |  ''"hermitian"'' | The ansatz of the vertex decomposition to use for fitting. By default the positive definite ansatz \f${\Pi^\ast}^r_R\Pi_r^R\Lambda_F^R\f$ is employed. See |
 |  ''swampingThreshold'' |  real |  1.0 | The ratio $\left\Vert A^{(n)}-A^{(n-1)}\right\Vert/\left\Vert A^{(n)}\right\Vert$ to aim for when adjusting the regularization parameter in each iteration. Larger values permit larger steps per iterations, however too large steps may lead to swamping. See the [[publications:tensor_rank_decomposition&#determining_the_regularization_parameter|article]] for more details.  |
 |  ''regularizationFriction'' |  real |  0.25 | The friction parameter $\gamma$ for adjusting the regularization parameter in each iteration. Low values result in a fast response but may lead to oscillatory behavior. See the [[publications:tensor_rank_decomposition&#determining_the_regularization_parameter|article]] for more details.  |
 
+==== Ansatz ====
+Three ansatzes are available.
+^  Name  ^  Ansatz  ^  Description  ^
+|  ''"symmetric"''  | \f$\Gamma^q_{rF}\approx\Lambda_F^R\Pi_q^R\Pi_r^R\f$  | Coulomb integrals are symmetric w.r.t. swap of upper and lower orbital indices. Needs lower rank $N_R$, however requires real orbitals.  |
+|  ''"hermitian"''  | \f$\Gamma^q_{rF}\approx\Lambda_F^R{\Pi^\ast}^q_R\Pi_r^R\f$  | Coulomb integrals are hermitian w.r.t. swap of upper and lower orbital indices. Needs larget rank $N_R$, also works for complex orbitals.  |
+|  ''"pseudoInverse"''  | \f$\Gamma^q_{rF}\approx\Lambda_F^R{\Pi^+}^q_R\Pi_r^R\f$  | where \f$\Pi^+\f$ denotes the Moore--Penrose pseudo inverse of \f$\Pi\f$. Needed to define imaginary time propagators satisfying \f$G^S_T(\tau_1) G^R_S(\tau_2) = G^R_T(\tau_1+\tau_2)\f$.  |
+
 ===== Output arguments =====
 ^  Argument  ^  Type  ^  Description  ^
-|   ''FactorOrbitals'' |  complex tensor | The [[internal:cc4s:nomenclature|factor orbitals]] $\Pi_{rR}$.  |
-|   ''CoulombFactors'' |  complex tensor | The [[internal:cc4s:nomenclature|Coulomb factors]] $\Lambda_{FR}$.  |
+|   ''FactorOrbitals'' |  complex tensor | The [[internal:cc4s:nomenclature|factor orbitals]] $\Pi_r^R$.  |
+|   ''CoulombFactors'' |  complex tensor | The [[internal:cc4s:nomenclature|Coulomb factors]] $\Lambda_F^R$.  |
