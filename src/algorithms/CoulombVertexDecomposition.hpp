@@ -102,8 +102,8 @@ namespace cc4s {
     static constexpr bool DEFAULT_NORMALIZED_FACTOR_ORBITALS = false;
     static constexpr bool DEFAULT_WRITE_SUB_ITERATIONS = false;
 
-    static const std::string QUADRATIC;
-    static const std::string POSITIVE_DEFINITE;
+    static const std::string SYMMETRIC;
+    static const std::string HERMITIAN;
     static const std::string PSEUDO_INVERSE;
 
   protected:
