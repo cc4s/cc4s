@@ -570,14 +570,23 @@ Tensor<complex> *
   int rightPiStart[] = { 0 ,                                b };
   int rightPiEnd[]   = { Nv, std::min(b+factorsSliceSize, NR) };
 
-  int quadratic(0);
-  
+  std::string ansatz(
+    getTextArgument("coulombVertexDecompositionAnsatz", POSITIVE_DEFINITE)
+  );
+
   Tensor<complex> leftPiaR(2, vRx, syms, *PirR->wrld, "leftPiaR");
-  if (quadratic) {
+  if (ansatz == POSITIVE_DEFINITE) {
+    leftPiaR=PiaR.slice(leftPiStart  ,  leftPiEnd);
+  } else if (ansatz == QUADRATIC) {
     leftPiaR=conjPiaR.slice(leftPiStart  ,  leftPiEnd);
+  } else if (ansatz == PSEUDO_INVERSE) {
+    leftPiaR=PiaR.slice(leftPiStart  ,  leftPiEnd);
   } else {
-    leftPiaR=    PiaR.slice(leftPiStart  ,  leftPiEnd);
+    std::stringstream stringStream;
+    stringStream << "Unknown decomposition ansatz \"" << ansatz << "\"";
+    throw new EXCEPTION(stringStream.str());
   }
+
   Tensor<complex> rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
   rightPiaR.set_name("rightPiaR");
   
@@ -628,12 +637,19 @@ Tensor<complex> *
   // Slice the respective parts from dressedPiaR
   Tensor<complex> dressedLeftPiaR (conjDressedPiaR.slice(leftPiStart  ,  leftPiEnd));
   dressedLeftPiaR.set_name("dressedLeftPiaR");
+
   Tensor<complex> dressedRightPiaR(2, vRy, syms, *PirR->wrld, "leftPiaR");
-  if (quadratic) {
-    dressedRightPiaR=dressedPiaR.slice(rightPiStart , rightPiEnd);
-  } else {
+  if (ansatz == POSITIVE_DEFINITE) {
     dressedRightPiaR=conjDressedPiaR.slice(rightPiStart , rightPiEnd);
-  }    
+  } else if (ansatz == QUADRATIC) {
+    dressedRightPiaR=dressedPiaR.slice(rightPiStart , rightPiEnd);
+  } else if (ansatz == PSEUDO_INVERSE) {
+    dressedRightPiaR=conjDressedPiaR.slice(rightPiStart , rightPiEnd);
+  } else {
+    std::stringstream stringStream;
+    stringStream << "Unknown decomposition ansatz \"" << ansatz << "\"";
+    throw new EXCEPTION(stringStream.str());
+  }
 
   XRaij["Rbij"] = XRSij["RSij"]  * dressedRightPiaR["bS"];
 
@@ -824,3 +840,13 @@ std::string ClusterSinglesDoublesAlgorithm::getDataName(
   return dataName.str();
 }
 
+
+const std::string ClusterSinglesDoublesAlgorithm::QUADRATIC(
+  "quadratic"
+);
+const std::string ClusterSinglesDoublesAlgorithm::POSITIVE_DEFINITE(
+  "positiveDefinite"
+);
+const std::string ClusterSinglesDoublesAlgorithm::PSEUDO_INVERSE(
+  "pseudoInverse"
+);
