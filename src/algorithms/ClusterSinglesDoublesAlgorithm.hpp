@@ -39,6 +39,10 @@ namespace cc4s {
      */
     static int constexpr DEFAULT_MAX_ITERATIONS = 16;
 
+    static const std::string QUADRATIC;
+    static const std::string POSITIVE_DEFINITE;
+    static const std::string PSEUDO_INVERSE;
+
   protected:
     template <typename F>
     F run();
