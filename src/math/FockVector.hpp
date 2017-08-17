@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+
 #include <initializer_list>
 
 #include <ctf.hpp>
@@ -17,7 +18,7 @@ namespace cc4s {
     std::vector<std::string> componentIndices;
 
     FockVector(
-      FockVector<F> const &a
+      const FockVector<F> &a
     ):
       componentTensors(a.componentTensors),
       componentIndices(a.componentIndices)
@@ -33,43 +34,67 @@ namespace cc4s {
     {
     }
 
-    FockVector<F> &operator += (FockVector<F> &a) {
+    FockVector<F> &operator += (const FockVector<F> &a) {
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         // TODO: check whether given vector a is compatible w.r.t.
         // number and shape components
-        char const *indices(componentIndices[i].c_str());
+        const char *indices(componentIndices[i].c_str());
         componentTensors[i][indices] += a.componentTensors[i][indices];
       }
       return *this;
     }
 
-    FockVector<F> &operator *= (F const s) {
-      // TODO: implement scalar multiplication
+    FockVector<F> &operator *= (coonst F s) {
+      CTF::Scalar<F> scalar(s);
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        // TODO: check whether given vector a is compatible w.r.t.
+        // number and shape components
+        const char *indices(componentIndices[i].c_str());
+        componentTensors[i][indices] *= scalar[""];
+      }
+      return *this;
     }
 
-    F dot(FockVector<F> &a) {
+    F dot(const FockVector<F> &a) const {
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         // TODO: check whether given vector a is compatible w.r.t.
         // number and shape components
-        char const *indices(componentIndices[i].c_str());
-        CTF::Tensor<F> conjThis(componentTensors[i]);
+        const char *indices(componentIndices[i].c_str());
         CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
         // add to result
         result.contract(
-          1.0, conjThis, indices, a.componentTensors[i], indices,
+          1.0, componentTensors[i], indices, a.componentTensors[i], indices,
           1.0, "", fDot
         );
       }
       return result.get_val();
     }
-
+  protected:
+    void checkCompatabilityTo(const FockVector<F> &a) const {
+      if (
+        componentTensors.size() != a.componentTensors.size() ||
+        componentIndices.size() != a.componentIndices.size() 
+      ) {
+        throw EXCEPTION("Number of component tensors does no match");
+      }
+      // TODO: check shapes.
+    }
   };
 
   template <typename F>
-  FockVector<F> inline operator +(FockVector<F> &a, FockVector<F> &b) {
+  FockVector<F> inline operator +(
+    const FockVector<F> &a, const FockVector<F> &b
+  ) {
     FockVector<F> result(a);
     result += b;
+    return result;
+  }
+
+  template <typename F>
+  FockVector<F> inline operator *(const FockVector<F> &a, const F &s) {
+    FockVector<F> result(a);
+    result *= s;
     return result;
   }
 }
