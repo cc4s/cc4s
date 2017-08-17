@@ -50,11 +50,13 @@ namespace cc4s {
       while (basis.size() <= maxBasisSize) {
         // compute reduced H
         LapackMatrix<F> reducedH(basis.size(), basis.size());
-        for (int i(0); i < basis.size(); ++i) {
-          for (int j(0); j < basis.size(); ++j) {
-            reducedH(i,j) = basis[i].dot( h.rightApply(basis[j]) );
+        for (int j(0); j < basis.size(); ++j) {
+          V HBj( h.rightApply(basis[j]) );
+          for (int i(0); i < basis.size(); ++i) {
+            reducedH(i,j) = basis[i].dot(HBj);
           }
         }
+
         // compute K lowest reduced eigenvalues and vectors of reduced H
         LapackMatrix<F> reducedEigenVectors(basis.size(), basis.size());
         LapackGeneralEigenSystem<F> reducedEigenSystem(
