@@ -328,13 +328,13 @@ void CoulombVertexDecomposition::takeFactor(
   Matrix<complex> &targetPi, Matrix<complex> &sourcePi
 ) {
   std::string ansatz(
-    getTextArgument("coulombVertexDecompositionAnsatz", POSITIVE_DEFINITE)
+    getTextArgument("ansatz", HERMITIAN)
   );
 
-  if (ansatz == POSITIVE_DEFINITE) {
+  if (ansatz == HERMITIAN) {
     Univar_Function<complex> fConj(&cc4s::conj<complex>);
     PiqR->sum(1.0, *PirR,"qR", 0.0,"qR",fConj);
-  } else if (ansatz == QUADRATIC) {
+  } else if (ansatz == SYMMETRIC) {
     (*PiqR)["qR"] = (*PirR)["qR"];
   } else if (ansatz == PSEUDO_INVERSE) {
     (*PiqR)["qR"] = IterativePseudoInverse<complex>(*PirR).get()["qR"];
@@ -355,10 +355,10 @@ double CoulombVertexDecomposition::getDelta() {
   return Delta;
 }
 
-const std::string CoulombVertexDecomposition::QUADRATIC(
-  "quadratic");
-const std::string CoulombVertexDecomposition::POSITIVE_DEFINITE(
-  "positiveDefinite"
+const std::string CoulombVertexDecomposition::SYMMETRIC(
+  "symmetric");
+const std::string CoulombVertexDecomposition::HERMITIAN(
+  "hermitian"
 );
 const std::string CoulombVertexDecomposition::PSEUDO_INVERSE(
   "pseudoInverse"
