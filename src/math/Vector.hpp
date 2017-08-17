@@ -87,7 +87,7 @@ namespace cc4s {
     F dot(Vector<F,D> const &v) {
       F sum(0);
       for (int d(0); d<D; ++d) {
-        sum += coordinate[d] * cc4s::conj(v.coordinate[d]);
+        sum += cc4s::dot(coordinate[d], v.coordinate[d]);
       }
       return sum;
     }
