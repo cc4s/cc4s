@@ -54,9 +54,12 @@ namespace cc4s {
         // number and shape components
         char const *indices(componentIndices[i].c_str());
         CTF::Tensor<F> conjThis(componentTensors[i]);
-        cc4s::conjugate(conjThis);
+        CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
         // add to result
-        result[""] += conjThis[indices] * a.componentTensors[i][indices];
+        result.contract(
+          1.0, conjThis, indices, a.componentTensors[i], indices,
+          1.0, "", fDot
+        );
       }
       return result.get_val();
     }

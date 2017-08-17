@@ -31,7 +31,7 @@ namespace cc4s {
   // bivariate functions
   template <typename F=double>
   inline F dot(F const x, F const y) {
-    return x * conj(y);
+    return conj(x) * y;
   }
 
   /**
