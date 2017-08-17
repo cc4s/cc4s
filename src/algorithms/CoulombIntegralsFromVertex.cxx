@@ -177,6 +177,8 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
     new Tensor<>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaibj") : nullptr);
   Tensor<> *Vabij(isArgumentGiven("PPHHCoulombIntegrals") ?
     new Tensor<>(4, vvoo.data(), syms.data(), *Cc4s::world, "Vabij") : nullptr);
+  Tensor<> *Vijab(isArgumentGiven("HHPPCoulombIntegrals") ?
+    new Tensor<>(4, oovv.data(), syms.data(), *Cc4s::world, "Vijab") : nullptr);
   Tensor<> *Vijkl(isArgumentGiven("HHHHCoulombIntegrals") ?
     new Tensor<>(4, oooo.data(), syms.data(), *Cc4s::world, "Vijkl") : nullptr);
   Tensor<> *Vijka(isArgumentGiven("HHHPCoulombIntegrals") ?
@@ -224,6 +226,12 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
     (*Vabij)["abij"]  = realGammaGai["Gai"] * realGammaGai["Gbj"];
     (*Vabij)["abij"] += imagGammaGai["Gai"] * imagGammaGai["Gbj"];
     allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
+  }
+  if (Vijab) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vijab->get_name() << std::endl;
+    (*Vijab)["ijab"] = (*Vabij)["abij"];
+    allocatedTensorArgument("HHPPCoulombIntegrals", Vijab);
   }
   if (Vijkl) {
     LOG(1, "CoulombIntegrals") << "Evaluating "
