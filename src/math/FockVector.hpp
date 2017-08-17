@@ -14,6 +14,8 @@ namespace cc4s {
   template <typename F=double>
   class FockVector {
   public:
+    typedef F FieldType;
+
     std::vector<CTF::Tensor<F>> componentTensors;
     std::vector<std::string> componentIndices;
 
