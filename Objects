@@ -80,7 +80,8 @@ build/${CONFIG}/obj/algorithms/CcdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/CcsdEquationOfMotion.o \
 
 TESTS_OBJECTS = \
-build/${CONFIG}/obj/math/tests/Antisymmetrize.o \
-build/${CONFIG}/obj/math/tests/Symmetrize.o \
-build/${CONFIG}/obj/math/tests/PermutationSign.o \
-build/${CONFIG}/obj/test/main.o  \
+build/${CONFIG}/obj/test/math/Antisymmetrize.o \
+build/${CONFIG}/obj/test/math/Symmetrize.o \
+build/${CONFIG}/obj/test/math/PermutationSign.o \
+build/${CONFIG}/obj/test/util/LapackEigenSystem.o \
+build/${CONFIG}/obj/test/Test.o  \

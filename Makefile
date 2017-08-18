@@ -27,7 +27,7 @@ all: build/${CONFIG}/bin/${TARGET}
 test:
 	bash test/test.sh -c $(CONFIG)
 
-unit-test: build/${CONFIG}/bin/test
+unit-test: build/${CONFIG}/bin/Test
 
 # generate documentation
 doc:
@@ -83,7 +83,7 @@ build/${CONFIG}/bin/%: build/${CONFIG}/obj/%.o ${OBJECTS}
 	${CXX} ${OPTIONS} ${OPTIMIZE} ${OBJECTS} build/${CONFIG}/obj/${TARGET}.o ${INCLUDE} ${LIBS} -o $@
 
 # compile and link test executable
-build/${CONFIG}/bin/test: ${OBJECTS} $(TESTS_OBJECTS)
+build/${CONFIG}/bin/Test: ${OBJECTS} $(TESTS_OBJECTS)
 	mkdir -p $(dir $@)
 	${CXX} ${OPTIONS} ${OPTIMIZE} ${OBJECTS} $(TESTS_OBJECTS) ${INCLUDE} ${LIBS} -o $@
 

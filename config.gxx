@@ -13,6 +13,9 @@ OPTIMIZE=-Ofast -march=native -flto
 # location of the Cyclops Tensor Framework library depends on the configuration
 CTF=modules/build/${CONFIG}/ctf
 
+# location of the compiled BLAS,LAPACK and ScaLAPACK libraries
+SCA=/usr/local/lib/scalapack
+
 # additional include directories for header files
 INCLUDE=-I${CTF}/include
 

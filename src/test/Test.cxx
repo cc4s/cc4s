@@ -1,5 +1,5 @@
 #define CATCH_CONFIG_RUNNER
-#include <util/Test.hpp>
+#include <test/Test.hpp>
 #include <Cc4s.hpp>
 #include <Parser.hpp>
 #include <util/MpiCommunicator.hpp>
