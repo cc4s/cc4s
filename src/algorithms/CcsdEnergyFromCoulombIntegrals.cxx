@@ -784,14 +784,23 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   } else {
     // For the rest iterations compute the CCSD amplitudes
     
-    //********************************************************************************
-    //***********************  T2 amplitude equations  *******************************
-    //********************************************************************************
+    // ********************************************************************************
+    // ***********************  T2 amplitude equations  *******************************
+    // ********************************************************************************
 
     LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
 
     // Read the Coulomb vertex GammaGqr
     Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+
+    // Read all required integrals
+    Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
+    Tensor<F> *Vaijb(getTensorArgument<F>("PHHPCoulombIntegrals"));
+    Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
+    Tensor<F> *Vaibj(getTensorArgument<F>("PHPHCoulombIntegrals"));
+    Tensor<F> *Vijkl(getTensorArgument<F>("HHHHCoulombIntegrals"));
+    Tensor<F> *Vijka(getTensorArgument<F>("HHHPCoulombIntegrals"));
+    Tensor<F> *Vaijk(getTensorArgument<F>("PHHHCoulombIntegrals"));
 
     std::array<int,4> syms({{ NS, NS, NS, NS }});
     std::array<int,4> voov({{ Nv, No, No, Nv }});
@@ -983,9 +992,9 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
       }
     }
 
-    //********************************************************************************
-    //***********************  T1 amplitude equations  *******************************
-    //********************************************************************************
+    // ********************************************************************************
+    // ***********************  T1 amplitude equations  *******************************
+    // ********************************************************************************
     {
       LOG(1, abbreviation) << "Solving T1 Amplitude Equations" << std::endl;
       // Intermediates used for T1 amplitudes

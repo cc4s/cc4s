@@ -90,13 +90,13 @@ void CoulombVertexDecomposition::run() {
   }
 
   PiqR = new Matrix<complex>(Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile);
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  // PiqR["qR"] = conj(PirR["qR"])
-  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR", fConj);
+  computeOutgoingPi();
 
   allocatedTensorArgument<complex>("FactorOrbitals", PirR);
   allocatedTensorArgument<complex>("CoulombFactors", LambdaGR);
-
+  if (isArgumentGiven("OutgoingFactorOrbitals")) {
+    allocatedTensorArgument<complex>("OutgoingFactorOrbitals", PiqR);
+  }
   composedGammaGqr = new Tensor<complex>(
     3, GammaGqr->lens, GammaGqr->sym, *GammaGqr->wrld, "composedGammaGqr",
     GammaGqr->profile
@@ -125,6 +125,9 @@ void CoulombVertexDecomposition::run() {
     fit(iterationsCount);
     ++iterationsCount;
   }
+
+  if (!isArgumentGiven("OutgoingFactorOrbitals")) { delete PiqR; }
+  if (!isArgumentGiven("ComposedCoulombVertex")) { delete composedGammaGqr; }
 }
 
 void CoulombVertexDecomposition::dryRun() {
@@ -283,7 +286,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   if (realFactorOrbitals) realizePi(*PirR);
   if (normalizedFactorOrbitals) normalizePi(*PirR);
   mixer->append(*PirR);
-  takeFactor(*PiqR, *PirR);
+  computeOutgoingPi();
   if (writeSubIterations) {
     LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << 0 << ")"
       << "Pi^(" << (i+1) << "," << 0 << ")"
@@ -312,7 +315,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
         << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
     }
     (*PirR)["qR"] = mixer->getNext()["qR"];
-    takeFactor(*PiqR, *PirR);
+    computeOutgoingPi();
     quadraticDelta = getDelta();
     if (writeSubIterations) {
       LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
@@ -324,9 +327,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   delete mixer;
 }
 
-void CoulombVertexDecomposition::takeFactor(
-  Matrix<complex> &targetPi, Matrix<complex> &sourcePi
-) {
+void CoulombVertexDecomposition::computeOutgoingPi() {
   std::string ansatz(
     getTextArgument("ansatz", HERMITIAN)
   );

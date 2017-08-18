@@ -143,15 +143,13 @@ namespace cc4s {
     void iterateQuadraticFactor(int iterationsCount);
 
     /**
-     * \brief Takes the source factor orbitals and computes the
-     * target factor orbitals according to the chosen ansatz.
+     * \brief Takes the incoming factor orbitals and computes the
+     * outgoing factor orbitals according to the chosen ansatz.
      * The ansatz is specified as the string argument
-     * coulombVertexDecompositionAnsatz and can be one of the following:
-     * "quadratic", "positiveDefinite", "pseudoInverse"
+     * ansatz and can be one of the following:
+     * "symmetric", "hermitian", "pseudoInverse"
      **/
-    void takeFactor(
-      CTF::Matrix<complex> &targetPi, CTF::Matrix<complex> &sourcePi
-    );
+    void computeOutgoingPi();
 
     /**
      * \brief Computes and returns the difference 
