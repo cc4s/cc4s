@@ -518,6 +518,8 @@ Tensor<complex> *
 ) {
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
   PirR->set_name("PirR");
+  Tensor<complex> *PiqR(getTensorArgument<complex>("OutgoingFactorOrbitals"));
+  PiqR->set_name("PiqR");
   Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
   LambdaGR->set_name("LambdaGR");
 
@@ -558,9 +560,15 @@ Tensor<complex> *
   int aREnd[]   = {Np ,NR};
   Tensor<complex> PiaR(PirR->slice(aRStart,aREnd));
   PiaR.set_name("PiaR");
+  Tensor<complex> PicR(PiqR->slice(aRStart,aREnd));
+  PicR.set_name("PicR");
+  
   Tensor<complex> conjPiaR(false, PiaR);
   conjPiaR.set_name("ConjPiaR");
   conjPiaR.sum(1.0, PiaR,"aR", 0.0,"aR", fConj);
+  Tensor<complex> conjPicR(false, PicR);
+  conjPicR.set_name("ConjPicR");
+  conjPicR.sum(1.0, PicR,"aR", 0.0,"aR", fConj);
 
   // Slice the respective parts from PiaR
   int leftPiStart[]  = { 0 ,                                a };
@@ -568,7 +576,7 @@ Tensor<complex> *
   int rightPiStart[] = { 0 ,                                b };
   int rightPiEnd[]   = { Nv, std::min(b+factorsSliceSize, NR) };
 
-  Tensor<complex> leftPiaR (PiaR.slice(leftPiStart  ,  leftPiEnd));
+  Tensor<complex> leftPiaR(conjPicR.slice(leftPiStart  ,  leftPiEnd));
   leftPiaR.set_name("leftPiaR");
   Tensor<complex> rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
   rightPiaR.set_name("rightPiaR");
@@ -604,22 +612,30 @@ Tensor<complex> *
   int iREnd[]   = {No ,NR};
   Tensor<complex> PiiR(PirR->slice(iRStart,iREnd));
   PiiR.set_name("PiiR");
+  Tensor<complex> PijR(PiqR->slice(iRStart,iREnd));
+  PijR.set_name("PijR");
   Tensor<complex> conjPiiR(false, PiiR);
   conjPiiR.set_name("ConjPiiR");
   conjPiiR.sum(1.0, PiiR,"iR", 0.0,"iR", fConj);
-
-  // Initialize dressedPiaR
-  Tensor<complex> dressedPiaR(conjPiaR);
-  dressedPiaR.set_name("dressedPiaR");
+  Tensor<complex> conjPijR(false, PijR);
+  conjPijR.set_name("ConjPijR");
+  conjPijR.sum(1.0, PijR,"iR", 0.0,"iR", fConj);
 
   // Construct dressedPiaR
-  dressedPiaR["aR"] += (-1.0) * conjPiiR["kR"] * (*Tai)["ak"];
+  Tensor<complex> dressedPiaR(PicR);
+  dressedPiaR.set_name("dressedPiaR");
+  dressedPiaR["aR"] += (-1.0) * PijR["kR"] * (*Tai)["ak"];
+
+  Tensor<complex> conjDressedPiaR(conjPiaR);
+  conjDressedPiaR.set_name("conjDressedPiaR");
+  conjDressedPiaR["aR"] += (-1.0) * conjPiiR["kR"] * (*Tai)["ak"];
 
   // Slice the respective parts from dressedPiaR
-  Tensor<complex> dressedLeftPiaR (dressedPiaR.slice(leftPiStart  ,  leftPiEnd));
+  Tensor<complex> dressedLeftPiaR (conjDressedPiaR.slice(leftPiStart  ,  leftPiEnd));
   dressedLeftPiaR.set_name("dressedLeftPiaR");
+
   Tensor<complex> dressedRightPiaR(dressedPiaR.slice(rightPiStart , rightPiEnd));
-  dressedRightPiaR.set_name("dressedRightPiaR");
+  dressedRightPiaR.set_name("dressedrightPiaR");
 
   XRaij["Rbij"] = XRSij["RSij"]  * dressedRightPiaR["bS"];
 
@@ -809,4 +825,3 @@ std::string ClusterSinglesDoublesAlgorithm::getDataName(
   dataName << getAbbreviation() << type << data;
   return dataName.str();
 }
-

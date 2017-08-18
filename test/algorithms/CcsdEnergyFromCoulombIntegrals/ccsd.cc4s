@@ -65,6 +65,8 @@ CoulombVertexDecomposition [
   (maxIterations 64)
   (mixer "LinearMixer")
   (mixingRatio 0.8)
+  % Choose the ansatz, one of "quadratic", "positiveDefinite", "pseudoInverse"
+  (coulombVertexDecompositionAnsatz "positiveDefinite")
 ] [
   FactorOrbitals CoulombFactors
   % Returns (if given) the Coulomb Vertex from the decomposed tensors.
@@ -88,6 +90,8 @@ CcsdEnergyFromCoulombIntegrals [
 % (factorsSliceFactor 0.33)
 % (mixer "LinearMixer")
 % (mixingRatio 1.5)
+  % Specify the decomposition ansatz, one of "quadratic", "positiveDefinite", "pseudoInverse"
+  (coulombVertexDecompositionAnsatz "positiveDefinite")
 ] [
   (CcsdEnergy CcsdEnergyFactors)
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudesFactors)

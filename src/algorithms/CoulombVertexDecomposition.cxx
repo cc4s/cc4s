@@ -2,6 +2,7 @@
 
 #include <algorithms/CoulombVertexDecomposition.hpp>
 #include <math/CanonicalPolyadicDecomposition.hpp>
+#include <math/IterativePseudoInverse.hpp>
 #include <math/RandomTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <mixers/Mixer.hpp>
@@ -89,13 +90,13 @@ void CoulombVertexDecomposition::run() {
   }
 
   PiqR = new Matrix<complex>(Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile);
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  // PiqR["qR"] = conj(PirR["qR"])
-  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR", fConj);
+  computeOutgoingPi();
 
   allocatedTensorArgument<complex>("FactorOrbitals", PirR);
   allocatedTensorArgument<complex>("CoulombFactors", LambdaGR);
-
+  if (isArgumentGiven("OutgoingFactorOrbitals")) {
+    allocatedTensorArgument<complex>("OutgoingFactorOrbitals", PiqR);
+  }
   composedGammaGqr = new Tensor<complex>(
     3, GammaGqr->lens, GammaGqr->sym, *GammaGqr->wrld, "composedGammaGqr",
     GammaGqr->profile
@@ -124,6 +125,9 @@ void CoulombVertexDecomposition::run() {
     fit(iterationsCount);
     ++iterationsCount;
   }
+
+  if (!isArgumentGiven("OutgoingFactorOrbitals")) { delete PiqR; }
+  if (!isArgumentGiven("ComposedCoulombVertex")) { delete composedGammaGqr; }
 }
 
 void CoulombVertexDecomposition::dryRun() {
@@ -274,7 +278,6 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     throw new EXCEPTION(stringStream.str());
   }
 
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
   // initial guess
   double quadraticDelta(getDelta());
   fitAlternatingLeastSquaresFactor(
@@ -283,8 +286,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   if (realFactorOrbitals) realizePi(*PirR);
   if (normalizedFactorOrbitals) normalizePi(*PirR);
   mixer->append(*PirR);
-  // (*PiqR)["qR"] = (*PirR)["qR"];
-  PiqR->sum(1.0, *PirR,"qR", 0.0,"qR",fConj);
+  computeOutgoingPi();
   if (writeSubIterations) {
     LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << 0 << ")"
       << "Pi^(" << (i+1) << "," << 0 << ")"
@@ -313,8 +315,7 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
         << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
     }
     (*PirR)["qR"] = mixer->getNext()["qR"];
-    // (*PiqR)["qR"] = (*PirR)["qR"];
-    PiqR->sum(1.0, *PirR,"qR", 0.0,"qR",fConj);
+    computeOutgoingPi();
     quadraticDelta = getDelta();
     if (writeSubIterations) {
       LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
@@ -326,6 +327,25 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   delete mixer;
 }
 
+void CoulombVertexDecomposition::computeOutgoingPi() {
+  std::string ansatz(
+    getTextArgument("ansatz", HERMITIAN)
+  );
+
+  if (ansatz == HERMITIAN) {
+    Univar_Function<complex> fConj(&cc4s::conj<complex>);
+    PiqR->sum(1.0, *PirR,"qR", 0.0,"qR",fConj);
+  } else if (ansatz == SYMMETRIC) {
+    (*PiqR)["qR"] = (*PirR)["qR"];
+  } else if (ansatz == PSEUDO_INVERSE) {
+    (*PiqR)["qR"] = IterativePseudoInverse<complex>(*PirR).get()["qR"];
+  } else {
+    std::stringstream stringStream;
+    stringStream << "Unknown decomposition ansatz \"" << ansatz << "\"";
+    throw new EXCEPTION(stringStream.str());
+  }
+}
+
 double CoulombVertexDecomposition::getDelta() {
   composeCanonicalPolyadicDecompositionTensors(
     *LambdaGR, *PiqR, *PirR, *composedGammaGqr
@@ -335,4 +355,13 @@ double CoulombVertexDecomposition::getDelta() {
   (*composedGammaGqr)["Gqr"] += (*GammaGqr)["Gqr"];
   return Delta;
 }
+
+const std::string CoulombVertexDecomposition::SYMMETRIC(
+  "symmetric");
+const std::string CoulombVertexDecomposition::HERMITIAN(
+  "hermitian"
+);
+const std::string CoulombVertexDecomposition::PSEUDO_INVERSE(
+  "pseudoInverse"
+);
 
