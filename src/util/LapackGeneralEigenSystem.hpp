@@ -4,6 +4,9 @@
 
 #include <math/Complex.hpp>
 #include <util/LapackMatrix.hpp>
+#include <util/Exception.hpp>
+#include <extern/Lapack.hpp>
+#include <util/Log.hpp>
 
 #include <vector>
 
@@ -12,6 +15,7 @@ namespace cc4s {
   template <typename F=double>
   class LapackGeneralEigenSystem;
 
+/*
   // specialization for double
   template <>
   class LapackGeneralEigenSystem<double> {
@@ -19,25 +23,27 @@ namespace cc4s {
     LapackGeneralEigenSystem(
       const LapackMatrix<double> &A_
     ):
-      R(),
-      lambdas(A_.getRows()),
+      R(A_.getRows(), A_.getColumns()),
+      L(A_.getRows(), A_.getColumns()),
+      lambdas(A_.getRows())
     {
       if (A_.getRows() != A_.getColumns()) {
         throw EXCEPTION("EigenSystem requries a square matrix");
       }
       // copy A since it will be modified
       LapackMatrix<double> A(A_);
-      std::vector<double> lambdaReals(A_.getRows()), lambdaImags(A_.getRows());
+      int rows(A_.getRows());
+      std::vector<double> lambdaReals(rows), lambdaImags(rows);
       double optimalWork;
       int workCount(-1);
       int info;
       dgeev_(
-        "N", "V", // compute only right eigenvectors
-        &A.getRows(),
-        A.data(), &A.getRows(),
+        "V", "V",
+        &rows,
+        A.getValues(), &rows,
         lambdaReals.data(), lambdaImags.data(),
-        nullptr, &one,
-        &R->getValues(), &R->getRows(),
+        L.getValues(), &rows,
+        R.getValues(), &rows,
         &optimalWork, &workCount,
         &info
       );
@@ -46,18 +52,18 @@ namespace cc4s {
       std::vector<double> work(workCount);
      
       dgeev_(
-        "N", "V", // compute only right eigenvectors
-        &A.getRows(),
-        A.data(), &A.getRows(),
+        "V", "V",
+        &rows,
+        A.getValues(), &rows,
         lambdaReals.data(), lambdaImags.data(),
-        nullptr, &one,
-        &R->getValues(), &R->getRows(),
-        &work.data(), &workCount,
+        L.getValues(), &rows,
+        R.getValues(), &rows,
+        work.data(), &workCount,
         &info
       );
       // TODO: check info
 
-      for (int i(0); i < A.getRows(); ++i) {
+      for (int i(0); i < rows; ++i) {
         lambdas[i] = complex(lambdaReals[i], lambdaImags[i]);
         if (std::abs(lambdaImags[i]) > 1e-8*std::abs(lambdaReals[i])) {
           // TODO: decode eigenvectors to complex eigenvalues
@@ -84,6 +90,7 @@ namespace cc4s {
     LapackMatrix<complex> R, L;
     std::vector<complex> lambdas;
   };
+*/
 
   // specialization for complex
   template <>
@@ -92,42 +99,44 @@ namespace cc4s {
     LapackGeneralEigenSystem(
       const LapackMatrix<complex> &A_
     ):
-      R(),
-      lambdas(A_.getRows()),
+      R(A_.getRows(), A_.getColumns()),
+      L(A_.getRows(), A_.getColumns()),
+      lambdas(A_.getRows())
     {
       if (A_.getRows() != A_.getColumns()) {
         throw EXCEPTION("EigenSystem requries a square matrix");
       }
       // copy A since it will be modified
       LapackMatrix<complex> A(A_);
-      std::vector<complex> lambdaReals(A_.getRows()), lambdaImags(A_.getRows());
+      int rows(A_.getRows());
+      std::vector<double> realWork(2*rows);
       complex optimalWork;
       int workCount(-1);
       int info;
       zgeev_(
-        "N", "V", // compute only right eigenvectors
-        &A.getRows(),
-        A.data(), &A.getRows(),
+        "V", "V",
+        &rows,
+        A.getValues(), &rows,
         lambdas.data(),
-        nullptr, &one,
-        &R->getValues(), &R->getRows(),
+        L.getValues(), &rows,
+        R.getValues(), &rows,
         &optimalWork, &workCount,
+        realWork.data(),
         &info
       );
       // TODO: check info
       workCount = static_cast<int>(std::real(optimalWork)+0.5);
       std::vector<complex> work(workCount);
-      std::vector<double> realWork(2*A.getRows());
      
       zgeev_(
-        "N", "V", // compute only right eigenvectors
-        &A.getRows(),
-        A.data(), &A.getRows(),
+        "V", "V",
+        &rows,
+        A.getValues(), &rows,
         lambdas.data(),
-        nullptr, &one,
-        &R->getValues(), &R->getRows(),
-        &work.data(), &workCount,
-        &realWorl.data(),
+        L.getValues(), &rows,
+        R.getValues(), &rows,
+        work.data(), &workCount,
+        realWork.data(),
         &info
       );
       // TODO: check info
@@ -137,7 +146,7 @@ namespace cc4s {
     }
 
     const std::vector<complex> &getEigenValues() const {
-      return lambda;
+      return lambdas;
     }
 
     const LapackMatrix<complex> &getRightEigenVectors() const {

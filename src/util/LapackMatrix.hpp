@@ -12,10 +12,10 @@ namespace cc4s {
     LapackMatrix(
       const LapackMatrix<F> &A
     ):
-      rows(A.rows), columns(B.columns), values(new F[rows*columns])
+      rows(A.rows), columns(A.columns), values(new F[rows*columns])
     {
       for (int64_t i(0); i < rows*columns; ++i) {
-        values[i] = F(0);
+        values[i] = A.values[i];
       }
     }
 
@@ -28,7 +28,7 @@ namespace cc4s {
       rows(rows_), columns(columns_), values(new F[rows_*columns_])
     {
       for (int64_t i(0); i < rows*columns; ++i) {
-        values[i] = A.values[i];
+        values[i] = F(0);
       }
     }
 
@@ -39,11 +39,11 @@ namespace cc4s {
       delete[] values;
     }
 
-    const F &operator (const  int i, const int j) const {
+    const F &operator ()(const  int i, const int j) const {
       return values[i+j*rows];
     }
 
-    F &operator (const int i, const int j) {
+    F &operator ()(const int i, const int j) {
       return values[i+j*rows];
     }
 
