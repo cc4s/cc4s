@@ -297,12 +297,12 @@ void FiniteSizeCorrection::calculateStructureFactorComplex() {
   Tensor<complex> GammaGai(GammaGqr->slice(GaiStart, GaiEnd));
 
   //Define CGai
-  Tensor<complex> CGai(GammaGai);
+  Tensor<complex> CGai(GammaGia);
   CGai["Gai"] *= invSqrtVG["G"];
 
   Tensor<complex> conjCGai(false, GammaGai);
   Univar_Function<complex> fConj(conj<complex>);
-  conjCGai.sum(1.0,GammaGia,"Gia", 0.0,"Gai", fConj);
+  conjCGai.sum(1.0,GammaGai,"Gai", 0.0,"Gai", fConj);
   conjCGai["Gai"] *= invSqrtVG["G"];
 
   //Get Tabij
