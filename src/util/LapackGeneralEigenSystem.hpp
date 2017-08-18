@@ -5,6 +5,8 @@
 #include <math/Complex.hpp>
 #include <util/LapackMatrix.hpp>
 
+#include <vector>
+
 namespace cc4s {
   // base template
   template <typename F=double>
@@ -15,59 +17,141 @@ namespace cc4s {
   class LapackGeneralEigenSystem<double> {
   public:
     LapackGeneralEigenSystem(
-      const LapackMatrix<double> &A_,
-      LapackMatrix<double> *R_
+      const LapackMatrix<double> &A_
     ):
-      A(A_), R(R_), workCount(-1), work(nullptr)
+      R(),
+      lambdas(A_.getRows()),
     {
-      // TODO: check if matrix is quadratic
+      if (A_.getRows() != A_.getColumns()) {
+        throw EXCEPTION("EigenSystem requries a square matrix");
+      }
+      // copy A since it will be modified
+      LapackMatrix<double> A(A_);
+      std::vector<double> lambdaReals(A_.getRows()), lambdaImags(A_.getRows());
       double optimalWork;
+      int workCount(-1);
       int info;
-      int one(1);
       dgeev_(
         "N", "V", // compute only right eigenvectors
-        &A.rows,
-        A.getValues(), &A.rows,
-        nullptr, nullptr,
+        &A.getRows(),
+        A.data(), &A.getRows(),
+        lambdaReals.data(), lambdaImags.data(),
         nullptr, &one,
-        &R->getValues(), &R->rows,
+        &R->getValues(), &R->getRows(),
         &optimalWork, &workCount,
         &info
       );
       // TODO: check info
       workCount = static_cast<int>(optimalWork+0.5);
-      // allocate work:
-      work = new double[workCount];
+      std::vector<double> work(workCount);
+     
+      dgeev_(
+        "N", "V", // compute only right eigenvectors
+        &A.getRows(),
+        A.data(), &A.getRows(),
+        lambdaReals.data(), lambdaImags.data(),
+        nullptr, &one,
+        &R->getValues(), &R->getRows(),
+        &work.data(), &workCount,
+        &info
+      );
+      // TODO: check info
+
+      for (int i(0); i < A.getRows(); ++i) {
+        lambdas[i] = complex(lambdaReals[i], lambdaImags[i]);
+        if (std::abs(lambdaImags[i]) > 1e-8*std::abs(lambdaReals[i])) {
+          // TODO: decode eigenvectors to complex eigenvalues
+        }
+      }
     }
 
     ~LapackGeneralEigenSystem() {
-      if (work) delete[] work;
-      work = nullptr;
     }
 
-    void solve(complex *lambda) {
-      int offset(1);
+    const std::vector<complex> &getEigenValues() const {
+      return lambda;
+    }
+
+    const LapackMatrix<complex> &getRightEigenVectors() const {
+      return R;
+    }
+
+    const LapackMatrix<complex> &getLeftEigenVectors() const {
+      return L;
+    }
+
+  protected:
+    LapackMatrix<complex> R, L;
+    std::vector<complex> lambdas;
+  };
+
+  // specialization for complex
+  template <>
+  class LapackGeneralEigenSystem<complex> {
+  public:
+    LapackGeneralEigenSystem(
+      const LapackMatrix<complex> &A_
+    ):
+      R(),
+      lambdas(A_.getRows()),
+    {
+      if (A_.getRows() != A_.getColumns()) {
+        throw EXCEPTION("EigenSystem requries a square matrix");
+      }
+      // copy A since it will be modified
+      LapackMatrix<complex> A(A_);
+      std::vector<complex> lambdaReals(A_.getRows()), lambdaImags(A_.getRows());
+      complex optimalWork;
+      int workCount(-1);
       int info;
-      pdsyev_(
-        "V", "L",
-        &A->lens[0],
-        A->getLocalValues(), &offset, &offset, A->getDescriptor(),
-        lambda,
-        R->getLocalValues(), &offset, &offset, U->getDescriptor(),
-        work, &workCount,
+      zgeev_(
+        "N", "V", // compute only right eigenvectors
+        &A.getRows(),
+        A.data(), &A.getRows(),
+        lambdas.data(),
+        nullptr, &one,
+        &R->getValues(), &R->getRows(),
+        &optimalWork, &workCount,
+        &info
+      );
+      // TODO: check info
+      workCount = static_cast<int>(std::real(optimalWork)+0.5);
+      std::vector<complex> work(workCount);
+      std::vector<double> realWork(2*A.getRows());
+     
+      zgeev_(
+        "N", "V", // compute only right eigenvectors
+        &A.getRows(),
+        A.data(), &A.getRows(),
+        lambdas.data(),
+        nullptr, &one,
+        &R->getValues(), &R->getRows(),
+        &work.data(), &workCount,
+        &realWorl.data(),
         &info
       );
       // TODO: check info
     }
-  protected:
-    LapackMatrix<double> A;
-    LapackMatrix<double> *R;
-    int workCount;
-    double *work;
-  };
 
-  // TODO: write complex version
-  // specialization for complex
+    ~LapackGeneralEigenSystem() {
+    }
+
+    const std::vector<complex> &getEigenValues() const {
+      return lambda;
+    }
+
+    const LapackMatrix<complex> &getRightEigenVectors() const {
+      return R;
+    }
+
+    const LapackMatrix<complex> &getLeftEigenVectors() const {
+      return L;
+    }
+
+  protected:
+    LapackMatrix<complex> R, L;
+    std::vector<complex> lambdas;
+  };
 }
 
 #endif

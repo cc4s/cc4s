@@ -47,6 +47,9 @@ namespace cc4s {
       return values[i+j*rows];
     }
 
+    int getRows() const { return rows; }
+    int getColumns() const { return columns; }
+
     /**
      * \brief Returns the pointer to the column major data.
      **/

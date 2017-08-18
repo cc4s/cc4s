@@ -59,12 +59,7 @@ namespace cc4s {
 
         // compute K lowest reduced eigenvalues and vectors of reduced H
         LapackMatrix<F> reducedEigenVectors(basis.size(), basis.size());
-        LapackGeneralEigenSystem<F> reducedEigenSystem(
-          reducedH, &reducedEigenVectors
-        );
-        std::vector<complex> reducedEigenValues(
-          reducedEigenSystem.solve()
-        );
+        LapackGeneralEigenSystem<F> reducedEigen(reducedH);
         
         // begin basis extension loop for each k
         for (int k(0); k < eigenValues.size(); ++k) {
@@ -72,15 +67,15 @@ namespace cc4s {
           V estimatedEigenVector(rightEigenVector[0]);
           estimatedEigenVector *= F(0);
           for (int b(0); b < reducedH.columns; ++b) {
-            estimatedEigenVector += basis[b] * reducedEigenVectors(b,k);
+            estimatedEigenVector += basis[b] * reducedEigen.vectors(b,k);
           }
 
           // compute residuum
-          V residue(estimatedEigenVector * (-reducedEigenValues[k]));
+          V residue(estimatedEigenVector * (-reducedEigen.values(k)));
           residue += h.rightApply(estimatedEigenVector);
 
           // compute correction using preconditioner
-          V correction(p.correction(reducedEigenValues[k], residue));
+          V correction(p.correction(reducedEigen.values[k], residue));
 
           // orthonormalize and append to basis
           for (int b(0); b < basis.size(); ++b) {
@@ -90,10 +85,19 @@ namespace cc4s {
           basis.push_back(correction);
         }
         // end basis extension loop
+
+        // TODO: determine if all residua were sufficiently small to finish
       }
       // end convergence loop
     }
 
+    const std::vector<complex> &getEigenValues() const {
+      return eigenValues;
+    }
+
+    const std::vector<V> &getRightEigenVectors() const {
+      return rightEigenVectors;
+    }
 
   protected:
     std::vector<complex> eigenValues;
