@@ -38,7 +38,7 @@ namespace cc4s {
     Momentum *cartesianGrid;
     void readFromFile();
     void calculateStructureFactorReal();
-    void calculateStructureFactorComplex();
+    void calculateStructureFactor();
     void constructFibonacciGrid(double R);
     void interpolation3D();
     bool IsInSmallBZ(

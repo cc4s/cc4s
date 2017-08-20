@@ -38,12 +38,7 @@ void FiniteSizeCorrection::run() {
     readFromFile();
   } else {
     LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
-    bool complex = !getIntegerArgument("complex", 0);
-    if (complex) {
-      calculateStructureFactorComplex();
-    } else {
-      calculateStructureFactorReal();
-    }
+    calculateStructureFactor();
   }
 
   LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
@@ -218,7 +213,7 @@ void FiniteSizeCorrection::calculateStructureFactorReal() {
 }
 
 
-void FiniteSizeCorrection::calculateStructureFactorComplex() {
+void FiniteSizeCorrection::calculateStructureFactor() {
   Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
   Tensor<> *realVG(new Tensor<>(false, *realInfVG));
   // Define take out inf funciton
