@@ -267,7 +267,7 @@ void FiniteSizeCorrection::calculateStructureFactor() {
     );
     int lens[]= {UGF->lens[0], GammaFqr->lens[1], GammaFqr->lens[2]};
     GammaGqr = new Tensor<complex>(
-      3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaFqr"
+      3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
     );
     (*GammaGqr)["Gqr"] = (*GammaFqr)["Fqr"] * (*UGF)["GF"];
   } else {
@@ -291,9 +291,9 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   Tensor<complex> GammaGia(GammaGqr->slice(GiaStart, GiaEnd));
   Tensor<complex> GammaGai(GammaGqr->slice(GaiStart, GaiEnd));
 
-  //Define CGai
-  Tensor<complex> CGai(GammaGia);
-  CGai["Gai"] *= invSqrtVG["G"];
+  //Define CGia
+  Tensor<complex> CGia(GammaGia);
+  CGia["Gia"] *= invSqrtVG["G"];
 
   Tensor<complex> conjCGai(false, GammaGai);
   Univar_Function<complex> fConj(conj<complex>);
@@ -310,12 +310,12 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   }
 
   //construct SG
-  NG = CGai.lens[0];
-  CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
-  (*SG)["G"] =   2.0 * conjCGai["Gai"] * CGai["Gbj"] * (*Tabij)["abij"];
-  (*SG)["G"] += -1.0 * conjCGai["Gaj"] * CGai["Gbi"] * (*Tabij)["abij"];
+  NG = CGia.lens[0];
+  CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGia.wrld, "SG"));
+  (*SG)["G"] =   2.0 * conjCGai["Gai"] * CGia["Gjb"] * (*Tabij)["abij"];
+  (*SG)["G"] += -1.0 * conjCGai["Gaj"] * CGia["Gib"] * (*Tabij)["abij"];
 
-  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
+  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGia.wrld, "realSG"));
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
 
