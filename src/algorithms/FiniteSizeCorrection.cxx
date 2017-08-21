@@ -275,7 +275,7 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   }
 
   // Compute the No,Nv,NG,Np
-  int NG(GammaGqr->lens[0]);
+  NG=GammaGqr->lens[0];
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
   int Np(GammaGqr->lens[1]);
@@ -295,10 +295,20 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   Tensor<complex> CGia(GammaGia);
   CGia["Gia"] *= invSqrtVG["G"];
 
+  Tensor<complex> conjTransposeCGia(false, GammaGia);
+  Univar_Function<complex> fConj(conj<complex>);
+  conjTransposeCGia.sum(1.0,GammaGai,"Gai", 0.0,"Gia", fConj);
+  conjTransposeCGia["Gia"] *= invSqrtVG["G"];
+
+  Tensor<complex> conjTransposeGammaGia(false, GammaGia);
+  conjTransposeGammaGia.sum(1.0,GammaGai,"Gai", 0.0,"Gia", fConj);
+
+  /*
   Tensor<complex> conjCGai(false, GammaGai);
   Univar_Function<complex> fConj(conj<complex>);
   conjCGai.sum(1.0,GammaGai,"Gai", 0.0,"Gai", fConj);
   conjCGai["Gai"] *= invSqrtVG["G"];
+  */
 
   //Get Tabij
   Tensor<complex> *Tabij(getTensorArgument<complex>("DoublesAmplitudes"));
@@ -310,10 +320,9 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   }
 
   //construct SG
-  NG = CGia.lens[0];
   CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGia.wrld, "SG"));
-  (*SG)["G"] =   2.0 * conjCGai["Gai"] * CGia["Gjb"] * (*Tabij)["abij"];
-  (*SG)["G"] += -1.0 * conjCGai["Gaj"] * CGia["Gib"] * (*Tabij)["abij"];
+  (*SG)["G"]  = ( 2.0) * conjTransposeCGia["Gia"] * CGia["Gjb"] * (*Tabij)["abij"];
+  (*SG)["G"] += (-1.0) * conjTransposeCGia["Gja"] * CGia["Gib"] * (*Tabij)["abij"];
 
   CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGia.wrld, "realSG"));
   fromComplexTensor(*SG, *realSG);
@@ -406,6 +415,7 @@ void FiniteSizeCorrection::constructFibonacciGrid(double R) {
 
 void FiniteSizeCorrection::interpolation3D() {
   Tensor<> *momenta(getTensorArgument<>("Momenta"));
+  //  int NG(momenta->lens[1]);
   cc4s::Vector<> *cartesianMomenta(new cc4s::Vector<>[NG]);
   momenta->read_all(&cartesianMomenta[0][0]);
 
@@ -792,6 +802,8 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   double r1 = integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
   double  sumSGVG(0.);
 
+  LOG(0,"FiniteSize") << "NG= "  << NG << std::endl;
+
   for (int d(0); d < NG; ++d){
     sumSGVG += cartesianGrid[d].vg * cartesianGrid[d].s;
     }
@@ -806,9 +818,9 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   LOG(1,"FiniteSize") << "Sumation within cutoff radius= " 
     << std::setprecision(10) << sum3D      << std::endl;
 
-  LOG(1,"FiniteSize") << "Spherical Averaging Correction  e="
+  LOG(2,"FiniteSize") << "Spherical Averaging Correction  e="
     << std::setprecision(10)  << r1        << std::endl;
-  LOG(1,"FiniteSize") << "Spherical Averaging Corrected   e="
+  LOG(2,"FiniteSize") << "Spherical Averaging Corrected   e="
     << std::setprecision(10)  << sumSGVG + r1 << std::endl;
 
   setRealArgument("CorrectedEnergy"  , sumSGVG+inter3D-sum3D);
