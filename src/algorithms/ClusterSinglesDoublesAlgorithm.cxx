@@ -101,10 +101,10 @@ F ClusterSinglesDoublesAlgorithm::calculateEnergy(
   F dire(energy.get_val());
   // exchange term
   //  energy[""] =  -1.0 * (*Tabij)["abij"] * (*Vijab)["ijba"];
-  energy[""] =  -1.0 * (*Tabij)["abij"] * conjVabij["ijba"];
+  energy[""] =  -1.0 * (*Tabij)["abij"] * conjVabij["baij"];
   if (Tai) {
     //    energy[""] += -1.0 * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"];
-    energy[""] += -1.0 * (*Tai)["ai"] * (*Tai)["bj"] * conjVabij["ijba"];
+    energy[""] += -1.0 * (*Tai)["ai"] * (*Tai)["bj"] * conjVabij["baij"];
   }
   F exce(energy.get_val());
   F e(dire + exce);

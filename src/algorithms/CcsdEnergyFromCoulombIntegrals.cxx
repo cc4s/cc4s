@@ -406,14 +406,6 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
   Tensor<complex> *Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
 
-  // Read all required integrals
-  Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
-  Tensor<complex> *Vijab(getTensorArgument<complex>("HHPPCoulombIntegrals"));
-  Tensor<complex> *Vaibj(getTensorArgument<complex>("PHPHCoulombIntegrals"));
-  Tensor<complex> *Vijkl(getTensorArgument<complex>("HHHHCoulombIntegrals"));
-  Tensor<complex> *Vijka(getTensorArgument<complex>("HHHPCoulombIntegrals"));
-  Tensor<complex> *Vaijk(getTensorArgument<complex>("PHHHCoulombIntegrals"));
-
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
                  abbreviation.begin(), ::toupper);
@@ -425,6 +417,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     Rabij["abij"] = (*Vabij)["abij"];
   } else {
     // For the rest iterations compute the CCSD amplitudes
+
+    // Read all required integrals
+    Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
+    Tensor<complex> *Vijab(getTensorArgument<complex>("HHPPCoulombIntegrals"));
+    Tensor<complex> *Vaibj(getTensorArgument<complex>("PHPHCoulombIntegrals"));
+    Tensor<complex> *Vijkl(getTensorArgument<complex>("HHHHCoulombIntegrals"));
+    Tensor<complex> *Vijka(getTensorArgument<complex>("HHHPCoulombIntegrals"));
+    Tensor<complex> *Vaijk(getTensorArgument<complex>("PHHHCoulombIntegrals"));
 
     // Read the Coulomb vertex GammaGqr
     Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
