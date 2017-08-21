@@ -397,18 +397,6 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   Tensor<complex> *Tai(&TaiMixer->getNext());
   Tai->set_name("Tai");
 
-  // Read all required integrals
-  Tensor<complex> *Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
-  Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
-  Tensor<complex> *Vijab(getTensorArgument<complex>("HHPPCoulombIntegrals"));
-  Tensor<complex> *Vaibj(getTensorArgument<complex>("PHPHCoulombIntegrals"));
-  Tensor<complex> *Vijkl(getTensorArgument<complex>("HHHHCoulombIntegrals"));
-  Tensor<complex> *Vijka(getTensorArgument<complex>("HHHPCoulombIntegrals"));
-  Tensor<complex> *Vaijk(getTensorArgument<complex>("PHHHCoulombIntegrals"));
-
-  // Read the Coulomb vertex GammaGqr
-  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
-
   // Allocate Tensors for T2 amplitudes
   Tensor<complex> Rabij(false, *Tabij);
   Rabij.set_name("Rabij");
@@ -416,51 +404,19 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   Tensor<complex> Rai(false, *Tai);
   Rai.set_name("Rai");
 
+  Tensor<complex> *Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
+
+  // Read all required integrals
+  Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
+  Tensor<complex> *Vijab(getTensorArgument<complex>("HHPPCoulombIntegrals"));
+  Tensor<complex> *Vaibj(getTensorArgument<complex>("PHPHCoulombIntegrals"));
+  Tensor<complex> *Vijkl(getTensorArgument<complex>("HHHHCoulombIntegrals"));
+  Tensor<complex> *Vijka(getTensorArgument<complex>("HHHPCoulombIntegrals"));
+  Tensor<complex> *Vaijk(getTensorArgument<complex>("PHHHCoulombIntegrals"));
+
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
                  abbreviation.begin(), ::toupper);
-
-  // Compute the No,Nv,NG,Np
-  int NG(GammaGqr->lens[0]);
-  int No(Vabij->lens[2]);
-  int Nv(Vabij->lens[0]);
-  int Np(GammaGqr->lens[1]);
-
-  // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
-  int aStart(Np-Nv), aEnd(Np);
-  int iStart(0), iEnd(No);
-  int GijStart[] = {0, iStart,iStart};
-  int GijEnd[]   = {NG,iEnd,  iEnd};
-  int GiaStart[] = {0, iStart,aStart};
-  int GiaEnd[]   = {NG,iEnd,  aEnd};
-  int GaiStart[] = {0, aStart,iStart};
-  int GaiEnd[]   = {NG,aEnd,  iEnd};
-  int GabStart[] = {0, aStart,aStart};
-  int GabEnd[]   = {NG,aEnd,  aEnd};
-  auto GammaGij( new Tensor<complex>(GammaGqr->slice(GijStart, GijEnd)) );
-  auto GammaGia( new Tensor<complex>(GammaGqr->slice(GiaStart, GiaEnd)) );
-  auto GammaGai( new Tensor<complex>(GammaGqr->slice(GaiStart, GaiEnd)) );
-  auto GammaGab( new Tensor<complex>(GammaGqr->slice(GabStart, GabEnd)) );
-
-  Univar_Function<complex> fConj(conj<complex>);
-
-  Tensor<complex> conjTransposeGammaGai(false, *GammaGai);
-  conjTransposeGammaGai.sum(1.0,*GammaGia,"Gia", 0.0,"Gai", fConj);
-  Tensor<complex> conjTransposeGammaGia(false, *GammaGia);
-  conjTransposeGammaGia.sum(1.0,*GammaGai,"Gai", 0.0,"Gia", fConj);
-  Tensor<complex> conjTransposeGammaGab(false, *GammaGab);
-  conjTransposeGammaGab.sum(1.0,*GammaGab,"Gba", 0.0,"Gab", fConj);
-  Tensor<complex> conjTransposeGammaGij(false, *GammaGij);
-  conjTransposeGammaGij.sum(1.0,*GammaGij,"Gji", 0.0,"Gij", fConj);
-
-
-
-
-  std::array<int,4> syms({{ NS, NS, NS, NS }});
-  std::array<int,4> voov({{ Nv, No, No, Nv }});
-  std::array<int,2> vv({{ Nv, Nv }});
-  std::array<int,2> vo({{ Nv, No }});
-  std::array<int,2> oo({{ No, No }});
 
   if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
     // For first iteration compute only the MP2 amplitudes 
@@ -469,6 +425,48 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     Rabij["abij"] = (*Vabij)["abij"];
   } else {
     // For the rest iterations compute the CCSD amplitudes
+
+    // Read the Coulomb vertex GammaGqr
+    Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+
+    // Compute the No,Nv,NG,Np
+    int NG(GammaGqr->lens[0]);
+    int No(Vabij->lens[2]);
+    int Nv(Vabij->lens[0]);
+    int Np(GammaGqr->lens[1]);
+
+    // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
+    int aStart(Np-Nv), aEnd(Np);
+    int iStart(0), iEnd(No);
+    int GijStart[] = {0, iStart,iStart};
+    int GijEnd[]   = {NG,iEnd,  iEnd};
+    int GiaStart[] = {0, iStart,aStart};
+    int GiaEnd[]   = {NG,iEnd,  aEnd};
+    int GaiStart[] = {0, aStart,iStart};
+    int GaiEnd[]   = {NG,aEnd,  iEnd};
+    int GabStart[] = {0, aStart,aStart};
+    int GabEnd[]   = {NG,aEnd,  aEnd};
+    auto GammaGij( new Tensor<complex>(GammaGqr->slice(GijStart, GijEnd)) );
+    auto GammaGia( new Tensor<complex>(GammaGqr->slice(GiaStart, GiaEnd)) );
+    auto GammaGai( new Tensor<complex>(GammaGqr->slice(GaiStart, GaiEnd)) );
+    auto GammaGab( new Tensor<complex>(GammaGqr->slice(GabStart, GabEnd)) );
+
+    Univar_Function<complex> fConj(conj<complex>);
+
+    Tensor<complex> conjTransposeGammaGai(false, *GammaGai);
+    conjTransposeGammaGai.sum(1.0,*GammaGia,"Gia", 0.0,"Gai", fConj);
+    Tensor<complex> conjTransposeGammaGia(false, *GammaGia);
+    conjTransposeGammaGia.sum(1.0,*GammaGai,"Gai", 0.0,"Gia", fConj);
+    Tensor<complex> conjTransposeGammaGab(false, *GammaGab);
+    conjTransposeGammaGab.sum(1.0,*GammaGab,"Gba", 0.0,"Gab", fConj);
+    Tensor<complex> conjTransposeGammaGij(false, *GammaGij);
+    conjTransposeGammaGij.sum(1.0,*GammaGij,"Gji", 0.0,"Gij", fConj);
+
+    std::array<int,4> syms({{ NS, NS, NS, NS }});
+    std::array<int,4> voov({{ Nv, No, No, Nv }});
+    std::array<int,2> vv({{ Nv, Nv }});
+    std::array<int,2> vo({{ Nv, No }});
+    std::array<int,2> oo({{ No, No }});
 
     //********************************************************************************
     //***********************  T2 amplitude equations  *******************************

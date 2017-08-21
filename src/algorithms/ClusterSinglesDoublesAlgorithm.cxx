@@ -76,10 +76,15 @@ F ClusterSinglesDoublesAlgorithm::calculateEnergy(
   Mixer<F> *TaiMixer, Mixer<F> *TabijMixer
 ) {
   // get the Coulomb integrals to compute the energy
-  Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
+  //  Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
+  Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
+  Tensor<F>  conjVabij(false, *Vabij);
+  Univar_Function<F> fConj(conj<F>);
+  conjVabij.sum(1.0,*Vabij,"abij", 0.0,"abij", fConj);
 
   // allocate energy
-  Scalar<F> energy(*Vijab->wrld);
+  //  Scalar<F> energy(*Vijab->wrld);
+  Scalar<F> energy(*Vabij->wrld);
   energy.set_name("energy");
 
   // singles amplitudes are optional
@@ -87,15 +92,19 @@ F ClusterSinglesDoublesAlgorithm::calculateEnergy(
   Tensor<F> *Tabij(&TabijMixer->getNext());
 
   // direct term
-  energy[""] =  +2.0 * (*Tabij)["abij"] * (*Vijab)["ijab"];
+  //  energy[""] =  +2.0 * (*Tabij)["abij"] * (*Vijab)["ijab"];
+  energy[""] =  +2.0 * (*Tabij)["abij"] * conjVabij["abij"];
   if (Tai) {
-    energy[""] += +2.0 * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijab"];
+    //    energy[""] += +2.0 * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijab"];
+    energy[""] += +2.0 * (*Tai)["ai"] * (*Tai)["bj"] * conjVabij["abij"];
   }
   F dire(energy.get_val());
   // exchange term
-  energy[""] =  -1.0 * (*Tabij)["abij"] * (*Vijab)["ijba"];
+  //  energy[""] =  -1.0 * (*Tabij)["abij"] * (*Vijab)["ijba"];
+  energy[""] =  -1.0 * (*Tabij)["abij"] * conjVabij["ijba"];
   if (Tai) {
-    energy[""] += -1.0 * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"];
+    //    energy[""] += -1.0 * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"];
+    energy[""] += -1.0 * (*Tai)["ai"] * (*Tai)["bj"] * conjVabij["ijba"];
   }
   F exce(energy.get_val());
   F e(dire + exce);
