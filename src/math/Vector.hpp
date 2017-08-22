@@ -8,6 +8,8 @@ namespace cc4s {
   template <typename F=double, int D=3>
   class Vector {
   public:
+    typedef F FieldType;
+
     Vector() {
       for (int d(0); d<D; ++d) {
         coordinate[d] = 0;
@@ -72,6 +74,13 @@ namespace cc4s {
       return t;
     }
 
+    Vector<F,D> &operator *= (const F r) {
+      for (int d(0); d<D; ++d) {
+        coordinate[d] *= r;
+      }
+      return *this;
+    }
+
     // Specialization for D=3
     Vector<F,3> cross(Vector<F,3> const &v) {
       Vector<F,3> t;
@@ -113,15 +122,15 @@ namespace cc4s {
       return coordinate[d];
     }
 
+    F &operator [](int d) {
+      return coordinate[d];
+    }
+
     F at(int d) const {
       return coordinate[d];
     }
 
     F &at(int d) {
-      return coordinate[d];
-    }
-
-    F &operator [](int d) {
       return coordinate[d];
     }
 

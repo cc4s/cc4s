@@ -37,20 +37,27 @@ namespace cc4s {
     }
 
     FockVector<F> &operator += (const FockVector<F> &a) {
+      checkCompatabilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        // TODO: check whether given vector a is compatible w.r.t.
-        // number and shape components
         const char *indices(componentIndices[i].c_str());
         componentTensors[i][indices] += a.componentTensors[i][indices];
       }
       return *this;
     }
 
+    FockVector<F> &operator -= (const FockVector<F> &a) {
+      checkCompatabilityTo(a);
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        const char *indices(componentIndices[i].c_str());
+        componentTensors[i][indices] += F(-1) * a.componentTensors[i][indices];
+      }
+      return *this;
+    }
+
     FockVector<F> &operator *= (coonst F s) {
+      checkCompatabilityTo(a);
       CTF::Scalar<F> scalar(s);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        // TODO: check whether given vector a is compatible w.r.t.
-        // number and shape components
         const char *indices(componentIndices[i].c_str());
         componentTensors[i][indices] *= scalar[""];
       }
@@ -58,10 +65,9 @@ namespace cc4s {
     }
 
     F dot(const FockVector<F> &a) const {
+      checkCompatabilityTo(a);
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        // TODO: check whether given vector a is compatible w.r.t.
-        // number and shape components
         const char *indices(componentIndices[i].c_str());
         CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
         // add to result
@@ -94,7 +100,23 @@ namespace cc4s {
   }
 
   template <typename F>
+  FockVector<F> inline operator -(
+    const FockVector<F> &a, const FockVector<F> &b
+  ) {
+    FockVector<F> result(a);
+    result -= b;
+    return result;
+  }
+
+  template <typename F>
   FockVector<F> inline operator *(const FockVector<F> &a, const F &s) {
+    FockVector<F> result(a);
+    result *= s;
+    return result;
+  }
+
+  template <typename F>
+  FockVector<F> inline operator *(const F &s, const FockVector<F> &a) {
     FockVector<F> result(a);
     result *= s;
     return result;
