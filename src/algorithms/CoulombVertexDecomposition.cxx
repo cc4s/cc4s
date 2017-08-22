@@ -27,8 +27,12 @@ CoulombVertexDecomposition::
 CoulombVertexDecomposition::
   ~CoulombVertexDecomposition()
 {
-  if (PiqR) delete PiqR;
-  if (!isArgumentGiven("ComposedCoulombVertex") && composedGammaGqr) delete composedGammaGqr;
+  if (!isArgumentGiven("OutgoingFactorOrbitals") && PiqR) {
+    delete PiqR;
+  }
+  if (!isArgumentGiven("ComposedCoulombVertex") && composedGammaGqr) {
+    delete composedGammaGqr;
+  }
   if (regularizationEstimator) delete regularizationEstimator;
 }
 
@@ -125,9 +129,6 @@ void CoulombVertexDecomposition::run() {
     fit(iterationsCount);
     ++iterationsCount;
   }
-
-  if (!isArgumentGiven("OutgoingFactorOrbitals")) { delete PiqR; }
-  if (!isArgumentGiven("ComposedCoulombVertex")) { delete composedGammaGqr; }
 }
 
 void CoulombVertexDecomposition::dryRun() {
