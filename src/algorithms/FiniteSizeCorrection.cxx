@@ -802,8 +802,6 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   double r1 = integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
   double  sumSGVG(0.);
 
-  LOG(0,"FiniteSize") << "NG= "  << NG << std::endl;
-
   for (int d(0); d < NG; ++d){
     sumSGVG += cartesianGrid[d].vg * cartesianGrid[d].s;
     }
