@@ -140,6 +140,22 @@ namespace cc4s {
         &info
       );
       // TODO: check info
+
+      // sort eigenvalues
+      std::vector<std::pair<int, complex>> sortedEigenValues(rows);
+      for (int i(0); i < rows; ++i) {
+        sortedEigenValues[i] = std::pair<int, complex>(i, lambdas[i]);
+      }
+      std::sort(
+        sortedEigenValues.begin(), sortedEigenValues.end(),
+        EigenValueComparator()
+      );
+      // order eigenvectors and returned eigenvalues in the same way
+      orderEigenVectors(sortedEigenValues, R);
+      orderEigenVectors(sortedEigenValues, L);
+      for (int i(0); i < rows; ++i) {
+        lambdas[i] = sortedEigenValues[i].second;
+      }
     }
 
     ~LapackGeneralEigenSystem() {
@@ -160,6 +176,35 @@ namespace cc4s {
   protected:
     LapackMatrix<complex> R, L;
     std::vector<complex> lambdas;
+
+    void orderEigenVectors(
+      const std::vector<std::pair<int, complex>> &sortedEigenValues,
+      LapackMatrix<complex> &U
+    ) {
+      LapackMatrix<complex> unsortedU(U);
+      for (int j(0); j < U.getRows(); ++j) {
+        int unsortedJ( sortedEigenValues[j].first );
+        for (int i(0); i < U.getRows(); ++i) {
+          U(i,j) = unsortedU(i,unsortedJ);
+        }
+      }
+    }
+
+    class EigenValueComparator {
+    public:
+      bool operator ()(
+        const std::pair<int, complex> &a,
+        const std::pair<int, complex> &b
+      ) {
+        complex diff(b.second-a.second);
+        double magnitude( std::abs(a.second)+std::abs(b.second) );
+        if (std::real(diff) > +1E-13*magnitude) return true;
+        if (std::real(diff) < -1E-13*magnitude) return false;
+        if (std::imag(diff) > +1E-13*magnitude) return false;
+        if (std::imag(diff) < -1E-13*magnitude) return true;
+        return a.first > b.first;
+      }
+    };
   };
 }
 

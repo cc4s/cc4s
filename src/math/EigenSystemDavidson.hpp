@@ -5,6 +5,7 @@
 #include <util/LapackGeneralEigenSystem.hpp>
 
 #include <vector>
+#include <utility>
 
 namespace cc4s {
   template <typename V>
@@ -50,7 +51,9 @@ namespace cc4s {
 
       // begin convergence loop
       double rms;
+      int iterationCount(0);
       do {
+        LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
         // compute reduced H by projection onto subspace spanned by basis
         LapackMatrix<F> reducedH(basis.size(), basis.size());
         for (unsigned int j(0); j < basis.size(); ++j) {
@@ -68,24 +71,23 @@ namespace cc4s {
         rms = 0.0;
         for (unsigned int k(0); k < eigenValues.size(); ++k) {
           // get estimated eigenvalue
-          F estimatedEigenValue( reducedEigenSystem.getEigenValues()[k] );
+          eigenValues[k] = reducedEigenSystem.getEigenValues()[k];
 
           // compute estimated eigenvector by expansion in basis
-          V estimatedEigenVector(rightEigenVectors[0]);
-          estimatedEigenVector *= F(0);
+          rightEigenVectors[k] *= F(0);
           for (int b(0); b < reducedH.getColumns(); ++b) {
-            estimatedEigenVector +=
+            rightEigenVectors[k] +=
               basis[b] * reducedEigenSystem.getRightEigenVectors()(b,k);
           }
 
           // compute residuum
-          V residuum( h.rightApply(estimatedEigenVector) );
-          residuum -= estimatedEigenVector * estimatedEigenValue;
+          V residuum( h.rightApply(rightEigenVectors[k]) );
+          residuum -= rightEigenVectors[k] * eigenValues[k];
           rms += std::real(residuum.dot(residuum)) /
-            std::real(estimatedEigenVector.dot(estimatedEigenVector));
+            std::real(rightEigenVectors[k].dot(rightEigenVectors[k]));
 
           // compute correction using preconditioner
-          V correction( p.getCorrection(estimatedEigenValue, residuum) );
+          V correction( p.getCorrection(eigenValues[k], residuum) );
 
           // orthonormalize and append to basis
           for (unsigned int b(0); b < basis.size(); ++b) {
@@ -94,13 +96,14 @@ namespace cc4s {
           correction *= F(1) / std::sqrt(correction.dot(correction));
           basis.push_back(correction);
         }
+        ++iterationCount;
         // end basis extension loop
       } while (
         rms >= eigenVectorsCount * tolerance && basis.size() <= maxBasisSize
       );
       // end convergence loop
       if (basis.size() > maxBasisSize) {
-        throw EXCEPTION("Failed to reach convergence");
+//        throw EXCEPTION("Failed to reach convergence");
       }
     }
 
