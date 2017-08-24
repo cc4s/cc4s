@@ -77,7 +77,6 @@ F ClusterSinglesDoublesAlgorithm::calculateEnergy(
 ) {
   // get the Coulomb integrals to compute the energy
   Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
-  Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
 
   // allocate energy
   Scalar<F> energy(*Vijab->wrld);
