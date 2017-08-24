@@ -36,17 +36,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   Tensor<> *Tai(&TaiMixer->getNext());
   Tai->set_name("Tai");
 
-  // Read all required integrals
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-  Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
-  Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
-  Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
-
-
-
-
-  // Read the Coulomb vertex GammaGqr
-  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
 
   // Allocate Tensors for T2 amplitudes
   Tensor<> Rabij(false, *Tabij);
@@ -58,6 +48,22 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
                  abbreviation.begin(), ::toupper);
+    
+  if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
+    // For first iteration compute only the MP2 amplitudes 
+    // Since Tabij = 0, Vabij is the only non-zero term
+    LOG(1, abbreviation) << "MP2 T2 Amplitudes" << std::endl;
+    Rabij["abij"] = (*Vabij)["abij"];
+  } else {
+    // For the rest iterations compute the CCSD amplitudes
+
+  // Read all required integrals
+  Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
+  Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
+  Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
+
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
 
   // Compute the No,Nv,NG,Np
   int NG(GammaGqr->lens[0]);
@@ -100,14 +106,6 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   std::array<int,2> vv({{ Nv, Nv }});
   std::array<int,2> vo({{ Nv, No }});
   std::array<int,2> oo({{ No, No }});
-    
-  if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
-    // For first iteration compute only the MP2 amplitudes 
-    // Since Tabij = 0, Vabij is the only non-zero term
-    LOG(1, abbreviation) << "MP2 T2 Amplitudes" << std::endl;
-    Rabij["abij"] = (*Vabij)["abij"];
-  } else {
-    // For the rest iterations compute the CCSD amplitudes
 
     //********************************************************************************
     //***********************  T2 amplitude equations  *******************************
