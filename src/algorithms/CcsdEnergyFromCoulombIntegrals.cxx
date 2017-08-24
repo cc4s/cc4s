@@ -703,6 +703,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 	  delete Vxycd;
 	}
       }
+
     }
 
     //********************************************************************************
@@ -736,6 +737,11 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
       Rai["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
       Rai["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
     }
+
+  delete GammaGij;
+  delete GammaGia;
+  delete GammaGai;
+  delete GammaGab;
   }
   
   // Calculate the amplitudes from the residuum

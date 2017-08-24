@@ -359,6 +359,9 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
 
   // Contract left and right slices of the dressed Coulomb vertices
   (*Vxycd)["xycd"]  = leftGamma["Gxc"] * rightGamma["Gyd"];
+  delete GammaGia;
+  delete GammaGai;
+  delete GammaGab;
   return Vxycd;
 }
 
