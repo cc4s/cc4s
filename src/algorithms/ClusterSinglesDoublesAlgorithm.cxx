@@ -332,7 +332,7 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   conjTransposeGammaGab.sum(1.0,*GammaGab,"Gba", 0.0,"Gab", fConj);
 
   // Construct dressed Coulomb vertex GammaGab
-  Tensor<complex> DressedGammaGab(GammaGab);
+  Tensor<complex> DressedGammaGab(*GammaGab);
   DressedGammaGab.set_name("DressedGammaGab");
   DressedGammaGab["Gab"] += (-1.0) * (*GammaGia)["Gkb"] * (*Tai)["ak"];
 
@@ -536,7 +536,7 @@ Tensor<complex> *
   Tai->set_name("Tai");
 
   // Intermediate tensor Iabij=T2+T1*T1
-  Tensor<complex> Iabij(Tabij);
+  Tensor<complex> Iabij(*Tabij);
   Iabij.set_name("Iabij");
   Iabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
 

@@ -475,7 +475,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     // Intermediates used both by T1 and T2
     Tensor<complex> Kac(2, vv.data(), syms.data(), *Vabij->wrld, "Kac");
     Tensor<complex> Kki(2, oo.data(), syms.data(), *Vabij->wrld, "Kki");
-    Tensor<complex> Xabij(Tabij);
+    Tensor<complex> Xabij(*Tabij);
     Xabij.set_name("Xabij");
     Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
 
@@ -548,7 +548,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
 
       // Intermediate tensor Yabij=T2-2*T1*T1
-      Tensor<complex> Yabij(Tabij);
+      Tensor<complex> Yabij(*Tabij);
       Yabij.set_name("Yabij");
       Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
 
@@ -577,7 +577,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
       Tensor<complex> conjTransposeDressedGammaGab(conjTransposeGammaGab);
       conjTransposeDressedGammaGab.set_name("conjTransposeDressedGammaGab");
 
-      Tensor<complex> DressedGammaGij(GammaGij);
+      Tensor<complex> DressedGammaGij(*GammaGij);
       DressedGammaGij.set_name("DressedGammaGij");
 
       conjTransposeDressedGammaGab["Gac"] += (-1.0) * conjTransposeGammaGia["Glc"] * (*Tai)["al"];
