@@ -82,7 +82,7 @@ namespace cc4s {
 using namespace cc4s;
 
 TEST_CASE( "EigenSystemDavidson", "[math]" ) {
-  constexpr int N(1024);
+  constexpr int N(256);
   std::mt19937 random;
   std::normal_distribution<double> normalDistribution(0.0, 1.0);
   LinearMap<N> f;
@@ -96,24 +96,12 @@ TEST_CASE( "EigenSystemDavidson", "[math]" ) {
     f.A(i,i) += 10.0;
   }
   LapackGeneralEigenSystem<complex> eigenSystem(f.A);
-  std::vector<std::pair<unsigned int, complex>> sortedEigenValues(N);
-/*
-  for (unsigned int i(0); i < eigenSystem.getEigenValues().size(); ++i) {
-    sortedEigenValues[i] = std::pair<unsigned int, complex>(
-      i, eigenSystem.getEigenValues()[i]
-    );
-  }
-  std::sort(
-    sortedEigenValues.begin(), sortedEigenValues.end(),
-    EigenValueComparator()
-  );
-*/
-/*
+
   EigenSystemDavidson<Vector<complex,N>> eigenSystemDavidson(
     f, 4, DiagonalDominantPreconditioner<N>(f), 1E-14, 64
   );
-*/
-  for (int k(0); k < eigenSystem.getRightEigenVectors().getColumns(); ++k) {
+
+  for (unsigned int k(0); k < eigenSystemDavidson.getEigenValues().size(); ++k) {
     std::stringstream rowStream;
     for (int i(0); i < eigenSystem.getRightEigenVectors().getRows(); ++i) {
       rowStream << "\t" << eigenSystem.getRightEigenVectors()(i,k);
@@ -121,14 +109,14 @@ TEST_CASE( "EigenSystemDavidson", "[math]" ) {
     LOG(0, "LapackGeneralEigenSystem") <<
       "EigenValue[" << k << "]=" <<
       eigenSystem.getEigenValues()[k] << std::endl;
-/*
     LOG(0, "LapackGeneralEigenSystem") <<
-      "EigenValue[" << k << "]=" <<
+      "EigenValueDavison[" << k << "]=" <<
       eigenSystemDavidson.getEigenValues()[k] << std::endl;
+/*
     LOG(0, "LapackGeneralEigenSystem") <<
       "EigenVector[" << k << "]=" << rowStream.str() << std::endl;
     LOG(0, "LapackGeneralEigenSystem") <<
-      "EigenVector[" << k << "]=" <<
+      "EigenVectorDavidson[" << k << "]=" <<
       eigenSystemDavidson.getRightEigenVectors()[k] << std::endl;
 */
   };
