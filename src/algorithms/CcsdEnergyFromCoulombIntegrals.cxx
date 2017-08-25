@@ -389,20 +389,19 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 void CcsdEnergyFromCoulombIntegrals::iterate(
   int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
 ) {
-  // Read the amplitudes Tai and Tabij
-  Tensor<complex> *Tabij(&TabijMixer->getNext());
-  Tabij->set_name("Tabij");
-  Tensor<complex> *Tai(&TaiMixer->getNext());
-  Tai->set_name("Tai");
+  // Read Vabij integrals
+  Tensor<complex> *Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
 
   // Allocate Tensors for T2 amplitudes
-  Tensor<complex> Rabij(false, *Tabij);
+  Tensor<complex> Rabij(false, *Vabij);
   Rabij.set_name("Rabij");
-  // Allocate Tensors for T1 amplitudes
-  Tensor<complex> Rai(false, *Tai);
-  Rai.set_name("Rai");
 
-  Tensor<complex> *Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
+  // Allocate Tensors for T1 amplitudes
+  int No(Vabij->lens[2]);
+  int Nv(Vabij->lens[0]);
+  std::array<int,2> vo({{ Nv, No }});
+  std::array<int,4> syms({{ NS, NS, NS, NS }});
+  Tensor<complex> Rai(2, vo.data(), syms.data(), *Vabij->wrld, "Rai");
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -413,8 +412,20 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     // Since Tabij = 0, Vabij is the only non-zero term
     LOG(1, abbreviation) << "MP2 T2 Amplitudes" << std::endl;
     Rabij["abij"] = (*Vabij)["abij"];
+  
+    // Calculate the amplitudes from the residuum
+    amplitudesFromResiduum(Rabij, "abij");
+    // Append amplitudes to the mixer
+    TabijMixer->append(Rabij);
+    TaiMixer->append(Rai);
   } else {
     // For the rest iterations compute the CCSD amplitudes
+
+    // Read the amplitudes Tai and Tabij
+    Tensor<complex> *Tabij(&TabijMixer->getNext());
+    Tabij->set_name("Tabij");
+    Tensor<complex> *Tai(&TaiMixer->getNext());
+    Tai->set_name("Tai");
 
     // Read all required integrals
     Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
@@ -429,8 +440,6 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
     // Compute the No,Nv,NG,Np
     int NG(GammaGqr->lens[0]);
-    int No(Vabij->lens[2]);
-    int Nv(Vabij->lens[0]);
     int Np(GammaGqr->lens[1]);
 
     // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
@@ -460,10 +469,8 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     Tensor<complex> conjTransposeGammaGij(false, *GammaGij);
     conjTransposeGammaGij.sum(1.0,*GammaGij,"Gji", 0.0,"Gij", fConj);
 
-    std::array<int,4> syms({{ NS, NS, NS, NS }});
     std::array<int,4> voov({{ Nv, No, No, Nv }});
     std::array<int,2> vv({{ Nv, Nv }});
-    std::array<int,2> vo({{ Nv, No }});
     std::array<int,2> oo({{ No, No }});
 
     //********************************************************************************
@@ -736,18 +743,18 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
       Rai["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
     }
 
-  delete GammaGij;
-  delete GammaGia;
-  delete GammaGai;
-  delete GammaGab;
-  }
+    delete GammaGij;
+    delete GammaGia;
+    delete GammaGai;
+    delete GammaGab;
   
-  // Calculate the amplitudes from the residuum
-  amplitudesFromResiduum(Rabij, "abij");
-  amplitudesFromResiduum(Rai, "ai");
-  // Append amplitudes to the mixer
-  TabijMixer->append(Rabij);
-  TaiMixer->append(Rai);
+    // Calculate the amplitudes from the residuum
+    amplitudesFromResiduum(Rabij, "abij");
+    amplitudesFromResiduum(Rai, "ai");
+    // Append amplitudes to the mixer
+    TabijMixer->append(Rabij);
+    TaiMixer->append(Rai);
+  }
 }
 
 
@@ -757,22 +764,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 template <typename F>
 void CcsdEnergyFromCoulombIntegrals::iterate(
   int i, Mixer<F> *TaiMixer, Mixer<F> *TabijMixer
-) {
-  // Read the amplitudes Tai and Tabij
-  Tensor<F> *Tabij(&TabijMixer->getNext());
-  Tabij->set_name("Tabij");
-  Tensor<F> *Tai(&TaiMixer->getNext());
-  Tai->set_name("Tai");
-
+)
+{
   // Read Vabij
   Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
 
   // Allocate Tensors for T2 amplitudes
-  Tensor<F> Rabij(false, *Tabij);
+  Tensor<F> Rabij(false, *Vabij);
   Rabij.set_name("Rabij");
-  // Allocate Tensors for T1 amplitudes
-  Tensor<F> Rai(false, *Tai);
-  Rai.set_name("Rai");
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -785,6 +784,16 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     Rabij["abij"] = (*Vabij)["abij"];
   } else {
     // For the rest iterations compute the CCSD amplitudes
+
+    // Read the amplitudes Tai and Tabij
+    Tensor<F> *Tabij(&TabijMixer->getNext());
+    Tabij->set_name("Tabij");
+    Tensor<F> *Tai(&TaiMixer->getNext());
+    Tai->set_name("Tai");
+
+    // Allocate Tensors for T1 amplitudes
+    Tensor<F> Rai(false, *Tai);
+    Rai.set_name("Rai");
     
     // ********************************************************************************
     // ***********************  T2 amplitude equations  *******************************
@@ -1023,13 +1032,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
       Rai["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
       Rai["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
     }
-  }
   
-  // Calculate the amplitudes from the residuum
-  amplitudesFromResiduum(Rabij, "abij");
-  amplitudesFromResiduum(Rai, "ai");
-  // Append amplitudes to the mixer
-  TabijMixer->append(Rabij);
-  TaiMixer->append(Rai);
+    // Calculate the amplitudes from the residuum
+    amplitudesFromResiduum(Rabij, "abij");
+    amplitudesFromResiduum(Rai, "ai");
+    // Append amplitudes to the mixer
+    TabijMixer->append(Rabij);
+    TaiMixer->append(Rai);
+    }
 }
+
 */

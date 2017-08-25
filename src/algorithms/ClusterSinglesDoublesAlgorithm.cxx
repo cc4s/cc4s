@@ -125,11 +125,13 @@ Mixer<F> *ClusterSinglesDoublesAlgorithm::createMixer(
     Tensor<F> *T(getTensorArgument<F>(initialDataName.str()));
     // use given amplitudes as initial amplitudes
     mixer->append(*T);
+/*
   } else {
     Tensor<F> *V(getTensorArgument<F>("PPHHCoulombIntegrals"));
     std::vector<int> syms(shape.size(), NS);
     Tensor<F> T(shape.size(), shape.data(), syms.data(), *V->wrld, "T");
     mixer->append(T);
+*/
   }
   // The amplitudes will from now on be managed by the mixer
   return mixer;
