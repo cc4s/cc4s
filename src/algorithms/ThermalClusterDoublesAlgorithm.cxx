@@ -36,7 +36,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     << "Number of imaginary time scales retained=" << recursionLength+1
     << std::endl;
   LOG(1, getCapitalizedAbbreviation())
-    << "Imaginary time recursion scaling=" << recursionScale << std::endl;
+    << "Imaginary time recursion scaling q=" << recursionScale << std::endl;
 
   energies.resize(recursionLength+1);
   amplitudes.resize(recursionLength+1);
@@ -61,7 +61,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   int N(10);
   double energy;
   for (n = N; n > 0; --n) {
-    LOG(0, getCapitalizedAbbreviation()) << "imaginary time scale=" << n << std::endl;
+    LOG(0, getCapitalizedAbbreviation()) << "imaginary time scale=beta*q^-" << n << std::endl;
     // update the next amplitudes according to the algorithm implementation
     update(n);
     energy = energies[0]->get_val();
