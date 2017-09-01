@@ -37,20 +37,18 @@ namespace cc4s {
     /**
      * \brief Defines the default number of samples in imaginary time, 32.
      */
-    static int constexpr DEFAULT_SAMPLES = 32;
+    static int constexpr DEFAULT_RECURSION_LENGTH = 2;
 
   protected:
     /**
-     * \brief The current correlation energy from all diagrams that were
-     * closed up to the current moment in imaginart time.
+     * \brief The free energies of all preceeding time scales.
      **/
-    CTF::Scalar<> *directEnergy, *exchangeEnergy;
+    std::vector<CTF::Scalar<> *>energies;
 
     /**
-     * \brief The thermal amplitudes of doubles diagrams of the
-     * current and the subsequent moment in imaginary time.
+     * \brief The thermal doubles amplitudes of all preceeding time scales.
      */
-    CTF::Tensor<> *Tabij[2];
+    std::vector<CTF::Tensor<> *>amplitudes;
 
     /**
      * \brief The eigenenergy difference of between the state a and i.
@@ -66,17 +64,19 @@ namespace cc4s {
     double beta;
 
     /**
-     * \brief The number of imaginary frequency intervals between \f$0\f$ and
-     * \f$\beta\f$ for the approximate solution of the amplitude integral
-     * equation.
+     * \brief The number of imaginary frequency intervals retained.
      **/
-    int samples;
+    int recursionLength;
 
     /**
-     * \brief Advances the correlation energy and the amplitudes from the
-     * the current moment in imaginary time to the next sample according
-     * to the concrete implementation.
-     * \param[in] i sample number
+     * \brief The scaling factor of two successive imaginary time scales.
+     **/
+    double recursionScale;
+
+    /**
+     * \brief Calculates properties at the next larger imaginary time scale
+     * from the properties of the preceding smaller imaginary time scales
+     * \param[in] n The decreasing level of energy. At 0 the calcuation is done.
      */
     virtual void update(int n) = 0;
 
@@ -87,12 +87,15 @@ namespace cc4s {
      * that.
      */
     virtual void dryUpdate();
+
+    std::string getCapitalizedAbbreviation();
+    double getRecursionScale(const int M);
   };
 
 
-  class ImaginaryTimePropagation {
+  class ImaginaryTimeTransform {
   protected:
-    ImaginaryTimePropagation(
+    ImaginaryTimeTransform(
       double DTau_
     ): DTau(DTau_) {
     }
@@ -104,11 +107,11 @@ namespace cc4s {
    * one particle hole pair without interaction
    * within the imgainary time interval of length DTau.
    **/
-  class FreePHImaginaryTimePropagation: public ImaginaryTimePropagation {
+  class FreePHImaginaryTimeTransform: public ImaginaryTimeTransform {
   public:
-    FreePHImaginaryTimePropagation(
+    FreePHImaginaryTimeTransform(
       double DTau_
-    ): ImaginaryTimePropagation(DTau_) {
+    ): ImaginaryTimeTransform(DTau_) {
     }
     /**
      * \brief Transforms the amplitude P given the energy differences
@@ -121,16 +124,32 @@ namespace cc4s {
     }
   };
 
+  class FreeImaginaryTimePropagation: public ImaginaryTimeTransform {
+  public:
+    FreeImaginaryTimePropagation(
+      double DTau_
+    ): ImaginaryTimeTransform(DTau_) {
+    }
+    /**
+     * \brief Returns propagator given the energy sum of the states
+     * propagating.
+     * \param[in] Delta The propagating energies. Particles count positive.
+     **/
+    double operator ()(const double Delta) {
+      return std::exp(-Delta*DTau);
+    }
+  };
+
   /**
    * \brief Offers a transform method for the propagation of
    * two particle hole pairs without interaction
    * within the imgainary time interval of length DTau.
    **/
-  class FreePPHHImaginaryTimePropagation: public ImaginaryTimePropagation {
+  class FreePPHHImaginaryTimeTransform: public ImaginaryTimeTransform {
   public:
-    FreePPHHImaginaryTimePropagation(
+    FreePPHHImaginaryTimeTransform(
       double DTau_
-    ): ImaginaryTimePropagation(DTau_) {
+    ): ImaginaryTimeTransform(DTau_) {
     }
     /**
      * \brief Transforms the amplitude P given the energy differences
@@ -149,11 +168,11 @@ namespace cc4s {
    * two particle hole pairs from or to the Coulomb interaction
    * at tau within the imgainary time interval of length DTau.
    **/
-  class PPHHImaginaryTimePropagation: public ImaginaryTimePropagation {
+  class PPHHImaginaryTimeTransform: public ImaginaryTimeTransform {
   public:
-    PPHHImaginaryTimePropagation(
+    PPHHImaginaryTimeTransform(
       double DTau_
-    ): ImaginaryTimePropagation(DTau_) {
+    ): ImaginaryTimeTransform(DTau_) {
     }
     /**
      * \brief Transforms the amplitude P given the energy differences
@@ -170,7 +189,32 @@ namespace cc4s {
       // to avoid division by small numbers
       P *= (DeltaDTau*DeltaDTau * DTau > 6e-15) ?
         (1 - std::exp(-DeltaDTau)) / Delta :
-        DTau * (1 - DeltaDTau*DTau/2);
+        DTau * (1 - 0.5*DeltaDTau*DTau);
+    }
+  };
+
+  class SameSideConnectedImaginaryTimePropagation:
+    public ImaginaryTimeTransform
+  {
+  public:
+    SameSideConnectedImaginaryTimePropagation(
+      double DTau_
+    ): ImaginaryTimeTransform(DTau_) {
+    }
+    /**
+     * \brief Returns the propgator for states connected to the interaction
+     * given the energy sum of the states propagating. The states must be
+     * connected either all from below or all to above.
+     * Particles count positive, holes count negative.
+     * \param[in] Delta The energy sum of the states propagating.
+     **/
+    double operator ()(const double Delta) {
+      const double DeltaDTau(Delta*DTau);
+      // use the first order approximation around Delta=zero if applicable
+      // to avoid division by small numbers
+      return (DeltaDTau*DeltaDTau * DTau > 6e-15) ?
+        (1 - std::exp(-DeltaDTau)) / Delta :
+        DTau * (1 - 0.5*DeltaDTau*DTau);
     }
   };
 
@@ -179,11 +223,11 @@ namespace cc4s {
    * one particle hole pair to and one pair from the Coulomb interaction
    * at tau within the imgainary time interval of length DTau.
    **/
-  class HPPHImaginaryTimePropagation: public ImaginaryTimePropagation {
+  class HPPHImaginaryTimeTransform: public ImaginaryTimeTransform {
   public:
-    HPPHImaginaryTimePropagation(
+    HPPHImaginaryTimeTransform(
       double DTau_
-    ): ImaginaryTimePropagation(DTau_) {
+    ): ImaginaryTimeTransform(DTau_) {
     }
     /**
      * \brief Transforms the amplitude P given the energy differences
@@ -203,6 +247,38 @@ namespace cc4s {
       // use the second order approximation around Delta=zero if applicable
       // to avoid division by small numbers
       P *= meanP * (
+        (DeltaDTauSquared*DeltaDTauSquared * DTau > 1.20e-13) ?
+          std::sinh(DeltaDTau) / Delta :
+          DTau * (1 + DeltaDTauSquared*DTau/6)
+      );
+    }
+  };
+
+  class UpDownConnectedImaginaryTimeTransform:
+    public ImaginaryTimeTransform
+  {
+  public:
+    UpDownConnectedImaginaryTimeTransform(
+      double DTau_
+    ): ImaginaryTimeTransform(DTau_) {
+    }
+    /**
+     * \brief Returns the propagator given the energy sums of the
+     * states connected from below as well as the energy sums of the states
+     * connected to above.
+     * Particles count positive, holes count negative.
+     * \param[in] D0 The energy sums of the states connected from below.
+     * \param[in] D1 The energy sums of the states connected to above.
+     **/
+    double operator ()(const double D0, const double D1) {
+      const double meanD((D1+D0)*0.5);
+      const double Delta((D1-D0)*0.5);
+      const double meanP(std::exp(-meanD*DTau));
+      const double DeltaDTau(Delta*DTau);
+      const double DeltaDTauSquared(DeltaDTau*DeltaDTau);
+      // use the second order approximation around Delta=zero if applicable
+      // to avoid division by small numbers
+      return meanP * (
         (DeltaDTauSquared*DeltaDTauSquared * DTau > 1.20e-13) ?
           std::sinh(DeltaDTau) / Delta :
           DTau * (1 + DeltaDTauSquared*DTau/6)

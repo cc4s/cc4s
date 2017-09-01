@@ -28,20 +28,22 @@ void ThermalClusterDoublesAlgorithm::run() {
   int Nv(Vabij->lens[0]);
   int syms[] = { NS, NS, NS, NS };
   int vvoo[] = { Nv, Nv, No, No };
-  Tabij[0] = new Tensor<>(4, vvoo, syms, *Vabij->wrld, "Tabij0");
-  Tabij[1] = new Tensor<>(4, vvoo, syms, *Vabij->wrld, "Tabij1");
-
-  // Allocate the energy
-  directEnergy = new Scalar<>(*Vabij->wrld);
-  directEnergy->set_name("directEnergy");
-  exchangeEnergy = new Scalar<>(*Vabij->wrld);
-  exchangeEnergy->set_name("exchangeEnergy");
-
-  std::string abbreviation(getAbbreviation());
-  std::transform(
-    abbreviation.begin(), abbreviation.end(), 
-    abbreviation.begin(), ::toupper
+  recursionLength = getIntegerArgument(
+    "recursionLength", DEFAULT_RECURSION_LENGTH
   );
+  recursionScale= getRecursionScale(recursionLength);
+  LOG(1, getCapitalizedAbbreviation())
+    << "Number of imaginary time scales retained=" << recursionLength+1
+    << std::endl;
+  LOG(1, getCapitalizedAbbreviation())
+    << "Imaginary time recursion scaling=" << recursionScale << std::endl;
+
+  energies.resize(recursionLength+1);
+  amplitudes.resize(recursionLength+1);
+  for (unsigned int i(0); i < energies.size(); ++i) {
+    energies[i] = new Scalar<>(*Vabij->wrld);
+    amplitudes[i] = new Tensor<>(4, vvoo, syms, *Vabij->wrld, "Tabij");
+  }
 
   // allocate and initialize the eigenenergy difference matrix
   Dai = new Matrix<>(Nv, No, *Vabij->wrld);
@@ -52,38 +54,38 @@ void ThermalClusterDoublesAlgorithm::run() {
   (*Dai)["ai"] -= (*epsi)["i"];
 
   beta = 1 / getRealArgument("Temperature");
-  LOG(1, abbreviation) << "beta=" << beta << std::endl;
+  LOG(1, getCapitalizedAbbreviation()) << "beta=" << beta << std::endl;
 
-  double dire(0), exce(0);
-  samples = getIntegerArgument("samples", DEFAULT_SAMPLES);
   int n;
-  for (n = 0; n < samples; ++n) {
-    LOG(0, abbreviation) << "step=" << n+1 << std::endl;
+  // TODO: determine N from spectrum and temperature
+  int N(10);
+  double energy;
+  for (n = N; n > 0; --n) {
+    LOG(0, getCapitalizedAbbreviation()) << "imaginary time scale=" << n << std::endl;
     // update the next amplitudes according to the algorithm implementation
     update(n);
-    dire = directEnergy->get_val();
-    exce = exchangeEnergy->get_val();
-    LOG(0, abbreviation) << "e=" << dire+exce << std::endl;
-    LOG(1, abbreviation) << "dir=" << dire << std::endl;
-    LOG(1, abbreviation) << "exc=" << exce << std::endl;
+    energy = energies[0]->get_val();
   }
 
-  std::stringstream amplitudesName;
   // TODO: only the sequence of amplitudes at all sampled imaginary times
   // would be of interest.
 /*
+  std::stringstream amplitudesName;
   amplitudesName << "Thermal" << getAbbreviation() << "DoublesAmplitudes";
   allocatedTensorArgument(
     amplitudesName.str(), Tabij[n&1]
   );
 */
   // currently, we can just dispose them
-  delete Tabij[0]; delete Tabij[1];
+  for (int i(0); i <= recursionLength; ++i) {
+    delete energies[i];
+    delete amplitudes[i];
+  }
   delete Dai;
 
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), dire+exce);
+  setRealArgument(energyName.str(), energy);
 }
 
 void ThermalClusterDoublesAlgorithm::dryRun() {
@@ -108,7 +110,7 @@ void ThermalClusterDoublesAlgorithm::dryRun() {
   // Allocate the energy e
   DryScalar<> energy(SOURCE_LOCATION);
 
-  getIntegerArgument("samples", DEFAULT_SAMPLES);
+  getIntegerArgument("recursionLength", DEFAULT_RECURSION_LENGTH);
 
   // Call the dry iterate of the actual algorithm, which is left open here
   dryUpdate();
@@ -121,5 +123,24 @@ void ThermalClusterDoublesAlgorithm::dryRun() {
 void ThermalClusterDoublesAlgorithm::dryUpdate() {
   LOG(0, "CluserDoubles") << "Dry run for update not given for Thermal"
     << getAbbreviation() << std::endl;
+}
+
+std::string ThermalClusterDoublesAlgorithm::getCapitalizedAbbreviation() {
+  std::string abbreviation(getAbbreviation());
+  std::transform(
+    abbreviation.begin(), abbreviation.end(), 
+    abbreviation.begin(), ::toupper
+  );
+  return abbreviation;
+}
+
+double ThermalClusterDoublesAlgorithm::getRecursionScale(const int M) {
+  double q(2.0);
+  double delta;
+  do {
+    const double qM(std::pow(q,M));
+    q -= delta = (qM*(q-1) - 1) / (qM*(M*(1-1/q)+1));
+  } while (std::abs(delta) > 1e-15);
+  return q;
 }
 
