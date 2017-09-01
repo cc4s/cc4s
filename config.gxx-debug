@@ -13,11 +13,15 @@ OPTIMIZE=-O0 -g
 # location of the Cyclops Tensor Framework library depends on the configuration
 CTF=modules/build/gxx/ctf
 
+# location of the compiled BLAS,LAPACK and ScaLAPACK libraries
+SCA=/usr/local/lib/scalapack
+
 # additional include directories for header files
 INCLUDE=-I${CTF}/include
 
 # additional library paths and libraries to link to
-LIBS=-L${CTF}/lib -lctf -lblas -llapack -lblacs-openmpi -lblacsCinit-openmpi -lscalapack-openmpi
+LIBS=-L${CTF}/lib -lctf -L${SCA} -lscalapack -lreflapack -lrefblas -lgfortran
+#LIBS=-L${CTF}/lib -lctf -lblas -llapack -lblacs-openmpi -lblacsCinit-openmpi -lscalapack-openmpi
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
