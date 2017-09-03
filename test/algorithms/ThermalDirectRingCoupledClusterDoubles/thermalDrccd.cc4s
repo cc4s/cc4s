@@ -65,7 +65,7 @@ ThermalDirectRingCoupledClusterDoubles [
   ThermalHoleEigenEnergies ThermalParticleEigenEnergies
   ThermalHoleOccupancies ThermalParticleOccupancies
   (Temperature 2.6)
-  (recursionLength 100)
+  (recursionLength 3)
 ] [
   ThermalDrccdEnergy
 ].

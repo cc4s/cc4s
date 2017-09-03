@@ -20,7 +20,7 @@ ThermalDirectRingCoupledClusterDoubles::
 ) {
 }
 
-void ThermalDirectRingCoupledClusterDoubles::update(int n) {
+void ThermalDirectRingCoupledClusterDoubles::iterate(int n) {
   // Read Vabij
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
 
@@ -37,7 +37,7 @@ void ThermalDirectRingCoupledClusterDoubles::update(int n) {
 }
 
 
-void ThermalDirectRingCoupledClusterDoubles::dryUpdate() {
+void ThermalDirectRingCoupledClusterDoubles::dryIterate() {
   // Read the DRCCD amplitudes Tabij
   //DryTensor<> *Tabij(
   getTensorArgument<double, DryTensor<double>>("DrccdDoublesAmplitudes");

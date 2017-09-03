@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef THERMAL_DIRECTOR_RING_COUPLED_CLUSTER_DOUBLES_DEFINED 
 #define THERMAL_DIRECTOR_RING_COUPLED_CLUSTER_DOUBLES_DEFINED
 
@@ -28,11 +28,11 @@ namespace cc4s {
      * \brief Implements the iterate method with the DRCCD iteration.
      * \param[in] i Iteration number
      */
-    virtual void update(int n);
+    virtual void iterate(int n);
     /**
      * \brief Implements the dry iterate method with the DRCCD iteration.
      */
-    virtual void dryUpdate();
+    virtual void dryIterate();
   };
 }
 

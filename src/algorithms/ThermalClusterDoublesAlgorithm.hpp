@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef THERMAL_CLUSTER_DOUBLES_ALGORITHM_DEFINED 
 #define THERMAL_CLUSTER_DOUBLES_ALGORITHM_DEFINED
 
@@ -10,8 +10,7 @@
 namespace cc4s {
   /**
    * \brief Provides the functionality for a finite temperature algorithm with
-   * only doubles amplitudes. It updates the correlation free energy from
-   * the amplitudes.
+   * only doubles amplitudes.
    */
   class ThermalClusterDoublesAlgorithm: public Algorithm {
   public:
@@ -35,9 +34,13 @@ namespace cc4s {
     virtual std::string getAbbreviation() = 0;
 
     /**
-     * \brief Defines the default number of samples in imaginary time, 32.
+     * \brief Defines the default recursion length.
      */
     static int constexpr DEFAULT_RECURSION_LENGTH = 2;
+    /**
+     * \brief Defines the default recursion length.
+     */
+    static int constexpr DEFAULT_MIN_ITERATIONS = 8;
 
   protected:
     /**
@@ -71,25 +74,28 @@ namespace cc4s {
     /**
      * \brief The scaling factor of two successive imaginary time scales.
      **/
-    double recursionScale;
+    double recursionScaling;
 
     /**
      * \brief Calculates properties at the next larger imaginary time scale
      * from the properties of the preceding smaller imaginary time scales
      * \param[in] n The decreasing level of energy. At 0 the calcuation is done.
      */
-    virtual void update(int n) = 0;
+    virtual void iterate(int n) = 0;
 
     /**
-     * \brief Performs a dry run of an update according to the concrete
+     * \brief Performs a dry run of an iterate according to the concrete
      * algorithm.
      * The base class does not perform accounting and writes a warning about
      * that.
      */
-    virtual void dryUpdate();
+    virtual void dryIterate();
+
+    void initializeRecursion();
 
     std::string getCapitalizedAbbreviation();
-    double getRecursionScale(const int M);
+    double getRecursionScaling(const int M);
+    double getEnergyScale();
   };
 
 
