@@ -26,7 +26,7 @@ TensorWriter [(Data DrccdEnergy)] [].
 %% must be equivalent to zero temperature states, except reordering %%
 ThermalHolesAndParticles [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-  (Temperature 2.6)
+  (Temperature 0.086)
   (Electrons 8)
 ] [
   ChemicalPotential
@@ -53,7 +53,7 @@ ThermalMp2EnergyFromCoulombIntegrals [
   ThermalPPHHCoulombIntegrals
   ThermalHoleEigenEnergies ThermalParticleEigenEnergies
   ThermalHoleOccupancies ThermalParticleOccupancies
-  (Temperature 2.6)
+  (Temperature 0.086)
 ] [
   ThermalMp2Energy
 ].
@@ -64,8 +64,9 @@ ThermalDirectRingCoupledClusterDoubles [
   ThermalPPHHCoulombIntegrals
   ThermalHoleEigenEnergies ThermalParticleEigenEnergies
   ThermalHoleOccupancies ThermalParticleOccupancies
-  (Temperature 2.6)
-  (recursionLength 3)
+  (Temperature 0.086)
+  (recursionLength 1)
+  (maxIterations 1)
 ] [
   ThermalDrccdEnergy
 ].

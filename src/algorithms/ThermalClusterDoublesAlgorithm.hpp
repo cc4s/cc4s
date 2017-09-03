@@ -38,9 +38,13 @@ namespace cc4s {
      */
     static int constexpr DEFAULT_RECURSION_LENGTH = 2;
     /**
-     * \brief Defines the default recursion length.
+     * \brief Defines the default minimum number of iterations
      */
     static int constexpr DEFAULT_MIN_ITERATIONS = 8;
+    /**
+     * \brief Defines the default maximum number of iterations
+     */
+    static int constexpr DEFAULT_MAX_ITERATIONS = 1024;
 
   protected:
     /**
@@ -91,7 +95,8 @@ namespace cc4s {
      */
     virtual void dryIterate();
 
-    void initializeRecursion();
+    void initializeRecursion(const int N);
+    double recurse(const int n);
 
     std::string getCapitalizedAbbreviation();
     double getRecursionScaling(const int M);
