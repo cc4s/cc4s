@@ -157,6 +157,13 @@ double ThermalClusterDoublesAlgorithm::recurse(const int n) {
   Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(propagation));
   Dabij["abij"] *= (*Vabij)["abij"];
 
+  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
+  Dabij["abij"] *= (*Na)["a"];
+  Dabij["abij"] *= (*Na)["b"];
+  Dabij["abij"] *= (*Ni)["i"];
+  Dabij["abij"] *= (*Ni)["j"];
+
   (*energies[recursionLength])[""] += (*energies[0])[""];
   (*energies[recursionLength])[""] -=
     2.0 * Dabij["abij"] * (*amplitudes[0])["abij"];
