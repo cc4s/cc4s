@@ -45,7 +45,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   int n;
   double energy;
   for (n = N; n > 0; --n) {
-    LOG(0, getCapitalizedAbbreviation()) << "imaginary time scale=" << n << std::endl;
+    LOG(0, getCapitalizedAbbreviation()) << "imaginary time scale=beta*q^-" << n << std::endl;
     // iterate the next amplitudes according to the algorithm implementation
     
     iterate(n);
