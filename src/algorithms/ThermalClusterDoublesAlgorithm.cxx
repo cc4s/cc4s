@@ -20,14 +20,14 @@ ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
 }
 
 void ThermalClusterDoublesAlgorithm::run() {
+  beta = 1 / getRealArgument("Temperature");
+
   recursionLength = getIntegerArgument(
     "recursionLength", DEFAULT_RECURSION_LENGTH
   );
   recursionScaling = getRecursionScaling(recursionLength);
-  beta = 1 / getRealArgument("Temperature");
-
   double energyScale( getEnergyScale() );
-  int64_t N( std::ceil(std::log(beta*energyScale) / std::log(recursionScaling)) );
+  int64_t N(std::ceil(std::log(beta*energyScale) / std::log(recursionScaling)));
   N += getIntegerArgument("minIterations", DEFAULT_MIN_ITERATIONS);
   N = std::min(N, getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS));
 
@@ -44,12 +44,14 @@ void ThermalClusterDoublesAlgorithm::run() {
   int n;
   double energy;
   for (n = N; n > 0; --n) {
+    const double betam( beta*std::pow(recursionScaling,-(n-1)) );
     LOG(0, getCapitalizedAbbreviation()) <<
-      "calculating imaginary time scale=beta*q^-" << n-1 << std::endl;
+      "calculating imaginary time scale=beta*q^-" << n-1 <<
+      "=" << betam << std::endl;
 
     // iterate the next amplitudes according to the algorithm implementation
-    
     iterate(n);
+
     energy = recurse(n);
     LOG(1, getCapitalizedAbbreviation()) << "e=" << energy << std::endl;
   }
@@ -117,7 +119,8 @@ void ThermalClusterDoublesAlgorithm::initializeRecursion(const int N) {
     const int n(N+i);
     const double betan( beta*std::pow(recursionScaling,-n) );
     LOG(0, getCapitalizedAbbreviation()) <<
-      "initializing imaginary time scale=beta*q^-" << n << "=" << betan << std::endl;
+      "initializing imaginary time scale=beta*q^-" << n <<
+      "=" << betan << std::endl;
     energies[i] = new Scalar<>(*Vabij->wrld);
     energies[i]->set_name("F");
     amplitudes[i] = new Tensor<>(*Vabij);
@@ -138,6 +141,7 @@ double ThermalClusterDoublesAlgorithm::recurse(const int n) {
   Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
   Tensor<> Dabij(false, *Vabij);
 
+  Tensor<> nextT( *amplitudes[recursionLength] );
   Dabij["abij"] =  (*epsa)["a"];
   Dabij["abij"] += (*epsa)["b"];
   Dabij["abij"] -= (*epsi)["i"];
@@ -146,8 +150,7 @@ double ThermalClusterDoublesAlgorithm::recurse(const int n) {
   const double betam( beta*std::pow(recursionScaling,-m) );
   FreeImaginaryTimePropagation freePropagation(betam);
   Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(freePropagation));
-  (*amplitudes[recursionLength])["abij"] +=
-    (*amplitudes[0])["abij"] * Dabij["abij"];
+  nextT["abij"] += (*amplitudes[0])["abij"] * Dabij["abij"];
 
   Dabij["abij"] =  (*epsa)["a"];
   Dabij["abij"] += (*epsa)["b"];
@@ -164,21 +167,22 @@ double ThermalClusterDoublesAlgorithm::recurse(const int n) {
   Dabij["abij"] *= (*Ni)["i"];
   Dabij["abij"] *= (*Ni)["j"];
 
-  (*energies[recursionLength])[""] += (*energies[0])[""];
-  (*energies[recursionLength])[""] -=
-    2.0 * Dabij["abij"] * (*amplitudes[0])["abij"];
-  (*energies[recursionLength])[""] +=
-    1.0 * Dabij["abji"] * (*amplitudes[0])["abij"];
+  Scalar<> nextF( *energies[recursionLength] );
+  nextF[""] += (*energies[0])[""];
+  nextF[""] -= 2.0 * Dabij["abij"] * (*amplitudes[0])["abij"];
+  nextF[""] += 1.0 * Dabij["abji"] * (*amplitudes[0])["abij"];
 
-  // rotate amplitude and energy pointers to make the last the new head
-  Tensor<> *nextT = amplitudes[recursionLength];
-  Scalar<> *nextF = energies[recursionLength];
+  // rotate amplitude and energy pointers to make the T[M] the new head T[0]
+  Tensor<> *nextTPointer(amplitudes[recursionLength]);
+  Scalar<> *nextFPointer(energies[recursionLength]);
   for (int i(recursionLength); i > 0; --i) {
     amplitudes[i] = amplitudes[i-1];
     energies[i] = energies[i-1];
   }
-  amplitudes[0] = nextT;
-  energies[0] = nextF;
+  amplitudes[0] = nextTPointer;
+  energies[0] = nextFPointer;
+  (*nextTPointer)["abij"] = nextT["abij"];
+  (*nextFPointer)[""] = nextF[""];
 
   return energies[0]->get_val()/beta;
 }
