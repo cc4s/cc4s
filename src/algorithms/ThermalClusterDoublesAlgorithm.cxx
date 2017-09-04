@@ -55,6 +55,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     energy = recurse(n);
     LOG(1, getCapitalizedAbbreviation()) << "e=" << energy << std::endl;
   }
+  energy = energies[0]->get_val()/beta;
 
   // currently, we can just dispose them
   for (int i(0); i <= recursionLength; ++i) {
@@ -110,7 +111,10 @@ void ThermalClusterDoublesAlgorithm::initializeRecursion(const int N) {
   Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
   Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
   Tensor<> Dabij(false, *Vabij);
+  Tensor<> Tabij(false, *Vabij);
 
   // Allocate the doubles amplitudes
   energies.resize(recursionLength+1);
@@ -121,8 +125,6 @@ void ThermalClusterDoublesAlgorithm::initializeRecursion(const int N) {
     LOG(0, getCapitalizedAbbreviation()) <<
       "initializing imaginary time scale=beta*q^-" << n <<
       "=" << betan << std::endl;
-    energies[i] = new Scalar<>(*Vabij->wrld);
-    energies[i]->set_name("F");
     amplitudes[i] = new Tensor<>(*Vabij);
     amplitudes[i]->set_name("Tabij");
     Dabij["abij"] =  (*epsa)["a"];
@@ -132,6 +134,23 @@ void ThermalClusterDoublesAlgorithm::initializeRecursion(const int N) {
     SameSideConnectedImaginaryTimePropagation propagation(betan);
     Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(propagation));
     (*amplitudes[i])["abij"] *= (-1.0) * Dabij["abij"];
+
+    Tabij["abij"] =   4.0 * (*Vabij)["abij"];
+    Tabij["abij"] += -2.0 * (*Vabij)["abji"];
+    Tabij["abij"] *= 0.5 * (*Vabij)["abij"];
+    Dabij["abij"] =  (*epsa)["a"];
+    Dabij["abij"] += (*epsa)["b"];
+    Dabij["abij"] -= (*epsi)["i"];
+    Dabij["abij"] -= (*epsi)["j"];
+    Mp2ImaginaryTimePropagation mp2Propagation(betan);
+    Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(mp2Propagation));
+    Dabij["abij"] *= (*Na)["a"];
+    Dabij["abij"] *= (*Na)["b"];
+    Dabij["abij"] *= (*Ni)["i"];
+    Dabij["abij"] *= (*Ni)["j"];
+    energies[i] = new Scalar<>(*Vabij->wrld);
+    energies[i]->set_name("F");
+    (*energies[i])[""] = (-1.0) * Tabij["abij"] * Dabij["abij"];
   }
 }
 

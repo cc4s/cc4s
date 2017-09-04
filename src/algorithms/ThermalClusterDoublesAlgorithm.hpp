@@ -130,7 +130,7 @@ namespace cc4s {
      * \param[in] Dai The energy difference of the pair propagating.
      * \param[inout] P The amplitude to transform according to the propagation.
      **/
-    void operator ()(double Dai, double &P) {
+    void operator ()(double Dai, double &P) const {
       P *= std::exp(-Dai*DTau);
     }
   };
@@ -146,7 +146,7 @@ namespace cc4s {
      * propagating.
      * \param[in] Delta The propagating energies. Particles count positive.
      **/
-    double operator ()(const double Delta) {
+    double operator ()(const double Delta) const {
       return std::exp(-Delta*DTau);
     }
   };
@@ -193,7 +193,7 @@ namespace cc4s {
      * \param[in] Dbj The energy difference of the second propagating.
      * \param[inout] P The amplitude to transform according to the propagation.
      **/
-    void operator ()(double Dai, double Dbj, double &P) {
+    void operator ()(double Dai, double Dbj, double &P) const {
       const double Delta(Dai+Dbj);
       const double DeltaDTau(Delta*DTau);
       // use the first order approximation around Delta=zero if applicable
@@ -219,7 +219,7 @@ namespace cc4s {
      * Particles count positive, holes count negative.
      * \param[in] Delta The energy sum of the states propagating.
      **/
-    double operator ()(const double Delta) {
+    double operator ()(const double Delta) const {
       const double DeltaDTau(Delta*DTau);
       // use the first order approximation around Delta=zero if applicable
       // to avoid division by small numbers
@@ -249,7 +249,7 @@ namespace cc4s {
      *                interaction.
      * \param[inout] P The amplitude to transform according to the propagation.
      **/
-    void operator ()(double Dai, double Dbj, double &P) {
+    void operator ()(double Dai, double Dbj, double &P) const {
       const double meanD((Dbj+Dai)*0.5);
       const double Delta((Dbj-Dai)*0.5);
       const double meanP(std::exp(-meanD*DTau));
@@ -281,7 +281,7 @@ namespace cc4s {
      * \param[in] D0 The energy sums of the states connected from below.
      * \param[in] D1 The energy sums of the states connected to above.
      **/
-    double operator ()(const double D0, const double D1) {
+    double operator ()(const double D0, const double D1) const {
       const double meanD((D1+D0)*0.5);
       const double Delta((D1-D0)*0.5);
       const double meanP(std::exp(-meanD*DTau));
@@ -294,6 +294,23 @@ namespace cc4s {
           std::sinh(DeltaDTau) / Delta :
           DTau * (1 + DeltaDTauSquared*DTau/6)
       );
+    }
+  };
+
+  class Mp2ImaginaryTimePropagation: public ImaginaryTimeTransform {
+  public:
+    Mp2ImaginaryTimePropagation(
+      const double DTau_
+    ): ImaginaryTimeTransform(DTau_) {
+    }
+    double operator ()(const double Delta) const {
+      // use the first order approximation around Delta=zero if applicable
+      // to avoid division by small numbers
+      const double DeltaDTau( Delta*DTau );
+      const double DTauDTau( DTau*DTau );
+      return std::abs(Delta) > 1.2e-13 ?
+        (std::exp(-DeltaDTau) - 1.0 + DeltaDTau) / (Delta*Delta) :
+        0.5*DTauDTau - DeltaDTau*DTauDTau/6;
     }
   };
 }
