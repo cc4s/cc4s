@@ -188,8 +188,8 @@ double ThermalClusterDoublesAlgorithm::recurse(const int n) {
 
   Scalar<> nextF( *energies[recursionLength] );
   nextF[""] += (*energies[0])[""];
-  nextF[""] -= 2.0 * Dabij["abij"] * (*amplitudes[0])["abij"];
-  nextF[""] += 1.0 * Dabij["abji"] * (*amplitudes[0])["abij"];
+  nextF[""] += 2.0 * Dabij["abij"] * (*amplitudes[0])["abij"];
+  nextF[""] -= 1.0 * Dabij["abji"] * (*amplitudes[0])["abij"];
 
   // rotate amplitude and energy pointers to make the T[M] the new head T[0]
   Tensor<> *nextTPointer(amplitudes[recursionLength]);

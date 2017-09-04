@@ -225,7 +225,7 @@ namespace cc4s {
       // to avoid division by small numbers
       return (DeltaDTau*DeltaDTau * DTau > 6e-15) ?
         (1 - std::exp(-DeltaDTau)) / Delta :
-        DTau * (1 - 0.5*DeltaDTau*DTau);
+        DTau * (1 - 0.5*DeltaDTau);
     }
   };
 
@@ -308,9 +308,10 @@ namespace cc4s {
       // to avoid division by small numbers
       const double DeltaDTau( Delta*DTau );
       const double DTauDTau( DTau*DTau );
-      return std::abs(Delta) > 1.2e-13 ?
-        (std::exp(-DeltaDTau) - 1.0 + DeltaDTau) / (Delta*Delta) :
-        0.5*DTauDTau - DeltaDTau*DTauDTau/6;
+      const double DeltaDelta( Delta*Delta );
+      return DeltaDTau*DeltaDTau*DTauDTau > 2.4e-14 ?
+        (std::exp(-DeltaDTau) - 1.0 + DeltaDTau) / DeltaDelta :
+        DTau*(0.5*DTau + DeltaDTau*DTau/6);
     }
   };
 }
