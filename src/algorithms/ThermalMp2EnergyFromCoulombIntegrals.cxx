@@ -42,7 +42,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
     void operator()(double &eps) {
       eps = std::abs(eps) > 1e-8 ?
         (std::exp(-eps/kT) - 1.0 + eps/kT) / (eps*eps/kT) :
-        0.5/kT;
+        0.5/kT - eps*(kT*kT*6);
     }
   protected:
     double kT;
