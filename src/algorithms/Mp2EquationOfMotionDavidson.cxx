@@ -2,6 +2,7 @@
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
 #include <math/MathFunctions.hpp>
+#include <math/FockVector.hpp>
 #include <math/RandomTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -119,17 +120,17 @@ void Mp2EquationOfMotionDavidson::run() {
 
 
   // Create L and R and intermediates
-  int oneBodySyms[] = {NS, NS};
-  int oneBodyLensL[] = {No, Nv};
-  T *Lia( new T(2, oneBodyLensL, oneBodySyms, *Cc4s::world, "Lia") );
-  T Lijab(false, Vijab);
-  T *LHia( new T(2, oneBodyLensL, oneBodySyms, *Cc4s::world, "LHia") );
-  T LHijab(false, Vijab);
-  int oneBodyLensR[] = {Nv, No};
-  T *Rai( new T(2, oneBodyLensR, oneBodySyms, *Cc4s::world, "Rai") );
-  T Rabij(false, Vabij);
-  T *HRai( new T(2, oneBodyLensR, oneBodySyms, *Cc4s::world, "Rai") );
-  T HRabij(false, Vabij);
+  //int oneBodySyms[] = {NS, NS};
+  //int oneBodyLensL[] = {No, Nv};
+  //T *Lia( new T(2, oneBodyLensL, oneBodySyms, *Cc4s::world, "Lia") );
+  //T Lijab(false, Vijab);
+  //T *LHia( new T(2, oneBodyLensL, oneBodySyms, *Cc4s::world, "LHia") );
+  //T LHijab(false, Vijab);
+  //int oneBodyLensR[] = {Nv, No};
+  //T *Rai( new T(2, oneBodyLensR, oneBodySyms, *Cc4s::world, "Rai") );
+  //T Rabij(false, Vabij);
+  //T *HRai( new T(2, oneBodyLensR, oneBodySyms, *Cc4s::world, "Rai") );
+  //T HRabij(false, Vabij);
 
   // kinetic terms
   int kineticLensVirtual[] = {Nv, Nv};
@@ -137,23 +138,10 @@ void Mp2EquationOfMotionDavidson::run() {
   T *Fab( new T(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab") );
   int kineticLensOccupied[] = {No, No};
   T *Fij( new T(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij") );
-
   (*Fab)["aa"] = (*epsa)["a"];
   (*Fij)["ii"] = (*epsi)["i"];
 
-  //The totalDimension should be totalDimension, but the zero-particle part is
-  //zero, so we restrict the hamiltonian to the space spanned by the singles
-  //and doubles excitations
-  int hLens[] = {totalDimension-1, totalDimension-1};
-  int hSyms[] = {NS, NS};
-  T *Hpq( new CTF::Tensor<>(2, hLens, hSyms, *Cc4s::world, "Hpq") );
-
-  int64_t *hIndices;
-  double *hValues;
-  int oneBodyLength((*Lia).lens[0] * (*Lia).lens[1]);
-  int twoBodyLength(
-      Rabij.lens[0] * Rabij.lens[1] * Rabij.lens[2] *  Rabij.lens[3]
-  );
+  Mp2PreConditioner<double, FockVector<double>> P(Fij, Fab, Tabij, Vabcd, Viajb, Vijab, Vijkl);
 
 }
 
