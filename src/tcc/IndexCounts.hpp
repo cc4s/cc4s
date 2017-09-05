@@ -4,7 +4,7 @@
 
 namespace tcc {
   /**
-   * \brief Contains frequency counts for all indicies in a
+   * \brief Contains frequency counts for all indices in a
    * contraction including the indices on the left hand side.
    * These counts are used to efficiently determine which indices
    * are outer indices and which are contracted indices for each
