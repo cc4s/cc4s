@@ -1,0 +1,50 @@
+CoulombVertexReader [
+  (file "../../resources/4alex/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.74")
+  (unrestricted 1)
+] [
+  (CoulombVertex FullCoulombVertex)
+  HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombVertexSingularVectors [
+  FullCoulombVertex
+  (fieldVariables 100)
+  (reduction 0.5)
+] [
+  CoulombVertexSingularVectors
+  CoulombVertexSingularValues
+].
+
+TensorWriter [(Data CoulombVertexSingularValues)] [].
+
+ApproximateCoulombVertex [
+  FullCoulombVertex
+  CoulombVertexSingularVectors
+] [
+  CoulombVertex
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  PPPPCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPPHCoulombIntegrals
+].
+
+Mp2EquationOfMotionDavidson [
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  PPPPCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPPHCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (unrestricted 1)
+] [
+].

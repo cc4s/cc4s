@@ -56,7 +56,8 @@ namespace cc4s {
             minIndex = i;
           }
         }
-        d[minIndex] = maxReal; // set to maximum value not to encounter it again
+        // set to maximum value not to encounter it again
+        d[minIndex] = maxReal;
         Vector<complex,D> v;
         v[minIndex] = 1.0;
         basis[b] = v;

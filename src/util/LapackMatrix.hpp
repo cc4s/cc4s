@@ -20,7 +20,7 @@ namespace cc4s {
     }
 
     /**
-     * \brief Construct an zero nxm Lapack.
+     * \brief Construct a zero nxm Lapack.
      **/
     LapackMatrix(
       const int rows_, const int columns_

@@ -2,6 +2,7 @@
 #define FOCK_VECTOR_DEFINED
 
 #include <math/ComplexTensor.hpp>
+#include <math/Vector.hpp>
 
 #include <vector>
 #include <string>
@@ -26,9 +27,9 @@ namespace cc4s {
       componentIndices(a.componentIndices)
     {
     }
-  
+
     FockVector(
-      std::initializer_list<CTF::Tensor<F>> componentTensors_
+      std::initializer_list<CTF::Tensor<F>> componentTensors_,
       std::initializer_list<std::string> componentIndices_
     ):
       componentTensors(componentTensors_),
@@ -54,8 +55,8 @@ namespace cc4s {
       return *this;
     }
 
-    FockVector<F> &operator *= (coonst F s) {
-      checkCompatabilityTo(a);
+    FockVector<F> &operator *= (const F s) {
+      checkCompatabilityTo(s);
       CTF::Scalar<F> scalar(s);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
