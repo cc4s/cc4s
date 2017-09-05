@@ -66,7 +66,7 @@ namespace cc4s {
         // compute K lowest reduced eigenvalues and vectors of reduced H
         LapackMatrix<F> reducedEigenVectors(basis.size(), basis.size());
         LapackGeneralEigenSystem<F> reducedEigenSystem(reducedH);
-        
+
         // begin basis extension loop for each k
         rms = 0.0;
         for (unsigned int k(0); k < eigenValues.size(); ++k) {
@@ -103,7 +103,7 @@ namespace cc4s {
       );
       // end convergence loop
       if (basis.size() > maxBasisSize) {
-//        throw EXCEPTION("Failed to reach convergence");
+        //throw EXCEPTION("Failed to reach convergence");
       }
     }
 
