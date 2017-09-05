@@ -291,6 +291,8 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   Tensor<complex> GammaGia(GammaGqr->slice(GiaStart, GiaEnd));
   Tensor<complex> GammaGai(GammaGqr->slice(GaiStart, GaiEnd));
 
+  delete GammaGqr;
+  
   //Define CGia
   Tensor<complex> CGia(GammaGia);
   CGia["Gia"] *= invSqrtVG["G"];
