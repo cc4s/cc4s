@@ -23,17 +23,9 @@ ThermalDirectRingCoupledClusterDoubles::
 void ThermalDirectRingCoupledClusterDoubles::iterate(int n) {
   // Read Vabij
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
-
-  Tensor<> PVabij(*Vabij);
-
-  // get the occupancies for contractions
-  Tensor<> *Ni(getTensorArgument("ThermalHoleOccupancies"));
-  Tensor<> *Na(getTensorArgument("ThermalParticleOccupancies"));
-
-  PVabij["abij"] *= (*Ni)["i"];
-  PVabij["abij"] *= (*Ni)["j"];
-  PVabij["abij"] *= (*Na)["a"];
-  PVabij["abij"] *= (*Na)["b"];
+  Tensor<> Tabij(false, *Vabij);
+  Tensor<> Dabij(false, *Vabij);
+  Tensor<> Dai(2, &Vabij->lens[1], &Vabij->sym[1], *Vabij->wrld, "Dai");
 }
 
 
