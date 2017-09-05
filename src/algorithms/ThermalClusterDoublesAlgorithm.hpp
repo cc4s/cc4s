@@ -268,11 +268,11 @@ namespace cc4s {
     }
   };
 
-  class UpDownConnectedImaginaryTimeTransform:
+  class UpDownConnectedImaginaryTimePropagation:
     public ImaginaryTimeTransform
   {
   public:
-    UpDownConnectedImaginaryTimeTransform(
+    UpDownConnectedImaginaryTimePropagation(
       double DTau_
     ): ImaginaryTimeTransform(DTau_) {
     }
@@ -283,6 +283,7 @@ namespace cc4s {
      * Particles count positive, holes count negative.
      * \param[in] D0 The energy sums of the states connected from below.
      * \param[in] D1 The energy sums of the states connected to above.
+     * Note that the propagation is symmetric under exchange of D0 and D1.
      **/
     double operator ()(const double D0, const double D1) const {
       const double meanD((D1+D0)*0.5);
