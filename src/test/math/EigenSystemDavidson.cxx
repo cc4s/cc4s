@@ -90,16 +90,19 @@ TEST_CASE( "EigenSystemDavidson", "[math]" ) {
   for (int i(0); i < N; ++i) {
     for (int j(0); j < N; ++j) {
       f.A(i,j).real(normalDistribution(random));
-      f.A(i,j).imag(0 );
+      f.A(i,j).imag(0);
       //f.A(i,j).imag(normalDistribution(random));
     }
     // make it diagonally dominant
-    f.A(i,i) += 10.0;
+    f.A(i,i) -= 100.0;
   }
+  f.A(10,10) = -100.0;
+
+  // Find the eigenvalues using the Lapack eigen solver
   LapackGeneralEigenSystem<complex> eigenSystem(f.A);
 
   EigenSystemDavidson<Vector<complex,N>> eigenSystemDavidson(
-    f, 4, DiagonalDominantPreconditioner<N>(f), 1E-14, 64
+    f, 4, DiagonalDominantPreconditioner<N>(f), 1E-8, 64
   );
 
   for (unsigned int k(0); k < eigenSystemDavidson.getEigenValues().size(); ++k) {
