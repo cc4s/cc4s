@@ -112,7 +112,7 @@ void FiniteSizeCorrection::readFromFile(){
 
 void FiniteSizeCorrection::calculateStructureFactor() {
 
-//Definition of the variables
+  //Definition of the variables
   Tensor<complex> *GammaFai(
     getTensorArgument<complex>("ParticleHoleCoulombVertex")
   );
@@ -132,21 +132,16 @@ void FiniteSizeCorrection::calculateStructureFactor() {
     GammaGai = GammaFai;
   }
 
-// local allocation
-//  int a(7);
-// heap allocation (survive after function return)
-//  int *b(new int(7));
-
   Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
   Tensor<> *realVG(new Tensor<>(false, *realInfVG));
-//Define take out inf funciton
+  //Define take out inf funciton
   class TakeOutInf {
   public:
     double operator ()(double x){
       return std::isinf(x) ? 0.0 : x;
     }
   };
- //Take out the inf from realVG.
+  //Take out the inf from realVG.
   TakeOutInf takeOutInf;
   Univar_Function<> fTakeOutInf(takeOutInf);
   realVG->sum(1.0, *realInfVG, "G", 0.0, "G", fTakeOutInf);
@@ -161,14 +156,14 @@ void FiniteSizeCorrection::calculateStructureFactor() {
      *realInvSqrtVG.wrld, "invSqrtVG"
   );
 
-//Starting a new space whose memory will be erased after operation
-    //Define operation inverse square root
-    class InvSqrt {
-    public:
-        double operator ()(double x){
-                return std::sqrt(1.0 / x);
-        }
-    };
+  //Starting a new space whose memory will be erased after operation
+  //Define operation inverse square root
+  class InvSqrt {
+  public:
+    double operator ()(double x){
+      return std::sqrt(1.0 / x);
+    }
+  };
 
   //Get the inverted square root of VG
   InvSqrt invSqrt;
@@ -202,25 +197,16 @@ void FiniteSizeCorrection::calculateStructureFactor() {
     Tabij["abij"] += Tai["ai"] * Tai["bj"];
   }
 
-  //construct SG
+  //Construct SG
   NG = CGai.lens[0];
   CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
-  (*SG)["G"] =   2.0 * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
+  (*SG)["G"]  = ( 2.0) * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
+  (*SG)["G"] += (-1.0) * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
 
-// BUG: the following line yields wrong sign:
-//  (*SG)["G"] -= 1.0 * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
-  (*SG)["G"] += -1.0 * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
   CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
 
-  //Get energy from amplitudes
-  //  Scalar<> EMp2(*CGai.wrld);
-  //  EMp2[""] = (*realSG)["G"] * (*realVG)["G"];
-  //  double DEMp2(std::real(EMp2.get_val()));
-  //  setRealArgument("EnergyFromAmplitudes", DEMp2);
-
-  //  allocatedTensorArgument<>("VG", realVG);
   VofG = new double[NG];
   realVG->read_all(VofG);
   structureFactors = new double[NG];
@@ -229,7 +215,7 @@ void FiniteSizeCorrection::calculateStructureFactor() {
 
 void FiniteSizeCorrection::dryCalculateStructureFactor() {
 
-//Definition of the variables
+  //Definition of the variables
   DryTensor<complex> *GammaFai(
     getTensorArgument<complex, DryTensor<complex>>("ParticleHoleCoulombVertex")
   );
@@ -312,23 +298,54 @@ void FiniteSizeCorrection::interpolation3D() {
 
   // FIXME: give direct or reciprocal grid and calaculate all properties,
   // such as a,b,c and omega from it.
-  cartesianGrid = new Momentum[2*NG];
-  // complete momentum grid in a Gamma only calculation
-  // TODO: detect if grid needs to be doubled
-  for (int g(0); g<NG; ++g) {
-    cartesianGrid[g] = Momentum(
-      cartesianMomenta[g], structureFactors[g], VofG[g]
-    );
-    cartesianGrid[g+NG] = Momentum(
-      cartesianMomenta[g]*(-1.), structureFactors[g], VofG[g]
-    );
+  
+  // Detecting whether a grid is half or full by summming up all 
+  // G vectors. If it is full and symmetric, the length of the sum 
+  // should be equal to 0. But in case where the grid is not symmetric, 
+  // this method will fail.
+  cc4s::Vector<> check_grid;
+  for (int g(0); g < NG; ++g){
+    check_grid+=cartesianMomenta[g];
   }
+  LOG(1, "interpolation3D")<< "Length of the sum of all G vectors="
+    << check_grid.length() << std::endl;
+  if (check_grid.length() > 1e-10){
+    LOG(1, "interpolation3D")<< 
+      "Working with half G grid, completing the other half..."<< std::endl;
+    LOG(1, "interpolation3D")<< 
+      "!!! Always check if you are indeed working with half G grid !!!"
+      << std::endl;
+    cartesianGrid = new Momentum[(2*NG-1)];
+    cartesianGrid[0] = Momentum(
+      cartesianMomenta[0], 0.5*structureFactors[0], VofG[0]
+    );
+    for (int g(1); g<NG; ++g) {
+      cartesianGrid[g] = Momentum(
+        cartesianMomenta[g], 0.5*structureFactors[g], VofG[g]
+      );
+      cartesianGrid[(g+NG-1)] = Momentum(
+        cartesianMomenta[g]*(-1.), 0.5*structureFactors[g], VofG[g]
+      );
+    }
+    NG = (2*NG-1);
+  }
+  else {
+    LOG(1, "interpolation3D")<< "Working with full G grid." << std::endl;
+    LOG(1, "interpolation3D")<< 
+      "!!! Always check if you are indeed working with full G grid !!!"
+      << std::endl;
+    cartesianGrid = new Momentum[NG];
+    for (int g(0); g<NG; ++g)
+      cartesianGrid[g] = Momentum(
+        cartesianMomenta[g], structureFactors[g], VofG[g]
+      );
+  } 
 
   // sort according to vector length.
-  std::sort(cartesianGrid, &cartesianGrid[2*NG], Momentum::sortByLength);
+  std::sort(cartesianGrid, &cartesianGrid[NG], Momentum::sortByLength);
 
   // get the 3 unit vectors;
-  cc4s::Vector<> a(cartesianGrid[2].v);
+  cc4s::Vector<> a(cartesianGrid[1].v);
 
   // GC is the shortest vector.
   if (isArgumentGiven("shortestGvector")) {
@@ -340,9 +357,8 @@ void FiniteSizeCorrection::interpolation3D() {
   // determine a small length on the scale of the cell
   const double epsilon(1e-9*a.length());
 
-  LOG(2, "GridSearch") << "b1=#2" << std::endl;
-  // the 0th and 1st elements are 0, avoid it.
-  int j=3;
+  LOG(2, "GridSearch") << "b1=#1" << std::endl;
+  int j=2;
   //a and b should not be parallel;
   while ((a.cross(cartesianGrid[j].v)).length() < epsilon) ++j;
   cc4s::Vector<> b(cartesianGrid[j].v);
@@ -367,7 +383,7 @@ void FiniteSizeCorrection::interpolation3D() {
 
   // determine bounding box in direct (reciprocal) coordinates
   Vector<> directMin, directMax;
-  for (int g(0); g < 2*NG; ++g) {
+  for (int g(0); g < NG; ++g) {
     for (int d(0); d < 3; ++d) {
       double directComponent(T[d].dot(cartesianGrid[g].v));
       directMin[d] = std::min(directMin[d], directComponent);
@@ -392,7 +408,7 @@ void FiniteSizeCorrection::interpolation3D() {
   double *regularSG(new double[boxSize]);
   for (int64_t g(0); g < boxSize; ++g) regularSG[g] = 0;
   // enter known SG values
-  for (int g(0); g < 2*NG; ++g) {
+  for (int g(0); g < NG; ++g) {
     int64_t index(0);
     Vector<> directG;
     for (int d(2); d >= 0; --d) {
@@ -454,7 +470,7 @@ void FiniteSizeCorrection::interpolation3D() {
   // spherically sample
   double lastLength(-1);
   averageSGs.clear(); GLengths.clear();
-  for (int g(0); g < 2*NG; ++g) {
+  for (int g(0); g < NG; ++g) {
     double length(cartesianGrid[g].l);
     if (abs(length - lastLength) > 1e-3) {
       constructFibonacciGrid(length);
@@ -474,34 +490,38 @@ void FiniteSizeCorrection::interpolation3D() {
     }
   }
 
-  //Define the 3D zone close to the Gamma point which needed to be integrated over. Find the vectors which define it. Small BZ
+  //Define the 3D zone close to the Gamma point which needed to be
+  //integrated over. Find the vectors which define it. Small BZ
   //  for (int t(0); t < 20; t++){
   //    LOG(0,"G vectors by length") << cartesianGrid[t].v << std::endl;
   //  }
 
   std::vector<Vector<>> smallBZ;
-  smallBZ.push_back(cartesianGrid[2].v);
-  for (int t(3); t<2*NG; t++){
+  smallBZ.push_back(cartesianGrid[1].v);
+  for (int t(2); t<NG; t++){
     if (IsInSmallBZ(cartesianGrid[t].v, 1., smallBZ)){
       smallBZ.push_back(cartesianGrid[t].v);
     }
   }
 
-  LOG(0,"FiniteSize") << "Size of vectors="  << smallBZ.size() << std::endl;
+  LOG(1,"interpolation3D") << "Number of basis vectors of small BZ="  
+    << smallBZ.size() << std::endl;
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
     LOG(2,"interpolation3D") << "smallBZ basis vector: " << smallBZ[i] << std::endl;
   }
 
   //integration in 3D
   double constantFactor(getRealArgument("constantFactor"));
-  double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
+  //cutOffRadius is set to a big default value 100 to ensure
+  //the integration is over the whole G grid. 
+  double cutOffRadius(getRealArgument("cutOffRadius", 100));
   int N0(51), N1(51), N2(51);
   inter3D = 0.;
   sum3D   = 0.;
   int countNO(0);
   int countNOg(0);
   std::vector<Vector<>> gridWithinRadius;
-  for (int i(0); i < 2*NG; ++i) {
+  for (int i(0); i < NG; ++i) {
     if (cartesianGrid[i].l < cutOffRadius) {
       gridWithinRadius.push_back(cartesianGrid[i].v);
       if (cartesianGrid[i].l > epsilon) {
@@ -511,7 +531,9 @@ void FiniteSizeCorrection::interpolation3D() {
     }
   }
 
-  MpiCommunicator communicator(*Cc4s::world);
+  MpiCommunicator communicator(
+    Cc4s::world->rank, Cc4s::world->np, Cc4s::world->comm
+  );
   communicator.barrier();
   for (int t0(-N0); t0 <= N0; ++t0) {
     for (int t1(-N1); t1 <= N1; ++t1) {
@@ -522,10 +544,16 @@ void FiniteSizeCorrection::interpolation3D() {
           Vector<double> gb(((b/double(N1))*double(t1)));
           Vector<double> gc(((c/double(N2))*double(t2)));
           Vector<double> g(ga+gb+gc);
+          //for each g that is within smallBZ, add its contribution 
+          //and that of all its 
+          //periodic images that differ only in a reciprocal lattice
+          //to inter3D
           if (IsInSmallBZ(g, 2, smallBZ)){
             countNOg++;
             for (std::vector<int>::size_type i = 0; i != gridWithinRadius.size(); ++i) {
+              //reset g to the vector that is within the first smallBZ.
               g=ga+gb+gc;
+              //add an reciprocal lattice vector to g to get a periodic image of it.
               g += gridWithinRadius[i];
               for (int d(0); d <3; ++d){
                 directg[d]=T[d].dot(g);
@@ -548,28 +576,38 @@ void FiniteSizeCorrection::interpolation3D() {
   communicator.allReduce(inter3D, totalInter3D);
   communicator.allReduce(countNOg, totalCountNOg);
 
-  LOG(2,"integration3D") << "countNOg= " << totalCountNOg <<std::endl;
-  sum3D = sum3D/2.; //Both readFromFile=0 and 1 needs to be divided by 2
-  LOG(2, "interpolation3D") << "sum3D= " << sum3D << std::endl;
+  LOG(2,   "integration3D") << "countNOg= " << totalCountNOg << std::endl;
+  LOG(2, "interpolation3D") <<    "sum3D= " <<         sum3D << std::endl;
   inter3D=totalInter3D/totalCountNOg;
-  LOG(2,"interpolation3D") << "Number of points in summation="<< countNO << std::endl;
+  LOG(2, "interpolation3D") << "Number of points in summation=" << countNO << std::endl;
 }
 
 void FiniteSizeCorrection::dryInterpolation3D() {
-  DryTensor<> *momenta(
-    getTensorArgument<double, DryTensor<double>>("Momenta")
-  );
+  //  DryTensor<> *momenta(
+  getTensorArgument<double, DryTensor<double>>("Momenta");
+  //  );
 
   // GC is the shortest vector.
   if (isArgumentGiven("shortestGvector")) {
     GC = getRealArgument("shortestGvector");
   }
 
-  //integration in 3D
-  double constantFactor(getRealArgument("constantFactor"));
-  double cutOffRadius(getRealArgument("cutOffRadius", 1e-5));
+  // integration in 3D
+
+  //  double constantFactor(
+  getRealArgument("constantFactor");
+  //  );
+
+  //  double cutOffRadius(
+  getRealArgument("cutOffRadius", 1e-5);
+  //  );
 }
 
+//scale=1 is used to search for the vectors which
+//define smallBZ; scale = 2 is used to tell if a vector is
+//within the smallBZ or not. For a vector that is within the smallBZ,
+//its projection on any vectors which define smallBZ must be less 
+//than 1/2.
 bool FiniteSizeCorrection::IsInSmallBZ(
   Vector<> point, double scale, std::vector<Vector<>> smallBZ
 )
@@ -577,11 +615,12 @@ bool FiniteSizeCorrection::IsInSmallBZ(
   std::vector<int>::size_type countVector(0);
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
     // FIXME: use an epsilon instead of 1e-9
+    double epsilon(smallBZ[0].length() * 1e-10);
     if (
       abs(abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()
-       *scale -1.0) < 1e-9 ||
-      abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale
-       -1.0 < -1e-9
+       *scale -1.0) < epsilon
+       || abs(smallBZ[i].dot(point))/smallBZ[i].length()/smallBZ[i].length()*scale
+       -1.0 < -epsilon
     ) {
       countVector++;
     }
@@ -633,22 +672,18 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   for (unsigned int i(0); i < GLengths.size(); ++i){
     LOG(2, "StructureFactor") << GLengths[i] << " " << averageSGs[i] << std::endl;
   }
-  int kpoints(getIntegerArgument("kpoints", 1));
+  int kpoints(getIntegerArgument("kpoints",1));
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
-  // the factor 1/2 is only needed when half of the G grid is provided (this is the case
-  // for a Gamma point calculation in vasp).
-  double r1 = 1./2.*integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
-  double  sumSGVG(0.);
-  int fReadFromFile(getIntegerArgument("fReadFromFile", 0));
-  if (fReadFromFile == 1) r1=r1*2.;
-  //TODO:Exclude the integrated region from the summation.
-  for (int d(0); d < NG; ++d){
-    sumSGVG += VofG[d] * structureFactors[d];
-    }
-  inter3D = inter3D/2.;//both read or not from file should divide by 2
 
-  LOG(0,"FiniteSize") << "Uncorrected e="  << std::setprecision(10) << sumSGVG
+  double r1 = integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
+  double  sumSGVG(0.);
+
+  for (int d(0); d < NG; ++d){
+    sumSGVG += cartesianGrid[d].vg * cartesianGrid[d].s;
+    }
+
+  LOG(0,"FiniteSize") << "Uncorrected e= "  << std::setprecision(10) << sumSGVG
     << std::endl;
   LOG(0,"FiniteSize") << "Corrected   e= " << std::setprecision(10) 
     << sumSGVG+inter3D-sum3D << std::endl;
@@ -667,9 +702,9 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
 }
 
 void FiniteSizeCorrection::dryCalculateFiniteSizeCorrection() {
-  int kpoints(getIntegerArgument("kpoints", 1));
-  double volume(getRealArgument("volume"));
-  double constantFactor(getRealArgument("constantFactor"));
+  getIntegerArgument("kpoints", 1);
+  getRealArgument("volume");
+  getRealArgument("constantFactor");
 
   setRealArgument("CorrectedEnergy", 0.0);
 }
