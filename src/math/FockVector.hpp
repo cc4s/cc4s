@@ -79,6 +79,77 @@ namespace cc4s {
       }
       return result.get_val();
     }
+
+    /**
+     * \brief Reads out all locally stored values together with their
+     * respective indices.
+     **/
+    std::vector<std::pair<int64_t,F>> readLocal() {
+      int64_t elementsCount(0);
+      int64_t indexBase(0);
+      std::vector<std::pair<int64_t,F>> elements;
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        int64_t componentValuesCount;
+        int64_t *componentIndices;
+        F *componentValues;
+        componentTensors[i].read_local(
+          &componentValuesCount, &componentIndices, &componentValues
+        );
+
+        elements.resize(elementsCount+componentValuesCount);
+        for (int64_t k(0); k < componentValuesCount; ++k) {
+          // translate index within component tensor to Fock vector index
+          elements[elementsCount+k].first = indexBase + componentIndices[k];
+          elements[elementsCount+k].second = componentValues[k];
+        }
+        elementsCount += componentValuesCount;
+        free(componentIndices);
+        free(componentValues);
+
+        int64_t tensorIndexSize(1);
+        for (int d(0); d < componentTensors[i].order; ++d) {
+          tensorIndexSize *= componentTensors[i].lens[d];
+        }
+        indexBase += tensorIndexSize;
+      }
+      return elements;
+    }
+
+    void write(const std::vector<std::pair<int64_t,F>> &elements) {
+      // vectors to contain indices and values for each component tensor
+      std::vector<std::vector<int64_t>> tensorIndices(componentTensors.size());
+      std::vector<std::vector<F>> tensorValues(componentTensors.size());
+      std::vector<int64_t> indexEnds(componentTensors.size());
+      
+      int64_t indexBase(0);
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        int64_t tensorIndexSize(1);
+        for (int d(0); d < componentTensors[i].order; ++d) {
+          tensorIndexSize *= componentTensors[i].lens[d];
+        }
+        indexEnds[i] = indexBase += tensorIndexSize;
+      }
+
+      for (int64_t k(0); k < elements.size(); ++k) {
+        unsigned int i(0);
+        indexBase = 0;
+        while (elements[k].first >= indexEnds[i]) {
+          indexBase = indexEnds[i++];
+        }
+        // write translated index to respective tensor
+        tensorIndices[i].push_back(elements[k].first - indexBase);
+        tensorValues[i].push_back(elements[k].second);
+      }
+
+      // write data of each tensor
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        componentTensors[i].write(
+          tensorIndices[i].size(),
+          tensorIndices[i].data(),
+          tensorValues[i].data()
+        );
+      }
+    }
   protected:
     void checkCompatabilityTo(const FockVector<F> &a) const {
       if (

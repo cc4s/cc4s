@@ -47,6 +47,22 @@ namespace cc4s {
       );
     }
 
+    template <typename F>
+    void gather(
+      const std::vector<F> &src, std::vector<F> &dst, int rootRank = 0
+    ) {
+      if (rank == rootRank) {
+        dst.resize(src.size() * processes);
+      }
+      MPI_Gather(
+        src.data(), src.size() * MpiTypeTraits<F>::ElementCount,
+        MpiTypeTraits<F>::ElementType,
+        dst.data(), src.size() * MpiTypeTraits<F>::ElementCount,
+        MpiTypeTraits<F>::ElementType,
+        rootRank, comm
+      );
+    }
+
     int getRank() const {
       return rank;
     }
