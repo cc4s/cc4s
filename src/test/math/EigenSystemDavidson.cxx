@@ -90,30 +90,33 @@ TEST_CASE( "EigenSystemDavidson", "[math]" ) {
   for (int i(0); i < N; ++i) {
     for (int j(0); j < N; ++j) {
       f.A(i,j).real(normalDistribution(random));
-      f.A(i,j).imag(0 );
+      f.A(i,j).imag(0);
       //f.A(i,j).imag(normalDistribution(random));
     }
     // make it diagonally dominant
-    f.A(i,i) += 10.0;
+    f.A(i,i) -= 100.0;
   }
+  f.A(10,10) = -100.0;
+
+  // Find the eigenvalues using the Lapack eigen solver
   LapackGeneralEigenSystem<complex> eigenSystem(f.A);
   std::vector<std::pair<unsigned int, complex>> sortedEigenValues(N);
-/*
+
   for (unsigned int i(0); i < eigenSystem.getEigenValues().size(); ++i) {
     sortedEigenValues[i] = std::pair<unsigned int, complex>(
       i, eigenSystem.getEigenValues()[i]
     );
   }
-  std::sort(
-    sortedEigenValues.begin(), sortedEigenValues.end(),
-    EigenValueComparator()
-  );
-*/
-/*
+  //std::sort(
+    //sortedEigenValues.begin(), sortedEigenValues.end(),
+    //EigenValueComparator()
+  //);
+
+
   EigenSystemDavidson<Vector<complex,N>> eigenSystemDavidson(
-    f, 4, DiagonalDominantPreconditioner<N>(f), 1E-14, 64
+    f, 4, DiagonalDominantPreconditioner<N>(f), 1E-8, 64
   );
-*/
+
   for (int k(0); k < eigenSystem.getRightEigenVectors().getColumns(); ++k) {
     std::stringstream rowStream;
     for (int i(0); i < eigenSystem.getRightEigenVectors().getRows(); ++i) {
@@ -122,10 +125,10 @@ TEST_CASE( "EigenSystemDavidson", "[math]" ) {
     LOG(0, "LapackGeneralEigenSystem") <<
       "EigenValue[" << k << "]=" <<
       eigenSystem.getEigenValues()[k] << std::endl;
-/*
     LOG(0, "LapackGeneralEigenSystem") <<
       "EigenValue[" << k << "]=" <<
       eigenSystemDavidson.getEigenValues()[k] << std::endl;
+/*
     LOG(0, "LapackGeneralEigenSystem") <<
       "EigenVector[" << k << "]=" << rowStream.str() << std::endl;
     LOG(0, "LapackGeneralEigenSystem") <<
