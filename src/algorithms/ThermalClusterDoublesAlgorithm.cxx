@@ -109,10 +109,6 @@ void ThermalClusterDoublesAlgorithm::dryIterate() {
 void ThermalClusterDoublesAlgorithm::initializeRecursion(const int N) {
   // Read the Coulomb Integrals Vabij required for the energy
   Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
-  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
-  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
-  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
   Tensor<> Dabij(false, *Vabij);
   Tensor<> Tabij(false, *Vabij);
 
@@ -127,27 +123,18 @@ void ThermalClusterDoublesAlgorithm::initializeRecursion(const int N) {
       "=" << betan << std::endl;
     amplitudes[i] = new Tensor<>(*Vabij);
     amplitudes[i]->set_name("Tabij");
-    Dabij["abij"] =  (*epsa)["a"];
-    Dabij["abij"] += (*epsa)["b"];
-    Dabij["abij"] -= (*epsi)["i"];
-    Dabij["abij"] -= (*epsi)["j"];
+    fetchDelta(Dabij);
     SameSideConnectedImaginaryTimePropagation propagation(betan);
     Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(propagation));
     (*amplitudes[i])["abij"] *= (-1.0) * Dabij["abij"];
 
     Tabij["abij"] =   4.0 * (*Vabij)["abij"];
     Tabij["abij"] += -2.0 * (*Vabij)["abji"];
-    Tabij["abij"] *= 0.5 * (*Vabij)["abij"];
-    Dabij["abij"] =  (*epsa)["a"];
-    Dabij["abij"] += (*epsa)["b"];
-    Dabij["abij"] -= (*epsi)["i"];
-    Dabij["abij"] -= (*epsi)["j"];
+    Tabij["abij"] *=  0.5 * (*Vabij)["abij"];
+    fetchDelta(Dabij);
     Mp2ImaginaryTimePropagation mp2Propagation(betan);
     Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(mp2Propagation));
-    Dabij["abij"] *= (*Na)["a"];
-    Dabij["abij"] *= (*Na)["b"];
-    Dabij["abij"] *= (*Ni)["i"];
-    Dabij["abij"] *= (*Ni)["j"];
+    thermalContraction(Dabij);
     energies[i] = new Scalar<>(*Vabij->wrld);
     energies[i]->set_name("F");
     (*energies[i])[""] = (-1.0) * Tabij["abij"] * Dabij["abij"];
@@ -158,6 +145,8 @@ double ThermalClusterDoublesAlgorithm::recurse(const int n) {
   Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
   Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
   Tensor<> Dabij(false, *Vabij);
 
   Tensor<> nextT( *amplitudes[recursionLength] );
@@ -178,9 +167,6 @@ double ThermalClusterDoublesAlgorithm::recurse(const int n) {
   SameSideConnectedImaginaryTimePropagation propagation(betam);
   Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(propagation));
   Dabij["abij"] *= (*Vabij)["abij"];
-
-  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
-  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
   Dabij["abij"] *= (*Na)["a"];
   Dabij["abij"] *= (*Na)["b"];
   Dabij["abij"] *= (*Ni)["i"];
@@ -237,5 +223,44 @@ double ThermalClusterDoublesAlgorithm::getEnergyScale() {
   std::vector<double> particleEnergies(epsa->lens[0]);
   epsa->read_all(particleEnergies.data());
   return particleEnergies.back() - holeEnergies.front();
+}
+
+std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
+  char indices[T.order+1];
+  const int excitationLevel(T.order/2);
+  for (int i(0); i < excitationLevel; ++i) {
+    indices[i] = static_cast<char>('a'+i);
+    indices[i+excitationLevel] = static_cast<char>('i'+i);
+  }
+  indices[T.order] = 0;
+  return indices;
+}
+
+void ThermalClusterDoublesAlgorithm::fetchDelta(Tensor<> &Delta) {
+  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  std::string indices(getAmplitudeIndices(Delta));
+  double factor(0.0);
+  const int excitationLevel(Delta.order/2);
+  for (int i(0); i < excitationLevel; ++i) {
+    char aIndex[] = {static_cast<char>('a'+i), 0};
+    Delta.sum(+1.0, *epsa,aIndex, factor,indices.c_str());
+    factor = 1.0;
+    char iIndex[] = {static_cast<char>('i'+i), 0};
+    Delta.sum(-1.0, *epsi,iIndex, 1.0,indices.c_str());
+  }
+}
+
+void ThermalClusterDoublesAlgorithm::thermalContraction(Tensor<> &T) {
+  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
+  std::string indices(getAmplitudeIndices(T));
+  const int excitationLevel(T.order/2);
+  for (int i(0); i < excitationLevel; ++i) {
+    char aIndex[] = {static_cast<char>('a'+i), 0};
+    T[indices.c_str()] *= (*Na)[aIndex];;
+    char iIndex[] = {static_cast<char>('i'+i), 0};
+    T[indices.c_str()] *= (*Ni)[iIndex];;
+  }
 }
 

@@ -101,6 +101,9 @@ namespace cc4s {
     std::string getCapitalizedAbbreviation();
     double getRecursionScaling(const int M);
     double getEnergyScale();
+    std::string getAmplitudeIndices(CTF::Tensor<> &T);
+    void fetchDelta(CTF::Tensor<> &Delta);
+    void thermalContraction(CTF::Tensor<> &T);
   };
 
 
