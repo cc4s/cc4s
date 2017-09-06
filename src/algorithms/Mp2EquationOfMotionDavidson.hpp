@@ -70,9 +70,11 @@ namespace cc4s {
     )
     {
       CTF::Scalar<F> energy;
+      //diag["ai"]  = ( - 1.0  ) * Fij["ii"];
       energy[""]  = ( - 1.0  ) * Rai["aj"] * Fij["jk"] * Lia["ka"];
       energy[""] += ( + 1.0  ) * Rai["aj"] * Fab["ca"] * Lia["jc"];
       energy[""] += ( - 1.0  ) * Rai["aj"] * Viajb["jcla"] * Lia["lc"];
+      //diag["ai"] += ( + 1.0  ) * Tabij["adin"] * Vijab["nida"]
       energy[""] += ( + 1.0  ) * Rai["aj"] * Tabij["cdmn"] * Vijab["njda"] * Lia["mc"];
       energy[""] += ( + 0.5  ) * Rai["aj"] * Tabij["cdmn"] * Vijab["njcd"] * Lia["ma"];
       energy[""] += ( + 0.5  ) * Rai["aj"] * Tabij["cdmn"] * Vijab["mnda"] * Lia["jc"];
