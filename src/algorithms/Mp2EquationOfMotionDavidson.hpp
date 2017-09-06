@@ -21,6 +21,9 @@ namespace cc4s {
   class Mp2PreConditioner
   {
   public:
+    /**
+     * \brief Constructor for the preconditioner.
+     */
     Mp2PreConditioner (
       CTF::Tensor<F> &Fij,
       CTF::Tensor<F> &Fab,
@@ -36,14 +39,19 @@ namespace cc4s {
       Viajb(Viajb),
       Vijab(Vijab),
       Vijkl(Vijkl)
-    { };
+    {
+    };
     ~Mp2PreConditioner (){
     };
-    std::vector<V> getInitialBasis(int eigenVectorsCount) const;
+    std::vector<V> getInitialBasis(int eigenVectorsCount);
     V getCorrection(const complex eigenValue, const V &residuum) const;
 
   private:
 
+    /**
+     * \brief These are the tensors needed to calculate diagonal elements
+     * using the Hirata equations.
+     */
     CTF::Tensor<F> Fij, Fab, Tabij, Vabcd, Viajb, Vijab, Vijkl;
 
     F computeDiagonalElement(
