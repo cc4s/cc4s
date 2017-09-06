@@ -187,9 +187,81 @@ template <typename F, typename V>
 std::vector<V> Mp2PreConditioner<F, V>::getInitialBasis(
   const int eigenVectorsCount
 ) const {
+  std::vector<std::pair<int64_t, F>> localElements( diagonalH.readLocal() );
+  std::sort(
+    localElements.data(),
+    localElements.size(),
+    LapackGeneralEigenSystem<F>::EigenValueComparator
+  );
+  std::vector<int64_t> localLowestElementIndices;
+  std::vector<F> localLowestElementValues;
+  for (int64_t i(0); i < eigenVectorCount; ++i) {
+    localLowestElementIndices[i] = localElements[i].first;
+    localLowestElementValues[i] = localElements[i].second;
+  }
+  MpiCommunicator communicator(Cc4s::world);
+  int lowestElementsCount(
+    communicator.rank == 0 ? eigenVectorsCount * communicator.processes : 0
+  );
+  std::vector<int64_t> lowestElementIndices(lowestElementsCount);
+  std::vector<F> lowestElementValues(lowestElementsCount);
+  communicator.gather(localLowestElementIndices, lowestElementIndices);
+  communicator.gather(localLowestElementvalues, lowestElementValues);
+  std::vector<std::pair<int64_t, F>> lowestElements(lowestElementsCount);
+  for (int i(0); i < lowestElementsCount; ++i) {
+    lowestElements[i].first = lowestElementIndices[i];
+    lowestElements[i].second = lowestElementsValues[i];
+  }
+  std::sort(
+    lowestElements.data(), lowestElements.size(),
+    LapackGeneralEigenSystem<F>::EigenValueComparator
+  );
+  // at rank==0 (root) lowestElements contains N*Np entries
+  // rank > 0 has an empty list
   std::vector<V> basis;
+  for (int b(0); b < eigenVectorsCount; ++b) {
+    V basisElement(diagonalH);
+    basisElement *= 0.0;
+    std::vector<std::pair<int64_t,F>> elements;
+    if (communicator.rank == 0) {
+      elements.push_back(
+        std::make_pair(lowestElements[b].first, 1.0)
+      );
+    }
+    basisElement.write(elements);
+    // (101, -70), (32, -55), ...
+    // b1: 0... 1 (at global position 101) 0 ...
+    // b2: 0... 1 (at global position 32) 0 ...i
+    basis.push_back(basisElement);
+  }
   return basis;
 }
+
+/*
+std::vector<Vector<complex,D>> getInitialBasis(const int N) const {
+  // return unit vectors to lowest elemens in diagonal
+  Vector<complex,D> d(diagonal);
+  std::vector<Vector<complex,D>> basis(N);
+  double maxReal(std::real(d[0]));
+  for (int i(1); i < D; ++i) maxReal = std::max( std::real(d[i]), maxReal );
+  for (int b(0); b < N; ++b) {
+    double minReal(std::real(d[0]));
+    int minIndex(0);
+    for (int i(1); i < D; ++i) {
+      if (std::real(d[i]) < minReal) {
+        minReal = std::real(d[i]);
+        minIndex = i;
+      }
+    }
+    // set to maximum value not to encounter it again
+    d[minIndex] = maxReal;
+    Vector<complex,D> v;
+    v[minIndex] = 1.0;
+    basis[b] = v;
+  }
+  return basis;
+}
+*/
 
 // instantiate class
 template

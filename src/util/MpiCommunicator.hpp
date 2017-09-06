@@ -20,7 +20,7 @@ namespace cc4s {
     }
     MpiCommunicator(
       const CTF::World &world
-    ): rank(world.rank), processes(world.np), comm(world.comm) {     
+    ): rank(world.rank), processes(world.np), comm(world.comm) {
     }
     ~MpiCommunicator() {
     }

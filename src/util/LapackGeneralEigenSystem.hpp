@@ -15,6 +15,25 @@ namespace cc4s {
   template <typename F=double>
   class LapackGeneralEigenSystem;
 
+
+  template <>
+  class LapackGeneralEigenSystem<double> {
+  public:
+    class EigenValueComparator {
+    public:
+      bool operator ()(
+        const std::pair<int, double> &a,
+        const std::pair<int, double> &b
+      ) {
+        double diff(b.second-a.second);
+        double magnitude( std::abs(a.second)+std::abs(b.second) );
+        if (std::real(diff) > +1E-13*magnitude) return true;
+        if (std::real(diff) < -1E-13*magnitude) return false;
+        return a.first > b.first;
+      }
+    };
+  };
+
 /*
   // specialization for double
   template <>
@@ -205,7 +224,6 @@ namespace cc4s {
         }
       }
     }
-
   };
 }
 
