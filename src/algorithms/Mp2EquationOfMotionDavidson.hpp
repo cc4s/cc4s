@@ -47,8 +47,11 @@ namespace cc4s {
     }
     ~Mp2PreConditioner () {
     }
-    std::vector<V> getInitialBasis(int eigenVectorsCount);
-    V getCorrection(const complex eigenValue, const V &residuum) const;
+    std::vector<V> getInitialBasis(int eigenVectorsCount) const;
+
+    V getCorrection(const complex eigenValue, const V &residuum) const {
+      return residuum;
+    }
 
   private:
     V diagonalH;
