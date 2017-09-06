@@ -141,7 +141,8 @@ void Mp2EquationOfMotionDavidson::run() {
   (*Fab)["aa"] = (*epsa)["a"];
   (*Fij)["ii"] = (*epsi)["i"];
 
-  Mp2PreConditioner<double, FockVector<double>> P(Fij, Fab, Tabij, Vabcd, Viajb, Vijab, Vijkl);
+  Mp2PreConditioner<double, FockVector<double>>
+    P(*Fij, *Fab, Tabij, *Vabcd, *Viajb, *Vijab, *Vijkl);
 
 }
 
