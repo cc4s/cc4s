@@ -62,7 +62,7 @@ namespace cc4s {
    * \brief Calculate the sign of a permutation of strings, e.g.
    * sign("abcd", "bacd") = -1
    */
-  int permutationSign(std::string original, std::string permuted);
+  int permutationSign(const std::string &original, const std::string &permuted);
 
   /**
    * \brief Apply a permutation operator and antisymmetrize accordingly, e.g.

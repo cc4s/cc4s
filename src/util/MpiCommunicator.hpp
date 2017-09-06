@@ -20,7 +20,7 @@ namespace cc4s {
     }
     MpiCommunicator(
       const CTF::World &world
-    ): rank(world.rank), processes(world.np), comm(world.comm) {     
+    ): rank(world.rank), processes(world.np), comm(world.comm) {
     }
     ~MpiCommunicator() {
     }
@@ -44,6 +44,22 @@ namespace cc4s {
         &src, &dst,
         MpiTypeTraits<F>::ElementCount, MpiTypeTraits<F>::ElementType,
         MPI_SUM, comm
+      );
+    }
+
+    template <typename F>
+    void gather(
+      const std::vector<F> &src, std::vector<F> &dst, int rootRank = 0
+    ) {
+      if (rank == rootRank) {
+        dst.resize(src.size() * processes);
+      }
+      MPI_Gather(
+        src.data(), src.size() * MpiTypeTraits<F>::ElementCount,
+        MpiTypeTraits<F>::ElementType,
+        dst.data(), src.size() * MpiTypeTraits<F>::ElementCount,
+        MpiTypeTraits<F>::ElementType,
+        rootRank, comm
       );
     }
 

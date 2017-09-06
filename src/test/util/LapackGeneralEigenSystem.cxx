@@ -3,6 +3,8 @@
 #include <util/LapackMatrix.hpp>
 #include <util/LapackGeneralEigenSystem.hpp>
 
+#include <util/Log.hpp>
+
 using namespace cc4s;
 
 TEST_CASE( "LapackGeneralEigenSystem", "[util]" ) {
@@ -27,4 +29,13 @@ TEST_CASE( "LapackGeneralEigenSystem", "[util]" ) {
   REQUIRE(
     std::abs(eigenSystem.getEigenValues()[2] - expectedEigenValues[2]) < 1E-14
   );
+
+  for (int k(0); k < eigenSystem.getRightEigenVectors().getColumns(); ++k) {
+    std::stringstream rowStream;
+    for (int i(0); i < eigenSystem.getRightEigenVectors().getRows(); ++i) {
+      rowStream << "\t" << eigenSystem.getRightEigenVectors()(i,k);
+    }
+    LOG(0, "LapackGeneralEigenSystem") <<
+      "EigenVector[" << k << "]=" << rowStream.str() << std::endl;
+  };
 }
