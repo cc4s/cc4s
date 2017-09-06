@@ -1,15 +1,18 @@
 #include <algorithms/Mp2EquationOfMotionDavidson.hpp>
+
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
+#include <math/EigenSystemDavidson.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/FockVector.hpp>
 #include <math/RandomTensor.hpp>
+#include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
 #include <Cc4s.hpp>
 
-#include <math/EigenSystemDavidson.hpp>
+#include <algorithm>
 
 using namespace cc4s;
 using namespace tcc;
@@ -186,35 +189,35 @@ void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
 template <typename F, typename V>
 std::vector<V> Mp2PreConditioner<F, V>::getInitialBasis(
   const int eigenVectorsCount
-) const {
+) {
   std::vector<std::pair<int64_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
-    localElements.data(),
-    localElements.size(),
-    LapackGeneralEigenSystem<F>::EigenValueComparator
+    localElements.begin(), localElements.end(),
+    typename LapackGeneralEigenSystem<F>::EigenValueComparator()
   );
   std::vector<int64_t> localLowestElementIndices;
   std::vector<F> localLowestElementValues;
-  for (int64_t i(0); i < eigenVectorCount; ++i) {
+  for (int64_t i(0); i < eigenVectorsCount; ++i) {
     localLowestElementIndices[i] = localElements[i].first;
     localLowestElementValues[i] = localElements[i].second;
   }
-  MpiCommunicator communicator(Cc4s::world);
+  MpiCommunicator communicator(*Cc4s::world);
   int lowestElementsCount(
-    communicator.rank == 0 ? eigenVectorsCount * communicator.processes : 0
+    communicator.getRank() == 0 ?
+      eigenVectorsCount * communicator.getProcesses() : 0
   );
   std::vector<int64_t> lowestElementIndices(lowestElementsCount);
   std::vector<F> lowestElementValues(lowestElementsCount);
   communicator.gather(localLowestElementIndices, lowestElementIndices);
-  communicator.gather(localLowestElementvalues, lowestElementValues);
+  communicator.gather(localLowestElementValues, lowestElementValues);
   std::vector<std::pair<int64_t, F>> lowestElements(lowestElementsCount);
   for (int i(0); i < lowestElementsCount; ++i) {
     lowestElements[i].first = lowestElementIndices[i];
-    lowestElements[i].second = lowestElementsValues[i];
+    lowestElements[i].second = lowestElementValues[i];
   }
   std::sort(
-    lowestElements.data(), lowestElements.size(),
-    LapackGeneralEigenSystem<F>::EigenValueComparator
+    lowestElements.begin(), lowestElements.end(),
+    typename LapackGeneralEigenSystem<F>::EigenValueComparator()
   );
   // at rank==0 (root) lowestElements contains N*Np entries
   // rank > 0 has an empty list
@@ -223,7 +226,7 @@ std::vector<V> Mp2PreConditioner<F, V>::getInitialBasis(
     V basisElement(diagonalH);
     basisElement *= 0.0;
     std::vector<std::pair<int64_t,F>> elements;
-    if (communicator.rank == 0) {
+    if (communicator.getRank() == 0) {
       elements.push_back(
         std::make_pair(lowestElements[b].first, 1.0)
       );
@@ -236,32 +239,6 @@ std::vector<V> Mp2PreConditioner<F, V>::getInitialBasis(
   }
   return basis;
 }
-
-/*
-std::vector<Vector<complex,D>> getInitialBasis(const int N) const {
-  // return unit vectors to lowest elemens in diagonal
-  Vector<complex,D> d(diagonal);
-  std::vector<Vector<complex,D>> basis(N);
-  double maxReal(std::real(d[0]));
-  for (int i(1); i < D; ++i) maxReal = std::max( std::real(d[i]), maxReal );
-  for (int b(0); b < N; ++b) {
-    double minReal(std::real(d[0]));
-    int minIndex(0);
-    for (int i(1); i < D; ++i) {
-      if (std::real(d[i]) < minReal) {
-        minReal = std::real(d[i]);
-        minIndex = i;
-      }
-    }
-    // set to maximum value not to encounter it again
-    d[minIndex] = maxReal;
-    Vector<complex,D> v;
-    v[minIndex] = 1.0;
-    basis[b] = v;
-  }
-  return basis;
-}
-*/
 
 // instantiate class
 template

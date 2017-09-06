@@ -59,7 +59,6 @@ namespace cc4s {
     }
 
     FockVector<F> &operator *= (const F s) {
-      checkCompatabilityTo(s);
       CTF::Scalar<F> scalar(s);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
@@ -123,7 +122,7 @@ namespace cc4s {
       std::vector<std::vector<F>> tensorValues(componentTensors.size());
       std::vector<int64_t> indexEnds(componentTensors.size());
 
-      for (int64_t k(0); k < elements.size(); ++k) {
+      for (uint64_t k(0); k < elements.size(); ++k) {
         int component;
         int64_t componentIndex;
         fromTotalIndex(elements[k].first, component, componentIndex);
