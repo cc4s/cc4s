@@ -173,6 +173,22 @@ namespace cc4s {
       return L;
     }
 
+    class EigenValueComparator {
+    public:
+      bool operator ()(
+        const std::pair<int, complex> &a,
+        const std::pair<int, complex> &b
+      ) {
+        complex diff(b.second-a.second);
+        double magnitude( std::abs(a.second)+std::abs(b.second) );
+        if (std::real(diff) > +1E-13*magnitude) return true;
+        if (std::real(diff) < -1E-13*magnitude) return false;
+        if (std::imag(diff) > +1E-13*magnitude) return false;
+        if (std::imag(diff) < -1E-13*magnitude) return true;
+        return a.first > b.first;
+      }
+    };
+
   protected:
     LapackMatrix<complex> R, L;
     std::vector<complex> lambdas;
@@ -190,21 +206,6 @@ namespace cc4s {
       }
     }
 
-    class EigenValueComparator {
-    public:
-      bool operator ()(
-        const std::pair<int, complex> &a,
-        const std::pair<int, complex> &b
-      ) {
-        complex diff(b.second-a.second);
-        double magnitude( std::abs(a.second)+std::abs(b.second) );
-        if (std::real(diff) > +1E-13*magnitude) return true;
-        if (std::real(diff) < -1E-13*magnitude) return false;
-        if (std::imag(diff) > +1E-13*magnitude) return false;
-        if (std::imag(diff) < -1E-13*magnitude) return true;
-        return a.first > b.first;
-      }
-    };
   };
 }
 
