@@ -145,9 +145,9 @@ template <typename F>
 void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
     CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, int64_t i) {
   int oneBodyLength(Tai.lens[-1] * Tai.lens[1]);
-  int twoBodyLength(
-      Tabij.lens[0] * Tabij.lens[1] * Tabij.lens[2] *  Tabij.lens[3]
-  );
+  //int twoBodyLength(
+      //Tabij.lens[0] * Tabij.lens[1] * Tabij.lens[2] *  Tabij.lens[3]
+  //);
 
   Tabij["abij"] = 0;
   Tai["ai"] = 0;
@@ -180,4 +180,22 @@ template
 void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
     CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, int64_t i);
 
+//template <typename F, typename V=FockVector<F>>
+//std::vector<V> Mp2PreConditioner<F, V>::getInitialBasis(int eigenVectorsCount){
+  //CTF::Scalar<F> nullies;
+  //FockVector<F> fockA({{nullies}});
+  //return fockA;
+//}
 
+template <typename F>
+std::vector<FockVector<F>>
+Mp2PreConditioner<F, FockVector<F>>::getInitialBasis(int eigenVectorsCount)
+{
+  CTF::Scalar<F> nullies;
+  FockVector<F> fockA({{nullies}});
+  return fockA;
+}
+
+template
+std::vector<FockVector<double>>
+Mp2PreConditioner<double, FockVector<double>>::getInitialBasis(int eigenVectorsCount);
