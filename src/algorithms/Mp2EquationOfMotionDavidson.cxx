@@ -25,81 +25,76 @@ Mp2EquationOfMotionDavidson::~Mp2EquationOfMotionDavidson() {}
 void Mp2EquationOfMotionDavidson::run() {
   typedef CTF::Tensor<> T;
 
+  // Get copy of couloumb integrals
+  T Vijkl(*getTensorArgument<double, T>("HHHHCoulombIntegrals"));
+  T Vabcd(*getTensorArgument<double, T>("PPPPCoulombIntegrals")); 
+
+  T Vabij(*getTensorArgument<double, T>("PPHHCoulombIntegrals"));
+  // T *Vijab(getTensorArgument<double, T>("HHPPCoulombIntegrals")); // swap PPHH (done)
+
+  T Vijka(*getTensorArgument<double, T>("HHHPCoulombIntegrals"));
+  // T *Viajk(getTensorArgument<double, T>("HPHHCoulombIntegrals")); // swap HHHP (done)
+
+  T Vaibj(*getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
+  //T *Viajb(getTensorArgument<double, T>("HPHPCoulombIntegrals")); // swap PHPH (done)
+
+  T Vabci(*getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
+  //T *Viabc(getTensorArgument<double, T>("HPPPCoulombIntegrals")); // swap PPPH (done)
+  //T *Vabic(getTensorArgument<double, T>("PPHPCoulombIntegrals")); // swap PPPH (done)
+
+
   // Get orbital energies
   T *epsi(getTensorArgument<double, T>("HoleEigenEnergies"));
   T *epsa(getTensorArgument<double, T>("ParticleEigenEnergies"));
-
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
+  int syms[] = {NS, NS, NS, NS};
+
+  //  Tai
+  int vo[] = { Nv, No };
+  T Tai(2, vo, syms, *Cc4s::world, "Tai");
+  T Tabij(false, Vabij);
+
   int totalDimension(1 + Nv * No + No * No * Nv * Nv);
   LOG(1, "MP2_EOM_DAVIDSON") << "Nv " << Nv << std::endl;
   LOG(1, "MP2_EOM_DAVIDSON") << "No " << No << std::endl;
   LOG(1, "MP2_EOM_DAVIDSON") << "Problem dimension " << totalDimension << std::endl;
 
-  // Get couloumb integrals (these shoul not be antisymmetrized)
-  T *Vijkl(getTensorArgument<double, T>("HHHHCoulombIntegrals"));
-  T *Vabcd(getTensorArgument<double, T>("PPPPCoulombIntegrals")); 
-
-  T *Vabij(getTensorArgument<double, T>("PPHHCoulombIntegrals"));
-  // T *Vijab(getTensorArgument<double, T>("HHPPCoulombIntegrals")); // swap PPHH (done)
-
-  T *Vijka(getTensorArgument<double, T>("HHHPCoulombIntegrals"));
-  // T *Viajk(getTensorArgument<double, T>("HPHHCoulombIntegrals")); // swap HHHP (done)
-
-  T *Vaibj(getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
-  //T *Viajb(getTensorArgument<double, T>("HPHPCoulombIntegrals")); // swap PHPH (done)
-
-  T *Vabci(getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
-  //T *Viabc(getTensorArgument<double, T>("HPPPCoulombIntegrals")); // swap PPPH (done)
-  //T *Vabic(getTensorArgument<double, T>("PPHPCoulombIntegrals")); // swap PPPH (done)
-
-  int syms[] = {NS, NS, NS, NS};
 
   LOG(1, "MP2_EOM_DAVIDSON") << "Antisymmetrizing Vpqrs " << std::endl;
 
   //  Vijab
   int oovv[] = { No, No, Nv, Nv };
-  T *Vijab(
-    new T(4, oovv, syms, *Cc4s::world, "Vijab")
-  );
-  (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
+  T Vijab(4, oovv, syms, *Cc4s::world, "Vijab");
+  Vijab["ijab"] =  Vabij["abij"] - Vabij["abji"];
 
   //  Viajk
   int ovoo[] = { No, Nv, No, No };
-  T *Viajk(
-    new T(4, ovoo, syms, *Cc4s::world, "Viajk")
-  );
-  (*Viajk)["iajk"] =  (*Vijka)["ijka"]  - (*Vijka)["ikja"];
+  T Viajk(4, ovoo, syms, *Cc4s::world, "Viajk");
+  Viajk["iajk"] =  Vijka["ijka"]  - Vijka["ikja"];
 
   // Viajb
   int ovov[] = { No, Nv, No, Nv };
-  T *Viajb(
-    new T(4, ovov, syms, *Cc4s::world, "Viajb")
-  );
-  (*Viajb)["iajb"] =  (*Vaibj)["aibj"] - (*Vabij)["abji"];
+  T Viajb(4, ovov, syms, *Cc4s::world, "Viajb");
+  Viajb["iajb"] =  Vaibj["aibj"] - Vabij["abji"];
 
   // Viabc
   int ovvv[] = { No, Nv, Nv, Nv };
-  T *Viabc(
-    new T(4, ovvv, syms, *Cc4s::world, "Viabc")
-  );
-  (*Viabc)["iabc"] =  (*Vabci)["abci"] - (*Vabci)["acbi"];
+  T Viabc(4, ovvv, syms, *Cc4s::world, "Viabc");
+  Viabc["iabc"] =  Vabci["abci"] - Vabci["acbi"];
 
   // Vabic
   int vvov[] = { Nv, Nv, No, Nv };
-  T *Vabic(
-    new T(4, vvov, syms, *Cc4s::world, "Vabic")
-  );
-  (*Vabic)["abic"] =  (*Vabci)["abci"] - (*Vabci)["baci"];
+  T Vabic(4, vvov, syms, *Cc4s::world, "Vabic");
+  Vabic["abic"] =  Vabci["abci"] - Vabci["baci"];
 
-  // Antisymmetrize integrals that are read in
-  (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
-  (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
-  (*Vijka)["ijka"] -= (*Vijka)["jika"];
-  (*Vaibj)["aibj"] -= (*Vabij)["baij"];
-  (*Vabci)["abci"] -= (*Vabci)["baci"];
-  (*Vabij)["abij"] -= (*Vabij)["abji"];
+  // Antisymmetrize integrals
+  Vijkl["ijkl"] -= Vijkl["ijlk"];
+  Vabcd["abcd"] -= Vabcd["abdc"];
+  Vijka["ijka"] -= Vijka["jika"];
+  Vaibj["aibj"] -= Vabij["baij"];
+  Vabci["abci"] -= Vabci["baci"];
+  Vabij["abij"] -= Vabij["abji"];
 
-  T Tabij(false, Vabij);
   Tabij["abij"] =  (*epsi)["i"];
   Tabij["abij"] += (*epsi)["j"];
   Tabij["abij"] -= (*epsa)["a"];
@@ -108,13 +103,13 @@ void Mp2EquationOfMotionDavidson::run() {
   LOG(1, "MP2_EOM_DAVIDSON") <<
     "Creating doubles amplitudes" << totalDimension << std::endl;
   CTF::Bivar_Function<> fDivide(&divide<double>);
-  Tabij.contract(1.0, (*Vabij),"abij", Tabij,"abij", 0.0,"abij", fDivide);
+  Tabij.contract(1.0, Vabij,"abij", Tabij,"abij", 0.0,"abij", fDivide);
 
   CTF::Scalar<> energy(0.0);
   double energy_val(0.0);
 
   LOG(2, "MP2_EOM_DAVIDSON") << "Calculating MP2 energy" << std::endl;
-  energy[""] = ( 0.25 ) * Tabij["abij"] * (*Vabij)["abij"];
+  energy[""] = ( 0.25 ) * Tabij["abij"] * Vabij["abij"];
   energy_val = energy.get_val();
   LOG(1, "MP2_EOM_DAVIDSON") << " Mp2 energy = " << energy_val << std::endl;
 
@@ -135,14 +130,15 @@ void Mp2EquationOfMotionDavidson::run() {
   // kinetic terms
   int kineticLensVirtual[] = {Nv, Nv};
   int kineticSyms[] = {NS, NS};
-  T *Fab( new T(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab") );
+  T Fab(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab");
   int kineticLensOccupied[] = {No, No};
-  T *Fij( new T(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij") );
-  (*Fab)["aa"] = (*epsa)["a"];
-  (*Fij)["ii"] = (*epsi)["i"];
+  T Fij(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij");
+  Fab["aa"] = (*epsa)["a"];
+  Fij["ii"] = (*epsi)["i"];
 
-  Mp2PreConditioner<double, FockVector<double>> P(Fij, Fab, Tabij, Vabcd, Viajb, Vijab, Vijkl);
-
+  Mp2PreConditioner<double, FockVector<double>> P(
+    Fij, Fab, Tai, Tabij, Vabcd, Viajb, Vijab, Vijkl
+  );
 }
 
 template <typename F>

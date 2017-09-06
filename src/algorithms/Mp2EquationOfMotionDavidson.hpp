@@ -22,20 +22,24 @@ namespace cc4s {
   {
   public:
     Mp2PreConditioner (
-      CTF::Tensor<F> &Fij,
-      CTF::Tensor<F> &Fab,
-      CTF::Tensor<F> &Tabij,
-      CTF::Tensor<F> &Vabcd,
-      CTF::Tensor<F> &Viajb,
-      CTF::Tensor<F> &Vijab,
-      CTF::Tensor<F> &Vijkl
-    ): Fij(Fij),
-      Fab(Fab),
-      Tabij(Tabij),
-      Vabcd(Vabcd),
-      Viajb(Viajb),
-      Vijab(Vijab),
-      Vijkl(Vijkl)
+      CTF::Tensor<F> &Fij_,
+      CTF::Tensor<F> &Fab_,
+      CTF::Tensor<F> &Tai_,
+      CTF::Tensor<F> &Tabij_,
+      CTF::Tensor<F> &Vabcd_,
+      CTF::Tensor<F> &Viajb_,
+      CTF::Tensor<F> &Vijab_,
+      CTF::Tensor<F> &Vijkl_
+    ):
+      diagonalH({{Tai_, Tabij_}, {"ai", "abij"}}),
+      Fij(Fij_),
+      Fab(Fab_),
+      Tai(Tai_),
+      Tabij(Tabij_),
+      Vabcd(Vabcd_),
+      Viajb(Viajb_),
+      Vijab(Vijab_),
+      Vijkl(Vijkl_)
     { };
     ~Mp2PreConditioner (){
     };
@@ -43,8 +47,9 @@ namespace cc4s {
     V getCorrection(const complex eigenValue, const V &residuum) const;
 
   private:
+    V diagonalH;
 
-    CTF::Tensor<F> Fij, Fab, Tabij, Vabcd, Viajb, Vijab, Vijkl;
+    CTF::Tensor<F> Fij, Fab, Tai, Tabij, Vabcd, Viajb, Vijab, Vijkl;
 
     F computeDiagonalElement(
       CTF::Tensor<F> &Rai,

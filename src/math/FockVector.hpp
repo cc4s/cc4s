@@ -24,8 +24,10 @@ namespace cc4s {
       const FockVector<F> &a
     ):
       componentTensors(a.componentTensors),
-      componentIndices(a.componentIndices)
+      componentIndices(a.componentIndices),
+      indexEnds(a.componentTensors.size())
     {
+      initializeIndexTranslation();
     }
 
     FockVector(
@@ -33,8 +35,10 @@ namespace cc4s {
       std::initializer_list<std::string> componentIndices_
     ):
       componentTensors(componentTensors_),
-      componentIndices(componentIndices_)
+      componentIndices(componentIndices_),
+      indexEnds(componentTensors_.size())
     {
+      initializeIndexTranslation();
     }
 
     FockVector<F> &operator += (const FockVector<F> &a) {
@@ -80,13 +84,16 @@ namespace cc4s {
       return result.get_val();
     }
 
+    int64_t getDimension() const {
+      return indexEnds.back();
+    }
+
     /**
      * \brief Reads out all locally stored values together with their
      * respective indices.
      **/
     std::vector<std::pair<int64_t,F>> readLocal() {
       int64_t elementsCount(0);
-      int64_t indexBase(0);
       std::vector<std::pair<int64_t,F>> elements;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         int64_t componentValuesCount;
@@ -99,18 +106,14 @@ namespace cc4s {
         elements.resize(elementsCount+componentValuesCount);
         for (int64_t k(0); k < componentValuesCount; ++k) {
           // translate index within component tensor to Fock vector index
-          elements[elementsCount+k].first = indexBase + componentIndices[k];
+          elements[elementsCount+k].first = getTotalIndex(
+            i, componentIndices[k]
+          );
           elements[elementsCount+k].second = componentValues[k];
         }
         elementsCount += componentValuesCount;
         free(componentIndices);
         free(componentValues);
-
-        int64_t tensorIndexSize(1);
-        for (int d(0); d < componentTensors[i].order; ++d) {
-          tensorIndexSize *= componentTensors[i].lens[d];
-        }
-        indexBase += tensorIndexSize;
       }
       return elements;
     }
@@ -120,25 +123,14 @@ namespace cc4s {
       std::vector<std::vector<int64_t>> tensorIndices(componentTensors.size());
       std::vector<std::vector<F>> tensorValues(componentTensors.size());
       std::vector<int64_t> indexEnds(componentTensors.size());
-      
-      int64_t indexBase(0);
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        int64_t tensorIndexSize(1);
-        for (int d(0); d < componentTensors[i].order; ++d) {
-          tensorIndexSize *= componentTensors[i].lens[d];
-        }
-        indexEnds[i] = indexBase += tensorIndexSize;
-      }
 
       for (int64_t k(0); k < elements.size(); ++k) {
-        unsigned int i(0);
-        indexBase = 0;
-        while (elements[k].first >= indexEnds[i]) {
-          indexBase = indexEnds[i++];
-        }
-        // write translated index to respective tensor
-        tensorIndices[i].push_back(elements[k].first - indexBase);
-        tensorValues[i].push_back(elements[k].second);
+        int component;
+        int64_t componentIndex;
+        fromTotalIndex(elements[k].first, component, componentIndex);
+        // write to respective component tensor
+        tensorIndices[component].push_back(componentIndex);
+        tensorValues[component].push_back(elements[k].second);
       }
 
       // write data of each tensor
@@ -151,6 +143,50 @@ namespace cc4s {
       }
     }
   protected:
+    std::vector<int64_t> indexEnds;
+
+    /**
+     * \Brief Initializes the index ends vector needed for the
+     * index translation methods getTotalIndex and fromTotalIndex.
+     **/
+    void initializeIndexTranslation() {
+      int64_t indexBase(0);
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        int64_t tensorIndexSize(1);
+        for (int d(0); d < componentTensors[i].order; ++d) {
+          tensorIndexSize *= componentTensors[i].lens[d];
+        }
+        indexEnds[i] = indexBase += tensorIndexSize;
+      }
+    }
+
+    /**
+     * \Brief Translates the given component and the index into
+     * its element into a total index between 0 and getDimension()-1.
+     **/
+    int64_t getTotalIndex(
+      const int component, const int64_t componentIndex
+    ) const {
+      int64_t base(component > 0 ? indexEnds[component-1] : 0);
+      return base + componentIndex;
+    }
+
+    /**
+     * \Brief Translates the given total index between 0 and getDimension()-1
+     * into a component number and an index into the corresponding component
+     * tensor.
+     **/
+    void fromTotalIndex(
+      const int64_t totalIndex, int &component, int64_t &componentIndex
+    ) const {
+      component = 0;
+      int64_t base(0);
+      while (totalIndex >= indexEnds[component]) {
+        base = indexEnds[component++];
+      }
+      componentIndex = totalIndex - base;
+    }
+
     void checkCompatabilityTo(const FockVector<F> &a) const {
       if (
         componentTensors.size() != a.componentTensors.size() ||
