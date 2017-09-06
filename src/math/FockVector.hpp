@@ -5,7 +5,6 @@
 
 #include <vector>
 #include <string>
-
 #include <initializer_list>
 
 #include <ctf.hpp>

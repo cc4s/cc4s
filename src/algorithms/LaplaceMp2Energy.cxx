@@ -73,6 +73,8 @@ void LaplaceMp2Energy::run() {
   Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
   LambdaGR->set_name("LambdaGR"); 
 
+  normalizeV(*LambdaGR, *PirR);
+
   int Np(PirR->lens[0]);
   int NR(PirR->lens[1]);
   int RR[]  =     { NR, NR };
@@ -121,6 +123,7 @@ void LaplaceMp2Energy::run() {
   (*GpRSn)["RSn"] = PiaR["aS"] * PiaR["aR"] * CPan["an"];
   LOG(1, "MP2") << "Particle propagator set up" << std::endl;
 
+  allocatedTensorArgument<complex>("CoulombPropagator", new Tensor<complex>(VRS));
 
   // get numerical weights
   Tensor<> *realwn(getTensorArgument("ImaginaryTimeWeights"));
@@ -129,8 +132,8 @@ void LaplaceMp2Energy::run() {
 
 
   calculateAnalytically();
-//  double energy(calculateNumerically());
-  double energy(calculateStochastically());
+  double energy(calculateNumerically());
+//  double energy(calculateStochastically());
 
   LOG(0, "MP2") << "e=" << energy << std::endl;
 //  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
@@ -217,6 +220,37 @@ double LaplaceMp2Energy::calculateDirectTerm() {
 }
 */
 
+void LaplaceMp2Energy::normalizeV(
+  Tensor<complex> &Lambda, Tensor<complex> &Pi
+) {
+  Univar_Function<complex> fConj(&cc4s::conj<complex>);
+  Tensor<complex> conjLambda(false, Lambda);
+  conjLambda.sum(1.0, Lambda,"GR", 0.0,"GR", fConj);
+  CTF::Vector<complex> norm(Lambda.lens[1], *Lambda.wrld);
+  norm["R"] = Lambda["GR"] * conjLambda["GR"];
+
+  CTF::Transform<complex, complex>(
+    std::function<void(complex, complex &)>(
+      [](complex nR, complex &lambdaGR) {
+        // scale Lambda down
+        lambdaGR /= std::sqrt(std::real(nR));
+      }
+    )
+  ) (
+    norm["R"], Lambda["GR"]
+  );
+  CTF::Transform<complex, complex>(
+    std::function<void(complex, complex &)>(
+      [](complex nR, complex &PirR) {
+        // scale Pi up
+        PirR *= std::sqrt(std::sqrt(std::real(nR)));
+      }
+    )
+  ) (
+    norm["R"], Pi["rR"]
+  );
+}
+
 double LaplaceMp2Energy::calculateNumerically() {
   typedef CtfMachineTensor<complex> MT;
   auto machineTensorFactory(MT::Factory::create());
@@ -278,6 +312,7 @@ double LaplaceMp2Energy::calculateAnalytically() {
   cDabij["abij"] -= cepsa["b"];
   Bivar_Function<complex> fDivide(&divide<complex>);
   cDabij.contract(1.0, cVabij,"abij", cDabij,"abij", 0.0,"abij", fDivide);
+  cDabij.sum(1.0, cDabij,"abij", 0.0,"abij", fConj);
 
   Scalar<complex> energy(*Cc4s::world);
   energy[""] = 2.0 * cDabij["abij"] * cVabij["abij"];

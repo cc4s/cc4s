@@ -1,0 +1,40 @@
+====== Features ======
+===== Zero temperature =====
+==== Total energies ====
+^  Menmonic  ^  Theory  ^  @HF  ^ @DFT((mosts theories can also be formulated on top of Density Functional Theory (DFT) rather than on top of Hartree--Fock (HF) ))  ^
+| MP2  | second order Møller--Plesset  |  ✔  |  ✘  |
+| drCCD (RPA)  | direct ring coupled cluster doubles (contains the random phase approximation) |  ✔  |  ✔  |
+| CCD    | coupled cluster doubles |  ✔  |  ✘  |
+| CCSD   | coupled cluster singles and doubles |  ✔  |  ✘  |
+| DCD    | distinguishable cluster doubles |  ✔  |  ✘  |
+| DCSD   | distinguishable cluster singles and doubles |  ✔  |  ✘  |
+| CCSD(T)  | CCSD with perturbative triples |  ✔  |  ✘  |
+
+==== Other ground state expectation values ====
+^  Menmonic  ^  Theory  ^  @HF  ^ @DFT  ^
+| $\Lambda$-MP2  | Lagrangian second order Møller--Plesset  |  ✔  |  ✘  |
+| $\Lambda$-drCCD  | Lagrangian direct ring coupled cluster doubles  |  ✔  |  ✔  |
+| $\Lambda$-CCD   | Lagrangian coupled cluster doubles |  ✔  |  ✘  |
+| $\Lambda$-CCSD   | Lagrangian coupled cluster singles and doubles |  ✔  |  ✘  |
+
+==== Excitation energies and transition moments ====
+^  Menmonic  ^  Theory  ^  @HF  ^ @DFT  ^
+| EOM-drCCD  | equation of motion direct ring coupled cluster doubles  |  ✔  |  ✔  |
+| EOM-CCSD   | equation of motion coupled cluster singles and doubles |  ✔  |  ✘  |
+==== Accelerating techniques ====
+^  Menmonic  ^  Technique  ^  Approximates  ^
+| OAF  | optimized auxiliary field  | Coulomb integrals, doubles amplitudes (optional)  |
+| TRD  | tensor rank decomposition  | Coulomb integrals, doubles amplitudes (optional)  |
+| PGTO  | pseudized Gaussian type orbitals  | Hartree--Fock virtual orbitals  |
+| MP2-NO  | MP2 natural orbitals from PGTOs  | Gaussian virtual orbitals  |
+| RPA-NO  | RPA natural orbitals from PGTOs  | Gaussian virtual orbitals  |
+
+==== Experimental techniques ====
+^  Mnemonic  ^  Technique  ^
+| CCSD(sT)  | CCSD with stochastic perturbative triples  |
+
+===== Finite temperature =====
+==== Free energies =====
+^  Menmonic  ^  Theory  ^  @HF  ^ @DFT  ^
+| FT-MP2  | finite temperature second order Møller--Plesset  |  ✔  |  ✘  |
+| FT-drCCD (RPA)  | finite temperature direct ring coupled cluster doubles (contains the random phase approximation) |  ✔  |  ✔  |

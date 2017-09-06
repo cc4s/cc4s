@@ -79,6 +79,7 @@ namespace cc4s {
       double *cummulants;
     };
 
+    void normalizeV(CTF::Tensor<complex> &Lambda, CTF::Tensor<complex> &Pi);
     double calculateNumerically();
     double calculateAnalytically();
     double calculateStochastically();

@@ -20,70 +20,53 @@ ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
 }
 
 void ThermalClusterDoublesAlgorithm::run() {
-  // Read the Coulomb Integrals Vabij required for the energy
-  Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
-
-  // Allocate the doubles amplitudes
-  int No(Vabij->lens[2]);
-  int Nv(Vabij->lens[0]);
-  int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { Nv, Nv, No, No };
-  Tabij[0] = new Tensor<>(4, vvoo, syms, *Vabij->wrld, "Tabij0");
-  Tabij[1] = new Tensor<>(4, vvoo, syms, *Vabij->wrld, "Tabij1");
-
-  // Allocate the energy
-  directEnergy = new Scalar<>(*Vabij->wrld);
-  directEnergy->set_name("directEnergy");
-  exchangeEnergy = new Scalar<>(*Vabij->wrld);
-  exchangeEnergy->set_name("exchangeEnergy");
-
-  std::string abbreviation(getAbbreviation());
-  std::transform(
-    abbreviation.begin(), abbreviation.end(), 
-    abbreviation.begin(), ::toupper
-  );
-
-  // allocate and initialize the eigenenergy difference matrix
-  Dai = new Matrix<>(Nv, No, *Vabij->wrld);
-  Dai->set_name("Dai");
-  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
-  (*Dai)["ai"] =  (*epsa)["a"];
-  (*Dai)["ai"] -= (*epsi)["i"];
-
   beta = 1 / getRealArgument("Temperature");
-  LOG(1, abbreviation) << "beta=" << beta << std::endl;
 
-  double dire(0), exce(0);
-  samples = getIntegerArgument("samples", DEFAULT_SAMPLES);
-  int n;
-  for (n = 0; n < samples; ++n) {
-    LOG(0, abbreviation) << "step=" << n+1 << std::endl;
-    // update the next amplitudes according to the algorithm implementation
-    update(n);
-    dire = directEnergy->get_val();
-    exce = exchangeEnergy->get_val();
-    LOG(0, abbreviation) << "e=" << dire+exce << std::endl;
-    LOG(1, abbreviation) << "dir=" << dire << std::endl;
-    LOG(1, abbreviation) << "exc=" << exce << std::endl;
-  }
-
-  std::stringstream amplitudesName;
-  // TODO: only the sequence of amplitudes at all sampled imaginary times
-  // would be of interest.
-/*
-  amplitudesName << "Thermal" << getAbbreviation() << "DoublesAmplitudes";
-  allocatedTensorArgument(
-    amplitudesName.str(), Tabij[n&1]
+  recursionLength = getIntegerArgument(
+    "recursionLength", DEFAULT_RECURSION_LENGTH
   );
-*/
+  recursionScaling = getRecursionScaling(recursionLength);
+  double energyScale( getEnergyScale() );
+  int64_t N(std::ceil(std::log(beta*energyScale) / std::log(recursionScaling)));
+  N += getIntegerArgument("minIterations", DEFAULT_MIN_ITERATIONS);
+  N = std::min(N, getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS));
+
+  LOG(1, getCapitalizedAbbreviation()) << "beta=" << beta << std::endl;
+  LOG(1, getCapitalizedAbbreviation())
+    << "Imaginart time recursion length=" << recursionLength << std::endl;
+  LOG(1, getCapitalizedAbbreviation())
+    << "Imaginary time recursion scaling q=" << recursionScaling << std::endl;
+  LOG(1, getCapitalizedAbbreviation())
+    << "Imaginary time recursion iterations=" << N << std::endl;
+
+  initializeRecursion(N);
+
+  int n;
+  double energy;
+  for (n = N; n > 0; --n) {
+    const double betam( beta*std::pow(recursionScaling,-(n-1)) );
+    LOG(0, getCapitalizedAbbreviation()) <<
+      "calculating imaginary time scale=beta*q^-" << n-1 <<
+      "=" << betam << std::endl;
+
+    // iterate the next amplitudes according to the algorithm implementation
+    iterate(n);
+
+    energy = recurse(n);
+    LOG(1, getCapitalizedAbbreviation()) << "e=" << energy << std::endl;
+  }
+  energy = energies[0]->get_val()/beta;
+
   // currently, we can just dispose them
-  delete Tabij[0]; delete Tabij[1];
+  for (int i(0); i <= recursionLength; ++i) {
+    delete energies[i];
+    delete amplitudes[i];
+  }
   delete Dai;
 
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), dire+exce);
+  setRealArgument(energyName.str(), energy);
 }
 
 void ThermalClusterDoublesAlgorithm::dryRun() {
@@ -108,18 +91,176 @@ void ThermalClusterDoublesAlgorithm::dryRun() {
   // Allocate the energy e
   DryScalar<> energy(SOURCE_LOCATION);
 
-  getIntegerArgument("samples", DEFAULT_SAMPLES);
+  getIntegerArgument("recursionLength", DEFAULT_RECURSION_LENGTH);
 
   // Call the dry iterate of the actual algorithm, which is left open here
-  dryUpdate();
+  dryIterate();
 
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
   setRealArgument(energyName.str(), 0.0);
 }
 
-void ThermalClusterDoublesAlgorithm::dryUpdate() {
-  LOG(0, "CluserDoubles") << "Dry run for update not given for Thermal"
+void ThermalClusterDoublesAlgorithm::dryIterate() {
+  LOG(0, "CluserDoubles") << "Dry run for iterate not given for Thermal"
     << getAbbreviation() << std::endl;
+}
+
+void ThermalClusterDoublesAlgorithm::initializeRecursion(const int N) {
+  // Read the Coulomb Integrals Vabij required for the energy
+  Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
+  Tensor<> Dabij(false, *Vabij);
+  Tensor<> Tabij(false, *Vabij);
+
+  // Allocate the doubles amplitudes
+  energies.resize(recursionLength+1);
+  amplitudes.resize(recursionLength+1);
+  for (int i(recursionLength); i >= 0; --i) {
+    const int n(N+i);
+    const double betan( beta*std::pow(recursionScaling,-n) );
+    LOG(0, getCapitalizedAbbreviation()) <<
+      "initializing imaginary time scale=beta*q^-" << n <<
+      "=" << betan << std::endl;
+    amplitudes[i] = new Tensor<>(*Vabij);
+    amplitudes[i]->set_name("Tabij");
+    fetchDelta(Dabij);
+    SameSideConnectedImaginaryTimePropagation propagation(betan);
+    Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(propagation));
+    (*amplitudes[i])["abij"] *= (-1.0) * Dabij["abij"];
+
+    Tabij["abij"] =   4.0 * (*Vabij)["abij"];
+    Tabij["abij"] += -2.0 * (*Vabij)["abji"];
+    Tabij["abij"] *=  0.5 * (*Vabij)["abij"];
+    fetchDelta(Dabij);
+    Mp2ImaginaryTimePropagation mp2Propagation(betan);
+    Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(mp2Propagation));
+    thermalContraction(Dabij);
+    energies[i] = new Scalar<>(*Vabij->wrld);
+    energies[i]->set_name("F");
+    (*energies[i])[""] = (-1.0) * Tabij["abij"] * Dabij["abij"];
+  }
+}
+
+double ThermalClusterDoublesAlgorithm::recurse(const int n) {
+  Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
+  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
+  Tensor<> Dabij(false, *Vabij);
+
+  Tensor<> nextT( *amplitudes[recursionLength] );
+  Dabij["abij"] =  (*epsa)["a"];
+  Dabij["abij"] += (*epsa)["b"];
+  Dabij["abij"] -= (*epsi)["i"];
+  Dabij["abij"] -= (*epsi)["j"];
+  const int m(n+recursionLength);
+  const double betam( beta*std::pow(recursionScaling,-m) );
+  FreeImaginaryTimePropagation freePropagation(betam);
+  Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(freePropagation));
+  nextT["abij"] += (*amplitudes[0])["abij"] * Dabij["abij"];
+
+  Dabij["abij"] =  (*epsa)["a"];
+  Dabij["abij"] += (*epsa)["b"];
+  Dabij["abij"] -= (*epsi)["i"];
+  Dabij["abij"] -= (*epsi)["j"];
+  SameSideConnectedImaginaryTimePropagation propagation(betam);
+  Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(propagation));
+  Dabij["abij"] *= (*Vabij)["abij"];
+  Dabij["abij"] *= (*Na)["a"];
+  Dabij["abij"] *= (*Na)["b"];
+  Dabij["abij"] *= (*Ni)["i"];
+  Dabij["abij"] *= (*Ni)["j"];
+
+  Scalar<> nextF( *energies[recursionLength] );
+  nextF[""] += (*energies[0])[""];
+  nextF[""] += 2.0 * Dabij["abij"] * (*amplitudes[0])["abij"];
+  nextF[""] -= 1.0 * Dabij["abji"] * (*amplitudes[0])["abij"];
+
+  // rotate amplitude and energy pointers to make the T[M] the new head T[0]
+  Tensor<> *nextTPointer(amplitudes[recursionLength]);
+  Scalar<> *nextFPointer(energies[recursionLength]);
+  for (int i(recursionLength); i > 0; --i) {
+    amplitudes[i] = amplitudes[i-1];
+    energies[i] = energies[i-1];
+  }
+  amplitudes[0] = nextTPointer;
+  energies[0] = nextFPointer;
+  (*nextTPointer)["abij"] = nextT["abij"];
+  (*nextFPointer)[""] = nextF[""];
+
+  return energies[0]->get_val()/beta;
+}
+
+std::string ThermalClusterDoublesAlgorithm::getCapitalizedAbbreviation() {
+  std::string abbreviation(getAbbreviation());
+  std::transform(
+    abbreviation.begin(), abbreviation.end(), 
+    abbreviation.begin(), ::toupper
+  );
+  return abbreviation;
+}
+
+/**
+ * \brief Calculates and returns the scaling factor \f$q\f$ satisfying
+ * \f$q^{M+1}-q^M-1 = 0\f$.
+ **/
+double ThermalClusterDoublesAlgorithm::getRecursionScaling(const int M) {
+  double q(2.0);
+  double delta;
+  do {
+    const double qM(std::pow(q,M));
+    q -= delta = (qM*(q-1) - 1) / (qM*(M*(q-1)/q+1));
+  } while (std::abs(delta) > 1e-15);
+  return q;
+}
+
+double ThermalClusterDoublesAlgorithm::getEnergyScale() {
+  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  std::vector<double> holeEnergies(epsi->lens[0]);
+  epsi->read_all(holeEnergies.data());
+  std::vector<double> particleEnergies(epsa->lens[0]);
+  epsa->read_all(particleEnergies.data());
+  return particleEnergies.back() - holeEnergies.front();
+}
+
+std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
+  char indices[T.order+1];
+  const int excitationLevel(T.order/2);
+  for (int i(0); i < excitationLevel; ++i) {
+    indices[i] = static_cast<char>('a'+i);
+    indices[i+excitationLevel] = static_cast<char>('i'+i);
+  }
+  indices[T.order] = 0;
+  return indices;
+}
+
+void ThermalClusterDoublesAlgorithm::fetchDelta(Tensor<> &Delta) {
+  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  std::string indices(getAmplitudeIndices(Delta));
+  double factor(0.0);
+  const int excitationLevel(Delta.order/2);
+  for (int i(0); i < excitationLevel; ++i) {
+    char aIndex[] = {static_cast<char>('a'+i), 0};
+    Delta.sum(+1.0, *epsa,aIndex, factor,indices.c_str());
+    factor = 1.0;
+    char iIndex[] = {static_cast<char>('i'+i), 0};
+    Delta.sum(-1.0, *epsi,iIndex, 1.0,indices.c_str());
+  }
+}
+
+void ThermalClusterDoublesAlgorithm::thermalContraction(Tensor<> &T) {
+  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
+  std::string indices(getAmplitudeIndices(T));
+  const int excitationLevel(T.order/2);
+  for (int i(0); i < excitationLevel; ++i) {
+    char aIndex[] = {static_cast<char>('a'+i), 0};
+    T[indices.c_str()] *= (*Na)[aIndex];;
+    char iIndex[] = {static_cast<char>('i'+i), 0};
+    T[indices.c_str()] *= (*Ni)[iIndex];;
+  }
 }
 
