@@ -134,20 +134,6 @@ namespace cc4s {
     );
 
     /**
-     * \brief Calculates and returns tensor Fabij of the residuum
-     * from the dressed Coulomb factors. 
-     * The caller is responsible for deleting the dynamically allocated
-     * result tensor. 
-     * \param[out] Fabij sliced Residuum
-     */
-    CTF::Tensor<double> *amplitudesFromCoupledCoulombFactors(
-      Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-    );
-    CTF::Tensor<complex> *amplitudesFromCoupledCoulombFactors(
-      Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
-    );
-
-    /**
      * \brief Adds the given slice of the residuum tensor Rxyij to the
      * entire residuum tensor Rabij at the respective index range.
      * \param[in] a0 1st sliced dimension (x).
