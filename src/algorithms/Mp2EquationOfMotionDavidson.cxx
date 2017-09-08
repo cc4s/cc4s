@@ -285,12 +285,6 @@ FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::rightApply(
   (*HRabij)["cdij"] +=
     ( - 0.5 ) * (*Tabij)["ecno"] * (*Vijab)["noeh"] * (*Rabij)["hdij"];
 
-  // symmetrize doubles part w.r.t. left/right
-  (*HRabij)["abij"] += (*HRabij)["baji"];
-  // anti-symmetrize w.r.t. exchange
-  (*HRabij)["abij"] -= (*HRabij)["abji"];
-  (*HRabij)["abij"] *= 0.5;
-
   return HR;
 }
 
@@ -315,40 +309,38 @@ Mp2PreConditioner<F>::Mp2PreConditioner(
   CTF::Tensor<F> *Dabij( &diagonalH.componentTensors[1] );
 
   // calculate diagonal elements of H
-  (*Dai)["aj"]  = ( - 1.0  ) * Fij["jj"];
-  (*Dai)["aj"] += ( + 1.0  ) * Fab["aa"];
-  (*Dai)["aj"] += ( - 1.0  ) * Viajb["jaja"];
-  (*Dai)["aj"] += ( + 1.0  ) * Tabij["adjn"] * Vijab["njda"];
-  (*Dai)["aj"] += ( + 0.5  ) * Tabij["cdjn"] * Vijab["njcd"];
-  (*Dai)["aj"] += ( + 0.5  ) * Tabij["admn"] * Vijab["mnda"];
+  (*Dai)["bi"] =  ( - 1.0 ) * Fij["ii"];
+  (*Dai)["bi"] += ( + 1.0 ) * Fab["bb"];
+  (*Dai)["bi"] += ( - 1.0 ) * Viajb["ibib"];
+  (*Dai)["bi"] += ( + 1.0 ) * Tabij["cbli"] * Vijab["licb"];
+  (*Dai)["bi"] += ( - 0.5 ) * Tabij["cdmi"] * Vijab["micd"];
+  (*Dai)["bi"] += ( - 0.5 ) * Tabij["cblm"] * Vijab["lmcb"];
 
-  (*Dabij)["abkl"] += ( - 1.0  ) * Fij["kk"];
-/*
-  (*Dabij)["abkl"] += ( + 1.0  ) * Rabij["abkl"] * Fij["lm"] * Lijab["mkab"];
-  (*Dabij)["abkl"] += ( - 1.0  ) * Rabij["abkl"] * Fab["eb"] * Lijab["klea"];
-  (*Dabij)["abkl"] += ( + 1.0  ) * Rabij["abkl"] * Fab["ea"] * Lijab["kleb"];
-  (*Dabij)["abkl"] += ( - 0.5  ) * Rabij["abkl"] * Vijkl["klmn"] * Lijab["nmab"];
-  (*Dabij)["abkl"] += ( + 1.0  ) * Rabij["abkl"] * Viajb["kenb"] * Lijab["nlea"];
-  (*Dabij)["abkl"] += ( - 1.0  ) * Rabij["abkl"] * Viajb["kena"] * Lijab["nleb"];
-  (*Dabij)["abkl"] += ( - 1.0  ) * Rabij["abkl"] * Viajb["lenb"] * Lijab["nkea"];
-  (*Dabij)["abkl"] += ( + 1.0  ) * Rabij["abkl"] * Viajb["lena"] * Lijab["nkeb"];
-  (*Dabij)["abkl"] += ( - 0.5  ) * Rabij["abkl"] * Vabcd["efab"] * Lijab["klfe"];
-  (*Dabij)["abkl"] += ( + 0.5  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["klfb"] * Lijab["poea"];
-  (*Dabij)["abkl"] += ( - 0.5  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["klfa"] * Lijab["poeb"];
-  (*Dabij)["abkl"] += ( - 0.25  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["klef"] * Lijab["poab"];
-  (*Dabij)["abkl"] += ( - 0.5  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["pkab"] * Lijab["olfe"];
-  (*Dabij)["abkl"] += ( + 0.5  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["plab"] * Lijab["okfe"];
-  (*Dabij)["abkl"] += ( - 1.0  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["pkfb"] * Lijab["olea"];
-  (*Dabij)["abkl"] += ( + 1.0  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["pkfa"] * Lijab["oleb"];
-  (*Dabij)["abkl"] += ( + 1.0  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["plfb"] * Lijab["okea"];
-  (*Dabij)["abkl"] += ( - 1.0  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["plfa"] * Lijab["okeb"];
-  (*Dabij)["abkl"] += ( + 0.5  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["pkef"] * Lijab["olab"];
-  (*Dabij)["abkl"] += ( - 0.5  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["plef"] * Lijab["okab"];
-  (*Dabij)["abkl"] += ( - 0.25  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["opab"] * Lijab["klfe"];
-  (*Dabij)["abkl"] += ( - 0.5  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["opfb"] * Lijab["klea"];
-  (*Dabij)["abkl"] += ( + 0.5  ) * Rabij["abkl"] * Tabij["efop"] * Vijab["opfa"] * Lijab["kleb"];
-*/
-  // TODO: antisymmetrize
+  (*Dabij)["cdij"] =  ( - 1.0 ) * Fij["ii"];
+  (*Dabij)["cdii"] += ( + 1.0 ) * Fij["ii"];
+  (*Dabij)["ccij"] += ( - 1.0 ) * Fab["cc"];
+  (*Dabij)["cdij"] += ( + 1.0 ) * Fab["cc"];
+
+  (*Dabij)["cdij"] += ( + 0.5 ) * Vijkl["ijij"];
+  (*Dabij)["ccij"] += ( + 1.0 ) * Viajb["icic"];
+  (*Dabij)["cdij"] += ( - 1.0 ) * Viajb["icic"];
+  (*Dabij)["ccii"] += ( - 1.0 ) * Viajb["icic"];
+  (*Dabij)["cdii"] += ( + 1.0 ) * Viajb["icic"];
+  (*Dabij)["cdij"] += ( + 0.5 ) * Vabcd["cdcd"];
+  (*Dabij)["ccij"] += ( + 0.5 ) * Tabij["ecij"] * Vijab["ijec"];
+  (*Dabij)["cdij"] += ( - 0.5 ) * Tabij["ecij"] * Vijab["ijec"];
+  (*Dabij)["cdij"] += ( + 0.25) * Tabij["efij"] * Vijab["ijef"];
+  (*Dabij)["cdij"] += ( - 0.5 ) * Tabij["cdmi"] * Vijab["micd"];
+  (*Dabij)["cdii"] += ( + 0.5 ) * Tabij["cdmi"] * Vijab["micd"];
+  (*Dabij)["ccij"] += ( - 1.0 ) * Tabij["ecni"] * Vijab["niec"];
+  (*Dabij)["cdij"] += ( + 1.0 ) * Tabij["ecni"] * Vijab["niec"];
+  (*Dabij)["ccii"] += ( + 1.0 ) * Tabij["ecni"] * Vijab["niec"];
+  (*Dabij)["cdii"] += ( - 1.0 ) * Tabij["ecni"] * Vijab["niec"];
+  (*Dabij)["cdij"] += ( - 0.5 ) * Tabij["efoi"] * Vijab["oief"];
+  (*Dabij)["cdii"] += ( + 0.5 ) * Tabij["efoi"] * Vijab["oief"];
+  (*Dabij)["cdij"] += ( + 0.25) * Tabij["cdmn"] * Vijab["mncd"];
+  (*Dabij)["ccij"] += ( + 0.5 ) * Tabij["ecno"] * Vijab["noec"];
+  (*Dabij)["cdij"] += ( - 0.5 ) * Tabij["ecno"] * Vijab["noec"];
 }
 
 
