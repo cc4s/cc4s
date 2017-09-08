@@ -1,0 +1,38 @@
+CoulombVertexReader [
+  (file "../../resources/CoulombVertex.bin")
+] [
+  CoulombVertex
+  HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (complex 0)
+] [
+  PPHHCoulombIntegrals
+  HHPPCoulombIntegrals
+  PHPHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PPHHCoulombIntegrals
+  HHPPCoulombIntegrals
+  PHPHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 24)
+% (integralsSliceSize 12)
+% (integralsSliceFactor 0.33)
+% (mixer "LinearMixer")
+% (mixingRatio 0.8)
+] [
+  (CcsdEnergy CcsdEnergy) 
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
+].
+
+TensorWriter [(Data CcsdEnergy)] [].

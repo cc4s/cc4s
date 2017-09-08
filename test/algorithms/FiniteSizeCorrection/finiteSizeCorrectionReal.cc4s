@@ -1,3 +1,15 @@
+%ParticleHoleCoulombVertexReader [
+%  (file "../../resources/ParticleHoleCoulombVertex.bin")
+%] [
+%  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
+%].
+
+%ParticleHoleCoulombIntegrals [
+%  ParticleHoleCoulombVertex
+%] [
+%  PPHHCoulombIntegrals
+%].
+
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [
@@ -10,13 +22,12 @@ CoulombIntegralsFromVertex [
   PPHHCoulombIntegrals
 ].
 
-DrccdEnergyFromCoulombIntegrals [
+Mp2EnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
-  (maxIterations 1)
 ] [
-  (DrccdEnergy Mp2Energy)
-  (DrccdDoublesAmplitudes DoublesAmplitudes)
+  (Mp2Energy Mp2Energy)
+  (Mp2DoublesAmplitudes DoublesAmplitudes)
 ].
 
 SliceCoulombVertex [

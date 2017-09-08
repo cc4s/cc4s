@@ -27,6 +27,7 @@ Mp2EnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
 ] [
   Mp2Energy
+% Mp2DoublesAmplitudes
 ].
 
 TensorWriter [(Data Mp2Energy)] [].
