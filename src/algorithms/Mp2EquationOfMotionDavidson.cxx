@@ -33,15 +33,18 @@ void Mp2EquationOfMotionDavidson::run() {
   T Vijkl(*getTensorArgument<double, T>("HHHHCoulombIntegrals"));
   T Vabcd(*getTensorArgument<double, T>("PPPPCoulombIntegrals")); 
 
+  // TODO: not needed after amplitude and energy calculations
   T Vabij(*getTensorArgument<double, T>("PPHHCoulombIntegrals"));
   // T *Vijab(getTensorArgument<double, T>("HHPPCoulombIntegrals")); // swap PPHH (done)
 
   T Vijka(*getTensorArgument<double, T>("HHHPCoulombIntegrals"));
   // T *Viajk(getTensorArgument<double, T>("HPHHCoulombIntegrals")); // swap HHHP (done)
 
+  // TODO: only needed for antisymmetrization
   T Vaibj(*getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
   //T *Viajb(getTensorArgument<double, T>("HPHPCoulombIntegrals")); // swap PHPH (done)
 
+  // TODO: only needed for antisymmetrization
   T Vabci(*getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
   //T *Viabc(getTensorArgument<double, T>("HPPPCoulombIntegrals")); // swap PPPH (done)
   //T *Vabic(getTensorArgument<double, T>("PPHPCoulombIntegrals")); // swap PPPH (done)
@@ -121,7 +124,6 @@ void Mp2EquationOfMotionDavidson::run() {
   Mp2SimilarityTransformedHamiltonian<double> H(
     &Tai, &Tabij, &Fij, &Fab,
     &Vabcd, &Viajb, &Vijab, &Vijkl, &Vijka, &Viabc, &Viajk, &Vabic
-    // TODO add extra Vs...
   );
   Mp2PreConditioner<double> P(
     Tai, Tabij, Fij, Fab, Vabcd, Viajb, Vijab, Vijkl
