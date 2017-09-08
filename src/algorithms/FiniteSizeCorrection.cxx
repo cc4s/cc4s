@@ -40,25 +40,15 @@ void FiniteSizeCorrection::run() {
     LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
 
     Data *Tabij(getArgumentData("DoublesAmplitudes"));
-    TensorData<double>     *realTabij(dynamic_cast<TensorData<double>  *>(Tabij));
-    TensorData<complex> *complexTabij(dynamic_cast<TensorData<complex> *>(Tabij));
+    TensorData<double> *realTabij(dynamic_cast<TensorData<double>*>(Tabij));
     if (realTabij) {
       calculateRealStructureFactor();
     } else {
       calculateComplexStructureFactor();
     }
 
-    /*
-    Data *Tabij(getArgumentData("DoublesAmplitudes"));
-    TensorData<double>     *realTabij(dynamic_cast<TensorData<double>  *>(Tabij));
-    TensorData<complex> *complexTabij(dynamic_cast<TensorData<complex> *>(Tabij));
-    if (realTabij) {
-      e = calculateStructureFactor(   *realTabij->value);
-    } else {
-      e = calculateStructureFactor(*complexTabij->value);
-    }
-    */
-
+    delete Tabij;
+    delete realTabij;
   }
 
   LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
