@@ -132,11 +132,31 @@ void FiniteSizeCorrection::readFromFile(){
 
 void FiniteSizeCorrection::calculateRealStructureFactor() {
   //Definition of the variables
-  Tensor<complex> *GammaFai(
-    getTensorArgument<complex>("ParticleHoleCoulombVertex")
-  );
-
+  Tensor<complex> *GammaFai;
   Tensor<complex> *GammaGai;
+
+  // Read the Particle/Hole Eigenenergies
+  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+
+  if (isArgumentGiven("CoulombVertex")) {
+    // Read the Coulomb vertex GammaGqr
+    Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
+
+    // Get the Particle Hole Coulomb Vertex
+    int No(epsi->lens[0]);
+    int Nv(epsa->lens[0]);
+    int Np(GammaFqr->lens[1]);
+    int NF(GammaFqr->lens[0]);
+
+    int aStart(Np-Nv), aEnd(Np);
+    int iStart(0), iEnd(No);
+    int FaiStart[] = {0, aStart,iStart};
+    int FaiEnd[]   = {NF,aEnd,  iEnd};
+    GammaFai = (new Tensor<complex>(GammaFqr->slice(FaiStart, FaiEnd)));
+  } else {
+    GammaFai = (new Tensor<complex>(getTensorArgument<complex>("ParticleHoleCoulombVertex")));
+  }
 
   if (isArgumentGiven("CoulombVertexSingularVectors")) {
     Tensor<complex> *UGF(
@@ -230,6 +250,9 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   realVG->read_all(VofG);
   structureFactors = new double[NG];
   realSG->read_all(structureFactors);
+
+  delete GammaFai;
+  delete GammaGai;
 }
 
 
@@ -312,6 +335,7 @@ void FiniteSizeCorrection::calculateComplexStructureFactor() {
   Tensor<complex> GammaGai(GammaGqr->slice(GaiStart, GaiEnd));
 
   delete GammaGqr;
+  delete GammaFqr;
   
   //Define CGia
   Tensor<complex> CGia(GammaGia);
