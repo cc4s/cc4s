@@ -38,7 +38,27 @@ void FiniteSizeCorrection::run() {
     readFromFile();
   } else {
     LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
-    calculateStructureFactor();
+
+    Data *Tabij(getArgumentData("DoublesAmplitudes"));
+    TensorData<double>     *realTabij(dynamic_cast<TensorData<double>  *>(Tabij));
+    TensorData<complex> *complexTabij(dynamic_cast<TensorData<complex> *>(Tabij));
+    if (realTabij) {
+      calculateRealStructureFactor();
+    } else {
+      calculateComplexStructureFactor();
+    }
+
+    /*
+    Data *Tabij(getArgumentData("DoublesAmplitudes"));
+    TensorData<double>     *realTabij(dynamic_cast<TensorData<double>  *>(Tabij));
+    TensorData<complex> *complexTabij(dynamic_cast<TensorData<complex> *>(Tabij));
+    if (realTabij) {
+      e = calculateStructureFactor(   *realTabij->value);
+    } else {
+      e = calculateStructureFactor(*complexTabij->value);
+    }
+    */
+
   }
 
   LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
@@ -110,7 +130,7 @@ void FiniteSizeCorrection::readFromFile(){
   LOG(1,"readFromFile") << "Finished" << std::endl;
 }
 
-void FiniteSizeCorrection::calculateStructureFactorReal() {
+void FiniteSizeCorrection::calculateRealStructureFactor() {
   //Definition of the variables
   Tensor<complex> *GammaFai(
     getTensorArgument<complex>("ParticleHoleCoulombVertex")
@@ -213,7 +233,7 @@ void FiniteSizeCorrection::calculateStructureFactorReal() {
 }
 
 
-void FiniteSizeCorrection::calculateStructureFactor() {
+void FiniteSizeCorrection::calculateComplexStructureFactor() {
   Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
   Tensor<> *realVG(new Tensor<>(false, *realInfVG));
   // Define take out inf funciton

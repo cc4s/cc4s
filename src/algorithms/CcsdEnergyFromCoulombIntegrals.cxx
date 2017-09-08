@@ -30,20 +30,18 @@ CcsdEnergyFromCoulombIntegrals::~CcsdEnergyFromCoulombIntegrals() {
 void CcsdEnergyFromCoulombIntegrals::iterate(
   int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
 ) {
-  // Read the amplitudes Tai and Tabij
-  Tensor<> *Tabij(&TabijMixer->getNext());
-  Tabij->set_name("Tabij");
-  Tensor<> *Tai(&TaiMixer->getNext());
-  Tai->set_name("Tai");
-
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
   // Allocate Tensors for T2 amplitudes
-  Tensor<> Rabij(false, *Tabij);
+  Tensor<> Rabij(false, *Vabij);
   Rabij.set_name("Rabij");
+
   // Allocate Tensors for T1 amplitudes
-  Tensor<> Rai(false, *Tai);
-  Rai.set_name("Rai");
+  int No(Vabij->lens[2]);
+  int Nv(Vabij->lens[0]);
+  std::array<int,2> vo({{ Nv, No }});
+  std::array<int,4> syms({{ NS, NS, NS, NS }});
+  Tensor<> Rai(2, vo.data(), syms.data(), *Vabij->wrld, "Rai");
 
   std::string abbreviation(getAbbreviation());
   std::transform(abbreviation.begin(), abbreviation.end(), 
@@ -54,8 +52,20 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     // Since Tabij = 0, Vabij is the only non-zero term
     LOG(1, abbreviation) << "MP2 T2 Amplitudes" << std::endl;
     Rabij["abij"] = (*Vabij)["abij"];
+  
+    // Calculate the amplitudes from the residuum
+    amplitudesFromResiduum(Rabij, "abij");
+    // Append amplitudes to the mixer
+    TabijMixer->append(Rabij);
+    TaiMixer->append(Rai);
   } else {
     // For the rest iterations compute the CCSD amplitudes
+
+    // Read the amplitudes Tai and Tabij
+    Tensor<> *Tabij(&TabijMixer->getNext());
+    Tabij->set_name("Tabij");
+    Tensor<> *Tai(&TaiMixer->getNext());
+    Tai->set_name("Tai");
 
     // Read all required integrals
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
@@ -376,14 +386,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
       Rai["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
       Rai["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
     }
-  }
 
-  // Calculate the amplitudes from the residuum
-  amplitudesFromResiduum(Rabij, "abij");
-  amplitudesFromResiduum(Rai, "ai");
-  // Append amplitudes to the mixer
-  TabijMixer->append(Rabij);
-  TaiMixer->append(Rai);
+    // Calculate the amplitudes from the residuum
+    amplitudesFromResiduum(Rabij, "abij");
+    amplitudesFromResiduum(Rai, "ai");
+    // Append amplitudes to the mixer
+    TabijMixer->append(Rabij);
+    TaiMixer->append(Rai);
+  }
 }
 
 
