@@ -29,7 +29,7 @@ namespace cc4s {
         double magnitude( std::abs(a.second)+std::abs(b.second) );
         if (std::real(diff) > +1E-13*magnitude) return true;
         if (std::real(diff) < -1E-13*magnitude) return false;
-        return a.first > b.first;
+        return a.first < b.first;
       }
     };
   };
@@ -204,7 +204,7 @@ namespace cc4s {
         if (std::real(diff) < -1E-13*magnitude) return false;
         if (std::imag(diff) > +1E-13*magnitude) return false;
         if (std::imag(diff) < -1E-13*magnitude) return true;
-        return a.first > b.first;
+        return a.first < b.first;
       }
     };
 

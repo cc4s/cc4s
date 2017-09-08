@@ -1,5 +1,5 @@
 CoulombVertexReader [
-  (file "../../resources/4alex/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.74")
+  (file "../../resources/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.74")
   (unrestricted 1)
 ] [
   (CoulombVertex FullCoulombVertex)
@@ -47,4 +47,13 @@ Mp2EquationOfMotionDavidson [
   HoleEigenEnergies ParticleEigenEnergies
   (unrestricted 1)
 ] [
+  SinglesHamiltonianDiagonal
+  DoublesHamiltonianDiagonal
+  SinglesBasis
+  DoublesBasis
 ].
+
+TensorWriter [(Data SinglesHamiltonianDiagonal)] [].
+TensorWriter [(Data DoublesHamiltonianDiagonal)] [].
+TensorWriter [(Data SinglesBasis)] [].
+TensorWriter [(Data DoublesBasis)] [].

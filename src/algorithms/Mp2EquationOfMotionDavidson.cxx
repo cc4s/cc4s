@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <utility>
+#include <limits>
 
 using namespace cc4s;
 using namespace tcc;
@@ -128,8 +129,27 @@ void Mp2EquationOfMotionDavidson::run() {
   Mp2PreConditioner<double> P(
     Tai, Tabij, Fij, Fab, Vabcd, Viajb, Vijab, Vijkl
   );
+  std::vector<FockVector<double>> basis( P.getInitialBasis(4) );
+  allocatedTensorArgument(
+    "SinglesHamiltonianDiagonal",
+    new CTF::Tensor<>(P.getDiagonalH().componentTensors[0])
+  );
+  allocatedTensorArgument(
+    "DoublesHamiltonianDiagonal",
+    new CTF::Tensor<>(P.getDiagonalH().componentTensors[1])
+  );
+  allocatedTensorArgument(
+    "DoublesBasis", new CTF::Tensor<>(basis[0].componentTensors[1])
+  );
+  allocatedTensorArgument(
+    "SinglesBasis", new CTF::Tensor<>(basis[1].componentTensors[0])
+  );
+  allocatedTensorArgument(
+    "DoublesBasis", new CTF::Tensor<>(basis[1].componentTensors[1])
+  );
+  
   // Davidson solver
-  EigenSystemDavidson<FockVector<double>> eigenSystem(H, 4, P, 1E-7, 4*16);
+  EigenSystemDavidson<FockVector<double>> eigenSystem(H, 8, P, 1E-10, 8*16);
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
   for (auto &ev: eigenValues) {
@@ -349,6 +369,31 @@ Mp2PreConditioner<F>::Mp2PreConditioner(
   (*Dabij)["cdij"] += ( - 0.5 ) * Tabij["ecno"] * Vijab["noec"];
 }
 
+template <typename F>
+class EomDiagonalValueComparator;
+
+template <>
+class EomDiagonalValueComparator<double> {
+public:
+  bool operator ()(
+    const std::pair<int, double> &a,
+    const std::pair<int, double> &b
+  ) {
+    double A(
+      std::abs(a.second) < 1E-13 ?
+        std::numeric_limits<double>::infinity() : a.second
+    );
+    double B(
+      std::abs(b.second) < 1E-13 ?
+        std::numeric_limits<double>::infinity() : b.second
+    );
+    double diff(B-A);
+    double magnitude(std::abs(A)+std::abs(B));
+    if (std::real(diff) > +1E-13*magnitude) return true;
+    if (std::real(diff) < -1E-13*magnitude) return false;
+    return a.first < b.first;
+  }
+};
 
 template <typename F>
 std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
@@ -358,14 +403,14 @@ std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
   std::vector<std::pair<int64_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
     localElements.begin(), localElements.end(),
-    typename LapackGeneralEigenSystem<F>::EigenValueComparator()
+    EomDiagonalValueComparator<double>()
   );
 
   // gather all K elements of all processors at root
   //   convert into homogeneous arrays for MPI gather
-  std::vector<int64_t> localLowestElementIndices;
-  std::vector<F> localLowestElementValues;
-  for (int64_t i(0); i < eigenVectorsCount; ++i) {
+  std::vector<int64_t> localLowestElementIndices(localElements.size());
+  std::vector<F> localLowestElementValues(localElements.size());
+  for (uint64_t i(0); i < localElements.size(); ++i) {
     localLowestElementIndices[i] = localElements[i].first;
     localLowestElementValues[i] = localElements[i].second;
   }
@@ -388,7 +433,7 @@ std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
   // find globally lowest K diagonal elements among the gathered elements
   std::sort(
     lowestElements.begin(), lowestElements.end(),
-    typename LapackGeneralEigenSystem<F>::EigenValueComparator()
+    EomDiagonalValueComparator<double>()
   );
   // at rank==0 (root) lowestElements contains N*Np entries
   // rank > 0 has an empty list
@@ -423,7 +468,8 @@ FockVector<F> Mp2PreConditioner<F>::getCorrection(
     DiagonalCorrection(const double lambda_): lambda(lambda_) {
     }
     F operator ()(const F residuumElement, const F diagonalElement) {
-      return residuumElement / (lambda - diagonalElement);
+      return std::abs(lambda - diagonalElement) < 1E-4 ?
+        0.0 : residuumElement / (lambda - diagonalElement);
     }
   protected:
     double lambda;

@@ -64,6 +64,10 @@ namespace cc4s {
 
     V getCorrection(const complex eigenValue, V &residuum);
 
+    V getDiagonalH() const {
+      return diagonalH;
+    }
+
   protected:
     V diagonalH;
   };
