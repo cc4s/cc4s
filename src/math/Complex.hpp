@@ -37,6 +37,23 @@ namespace cc4s {
   inline double absSqr(const complex z) {
     return absSqr(z.real()) + absSqr(z.imag());
   }
+
+  // base template
+  template <typename F>
+  class ComplexTraits {
+  public:
+    static F convert(const complex x) {
+      return F(x);
+    }
+  };
+
+  template <>
+  class ComplexTraits<double> {
+  public:
+    static double convert(const complex x) {
+      return std::real(x);
+    }
+  };
 }
 
 #endif

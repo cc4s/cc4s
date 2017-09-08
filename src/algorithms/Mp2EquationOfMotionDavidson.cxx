@@ -128,9 +128,13 @@ void Mp2EquationOfMotionDavidson::run() {
   Mp2PreConditioner<double> P(
     Tai, Tabij, Fij, Fab, Vabcd, Viajb, Vijab, Vijkl
   );
+  // Davidson solver
+  EigenSystemDavidson<FockVector<double>> eigenSystem(H, 4, P, 1E-7, 4*16);
 
-  // .. davidson solver, needing Mp2PreConditioner & Mp2SimTransHam
-
+  std::vector<complex> eigenValues(eigenSystem.getEigenValues());
+  for (auto &ev: eigenValues) {
+    LOG(0, "MP2_EOM_DAVIDSON") << "Eigenvalue=" << ev << std::endl;
+  }
 }
 
 // template method implementation

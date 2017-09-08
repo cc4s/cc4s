@@ -19,6 +19,9 @@ namespace cc4s {
     std::vector<CTF::Tensor<F>> componentTensors;
     std::vector<std::string> componentIndices;
 
+    FockVector() {
+    }
+
     FockVector(
       const FockVector<F> &a
     ):
@@ -40,7 +43,14 @@ namespace cc4s {
       initializeIndexTranslation();
     }
 
-    FockVector<F> &operator += (const FockVector<F> &a) {
+    FockVector<F> *operator =(const FockVector<F> &a) {
+      // asuume shape of rhs
+      componentTensors = a.componentTensors;
+      componentIndices = a.componentIndices;
+      return *this;
+    }
+
+    FockVector<F> &operator += (FockVector<F> &a) {
       checkCompatabilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
@@ -49,7 +59,7 @@ namespace cc4s {
       return *this;
     }
 
-    FockVector<F> &operator -= (const FockVector<F> &a) {
+    FockVector<F> &operator -= (FockVector<F> &a) {
       checkCompatabilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
@@ -67,7 +77,7 @@ namespace cc4s {
       return *this;
     }
 
-    F dot(const FockVector<F> &a) const {
+    F dot(FockVector<F> &a) {
       checkCompatabilityTo(a);
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
@@ -198,7 +208,7 @@ namespace cc4s {
 
   template <typename F>
   FockVector<F> inline operator +(
-    const FockVector<F> &a, const FockVector<F> &b
+    FockVector<F> &a, FockVector<F> &b
   ) {
     FockVector<F> result(a);
     result += b;
@@ -207,7 +217,7 @@ namespace cc4s {
 
   template <typename F>
   FockVector<F> inline operator -(
-    const FockVector<F> &a, const FockVector<F> &b
+    FockVector<F> &a, FockVector<F> &b
   ) {
     FockVector<F> result(a);
     result -= b;
@@ -215,14 +225,14 @@ namespace cc4s {
   }
 
   template <typename F>
-  FockVector<F> inline operator *(const FockVector<F> &a, const F &s) {
+  FockVector<F> inline operator *(FockVector<F> &a, const F &s) {
     FockVector<F> result(a);
     result *= s;
     return result;
   }
 
   template <typename F>
-  FockVector<F> inline operator *(const F &s, const FockVector<F> &a) {
+  FockVector<F> inline operator *(const F &s, FockVector<F> &a) {
     FockVector<F> result(a);
     result *= s;
     return result;

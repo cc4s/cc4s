@@ -17,16 +17,16 @@ namespace cc4s {
      * \brief ...
      * \param[in] h object representing the matrix whose eigen system is sought
      * offering the following method:
-     * V rightApply(const V &v) const;
+     * V rightApply(V &v);
      * returning the action of h on v standing right of h.
      * \param[in] eigenVectorsCount the number of eigenvalues and vectors to be
      * computed.
      * \param[in] p object representing the preconditioner
      * offering the following method:
-     * std::vector<V> getInitialBasis(int eigenVectorsCount) const;
+     * std::vector<V> getInitialBasis(int eigenVectorsCount);
      * returning an initial guess the basis consisting of eigenVectorsCount
      * vectors.
-     * V getCorrection(const complex eigenValue, const V &residuum) const;
+     * V getCorrection(const complex eigenValue, V &residuum);
      * computing the estimated correction for the k-th eigenvector given its
      * eigenvalue and the residuum of the current k-th estimated eigenvector.
      * \param[in] tolerance the targeted relative tolerance to be met
@@ -36,18 +36,17 @@ namespace cc4s {
      **/
     template <typename H, typename P>
     EigenSystemDavidson(
-      const H &h,
+      H &h,
       const int eigenVectorsCount,
-      const P &p,
+      P &p,
       const double tolerance = 1E-14,
       const unsigned int maxBasisSize = 1000
-    ) {
-      eigenValues.resize(eigenVectorsCount);
-      rightEigenVectors.resize(eigenVectorsCount);
-
+    ):
+      eigenValues(eigenVectorsCount),
+      rightEigenVectors( p.getInitialBasis(eigenVectorsCount) )
+    {
       // get inital estimates for rEV = initial B matrix
-      std::vector<V> basis;
-      basis = p.getInitialBasis(eigenVectorsCount);
+      std::vector<V> basis( rightEigenVectors );
 
       // begin convergence loop
       double rms;
@@ -55,7 +54,7 @@ namespace cc4s {
       do {
         LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
         // compute reduced H by projection onto subspace spanned by basis
-        LapackMatrix<F> reducedH(basis.size(), basis.size());
+        LapackMatrix<complex> reducedH(basis.size(), basis.size());
         for (unsigned int j(0); j < basis.size(); ++j) {
           V HBj( h.rightApply(basis[j]) );
           for (unsigned int i(0); i < basis.size(); ++i) {
@@ -64,8 +63,8 @@ namespace cc4s {
         }
 
         // compute K lowest reduced eigenvalues and vectors of reduced H
-        LapackMatrix<F> reducedEigenVectors(basis.size(), basis.size());
-        LapackGeneralEigenSystem<F> reducedEigenSystem(reducedH);
+        LapackMatrix<complex> reducedEigenVectors(basis.size(), basis.size());
+        LapackGeneralEigenSystem<complex> reducedEigenSystem(reducedH);
 
         // begin basis extension loop for each k
         rms = 0.0;
@@ -76,13 +75,20 @@ namespace cc4s {
           // compute estimated eigenvector by expansion in basis
           rightEigenVectors[k] *= F(0);
           for (int b(0); b < reducedH.getColumns(); ++b) {
-            rightEigenVectors[k] +=
-              basis[b] * reducedEigenSystem.getRightEigenVectors()(b,k);
+            V scaledBase(
+              basis[b] * ComplexTraits<F>::convert(
+                reducedEigenSystem.getRightEigenVectors()(b,k)
+              )
+            );
+            rightEigenVectors[k] += scaledBase;
           }
 
           // compute residuum
           V residuum( h.rightApply(rightEigenVectors[k]) );
-          residuum -= rightEigenVectors[k] * eigenValues[k];
+          V lambdaR(
+            rightEigenVectors[k] * ComplexTraits<F>::convert(eigenValues[k])
+          );
+          residuum -= lambdaR;
           rms += std::real(residuum.dot(residuum)) /
             std::real(rightEigenVectors[k].dot(rightEigenVectors[k]));
 
@@ -91,7 +97,8 @@ namespace cc4s {
 
           // orthonormalize and append to basis
           for (unsigned int b(0); b < basis.size(); ++b) {
-            correction -= basis[b] * basis[b].dot(correction);
+            V scaledBase( basis[b] * basis[b].dot(correction) );
+            correction -= scaledBase;
           }
           correction *= F(1) / std::sqrt(correction.dot(correction));
           basis.push_back(correction);
