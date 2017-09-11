@@ -49,11 +49,7 @@ Mp2EquationOfMotionDavidson [
 ] [
   SinglesHamiltonianDiagonal
   DoublesHamiltonianDiagonal
-  SinglesBasis
-  DoublesBasis
 ].
 
 TensorWriter [(Data SinglesHamiltonianDiagonal)] [].
 TensorWriter [(Data DoublesHamiltonianDiagonal)] [].
-TensorWriter [(Data SinglesBasis)] [].
-TensorWriter [(Data DoublesBasis)] [].

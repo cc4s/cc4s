@@ -138,15 +138,6 @@ void Mp2EquationOfMotionDavidson::run() {
     "DoublesHamiltonianDiagonal",
     new CTF::Tensor<>(P.getDiagonalH().componentTensors[1])
   );
-  allocatedTensorArgument(
-    "DoublesBasis", new CTF::Tensor<>(basis[0].componentTensors[1])
-  );
-  allocatedTensorArgument(
-    "SinglesBasis", new CTF::Tensor<>(basis[1].componentTensors[0])
-  );
-  allocatedTensorArgument(
-    "DoublesBasis", new CTF::Tensor<>(basis[1].componentTensors[1])
-  );
   
   // Davidson solver
   EigenSystemDavidson<FockVector<double>> eigenSystem(H, 8, P, 1E-10, 8*16);
