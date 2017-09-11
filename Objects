@@ -79,6 +79,7 @@ build/${CONFIG}/obj/algorithms/Mp2EquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/Mp2EquationOfMotionDavidson.o \
 build/${CONFIG}/obj/algorithms/CcdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/CcsdEquationOfMotion.o \
+build/${CONFIG}/obj/algorithms/ThermalEquationOfMotion.o \
 
 TESTS_OBJECTS = \
 build/${CONFIG}/obj/test/math/Antisymmetrize.o \
