@@ -31,6 +31,7 @@ namespace cc4s {
     virtual std::string getAbbreviation() { return "Ccsd"; }
 
     static int64_t constexpr DEFAULT_SLICE_SIZE = -1;
+    static int64_t constexpr DEFAULT_DISTINGUISHABLE = 0;
 
   protected:
     /**
