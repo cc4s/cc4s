@@ -199,6 +199,15 @@ namespace cc4s {
         const std::pair<int, complex> &b
       ) {
         complex diff(b.second-a.second);
+        // FIXME: Move the inf code into particular implementations
+        double inf = std::numeric_limits<double>::infinity();
+        complex A(
+          std::abs(a.second) < 1E-4 ? *(new complex(inf,inf)) : a.second
+        );
+        complex B(
+          std::abs(b.second) < 1E-4 ? *(new complex(inf,inf)) : b.second
+        );
+        complex diff(B-A);
         double magnitude( std::abs(a.second)+std::abs(b.second) );
         if (std::real(diff) > +1E-13*magnitude) return true;
         if (std::real(diff) < -1E-13*magnitude) return false;
