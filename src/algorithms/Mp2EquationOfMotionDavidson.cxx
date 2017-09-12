@@ -140,7 +140,7 @@ void Mp2EquationOfMotionDavidson::run() {
   );
   
   // Davidson solver
-  EigenSystemDavidson<FockVector<double>> eigenSystem(H, 8, P, 1E-10, 8*16);
+  EigenSystemDavidson<FockVector<double>> eigenSystem(H, 4, P, 1E-4, 8*16);
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
   for (auto &ev: eigenValues) {
@@ -302,6 +302,11 @@ FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::rightApply(
   (*HRabij)["cdij"] +=
     ( - 0.5 ) * (*Tabij)["ecno"] * (*Vijab)["noeh"] * (*Rabij)["hdij"];
 
+  // Filter out non-physical part
+  (*HRabij)["cdii"] = ( 0.0 );
+  (*HRabij)["ccij"] = ( 0.0 );
+  (*HRabij)["ccii"] = ( 0.0 );
+
   return HR;
 }
 
@@ -358,6 +363,11 @@ Mp2PreConditioner<F>::Mp2PreConditioner(
   (*Dabij)["cdij"] += ( + 0.25) * Tabij["cdmn"] * Vijab["mncd"];
   (*Dabij)["ccij"] += ( + 0.5 ) * Tabij["ecno"] * Vijab["noec"];
   (*Dabij)["cdij"] += ( - 0.5 ) * Tabij["ecno"] * Vijab["noec"];
+
+  // Filter out non-physical part
+  (*Dabij)["cdii"] = ( 0.0 );
+  (*Dabij)["ccij"] = ( 0.0 );
+  (*Dabij)["ccii"] = ( 0.0 );
 }
 
 template <typename F>
