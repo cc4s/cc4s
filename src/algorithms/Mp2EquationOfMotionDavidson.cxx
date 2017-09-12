@@ -424,10 +424,12 @@ std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
     localLowestElementValues[i] = localElements[i].second;
   }
   MpiCommunicator communicator(*Cc4s::world);
-  int lowestElementsCount(
-    communicator.getRank() == 0 ?
-      eigenVectorsCount * communicator.getProcesses() : 0
-  );
+  // FIXME: Generalize this to the obvious
+  int lowestElementsCount(156);
+  //int lowestElementsCount(
+    //communicator.getRank() == 0 ?
+      //eigenVectorsCount * communicator.getProcesses() : 0
+  //);
   std::vector<int64_t> lowestElementIndices(lowestElementsCount);
   std::vector<F> lowestElementValues(lowestElementsCount);
   communicator.gather(localLowestElementIndices, lowestElementIndices);
@@ -449,7 +451,10 @@ std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
 
   // create basis vectors for each lowest element
   std::vector<V> basis;
-  for (int b(0); b < eigenVectorsCount; ++b) {
+  //for (int b(0); b < eigenVectorsCount; ++b) {
+  int bb(0);
+  int b(0);
+  while (bb < eigenVectorsCount) {
     V basisElement(diagonalH);
     basisElement *= 0.0;
     std::vector<std::pair<int64_t,F>> elements;
@@ -462,7 +467,18 @@ std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
     // (101, -70), (32, -55), ...
     // b1: 0... 1 (at global position 101) 0 ...
     // b2: 0... 1 (at global position 32) 0 ...i
+
+    // Filter out unphysical components from the basisElement
+    (basisElement.componentTensors[1])["abii"]=0.0;
+    (basisElement.componentTensors[1])["aaij"]=0.0;
+    (basisElement.componentTensors[1])["aaii"]=0.0;
+
+    b++;
+    //std::cout << "b" << b << std::endl;
+    if (std::sqrt(basisElement.dot(basisElement))!=F(1)) continue;
+    bb++;
     basis.push_back(basisElement);
+    //std::cout << "bb" << bb << std::endl;
   }
   return basis;
 }
