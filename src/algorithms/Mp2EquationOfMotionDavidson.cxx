@@ -397,6 +397,7 @@ template <typename F>
 std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
   const int eigenVectorsCount
 ) {
+  LOG(0, "MP2_EOM_DAVIDSON") << "Getting initial basis " << std::endl;
   // find K=eigenVectorsCount lowest diagonal elements at each processor
   std::vector<std::pair<int64_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
