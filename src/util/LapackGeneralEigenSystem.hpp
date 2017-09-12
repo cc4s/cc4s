@@ -146,7 +146,7 @@ namespace cc4s {
       // TODO: check info
       workCount = static_cast<int>(std::real(optimalWork)+0.5);
       std::vector<complex> work(workCount);
-     
+
       zgeev_(
         "V", "V",
         &rows,
