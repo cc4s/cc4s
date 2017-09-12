@@ -56,17 +56,17 @@ TensorReader [] [(Data Momenta)].
 FiniteSizeCorrection [
   CoulombVertex
   CoulombKernel
+  Momenta
   (SinglesAmplitudes CcsdSinglesAmplitudes)
   (DoublesAmplitudes CcsdDoublesAmplitudes)
-  Momenta
-% Set the number of kpoints, the volume of the simulation cell, and the
-% constantFactor
+  % Set the number of kpoints, the volume of the simulation cell, and the
+  % constantFactor
 % (kpoints 1)
   (volume 136.99)
   (constantFactor 0.002351)
-% Set the shortest G-vector (if given), else the smallest G-vector will be
-% used
-  (shortestGvector 0.02351)
+  % Set the shortest G-vector (if given), else the smallest G-vector will be
+  % used
+% (shortestGvector 0.02351)
 ] [
   CorrectedEnergy
   StructureFactor

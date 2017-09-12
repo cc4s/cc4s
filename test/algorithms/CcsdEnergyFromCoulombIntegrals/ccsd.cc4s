@@ -7,22 +7,29 @@ CoulombVertexReader [
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-  (complex 0)
+  % for a complex calculation use 1, for a real one 0
+  (complex 1)
 ] [
-  PPHHCoulombIntegrals
-  HHPPCoulombIntegrals
   PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PHHPCoulombIntegrals
+  HHPPCoulombIntegrals
   HHHHCoulombIntegrals
+  % the two following integrals are only needed for a complex calculation
   HHHPCoulombIntegrals
+  PHHHCoulombIntegrals
 ].
 
 CcsdEnergyFromCoulombIntegrals [
   CoulombVertex
-  PPHHCoulombIntegrals
-  HHPPCoulombIntegrals
   PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PHHPCoulombIntegrals
+  HHPPCoulombIntegrals
   HHHHCoulombIntegrals
+  % the two following integrals are only needed for a complex calculation
   HHHPCoulombIntegrals
+  PHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   (maxIterations 24)
 % (integralsSliceSize 12)
