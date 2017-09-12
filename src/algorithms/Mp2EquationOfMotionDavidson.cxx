@@ -512,6 +512,10 @@ FockVector<F> Mp2PreConditioner<F>::getCorrection(
       CTF::Bivar_Function<F>(diagonalCorrection)
     );
   }
+  // Filter out unphysical components from the correction
+  (correction.componentTensors[1])["abii"]=0.0;
+  (correction.componentTensors[1])["aaij"]=0.0;
+  (correction.componentTensors[1])["aaii"]=0.0;
   return correction;
 }
 
