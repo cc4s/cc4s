@@ -100,7 +100,9 @@ namespace cc4s {
             V scaledBase( basis[b] * basis[b].dot(correction) );
             correction -= scaledBase;
           }
-          correction *= F(1) / std::sqrt(correction.dot(correction));
+          F correction_norm(correction.dot(correction));
+          if (std::abs(correction_norm) < tolerance) continue;
+          correction *= F(1) / correction_norm;
           basis.push_back(correction);
         }
         ++iterationCount;
