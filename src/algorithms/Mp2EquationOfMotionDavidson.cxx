@@ -363,6 +363,12 @@ Mp2PreConditioner<F>::Mp2PreConditioner(
 template <typename F>
 class EomDiagonalValueComparator;
 
+/**
+ * \brief Comparator that should filter out zero values of the diagonal
+ * matrix.
+ * Zero values are treated as infinite so that they get appended to the
+ * end of the list.
+ */
 template <>
 class EomDiagonalValueComparator<double> {
 public:
@@ -379,7 +385,8 @@ public:
         std::numeric_limits<double>::infinity() : b.second
     );
     double diff(B-A);
-    double magnitude(std::abs(A)+std::abs(B));
+    // maintain magnitude finite!
+    double magnitude(std::abs(a.second)+std::abs(b.second));
     if (std::real(diff) > +1E-13*magnitude) return true;
     if (std::real(diff) < -1E-13*magnitude) return false;
     return a.first < b.first;
