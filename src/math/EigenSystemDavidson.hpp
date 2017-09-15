@@ -48,16 +48,140 @@ namespace cc4s {
       P &p,
       const double tolerance = 1E-14,
       const unsigned int maxBasisSize = 1000,
-      const bool dualVersion = false
+      const bool dualVersion = true
     ):
       eigenValues(eigenVectorsCount)
     {
       if (dualVersion)
-        LOG(1,"Davidson") << "Dual Version not implemented" << std::endl;
+        eigenSystemDualVersion(
+          h, eigenVectorsCount, p, tolerance, maxBasisSize
+        );
       else
         eigenSystemMonoVersion(
           h, eigenVectorsCount, p, tolerance, maxBasisSize
         );
+    }
+
+    template <typename H, typename P>
+    void eigenSystemDualVersion(
+      H &h,
+      const int eigenVectorsCount,
+      P &p,
+      const double tolerance,
+      const unsigned int maxBasisSize
+    ) {
+      // get inital estimates for rEV = initial B matrix
+      rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
+      leftEigenVectors = p.getInitialBasis(eigenVectorsCount);
+      std::vector<V> rightBasis( rightEigenVectors );
+      std::vector<V> leftBasis( leftEigenVectors );
+
+      // begin convergence loop
+      double rms;
+      int iterationCount(0);
+      do {
+        LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
+
+        // check if leftBasis and rightBasis have the same size
+        if (rightBasis.size() != leftBasis.size()) {
+          LOG(1, "Davidson") << "Right and left bases have different sizes"
+                             << std::endl;
+          throw EXCEPTION("");
+        }
+
+        // compute reduced H by projection onto subspace spanned by rightBasis
+        // and leftBasis
+        LapackMatrix<complex> reducedH(rightBasis.size(), rightBasis.size());
+        for (unsigned int j(0); j < rightBasis.size(); ++j) {
+          V HBj( h.rightApply(rightBasis[j]) );
+          for (unsigned int i(0); i < rightBasis.size(); ++i) {
+            reducedH(i,j) = leftBasis[i].dot(HBj);
+          }
+        }
+
+        // compute K lowest reduced eigenvalues and vectors of reduced H
+        LapackMatrix<complex> reducedEigenVectors(
+          rightBasis.size(), rightBasis.size()
+        );
+        LapackGeneralEigenSystem<complex> reducedEigenSystem(reducedH);
+
+        // begin rightBasis extension loop for each k
+        rms = 0.0;
+        for (unsigned int k(0); k < eigenValues.size(); ++k) {
+          // get estimated eigenvalue
+          eigenValues[k] = reducedEigenSystem.getEigenValues()[k];
+
+          // compute estimated eigenvector by expansion in rightBasis
+          rightEigenVectors[k] *= F(0);
+          leftEigenVectors[k] *= F(0);
+          for (int b(0); b < reducedH.getColumns(); ++b) {
+            // Get the rightEigenVectors in the coordinates of the
+            // original basis (rightBasis)
+            V rightScaledBase(
+              rightBasis[b] * ComplexTraits<F>::convert(
+                reducedEigenSystem.getRightEigenVectors()(b,k)
+              )
+            );
+            rightEigenVectors[k] += rightScaledBase;
+
+            // Do the same for the leftEigenVectors
+            V leftScaledBase(
+              leftBasis[b] * ComplexTraits<F>::convert(
+                reducedEigenSystem.getLeftEigenVectors()(b,k)
+              )
+            );
+            leftEigenVectors[k] += leftScaledBase;
+
+          }
+
+          double rightNorm(
+            rightEigenVectors[k].dot(rightEigenVectors[k])
+          );
+          LOG(1,"Davidson") << "Right norm [" << k << "] "
+                            << rightNorm << std::endl;
+          LOG(1,"Davidson") << "EV         [" << k << "] "
+                            << eigenValues[k] << std::endl;
+
+          // compute residuum
+          V rightResiduum( h.rightApply(rightEigenVectors[k]) );
+          V rightLambdaR(
+            rightEigenVectors[k] * ComplexTraits<F>::convert(eigenValues[k])
+          );
+          rightResiduum -= rightLambdaR;
+
+          std::cout << "Applying left" << std::endl;
+          V leftResiduum( h.leftApply(leftEigenVectors[k]) );
+          V leftLambdaR(
+            leftEigenVectors[k] * ComplexTraits<F>::convert(eigenValues[k])
+          );
+          leftResiduum -= leftLambdaR;
+
+          rms += std::real(rightResiduum.dot(rightResiduum)) /
+            std::real(rightEigenVectors[k].dot(rightEigenVectors[k]));
+
+          // compute rightCorrection using preconditioner
+          V rightCorrection( p.getCorrection(eigenValues[k], rightResiduum) );
+
+          // orthonormalize and append to rightBasis
+          for (unsigned int b(0); b < rightBasis.size(); ++b) {
+            V rightScaledBase( rightBasis[b] * rightBasis[b].dot(rightCorrection) );
+            rightCorrection -= rightScaledBase;
+          }
+          F correction_norm(rightCorrection.dot(rightCorrection));
+          if (std::abs(correction_norm) < tolerance) continue;
+          rightCorrection *= F(1) / correction_norm;
+          rightBasis.push_back(rightCorrection);
+        }
+        ++iterationCount;
+        // end rightBasis extension loop
+      } while (
+        rms >= eigenVectorsCount * tolerance &&
+        rightBasis.size() <= maxBasisSize
+      );
+      // end convergence loop
+      if (rightBasis.size() > maxBasisSize) {
+        //throw EXCEPTION("Failed to reach convergence");
+      }
     }
 
     template <typename H, typename P>
