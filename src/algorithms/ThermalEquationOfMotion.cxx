@@ -58,7 +58,7 @@ void ThermalEquationOfMotion::run() {
     "DoublesBasis",
     new CTF::Tensor<>(basis[8].componentTensors[1])
   );
-  
+
   // Davidson solver
   EigenSystemDavidson<FockVector<double>> eigenSystem(H, 16, P, 1E-14, 16*16);
 
@@ -82,6 +82,16 @@ ThermalHamiltonian<F>::ThermalHamiltonian(
   epsa(epsa_),
   Vabij(Vabij_)
 {
+}
+
+template <typename F>
+FockVector<F> ThermalHamiltonian<F>::leftApply(
+  FockVector<F> &L
+) {
+  FockVector<F> LH(L);
+  // TODO: Implement left apply
+  LH *= F(0);
+  return LH;
 }
 
 template <typename F>
