@@ -28,6 +28,7 @@ namespace cc4s {
     );
 
     FockVector<F> rightApply(FockVector<F> &v);
+    FockVector<F> leftApply(FockVector<F> &v);
 
   protected:
     CTF::Tensor<F> *Tai, *Tabij;

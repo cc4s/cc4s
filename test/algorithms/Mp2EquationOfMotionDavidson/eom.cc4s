@@ -1,5 +1,5 @@
 CoulombVertexReader [
-  (file "../../resources/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.74")
+  (file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
   (unrestricted 1)
 ] [
   (CoulombVertex FullCoulombVertex)
