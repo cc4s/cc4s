@@ -135,7 +135,7 @@ namespace cc4s {
   MySimpleVector v;
   MySimpleMatrix m;
   MySimplePreconditioner<MySimpleMatrix> p
-  EigenSystemDavidson<MyFuckingVector> eigenSystem(m, 4, p);
+  EigenSystemDavidson<MyVectorType> eigenSystem(m, 4, p);
   eigenSystem.getEigenValues()[0];
   eigenSystem.getRightEigenVectors()[0];
 */

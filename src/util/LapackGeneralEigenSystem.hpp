@@ -198,7 +198,6 @@ namespace cc4s {
         const std::pair<int, complex> &a,
         const std::pair<int, complex> &b
       ) {
-        complex diff(b.second-a.second);
         // FIXME: Move the inf code into particular implementations
         double inf = std::numeric_limits<double>::infinity();
         complex A(
