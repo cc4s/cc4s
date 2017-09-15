@@ -82,10 +82,14 @@ namespace cc4s {
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
+        // We need also the indices for a in general, since we might have
+        // {{T['ijab']}}.dot(Q['abij']), which is still valid, although
+        // the indices are not equal
+        const char *aIndices(a.componentIndices[i].c_str());
         CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
         // add to result
         result.contract(
-          1.0, componentTensors[i], indices, a.componentTensors[i], indices,
+          1.0, componentTensors[i], indices, a.componentTensors[i], aIndices,
           1.0, "", fDot
         );
       }
@@ -198,7 +202,7 @@ namespace cc4s {
     void checkCompatabilityTo(const FockVector<F> &a) const {
       if (
         componentTensors.size() != a.componentTensors.size() ||
-        componentIndices.size() != a.componentIndices.size() 
+        componentIndices.size() != a.componentIndices.size()
       ) {
         throw EXCEPTION("Number of component tensors does no match");
       }
