@@ -18,6 +18,9 @@ namespace cc4s {
      * \param[in] h object representing the matrix whose eigen system is sought
      * offering the following method:
      * V rightApply(V &v);
+     * Also, if the dual version of the Davidson algorithm is to be used
+     * h should offer the leftApply method
+     * V leftApply(V &v);
      * returning the action of h on v standing right of h.
      * \param[in] eigenVectorsCount the number of eigenvalues and vectors to be
      * computed.
@@ -33,6 +36,10 @@ namespace cc4s {
      * by all residua.
      * \param[in] maxBasisSize the maximum allowed number of vectors
      * representing eigenvectors.
+     * \param[in] dualVersion If the dual version of the algorithm is to be
+     * used. The dual version of the algorithm calculates both the right and
+     * left eigenvectors of the h object. If the dual version is not to be used
+     * then only the right eigenvectors are to be calculated.
      **/
     template <typename H, typename P>
     EigenSystemDavidson(
@@ -40,43 +47,62 @@ namespace cc4s {
       const int eigenVectorsCount,
       P &p,
       const double tolerance = 1E-14,
-      const unsigned int maxBasisSize = 1000
+      const unsigned int maxBasisSize = 1000,
+      const bool dualVersion = false
     ):
-      eigenValues(eigenVectorsCount),
-      rightEigenVectors( p.getInitialBasis(eigenVectorsCount) )
+      eigenValues(eigenVectorsCount)
     {
+      if (dualVersion)
+        LOG(1,"Davidson") << "Dual Version not implemented" << std::endl;
+      else
+        eigenSystemMonoVersion(
+          h, eigenVectorsCount, p, tolerance, maxBasisSize
+        );
+    }
+
+    template <typename H, typename P>
+    void eigenSystemMonoVersion(
+      H &h,
+      const int eigenVectorsCount,
+      P &p,
+      const double tolerance,
+      const unsigned int maxBasisSize
+    ) {
       // get inital estimates for rEV = initial B matrix
-      std::vector<V> basis( rightEigenVectors );
+      rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
+      std::vector<V> rightBasis( rightEigenVectors );
 
       // begin convergence loop
       double rms;
       int iterationCount(0);
       do {
         LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
-        // compute reduced H by projection onto subspace spanned by basis
-        LapackMatrix<complex> reducedH(basis.size(), basis.size());
-        for (unsigned int j(0); j < basis.size(); ++j) {
-          V HBj( h.rightApply(basis[j]) );
-          for (unsigned int i(0); i < basis.size(); ++i) {
-            reducedH(i,j) = basis[i].dot(HBj);
+        // compute reduced H by projection onto subspace spanned by rightBasis
+        LapackMatrix<complex> reducedH(rightBasis.size(), rightBasis.size());
+        for (unsigned int j(0); j < rightBasis.size(); ++j) {
+          V HBj( h.rightApply(rightBasis[j]) );
+          for (unsigned int i(0); i < rightBasis.size(); ++i) {
+            reducedH(i,j) = rightBasis[i].dot(HBj);
           }
         }
 
         // compute K lowest reduced eigenvalues and vectors of reduced H
-        LapackMatrix<complex> reducedEigenVectors(basis.size(), basis.size());
+        LapackMatrix<complex> reducedEigenVectors(
+          rightBasis.size(), rightBasis.size()
+        );
         LapackGeneralEigenSystem<complex> reducedEigenSystem(reducedH);
 
-        // begin basis extension loop for each k
+        // begin rightBasis extension loop for each k
         rms = 0.0;
         for (unsigned int k(0); k < eigenValues.size(); ++k) {
           // get estimated eigenvalue
           eigenValues[k] = reducedEigenSystem.getEigenValues()[k];
 
-          // compute estimated eigenvector by expansion in basis
+          // compute estimated eigenvector by expansion in rightBasis
           rightEigenVectors[k] *= F(0);
           for (int b(0); b < reducedH.getColumns(); ++b) {
             V scaledBase(
-              basis[b] * ComplexTraits<F>::convert(
+              rightBasis[b] * ComplexTraits<F>::convert(
                 reducedEigenSystem.getRightEigenVectors()(b,k)
               )
             );
@@ -95,23 +121,24 @@ namespace cc4s {
           // compute correction using preconditioner
           V correction( p.getCorrection(eigenValues[k], residuum) );
 
-          // orthonormalize and append to basis
-          for (unsigned int b(0); b < basis.size(); ++b) {
-            V scaledBase( basis[b] * basis[b].dot(correction) );
+          // orthonormalize and append to rightBasis
+          for (unsigned int b(0); b < rightBasis.size(); ++b) {
+            V scaledBase( rightBasis[b] * rightBasis[b].dot(correction) );
             correction -= scaledBase;
           }
           F correction_norm(correction.dot(correction));
           if (std::abs(correction_norm) < tolerance) continue;
           correction *= F(1) / correction_norm;
-          basis.push_back(correction);
+          rightBasis.push_back(correction);
         }
         ++iterationCount;
-        // end basis extension loop
+        // end rightBasis extension loop
       } while (
-        rms >= eigenVectorsCount * tolerance && basis.size() <= maxBasisSize
+        rms >= eigenVectorsCount * tolerance &&
+        rightBasis.size() <= maxBasisSize
       );
       // end convergence loop
-      if (basis.size() > maxBasisSize) {
+      if (rightBasis.size() > maxBasisSize) {
         //throw EXCEPTION("Failed to reach convergence");
       }
     }
@@ -124,9 +151,14 @@ namespace cc4s {
       return rightEigenVectors;
     }
 
+    const std::vector<V> &getLeftEigenVectors() const {
+      return leftEigenVectors;
+    }
+
   protected:
     std::vector<complex> eigenValues;
     std::vector<V> rightEigenVectors;
+    std::vector<V> leftEigenVectors;
   };
 }
 #endif
