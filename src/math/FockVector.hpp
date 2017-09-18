@@ -3,6 +3,7 @@
 
 #include <math/ComplexTensor.hpp>
 #include <math/Vector.hpp>
+#include <util/Exception.hpp>
 
 #include <vector>
 #include <string>
@@ -75,6 +76,25 @@ namespace cc4s {
         componentTensors[i][indices] *= scalar[""];
       }
       return *this;
+    }
+
+    F braket(FockVector<F> &a) {
+      checkDualCompatibility(a);
+      CTF::Scalar<F> result;
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        const char *indices(componentIndices[i].c_str());
+        // We need also the indices for a in general, since we might have
+        // {{T['ijab']}}.dot(Q['abij']), which is still valid, although
+        // the indices are not equal
+        const char *aIndices(a.componentIndices[i].c_str());
+        CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
+        // add to result
+        result.contract(
+          1.0, componentTensors[i], indices, a.componentTensors[i], aIndices,
+          1.0, "", fDot
+        );
+      }
+      return result.get_val();
     }
 
     F dot(FockVector<F> &a) {
@@ -197,6 +217,40 @@ namespace cc4s {
         base = indexEnds[component++];
       }
       componentIndex = totalIndex - base;
+    }
+
+    /**
+     * \brief Check if two fock vectors are dual conjugated of each other.
+     * e.g.:
+     *  Suppose we have Aabij and Bijab,
+     *    \f[ A^{ab}_{ij} = c^{+}_a c^{+}_b c_j c_i \f]
+     *  and also
+     *    \f[ (A^{ab}_{ij})^+ = c^{+}_i c^{+}_j c_b c_a \f] = A^{ij}_{ab}
+     *  therefore it should check that the length
+     *  of the index a in Aabij is the same as the length of
+     *  a in Bijab, the len of b in Aabij the same as b in Bijab, etc...
+     *
+     *  TODO: Improve speed?
+     */
+    void checkDualCompatibility(const FockVector<F> &a) const {
+      checkCompatibilityTo(a);
+      for (int i ; i < componentTensors.size() ; i++) {
+        CTF::Tensor<F> *A(a.componentTensors[i]), *B(componentTensors[i]);
+        std::string aIndices(a.componentTensors[i].c_str()),
+          bIndices(componentTensors[i].c_str());
+        int indexLens(A->order());
+        for (int j ; j < indexLens ; j++) {
+          std::size_t bIndexPos(
+            bIndices.find(aIndices[j])
+          );
+          if (bIndexPos == std::string::npos) {
+            throw EXCEPTION("Index of fock vectors do not match");
+          }
+          if (A->lens[j] != B->lens[bIndexPos]) {
+            throw EXCEPTION("Number of component tensors does no match");
+          }
+        }
+      }
     }
 
     void checkCompatibilityTo(const FockVector<F> &a) const {

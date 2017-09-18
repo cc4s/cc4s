@@ -48,7 +48,7 @@ namespace cc4s {
       P &p,
       const double tolerance = 1E-14,
       const unsigned int maxBasisSize = 1000,
-      const bool dualVersion = true
+      const bool dualVersion = false
     ):
       eigenValues(eigenVectorsCount)
     {
@@ -100,9 +100,6 @@ namespace cc4s {
         }
 
         // compute K lowest reduced eigenvalues and vectors of reduced H
-        LapackMatrix<complex> reducedEigenVectors(
-          rightBasis.size(), rightBasis.size()
-        );
         LapackGeneralEigenSystem<complex> reducedEigenSystem(reducedH);
 
         // begin rightBasis extension loop for each k

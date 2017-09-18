@@ -85,6 +85,8 @@ TESTS_OBJECTS = \
 build/${CONFIG}/obj/test/math/Antisymmetrize.o \
 build/${CONFIG}/obj/test/math/Symmetrize.o \
 build/${CONFIG}/obj/test/math/PermutationSign.o \
-build/${CONFIG}/obj/test/math/EigenSystemDavidson.o \
+build/${CONFIG}/obj/test/math/FockVector.o \
 build/${CONFIG}/obj/test/util/LapackGeneralEigenSystem.o \
 build/${CONFIG}/obj/test/Test.o  \
+
+# build/${CONFIG}/obj/test/math/EigenSystemDavidson.o \
