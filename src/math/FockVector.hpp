@@ -51,7 +51,7 @@ namespace cc4s {
     }
 
     FockVector<F> &operator += (FockVector<F> &a) {
-      checkCompatabilityTo(a);
+      checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
         componentTensors[i][indices] += a.componentTensors[i][indices];
@@ -60,7 +60,7 @@ namespace cc4s {
     }
 
     FockVector<F> &operator -= (FockVector<F> &a) {
-      checkCompatabilityTo(a);
+      checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
         componentTensors[i][indices] += F(-1) * a.componentTensors[i][indices];
@@ -78,7 +78,7 @@ namespace cc4s {
     }
 
     F dot(FockVector<F> &a) {
-      checkCompatabilityTo(a);
+      checkCompatibilityTo(a);
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
@@ -199,7 +199,7 @@ namespace cc4s {
       componentIndex = totalIndex - base;
     }
 
-    void checkCompatabilityTo(const FockVector<F> &a) const {
+    void checkCompatibilityTo(const FockVector<F> &a) const {
       if (
         componentTensors.size() != a.componentTensors.size() ||
         componentIndices.size() != a.componentIndices.size()
