@@ -1,3 +1,6 @@
 [submodule "ctf"]
 	path = lib/src/ctf
 	url = https://github.com/solomonik/ctf.git
+[submodule "resources"]
+	path = resources
+	url = hulldamage.org:/git/cc4s/resources.git
