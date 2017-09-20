@@ -1,4 +1,4 @@
-#include <algorithms/DcsdEnergyFromCoulombIntegrals.hpp>
+#include <algorithms/LegacyDcsdEnergyFromCoulombIntegrals.hpp>
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
 #include <math/MathFunctions.hpp>
@@ -10,14 +10,14 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(DcsdEnergyFromCoulombIntegrals);
+ALGORITHM_REGISTRAR_DEFINITION(LegacyDcsdEnergyFromCoulombIntegrals);
 
-DcsdEnergyFromCoulombIntegrals::DcsdEnergyFromCoulombIntegrals(
+LegacyDcsdEnergyFromCoulombIntegrals::LegacyDcsdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
 ): LegacyClusterSinglesDoublesAlgorithm(argumentList) {
 }
 
-DcsdEnergyFromCoulombIntegrals::~DcsdEnergyFromCoulombIntegrals() {
+LegacyDcsdEnergyFromCoulombIntegrals::~LegacyDcsdEnergyFromCoulombIntegrals() {
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -26,7 +26,7 @@ DcsdEnergyFromCoulombIntegrals::~DcsdEnergyFromCoulombIntegrals() {
 // modified to give DCSD amplitudes according to
 // D. Kats, et. al., J. Chem. Phys. 142, 064111 (2015)
 //////////////////////////////////////////////////////////////////////
-void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
+void LegacyDcsdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the amplitudes Tai and Tabij
     Tensor<> *Tai(&TaiMixer->getNext());
@@ -180,7 +180,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
             Rabij["abij"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGab["Gbc"] * (*Tai)["cj"];
           }
           Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
-          Rabij["abij"] += ( 1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
+          Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
           
           // Build Xakic
           if (Vabci) {
@@ -473,7 +473,7 @@ void DcsdEnergyFromCoulombIntegrals::iterate(int i) {
 }
 
 
-void DcsdEnergyFromCoulombIntegrals::dryIterate() {
+void LegacyDcsdEnergyFromCoulombIntegrals::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
     // Read the DCSD amplitudes Tai and Tabij

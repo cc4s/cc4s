@@ -53,8 +53,8 @@ build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/LegacyCcsdEnergyFromCoulombIntegrals.o \
+build/${CONFIG}/obj/algorithms/LegacyDcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexSingularVectors.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexSingularVectors.o \
 build/${CONFIG}/obj/algorithms/ApproximateCoulombVertex.o \

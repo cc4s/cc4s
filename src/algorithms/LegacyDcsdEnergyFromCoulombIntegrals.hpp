@@ -1,6 +1,6 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef DCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
-#define DCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
+#ifndef LEGACY_DCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
+#define LEGACY_DCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
 #include <algorithms/LegacyClusterSinglesDoublesAlgorithm.hpp>
 
@@ -16,15 +16,15 @@ namespace cc4s {
    * V_{kl}^{ij}, V_{ka}^{ij}, V_{ci}^{ab}\f$ and \f$V_{cd}^{ab}\f$ (if given, else slicing and the Coulomb
    * Vertex \f$\Gamma_{pG}^q\f$  is used).
    */
-  class DcsdEnergyFromCoulombIntegrals:
+  class LegacyDcsdEnergyFromCoulombIntegrals:
     public LegacyClusterSinglesDoublesAlgorithm
   {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(DcsdEnergyFromCoulombIntegrals);
-    DcsdEnergyFromCoulombIntegrals(
+    ALGORITHM_REGISTRAR_DECLARATION(LegacyDcsdEnergyFromCoulombIntegrals);
+    LegacyDcsdEnergyFromCoulombIntegrals(
       std::vector<Argument> const &argumentList
     );
-    virtual ~DcsdEnergyFromCoulombIntegrals();
+    virtual ~LegacyDcsdEnergyFromCoulombIntegrals();
 
     /**
      * \brief Returns the abbreviation of the routine (DCSD).
