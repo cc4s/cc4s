@@ -247,10 +247,13 @@ namespace cc4s {
             V scaledBase( rightBasis[b] * rightBasis[b].dot(correction) );
             correction -= scaledBase;
           }
-          F correction_norm(correction.dot(correction));
-          if (std::abs(correction_norm) < tolerance) continue;
+          F correction_norm(
+            std::sqrt(correction.dot(correction))
+          );
+          if (std::abs(correction_norm) < 1E-6) continue;
           correction *= F(1) / correction_norm;
           rightBasis.push_back(correction);
+          LOG(1,"Davidson") << "Basis size " << rightBasis.size() << std::endl;
         }
         ++iterationCount;
         // end rightBasis extension loop

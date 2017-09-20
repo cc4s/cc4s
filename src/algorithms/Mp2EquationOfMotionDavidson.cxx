@@ -493,12 +493,15 @@ std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
     localLowestElementValues[i] = localElements[i].second;
   }
   MpiCommunicator communicator(*Cc4s::world);
-  // FIXME: Generalize this to the obvious
-  int lowestElementsCount(156);
-  //int lowestElementsCount(
-    //communicator.getRank() == 0 ?
-      //eigenVectorsCount * communicator.getProcesses() : 0
-  //);
+   int lowestElementsCount(
+    diagonalH.componentTensors[0].lens[0] *
+    diagonalH.componentTensors[0].lens[1] +
+    pow(
+      diagonalH.componentTensors[0].lens[0] *
+      diagonalH.componentTensors[0].lens[1],
+      3.0
+    )
+  );
   std::vector<int64_t> lowestElementIndices(lowestElementsCount);
   std::vector<F> lowestElementValues(lowestElementsCount);
   communicator.gather(localLowestElementIndices, lowestElementIndices);
