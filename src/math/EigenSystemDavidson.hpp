@@ -193,6 +193,28 @@ namespace cc4s {
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
       std::vector<V> rightBasis( rightEigenVectors );
 
+      // Antisymmetrize initial basis
+      LOG(1,"Davidson") << "Antisymmetrize basis" << std::endl;
+      for (unsigned int j(0); j < rightEigenVectors.size(); ++j) {
+        rightEigenVectors[j].componentTensors[1]["abij"] -=
+           rightEigenVectors[j].componentTensors[1]["abji"];
+      }
+      LOG(1,"Davidson") << "Performing Gramm Schmidt in basis" << std::endl;
+      for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
+        V newVector(rightEigenVectors[b]);
+        for (unsigned int j(0); j < b; ++j) {
+          V scaledBase( rightEigenVectors[j] * rightEigenVectors[j].dot(rightEigenVectors[b]) );
+          newVector -= scaledBase;
+        }
+        // normalize
+        F newVector_norm(
+          std::sqrt(newVector.dot(newVector))
+        );
+        newVector *= F(1) / newVector_norm;
+        rightEigenVectors[b] *= F(0);
+        rightEigenVectors[b] += newVector;
+      }
+
       // begin convergence loop
       double rms;
       int iterationCount(0);
@@ -203,6 +225,8 @@ namespace cc4s {
         for (unsigned int j(0); j < rightBasis.size(); ++j) {
           V HBj( h.rightApply(rightBasis[j]) );
           for (unsigned int i(0); i < rightBasis.size(); ++i) {
+            //V HBi( h.rightApply(rightBasis[i]) );
+            //reducedH(i,j) = HBi.dot(HBj);
             reducedH(i,j) = rightBasis[i].dot(HBj);
           }
         }
@@ -229,11 +253,22 @@ namespace cc4s {
             );
             rightEigenVectors[k] += scaledBase;
           }
+          double rightNorm(
+            rightEigenVectors[k].dot(rightEigenVectors[k])
+          );
+
+          LOG(1,"Davidson") << "Right norm [" << k << "] "
+                            << rightNorm << std::endl;
+          LOG(1,"Davidson") << "EV         [" << k << "] "
+                            << eigenValues[k] << std::endl;
 
           // compute residuum
           V residuum( h.rightApply(rightEigenVectors[k]) );
           V lambdaR(
-            rightEigenVectors[k] * ComplexTraits<F>::convert(eigenValues[k])
+            rightEigenVectors[k] * ComplexTraits<F>::convert(
+              //std::sqrt(eigenValues[k])
+              eigenValues[k]
+            )
           );
           residuum -= lambdaR;
           rms += std::real(residuum.dot(residuum)) /
@@ -242,6 +277,8 @@ namespace cc4s {
           // compute correction using preconditioner
           V correction( p.getCorrection(eigenValues[k], residuum) );
 
+          correction.componentTensors[1]["abij"] -=
+             correction.componentTensors[1]["abji"];
           // orthonormalize and append to rightBasis
           for (unsigned int b(0); b < rightBasis.size(); ++b) {
             V scaledBase( rightBasis[b] * rightBasis[b].dot(correction) );
