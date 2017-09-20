@@ -47,8 +47,15 @@ void FiniteSizeCorrection::run() {
       calculateComplexStructureFactor();
     }
 
-    delete Tabij;
-    delete realTabij;
+    /*
+    bool complex = getIntegerArgument("complex", 0);
+    if (complex) {
+      calculateComplexStructureFactor();
+    } else {
+      calculateRealStructureFactor();
+    }
+    */
+    
   }
 
   LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
@@ -121,46 +128,48 @@ void FiniteSizeCorrection::readFromFile(){
 }
 
 void FiniteSizeCorrection::calculateRealStructureFactor() {
-  //Definition of the variables
-  Tensor<complex> *GammaFai;
-  Tensor<complex> *GammaGai;
-
   // Read the Particle/Hole Eigenenergies
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
-  if (isArgumentGiven("CoulombVertex")) {
-    // Read the Coulomb vertex GammaGqr
-    Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
 
-    // Get the Particle Hole Coulomb Vertex
-    int No(epsi->lens[0]);
-    int Nv(epsa->lens[0]);
-    int Np(GammaFqr->lens[1]);
-    int NF(GammaFqr->lens[0]);
+  // Get the Particle Hole Coulomb Vertex
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(GammaFqr->lens[1]);
+  int NF(GammaFqr->lens[0]);
 
-    int aStart(Np-Nv), aEnd(Np);
-    int iStart(0), iEnd(No);
-    int FaiStart[] = {0, aStart,iStart};
-    int FaiEnd[]   = {NF,aEnd,  iEnd};
-    GammaFai = (new Tensor<complex>(GammaFqr->slice(FaiStart, FaiEnd)));
-  } else {
-    GammaFai = (new Tensor<complex>(getTensorArgument<complex>("ParticleHoleCoulombVertex")));
+  int aStart(Np-Nv), aEnd(Np);
+  int iStart(0), iEnd(No);
+  int FaiStart[] = {0, aStart,iStart};
+  int FaiEnd[]   = {NF,aEnd,  iEnd};
+
+  // Definition of ParticleHole Coulomb Vertex
+  Tensor<complex> *GammaGai;
+
+  {
+    Tensor<complex> GammaFai(GammaFqr->slice(FaiStart, FaiEnd));
+
+    if (isArgumentGiven("CoulombVertexSingularVectors")) {
+      Tensor<complex> *UGF(
+        getTensorArgument<complex>("CoulombVertexSingularVectors")
+      );
+      int lens[]= {UGF->lens[0], Nv, No};
+      GammaGai = new Tensor<complex>(
+        3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+      );
+      (*GammaGai)["Gai"] = GammaFai["Fai"] * (*UGF)["GF"];
+    } else {
+      int lens[]= {NF, Nv, No};
+      GammaGai = new Tensor<complex>(
+        3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+      );
+      (*GammaGai) = GammaFai;
+    }
   }
-
-  if (isArgumentGiven("CoulombVertexSingularVectors")) {
-    Tensor<complex> *UGF(
-      getTensorArgument<complex>("CoulombVertexSingularVectors")
-    );
-    int lens[]= {UGF->lens[0], GammaFai->lens[1], GammaFai->lens[2]};
-    GammaGai = new Tensor<complex>(
-      3, lens, GammaFai->sym, *GammaFai->wrld, "GammaGai"
-    );
-    (*GammaGai)["Gai"] = (*GammaFai)["Fai"] * (*UGF)["GF"];
-  } else {
-    GammaGai = GammaFai;
-  }
-
+  
   Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
   Tensor<> *realVG(new Tensor<>(false, *realInfVG));
   //Define take out inf funciton
@@ -204,6 +213,8 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   Tensor<complex> CGai(*GammaGai);
   CGai["Gai"] *= invSqrtVG["G"];
 
+  delete GammaGai;
+  
   //Conjugate of CGai
   Tensor<complex> conjCGai(false, CGai);
   Univar_Function<complex> fConj(conj<complex>);
@@ -240,9 +251,6 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   realVG->read_all(VofG);
   structureFactors = new double[NG];
   realSG->read_all(structureFactors);
-
-  delete GammaFai;
-  delete GammaGai;
 }
 
 
@@ -304,7 +312,11 @@ void FiniteSizeCorrection::calculateComplexStructureFactor() {
     );
     (*GammaGqr)["Gqr"] = (*GammaFqr)["Fqr"] * (*UGF)["GF"];
   } else {
-    GammaGqr = GammaFqr;
+    int lens[]= {GammaFqr->lens[0], GammaFqr->lens[1], GammaFqr->lens[2]};
+    GammaGqr = new Tensor<complex>(
+      3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+    );
+    (*GammaGqr) = (*GammaFqr);
   }
 
   // Compute the No,Nv,NG,Np
@@ -325,7 +337,6 @@ void FiniteSizeCorrection::calculateComplexStructureFactor() {
   Tensor<complex> GammaGai(GammaGqr->slice(GaiStart, GaiEnd));
 
   delete GammaGqr;
-  delete GammaFqr;
   
   //Define CGia
   Tensor<complex> CGia(GammaGia);

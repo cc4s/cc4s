@@ -151,14 +151,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       // Build Lac
       if (!distinguishable) {
-	Lac["ac"]  = Kac["ac"];
+        Lac["ac"]  = Kac["ac"];
       } else {
-	// Intermediate tensor Yabij=T2-2*T1*T1
-	Tensor<> Yabij(Tabij);
-	Yabij.set_name("Yabij");
-	Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
-	Lac["ac"]      = (-1.0) * (*Vabij)["cdkl"] * Yabij["adkl"]; // Use Yabij in DCSD
-	Lac["ac"]     += ( 0.5) * (*Vabij)["dckl"] * Yabij["adkl"]; // Use Yabij in DCSD
+        // Intermediate tensor Yabij=T2-2*T1*T1
+        Tensor<> Yabij(Tabij);
+        Yabij.set_name("Yabij");
+        Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
+        Lac["ac"]      = (-1.0) * (*Vabij)["cdkl"] * Yabij["adkl"]; // Use Yabij in DCSD
+        Lac["ac"]     += ( 0.5) * (*Vabij)["dckl"] * Yabij["adkl"]; // Use Yabij in DCSD
       }
       Lac["ac"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * (*Tai)["dk"];
       Lac["ac"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * (*Tai)["dk"];
@@ -171,14 +171,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       // Build Lki
       if (!distinguishable) {
-	Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
+        Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
       } else {
-	// Intermediate tensor Yabij=T2-2*T1*T1
-	Tensor<> Yabij(Tabij);
-	Yabij.set_name("Yabij");
-	Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
-	Lki["ki"]      = ( 1.0) * (*Vabij)["cdkl"] * Yabij["cdil"]; // Use Yabij in DCSD
-	Lki["ki"]     += (-0.5) * (*Vabij)["dckl"] * Yabij["cdil"]; // Use Yabij in DCSD
+        // Intermediate tensor Yabij=T2-2*T1*T1
+        Tensor<> Yabij(Tabij);
+        Yabij.set_name("Yabij");
+        Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
+        Lki["ki"]      = ( 1.0) * (*Vabij)["cdkl"] * Yabij["cdil"]; // Use Yabij in DCSD
+        Lki["ki"]     += (-0.5) * (*Vabij)["dckl"] * Yabij["cdil"]; // Use Yabij in DCSD
       }
       Lki["ki"] += ( 2.0) * (*Vijka)["klic"] * (*Tai)["cl"];
       Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
@@ -235,12 +235,12 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
       Xakic["akic"] += (-0.5) * (*Vabij)["dclk"] *   Yabij ["dail"];
       Xakic["akic"] += ( 1.0) * (*Vabij)["dclk"] * (*Tabij)["adil"];
       if (!distinguishable) {
-	Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"];
+        Xakic["akic"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["adil"];
       }
       // Contract and Xakic intermediates with T2 amplitudes Tabij
       Yabij["cbkj"]  = ( 2.0) * (*Tabij)["cbkj"];
       Yabij["cbkj"] += (-1.0) * (*Tabij)["bckj"];
-	
+        
       Rabij["abij"] += ( 1.0) * Xakic["akic"] * Yabij["cbkj"];
     }
 
@@ -272,7 +272,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       // Xakci = 0.5 * Vcdlk * Tdail
       if (!distinguishable) {
-	Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"];
+        Xakci["akci"] += (-0.5) * (*Vabij)["cdlk"] * (*Tabij)["dail"];
       }
       
       // Contract and Xakci intermediates with T2 amplitudes Tabij
@@ -307,9 +307,9 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       // Construct last term
       if (!distinguishable) {
-	Xklij["klij"]  = (*Vabij)["cdkl"] * Xabij["cdij"];
+        Xklij["klij"]  = (*Vabij)["cdkl"] * Xabij["cdij"];
       } else {
-	Xklij["klij"]  = (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dj"];
+        Xklij["klij"]  = (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dj"];
       }
 
       // Add last term contracted only with the doubles
@@ -329,59 +329,59 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
         getIntegerArgument("factorsSliceSize", DEFAULT_SLICE_SIZE)
       );
       if (factorsSliceSize == -1) {
-	if (isArgumentGiven("factorsSliceFactor")) {
-	  double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
-	  factorsSliceSize = NR * factorsSliceFactor;
-	} else {
-	  factorsSliceSize = Nv;
-	}
+        if (isArgumentGiven("factorsSliceFactor")) {
+          double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
+          factorsSliceSize = NR * factorsSliceFactor;
+        } else {
+          factorsSliceSize = Nv;
+        }
       }
 
       // Slice loop starts here
       for (int b(0); b < NR; b += factorsSliceSize) {
-	for (int a(0); a < NR; a += factorsSliceSize) {
-	  LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
-	  Tensor<> *Fabij(
+        for (int a(0); a < NR; a += factorsSliceSize) {
+          LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+          Tensor<> *Fabij(
             sliceAmplitudesFromCoupledCoulombFactors(
               TaiMixer, TabijMixer, a, b, factorsSliceSize
             )
           );
-	  Fabij->set_name("Fabij");
-	  Rabij["abij"] += (*Fabij)["abij"];
-	  delete Fabij;
-	}
+          Fabij->set_name("Fabij");
+          Rabij["abij"] += (*Fabij)["abij"];
+          delete Fabij;
+        }
       }
     } else {
       // Read the integralsSliceSize. If not provided use No
       int integralsSliceSize(getIntegerArgument("integralsSliceSize",DEFAULT_SLICE_SIZE));
       if (integralsSliceSize == -1) {
-	if (isArgumentGiven("integralsSliceFactor")) {
-	  double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
-	  integralsSliceSize = Nv * integralsSliceFactor;
-	} else {
-	  integralsSliceSize = No;
-	}
+        if (isArgumentGiven("integralsSliceFactor")) {
+          double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
+          integralsSliceSize = Nv * integralsSliceFactor;
+        } else {
+          integralsSliceSize = No;
+        }
       }
         
       // Slice loop starts here
       for (int b(0); b < Nv; b += integralsSliceSize) {
-	for (int a(b); a < Nv; a += integralsSliceSize) {
-	  LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	  Tensor<> *Vxycd(
+        for (int a(b); a < Nv; a += integralsSliceSize) {
+          LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          Tensor<> *Vxycd(
             sliceCoupledCoulombIntegrals(TaiMixer, a, b, integralsSliceSize)
           );
-	  Vxycd->set_name("Vxycd");
-	  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-	  int syms[] = {NS, NS, NS, NS};
-	  Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
+          Vxycd->set_name("Vxycd");
+          int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+          int syms[] = {NS, NS, NS, NS};
+          Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
 
-	  // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
-	  Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+          // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
+          Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
 
-	  sliceIntoResiduum(Rxyij, a, b, Rabij);
-	  // The integrals of this slice are not needed anymore
-	  delete Vxycd;
-	}
+          sliceIntoResiduum(Rxyij, a, b, Rabij);
+          // The integrals of this slice are not needed anymore
+          delete Vxycd;
+        }
       }
     }
   
@@ -542,14 +542,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       // Build Lac
       if (!distinguishable) {
-	Lac["ac"]  = Kac["ac"];
+        Lac["ac"]  = Kac["ac"];
       } else {
-	// Intermediate tensor Yabij=T2-2*T1*T1
-	Tensor<complex> Yabij(Tabij);
-	Yabij.set_name("Yabij");
-	Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
-	Lac["ac"]      = (-1.0) * (*Vijab)["klcd"] * Yabij["adkl"]; // Use Yabij in DCSD
-	Lac["ac"]     += ( 0.5) * (*Vijab)["kldc"] * Yabij["adkl"]; // Use Yabij in DCSD
+        // Intermediate tensor Yabij=T2-2*T1*T1
+        Tensor<complex> Yabij(Tabij);
+        Yabij.set_name("Yabij");
+        Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
+        Lac["ac"]      = (-1.0) * (*Vijab)["klcd"] * Yabij["adkl"]; // Use Yabij in DCSD
+        Lac["ac"]     += ( 0.5) * (*Vijab)["kldc"] * Yabij["adkl"]; // Use Yabij in DCSD
       }
       Lac["ac"] += ( 2.0) * conjTransposeGammaGab["Gac"] * (*GammaGia)["Gkd"] * (*Tai)["dk"];
       Lac["ac"] += (-1.0) * conjTransposeGammaGab["Gad"] * (*GammaGia)["Gkc"] * (*Tai)["dk"];
@@ -560,14 +560,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       // Build Lki
       if (!distinguishable) {
-	Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
+        Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
       } else {
-	// Intermediate tensor Yabij=T2-2*T1*T1
-	Tensor<complex> Yabij(Tabij);
-	Yabij.set_name("Yabij");
-	Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
-	Lki["ki"]      = ( 1.0) * (*Vijab)["klcd"] * Yabij["cdil"]; // Use Yabij in DCSD
-	Lki["ki"]     += (-0.5) * (*Vijab)["kldc"] * Yabij["cdil"]; // Use Yabij in DCSD
+        // Intermediate tensor Yabij=T2-2*T1*T1
+        Tensor<complex> Yabij(Tabij);
+        Yabij.set_name("Yabij");
+        Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
+        Lki["ki"]      = ( 1.0) * (*Vijab)["klcd"] * Yabij["cdil"]; // Use Yabij in DCSD
+        Lki["ki"]     += (-0.5) * (*Vijab)["kldc"] * Yabij["cdil"]; // Use Yabij in DCSD
       }
       Lki["ki"] += ( 2.0) * (*Vijka)["klic"] * (*Tai)["cl"];
       Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
@@ -612,7 +612,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       Yabij["dclk"]  = ( 1.0) * (*Vijab)["lkdc"];
       if (!distinguishable) {
-	Yabij["dclk"] += (-0.5) * (*Vijab)["lkcd"];
+        Yabij["dclk"] += (-0.5) * (*Vijab)["lkcd"];
       }
       Xakic["akic"] += Yabij["dclk"] * (*Tabij)["adil"];
 
@@ -645,7 +645,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
       
       // Xakci = 0.5 * Vlkcd * Tdail
       if (!distinguishable) {
-	Xakci["akci"] += (-0.5) * (*Vijab)["lkcd"] * (*Tabij)["dail"];
+        Xakci["akci"] += (-0.5) * (*Vijab)["lkcd"] * (*Tabij)["dail"];
       }
 
       // Contract and Xakci intermediates with T2 amplitudes Tabij
@@ -680,9 +680,9 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
 
       // Construct last term
       if (!distinguishable) {
-	Xklij["klij"]  = (*Vijab)["klcd"] * Xabij["cdij"];
+        Xklij["klij"]  = (*Vijab)["klcd"] * Xabij["cdij"];
       } else {
-	Xklij["klij"]  = (*Tai)["ci"] * (*Vijab)["klcd"] * (*Tai)["dj"];
+        Xklij["klij"]  = (*Tai)["ci"] * (*Vijab)["klcd"] * (*Tai)["dj"];
       }
 
       // Add last term contracted only with the doubles
@@ -702,59 +702,59 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
         getIntegerArgument("factorsSliceSize", DEFAULT_SLICE_SIZE)
       );
       if (factorsSliceSize == -1) {
-	if (isArgumentGiven("factorsSliceFactor")) {
-	  double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
-	  factorsSliceSize = NR * factorsSliceFactor;
-	} else {
-	  factorsSliceSize = Nv;
-	}
+        if (isArgumentGiven("factorsSliceFactor")) {
+          double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
+          factorsSliceSize = NR * factorsSliceFactor;
+        } else {
+          factorsSliceSize = Nv;
+        }
       }
 
       // Slice loop starts here
       for (int b(0); b < NR; b += factorsSliceSize) {
-	for (int a(0); a < NR; a += factorsSliceSize) {
-	  LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
-	  Tensor<complex> *Fabij(
+        for (int a(0); a < NR; a += factorsSliceSize) {
+          LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+          Tensor<complex> *Fabij(
             sliceAmplitudesFromCoupledCoulombFactors(
               TaiMixer, TabijMixer, a, b, factorsSliceSize
             )
           );
-	  Fabij->set_name("Fabij");
-	  Rabij["abij"] += (*Fabij)["abij"];
-	  delete Fabij;
-	}
+          Fabij->set_name("Fabij");
+          Rabij["abij"] += (*Fabij)["abij"];
+          delete Fabij;
+        }
       }
     } else {
       // Read the integralsSliceSize. If not provided use No
       int integralsSliceSize(getIntegerArgument("integralsSliceSize",DEFAULT_SLICE_SIZE));
       if (integralsSliceSize == -1) {
-	if (isArgumentGiven("integralsSliceFactor")) {
-	  double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
-	  integralsSliceSize = Nv * integralsSliceFactor;
-	} else {
-	  integralsSliceSize = No;
-	}
+        if (isArgumentGiven("integralsSliceFactor")) {
+          double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
+          integralsSliceSize = Nv * integralsSliceFactor;
+        } else {
+          integralsSliceSize = No;
+        }
       }
         
       // Slice loop starts here
       for (int b(0); b < Nv; b += integralsSliceSize) {
-	for (int a(b); a < Nv; a += integralsSliceSize) {
-	  LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	  Tensor<complex> *Vxycd(
+        for (int a(b); a < Nv; a += integralsSliceSize) {
+          LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          Tensor<complex> *Vxycd(
             sliceCoupledCoulombIntegrals(TaiMixer, a, b, integralsSliceSize)
           );
-	  Vxycd->set_name("Vxycd");
-	  int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-	  int syms[] = {NS, NS, NS, NS};
-	  Tensor<complex> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
+          Vxycd->set_name("Vxycd");
+          int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+          int syms[] = {NS, NS, NS, NS};
+          Tensor<complex> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
 
-	  // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
-	  Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+          // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
+          Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
 
-	  sliceIntoResiduum(Rxyij, a, b, Rabij);
-	  // The integrals of this slice are not needed anymore
-	  delete Vxycd;
-	}
+          sliceIntoResiduum(Rxyij, a, b, Rabij);
+          // The integrals of this slice are not needed anymore
+          delete Vxycd;
+        }
       }
 
     }
