@@ -1,15 +1,3 @@
-%ParticleHoleCoulombVertexReader [
-%  (file "../../resources/ParticleHoleCoulombVertex.bin")
-%] [
-%  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
-%].
-
-%ParticleHoleCoulombIntegrals [
-%  ParticleHoleCoulombVertex
-%] [
-%  PPHHCoulombIntegrals
-%].
-
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [
@@ -50,11 +38,13 @@ CcsdEnergyFromCoulombIntegrals [
   (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
 ].
 
-TensorReader [] [(Data CoulombKernel)].
-TensorReader [] [(Data Momenta)].
+TensorReader [(file "../../resources/CoulombKernel.dat")] [(Data CoulombKernel)].
+TensorReader [(file "../../resources/Momenta.dat")] [(Data Momenta)].
+TensorReader [(file "../../resources/CoulombVertexSingularVectors.bin") (mode "binary")] [(Data CoulombVertexSingularVectors)].
 
 FiniteSizeCorrection [
   CoulombVertex
+  CoulombVertexSingularVectors
   CoulombKernel
   Momenta
   (SinglesAmplitudes CcsdSinglesAmplitudes)
@@ -64,9 +54,6 @@ FiniteSizeCorrection [
 % (kpoints 1)
   (volume 136.99)
   (constantFactor 0.002351)
-  % Set the shortest G-vector (if given), else the smallest G-vector will be
-  % used
-% (shortestGvector 0.02351)
 ] [
   CorrectedEnergy
   StructureFactor

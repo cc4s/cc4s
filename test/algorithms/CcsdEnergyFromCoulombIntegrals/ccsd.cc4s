@@ -36,6 +36,9 @@ CcsdEnergyFromCoulombIntegrals [
 % (integralsSliceFactor 0.33)
 % (mixer "LinearMixer")
 % (mixingRatio 0.8)
+  % for a DCSD calculation use the following flag
+  % distinguishable is 0 by default
+% (distinguishable 1)
 ] [
   (CcsdEnergy CcsdEnergy) 
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
