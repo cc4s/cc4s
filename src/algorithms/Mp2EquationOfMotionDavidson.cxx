@@ -140,7 +140,8 @@ void Mp2EquationOfMotionDavidson::run() {
   );
   
   // Davidson solver
-  EigenSystemDavidson<FockVector<double>> eigenSystem(H, 4, P, 1E-4, 8*16);
+  int eigenStates(getIntegerArgument("eigenstates", 1));
+  EigenSystemDavidson<FockVector<double>> eigenSystem(H, eigenStates, P, 1E-4, 8*16);
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
   for (auto &ev: eigenValues) {

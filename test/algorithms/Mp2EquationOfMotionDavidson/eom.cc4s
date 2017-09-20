@@ -50,6 +50,7 @@ Mp2EquationOfMotionDavidson [
   PPPHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (unrestricted 1)
+  (eigenstates 4)
 ] [
   SinglesHamiltonianDiagonal
   DoublesHamiltonianDiagonal
