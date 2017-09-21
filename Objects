@@ -50,8 +50,8 @@ build/${CONFIG}/obj/algorithms/CoulombIntegralsFromVertex.o \
 build/${CONFIG}/obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombVertex.o \
-build/${CONFIG}/obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
+build/${CONFIG}/obj/algorithms/LegacyCcdEnergyFromCoulombIntegrals.o \
+build/${CONFIG}/obj/algorithms/LegacyDcdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/LegacyCcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/LegacyDcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \

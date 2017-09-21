@@ -1,4 +1,4 @@
-#include <algorithms/DcdEnergyFromCoulombIntegrals.hpp>
+#include <algorithms/LegacyDcdEnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
@@ -8,14 +8,14 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(DcdEnergyFromCoulombIntegrals);
+ALGORITHM_REGISTRAR_DEFINITION(LegacyDcdEnergyFromCoulombIntegrals);
 
-DcdEnergyFromCoulombIntegrals::DcdEnergyFromCoulombIntegrals(
+LegacyDcdEnergyFromCoulombIntegrals::LegacyDcdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
 ): LegacyClusterDoublesAlgorithm(argumentList) {
 }
 
-DcdEnergyFromCoulombIntegrals::~DcdEnergyFromCoulombIntegrals() {
+LegacyDcdEnergyFromCoulombIntegrals::~LegacyDcdEnergyFromCoulombIntegrals() {
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -23,7 +23,7 @@ DcdEnergyFromCoulombIntegrals::~DcdEnergyFromCoulombIntegrals() {
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 // Modified according to D. Kats, J. Chem. Phys. 139, 021102 (2013)
 //////////////////////////////////////////////////////////////////////
-void DcdEnergyFromCoulombIntegrals::iterate(int i) {
+void LegacyDcdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the DCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
@@ -194,7 +194,7 @@ void DcdEnergyFromCoulombIntegrals::iterate(int i) {
   }
 }
 
-void DcdEnergyFromCoulombIntegrals::dryIterate() {
+void LegacyDcdEnergyFromCoulombIntegrals::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
     // Read the DCD amplitudes Tabij
@@ -276,7 +276,7 @@ void DcdEnergyFromCoulombIntegrals::dryIterate() {
 // Rev. Mod. Phys. 79, 291  Page 305, Figure 8. -> CCD
 // J. Chem. Phys. 139, 021102 (2013) -> DCD
 //////////////////////////////////////////////////////////////////////
-void DcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
+void LegacyDcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
   {
     // Read the CCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());

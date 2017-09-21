@@ -1,6 +1,6 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef CCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
-#define CCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
+#ifndef LEGACY_CCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
+#define LEGACY_CCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
 #include <algorithms/LegacyClusterDoublesAlgorithm.hpp>
 
@@ -15,13 +15,13 @@ namespace cc4s {
    * V_{kl}^{ij}\f$, and \f$V_{cd}^{ab}\f$ (if given, else slicing and the Coulomb
    * Vertex \f$\Gamma_{pG}^q\f$  is used).
    */
-  class CcdEnergyFromCoulombIntegrals: public LegacyClusterDoublesAlgorithm {
+  class LegacyCcdEnergyFromCoulombIntegrals: public LegacyClusterDoublesAlgorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CcdEnergyFromCoulombIntegrals);
-    CcdEnergyFromCoulombIntegrals(
+    ALGORITHM_REGISTRAR_DECLARATION(LegacyCcdEnergyFromCoulombIntegrals);
+    LegacyCcdEnergyFromCoulombIntegrals(
       std::vector<Argument> const &argumentList
     );
-    virtual ~CcdEnergyFromCoulombIntegrals();
+    virtual ~LegacyCcdEnergyFromCoulombIntegrals();
     /**
      * \brief Returns the abbreviation of the routine (CCD).
      * \return abbreviation of the routine

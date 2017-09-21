@@ -1,4 +1,4 @@
-#include <algorithms/CcdEnergyFromCoulombIntegrals.hpp>
+#include <algorithms/LegacyCcdEnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
@@ -8,21 +8,21 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CcdEnergyFromCoulombIntegrals);
+ALGORITHM_REGISTRAR_DEFINITION(LegacyCcdEnergyFromCoulombIntegrals);
 
-CcdEnergyFromCoulombIntegrals::CcdEnergyFromCoulombIntegrals(
+LegacyCcdEnergyFromCoulombIntegrals::LegacyCcdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
 ): LegacyClusterDoublesAlgorithm(argumentList) {
 }
 
-CcdEnergyFromCoulombIntegrals::~CcdEnergyFromCoulombIntegrals() {
+LegacyCcdEnergyFromCoulombIntegrals::~LegacyCcdEnergyFromCoulombIntegrals() {
 }
 
 //////////////////////////////////////////////////////////////////////
 // Hiarata iteration routine for the CCD amplitudes Tabij (Table. 1)
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 //////////////////////////////////////////////////////////////////////
-void CcdEnergyFromCoulombIntegrals::iterate(int i) {
+void LegacyCcdEnergyFromCoulombIntegrals::iterate(int i) {
   {
     // Read the CCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
@@ -192,7 +192,7 @@ void CcdEnergyFromCoulombIntegrals::iterate(int i) {
   }
 }
 
-void CcdEnergyFromCoulombIntegrals::dryIterate() {
+void LegacyCcdEnergyFromCoulombIntegrals::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
     // Read the CCD amplitudes Tabij
@@ -272,7 +272,7 @@ void CcdEnergyFromCoulombIntegrals::dryIterate() {
 // Bartlett iteration routine for the CCD amplitudes Tabij 
 // Rev. Mod. Phys. 79, 291  Page 305, Figure 8. -> CCD
 //////////////////////////////////////////////////////////////////////
-void CcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
+void LegacyCcdEnergyFromCoulombIntegrals::iterateBartlett(int i) {
   {
     // Read the CCD amplitudes Tabij
     Tensor<> *Tabij(&TabijMixer->getNext());
