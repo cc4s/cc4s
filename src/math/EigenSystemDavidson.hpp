@@ -191,7 +191,6 @@ namespace cc4s {
     ) {
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
-      std::vector<V> rightBasis( rightEigenVectors );
 
       // Antisymmetrize initial basis
       LOG(1,"Davidson") << "Antisymmetrize basis" << std::endl;
@@ -214,6 +213,8 @@ namespace cc4s {
         rightEigenVectors[b] *= F(0);
         rightEigenVectors[b] += newVector;
       }
+
+      std::vector<V> rightBasis( rightEigenVectors );
 
       // begin convergence loop
       double rms;
