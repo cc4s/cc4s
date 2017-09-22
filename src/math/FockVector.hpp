@@ -80,7 +80,7 @@ namespace cc4s {
     }
 
     FockVector<F> conjugateTranspose() {
-      FockVector<F> result();
+      FockVector<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         int order(componentIndices[i].length() / 2);
         std::vector<int> transposedLens(
@@ -96,7 +96,7 @@ namespace cc4s {
           CTF::Tensor<F>(
             transposedLens.size(), transposedLens.data(),
             componentTensors[i].sym, *componentTensors[i].wrld,
-            std::string(componentTensors[i].get_name()) + "*"
+            (std::string(componentTensors[i].get_name()) + "*").c_str()
           )
         );
         result.componentIndices.push_back(
@@ -104,11 +104,12 @@ namespace cc4s {
           componentIndices[i].substr(0, order)
         );
         CTF::Univar_Function<F> fConj(cc4s::conj<F>);
-        result.sum(
-          1.0, componentTensors[i], componentIndices[i],
-          0.0, result.componentIndices[i], fConj
+        result.componentTensors[i].sum(
+          1.0, componentTensors[i], componentIndices[i].c_str(),
+          0.0, result.componentIndices[i].c_str(), fConj
         );
       }
+      return result;
     }
 
     F braket(FockVector<F> &a) {
