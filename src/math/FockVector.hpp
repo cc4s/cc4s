@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <initializer_list>
+#include <algorithm>
 
 #include <ctf.hpp>
 
@@ -76,6 +77,38 @@ namespace cc4s {
         componentTensors[i][indices] *= scalar[""];
       }
       return *this;
+    }
+
+    FockVector<F> conjugateTranspose() {
+      FockVector<F> result();
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        int order(componentIndices[i].length() / 2);
+        std::vector<int> transposedLens(
+          componentTensors[i].lens,
+          componentTensors[i].lens + 2*order
+        );
+        std::rotate(
+          transposedLens.begin(),
+          transposedLens.begin() + order,
+          transposedLens.begin() + 2*order
+        );
+        result.componentTensors.push_back(
+          CTF::Tensor<F>(
+            transposedLens.size(), transposedLens.data(),
+            componentTensors[i].sym, *componentTensors[i].wrld,
+            std::string(componentTensors[i].get_name()) + "*"
+          )
+        );
+        result.componentIndices.push_back(
+          componentIndices[i].substr(order, 2*order) +
+          componentIndices[i].substr(0, order)
+        );
+        CTF::Univar_Function<F> fConj(cc4s::conj<F>);
+        result.sum(
+          1.0, componentTensors[i], componentIndices[i],
+          0.0, result.componentIndices[i], fConj
+        );
+      }
     }
 
     F braket(FockVector<F> &a) {
