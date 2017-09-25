@@ -23,7 +23,6 @@ namespace cc4s {
   protected:
     virtual void iterate(int i);
 
-
   };
 }
 
