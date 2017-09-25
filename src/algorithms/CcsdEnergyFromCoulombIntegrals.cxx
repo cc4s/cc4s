@@ -42,14 +42,14 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
     Tensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
                     getTensorArgument("PPPHCoulombIntegrals") : nullptr);
-  
+
     // Compute the No,Nv
     int No(Vabij->lens[2]);
     int Nv(Vabij->lens[0]);
 
     // Get abbreviation of algorithm
     std::string abbreviation(getAbbreviation());
-    std::transform(abbreviation.begin(), abbreviation.end(), 
+    std::transform(abbreviation.begin(), abbreviation.end(),
                    abbreviation.begin(), ::toupper);
 
     // Read the Coulomb vertex GammaGqr
@@ -69,21 +69,21 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
     Tensor<complex> GammaGij(GammaGqr->slice(GijStart,GijEnd));
 
     // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
-    Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym, 
+    Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym,
                           *GammaGai.wrld, "RealGammaGai");
-    Tensor<> imagGammaGai(3, GammaGai.lens, GammaGai.sym, 
+    Tensor<> imagGammaGai(3, GammaGai.lens, GammaGai.sym,
                           *GammaGai.wrld, "ImagGammaGai");
     fromComplexTensor(GammaGai, realGammaGai, imagGammaGai);
 
-    Tensor<> realGammaGab(3, GammaGab.lens, GammaGab.sym, 
+    Tensor<> realGammaGab(3, GammaGab.lens, GammaGab.sym,
                           *GammaGab.wrld, "RealGammaGab");
-    Tensor<> imagGammaGab(3, GammaGab.lens, GammaGab.sym, 
+    Tensor<> imagGammaGab(3, GammaGab.lens, GammaGab.sym,
                           *GammaGab.wrld, "ImagGammaGab");
     fromComplexTensor(GammaGab, realGammaGab, imagGammaGab);
 
-    Tensor<> realGammaGij(3, GammaGij.lens, GammaGij.sym, 
+    Tensor<> realGammaGij(3, GammaGij.lens, GammaGij.sym,
                           *GammaGij.wrld, "RealGammaGij");
-    Tensor<> imagGammaGij(3, GammaGij.lens, GammaGij.sym, 
+    Tensor<> imagGammaGij(3, GammaGij.lens, GammaGij.sym,
                           *GammaGij.wrld, "ImagGammaGij");
     fromComplexTensor(GammaGij, realGammaGij, imagGammaGij);
 
@@ -108,10 +108,10 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
       Rabij.set_name("Rabij");
 
       if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
-        // For first iteration compute only the MP2 amplitudes 
+        // For first iteration compute only the MP2 amplitudes
         // Since Tabij = 0, Vabij is the only non-zero term
         Rabij["abij"] = (*Vabij)["abij"];
-      } 
+      }
       else {
         // For the rest iterations compute the CCSD amplitudes
 
@@ -157,7 +157,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
           Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
           Lki["ki"] += ( 2.0) * (*Vijka)["klic"] * (*Tai)["cl"];
           Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
-    
+
           // Contract Lac with T2 Amplitudes
           Rabij["abij"]  = ( 1.0) * Lac["ac"] * (*Tabij)["cbij"];
 
@@ -184,7 +184,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
           Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
           Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
-          
+
           // Build Xakic
           if (Vabci) {
             Xakic["akic"]  = ( 1.0) * (*Vabij)["acik"];
@@ -245,7 +245,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
             realDressedGammaGij["Gki"] += ( 1.0) * realGammaGai["Gdk"] * (*Tai)["di"];
             imagDressedGammaGij["Gki"] += ( 1.0) * imagGammaGai["Gdk"] * (*Tai)["di"];
-            
+
             // Xakci = Vakci - Vlkci * Tal + Vakcd * Tdi - Vcdlk * Tdail
             Xakci["akci"]  = ( 1.0) * realDressedGammaGab["Gac"] * realDressedGammaGij["Gki"];
             Xakci["akci"] += ( 1.0) * imagDressedGammaGab["Gac"] * imagDressedGammaGij["Gki"];
@@ -262,9 +262,9 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
           Rabij["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
 
           // Symmetrize Rabij by applying permutation operator
-          // to save memory we use Xakci as intermediate for the permutation operator 
+          // to save memory we use Xakci as intermediate for the permutation operator
           Xakci["aibj"]  = Rabij["abij"];
-          Rabij["abij"] += Xakci["bjai"]; 
+          Rabij["abij"] += Xakci["bjai"];
 
           //////////////////////////////////////////////////////////////////////
           // Now add all terms to Rabij that do not need to be symmetrized with
@@ -310,7 +310,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
           // Contract Vabci with T2 and T1 amplitudes using Xabij
           Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabci)["cdak"] * Xabij["cdij"];
           Rabij["abij"] += (-1.0) * (*Tai)["ak"] * (*Vabci)["dcbk"] * Xabij["cdij"];
-        } 
+        }
         else {
           // Slice if Vabcd is not specified
 
@@ -335,7 +335,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
 
                 // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
                 Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
-              
+
                 sliceIntoResiduum(Rxyij, a, b, Rabij);
                 // The integrals of this slice are not needed anymore
                 delete Vxycd;
@@ -352,7 +352,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
                 LambdaGR->set_name("LambdaGR");
 
                 int NR(LambdaGR->lens[1]);
-                
+
                 int factorsSliceSize(getIntegerArgument
                                      ("factorsSliceSize"));
 
@@ -408,13 +408,13 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i) {
       // Append amplitudes to the mixer
       TabijMixer->append(Rabij);
     }
-  
+
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
     {
       LOG(1, abbreviation) << "Solving T1 Amplitude Equations" << std::endl;
-      
+
       // Allocate Tensors for T1 amplitudes
       Tensor<> Rai(false, *Tai);
       Rai.set_name("Rai");
@@ -466,14 +466,14 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
   {
     // TODO: the Mixer should provide a DryTensor in the future
     // Read the CCSD amplitudes Tai and Tabij
-    DryTensor<> *Tai(getTensorArgument<double, 
+    DryTensor<> *Tai(getTensorArgument<double,
                      DryTensor<double>>("CcsdSinglesAmplitudes"));
-    DryTensor<> *Tabij(getTensorArgument<double, 
+    DryTensor<> *Tabij(getTensorArgument<double,
                        DryTensor<double>>("CcsdDoublesAmplitudes"));
 
     // Read the Coulomb Integrals Vabcd Vabij Vaibj Vijkl Vijka Vabci
     // the Vabcd and Vabci may not be given then slicing is required
-    DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ? getTensorArgument<double, 
+    DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ? getTensorArgument<double,
                        DryTensor<double>>("PPPPCoulombIntegrals") : nullptr);
     DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
     DryTensor<> *Vaibj(getTensorArgument<double, DryTensor<double>>("PHPHCoulombIntegrals"));
@@ -487,9 +487,9 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
 
     // Get abbreviation of algorithm
     std::string abbreviation(getAbbreviation());
-    std::transform(abbreviation.begin(), abbreviation.end(), 
+    std::transform(abbreviation.begin(), abbreviation.end(),
                    abbreviation.begin(), ::toupper);
-  
+
     // Compute the No,Nv,Np
     int No(epsi->lens[0]);
     int Nv(epsa->lens[0]);
@@ -498,7 +498,7 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
     int syms[] = { NS, NS, NS, NS };
 
     // Read the Coulomb vertex GammaGqr
-    DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
+    DryTensor<complex> *GammaGqr(getTensorArgument<complex,
                                  DryTensor<complex>>("CoulombVertex"));
 
     // Compute the NG,Np
@@ -545,7 +545,7 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
       if (!Vabcd) {
         if (isArgumentGiven("CoulombFactors")) {
           // Read the factorsSliceSize. If not provided use NG.
-          DryTensor<complex> *LambdaGR(getTensorArgument<complex, 
+          DryTensor<complex> *LambdaGR(getTensorArgument<complex,
                                        DryTensor<complex>>("CoulombFactors"));
 
           int NR(LambdaGR->lens[1]);
@@ -553,7 +553,7 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
           int factorsSliceSize(getIntegerArgument
                                ("factorsSliceSize",NR));
 
-          LOG(1, abbreviation) << "Computing residuum Rabij from coupled factors with NR=" << NR 
+          LOG(1, abbreviation) << "Computing residuum Rabij from coupled factors with NR=" << NR
                                << ", using slicing size=" << factorsSliceSize << std::endl;
           DryTensor<> *Fabij(drySliceAmplitudesFromCoupledCoulombFactors(factorsSliceSize));
           delete Fabij;
@@ -563,7 +563,7 @@ void CcsdEnergyFromCoulombIntegrals::dryIterate() {
           int integralsSliceSize(getIntegerArgument
                                  ("integralsSliceSize",No));
 
-          LOG(1, abbreviation) << "Slicing Vabcd with Nv=" << Nv << ", with integals slice size=" 
+          LOG(1, abbreviation) << "Slicing Vabcd with Nv=" << Nv << ", with integals slice size="
                                << integralsSliceSize << std::endl;
 
           // Slice if Vabcd is not specified
