@@ -2,7 +2,7 @@
 #ifndef MP2_EOM_DEFINED
 #define MP2_EOM_DEFINED
 
-#include <algorithms/Algorithm.hpp>
+#include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
 
 namespace cc4s {
   /**
@@ -10,7 +10,7 @@ namespace cc4s {
    * amplitudes \f$T_{ab}^{ij}\f$ from the Coulomb Integrals \f$V_{ij}^{ab}\f$
    * in a \f$ \mathcal{O}(N^{6}) \f$ implementation.
    */
-  class UccsdAmplitudesFromCoulombIntegrals: public Algorithm {
+  class UccsdAmplitudesFromCoulombIntegrals: public ClusterSinglesDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(UccsdAmplitudesFromCoulombIntegrals);
     UccsdAmplitudesFromCoulombIntegrals(
@@ -18,10 +18,11 @@ namespace cc4s {
     );
     virtual ~UccsdAmplitudesFromCoulombIntegrals();
 
-    virtual void run();
+    virtual std::string getAbbreviation() { return "Uccsd"; }
 
   protected:
-    static constexpr int DEFAULT_MAX_ITERATIONS = 16;
+    virtual void iterate(int i);
+
 
   };
 }
