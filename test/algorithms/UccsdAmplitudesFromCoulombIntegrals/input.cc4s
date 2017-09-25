@@ -45,6 +45,13 @@ UccsdAmplitudesFromCoulombIntegrals [
   PHPHCoulombIntegrals
   PPPHCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
+  (maxIterations 32)
+% (mixer "LinearMixer")
+% (mixingRatio 1.5)
 ] [
+  (UccsdEnergy UccsdEnergy)
+  (UccsdSinglesAmplitudes UccsdSinglesAmplitudes)
+  (UccsdDoublesAmplitudes UccsdDoublesAmplitudes)
 ].
 
+TensorWriter [(Data UccsdEnergy)] [].
