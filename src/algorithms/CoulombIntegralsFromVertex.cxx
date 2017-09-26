@@ -131,9 +131,6 @@ void CoulombIntegralsFromVertex::dryRun() {
   DryTensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
                      new DryTensor<>(4, vvvo, syms) : nullptr);
 
-  if (Vabcd) {
-    allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
-  }
   if (Vaibj) {
     allocatedTensorArgument("PHPHCoulombIntegrals", Vaibj);
   }
@@ -145,6 +142,9 @@ void CoulombIntegralsFromVertex::dryRun() {
   }
   if (Vijka) {
     allocatedTensorArgument("HHHPCoulombIntegrals", Vijka);
+  }
+  if (Vabcd) {
+    allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
   }
   if (Vabci) {
     allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
@@ -171,18 +171,22 @@ void CoulombIntegralsFromVertex::dryRun() {
 }
 
 void CoulombIntegralsFromVertex::calculateRealIntegrals() {
-  Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
-    new Tensor<>(4, vvvv.data(), syms.data(), *Cc4s::world, "Vabcd") : nullptr);
   Tensor<> *Vaibj(isArgumentGiven("PHPHCoulombIntegrals") ?
     new Tensor<>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaibj") : nullptr);
   Tensor<> *Vabij(isArgumentGiven("PPHHCoulombIntegrals") ?
     new Tensor<>(4, vvoo.data(), syms.data(), *Cc4s::world, "Vabij") : nullptr);
   Tensor<> *Vijab(isArgumentGiven("HHPPCoulombIntegrals") ?
     new Tensor<>(4, oovv.data(), syms.data(), *Cc4s::world, "Vijab") : nullptr);
+  Tensor<> *Vaijb(isArgumentGiven("PHHPCoulombIntegrals") ?
+    new Tensor<>(4, voov.data(), syms.data(), *Cc4s::world, "Vaijb") : nullptr);
   Tensor<> *Vijkl(isArgumentGiven("HHHHCoulombIntegrals") ?
     new Tensor<>(4, oooo.data(), syms.data(), *Cc4s::world, "Vijkl") : nullptr);
   Tensor<> *Vijka(isArgumentGiven("HHHPCoulombIntegrals") ?
     new Tensor<>(4, ooov.data(), syms.data(), *Cc4s::world, "Vijka") : nullptr);
+  Tensor<> *Vaijk(isArgumentGiven("PHHHCoulombIntegrals") ?
+    new Tensor<>(4, vooo.data(), syms.data(), *Cc4s::world, "Vaijk") : nullptr);
+  Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
+    new Tensor<>(4, vvvv.data(), syms.data(), *Cc4s::world, "Vabcd") : nullptr);
   Tensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
     new Tensor<>(4, vvvo.data(), syms.data(), *Cc4s::world, "Vabci") : nullptr);
 
@@ -206,19 +210,19 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
   fromComplexTensor(*GammaGij, realGammaGij, imagGammaGij);
 
   // Compute the integrals Vabij Vaibj Vaijb Vijkl Vabcd
-  if (Vabcd) {
-    LOG(1, "CoulombIntegrals") << "Evaluating "
-                               << Vabcd->get_name() << std::endl;
-    (*Vabcd)["abcd"]  = realGammaGab["Gac"] * realGammaGab["Gbd"];
-    (*Vabcd)["abcd"] += imagGammaGab["Gac"] * imagGammaGab["Gbd"];
-    allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
-  }
   if (Vaibj) {
     LOG(1, "CoulombIntegrals") << "Evaluating "
                                << Vaibj->get_name() << std::endl;
     (*Vaibj)["aibj"]  = realGammaGab["Gab"] * realGammaGij["Gij"];
     (*Vaibj)["aibj"] += imagGammaGab["Gab"] * imagGammaGij["Gij"];
     allocatedTensorArgument("PHPHCoulombIntegrals", Vaibj);
+  }
+  if (Vaijb) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vaijb->get_name() << std::endl;
+    (*Vaijb)["aijb"]  = realGammaGai["Gaj"] * realGammaGai["Gbi"];
+    (*Vaijb)["aijb"] += imagGammaGai["Gaj"] * imagGammaGai["Gbi"];
+    allocatedTensorArgument("PHHPCoulombIntegrals", Vaijb);
   }
   if (Vabij) {
     LOG(1, "CoulombIntegrals") << "Evaluating "
@@ -246,6 +250,20 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
     (*Vijka)["ijka"]  = realGammaGij["Gik"] * realGammaGai["Gaj"];
     (*Vijka)["ijka"] += imagGammaGij["Gik"] * imagGammaGai["Gaj"];
     allocatedTensorArgument("HHHPCoulombIntegrals", Vijka);
+  }
+  if (Vaijk) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vaijk->get_name() << std::endl;
+    (*Vaijk)["aijk"]  = realGammaGai["Gaj"] * realGammaGij["Gik"];
+    (*Vaijk)["aijk"] += imagGammaGai["Gaj"] * imagGammaGij["Gik"];
+    allocatedTensorArgument("PHHHCoulombIntegrals", Vaijk);
+  }
+  if (Vabcd) {
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vabcd->get_name() << std::endl;
+    (*Vabcd)["abcd"]  = realGammaGab["Gac"] * realGammaGab["Gbd"];
+    (*Vabcd)["abcd"] += imagGammaGab["Gac"] * imagGammaGab["Gbd"];
+    allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
   }
   if (Vabci) {
     LOG(1, "CoulombIntegrals") << "Evaluating "

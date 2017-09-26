@@ -860,7 +860,7 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
 
   {
     std::stringstream stream;
-    stream << std::setprecision(10) << "Sumation within cutoff radius=" << sum3D << std::endl;
+    stream << std::setprecision(10) << "Summation within cutoff radius=" << sum3D << std::endl;
     LOG(1,"FiniteSize") << stream.str();
   }
   {
