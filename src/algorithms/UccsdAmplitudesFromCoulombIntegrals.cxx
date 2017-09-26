@@ -23,21 +23,20 @@ UccsdAmplitudesFromCoulombIntegrals::UccsdAmplitudesFromCoulombIntegrals(
 UccsdAmplitudesFromCoulombIntegrals::~UccsdAmplitudesFromCoulombIntegrals() {
 }
 
-void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
-
-  // Get orbital energies
-  CTF::Tensor<> *epsi(getTensorArgument<double, CTF::Tensor<> >("HoleEigenEnergies"));
-  CTF::Tensor<> *epsa(getTensorArgument<double, CTF::Tensor<> >("ParticleEigenEnergies"));
+void UccsdAmplitudesFromCoulombIntegrals::run() {
+  LOG(0, "UCCSD") << "Initializing data" << std::endl;
+  epsi = getTensorArgument<double, CTF::Tensor<> >("HoleEigenEnergies");
+  epsa = getTensorArgument<double, CTF::Tensor<> >("ParticleEigenEnergies");
 
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
 
   // Get couloumb integrals (these shoul not be antisymmetrized)
-  CTF::Tensor<> *Vijkl(getTensorArgument<double, CTF::Tensor<> >("HHHHCoulombIntegrals"));
-  CTF::Tensor<> *Vabcd(getTensorArgument<double, CTF::Tensor<> >("PPPPCoulombIntegrals"));
-  CTF::Tensor<> *Vabij(getTensorArgument<double, CTF::Tensor<> >("PPHHCoulombIntegrals"));
-  CTF::Tensor<> *Vijka(getTensorArgument<double, CTF::Tensor<> >("HHHPCoulombIntegrals"));
-  CTF::Tensor<> *Vaibj(getTensorArgument<double, CTF::Tensor<> >("PHPHCoulombIntegrals"));
-  CTF::Tensor<> *Vabci(getTensorArgument<double, CTF::Tensor<> >("PPPHCoulombIntegrals"));
+  Vijkl = getTensorArgument<double, CTF::Tensor<> >("HHHHCoulombIntegrals");
+  Vabcd = getTensorArgument<double, CTF::Tensor<> >("PPPPCoulombIntegrals");
+  Vabij = getTensorArgument<double, CTF::Tensor<> >("PPHHCoulombIntegrals");
+  Vijka = getTensorArgument<double, CTF::Tensor<> >("HHHPCoulombIntegrals");
+  Vaibj = getTensorArgument<double, CTF::Tensor<> >("PHPHCoulombIntegrals");
+  Vabci = getTensorArgument<double, CTF::Tensor<> >("PPPHCoulombIntegrals");
 
   int syms[] = {NS, NS, NS, NS};
 
@@ -47,9 +46,7 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
 
   //  Vijab
   int oovv[] = { No, No, Nv, Nv };
-  CTF::Tensor<> *Vijab(
-    new CTF::Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab")
-  );
+  Vijab =  new CTF::Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab");
   if (symmetrize)
     (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
   else
@@ -57,9 +54,7 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
 
   //  Viajk
   int ovoo[] = { No, Nv, No, No };
-  CTF::Tensor<> *Viajk(
-    new CTF::Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk")
-  );
+  Viajk =  new CTF::Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk");
   if (symmetrize)
     (*Viajk)["iajk"] =  (*Vijka)["ijka"]  - (*Vijka)["ikja"];
   else
@@ -67,9 +62,7 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
 
   // Viajb
   int ovov[] = { No, Nv, No, Nv };
-  CTF::Tensor<> *Viajb(
-    new CTF::Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb")
-  );
+  Viajb =  new CTF::Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb");
   if (symmetrize)
     (*Viajb)["iajb"] =  (*Vaibj)["aibj"] - (*Vabij)["abji"];
   else
@@ -77,9 +70,7 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
 
   // Viabc
   int ovvv[] = { No, Nv, Nv, Nv };
-  CTF::Tensor<> *Viabc(
-    new CTF::Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc")
-  );
+  Viabc =  new CTF::Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc");
   if (symmetrize)
     (*Viabc)["iabc"] =  (*Vabci)["abci"] - (*Vabci)["acbi"];
   else
@@ -87,9 +78,7 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
 
   // Vabic
   int vvov[] = { Nv, Nv, No, Nv };
-  CTF::Tensor<> *Vabic(
-    new CTF::Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic")
-  );
+  Vabic =  new CTF::Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic");
   if (symmetrize)
     (*Vabic)["abic"] =  (*Vabci)["abci"] - (*Vabci)["baci"];
   else
@@ -105,7 +94,11 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
     (*Vabij)["abij"] -= (*Vabij)["abji"];
   }
 
+  ClusterSinglesDoublesAlgorithm::run();
+}
+void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
 
+  int Nv(epsa->lens[0]), No(epsi->lens[0]);
 
   // Create T and R and intermediates
   // Read the amplitudes Tai and Tabij

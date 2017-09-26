@@ -18,10 +18,34 @@ namespace cc4s {
     );
     virtual ~UccsdAmplitudesFromCoulombIntegrals();
 
+    virtual void run();
     virtual std::string getAbbreviation() { return "Uccsd"; }
 
   protected:
     virtual void iterate(int i);
+    CTF::Tensor<> *epsi;
+    CTF::Tensor<> *epsa;
+
+    // Get couloumb integrals (these shoul not be antisymmetrized)
+    CTF::Tensor<> *Vijkl;
+    CTF::Tensor<> *Vabcd;
+    CTF::Tensor<> *Vabij;
+    CTF::Tensor<> *Vijka;
+    CTF::Tensor<> *Vaibj;
+    CTF::Tensor<> *Vabci;
+
+    //  Vijab
+    CTF::Tensor<> *Vijab;
+    //  Viajk
+    CTF::Tensor<> *Viajk;
+    // Viajb
+    CTF::Tensor<> *Viajb;
+    // Viabc
+    CTF::Tensor<> *Viabc;
+    // Vabic
+    CTF::Tensor<> *Vabic;
+
+
 
   };
 }

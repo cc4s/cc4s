@@ -47,7 +47,7 @@ UccsdAmplitudesFromCoulombIntegrals [
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 10)
   %(mixer "LinearMixer")
-  (mixingRatio 0.3)
+  (mixingRatio 0.6)
 ] [
   (UccsdEnergy UccsdEnergy)
   (UccsdSinglesAmplitudes UccsdSinglesAmplitudes)
