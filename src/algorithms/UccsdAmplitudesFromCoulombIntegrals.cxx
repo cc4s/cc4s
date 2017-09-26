@@ -24,58 +24,59 @@ UccsdAmplitudesFromCoulombIntegrals::~UccsdAmplitudesFromCoulombIntegrals() {
 }
 
 void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
-  typedef CTF::Tensor<> T;
 
   // Get orbital energies
-  T *epsi(getTensorArgument<double, T>("HoleEigenEnergies"));
-  T *epsa(getTensorArgument<double, T>("ParticleEigenEnergies"));
+  CTF::Tensor<> *epsi(getTensorArgument<double, CTF::Tensor<> >("HoleEigenEnergies"));
+  CTF::Tensor<> *epsa(getTensorArgument<double, CTF::Tensor<> >("ParticleEigenEnergies"));
 
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
 
   // Get couloumb integrals (these shoul not be antisymmetrized)
-  T *Vijkl(getTensorArgument<double, T>("HHHHCoulombIntegrals"));
-  T *Vabcd(getTensorArgument<double, T>("PPPPCoulombIntegrals")); 
-  T *Vabij(getTensorArgument<double, T>("PPHHCoulombIntegrals"));
-  T *Vijka(getTensorArgument<double, T>("HHHPCoulombIntegrals"));
-  T *Vaibj(getTensorArgument<double, T>("PHPHCoulombIntegrals"));
-  T *Vabci(getTensorArgument<double, T>("PPPHCoulombIntegrals"));
+  CTF::Tensor<> *Vijkl(getTensorArgument<double, CTF::Tensor<> >("HHHHCoulombIntegrals"));
+  CTF::Tensor<> *Vabcd(getTensorArgument<double, CTF::Tensor<> >("PPPPCoulombIntegrals")); 
+  CTF::Tensor<> *Vabij(getTensorArgument<double, CTF::Tensor<> >("PPHHCoulombIntegrals"));
+  CTF::Tensor<> *Vijka(getTensorArgument<double, CTF::Tensor<> >("HHHPCoulombIntegrals"));
+  CTF::Tensor<> *Vaibj(getTensorArgument<double, CTF::Tensor<> >("PHPHCoulombIntegrals"));
+  CTF::Tensor<> *Vabci(getTensorArgument<double, CTF::Tensor<> >("PPPHCoulombIntegrals"));
 
   int syms[] = {NS, NS, NS, NS};
 
-  LOG(1, "Uccsd_AMPS") << "Antisymmetrizing Vpqrs " << std::endl;
+  LOG(1, "UCCSD") << "Antisymmetrizing Vpqrs " << std::endl;
+
+  bool symmetrize(true);
 
   //  Vijab
   int oovv[] = { No, No, Nv, Nv };
-  T *Vijab(
-    new T(4, oovv, syms, *Cc4s::world, "Vijab")
+  CTF::Tensor<> *Vijab(
+    new CTF::Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab")
   );
   (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
 
   //  Viajk
   int ovoo[] = { No, Nv, No, No };
-  T *Viajk(
-    new T(4, ovoo, syms, *Cc4s::world, "Viajk")
+  CTF::Tensor<> *Viajk(
+    new CTF::Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk")
   );
   (*Viajk)["iajk"] =  (*Vijka)["ijka"]  - (*Vijka)["ikja"];
 
   // Viajb
   int ovov[] = { No, Nv, No, Nv };
-  T *Viajb(
-    new T(4, ovov, syms, *Cc4s::world, "Viajb")
+  CTF::Tensor<> *Viajb(
+    new CTF::Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb")
   );
   (*Viajb)["iajb"] =  (*Vaibj)["aibj"] - (*Vabij)["abji"];
 
   // Viabc
   int ovvv[] = { No, Nv, Nv, Nv };
-  T *Viabc(
-    new T(4, ovvv, syms, *Cc4s::world, "Viabc")
+  CTF::Tensor<> *Viabc(
+    new CTF::Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc")
   );
   (*Viabc)["iabc"] =  (*Vabci)["abci"] - (*Vabci)["acbi"];
 
   // Vabic
   int vvov[] = { Nv, Nv, No, Nv };
-  T *Vabic(
-    new T(4, vvov, syms, *Cc4s::world, "Vabic")
+  CTF::Tensor<> *Vabic(
+    new CTF::Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic")
   );
   (*Vabic)["abic"] =  (*Vabci)["abci"] - (*Vabci)["baci"];
 
@@ -92,15 +93,15 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
 
   // Create T and R and intermediates
   // Read the amplitudes Tai and Tabij
-  T *Tai(&TaiMixer->getNext());
+  CTF::Tensor<> *Tai(&TaiMixer->getNext());
   Tai->set_name("Tai");
-  T *Tabij(&TabijMixer->getNext());
+  CTF::Tensor<> *Tabij(&TabijMixer->getNext());
   Tabij->set_name("Tabij");
 
   // Allocate Tensors for T2 amplitudes
-  T Rai(*Tai);
+  CTF::Tensor<> Rai(*Tai);
   Rai.set_name("Rai");
-  T Rabij(*Vabij);
+  CTF::Tensor<> Rabij(*Vabij);
   Rabij.set_name("Rabij");
 
   if (iterationStep == 1) {
@@ -112,9 +113,9 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
   // kinetic terms
   int oneBodySyms[] = {NS, NS};
   int vv[] = {Nv, Nv};
-  T *Fab( new T(2, vv, oneBodySyms, *Cc4s::world, "Fab") );
+  CTF::Tensor<> *Fab( new CTF::Tensor<>(2, vv, oneBodySyms, *Cc4s::world, "Fab") );
   int oo[] = {No, No};
-  T *Fij( new T(2, oo, oneBodySyms, *Cc4s::world, "Fij") );
+  CTF::Tensor<> *Fij( new CTF::Tensor<>(2, oo, oneBodySyms, *Cc4s::world, "Fij") );
 
   (*Fab)["aa"] = (*epsa)["a"];
   (*Fij)["ii"] = (*epsi)["i"];
@@ -201,8 +202,6 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
   // Append amplitudes to the mixer
   TabijMixer->append(Rabij);
 
-
-  LOG(1,"Uccsd_AMPS") << "END" << std::endl;
 
 }
 
