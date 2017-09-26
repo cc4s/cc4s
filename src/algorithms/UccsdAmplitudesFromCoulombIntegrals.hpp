@@ -19,6 +19,7 @@ namespace cc4s {
     virtual ~UccsdAmplitudesFromCoulombIntegrals();
 
     virtual void run();
+    double calculateEnergy();
     virtual std::string getAbbreviation() { return "Uccsd"; }
 
   protected:

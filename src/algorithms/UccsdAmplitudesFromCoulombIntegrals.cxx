@@ -23,6 +23,27 @@ UccsdAmplitudesFromCoulombIntegrals::UccsdAmplitudesFromCoulombIntegrals(
 UccsdAmplitudesFromCoulombIntegrals::~UccsdAmplitudesFromCoulombIntegrals() {
 }
 
+double UccsdAmplitudesFromCoulombIntegrals::calculateEnergy() {
+  // allocate energy
+  CTF::Scalar<double> energy(*Vabij->wrld);
+  energy.set_name("energy");
+
+  // get amplitudes from the mixers
+  CTF::Tensor<> *Tai(&TaiMixer->getNext());
+  Tai->set_name("Tai");
+  CTF::Tensor<> *Tabij(&TabijMixer->getNext());
+  Tabij->set_name("Tabij");
+
+  energy[""] += ( + 0.25  ) * (*Tabij)["abkl"] * (*Vijab)["klab"];
+  energy[""] += ( + 0.5  ) * (*Tai)["aj"] * (*Tai)["cl"] * (*Vijab)["jlac"];
+
+  double e(energy.get_val());
+  LOG(0, "UCCSD") << "e=" << e << std::endl;
+
+  return e;
+}
+
+
 void UccsdAmplitudesFromCoulombIntegrals::run() {
   LOG(0, "UCCSD") << "Initializing data" << std::endl;
   epsi = getTensorArgument<double, CTF::Tensor<> >("HoleEigenEnergies");
