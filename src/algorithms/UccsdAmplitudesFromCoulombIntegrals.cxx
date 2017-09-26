@@ -104,8 +104,8 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
   CTF::Tensor<> Rabij(*Vabij);
   Rabij.set_name("Rabij");
 
-  if (iterationStep == 1) {
-    LOG(1, getAbbreviation()) << "Set initial amplitudes to Vabij"
+  if (iterationStep == 0) {
+    LOG(1, getAbbreviation()) << "Set initial Rabij amplitudes to Vabij"
                               << std::endl;
     Rabij["abij"] = (*Vabij)["abij"];
   }
