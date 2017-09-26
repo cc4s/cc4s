@@ -17,6 +17,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
+#include <sstream>
 
 using namespace cc4s;
 using namespace CTF;
@@ -849,24 +850,35 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   double r1 = integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
   double  sumSGVG(0.);
 
-  for (int d(0); d < NG; ++d){
+  // we assume the first entry of cartesianGrid corresponds to G=0
+  for (int d(1); d < NG; ++d) {
     sumSGVG += cartesianGrid[d].vg * cartesianGrid[d].s;
-    }
+  }
 
-  LOG(0,"FiniteSize") << "Uncorrected e= "  << std::setprecision(10) << sumSGVG
-    << std::endl;
-  LOG(0,"FiniteSize") << "Corrected   e= " << std::setprecision(10) 
-    << sumSGVG+inter3D-sum3D << std::endl;
+  LOG(0, "FiniteSize") << "Uncorrected e=" << sumSGVG << std::endl;
+  LOG(0, "FiniteSize") << "Corrected e=" << sumSGVG+inter3D-sum3D << std::endl;
 
-  LOG(1,"FiniteSize") << "Integral within cutoff radius= " 
-    << std::setprecision(10) << inter3D    << std::endl;
-  LOG(1,"FiniteSize") << "Sumation within cutoff radius= " 
-    << std::setprecision(10) << sum3D      << std::endl;
+  {
+    std::stringstream stream;
+    stream << std::setprecision(10) << "Sumation within cutoff radius=" << sum3D << std::endl;
+    LOG(1,"FiniteSize") << stream.str();
+  }
+  {
+    std::stringstream stream;
+    stream << std::setprecision(10) << "Integral within cutoff radius="<< inter3D << std::endl;
+    LOG(1,"FiniteSize") << stream.str();
+  }
 
-  LOG(2,"FiniteSize") << "Spherical Averaging Correction  e="
-    << std::setprecision(10)  << r1        << std::endl;
-  LOG(2,"FiniteSize") << "Spherical Averaging Corrected   e="
-    << std::setprecision(10)  << sumSGVG + r1 << std::endl;
+  {
+    std::stringstream stream;
+    stream << std::setprecision(10) << "Spherical Averaging Correction=" << r1 << std::endl;
+    LOG(1,"FiniteSize") << stream.str();
+  }
+  {
+    std::stringstream stream;
+    stream << std::setprecision(10) << "Spherical Averaging Corrected="<< sumSGVG + r1 << std::endl;
+    LOG(1,"FiniteSize") << stream.str();
+  }
 
   setRealArgument("CorrectedEnergy"  , sumSGVG+inter3D-sum3D);
 }
