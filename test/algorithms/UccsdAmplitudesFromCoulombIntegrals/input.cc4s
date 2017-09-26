@@ -1,5 +1,5 @@
 CoulombVertexReader [
-  (file "../../resources/4alex/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.74")
+  (file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.7")
   (unrestricted 1)
 ] [
   (CoulombVertex FullCoulombVertex)
@@ -47,7 +47,7 @@ UccsdAmplitudesFromCoulombIntegrals [
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 10)
   %(mixer "LinearMixer")
-  %(mixingRatio 1.5)
+  (mixingRatio 0.3)
 ] [
   (UccsdEnergy UccsdEnergy)
   (UccsdSinglesAmplitudes UccsdSinglesAmplitudes)
