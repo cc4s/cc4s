@@ -1,5 +1,6 @@
 CoulombVertexReader [
-  (file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.7")
+  (file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands19.ecgw150.POSCAR.0.7")
+  %(file "/home/gallo/simulations/he_atom/EOM/FTODDUMP")
   (unrestricted 1)
 ] [
   (CoulombVertex FullCoulombVertex)
@@ -47,7 +48,7 @@ UccsdAmplitudesFromCoulombIntegrals [
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 10)
   %(mixer "LinearMixer")
-  (mixingRatio 0.6)
+  (mixingRatio 1.0)
 ] [
   (UccsdEnergy UccsdEnergy)
   (UccsdSinglesAmplitudes UccsdSinglesAmplitudes)

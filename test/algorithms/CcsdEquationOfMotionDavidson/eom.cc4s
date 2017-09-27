@@ -40,7 +40,7 @@ CoulombIntegralsFromVertex [
   PPPHCoulombIntegrals
 ].
 
-Mp2EquationOfMotionDavidson [
+CcsdEquationOfMotionDavidson [
   PPHHCoulombIntegrals
   HHHHCoulombIntegrals
   PPPPCoulombIntegrals

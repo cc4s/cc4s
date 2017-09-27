@@ -1,4 +1,4 @@
-#include <algorithms/Mp2EquationOfMotionDavidson.hpp>
+#include <algorithms/CcsdEquationOfMotionDavidson.hpp>
 
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
@@ -19,15 +19,15 @@
 using namespace cc4s;
 using namespace tcc;
 
-ALGORITHM_REGISTRAR_DEFINITION(Mp2EquationOfMotionDavidson);
+ALGORITHM_REGISTRAR_DEFINITION(CcsdEquationOfMotionDavidson);
 
-Mp2EquationOfMotionDavidson::Mp2EquationOfMotionDavidson(
+CcsdEquationOfMotionDavidson::CcsdEquationOfMotionDavidson(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
-Mp2EquationOfMotionDavidson::~Mp2EquationOfMotionDavidson() {}
+CcsdEquationOfMotionDavidson::~CcsdEquationOfMotionDavidson() {}
 
-void Mp2EquationOfMotionDavidson::run() {
+void CcsdEquationOfMotionDavidson::run() {
   typedef CTF::Tensor<> T;
 
   // Get copy of couloumb integrals
@@ -111,7 +111,7 @@ void Mp2EquationOfMotionDavidson::run() {
   LOG(2, "MP2_EOM_DAVIDSON") << "Calculating MP2 energy" << std::endl;
   energy[""] = ( 0.25 ) * Tabij["abij"] * Vabij["abij"];
   e = energy.get_val();
-  LOG(1, "MP2_EOM_DAVIDSON") << " Mp2 energy = " << e << std::endl;
+  LOG(1, "MP2_EOM_DAVIDSON") << " Ccsd energy = " << e << std::endl;
 
   // HF terms
   int kineticLensVirtual[] = {Nv, Nv};
@@ -122,11 +122,11 @@ void Mp2EquationOfMotionDavidson::run() {
   Fab["aa"] = (*epsa)["a"];
   Fij["ii"] = (*epsi)["i"];
 
-  Mp2SimilarityTransformedHamiltonian<double> H(
+  CcsdSimilarityTransformedHamiltonian<double> H(
     &Tai, &Tabij, &Fij, &Fab,
     &Vabcd, &Viajb, &Vijab, &Vijkl, &Vijka, &Viabc, &Viajk, &Vabic
   );
-  Mp2PreConditioner<double> P(
+  CcsdPreConditioner<double> P(
     Tai, Tabij, Fij, Fab, Vabcd, Viajb, Vijab, Vijkl
   );
   std::vector<FockVector<double>> basis( P.getInitialBasis(4) );
@@ -151,7 +151,7 @@ void Mp2EquationOfMotionDavidson::run() {
 
 // template method implementation
 template <typename F>
-void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
+void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
   CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, int64_t i
 ) {
   std::vector<std::pair<int64_t, F>> elements;
@@ -167,13 +167,13 @@ void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
 
 // instantiate template method implementation
 template
-void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
+void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
   CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, int64_t i
 );
 
 
 template <typename F>
-Mp2SimilarityTransformedHamiltonian<F>::Mp2SimilarityTransformedHamiltonian(
+CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   CTF::Tensor<F> *Tai_,
   CTF::Tensor<F> *Tabij_,
   CTF::Tensor<F> *Fij_,
@@ -203,7 +203,7 @@ Mp2SimilarityTransformedHamiltonian<F>::Mp2SimilarityTransformedHamiltonian(
 }
 
 template <typename F>
-FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::leftApply(
+FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
   FockVector<F> &L
 ) {
   FockVector<F> LH(L);
@@ -272,7 +272,7 @@ FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::leftApply(
 }
 
 template <typename F>
-FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::rightApply(
+FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   FockVector<F> &R
 ) {
   FockVector<F> HR(R);
@@ -382,11 +382,11 @@ FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::rightApply(
 
 // instantiate class
 template
-class Mp2SimilarityTransformedHamiltonian<double>;
+class CcsdSimilarityTransformedHamiltonian<double>;
 
 
 template <typename F>
-Mp2PreConditioner<F>::Mp2PreConditioner(
+CcsdPreConditioner<F>::CcsdPreConditioner(
   CTF::Tensor<F> &Tai,
   CTF::Tensor<F> &Tabij,
   CTF::Tensor<F> &Fij,
@@ -474,7 +474,7 @@ public:
 };
 
 template <typename F>
-std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
+std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
   const int eigenVectorsCount
 ) {
   LOG(0, "MP2_EOM_DAVIDSON") << "Getting initial basis " << std::endl;
@@ -557,7 +557,7 @@ std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
 }
 
 template <typename F>
-FockVector<F> Mp2PreConditioner<F>::getCorrection(
+FockVector<F> CcsdPreConditioner<F>::getCorrection(
   const complex lambda, FockVector<F> &residuum
 ) {
   FockVector<F> w(diagonalH);
@@ -595,5 +595,5 @@ FockVector<F> Mp2PreConditioner<F>::getCorrection(
 
 // instantiate class
 template
-class Mp2PreConditioner<double>;
+class CcsdPreConditioner<double>;
 
