@@ -3,6 +3,7 @@
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
 #include <math/MathFunctions.hpp>
+#include <math/ComplexTensor.hpp>
 #include <math/RandomTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -61,59 +62,47 @@ void UccsdAmplitudesFromCoulombIntegrals::run() {
 
   int syms[] = {NS, NS, NS, NS};
 
-  //LOG(1, "UCCSD") << "Antisymmetrizing Vpqrs " << std::endl;
-
-  bool symmetrize(true);
-
   //  Vijab
   int oovv[] = { No, No, Nv, Nv };
   Vijab =  new CTF::Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab");
-  if (symmetrize)
-    (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
-  else
-    (*Vijab)["ijab"] =  (*Vabij)["abij"];
+  (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
+  conjugate(*Vijab);
 
   //  Viajk
   int ovoo[] = { No, Nv, No, No };
   Viajk =  new CTF::Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk");
-  if (symmetrize)
-    (*Viajk)["iajk"] =  (*Vijka)["ijka"]  - (*Vijka)["ikja"];
-  else
-    (*Viajk)["iajk"] =  (*Vijka)["ijka"];
+  (*Viajk)["iajk"] =  (*Vijka)["jkia"]  - (*Vijka)["kjia"];
+  conjugate(*Viajk);
 
   // Viajb
   int ovov[] = { No, Nv, No, Nv };
+  int voov[] = { Nv, No, No, Nv };
+  CTF::Tensor<> Vaijb(4, voov, syms, *Cc4s::world, "Vaijb");
+  // Assumes real orbitals
+  Vaijb["aijb"] = (*Vabij)["abji"];
   Viajb =  new CTF::Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb");
-  if (symmetrize)
-    (*Viajb)["iajb"] =  (*Vaibj)["aibj"] - (*Vabij)["abji"];
-  else
-    (*Viajb)["iajb"] =  (*Vaibj)["aibj"];
+  (*Viajb)["iajb"] = ( - 1.0 ) * (Vaijb)["aijb"];
+  (*Viajb)["iajb"] +=  (*Vaibj)["aibj"];
 
   // Viabc
   int ovvv[] = { No, Nv, Nv, Nv };
   Viabc =  new CTF::Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc");
-  if (symmetrize)
-    (*Viabc)["iabc"] =  (*Vabci)["abci"] - (*Vabci)["acbi"];
-  else
-    (*Viabc)["iabc"] =  (*Vabci)["abci"];
+  (*Viabc)["iabc"] =  (*Vabci)["abci"];
+  conjugate(*Viabc);
+  (*Viabc)["iabc"] -= (*Vabci)["acbi"];
 
   // Vabic
   int vvov[] = { Nv, Nv, No, Nv };
   Vabic =  new CTF::Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic");
-  if (symmetrize)
-    (*Vabic)["abic"] =  (*Vabci)["abci"] - (*Vabci)["baci"];
-  else
-    (*Vabic)["abic"] =  (*Vabci)["abci"];
+  (*Vabic)["abic"] =  (*Vabci)["baci"] - (*Vabci)["abci"];
 
-  if (symmetrize){
-    // Antisymmetrize integrals that are read in
-    (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
-    (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
-    (*Vijka)["ijka"] -= (*Vijka)["jika"];
-    (*Vaibj)["aibj"] -= (*Vabij)["baij"];
-    (*Vabci)["abci"] -= (*Vabci)["baci"];
-    (*Vabij)["abij"] -= (*Vabij)["abji"];
-  }
+  // Antisymmetrize integrals that are read in
+  (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
+  (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
+  (*Vijka)["ijka"] -= (*Vijka)["jika"];
+  (*Vaibj)["aibj"] -= (*Vabij)["baij"];
+  (*Vabci)["abci"] -= (*Vabci)["baci"];
+  (*Vabij)["abij"] -= (*Vabij)["abji"];
 
   ClusterSinglesDoublesAlgorithm::run();
 }
