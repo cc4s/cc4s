@@ -5,6 +5,7 @@
 #include <math/EigenSystemDavidson.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/FockVector.hpp>
+#include <math/ComplexTensor.hpp>
 #include <math/RandomTensor.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
@@ -31,24 +32,12 @@ void CcsdEquationOfMotionDavidson::run() {
   typedef CTF::Tensor<> T;
 
   // Get copy of couloumb integrals
-  T Vijkl(*getTensorArgument<double, T>("HHHHCoulombIntegrals"));
-  T Vabcd(*getTensorArgument<double, T>("PPPPCoulombIntegrals")); 
-
-  // TODO: not needed after amplitude and energy calculations
-  T Vabij(*getTensorArgument<double, T>("PPHHCoulombIntegrals"));
-  // T *Vijab(getTensorArgument<double, T>("HHPPCoulombIntegrals")); // swap PPHH (done)
-
-  T Vijka(*getTensorArgument<double, T>("HHHPCoulombIntegrals"));
-  // T *Viajk(getTensorArgument<double, T>("HPHHCoulombIntegrals")); // swap HHHP (done)
-
-  // TODO: only needed for antisymmetrization
-  T Vaibj(*getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
-  //T *Viajb(getTensorArgument<double, T>("HPHPCoulombIntegrals")); // swap PHPH (done)
-
-  // TODO: only needed for antisymmetrization
-  T Vabci(*getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
-  //T *Viabc(getTensorArgument<double, T>("HPPPCoulombIntegrals")); // swap PPPH (done)
-  //T *Vabic(getTensorArgument<double, T>("PPHPCoulombIntegrals")); // swap PPPH (done)
+  T *Vijkl(getTensorArgument<double, T>("HHHHCoulombIntegrals"));
+  T *Vabcd(getTensorArgument<double, T>("PPPPCoulombIntegrals"));
+  T *Vabij(getTensorArgument<double, T>("PPHHCoulombIntegrals"));
+  T *Vijka(getTensorArgument<double, T>("HHHPCoulombIntegrals"));
+  T *Vaibj(getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
+  T *Vabci(getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
 
 
   // Get orbital energies
@@ -57,61 +46,49 @@ void CcsdEquationOfMotionDavidson::run() {
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
   int syms[] = {NS, NS, NS, NS};
 
-  //  Tai
-  int vo[] = { Nv, No };
-  T Tai(2, vo, syms, *Cc4s::world, "Tai");
-  T Tabij(false, Vabij);
-
-  LOG(1, "MP2_EOM_DAVIDSON") << "Antisymmetrizing Vpqrs" << std::endl;
+  LOG(1, "CCSD_EOM_DAVIDSON") << "Antisymmetrizing Vpqrs" << std::endl;
 
   //  Vijab
   int oovv[] = { No, No, Nv, Nv };
-  T Vijab(4, oovv, syms, *Cc4s::world, "Vijab");
-  Vijab["ijab"] =  Vabij["abij"] - Vabij["abji"];
+  T *Vijab(new CTF::Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab"));
+  (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
+  conjugate(*Vijab);
 
   //  Viajk
   int ovoo[] = { No, Nv, No, No };
-  T Viajk(4, ovoo, syms, *Cc4s::world, "Viajk");
-  Viajk["iajk"] =  Vijka["ijka"]  - Vijka["ikja"];
+  T *Viajk(new CTF::Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk"));
+  (*Viajk)["iajk"] =  (*Vijka)["jkia"]  - (*Vijka)["kjia"];
+  conjugate(*Viajk);
 
   // Viajb
   int ovov[] = { No, Nv, No, Nv };
-  T Viajb(4, ovov, syms, *Cc4s::world, "Viajb");
-  Viajb["iajb"] =  Vaibj["aibj"] - Vabij["abji"];
+  int voov[] = { Nv, No, No, Nv };
+  T *Vaijb(new CTF::Tensor<>(4, voov, syms, *Cc4s::world, "Vaijb"));
+  // Assumes real orbitals
+  (*Vaijb)["aijb"] = (*Vabij)["abji"];
+  T *Viajb(new CTF::Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb"));
+  (*Viajb)["iajb"] = ( - 1.0 ) * (*Vaijb)["aijb"];
+  (*Viajb)["iajb"] +=  (*Vaibj)["aibj"];
 
   // Viabc
   int ovvv[] = { No, Nv, Nv, Nv };
-  T Viabc(4, ovvv, syms, *Cc4s::world, "Viabc");
-  Viabc["iabc"] =  Vabci["abci"] - Vabci["acbi"];
+  T *Viabc(new CTF::Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc"));
+  (*Viabc)["iabc"] =  (*Vabci)["abci"];
+  conjugate(*Viabc);
+  (*Viabc)["iabc"] -= (*Vabci)["acbi"];
 
   // Vabic
   int vvov[] = { Nv, Nv, No, Nv };
-  T Vabic(4, vvov, syms, *Cc4s::world, "Vabic");
-  Vabic["abic"] =  Vabci["abci"] - Vabci["baci"];
+  T *Vabic(new CTF::Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic"));
+  (*Vabic)["abic"] =  (*Vabci)["baci"] - (*Vabci)["abci"];
 
   // Antisymmetrize integrals
-  Vijkl["ijkl"] -= Vijkl["ijlk"];
-  Vabcd["abcd"] -= Vabcd["abdc"];
-  Vijka["ijka"] -= Vijka["jika"];
-  Vaibj["aibj"] -= Vabij["baij"];
-  Vabci["abci"] -= Vabci["baci"];
-  Vabij["abij"] -= Vabij["abji"];
-
-  Tabij["abij"] =  (*epsi)["i"];
-  Tabij["abij"] += (*epsi)["j"];
-  Tabij["abij"] -= (*epsa)["a"];
-  Tabij["abij"] -= (*epsa)["b"];
-
-  LOG(1, "MP2_EOM_DAVIDSON") << "Creating doubles amplitudes" << std::endl;
-  CTF::Bivar_Function<> fDivide(&divide<double>);
-  Tabij.contract(1.0, Vabij,"abij", Tabij,"abij", 0.0,"abij", fDivide);
-
-  CTF::Scalar<> energy(0.0);
-  double e(0.0);
-  LOG(2, "MP2_EOM_DAVIDSON") << "Calculating MP2 energy" << std::endl;
-  energy[""] = ( 0.25 ) * Tabij["abij"] * Vabij["abij"];
-  e = energy.get_val();
-  LOG(1, "MP2_EOM_DAVIDSON") << " Ccsd energy = " << e << std::endl;
+  (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
+  (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
+  (*Vijka)["ijka"] -= (*Vijka)["jika"];
+  (*Vaibj)["aibj"] -= (*Vabij)["baij"];
+  (*Vabci)["abci"] -= (*Vabci)["baci"];
+  (*Vabij)["abij"] -= (*Vabij)["abji"];
 
   // HF terms
   int kineticLensVirtual[] = {Nv, Nv};
@@ -122,12 +99,16 @@ void CcsdEquationOfMotionDavidson::run() {
   Fab["aa"] = (*epsa)["a"];
   Fij["ii"] = (*epsi)["i"];
 
+  // Get the Uccsd amplitudes
+  T Tai(getTensorArgument<double, T>("SinglesAmplitudes"));
+  T Tabij(getTensorArgument<double, T>("DoublesAmplitudes"));
+
   CcsdSimilarityTransformedHamiltonian<double> H(
     &Tai, &Tabij, &Fij, &Fab,
-    &Vabcd, &Viajb, &Vijab, &Vijkl, &Vijka, &Viabc, &Viajk, &Vabic
+    Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic
   );
   CcsdPreConditioner<double> P(
-    Tai, Tabij, Fij, Fab, Vabcd, Viajb, Vijab, Vijkl
+    Tai, Tabij, Fij, Fab, *Vabcd, *Viajb, *Vijab, *Vijkl
   );
   std::vector<FockVector<double>> basis( P.getInitialBasis(4) );
   allocatedTensorArgument(
@@ -145,7 +126,7 @@ void CcsdEquationOfMotionDavidson::run() {
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
   for (auto &ev: eigenValues) {
-    LOG(0, "MP2_EOM_DAVIDSON") << "Eigenvalue=" << ev << std::endl;
+    LOG(0, "CCSD_EOM_DAVIDSON") << "Eigenvalue=" << ev << std::endl;
   }
 }
 
