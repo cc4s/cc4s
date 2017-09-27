@@ -136,8 +136,8 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
   (*Fij)["ii"] = (*epsi)["i"];
 
   Rai["bi"]  = 0.0;
-  Rai["bi"] += ( - 1.0  ) * (*Fij)["ki"] * (*Tai)["bk"];
-  Rai["bi"] += ( + 1.0  ) * (*Fab)["bc"] * (*Tai)["ci"];
+//  Rai["bi"] += ( - 1.0  ) * (*Fij)["ki"] * (*Tai)["bk"];
+//  Rai["bi"] += ( + 1.0  ) * (*Fab)["bc"] * (*Tai)["ci"];
   Rai["bi"] += ( - 1.0  ) * (*Tai)["cl"] * (*Viajb)["lbic"];
   Rai["bi"] += ( + 0.5  ) * (*Tabij)["cblm"] * (*Vijka)["lmic"];
   Rai["bi"] += ( + 0.5  ) * (*Tabij)["cdmi"] * (*Viabc)["mbcd"];
@@ -147,9 +147,6 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
   Rai["bi"] += ( - 0.5  ) * (*Tabij)["cdmi"] * (*Tai)["bn"] * (*Vijab)["mncd"];
   Rai["bi"] += ( + 1.0  ) * (*Tabij)["cbli"] * (*Tai)["en"] * (*Vijab)["lnce"];
   Rai["bi"] += ( - 1.0  ) * (*Tai)["ci"] * (*Tai)["bl"] * (*Tai)["en"] * (*Vijab)["lnce"];
-
-  singlesAmplitudesFromResiduum(Rai);
-  TaiMixer->append(Rai);
 
   if (iterationStep == 0){
     LOG(1, getAbbreviation()) << "Set initial Rabij amplitudes to Vabij"
@@ -162,10 +159,10 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
     Rabij["cdij"] += ( + 1.0  ) * (*Tai)["dm"] * (*Viajk)["mcij"];
     Rabij["cdij"] += ( + 1.0  ) * (*Tai)["ej"] * (*Vabic)["cdie"];
     Rabij["cdij"] += ( - 1.0  ) * (*Tai)["ei"] * (*Vabic)["cdje"];
-    Rabij["cdij"] += ( - 1.0  ) * (*Fij)["mi"] * (*Tabij)["cdmj"];
-    Rabij["cdij"] += ( + 1.0  ) * (*Fij)["mj"] * (*Tabij)["cdmi"];
-    Rabij["cdij"] += ( - 1.0  ) * (*Fab)["de"] * (*Tabij)["ecij"];
-    Rabij["cdij"] += ( + 1.0  ) * (*Fab)["ce"] * (*Tabij)["edij"];
+//    Rabij["cdij"] += ( - 1.0  ) * (*Fij)["mi"] * (*Tabij)["cdmj"];
+//    Rabij["cdij"] += ( + 1.0  ) * (*Fij)["mj"] * (*Tabij)["cdmi"];
+//    Rabij["cdij"] += ( - 1.0  ) * (*Fab)["de"] * (*Tabij)["ecij"];
+//    Rabij["cdij"] += ( + 1.0  ) * (*Fab)["ce"] * (*Tabij)["edij"];
     Rabij["cdij"] += ( + 0.5  ) * (*Tabij)["cdmn"] * (*Vijkl)["mnij"];
     Rabij["cdij"] += ( + 1.0  ) * (*Tabij)["ecnj"] * (*Viajb)["ndie"];
     Rabij["cdij"] += ( - 1.0  ) * (*Tabij)["ednj"] * (*Viajb)["ncie"];
@@ -217,6 +214,9 @@ void UccsdAmplitudesFromCoulombIntegrals::iterate(int iterationStep) {
     Rabij["cdij"] += ( + 1.0  ) * (*Tai)["cm"] * (*Tai)["fo"] * (*Tabij)["hdij"] * (*Vijab)["mofh"];
     Rabij["cdij"] += ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["fj"] * (*Tai)["co"] * (*Tai)["dp"] * (*Vijab)["opef"];
   }
+
+  singlesAmplitudesFromResiduum(Rai);
+  TaiMixer->append(Rai);
 
   // Calculate the amplitudes from the residuum
   doublesAmplitudesFromResiduum(Rabij);
