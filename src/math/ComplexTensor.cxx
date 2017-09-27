@@ -105,6 +105,11 @@ void cc4s::toComplexTensor(
 }
 
 void cc4s::conjugate(
+  CTF::Tensor<double> &
+) {
+}
+
+void cc4s::conjugate(
   CTF::Tensor<complex> &C
 ) {
   char inds[C.order];
