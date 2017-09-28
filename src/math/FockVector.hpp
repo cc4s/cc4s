@@ -49,6 +49,7 @@ namespace cc4s {
       // asuume shape of rhs
       componentTensors = a.componentTensors;
       componentIndices = a.componentIndices;
+      initializeIndexTranslation();
       return *this;
     }
 
@@ -181,7 +182,6 @@ namespace cc4s {
       // vectors to contain indices and values for each component tensor
       std::vector<std::vector<int64_t>> tensorIndices(componentTensors.size());
       std::vector<std::vector<F>> tensorValues(componentTensors.size());
-      std::vector<int64_t> indexEnds(componentTensors.size());
 
       for (uint64_t k(0); k < elements.size(); ++k) {
         int component;
@@ -194,6 +194,8 @@ namespace cc4s {
 
       // write data of each tensor
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        tensorIndices[i].reserve(tensorIndices[i].size()+1);
+        tensorValues[i].reserve(tensorIndices[i].size()+1);
         componentTensors[i].write(
           tensorIndices[i].size(),
           tensorIndices[i].data(),
@@ -240,8 +242,12 @@ namespace cc4s {
     ) const {
       component = 0;
       int64_t base(0);
-      while (totalIndex >= indexEnds[component]) {
+      while (component < static_cast<int>(indexEnds.size())) {
+        if (totalIndex < indexEnds[component]) break;
         base = indexEnds[component++];
+      }
+      if (component >= static_cast<int>(indexEnds.size())) {
+        throw new EXCEPTION("Index out bounds");
       }
       componentIndex = totalIndex - base;
     }
