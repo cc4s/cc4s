@@ -5,7 +5,7 @@ TARGET=Cc4s
 CXX=mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS=-fopenmp
+OPTIONS=-fopenmp -DDEBUG
 
 # optimization options (only for compiling and linking)
 OPTIMIZE=-O0 -g
