@@ -49,7 +49,6 @@ void ThermalEquationOfMotion::run() {
     "DoublesHamiltonianDiagonal",
     new CTF::Tensor<>(P.getDiagonalH().componentTensors[1])
   );
-
   allocatedTensorArgument(
     "VacuumBasis",
     new CTF::Tensor<>(basis[8].componentTensors[0])
@@ -58,7 +57,6 @@ void ThermalEquationOfMotion::run() {
     "DoublesBasis",
     new CTF::Tensor<>(basis[8].componentTensors[1])
   );
-
   // Davidson solver
   EigenSystemDavidson<FockVector<double>> eigenSystem(H, 16, P, 1E-14, 16*16);
 
@@ -105,15 +103,19 @@ FockVector<F> ThermalHamiltonian<F>::rightApply(
   CTF::Tensor<F> *HR0( &HR.componentTensors[0] );
   CTF::Tensor<F> *HRabij( &HR.componentTensors[1] );
 
+
   // HR (vacuum part)
   // from R
   (*HR0)[""]  = (*E0)[""] * (*R0)[""];
   // from Rabij
-  (*HR0)[""] += (*Vabij)["abij"] * (*Rabij)["abij"];
+  (*HR0)[""] += 0.5 * (*Vabij)["abij"] * (*Rabij)["abij"];
+  (*HR0)[""] -= 0.5 * (*Vabij)["abij"] * (*Rabij)["abji"];
 
   // HRabij (two body part)
   // from R
-  (*HRabij)["abij"] =  (*Vabij)["abij"] * (*R0)[""];
+  (*HRabij)["abij"] = 0.5 * (*Vabij)["abij"] * (*R0)[""];
+  (*HRabij)["abij"] = 0.5 * (*Vabij)["abji"] * (*R0)[""];
+
   // from Rabij
   (*HRabij)["abij"] += (*epsa)["a"] * (*Rabij)["abij"];
   (*HRabij)["abij"] += (*epsa)["b"] * (*Rabij)["abij"];
@@ -187,23 +189,18 @@ std::vector<FockVector<F>> ThermalHamiltonianPreConditioner<F>::getInitialBasis(
     EomDiagonalValueComparator<double>()
   );
 
-  // gather all K elements of all processors at root
+  // gather all K lowest elements of each processor at root
   //   convert into homogeneous arrays for MPI gather
-  std::vector<int64_t> localLowestElementIndices(localElements.size());
-  std::vector<F> localLowestElementValues(localElements.size());
-  for (uint64_t i(0); i < localElements.size(); ++i) {
+  std::vector<int64_t> localLowestElementIndices(eigenVectorsCount);
+  std::vector<F> localLowestElementValues(eigenVectorsCount);
+  for (int i(0); i < eigenVectorsCount; ++i) {
     localLowestElementIndices[i] = localElements[i].first;
     localLowestElementValues[i] = localElements[i].second;
   }
   MpiCommunicator communicator(*Cc4s::world);
-   int lowestElementsCount(
-    diagonalH.componentTensors[0].lens[0] *
-    diagonalH.componentTensors[0].lens[1] +
-    pow(
-      diagonalH.componentTensors[0].lens[0] *
-      diagonalH.componentTensors[0].lens[1],
-      3.0
-    )
+  int lowestElementsCount(
+    communicator.getRank() == 0 ?
+      eigenVectorsCount * communicator.getProcesses() : 0
   );
   std::vector<int64_t> lowestElementIndices(lowestElementsCount);
   std::vector<F> lowestElementValues(lowestElementsCount);
@@ -221,7 +218,7 @@ std::vector<FockVector<F>> ThermalHamiltonianPreConditioner<F>::getInitialBasis(
     lowestElements.begin(), lowestElements.end(),
     EomDiagonalValueComparator<double>()
   );
-  // at rank==0 (root) lowestElements contains N*Np entries
+  // at rank==0 (root) lowestElements contains K*Np entries
   // rank > 0 has an empty list
 
   // create basis vectors for each lowest element
@@ -243,14 +240,9 @@ std::vector<FockVector<F>> ThermalHamiltonianPreConditioner<F>::getInitialBasis(
     // b1: 0... 1 (at global position 101) 0 ...
     // b2: 0... 1 (at global position 32) 0 ...i
 
-    // Filter out unphysical components from the basisElement
-    (basisElement.componentTensors[1])["abii"]=0.0;
-    (basisElement.componentTensors[1])["aaij"]=0.0;
-    (basisElement.componentTensors[1])["aaii"]=0.0;
-
     b++;
     std::cout << "b" << b << std::endl;
-    if (std::sqrt(basisElement.dot(basisElement))!=F(1)) continue;
+    if (basisElement.dot(basisElement) < 1e-7) continue;
     bb++;
     basis.push_back(basisElement);
     std::cout << "bb" << bb << std::endl;
