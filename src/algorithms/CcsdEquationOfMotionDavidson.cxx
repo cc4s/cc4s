@@ -1,10 +1,11 @@
-#include <algorithms/Mp2EquationOfMotionDavidson.hpp>
+#include <algorithms/CcsdEquationOfMotionDavidson.hpp>
 
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
 #include <math/EigenSystemDavidson.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/FockVector.hpp>
+#include <math/ComplexTensor.hpp>
 #include <math/RandomTensor.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
@@ -19,36 +20,24 @@
 using namespace cc4s;
 using namespace tcc;
 
-ALGORITHM_REGISTRAR_DEFINITION(Mp2EquationOfMotionDavidson);
+ALGORITHM_REGISTRAR_DEFINITION(CcsdEquationOfMotionDavidson);
 
-Mp2EquationOfMotionDavidson::Mp2EquationOfMotionDavidson(
+CcsdEquationOfMotionDavidson::CcsdEquationOfMotionDavidson(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
-Mp2EquationOfMotionDavidson::~Mp2EquationOfMotionDavidson() {}
+CcsdEquationOfMotionDavidson::~CcsdEquationOfMotionDavidson() {}
 
-void Mp2EquationOfMotionDavidson::run() {
+void CcsdEquationOfMotionDavidson::run() {
   typedef CTF::Tensor<> T;
 
   // Get copy of couloumb integrals
-  T Vijkl(*getTensorArgument<double, T>("HHHHCoulombIntegrals"));
-  T Vabcd(*getTensorArgument<double, T>("PPPPCoulombIntegrals")); 
-
-  // TODO: not needed after amplitude and energy calculations
-  T Vabij(*getTensorArgument<double, T>("PPHHCoulombIntegrals"));
-  // T *Vijab(getTensorArgument<double, T>("HHPPCoulombIntegrals")); // swap PPHH (done)
-
-  T Vijka(*getTensorArgument<double, T>("HHHPCoulombIntegrals"));
-  // T *Viajk(getTensorArgument<double, T>("HPHHCoulombIntegrals")); // swap HHHP (done)
-
-  // TODO: only needed for antisymmetrization
-  T Vaibj(*getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
-  //T *Viajb(getTensorArgument<double, T>("HPHPCoulombIntegrals")); // swap PHPH (done)
-
-  // TODO: only needed for antisymmetrization
-  T Vabci(*getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
-  //T *Viabc(getTensorArgument<double, T>("HPPPCoulombIntegrals")); // swap PPPH (done)
-  //T *Vabic(getTensorArgument<double, T>("PPHPCoulombIntegrals")); // swap PPPH (done)
+  T *Vijkl(getTensorArgument<double, T>("HHHHCoulombIntegrals"));
+  T *Vabcd(getTensorArgument<double, T>("PPPPCoulombIntegrals"));
+  T *Vabij(getTensorArgument<double, T>("PPHHCoulombIntegrals"));
+  T *Vijka(getTensorArgument<double, T>("HHHPCoulombIntegrals"));
+  T *Vaibj(getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
+  T *Vabci(getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
 
 
   // Get orbital energies
@@ -57,61 +46,49 @@ void Mp2EquationOfMotionDavidson::run() {
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
   int syms[] = {NS, NS, NS, NS};
 
-  //  Tai
-  int vo[] = { Nv, No };
-  T Tai(2, vo, syms, *Cc4s::world, "Tai");
-  T Tabij(false, Vabij);
-
-  LOG(1, "MP2_EOM_DAVIDSON") << "Antisymmetrizing Vpqrs" << std::endl;
+  LOG(1, "CCSD_EOM_DAVIDSON") << "Antisymmetrizing Vpqrs" << std::endl;
 
   //  Vijab
   int oovv[] = { No, No, Nv, Nv };
-  T Vijab(4, oovv, syms, *Cc4s::world, "Vijab");
-  Vijab["ijab"] =  Vabij["abij"] - Vabij["abji"];
+  T *Vijab(new CTF::Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab"));
+  (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
+  conjugate(*Vijab);
 
   //  Viajk
   int ovoo[] = { No, Nv, No, No };
-  T Viajk(4, ovoo, syms, *Cc4s::world, "Viajk");
-  Viajk["iajk"] =  Vijka["ijka"]  - Vijka["ikja"];
+  T *Viajk(new CTF::Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk"));
+  (*Viajk)["iajk"] =  (*Vijka)["jkia"]  - (*Vijka)["kjia"];
+  conjugate(*Viajk);
 
   // Viajb
   int ovov[] = { No, Nv, No, Nv };
-  T Viajb(4, ovov, syms, *Cc4s::world, "Viajb");
-  Viajb["iajb"] =  Vaibj["aibj"] - Vabij["abji"];
+  int voov[] = { Nv, No, No, Nv };
+  T *Vaijb(new CTF::Tensor<>(4, voov, syms, *Cc4s::world, "Vaijb"));
+  // Assumes real orbitals
+  (*Vaijb)["aijb"] = (*Vabij)["abji"];
+  T *Viajb(new CTF::Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb"));
+  (*Viajb)["iajb"] = ( - 1.0 ) * (*Vaijb)["aijb"];
+  (*Viajb)["iajb"] +=  (*Vaibj)["aibj"];
 
   // Viabc
   int ovvv[] = { No, Nv, Nv, Nv };
-  T Viabc(4, ovvv, syms, *Cc4s::world, "Viabc");
-  Viabc["iabc"] =  Vabci["abci"] - Vabci["acbi"];
+  T *Viabc(new CTF::Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc"));
+  (*Viabc)["iabc"] =  (*Vabci)["abci"];
+  conjugate(*Viabc);
+  (*Viabc)["iabc"] -= (*Vabci)["acbi"];
 
   // Vabic
   int vvov[] = { Nv, Nv, No, Nv };
-  T Vabic(4, vvov, syms, *Cc4s::world, "Vabic");
-  Vabic["abic"] =  Vabci["abci"] - Vabci["baci"];
+  T *Vabic(new CTF::Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic"));
+  (*Vabic)["abic"] =  (*Vabci)["baci"] - (*Vabci)["abci"];
 
   // Antisymmetrize integrals
-  Vijkl["ijkl"] -= Vijkl["ijlk"];
-  Vabcd["abcd"] -= Vabcd["abdc"];
-  Vijka["ijka"] -= Vijka["jika"];
-  Vaibj["aibj"] -= Vabij["baij"];
-  Vabci["abci"] -= Vabci["baci"];
-  Vabij["abij"] -= Vabij["abji"];
-
-  Tabij["abij"] =  (*epsi)["i"];
-  Tabij["abij"] += (*epsi)["j"];
-  Tabij["abij"] -= (*epsa)["a"];
-  Tabij["abij"] -= (*epsa)["b"];
-
-  LOG(1, "MP2_EOM_DAVIDSON") << "Creating doubles amplitudes" << std::endl;
-  CTF::Bivar_Function<> fDivide(&divide<double>);
-  Tabij.contract(1.0, Vabij,"abij", Tabij,"abij", 0.0,"abij", fDivide);
-
-  CTF::Scalar<> energy(0.0);
-  double e(0.0);
-  LOG(2, "MP2_EOM_DAVIDSON") << "Calculating MP2 energy" << std::endl;
-  energy[""] = ( 0.25 ) * Tabij["abij"] * Vabij["abij"];
-  e = energy.get_val();
-  LOG(1, "MP2_EOM_DAVIDSON") << " Mp2 energy = " << e << std::endl;
+  (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
+  (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
+  (*Vijka)["ijka"] -= (*Vijka)["jika"];
+  (*Vaibj)["aibj"] -= (*Vabij)["baij"];
+  (*Vabci)["abci"] -= (*Vabci)["baci"];
+  (*Vabij)["abij"] -= (*Vabij)["abji"];
 
   // HF terms
   int kineticLensVirtual[] = {Nv, Nv};
@@ -122,12 +99,16 @@ void Mp2EquationOfMotionDavidson::run() {
   Fab["aa"] = (*epsa)["a"];
   Fij["ii"] = (*epsi)["i"];
 
-  Mp2SimilarityTransformedHamiltonian<double> H(
+  // Get the Uccsd amplitudes
+  T Tai(getTensorArgument<double, T>("SinglesAmplitudes"));
+  T Tabij(getTensorArgument<double, T>("DoublesAmplitudes"));
+
+  CcsdSimilarityTransformedHamiltonian<double> H(
     &Tai, &Tabij, &Fij, &Fab,
-    &Vabcd, &Viajb, &Vijab, &Vijkl, &Vijka, &Viabc, &Viajk, &Vabic
+    Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic
   );
-  Mp2PreConditioner<double> P(
-    Tai, Tabij, Fij, Fab, Vabcd, Viajb, Vijab, Vijkl
+  CcsdPreConditioner<double> P(
+    Tai, Tabij, Fij, Fab, *Vabcd, *Viajb, *Vijab, *Vijkl
   );
   std::vector<FockVector<double>> basis( P.getInitialBasis(4) );
   allocatedTensorArgument(
@@ -145,13 +126,13 @@ void Mp2EquationOfMotionDavidson::run() {
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
   for (auto &ev: eigenValues) {
-    LOG(0, "MP2_EOM_DAVIDSON") << "Eigenvalue=" << ev << std::endl;
+    LOG(0, "CCSD_EOM_DAVIDSON") << "Eigenvalue=" << ev << std::endl;
   }
 }
 
 // template method implementation
 template <typename F>
-void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
+void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
   CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, int64_t i
 ) {
   std::vector<std::pair<int64_t, F>> elements;
@@ -167,13 +148,13 @@ void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
 
 // instantiate template method implementation
 template
-void Mp2EquationOfMotionDavidson::getCanonicalPerturbationBasis(
+void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
   CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, int64_t i
 );
 
 
 template <typename F>
-Mp2SimilarityTransformedHamiltonian<F>::Mp2SimilarityTransformedHamiltonian(
+CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   CTF::Tensor<F> *Tai_,
   CTF::Tensor<F> *Tabij_,
   CTF::Tensor<F> *Fij_,
@@ -203,7 +184,7 @@ Mp2SimilarityTransformedHamiltonian<F>::Mp2SimilarityTransformedHamiltonian(
 }
 
 template <typename F>
-FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::leftApply(
+FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
   FockVector<F> &L
 ) {
   FockVector<F> LH(L);
@@ -272,7 +253,7 @@ FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::leftApply(
 }
 
 template <typename F>
-FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::rightApply(
+FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   FockVector<F> &R
 ) {
   FockVector<F> HR(R);
@@ -293,6 +274,18 @@ FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::rightApply(
   (*HRai)["bi"] += ( + 1.0 ) * (*Tabij)["cbli"] * (*Vijab)["lmcf"] * (*Rai)["fm"];
   (*HRai)["bi"] += ( - 0.5 ) * (*Tabij)["cdmi"] * (*Vijab)["mncd"] * (*Rai)["bn"];
   (*HRai)["bi"] += ( - 0.5 ) * (*Tabij)["cblm"] * (*Vijab)["lmcf"] * (*Rai)["fi"];
+
+  // Singles amplitudes part
+  (*HRai)["bi"] += ( - 1.0  ) * (*Tai)["bk"] * (*Vijka)["klie"] * (*Rai)["el"];
+  (*HRai)["bi"] += ( + 1.0  ) * (*Tai)["cl"] * (*Vijka)["lmic"] * (*Rai)["bm"];
+  (*HRai)["bi"] += ( - 1.0  ) * (*Tai)["ci"] * (*Viabc)["lbce"] * (*Rai)["el"];
+  (*HRai)["bi"] += ( + 1.0  ) * (*Tai)["cl"] * (*Viabc)["lbce"] * (*Rai)["ei"];
+  (*HRai)["bi"] += ( + 0.5  ) * (*Tai)["ci"] * (*Vijab)["lmcf"] * (*Rabij)["fblm"];
+  (*HRai)["bi"] += ( + 0.5  ) * (*Tai)["bk"] * (*Vijab)["klef"] * (*Rabij)["efli"];
+  (*HRai)["bi"] += ( + 1.0  ) * (*Tai)["cl"] * (*Vijab)["lmcf"] * (*Rabij)["fbmi"];
+  (*HRai)["bi"] += ( - 1.0  ) * (*Tai)["ci"] * (*Tai)["bl"] * (*Vijab)["lmcf"] * (*Rai)["fm"];
+  (*HRai)["bi"] += ( + 1.0  ) * (*Tai)["ci"] * (*Tai)["dm"] * (*Vijab)["mncd"] * (*Rai)["bn"];
+  (*HRai)["bi"] += ( + 1.0  ) * (*Tai)["bk"] * (*Tai)["dm"] * (*Vijab)["kmdf"] * (*Rai)["fi"];
 
   // Contruct HR (two body part)
   // TODO: why "cdai" not "abij"?
@@ -372,6 +365,157 @@ FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::rightApply(
   (*HRabij)["cdij"] +=
     ( - 0.5 ) * (*Tabij)["ecno"] * (*Vijab)["noeh"] * (*Rabij)["hdij"];
 
+  // Singles amplitudes part
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["dm"] * (*Vijkl)["mnij"] * (*Rai)["cn"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["cm"] * (*Vijkl)["mnij"] * (*Rai)["dn"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ej"] * (*Viajb)["ndie"] * (*Rai)["cn"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ej"] * (*Viajb)["ncie"] * (*Rai)["dn"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Viajb)["ndje"] * (*Rai)["cn"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ei"] * (*Viajb)["ncje"] * (*Rai)["dn"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["cm"] * (*Viajb)["mdif"] * (*Rai)["fj"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["dm"] * (*Viajb)["mcif"] * (*Rai)["fj"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["cm"] * (*Viajb)["mdjf"] * (*Rai)["fi"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["dm"] * (*Viajb)["mcjf"] * (*Rai)["fi"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Vabcd)["cdef"] * (*Rai)["fj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ej"] * (*Vabcd)["cdef"] * (*Rai)["fi"];
+  (*HRabij)["cdij"] +=
+    ( + 0.5  ) * (*Tai)["ej"] * (*Vijka)["noie"] * (*Rabij)["cdno"];
+  (*HRabij)["cdij"] +=
+    ( - 0.5  ) * (*Tai)["ei"] * (*Vijka)["noje"] * (*Rabij)["cdno"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["dm"] * (*Vijka)["mnig"] * (*Rabij)["gcnj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["cm"] * (*Vijka)["mnig"] * (*Rabij)["gdnj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["dm"] * (*Vijka)["mnjg"] * (*Rabij)["gcni"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["cm"] * (*Vijka)["mnjg"] * (*Rabij)["gdni"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["en"] * (*Vijka)["noie"] * (*Rabij)["cdoj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["en"] * (*Vijka)["noje"] * (*Rabij)["cdoi"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Viabc)["ndeg"] * (*Rabij)["gcnj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ei"] * (*Viabc)["nceg"] * (*Rabij)["gdnj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ej"] * (*Viabc)["ndeg"] * (*Rabij)["gcni"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ej"] * (*Viabc)["nceg"] * (*Rabij)["gdni"];
+  (*HRabij)["cdij"] +=
+    ( - 0.5  ) * (*Tai)["cm"] * (*Viabc)["mdfg"] * (*Rabij)["fgij"];
+  (*HRabij)["cdij"] +=
+    ( + 0.5  ) * (*Tai)["dm"] * (*Viabc)["mcfg"] * (*Rabij)["fgij"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["en"] * (*Viabc)["ndeg"] * (*Rabij)["gcij"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["en"] * (*Viabc)["nceg"] * (*Rabij)["gdij"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ej"] * (*Tai)["dn"] * (*Vijka)["noie"] * (*Rai)["co"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ej"] * (*Tai)["cn"] * (*Vijka)["noie"] * (*Rai)["do"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["dn"] * (*Vijka)["noje"] * (*Rai)["co"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ei"] * (*Tai)["cn"] * (*Vijka)["noje"] * (*Rai)["do"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["cm"] * (*Tai)["dn"] * (*Vijka)["mnig"] * (*Rai)["gj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["cm"] * (*Tai)["dn"] * (*Vijka)["mnjg"] * (*Rai)["gi"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ei"] * (*Tai)["fj"] * (*Viabc)["odef"] * (*Rai)["co"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["fj"] * (*Viabc)["ocef"] * (*Rai)["do"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ei"] * (*Tai)["cn"] * (*Viabc)["ndeg"] * (*Rai)["gj"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["dn"] * (*Viabc)["nceg"] * (*Rai)["gj"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ej"] * (*Tai)["cn"] * (*Viabc)["ndeg"] * (*Rai)["gi"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ej"] * (*Tai)["dn"] * (*Viabc)["nceg"] * (*Rai)["gi"];
+  (*HRabij)["cdij"] +=
+    ( + 0.5  ) * (*Tai)["ei"] * (*Tai)["fj"] * (*Vijab)["opef"] * (*Rabij)["cdop"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rabij)["hcoj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ei"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rabij)["hdoj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ej"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rabij)["hcoi"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ej"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rabij)["hdoi"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["fo"] * (*Vijab)["opef"] * (*Rabij)["cdpj"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ej"] * (*Tai)["fo"] * (*Vijab)["opef"] * (*Rabij)["cdpi"];
+  (*HRabij)["cdij"] +=
+    ( + 0.5  ) * (*Tai)["cm"] * (*Tai)["dn"] * (*Vijab)["mngh"] * (*Rabij)["ghij"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["dm"] * (*Tai)["fo"] * (*Vijab)["mofh"] * (*Rabij)["hcij"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["cm"] * (*Tai)["fo"] * (*Vijab)["mofh"] * (*Rabij)["hdij"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fi"] * (*Vijab)["mofh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fj"] * (*Vijab)["mofh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["ednj"] * (*Tai)["gi"] * (*Vijab)["npeg"] * (*Rai)["cp"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["ecnj"] * (*Tai)["gi"] * (*Vijab)["npeg"] * (*Rai)["dp"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["edni"] * (*Tai)["gj"] * (*Vijab)["npeg"] * (*Rai)["cp"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["ecni"] * (*Tai)["gj"] * (*Vijab)["npeg"] * (*Rai)["dp"];
+  (*HRabij)["cdij"] +=
+    ( + 0.5  ) * (*Tabij)["cdmn"] * (*Tai)["gi"] * (*Vijab)["mngh"] * (*Rai)["hj"];
+  (*HRabij)["cdij"] +=
+    ( - 0.5  ) * (*Tabij)["cdmn"] * (*Tai)["gj"] * (*Vijab)["mngh"] * (*Rai)["hi"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["ecij"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["edij"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( - 0.5  ) * (*Tabij)["efij"] * (*Tai)["do"] * (*Vijab)["opef"] * (*Rai)["cp"];
+  (*HRabij)["cdij"] +=
+    ( + 0.5  ) * (*Tabij)["efij"] * (*Tai)["co"] * (*Vijab)["opef"] * (*Rai)["dp"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["edij"] * (*Tai)["fo"] * (*Vijab)["opef"] * (*Rai)["cp"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["ecij"] * (*Tai)["fo"] * (*Vijab)["opef"] * (*Rai)["dp"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["ecni"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hj"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["edni"] * (*Tai)["co"] * (*Vijab)["noeh"] * (*Rai)["hj"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["ecnj"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hi"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["ednj"] * (*Tai)["co"] * (*Vijab)["noeh"] * (*Rai)["hi"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fo"] * (*Vijab)["mofh"] * (*Rai)["hj"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fo"] * (*Vijab)["mofh"] * (*Rai)["hi"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tai)["ei"] * (*Tai)["fj"] * (*Tai)["do"] * (*Vijab)["opef"] * (*Rai)["cp"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["fj"] * (*Tai)["co"] * (*Vijab)["opef"] * (*Rai)["dp"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["cn"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hj"];
+  (*HRabij)["cdij"] +=
+   ( - 1.0  ) * (*Tai)["ej"] * (*Tai)["cn"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hi"];
+
+
   // Filter out non-physical part
   (*HRabij)["cdii"] = ( 0.0 );
   (*HRabij)["ccij"] = ( 0.0 );
@@ -382,11 +526,11 @@ FockVector<F> Mp2SimilarityTransformedHamiltonian<F>::rightApply(
 
 // instantiate class
 template
-class Mp2SimilarityTransformedHamiltonian<double>;
+class CcsdSimilarityTransformedHamiltonian<double>;
 
 
 template <typename F>
-Mp2PreConditioner<F>::Mp2PreConditioner(
+CcsdPreConditioner<F>::CcsdPreConditioner(
   CTF::Tensor<F> &Tai,
   CTF::Tensor<F> &Tabij,
   CTF::Tensor<F> &Fij,
@@ -399,6 +543,8 @@ Mp2PreConditioner<F>::Mp2PreConditioner(
   // pointers to singles and doubles tensors of diagonal part
   CTF::Tensor<F> *Dai( &diagonalH.componentTensors[0] );
   CTF::Tensor<F> *Dabij( &diagonalH.componentTensors[1] );
+
+  // TODO: Maybe inster the Tai part to the diagonal
 
   // calculate diagonal elements of H
   (*Dai)["bi"] =  ( - 1.0 ) * Fij["ii"];
@@ -474,10 +620,10 @@ public:
 };
 
 template <typename F>
-std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
+std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
   const int eigenVectorsCount
 ) {
-  LOG(0, "MP2_EOM_DAVIDSON") << "Getting initial basis " << std::endl;
+  LOG(0, "CCSD_EOM_DAVIDSON") << "Getting initial basis " << std::endl;
   // find K=eigenVectorsCount lowest diagonal elements at each processor
   std::vector<std::pair<int64_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
@@ -557,7 +703,7 @@ std::vector<FockVector<F>> Mp2PreConditioner<F>::getInitialBasis(
 }
 
 template <typename F>
-FockVector<F> Mp2PreConditioner<F>::getCorrection(
+FockVector<F> CcsdPreConditioner<F>::getCorrection(
   const complex lambda, FockVector<F> &residuum
 ) {
   FockVector<F> w(diagonalH);
@@ -595,5 +741,5 @@ FockVector<F> Mp2PreConditioner<F>::getCorrection(
 
 // instantiate class
 template
-class Mp2PreConditioner<double>;
+class CcsdPreConditioner<double>;
 

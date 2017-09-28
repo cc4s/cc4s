@@ -1,0 +1,91 @@
+CoulombVertexReader [
+  %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
+  %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands19.ecgw150.POSCAR.0.7")
+  %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
+  (file "../../resources/NV/FTODDUMP")
+  %(file "../../resources/andreas/FTODDUMP")
+  (unrestricted 1)
+] [
+  (CoulombVertex FullCoulombVertex)
+  HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombVertexSingularVectors [
+  FullCoulombVertex
+  (fieldVariables 100)
+  (reduction 0.5)
+] [
+  CoulombVertexSingularVectors
+  CoulombVertexSingularValues
+].
+
+TensorWriter [(Data CoulombVertexSingularValues)] [].
+
+ApproximateCoulombVertex [
+  FullCoulombVertex
+  CoulombVertexSingularVectors
+] [
+  CoulombVertex
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+].
+
+UccsdAmplitudesFromCoulombIntegrals [
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (maxIterations 10)
+  %(mixer "LinearMixer")
+  (mixingRatio 1.0)
+] [
+  (UccsdEnergy UccsdEnergy)
+  (UccsdSinglesAmplitudes UccsdSinglesAmplitudes)
+  (UccsdDoublesAmplitudes UccsdDoublesAmplitudes)
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+].
+
+CcsdEquationOfMotionDavidson [
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPHHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+  HoleEigenEnergies ParticleEigenEnergies
+  (SinglesAmplitudes UccsdSinglesAmplitudes)
+  (DoublesAmplitudes UccsdDoublesAmplitudes)
+  (unrestricted 1)
+  (eigenstates 15)
+] [
+  SinglesHamiltonianDiagonal
+  DoublesHamiltonianDiagonal
+].
+
+TensorWriter [(Data SinglesHamiltonianDiagonal)] [].
+TensorWriter [(Data DoublesHamiltonianDiagonal)] [].

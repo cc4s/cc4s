@@ -1,0 +1,36 @@
+CoulombVertexReader [
+  (file "../../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands19.ecgw150.POSCAR.0.7")
+  %(file "/home/gallo/simulations/he_atom/EOM/FTODDUMP")
+  (unrestricted 0)
+] [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+].
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PPPPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 10)
+] [
+  (CcsdEnergy CcsdEnergy) 
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
+].
+
+TensorWriter [(Data CcsdEnergy)] [].

@@ -76,10 +76,10 @@ build/${CONFIG}/obj/algorithms/CcsdPerturbativeTriples.o \
 build/${CONFIG}/obj/algorithms/experimental/StochasticContraction.o \
 build/${CONFIG}/obj/algorithms/DrccdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/Mp2EquationOfMotion.o \
-build/${CONFIG}/obj/algorithms/Mp2EquationOfMotionDavidson.o \
+build/${CONFIG}/obj/algorithms/CcsdEquationOfMotionDavidson.o \
 build/${CONFIG}/obj/algorithms/CcdEquationOfMotion.o \
-build/${CONFIG}/obj/algorithms/CcsdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/ThermalEquationOfMotion.o \
+build/${CONFIG}/obj/algorithms/UccsdAmplitudesFromCoulombIntegrals.o \
 
 TESTS_OBJECTS = \
 build/${CONFIG}/obj/test/math/Antisymmetrize.o \

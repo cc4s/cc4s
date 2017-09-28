@@ -10,9 +10,9 @@
 namespace cc4s {
 
   template <typename F = complex>
-  class Mp2SimilarityTransformedHamiltonian {
+  class CcsdSimilarityTransformedHamiltonian {
   public:
-    Mp2SimilarityTransformedHamiltonian(
+    CcsdSimilarityTransformedHamiltonian(
       CTF::Tensor<F> *Tai_,
       CTF::Tensor<F> *Tabij_,
       CTF::Tensor<F> *Fij_,
@@ -43,14 +43,14 @@ namespace cc4s {
    * complex
    */
   template <typename F = complex>
-  class Mp2PreConditioner {
+  class CcsdPreConditioner {
   public:
     typedef FockVector<F> V;
 
     /**
      * \brief Constructor for the preconditioner.
      */
-    Mp2PreConditioner (
+    CcsdPreConditioner (
       CTF::Tensor<F> &Tai,
       CTF::Tensor<F> &Tabij,
       CTF::Tensor<F> &Fij,
@@ -73,13 +73,13 @@ namespace cc4s {
     V diagonalH;
   };
 
-  class Mp2EquationOfMotionDavidson: public Algorithm {
+  class CcsdEquationOfMotionDavidson: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(Mp2EquationOfMotionDavidson);
-    Mp2EquationOfMotionDavidson(
+    ALGORITHM_REGISTRAR_DECLARATION(CcsdEquationOfMotionDavidson);
+    CcsdEquationOfMotionDavidson(
       std::vector<Argument> const &argumentList
     );
-    virtual ~Mp2EquationOfMotionDavidson();
+    virtual ~CcsdEquationOfMotionDavidson();
 
     virtual void run();
 
