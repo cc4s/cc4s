@@ -2,10 +2,13 @@
 #define FOCK_VECTOR_DEFINED
 
 #include <math/ComplexTensor.hpp>
+#include <math/Vector.hpp>
+#include <util/Exception.hpp>
 
 #include <vector>
 #include <string>
 #include <initializer_list>
+#include <algorithm>
 
 #include <ctf.hpp>
 
@@ -13,28 +16,48 @@ namespace cc4s {
   template <typename F=double>
   class FockVector {
   public:
+    typedef F FieldType;
+
     std::vector<CTF::Tensor<F>> componentTensors;
     std::vector<std::string> componentIndices;
 
+    FockVector() {
+    }
+
     FockVector(
-      FockVector<F> const &a
+      const FockVector<F> &a
     ):
       componentTensors(a.componentTensors),
-      componentIndices(a.componentIndices)
-    {
-    }
-  
-    FockVector(
-      std::initializer_list<CTF::Tensor<F>> componentTensors_
-      std::initializer_list<std::string> componentIndices_
-    ):
-      componentTensors(componentTensors_),
-      componentIndices(componentIndices_)
+      componentIndices(a.componentIndices),
+      indexEnds(a.componentTensors.size())
     {
       initializeIndexTranslation();
     }
 
-    FockVector<F> *operator =(const FockVector<F> &a) {
+    template <typename TensorIterator, typename IndexIterator>
+    FockVector(
+      TensorIterator tensorsBegin, TensorIterator tensorsEnd,
+      IndexIterator indicesBegin, IndexIterator indicesEnd
+    ):
+      componentTensors(tensorsBegin, tensorsEnd),
+      componentIndices(indicesBegin, indicesEnd),
+      indexEnds(componentTensors.size())
+    {
+      initializeIndexTranslation();
+    }
+
+    FockVector(
+      std::initializer_list<CTF::Tensor<F>> componentTensors_,
+      std::initializer_list<std::string> componentIndices_
+    ):
+      componentTensors(componentTensors_),
+      componentIndices(componentIndices_),
+      indexEnds(componentTensors_.size())
+    {
+      initializeIndexTranslation();
+    }
+
+    FockVector<F> &operator =(const FockVector<F> &a) {
       // asuume shape of rhs
       componentTensors = a.componentTensors;
       componentIndices = a.componentIndices;
@@ -43,29 +66,93 @@ namespace cc4s {
     }
 
     FockVector<F> &operator += (FockVector<F> &a) {
+      checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        // TODO: check whether given vector a is compatible w.r.t.
-        // number and shape components
-        char const *indices(componentIndices[i].c_str());
+        const char *indices(componentIndices[i].c_str());
         componentTensors[i][indices] += a.componentTensors[i][indices];
       }
       return *this;
     }
 
-    FockVector<F> &operator *= (F const s) {
-      // TODO: implement scalar multiplication
+    FockVector<F> &operator -= (FockVector<F> &a) {
+      checkCompatibilityTo(a);
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        const char *indices(componentIndices[i].c_str());
+        componentTensors[i][indices] += F(-1) * a.componentTensors[i][indices];
+      }
+      return *this;
+    }
+
+    FockVector<F> &operator *= (const F s) {
+      CTF::Scalar<F> scalar(s);
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        const char *indices(componentIndices[i].c_str());
+        componentTensors[i][indices] *= scalar[""];
+      }
+      return *this;
+    }
+
+    FockVector<F> conjugateTranspose() {
+      FockVector<F> result;
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        int order(componentIndices[i].length() / 2);
+        std::vector<int> transposedLens(
+          componentTensors[i].lens,
+          componentTensors[i].lens + 2*order
+        );
+        std::rotate(
+          transposedLens.begin(),
+          transposedLens.begin() + order,
+          transposedLens.begin() + 2*order
+        );
+        result.componentTensors.push_back(
+          CTF::Tensor<F>(
+            transposedLens.size(), transposedLens.data(),
+            componentTensors[i].sym, *componentTensors[i].wrld,
+            (std::string(componentTensors[i].get_name()) + "*").c_str()
+          )
+        );
+        result.componentIndices.push_back(
+          componentIndices[i].substr(order, 2*order) +
+          componentIndices[i].substr(0, order)
+        );
+        CTF::Univar_Function<F> fConj(cc4s::conj<F>);
+        result.componentTensors[i].sum(
+          1.0, componentTensors[i], componentIndices[i].c_str(),
+          0.0, result.componentIndices[i].c_str(), fConj
+        );
+      }
+      return result;
+    }
+
+    F braket(FockVector<F> &a) {
+      checkDualCompatibility(a);
+      CTF::Scalar<F> result;
+      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+        const char *indices(componentIndices[i].c_str());
+        const char *aIndices(a.componentIndices[i].c_str());
+        // add to result
+        result +=
+          componentTensors[i][indices] * a.componentTensors[i][aIndices];
+      }
+      return result.get_val();
     }
 
     F dot(FockVector<F> &a) {
+      checkCompatibilityTo(a);
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        // TODO: check whether given vector a is compatible w.r.t.
-        // number and shape components
-        char const *indices(componentIndices[i].c_str());
-        CTF::Tensor<F> conjThis(componentTensors[i]);
-        cc4s::conjugate(conjThis);
+        const char *indices(componentIndices[i].c_str());
+        // We need also the indices for a in general, since we might have
+        // {{T['ijab']}}.dot(Q['abij']), which is still valid, although
+        // the indices are not equal
+        const char *aIndices(a.componentIndices[i].c_str());
+        CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
         // add to result
-        result[""] += conjThis[indices] * a.componentTensors[i][indices];
+        result.contract(
+          1.0, componentTensors[i], indices, a.componentTensors[i], aIndices,
+          1.0, "", fDot
+        );
       }
       return result.get_val();
     }
@@ -137,6 +224,7 @@ namespace cc4s {
      * index translation methods getTotalIndex and fromTotalIndex.
      **/
     void initializeIndexTranslation() {
+      indexEnds.resize(componentTensors.size());
       int64_t indexBase(0);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         int64_t tensorIndexSize(1);
@@ -224,9 +312,34 @@ namespace cc4s {
   };
 
   template <typename F>
-  FockVector<F> inline operator +(FockVector<F> &a, FockVector<F> &b) {
+  FockVector<F> inline operator +(
+    FockVector<F> &a, FockVector<F> &b
+  ) {
     FockVector<F> result(a);
     result += b;
+    return result;
+  }
+
+  template <typename F>
+  FockVector<F> inline operator -(
+    FockVector<F> &a, FockVector<F> &b
+  ) {
+    FockVector<F> result(a);
+    result -= b;
+    return result;
+  }
+
+  template <typename F>
+  FockVector<F> inline operator *(FockVector<F> &a, const F &s) {
+    FockVector<F> result(a);
+    result *= s;
+    return result;
+  }
+
+  template <typename F>
+  FockVector<F> inline operator *(const F &s, FockVector<F> &a) {
+    FockVector<F> result(a);
+    result *= s;
     return result;
   }
 }

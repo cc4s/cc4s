@@ -27,9 +27,7 @@ CcsdEnergyFromCoulombIntegrals::~CcsdEnergyFromCoulombIntegrals() {
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 //////////////////////////////////////////////////////////////////////
 
-void CcsdEnergyFromCoulombIntegrals::iterate(
-  int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-) {
+void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
   // Allocate Tensors for T2 amplitudes
@@ -55,17 +53,15 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   
     // Calculate the amplitudes from the residuum
     amplitudesFromResiduum(Rabij, "abij");
-    // Append amplitudes to the mixer
-    TabijMixer->append(Rabij);
-    TaiMixer->append(Rai);
   } else {
     // For the rest iterations compute the CCSD amplitudes
 
     // Read the amplitudes Tai and Tabij
-    Tensor<> *Tabij(&TabijMixer->getNext());
-    Tabij->set_name("Tabij");
-    Tensor<> *Tai(&TaiMixer->getNext());
+    FockVector<double> *amplitudes(&mixer->getNext());
+    Tensor<> *Tai( &amplitudes->componentTensors[0] );
+    Tensor<> *Tabij( &amplitudes->componentTensors[1] );
     Tai->set_name("Tai");
+    Tabij->set_name("Tabij");
 
     // Read all required integrals
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
@@ -343,7 +339,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
           LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
           Tensor<> *Fabij(
             sliceAmplitudesFromCoupledCoulombFactors(
-              TaiMixer, TabijMixer, a, b, factorsSliceSize
+              mixer, a, b, factorsSliceSize
             )
           );
           Fabij->set_name("Fabij");
@@ -368,7 +364,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
         for (int a(b); a < Nv; a += integralsSliceSize) {
           LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           Tensor<> *Vxycd(
-            sliceCoupledCoulombIntegrals(TaiMixer, a, b, integralsSliceSize)
+            sliceCoupledCoulombIntegrals(mixer, a, b, integralsSliceSize)
           );
           Vxycd->set_name("Vxycd");
           int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
@@ -418,18 +414,16 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     }
 
     // Calculate the amplitudes from the residuum
-    amplitudesFromResiduum(Rabij, "abij");
     amplitudesFromResiduum(Rai, "ai");
-    // Append amplitudes to the mixer
-    TabijMixer->append(Rabij);
-    TaiMixer->append(Rai);
+    amplitudesFromResiduum(Rabij, "abij");
   }
+  // Append amplitudes to the mixer
+  FockVector<double> newAmplitudes({Rai, Rabij}, {"ai", "abij"});
+  mixer->append(newAmplitudes);
 }
 
 
-void CcsdEnergyFromCoulombIntegrals::iterate(
-  int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
-) {
+void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
   // Read Vabij integrals
   Tensor<complex> *Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
 
@@ -456,17 +450,15 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
   
     // Calculate the amplitudes from the residuum
     amplitudesFromResiduum(Rabij, "abij");
-    // Append amplitudes to the mixer
-    TabijMixer->append(Rabij);
-    TaiMixer->append(Rai);
   } else {
     // For the rest iterations compute the CCSD amplitudes
 
     // Read the amplitudes Tai and Tabij
-    Tensor<complex> *Tabij(&TabijMixer->getNext());
-    Tabij->set_name("Tabij");
-    Tensor<complex> *Tai(&TaiMixer->getNext());
+    FockVector<complex> *amplitudes(&mixer->getNext());
+    Tensor<complex> *Tai( &amplitudes->componentTensors[0] );
+    Tensor<complex> *Tabij( &amplitudes->componentTensors[1] );
     Tai->set_name("Tai");
+    Tabij->set_name("Tabij");
 
     // Read all required integrals
     Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
@@ -716,7 +708,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
           LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
           Tensor<complex> *Fabij(
             sliceAmplitudesFromCoupledCoulombFactors(
-              TaiMixer, TabijMixer, a, b, factorsSliceSize
+              mixer, a, b, factorsSliceSize
             )
           );
           Fabij->set_name("Fabij");
@@ -741,7 +733,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
         for (int a(b); a < Nv; a += integralsSliceSize) {
           LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           Tensor<complex> *Vxycd(
-            sliceCoupledCoulombIntegrals(TaiMixer, a, b, integralsSliceSize)
+            sliceCoupledCoulombIntegrals(mixer, a, b, integralsSliceSize)
           );
           Vxycd->set_name("Vxycd");
           int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
@@ -795,11 +787,11 @@ void CcsdEnergyFromCoulombIntegrals::iterate(
     delete GammaGab;
   
     // Calculate the amplitudes from the residuum
-    amplitudesFromResiduum(Rabij, "abij");
     amplitudesFromResiduum(Rai, "ai");
-    // Append amplitudes to the mixer
-    TabijMixer->append(Rabij);
-    TaiMixer->append(Rai);
+    amplitudesFromResiduum(Rabij, "abij");
   }
+  // Append amplitudes to the mixer
+  FockVector<complex> newAmplitudes({Rai, Rabij}, {"ai", "abij"});
+  mixer->append(newAmplitudes);
 }
 

@@ -4,8 +4,9 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <math/Complex.hpp>
+#include <math/FockVector.hpp>
+
 #include <string>
-#include <ctf.hpp>
 
 namespace cc4s {
   template <typename F>
@@ -20,12 +21,10 @@ namespace cc4s {
      * The passed tensor will not be modified, albeit it might be
      * redistributed during copying.
      */
-    virtual void append(CTF::Tensor<F> &A) = 0;
-    virtual CTF::Tensor<F> &getNext() = 0;
+    virtual void append(FockVector<F> &A) = 0;
+    virtual FockVector<F> &getNext() = 0;
 
     Algorithm *algorithm;
-
-    static std::string indices(CTF::Tensor<F> const &A);
   };
 
   template <typename F>

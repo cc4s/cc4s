@@ -126,11 +126,11 @@ namespace cc4s {
      * \brief Normalizes the given factor orbitals, such that
      * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta_{qq}\f$.
      */
-    void normalizePi(CTF::Matrix<complex> &Pi);
+    void normalizePi(CTF::Tensor<complex> &Pi);
     /**
      * \brief Discards the imaginary part of the given factor orbitals.
      */
-    void realizePi(CTF::Matrix<complex> &Pi);
+    void realizePi(CTF::Tensor<complex> &Pi);
 
     /**
      * \brief Solves the quadratically occurring factor Pi iteratively

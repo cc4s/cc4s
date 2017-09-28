@@ -12,28 +12,24 @@ ALGORITHM_REGISTRAR_DEFINITION(DrccdEnergyFromCoulombIntegrals);
 
 DrccdEnergyFromCoulombIntegrals::DrccdEnergyFromCoulombIntegrals(
   std::vector<Argument> const &argumentList
-): ClusterDoublesAlgorithm(argumentList) {
+): ClusterSinglesDoublesAlgorithm(argumentList) {
 }
 
 DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 }
 
-void DrccdEnergyFromCoulombIntegrals::iterate(
-  int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-) {
-  iterate<double>(i, TabijMixer);
+void DrccdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
+  iterate<double>(i, mixer);
 }
-void DrccdEnergyFromCoulombIntegrals::iterate(
-  int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
-) {
-  iterate<complex>(i, TabijMixer);
+void DrccdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
+  iterate<complex>(i, mixer);
 }
 
 template <typename F>
-void DrccdEnergyFromCoulombIntegrals::iterate(
-  int i, Mixer<F> *TabijMixer
-) {
-  Tensor<F> *Tabij(&TabijMixer->getNext());
+void DrccdEnergyFromCoulombIntegrals::iterate(int i, Mixer<F> *mixer) {
+  FockVector<F> *amplitudes(&mixer->getNext());
+  Tensor<F> *Tai( &amplitudes->componentTensors[0] );
+  Tensor<F> *Tabij( &amplitudes->componentTensors[1] );
   // Read all required integrals
   Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
   Tensor<F> *Vaijb(getTensorArgument<F>("PHHPCoulombIntegrals"));
@@ -73,8 +69,9 @@ void DrccdEnergyFromCoulombIntegrals::iterate(
   }
 
   // Calculate the amplitdues from the residuum
-  doublesAmplitudesFromResiduum(Rabij);
+  amplitudesFromResiduum(Rabij, "abij");
+  FockVector<F> newAmplitudes({*Tai, Rabij}, {"ai", "abij"});
   // And append them to the mixer
-  TabijMixer->append(Rabij);
+  mixer->append(newAmplitudes);
 }
 

@@ -2,11 +2,13 @@
 #ifndef CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED 
 #define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
 
-#include <algorithms/ClusterDoublesAlgorithm.hpp>
+#include <algorithms/Algorithm.hpp>
 #include <mixers/Mixer.hpp>
 #include <string>
 #include <ctf.hpp>
 #include <tcc/DryTensor.hpp>
+
+#include <initializer_list>
 
 namespace cc4s {
   /**
@@ -46,23 +48,19 @@ namespace cc4s {
     /**
      * \brief Performs one iteration of the concrete algorithm.
      **/
-    virtual void iterate(
-      int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-    ) = 0;
+    virtual void iterate(int i, Mixer<double> *mixer) = 0;
 
     /**
      * \brief Performs one iteration of the concrete algorithm.
      **/
-    virtual void iterate(
-      int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
-    ) = 0;
+    virtual void iterate(int i, Mixer<complex> *mixer) = 0;
 
     /**
      * \brief Calculates the energy from the amplitudes currently contained
-     * in the mixers. Overrides ClusterDoublesAlgorithm method.
+     * in the mixers.
      **/
     template <typename F>
-    F calculateEnergy(Mixer<F> *TaiMixer, Mixer<F> *TabijMixer);
+    F calculateEnergy(Mixer<F> *mixer);
 
     /**
      * \brief Calculates the amplitudes from the current residuum and
@@ -86,10 +84,15 @@ namespace cc4s {
     void dryAmplitudesFromResiduum(cc4s::DryTensor<F> &R);
 
     template <typename F>
-    Mixer<F> *createMixer(const std::string &type, std::vector<int> shape);
+    Mixer<F> *createMixer(
+      std::initializer_list<std::string> amplitudeNames,
+      std::initializer_list<std::string> amplitudeIndices
+    );
 
     template <typename F>
-    void storeAmplitudes(Mixer<F> *mixer, const std::string &type);
+    void storeAmplitudes(
+      Mixer<F> *mixer, std::initializer_list<std::string> names
+    );
 
     /**
      * \brief Calculates and returns one slice Xxycd of the Coulomb integrals \f$V_{cd}^{ab}\f$
@@ -104,11 +107,11 @@ namespace cc4s {
      * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
      */
     CTF::Tensor<double> *sliceCoupledCoulombIntegrals(
-      Mixer<double> *TaiMixer, int a, int b, int integralsSliceSize
+      Mixer<double> *mixer, int a, int b, int integralsSliceSize
     );
 
     CTF::Tensor<complex> *sliceCoupledCoulombIntegrals(
-      Mixer<complex> *TaiMixer, int a, int b, int integralsSliceSize
+      Mixer<complex> *mixer, int a, int b, int integralsSliceSize
     );
 
 
@@ -125,11 +128,11 @@ namespace cc4s {
      * \param[out] Fabij sliced Residuum
      */
     CTF::Tensor<double> *sliceAmplitudesFromCoupledCoulombFactors(
-      Mixer<double> *TaiMixer, Mixer<double> *TabijMixer,
+      Mixer<double> *mixer,
       int a, int b, int factorsSliceSize
     );
     CTF::Tensor<complex> *sliceAmplitudesFromCoupledCoulombFactors(
-      Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer,
+      Mixer<complex> *mixer,
       int a, int b, int factorsSliceSize
     );
 

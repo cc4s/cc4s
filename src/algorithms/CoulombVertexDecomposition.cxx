@@ -243,13 +243,13 @@ void CoulombVertexDecomposition::dryFit(
 }
 
 void CoulombVertexDecomposition::normalizePi(
-  Matrix<complex> &Pi
+  Tensor<complex> &Pi
 ) {
   Bivar_Function<complex> fDot(&cc4s::dot<complex>);
-  Vector<complex> norm(Pi.lens[0], *Pi.wrld);
+  CTF::Vector<complex> norm(Pi.lens[0], *Pi.wrld);
   // norm["q"] = Pi["qR"] * conj(Pi["qR"])
   norm.contract(1.0, Pi,"qR", Pi,"qR", 0.0,"q", fDot);
-  Matrix<complex> quotient(Pi);
+  Tensor<complex> quotient(Pi);
   Univar_Function<complex> fSqrt(&cc4s::sqrt<complex>);
   // quotient["qR"] = sqrt(norm["q"])
   quotient.sum(1.0, norm,"q", 0.0,"qR", fSqrt);
@@ -259,10 +259,10 @@ void CoulombVertexDecomposition::normalizePi(
 }
 
 void CoulombVertexDecomposition::realizePi(
-  Matrix<complex> &Pi
+  Tensor<complex> &Pi
 ) {
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  Matrix<complex> conjX(Pi);
+  Tensor<complex> conjX(Pi);
   // conjX["qR"] = conj(Pi["qR"])
   conjX.sum(1.0, Pi,"qR", 0.0,"qR", fConj);
   Pi["qR"] += conjX["qR"];
@@ -286,7 +286,8 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   );
   if (realFactorOrbitals) realizePi(*PirR);
   if (normalizedFactorOrbitals) normalizePi(*PirR);
-  mixer->append(*PirR);
+  FockVector<complex> Pi({*PirR},{"rR"});
+  mixer->append(Pi);
   computeOutgoingPi();
   if (writeSubIterations) {
     LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << 0 << ")"
@@ -304,18 +305,19 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     (Delta < quadraticDelta && j < maxSubIterationsCount)
   ) {
     fitAlternatingLeastSquaresFactor(
-      *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', *PirR,'r'
+      *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', Pi.componentTensors[0],'r'
     );
-    if (realFactorOrbitals) realizePi(*PirR);
-    if (normalizedFactorOrbitals) normalizePi(*PirR);
-    mixer->append(*PirR);
+    if (realFactorOrbitals) realizePi(Pi.componentTensors[0]);
+    if (normalizedFactorOrbitals) normalizePi(Pi.componentTensors[0]);
+    mixer->append(Pi);
     if (writeSubIterations) {
       quadraticDelta = getDelta();
       LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
         << "Pi^(" << (i+1) << "," << j << ")"
         << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
     }
-    (*PirR)["qR"] = mixer->getNext()["qR"];
+    Pi = mixer->getNext();
+    (*PirR)["rR"] = Pi.componentTensors[0]["rR"];
     computeOutgoingPi();
     quadraticDelta = getDelta();
     if (writeSubIterations) {

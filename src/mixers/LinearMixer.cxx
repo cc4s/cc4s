@@ -1,7 +1,8 @@
 #include <mixers/LinearMixer.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
-#include <ctf.hpp>
+
+#include <memory>
 
 using namespace CTF;
 using namespace cc4s;
@@ -20,25 +21,23 @@ LinearMixer<F>::LinearMixer(
 
 template <typename F>
 LinearMixer<F>::~LinearMixer() {
-  if (last) delete last;
 }
 
 template <typename F>
-void LinearMixer<F>::append(Tensor<F> &A) {
+void LinearMixer<F>::append(FockVector<F> &A) {
   if (!last) {
     // create new, copying A
-    last = new Tensor<F>(A);
+    last = std::make_shared<FockVector<F>>(A);
   } else {
     // overwrite last with A
-    std::string idx(Mixer<F>::indices(A));
-    // (*last)[] = ratio*A[idx.c_str()] + (1-ratio)*(*last);
-    last->sum(ratio, A, idx.c_str(), 1-ratio, idx.c_str());
+    *last *= 1-ratio;
+    *last += A;
   }
 }
 
 template <typename F>
-Tensor<F> &LinearMixer<F>::getNext() {
-  return *last;
+FockVector<F> &LinearMixer<F>::getNext() {
+    return *last;
 }
 
 // instantiate

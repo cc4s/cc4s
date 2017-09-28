@@ -3,6 +3,7 @@
 #define LINEAR_MIXER_DEFINED
 
 #include <mixers/Mixer.hpp>
+#include <memory>
 
 namespace cc4s {
   template <typename F>
@@ -12,10 +13,10 @@ namespace cc4s {
     LinearMixer(Algorithm *algorithm);
     virtual ~LinearMixer();
 
-    virtual void append(CTF::Tensor<F> &A);
-    virtual CTF::Tensor<F> &getNext();
+    virtual void append(FockVector<F> &A);
+    virtual FockVector<F> &getNext();
 
-    CTF::Tensor<F> *last;
+    std::shared_ptr<FockVector<F>> last;
     double ratio;
   };
 }
