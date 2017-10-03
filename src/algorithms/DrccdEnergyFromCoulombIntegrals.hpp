@@ -35,15 +35,17 @@ namespace cc4s {
      * \param[in] i Iteration number
      */
     virtual PTR(FockVector<double>) getResiduum(
-      const PTR(FockVector<double>) &amplitudes
+      const int iteration, const PTR(FockVector<double>) &amplitudes
     );
 
     virtual PTR(FockVector<complex>) getResiduum(
-      const PTR(FockVector<complex>) &amplitudes
+      const int iteration, const PTR(FockVector<complex>) &amplitudes
     );
 
     template <typename F>
-    PTR(FockVector<F>) getResiduum(const PTR(FockVector<F>) &amplitudes);
+    PTR(FockVector<F>) getResiduum(
+      const int iteration, const PTR(FockVector<F>) &amplitudes
+    );
   };
 }
 

@@ -20,20 +20,20 @@ DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 }
 
 PTR(FockVector<double>) DrccdEnergyFromCoulombIntegrals::getResiduum(
-  const PTR(FockVector<double>) &amplitudes
+  const int iteration, const PTR(FockVector<double>) &amplitudes
 ) {
-  return getResiduum<double>(amplitudes);
+  return getResiduum<double>(iteration, amplitudes);
 }
 
 PTR(FockVector<complex>) DrccdEnergyFromCoulombIntegrals::getResiduum(
-  const PTR(FockVector<complex>) &amplitudes
+  const int iteration, const PTR(FockVector<complex>) &amplitudes
 ) {
-  return getResiduum<complex>(amplitudes);
+  return getResiduum<complex>(iteration, amplitudes);
 }
 
 template <typename F>
 PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
-  const PTR(FockVector<F>) &amplitudes
+  const int iteration, const PTR(FockVector<F>) &amplitudes
 ) {
   // read all required integrals
   Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
@@ -61,7 +61,7 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
       "Solving T2 Amplitude Equations" << std::endl;
   }
 
-  if (std::real(amplitudes->dot(*amplitudes)) < 1E-6) {
+  if (iteration == 0) {
     // in the first iteration the amplitudes are zero
     // only the MP2 term is non-zero
     (*Rabij)["abij"] += (*Vabij)["abij"];

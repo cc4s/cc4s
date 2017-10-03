@@ -27,7 +27,7 @@ DrccdEnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals PHHPCoulombIntegrals HHPPCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 64)
-  (mixingRatio 0.7)
+%  (mixingRatio 1.0)
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
 ].

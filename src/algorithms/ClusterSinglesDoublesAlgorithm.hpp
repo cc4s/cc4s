@@ -4,11 +4,12 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <math/FockVector.hpp>
-#include <ctf.hpp>
 #include <tcc/DryTensor.hpp>
+#include <util/SharedPointer.hpp>
+
+#include <ctf.hpp>
 
 #include <string>
-#include <memory> 
 #include <initializer_list>
 
 namespace cc4s {
@@ -49,22 +50,22 @@ namespace cc4s {
     /**
      * \brief Computes and returns the residuum of the given amplitudes
      **/
-    virtual std::shared_ptr<FockVector<double>> getResiduum(
-      const std::shared_ptr<FockVector<double>> &amplitudes
+    virtual PTR(FockVector<double>) getResiduum(
+      const int iteration, const PTR(FockVector<double>) &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the residuum of the given amplitudes
      **/
-    virtual std::shared_ptr<FockVector<complex>> getResiduum(
-      const std::shared_ptr<FockVector<complex>> &amplitudes
+    virtual PTR(FockVector<complex>) getResiduum(
+      const int iteration, const PTR(FockVector<complex>) &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the energy of the given amplitudes.
      **/
     template <typename F>
-    F getEnergy(const std::shared_ptr<FockVector<F>> &amplitdues);
+    F getEnergy(const PTR(FockVector<F>) &amplitdues);
 
     /**
      * \brief Calculates an improved estimate of the amplitudes provided
@@ -80,8 +81,7 @@ namespace cc4s {
      **/
     template <typename F>
     void estimateAmplitudesFromResiduum(
-      const std::shared_ptr<FockVector<F>> &amplitudes,
-      const std::shared_ptr<FockVector<F>> &residuum
+      const PTR(FockVector<F>) &amplitudes, const PTR(FockVector<F>) &residuum
     );
 
     /**
@@ -100,7 +100,7 @@ namespace cc4s {
     void dryAmplitudesFromResiduum(cc4s::DryTensor<F> &R);
 
     template <typename F>
-    std::shared_ptr<FockVector<F>> createAmplitudes(
+    PTR(FockVector<F>) createAmplitudes(
       std::initializer_list<std::string> amplitudeNames,
       std::initializer_list<std::initializer_list<int>> amplitudeLens,
       std::initializer_list<std::string> amplitudeIndices
@@ -108,7 +108,7 @@ namespace cc4s {
 
     template <typename F>
     void storeAmplitudes(
-      const std::shared_ptr<FockVector<F>> &amplitudes,
+      const PTR(FockVector<F>) &amplitudes,
       std::initializer_list<std::string> names
     );
 
@@ -125,12 +125,12 @@ namespace cc4s {
      * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
      */
     CTF::Tensor<double> *sliceCoupledCoulombIntegrals(
-      const std::shared_ptr<FockVector<double>> &amplitudes,
+      const PTR(FockVector<double>) &amplitudes,
       int a, int b, int integralsSliceSize
     );
 
     CTF::Tensor<complex> *sliceCoupledCoulombIntegrals(
-      const std::shared_ptr<FockVector<complex>> &amplitudes,
+      const PTR(FockVector<complex>) &amplitudes,
       int a, int b, int integralsSliceSize
     );
 
@@ -148,11 +148,11 @@ namespace cc4s {
      * \param[out] Fabij sliced Residuum
      */
     CTF::Tensor<double> *sliceAmplitudesFromCoupledCoulombFactors(
-      const std::shared_ptr<FockVector<double>> &amplitudes,
+      const PTR(FockVector<double>) &amplitudes,
       int a, int b, int factorsSliceSize
     );
     CTF::Tensor<complex> *sliceAmplitudesFromCoupledCoulombFactors(
-      const std::shared_ptr<FockVector<complex>> &amplitudes,
+      const PTR(FockVector<complex>) &amplitudes,
       int a, int b, int factorsSliceSize
     );
 

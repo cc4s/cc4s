@@ -67,7 +67,7 @@ F ClusterSinglesDoublesAlgorithm::run() {
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
-    auto residuum( getResiduum(amplitudes) );
+    auto residuum( getResiduum(i, amplitudes) );
     mixer->append(amplitudes, residuum);
     // get mixer's best estimate for amplitudes and residuum
     amplitudes = mixer->get();
