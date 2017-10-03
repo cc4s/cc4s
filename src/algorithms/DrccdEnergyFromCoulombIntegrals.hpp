@@ -4,6 +4,8 @@
 
 #include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
 
+#include <util/SharedPointer.hpp>
+
 namespace cc4s {
   // this algorithm is now based on the ClusterSinglesDoublesAlgorithm
   // inheriting its iteration and slicing functionality.
@@ -32,12 +34,16 @@ namespace cc4s {
      * \brief Implements the iterate method with the DRCCD iteration.
      * \param[in] i Iteration number
      */
-    virtual void iterate(int i, Mixer<double> *mixer);
+    virtual PTR(FockVector<double>) getResiduum(
+      const PTR(FockVector<double>) &amplitudes
+    );
 
-    virtual void iterate(int i, Mixer<complex> *mixer);
+    virtual PTR(FockVector<complex>) getResiduum(
+      const PTR(FockVector<complex>) &amplitudes
+    );
 
     template <typename F>
-    void iterate(int i, Mixer<F> *mixer);
+    PTR(FockVector<F>) getResiduum(const PTR(FockVector<F>) &amplitudes);
   };
 }
 

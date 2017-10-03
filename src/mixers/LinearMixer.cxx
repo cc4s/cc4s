@@ -1,8 +1,7 @@
 #include <mixers/LinearMixer.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
-
-#include <memory>
 
 using namespace CTF;
 using namespace cc4s;
@@ -24,20 +23,37 @@ LinearMixer<F>::~LinearMixer() {
 }
 
 template <typename F>
-void LinearMixer<F>::append(FockVector<F> &A) {
+void LinearMixer<F>::append(
+  const PTR(FockVector<F>) &A, const PTR(FockVector<F>) &R
+) {
   if (!last) {
-    // create new, copying A
-    last = std::make_shared<FockVector<F>>(A);
+    // copy pointers
+    last = A;
+    lastResiduum = R;
   } else {
-    // overwrite last with A
+    // create copy and mix accordingly
+    auto next( NEW(FockVector<F>, *A) );
     *last *= 1-ratio;
-    *last += A;
+    *next *= ratio;
+    *next += *last;
+    last = next;
+
+    auto nextResiduum( NEW(FockVector<F>, *R) );
+    *lastResiduum *= 1-ratio;
+    *nextResiduum *= ratio;
+    *nextResiduum += *lastResiduum;
+    lastResiduum = nextResiduum;
   }
 }
 
 template <typename F>
-FockVector<F> &LinearMixer<F>::getNext() {
-    return *last;
+PTR(FockVector<F>) LinearMixer<F>::get() {
+    return last;
+}
+
+template <typename F>
+PTR(FockVector<F>) LinearMixer<F>::getResiduum() {
+    return lastResiduum;
 }
 
 // instantiate

@@ -3,7 +3,8 @@
 #define LINEAR_MIXER_DEFINED
 
 #include <mixers/Mixer.hpp>
-#include <memory>
+
+#include <util/SharedPointer.hpp>
 
 namespace cc4s {
   template <typename F>
@@ -13,10 +14,15 @@ namespace cc4s {
     LinearMixer(Algorithm *algorithm);
     virtual ~LinearMixer();
 
-    virtual void append(FockVector<F> &A);
-    virtual FockVector<F> &getNext();
+    virtual void append(
+      const PTR(FockVector<F>) &A, const PTR(FockVector<F>) &R
+    );
+    virtual PTR(FockVector<F>) get();
+    virtual PTR(FockVector<F>) getResiduum();
 
-    std::shared_ptr<FockVector<F>> last;
+    PTR(FockVector<F>) last;
+    PTR(FockVector<F>) lastResiduum;
+
     double ratio;
   };
 }

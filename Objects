@@ -46,7 +46,7 @@ build/${CONFIG}/obj/algorithms/CoulombVertexReader.o \
 build/${CONFIG}/obj/algorithms/CoulombIntegralsFromVertex.o \
 build/${CONFIG}/obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
+#build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexSingularVectors.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexSingularVectors.o \
 build/${CONFIG}/obj/algorithms/ApproximateCoulombVertex.o \

@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <string>
-#include <initializer_list>
 #include <algorithm>
 
 #include <ctf.hpp>
@@ -34,25 +33,25 @@ namespace cc4s {
       initializeIndexTranslation();
     }
 
-    template <typename TensorIterator, typename IndexIterator>
     FockVector(
-      TensorIterator tensorsBegin, TensorIterator tensorsEnd,
-      IndexIterator indicesBegin, IndexIterator indicesEnd
+      std::vector<CTF::Tensor<F>> &&tensors,
+      std::vector<std::string> &&indices
     ):
-      componentTensors(tensorsBegin, tensorsEnd),
-      componentIndices(indicesBegin, indicesEnd),
+      componentTensors(tensors),
+      componentIndices(indices),
       indexEnds(componentTensors.size())
     {
       initializeIndexTranslation();
     }
 
+    template <typename TensorsIterator, typename IndicesIterator>
     FockVector(
-      std::initializer_list<CTF::Tensor<F>> componentTensors_,
-      std::initializer_list<std::string> componentIndices_
+      TensorsIterator tensorsBegin, TensorsIterator tensorsEnd,
+      IndicesIterator indicesBegin, IndicesIterator indicesEnd
     ):
-      componentTensors(componentTensors_),
-      componentIndices(componentIndices_),
-      indexEnds(componentTensors_.size())
+      componentTensors(tensorsBegin, tensorsEnd),
+      componentIndices(indicesBegin, indicesEnd),
+      indexEnds(componentTensors.size())
     {
       initializeIndexTranslation();
     }

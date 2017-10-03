@@ -6,6 +6,7 @@
 #include <math/RandomTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <mixers/Mixer.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 #include <limits>
 
@@ -279,52 +280,57 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     throw new EXCEPTION(stringStream.str());
   }
 
-  // initial guess
-  double quadraticDelta(getDelta());
-  fitAlternatingLeastSquaresFactor(
-    *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', *PirR,'r'
+  // initial guess is current Pi^q_R, composedGamma-Gamma is the residuum
+  auto Pi(
+    NEW(FockVector<complex>,
+      std::vector<Tensor<complex>>({*PiqR}), std::vector<std::string>({"qR"})
+    )
   );
-  if (realFactorOrbitals) realizePi(*PirR);
-  if (normalizedFactorOrbitals) normalizePi(*PirR);
-  FockVector<complex> Pi({*PirR},{"rR"});
-  mixer->append(Pi);
-  computeOutgoingPi();
-  if (writeSubIterations) {
-    LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << 0 << ")"
-      << "Pi^(" << (i+1) << "," << 0 << ")"
-      << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
-  }
+  double initialDelta(getDelta());
+  auto R(
+    NEW(FockVector<complex>,
+      std::vector<Tensor<complex>>({*composedGammaGqr}),
+      std::vector<std::string>({"Gqr"})
+    )
+  );
+  R->componentTensors[0]["Gqr"] -= (*GammaGqr)["Gqr"];
+  mixer->append(Pi, R);
 
   // Babylonian algorithm to solve quadratic form
   int maxSubIterationsCount(getIntegerArgument("maxSubIterations", 8));
-  int minSubIterationsCount(getIntegerArgument("minSubIterations", 1));
+  int minSubIterationsCount(getIntegerArgument("minSubIterations", 2));
   int j(0);
-  Delta = quadraticDelta;
+  double Delta(2*initialDelta);
   while (
     j < minSubIterationsCount ||
-    (Delta < quadraticDelta && j < maxSubIterationsCount)
+    (initialDelta < Delta && j < maxSubIterationsCount)
   ) {
+    // get the mixer's best estimate for Pi^q_R
+    (*PiqR)["qR"] = mixer->get()->componentTensors[0]["qR"];
+    // then compute Pi_r^R from RALS
     fitAlternatingLeastSquaresFactor(
-      *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', Pi.componentTensors[0],'r'
+      *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', *PirR,'r'
     );
-    if (realFactorOrbitals) realizePi(Pi.componentTensors[0]);
-    if (normalizedFactorOrbitals) normalizePi(Pi.componentTensors[0]);
-    mixer->append(Pi);
-    if (writeSubIterations) {
-      quadraticDelta = getDelta();
-      LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
-        << "Pi^(" << (i+1) << "," << j << ")"
-        << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
-    }
-    Pi = mixer->getNext();
-    (*PirR)["rR"] = Pi.componentTensors[0]["rR"];
+    if (realFactorOrbitals) realizePi(*PirR);
+    if (normalizedFactorOrbitals) normalizePi(*PirR);
+    // and the new Pi^q_R by conjugate transposition or pseudo inversion
     computeOutgoingPi();
-    quadraticDelta = getDelta();
+    Pi = NEW(FockVector<complex>,
+      std::vector<Tensor<complex>>({*PiqR}),
+      std::vector<std::string>({"qR"})
+    );
+    // finally, compute the residuum
+    Delta = getDelta();
+    R = NEW(FockVector<complex>,
+      std::vector<Tensor<complex>>({*composedGammaGqr}),
+      std::vector<std::string>({"Gqr"})
+    );
     if (writeSubIterations) {
       LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
-        << "Pi^(" << (i+1) << "," << (j+1) << ")"
-        << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
+        << "Pi*^(" << (i+1) << "," << (j+1) << ")"
+        << "Lambda^(n) - Gamma|=" << Delta << std::endl;
     }
+    mixer->append(Pi, R);
     ++j;
   }
   delete mixer;

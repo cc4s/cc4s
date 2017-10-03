@@ -6,6 +6,7 @@
 #include <math/Complex.hpp>
 #include <math/FockVector.hpp>
 
+#include <memory>
 #include <string>
 
 namespace cc4s {
@@ -14,15 +15,42 @@ namespace cc4s {
   public:
     Mixer(Algorithm *algorithm);
     virtual ~Mixer();
+
+    /**
+     * \brief Returns the name of the implenting mixer.
+     **/
     virtual std::string getName() = 0;
 
     /**
-     * \brief Appends a copy of the given tensor to the mixer.
-     * The passed tensor will not be modified, albeit it might be
-     * redistributed during copying.
-     */
-    virtual void append(FockVector<F> &A) = 0;
-    virtual FockVector<F> &getNext() = 0;
+     * \brief Appends the given pair (A,R) of FockVectors to the mixer,
+     * where R is the residuum when using the amplitudes A.
+     * The mixer may use the given amplitudes and residua to provide
+     * an estimated amplitude with a lower expected residuum.
+     * Note that the shared pointers of A and R are stored for memory
+     * efficiency and A and R are not expected to be changed.
+     * Also note that FockVector cannot properly implement const-correctness.
+     **/
+    virtual void append(
+      const std::shared_ptr<FockVector<F>> &A,
+      const std::shared_ptr<FockVector<F>> &R
+    ) = 0;
+
+    /**
+     * \brief Returns the current best estimate of the amplitudes
+     * according to previously given pairs of amplitudes and residua.
+     * Requires one or more previous calls to append.
+     * The shared pointers point to FockVectors that may be changed.
+     **/
+    virtual std::shared_ptr<FockVector<F>> get() = 0;
+
+    /**
+     * \brief Returns the estimated residuum of the current best estimate
+     * of the amplitdues according to previously given pairs of amplitudes
+     * and residua.
+     * Requires one or more previous calls to append.
+     * The shared pointers point to FockVectors that may be changed.
+     **/
+    virtual std::shared_ptr<FockVector<F>> getResiduum() = 0;
 
     Algorithm *algorithm;
   };
