@@ -51,6 +51,16 @@ void CoulombIntegralsFromVertex::run() {
   int ooov[] = { No, No, No, Nv };
   int vvvo[] = { Nv, Nv, Nv, No };
 
+  // Indices for integrals created from already existing
+  int oovv[] = { No, No, Nv, Nv };
+  int ovoo[] = { No, Nv, No, No };
+  int ovov[] = { No, Nv, No, Nv };
+  int voov[] = { Nv, No, No, Nv };
+  int ovvv[] = { No, Nv, Nv, Nv };
+  int vvov[] = { Nv, Nv, No, Nv };
+
+  int antisymmetrize(getIntegerArgument("antisymmetrize", 0));
+
   Tensor<> *Vabcd(
     isArgumentGiven("PPPPCoulombIntegrals") ? 
     new Tensor<>(4, vvvv, syms, *Cc4s::world, "Vabcd") : nullptr
@@ -75,6 +85,31 @@ void CoulombIntegralsFromVertex::run() {
     isArgumentGiven("PPPHCoulombIntegrals") ?
     new Tensor<>(4, vvvo, syms, *Cc4s::world, "Vabci") : nullptr
   );
+  // Initialization of tensors created from already existing ones
+  T *Vijab(
+    isArgumentGiven("HHPPCoulombIntegrals") ?
+    new Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab") : nullptr
+  );
+  T *Viajk(
+    isArgumentGiven("HPHHCoulombIntegrals") ?
+    new Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk") : nullptr
+  );
+  T *Vaijb(
+    isArgumentGiven("PHHPCoulombIntegrals") ?
+    new Tensor<>(4, voov, syms, *Cc4s::world, "Vaijb") : nullptr
+  );
+  T *Viajb(
+    isArgumentGiven("HPHPCoulombIntegrals") ?
+    new Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb") : nullptr
+  );
+  T *Viabc(
+    isArgumentGiven("HPPPCoulombIntegrals") ?
+    new Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc") : nullptr
+  );
+  T *Vabic(
+    isArgumentGiven("PPHPCoulombIntegrals") ?
+    new Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic") : nullptr
+  );
 
   if (Vabcd) {
     allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
@@ -94,6 +129,26 @@ void CoulombIntegralsFromVertex::run() {
   if (Vabci) {
     allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
   }
+  // Allocation of tensors created from already existing ones
+  if (Vijab) {
+    allocatedTensorArgument("HHPPCoulombIntegrals", Vijab);
+  }
+  if (Viajk) {
+    allocatedTensorArgument("HPHHCoulombIntegrals", Viajk);
+  }
+  if (Vaijb) {
+    allocatedTensorArgument("PHHPCoulombIntegrals", Vaijb);
+  }
+  if (Viajb) {
+    allocatedTensorArgument("HPHPCoulombIntegrals", Viajb);
+  }
+  if (Viabc) {
+    allocatedTensorArgument("HPPPCoulombIntegrals", Viabc);
+  }
+  if (Vabic) {
+    allocatedTensorArgument("PPHPCoulombIntegrals", Vabic);
+  }
+
 
   // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
   int GaiStart[] = {0 ,aStart,iStart};
@@ -131,7 +186,7 @@ void CoulombIntegralsFromVertex::run() {
   );
   fromComplexTensor(GammaGij, realGammaGij, imagGammaGij);
 
-  // Compute the integrals Vabij Vaibj Vaijb Vijkl Vabcd
+  // Compute the integrals Vabij Vaibj Vijkl Vabcd
   if (Vabcd) {
     LOG(1, "Integrals") <<
       "Evaluating " << Vabcd->get_name() << std::endl;
@@ -167,6 +222,64 @@ void CoulombIntegralsFromVertex::run() {
       "Evaluating " << Vabci->get_name() << std::endl;
     (*Vabci)["abci"]  = realGammaGab["Gac"] * realGammaGai["Gbi"];
     (*Vabci)["abci"] += imagGammaGab["Gac"] * imagGammaGai["Gbi"];
+  }
+
+  // Create the rest of integrals from the already given ones
+  if (Vijab) {
+    //                   -----
+    // Remember: Vijab = Vabij
+    (*Vijab)["ijab"] =  (*Vabij)["abij"];
+    if (antisymmetrize) {
+      (*Vijab)["ijab"] +=  ( - 1.0) * (*Vabij)["abji"];
+    }
+    conjugate(*Vijab);
+  }
+  if (Viajk) {
+    //                   -----
+    // Remember: Viajk = Vjkia
+    (*Viajk)["iajk"] =  (*Vijka)["jkia"];
+    if (antisymmetrize) {
+      (*Viajk)["iajk"] += ( - 1.0 ) * (*Vijka)["kjia"];
+    }
+    conjugate(*Viajk);
+  }
+  // TODO: Do it and check
+  if (Viajb) {
+    if (antisymmetrize) {
+      // FIXME: Assumes real orbitals
+      (*Vaijb)["aijb"] = (*Vabij)["abji"];
+      (*Viajb)["iajb"] = ( - 1.0 ) * (*Vaijb)["aijb"];
+      (*Viajb)["iajb"] +=  (*Vaibj)["aibj"];
+    }
+  }
+  if (Viabc) {
+    //                           -----
+    // Remember: Viabc = Vaicb = Vcbai
+    // TODO: review if it is really like this
+    (*Viabc)["iabc"] =  (*Vabci)["abci"];
+    conjugate(*Viabc);
+    if (antisymmetrize) {
+      (*Viabc)["iabc"] -= (*Vabci)["acbi"];
+    }
+  }
+  if (Vabic) {
+    // Remember: Vabic = Vbaci
+    (*Vabic)["abic"] = (*Vabci)["baci"];
+    if (antisymmetrize) {
+      (*Vabic)["abic"] = ( - 1.0 ) * (*Vabci)["abci"];
+    }
+  }
+
+  if (antisymmetrize) {
+    // Antisymmetrize integrals calculated directly from Gamma
+    // IMPORTANT: This must be written after the creation of the integrals
+    //            depending on them.
+    if (Vijkl) (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
+    if (Vabcd) (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
+    if (Vijka) (*Vijka)["ijka"] -= (*Vijka)["jika"];
+    if (Vaibj) (*Vaibj)["aibj"] -= (*Vabij)["baij"];
+    if (Vabci) (*Vabci)["abci"] -= (*Vabci)["baci"];
+    if (Vabij) (*Vabij)["abij"] -= (*Vabij)["abji"];
   }
 
   /*
