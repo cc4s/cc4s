@@ -41,7 +41,8 @@ namespace cc4s {
     CTF::Tensor<complex> *GammaGia;
     CTF::Tensor<complex> *GammaGab;
     CTF::Tensor<complex> *GammaGij;
-    std::array<int,4> syms, vvvv, vovo, vvoo, voov, oovv, oooo, ooov, vooo, vvvo;
+    std::array<int,4> syms, vvvv, vovo, vvoo, voov, oovv, oooo, ooov, vooo, vvvo,
+                      ovoo, ovov, ovvv, vvov;
   };
 }
 
