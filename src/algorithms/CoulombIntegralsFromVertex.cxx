@@ -39,25 +39,54 @@ void CoulombIntegralsFromVertex::run() {
   int Nv(epsa->lens[0]);
   // hole and particle states may overlap at finite temperature
   int Np(GammaGqr->lens[1]);
-  int iStart(0), iEnd(No);
-  int aStart(Np-Nv), aEnd(Np);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
-  int syms[] = { NS, NS, NS, NS };
-  int vvvv[] = { Nv, Nv, Nv, Nv };
-  int vovo[] = { Nv, No, Nv, No };
-  int vvoo[] = { Nv, Nv, No, No };
-  int oooo[] = { No, No, No, No };
-  int ooov[] = { No, No, No, Nv };
-  int vvvo[] = { Nv, Nv, Nv, No };
+  // TODO: calculate vvvv, vvvo  for COMPLEX
+  syms = std::array<int,4>{{ NS, NS, NS, NS }};
+  vvvv = std::array<int,4>{{ Nv, Nv, Nv, Nv }};
+  vovo = std::array<int,4>{{ Nv, No, Nv, No }};
+  vvoo = std::array<int,4>{{ Nv, Nv, No, No }};
+  oooo = std::array<int,4>{{ No, No, No, No }};
+  ooov = std::array<int,4>{{ No, No, No, Nv }};
+  vvvo = std::array<int,4>{{ Nv, Nv, Nv, No }};
+  vooo = std::array<int,4>{{ Nv, No, No, No }};
+  voov = std::array<int,4>{{ Nv, No, No, Nv }};
+  oovv = std::array<int,4>{{ No, No, Nv, Nv }};
 
   // Indices for integrals created from already existing
-  int oovv[] = { No, No, Nv, Nv };
-  int ovoo[] = { No, Nv, No, No };
-  int ovov[] = { No, Nv, No, Nv };
-  int voov[] = { Nv, No, No, Nv };
-  int ovvv[] = { No, Nv, Nv, Nv };
-  int vvov[] = { Nv, Nv, No, Nv };
+  ovoo = std::array<int,4>{{ No, Nv, No, No }};
+  ovov = std::array<int,4>{{ No, Nv, No, Nv }};
+  ovvv = std::array<int,4>{{ No, Nv, Nv, Nv }};
+  vvov = std::array<int,4>{{ Nv, Nv, No, Nv }};
+
+
+  bool realIntegrals = !getIntegerArgument("complex", 0);
+  LOG(0, "CoulombIntegrals") << "Using "
+    << (realIntegrals ? "real" : "complex") << " Coulomb integrals"
+    << std::endl;
+
+  int aStart(Np-Nv), aEnd(Np);
+  int iStart(0), iEnd(No);
+  int GijStart[] = {0, iStart,iStart};
+  int GijEnd[]   = {NG,iEnd,  iEnd};
+  int GiaStart[] = {0, iStart,aStart};
+  int GiaEnd[]   = {NG,iEnd,  aEnd};
+  int GaiStart[] = {0, aStart,iStart};
+  int GaiEnd[]   = {NG,aEnd,  iEnd};
+  int GabStart[] = {0, aStart,aStart};
+  int GabEnd[]   = {NG,aEnd,  aEnd};
+  GammaGij = new Tensor<complex>(GammaGqr->slice(GijStart, GijEnd));
+  GammaGia = realIntegrals ?
+    nullptr : new Tensor<complex>(GammaGqr->slice(GiaStart, GiaEnd));
+  GammaGai = new Tensor<complex>(GammaGqr->slice(GaiStart, GaiEnd));
+  GammaGab = new Tensor<complex>(GammaGqr->slice(GabStart, GabEnd));
+
+  if (realIntegrals) {
+    calculateRealIntegrals();
+  } else {
+    calculateComplexIntegrals();
+  }
+
 
   int antisymmetrize(getIntegerArgument("antisymmetrize", 0));
 
