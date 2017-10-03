@@ -20,13 +20,14 @@ CoulombVertexDecomposition [
   % Set the number of iterations. Default is 32.
   (maxIterations 64)
   (mixer "LinearMixer")
-  (mixingRatio 0.8)
+  (mixingRatio 0.5)
   % Set whether CoulombFactors or FactorOrbitals are fitted
   % or kept fixed during the RALS iterations.
 % (fitCoulombFactors 1)
 % (fitFactorOrbitals 1)
   % Choose the ansatz, one of "symmetric", "hermitian", "pseudoInverse"
-  (ansatz "hermitian")
+  (ansatz "pseudoInverse")
+  (writeSubIterations 1)
 ] [
   FactorOrbitals
   OutgoingFactorOrbitals

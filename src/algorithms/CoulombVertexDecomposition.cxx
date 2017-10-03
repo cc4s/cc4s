@@ -347,7 +347,7 @@ void CoulombVertexDecomposition::computeOutgoingPi() {
   } else if (ansatz == SYMMETRIC) {
     (*PiqR)["qR"] = (*PirR)["qR"];
   } else if (ansatz == PSEUDO_INVERSE) {
-    (*PiqR)["qR"] = IterativePseudoInverse<complex>(*PirR).get()["qR"];
+    (*PiqR)["qR"] = IterativePseudoInverse<complex>(*PirR).get()["Rq"];
   } else {
     std::stringstream stringStream;
     stringStream << "Unknown decomposition ansatz \"" << ansatz << "\"";

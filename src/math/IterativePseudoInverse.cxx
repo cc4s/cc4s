@@ -28,8 +28,8 @@ IterativePseudoInverse<F>::IterativePseudoInverse(
   Univar_Function<F> fAbs(&abs<F>);
   Vector<F> rowAbsNorms(square.lens[0], *matrix.wrld);
   rowAbsNorms.sum(1.0,square,"ij", 0.0,"i",fAbs);
-  F *normValues(new F[rowAbsNorms.lens[0]]);
-  rowAbsNorms.read_all(normValues);
+  std::vector<F> normValues(rowAbsNorms.lens[0]);
+  rowAbsNorms.read_all(normValues.data());
   double max(-std::numeric_limits<double>::infinity());
   for (int i(0); i < square.lens[0]; ++i) {
     if (std::real(normValues[i]) > max) max = std::real(normValues[i]);
@@ -50,12 +50,12 @@ void IterativePseudoInverse<F>::iterate(double accuracy) {
   Matrix<F> sqr(matrix.lens[1], matrix.lens[1], *matrix.wrld);  double remainder(1.0), minRemainder(std::numeric_limits<double>::infinity());
   int n(0), nMin(0);
   // TODO: use constants for limits
+  // TODO: test rectangular matrices with lens[0]>lens[1] & lens[0]>lens[1]
   while (remainder > accuracy*accuracy && n-nMin < 100 && n < 10000) {
 
     sqr["ij"] = -1.0 * inverse["ik"] * matrix["kj"];
     sqr["ii"] += 1.0;
-    Bivar_Function<F> fRealDot(&realDot<F>);
-    s.contract(1.0, sqr,"ij", sqr,"ij", 0.0,"", fRealDot);
+    s[""] = sqr["ij"] * sqr["ij"];
     inverse["ij"] += alpha * sqr["ik"] * conjugate["kj"];
     remainder = std::real(s.get_val());
     if (remainder < minRemainder) {
@@ -83,8 +83,7 @@ void IterativePseudoInverse<F>::iterateQuadratically(double accuracy) {
     square["ii"] += 2.0;
     inverse["ij"] = inverse["ik"] * square["kj"];
     square["ii"] += -1.0;
-    Bivar_Function<F> fRealDot(&realDot<F>);
-    s.contract(1.0, square,"ij", square,"ij", 0.0,"", fRealDot);
+    s[""] = square["ij"] * square["ij"];
     remainder = std::real(s.get_val());
     LOG(4, "PseudoInverse") << "remainder=" << remainder << std::endl;
     if (remainder < minRemainder) {
