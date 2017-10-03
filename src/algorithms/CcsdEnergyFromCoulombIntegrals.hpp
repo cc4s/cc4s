@@ -39,11 +39,12 @@ namespace cc4s {
      * routine taken from So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001).
      * \param[in] i Iteration number
      */
-    virtual void iterate(int i, Mixer<double> *mixer);
-    virtual void iterate(int i, Mixer<complex> *mixer);
-
-    template <typename F>
-    void iterate(int i, Mixer<F> *mixer);
+    virtual PTR(FockVector<double>) getResiduum(
+      const int iteration, const PTR(FockVector<double>) &amplitudes
+    );
+    virtual PTR(FockVector<complex>) getResiduum(
+      const int iteration, const PTR(FockVector<complex>) &amplitudes
+    );
   };
 }
 

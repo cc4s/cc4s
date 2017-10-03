@@ -27,41 +27,39 @@ CcsdEnergyFromCoulombIntegrals::~CcsdEnergyFromCoulombIntegrals() {
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 //////////////////////////////////////////////////////////////////////
 
-void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
+PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
+  const int i, const PTR(FockVector<double>) &amplitudes
+) {
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
-  // Allocate Tensors for T2 amplitudes
-  Tensor<> Rabij(false, *Vabij);
-  Rabij.set_name("Rabij");
+  // get singles and doubles part of the amplitudes
+  Tensor<double> *Tai( &amplitudes->componentTensors[0] );
+  Tai->set_name("Tai");
+  Tensor<double> *Tabij( &amplitudes->componentTensors[1] );
+  Tabij->set_name("Tabij");
 
-  // Allocate Tensors for T1 amplitudes
-  int No(Vabij->lens[2]);
-  int Nv(Vabij->lens[0]);
-  std::array<int,2> vo({{ Nv, No }});
-  std::array<int,4> syms({{ NS, NS, NS, NS }});
-  Tensor<> Rai(2, vo.data(), syms.data(), *Vabij->wrld, "Rai");
+  // create residuum and get their singles and doubles part
+  auto residuum( NEW(FockVector<double>, *amplitudes) );
+  *residuum *= 0.0;
+  Tensor<double> *Rai( &residuum->componentTensors[0] );
+  Rai->set_name("Rai");
+  Tensor<double> *Rabij( &residuum->componentTensors[1] );
+  Rabij->set_name("Rabij");
 
-  std::string abbreviation(getAbbreviation());
-  std::transform(abbreviation.begin(), abbreviation.end(), 
-                 abbreviation.begin(), ::toupper);
-    
   if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
     // For first iteration compute only the MP2 amplitudes 
     // Since Tabij = 0, Vabij is the only non-zero term
-    LOG(1, abbreviation) << "MP2 T2 Amplitudes" << std::endl;
-    Rabij["abij"] = (*Vabij)["abij"];
-  
-    // Calculate the amplitudes from the residuum
-    amplitudesFromResiduum(Rabij, "abij");
+    LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
+    (*Rabij)["abij"] = (*Vabij)["abij"];
   } else {
     // For the rest iterations compute the CCSD amplitudes
-
-    // Read the amplitudes Tai and Tabij
-    FockVector<double> *amplitudes(&mixer->getNext());
-    Tensor<> *Tai( &amplitudes->componentTensors[0] );
-    Tensor<> *Tabij( &amplitudes->componentTensors[1] );
-    Tai->set_name("Tai");
-    Tabij->set_name("Tabij");
+    {
+      // construct Dabij = eps_a+eps_b-eps_i-eps_j
+      Tensor<double> Dabij(false, *Rabij);
+      calculateExcitationEnergies(Dabij, "abij");
+      // diagonal part
+      (*Rabij)["abij"] =  Dabij["abij"] * (*Tabij)["abij"];
+    }
 
     // Read all required integrals
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
@@ -127,7 +125,8 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
     //***********************  T2 amplitude equations  *******************************
     //********************************************************************************
     
-    LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "Solving T2 Amplitude Equations" << std::endl;
 
     // Intermediates used both by T1 and T2
     Tensor<> Kac(2, vv.data(), syms.data(), *Vabij->wrld, "Kac");
@@ -180,10 +179,10 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
       Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
 
       // Contract Lac with T2 Amplitudes
-      Rabij["abij"]  = ( 1.0) * Lac["ac"] * (*Tabij)["cbij"];
+      (*Rabij)["abij"] += ( 1.0) * Lac["ac"] * (*Tabij)["cbij"];
 
       // Contract Lki with T2 Amplitudes
-      Rabij["abij"] += (-1.0) * Lki["ki"] * (*Tabij)["abkj"];
+      (*Rabij)["abij"] += (-1.0) * Lki["ki"] * (*Tabij)["abkj"];
     }
     
     {
@@ -197,11 +196,11 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
       realDressedGammaGai["Gai"] += (-1.0) * realGammaGij["Gki"] * (*Tai)["ak"];
       imagDressedGammaGai["Gai"] += (-1.0) * imagGammaGij["Gki"] * (*Tai)["ak"];
 
-      Rabij["abij"] += ( 1.0) * realDressedGammaGai["Gai"] * realGammaGab["Gbc"] * (*Tai)["cj"];
-      Rabij["abij"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGab["Gbc"] * (*Tai)["cj"];
+      (*Rabij)["abij"] += ( 1.0) * realDressedGammaGai["Gai"] * realGammaGab["Gbc"] * (*Tai)["cj"];
+      (*Rabij)["abij"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGab["Gbc"] * (*Tai)["cj"];
 
-      Rabij["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
-      Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
+      (*Rabij)["abij"] += (-1.0) * (*Vijka)["jika"] * (*Tai)["bk"];
+      (*Rabij)["abij"] += (-1.0) * (*Tai)["bk"] * (*Vabij)["acik"] * (*Tai)["cj"];
     }
           
     {
@@ -237,7 +236,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
       Yabij["cbkj"]  = ( 2.0) * (*Tabij)["cbkj"];
       Yabij["cbkj"] += (-1.0) * (*Tabij)["bckj"];
         
-      Rabij["abij"] += ( 1.0) * Xakic["akic"] * Yabij["cbkj"];
+      (*Rabij)["abij"] += ( 1.0) * Xakic["akic"] * Yabij["cbkj"];
     }
 
     {
@@ -272,13 +271,13 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
       }
       
       // Contract and Xakci intermediates with T2 amplitudes Tabij
-      Rabij["abij"] += (-1.0) * Xakci["akci"] * (*Tabij)["cbkj"];
-      Rabij["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
+      (*Rabij)["abij"] += (-1.0) * Xakci["akci"] * (*Tabij)["cbkj"];
+      (*Rabij)["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
 
       // Symmetrize Rabij by applying permutation operator
       // to save memory we use Xakci as intermediate for the permutation operator 
-      Xakci["aibj"]  = Rabij["abij"];
-      Rabij["abij"] += Xakci["bjai"]; 
+      Xakci["aibj"]  = (*Rabij)["abij"];
+      (*Rabij)["abij"] += Xakci["bjai"]; 
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -287,7 +286,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
     //////////////////////////////////////////////////////////////////////
 
     // Add Vabij to Rabij (MP2 term)
-    Rabij["abij"] += (*Vabij)["abij"];
+    (*Rabij)["abij"] += (*Vabij)["abij"];
 
     {
       // Build Xklij intermediate
@@ -299,7 +298,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
       Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
 
       // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
-      Rabij["abij"] +=  Xklij["klij"] * Xabij["abkl"];
+      (*Rabij)["abij"] +=  Xklij["klij"] * Xabij["abkl"];
 
       // Construct last term
       if (!distinguishable) {
@@ -310,7 +309,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
 
       // Add last term contracted only with the doubles
       // The singles term is computed in the slicing
-      Rabij["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
+      (*Rabij)["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
     }
 
     if (isArgumentGiven("CoulombFactors")) {
@@ -336,14 +335,15 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
       // Slice loop starts here
       for (int b(0); b < NR; b += factorsSliceSize) {
         for (int a(0); a < NR; a += factorsSliceSize) {
-          LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+          LOG(1, getCapitalizedAbbreviation()) <<
+            "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
           Tensor<> *Fabij(
             sliceAmplitudesFromCoupledCoulombFactors(
-              mixer, a, b, factorsSliceSize
+              amplitudes, a, b, factorsSliceSize
             )
           );
           Fabij->set_name("Fabij");
-          Rabij["abij"] += (*Fabij)["abij"];
+          (*Rabij)["abij"] += (*Fabij)["abij"];
           delete Fabij;
         }
       }
@@ -362,9 +362,10 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
       // Slice loop starts here
       for (int b(0); b < Nv; b += integralsSliceSize) {
         for (int a(b); a < Nv; a += integralsSliceSize) {
-          LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          LOG(1, getCapitalizedAbbreviation()) <<
+            "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           Tensor<> *Vxycd(
-            sliceCoupledCoulombIntegrals(mixer, a, b, integralsSliceSize)
+            sliceCoupledCoulombIntegrals(amplitudes, a, b, integralsSliceSize)
           );
           Vxycd->set_name("Vxycd");
           int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
@@ -374,7 +375,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
           // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
           Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
 
-          sliceIntoResiduum(Rxyij, a, b, Rabij);
+          sliceIntoResiduum(Rxyij, a, b, *Rabij);
           // The integrals of this slice are not needed anymore
           delete Vxycd;
         }
@@ -385,80 +386,80 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<double> *mixer) {
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
     {
-      LOG(1, abbreviation) << "Solving T1 Amplitude Equations" << std::endl;
+      LOG(1, getCapitalizedAbbreviation()) <<
+        "Solving T1 Amplitude Equations" << std::endl;
+
+      // construct Dai = eps_a-eps_i
+      Tensor<double> Dai(false, *Rai);
+      calculateExcitationEnergies(Dai, "ai");
+      // diagonal part
+      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
+
       // Intermediates used for T1 amplitudes
       Tensor<> Kck(2, vo.data(), syms.data(), *Vabij->wrld, "Kck");
 
       // Contract Kac and Kki with T1 amplitudes
-      Rai["ai"]  = ( 1.0) * Kac["ac"] * (*Tai)["ci"];
-      Rai["ai"] += (-1.0) * Kki["ki"] * (*Tai)["ak"];
+      (*Rai)["ai"] += ( 1.0) * Kac["ac"] * (*Tai)["ci"];
+      (*Rai)["ai"] += (-1.0) * Kki["ki"] * (*Tai)["ak"];
 
       // Build Kck
       Kck["ck"]  = ( 2.0) * (*Vabij)["cdkl"] * (*Tai)["dl"];
       Kck["ck"] += (-1.0) * (*Vabij)["dckl"] * (*Tai)["dl"];
 
       // Contract all the rest terms with T1 and T2 amplitudes
-      Rai["ai"] += ( 2.0) * Kck["ck"] * (*Tabij)["caki"];
-      Rai["ai"] += (-1.0) * Kck["ck"] * (*Tabij)["caik"];
-      Rai["ai"] += ( 1.0) * (*Tai)["ak"] * Kck["ck"] * (*Tai)["ci"];
-      Rai["ai"] += ( 2.0) * (*Vabij)["acik"] * (*Tai)["ck"];
-      Rai["ai"] += (-1.0) * (*Vaibj)["ciak"] * (*Tai)["ck"];
+      (*Rai)["ai"] += ( 2.0) * Kck["ck"] * (*Tabij)["caki"];
+      (*Rai)["ai"] += (-1.0) * Kck["ck"] * (*Tabij)["caik"];
+      (*Rai)["ai"] += ( 1.0) * (*Tai)["ak"] * Kck["ck"] * (*Tai)["ci"];
+      (*Rai)["ai"] += ( 2.0) * (*Vabij)["acik"] * (*Tai)["ck"];
+      (*Rai)["ai"] += (-1.0) * (*Vaibj)["ciak"] * (*Tai)["ck"];
 
-      Rai["ai"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * Xabij["cdik"];
-      Rai["ai"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * Xabij["cdik"];
-      Rai["ai"] += (-1.0) * realGammaGab["Gda"] * realGammaGai["Gck"] * Xabij["cdik"];
-      Rai["ai"] += (-1.0) * imagGammaGab["Gda"] * imagGammaGai["Gck"] * Xabij["cdik"];
+      (*Rai)["ai"] += ( 2.0) * realGammaGab["Gca"] * realGammaGai["Gdk"] * Xabij["cdik"];
+      (*Rai)["ai"] += ( 2.0) * imagGammaGab["Gca"] * imagGammaGai["Gdk"] * Xabij["cdik"];
+      (*Rai)["ai"] += (-1.0) * realGammaGab["Gda"] * realGammaGai["Gck"] * Xabij["cdik"];
+      (*Rai)["ai"] += (-1.0) * imagGammaGab["Gda"] * imagGammaGai["Gck"] * Xabij["cdik"];
 
-      Rai["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
-      Rai["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
+      (*Rai)["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
+      (*Rai)["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
     }
-
-    // Calculate the amplitudes from the residuum
-    amplitudesFromResiduum(Rai, "ai");
-    amplitudesFromResiduum(Rabij, "abij");
   }
-  // Append amplitudes to the mixer
-  FockVector<double> newAmplitudes({Rai, Rabij}, {"ai", "abij"});
-  mixer->append(newAmplitudes);
+  return residuum;
 }
 
 
-void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
+PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
+  const int i, const PTR(FockVector<complex>) &amplitudes
+) {
   // Read Vabij integrals
   Tensor<complex> *Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
 
-  // Allocate Tensors for T2 amplitudes
-  Tensor<complex> Rabij(false, *Vabij);
-  Rabij.set_name("Rabij");
+  // get singles and doubles part of the amplitudes
+  Tensor<complex> *Tai( &amplitudes->componentTensors[0] );
+  Tai->set_name("Tai");
+  Tensor<complex> *Tabij( &amplitudes->componentTensors[1] );
+  Tabij->set_name("Tabij");
 
-  // Allocate Tensors for T1 amplitudes
-  int No(Vabij->lens[2]);
-  int Nv(Vabij->lens[0]);
-  std::array<int,2> vo({{ Nv, No }});
-  std::array<int,4> syms({{ NS, NS, NS, NS }});
-  Tensor<complex> Rai(2, vo.data(), syms.data(), *Vabij->wrld, "Rai");
-
-  std::string abbreviation(getAbbreviation());
-  std::transform(abbreviation.begin(), abbreviation.end(), 
-                 abbreviation.begin(), ::toupper);
+  // create residuum and get their singles and doubles part
+  auto residuum( NEW(FockVector<complex>, *amplitudes) );
+  *residuum *= complex(0.0);
+  Tensor<complex> *Rai( &residuum->componentTensors[0] );
+  Rai->set_name("Rai");
+  Tensor<complex> *Rabij( &residuum->componentTensors[1] );
+  Rabij->set_name("Rabij");
 
   if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
     // For first iteration compute only the MP2 amplitudes 
     // Since Tabij = 0, Vabij is the only non-zero term
-    LOG(1, abbreviation) << "MP2 T2 Amplitudes" << std::endl;
-    Rabij["abij"] = (*Vabij)["abij"];
-  
-    // Calculate the amplitudes from the residuum
-    amplitudesFromResiduum(Rabij, "abij");
+    LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
+    (*Rabij)["abij"] = (*Vabij)["abij"];
   } else {
     // For the rest iterations compute the CCSD amplitudes
-
-    // Read the amplitudes Tai and Tabij
-    FockVector<complex> *amplitudes(&mixer->getNext());
-    Tensor<complex> *Tai( &amplitudes->componentTensors[0] );
-    Tensor<complex> *Tabij( &amplitudes->componentTensors[1] );
-    Tai->set_name("Tai");
-    Tabij->set_name("Tabij");
+    {
+      // construct Dabij = eps_a+eps_b-eps_i-eps_j
+      Tensor<complex> Dabij(false, *Rabij);
+      calculateExcitationEnergies(Dabij, "abij");
+      // diagonal part
+      (*Rabij)["abij"] =  Dabij["abij"] * (*Tabij)["abij"];
+    }
 
     // Read all required integrals
     Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
@@ -472,6 +473,8 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
     Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
 
     // Compute the No,Nv,NG,Np
+    int No(Vabij->lens[2]);
+    int Nv(Vabij->lens[0]);
     int NG(GammaGqr->lens[0]);
     int Np(GammaGqr->lens[1]);
 
@@ -502,8 +505,10 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
     Tensor<complex> conjTransposeGammaGij(false, *GammaGij);
     conjTransposeGammaGij.sum(1.0,*GammaGij,"Gji", 0.0,"Gij", fConj);
 
+    std::array<int,4> syms({{ NS, NS, NS, NS }});
     std::array<int,4> voov({{ Nv, No, No, Nv }});
     std::array<int,2> vv({{ Nv, Nv }});
+    std::array<int,2> vo({{ Nv, No }});
     std::array<int,2> oo({{ No, No }});
 
     int distinguishable(
@@ -514,7 +519,8 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
     //***********************  T2 amplitude equations  *******************************
     //********************************************************************************
 
-    LOG(1, abbreviation) << "Solving T2 Amplitude Equations" << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "Solving T2 Amplitude Equations" << std::endl;
 
     // Intermediates used both by T1 and T2
     Tensor<complex> Kac(2, vv.data(), syms.data(), *Vabij->wrld, "Kac");
@@ -565,10 +571,10 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
       Lki["ki"] += (-1.0) * (*Vijka)["lkic"] * (*Tai)["cl"];
 
       // Contract Lac with T2 Amplitudes
-      Rabij["abij"]  = ( 1.0) * Lac["ac"] * (*Tabij)["cbij"];
+      (*Rabij)["abij"] += ( 1.0) * Lac["ac"] * (*Tabij)["cbij"];
 
       // Contract Lki with T2 Amplitudes
-      Rabij["abij"] += (-1.0) * Lki["ki"] * (*Tabij)["abkj"];
+      (*Rabij)["abij"] += (-1.0) * Lki["ki"] * (*Tabij)["abkj"];
     }
     
     {
@@ -576,10 +582,10 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
       Tensor<complex> conjTransposeDressedGammaGai(conjTransposeGammaGai);
       conjTransposeDressedGammaGai.set_name("conjTransposeDressedGammaGai");
       conjTransposeDressedGammaGai["Gai"] += (-1.0) * conjTransposeGammaGij["Gki"] * (*Tai)["ak"];
-      Rabij["abij"] += ( 1.0) * conjTransposeDressedGammaGai["Gai"] * (*GammaGab)["Gbc"] * (*Tai)["cj"];
+      (*Rabij)["abij"] += ( 1.0) * conjTransposeDressedGammaGai["Gai"] * (*GammaGab)["Gbc"] * (*Tai)["cj"];
 
-      Rabij["abij"] += (-1.0) * (*Vaijk)["akij"] * (*Tai)["bk"];
-      Rabij["abij"] += (-1.0) * (*Tai)["bk"] * (*Vaijb)["akic"] * (*Tai)["cj"];
+      (*Rabij)["abij"] += (-1.0) * (*Vaijk)["akij"] * (*Tai)["bk"];
+      (*Rabij)["abij"] += (-1.0) * (*Tai)["bk"] * (*Vaijb)["akic"] * (*Tai)["cj"];
     }
         
     {
@@ -612,7 +618,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
       Yabij["cbkj"]  = ( 2.0) * (*Tabij)["cbkj"];
       Yabij["cbkj"] += (-1.0) * (*Tabij)["bckj"];
 
-      Rabij["abij"] += ( 1.0) * Xakic["akic"] * Yabij["cbkj"];
+      (*Rabij)["abij"] += ( 1.0) * Xakic["akic"] * Yabij["cbkj"];
     }
 
     {
@@ -641,13 +647,13 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
       }
 
       // Contract and Xakci intermediates with T2 amplitudes Tabij
-      Rabij["abij"] += (-1.0) * Xakci["akci"] * (*Tabij)["cbkj"];
-      Rabij["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
+      (*Rabij)["abij"] += (-1.0) * Xakci["akci"] * (*Tabij)["cbkj"];
+      (*Rabij)["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
 
       // Symmetrize Rabij by applying permutation operator
       // to save memory we use Xakci as intermediate for the permutation operator 
-      Xakci["aibj"]  = Rabij["abij"];
-      Rabij["abij"] += Xakci["bjai"]; 
+      Xakci["aibj"]  = (*Rabij)["abij"];
+      (*Rabij)["abij"] += Xakci["bjai"]; 
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -656,7 +662,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
     //////////////////////////////////////////////////////////////////////
 
     // Add Vabij to Rabij (MP2 term)
-    Rabij["abij"] += (*Vabij)["abij"];
+    (*Rabij)["abij"] += (*Vabij)["abij"];
 
     {
       // Build Xklij intermediate
@@ -668,7 +674,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
       Xklij["klij"] += (*Vijka)["lkjc"] * (*Tai)["ci"];
 
       // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
-      Rabij["abij"] +=  Xklij["klij"] * Xabij["abkl"];
+      (*Rabij)["abij"] +=  Xklij["klij"] * Xabij["abkl"];
 
       // Construct last term
       if (!distinguishable) {
@@ -679,7 +685,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
 
       // Add last term contracted only with the doubles
       // The singles term is computed in the slicing
-      Rabij["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
+      (*Rabij)["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
     }
 
     if (isArgumentGiven("CoulombFactors")) {
@@ -705,14 +711,15 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
       // Slice loop starts here
       for (int b(0); b < NR; b += factorsSliceSize) {
         for (int a(0); a < NR; a += factorsSliceSize) {
-          LOG(1, abbreviation) << "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+          LOG(1, getCapitalizedAbbreviation()) <<
+            "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
           Tensor<complex> *Fabij(
             sliceAmplitudesFromCoupledCoulombFactors(
-              mixer, a, b, factorsSliceSize
+              amplitudes, a, b, factorsSliceSize
             )
           );
           Fabij->set_name("Fabij");
-          Rabij["abij"] += (*Fabij)["abij"];
+          (*Rabij)["abij"] += (*Fabij)["abij"];
           delete Fabij;
         }
       }
@@ -731,9 +738,10 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
       // Slice loop starts here
       for (int b(0); b < Nv; b += integralsSliceSize) {
         for (int a(b); a < Nv; a += integralsSliceSize) {
-          LOG(1, abbreviation) << "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+          LOG(1, getCapitalizedAbbreviation()) <<
+            "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
           Tensor<complex> *Vxycd(
-            sliceCoupledCoulombIntegrals(mixer, a, b, integralsSliceSize)
+            sliceCoupledCoulombIntegrals(amplitudes, a, b, integralsSliceSize)
           );
           Vxycd->set_name("Vxycd");
           int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
@@ -743,7 +751,7 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
           // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
           Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
 
-          sliceIntoResiduum(Rxyij, a, b, Rabij);
+          sliceIntoResiduum(Rxyij, a, b, *Rabij);
           // The integrals of this slice are not needed anymore
           delete Vxycd;
         }
@@ -755,43 +763,45 @@ void CcsdEnergyFromCoulombIntegrals::iterate(int i, Mixer<complex> *mixer) {
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
     {
-      LOG(1, abbreviation) << "Solving T1 Amplitude Equations" << std::endl;
+      LOG(1, getCapitalizedAbbreviation()) <<
+        "Solving T1 Amplitude Equations" << std::endl;
+
+      // construct Dai = eps_a-eps_i
+      Tensor<complex> Dai(false, *Rai);
+      calculateExcitationEnergies(Dai, "ai");
+      // diagonal part
+      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
+
       // Intermediates used for T1 amplitudes
       Tensor<complex> Kck(2, vo.data(), syms.data(), *Vabij->wrld, "Kck");
 
       // Contract Kac and Kki with T1 amplitudes
-      Rai["ai"]  = ( 1.0) * Kac["ac"] * (*Tai)["ci"];
-      Rai["ai"] += (-1.0) * Kki["ki"] * (*Tai)["ak"];
+      (*Rai)["ai"] += ( 1.0) * Kac["ac"] * (*Tai)["ci"];
+      (*Rai)["ai"] += (-1.0) * Kki["ki"] * (*Tai)["ak"];
 
       // Build Kck
       Kck["ck"]  = ( 2.0) * (*Vijab)["klcd"] * (*Tai)["dl"];
       Kck["ck"] += (-1.0) * (*Vijab)["kldc"] * (*Tai)["dl"];
 
       // Contract all the rest terms with T1 and T2 amplitudes
-      Rai["ai"] += ( 2.0) * Kck["ck"] * (*Tabij)["caki"];
-      Rai["ai"] += (-1.0) * Kck["ck"] * (*Tabij)["caik"];
-      Rai["ai"] += ( 1.0) * (*Tai)["ak"] * Kck["ck"] * (*Tai)["ci"];
-      Rai["ai"] += ( 2.0) * (*Vaijb)["akic"] * (*Tai)["ck"];
-      Rai["ai"] += (-1.0) * (*Vaibj)["akci"] * (*Tai)["ck"];
+      (*Rai)["ai"] += ( 2.0) * Kck["ck"] * (*Tabij)["caki"];
+      (*Rai)["ai"] += (-1.0) * Kck["ck"] * (*Tabij)["caik"];
+      (*Rai)["ai"] += ( 1.0) * (*Tai)["ak"] * Kck["ck"] * (*Tai)["ci"];
+      (*Rai)["ai"] += ( 2.0) * (*Vaijb)["akic"] * (*Tai)["ck"];
+      (*Rai)["ai"] += (-1.0) * (*Vaibj)["akci"] * (*Tai)["ck"];
 
-      Rai["ai"] += ( 2.0) * conjTransposeGammaGab["Gac"] * (*GammaGia)["Gkd"] * Xabij["cdik"];
-      Rai["ai"] += (-1.0) * conjTransposeGammaGab["Gad"] * (*GammaGia)["Gkc"] * Xabij["cdik"];
+      (*Rai)["ai"] += ( 2.0) * conjTransposeGammaGab["Gac"] * (*GammaGia)["Gkd"] * Xabij["cdik"];
+      (*Rai)["ai"] += (-1.0) * conjTransposeGammaGab["Gad"] * (*GammaGia)["Gkc"] * Xabij["cdik"];
       
-      Rai["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
-      Rai["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
+      (*Rai)["ai"] += (-2.0) * (*Vijka)["klic"] * Xabij["ackl"];
+      (*Rai)["ai"] += ( 1.0) * (*Vijka)["lkic"] * Xabij["ackl"];
     }
 
     delete GammaGij;
     delete GammaGia;
     delete GammaGai;
     delete GammaGab;
-  
-    // Calculate the amplitudes from the residuum
-    amplitudesFromResiduum(Rai, "ai");
-    amplitudesFromResiduum(Rabij, "abij");
   }
-  // Append amplitudes to the mixer
-  FockVector<complex> newAmplitudes({Rai, Rabij}, {"ai", "abij"});
-  mixer->append(newAmplitudes);
+  return residuum;
 }
 

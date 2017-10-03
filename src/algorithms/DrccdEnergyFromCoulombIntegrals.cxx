@@ -61,7 +61,7 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
       "Solving T2 Amplitude Equations" << std::endl;
   }
 
-  if (iteration == 0) {
+  if (iteration == 0 && !isArgumentGiven("startingDoublesAmplitudes")) {
     // in the first iteration the amplitudes are zero
     // only the MP2 term is non-zero
     (*Rabij)["abij"] += (*Vabij)["abij"];

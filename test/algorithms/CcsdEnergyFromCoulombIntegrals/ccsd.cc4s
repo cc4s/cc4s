@@ -33,7 +33,7 @@ CcsdEnergyFromCoulombIntegrals [
   ParticleEigenEnergies HoleEigenEnergies
   (maxIterations 24)
 % (integralsSliceSize 12)
-% (integralsSliceFactor 0.33)
+ (integralsSliceFactor 1)
 % (mixer "LinearMixer")
 % (mixingRatio 0.8)
   % for a DCSD calculation use the following flag
