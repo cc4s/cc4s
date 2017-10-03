@@ -3,6 +3,7 @@
 #define COULOMB_INTEGRALS_FROM_VERTEX_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <array>
 
 namespace cc4s {
   /**
@@ -32,7 +33,15 @@ namespace cc4s {
      * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
     */
     virtual void dryRun();
+  protected:
+    void calculateRealIntegrals();
+    void calculateComplexIntegrals();
 
+    CTF::Tensor<complex> *GammaGai;
+    CTF::Tensor<complex> *GammaGia;
+    CTF::Tensor<complex> *GammaGab;
+    CTF::Tensor<complex> *GammaGij;
+    std::array<int,4> syms, vvvv, vovo, vvoo, voov, oovv, oooo, ooov, vooo, vvvo;
   };
 }
 
