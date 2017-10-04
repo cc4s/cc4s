@@ -30,8 +30,6 @@ CcsdEnergyFromCoulombIntegrals::~CcsdEnergyFromCoulombIntegrals() {
 PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int i, const PTR(FockVector<double>) &amplitudes
 ) {
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
-
   // get singles and doubles part of the amplitudes
   Tensor<double> *Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
@@ -46,6 +44,9 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
   Tensor<double> *Rabij( &residuum->componentTensors[1] );
   Rabij->set_name("Rabij");
 
+  // get part of Coulomb integrals used whether the amplitudes are zero or not
+  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+
   if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
     // For first iteration compute only the MP2 amplitudes 
     // Since Tabij = 0, Vabij is the only non-zero term
@@ -58,7 +59,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       Tensor<double> Dabij(false, *Rabij);
       calculateExcitationEnergies(Dabij, "abij");
       // diagonal part
-      (*Rabij)["abij"] =  Dabij["abij"] * (*Tabij)["abij"];
+//      (*Rabij)["abij"] = Dabij["abij"] * (*Tabij)["abij"];
     }
 
     // Read all required integrals
@@ -70,9 +71,9 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
 
     // Compute the No,Nv,NG,Np
-    int NG(GammaGqr->lens[0]);
     int No(Vabij->lens[2]);
     int Nv(Vabij->lens[0]);
+    int NG(GammaGqr->lens[0]);
     int Np(GammaGqr->lens[1]);
 
     // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
@@ -131,7 +132,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     // Intermediates used both by T1 and T2
     Tensor<> Kac(2, vv.data(), syms.data(), *Vabij->wrld, "Kac");
     Tensor<> Kki(2, oo.data(), syms.data(), *Vabij->wrld, "Kki");
-    Tensor<> Xabij(Tabij);
+    Tensor<> Xabij(*Tabij);
     Xabij.set_name("Xabij");
     Xabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
 
@@ -149,7 +150,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         Lac["ac"]  = Kac["ac"];
       } else {
         // Intermediate tensor Yabij=T2-2*T1*T1
-        Tensor<> Yabij(Tabij);
+        Tensor<> Yabij(*Tabij);
         Yabij.set_name("Yabij");
         Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
         Lac["ac"]      = (-1.0) * (*Vabij)["cdkl"] * Yabij["adkl"]; // Use Yabij in DCSD
@@ -169,7 +170,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
       } else {
         // Intermediate tensor Yabij=T2-2*T1*T1
-        Tensor<> Yabij(Tabij);
+        Tensor<> Yabij(*Tabij);
         Yabij.set_name("Yabij");
         Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
         Lki["ki"]      = ( 1.0) * (*Vabij)["cdkl"] * Yabij["cdil"]; // Use Yabij in DCSD
@@ -223,7 +224,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       Xakic["akic"] += ( 1.0) * imagDressedGammaGai["Gai"] * imagGammaGai["Gck"];
 
       // Intermediate tensor Yabij=T2-2*T1*T1
-      Tensor<> Yabij(Tabij);
+      Tensor<> Yabij(*Tabij);
       Yabij.set_name("Yabij");
       Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
 
@@ -393,7 +394,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       Tensor<double> Dai(false, *Rai);
       calculateExcitationEnergies(Dai, "ai");
       // diagonal part
-      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
+//      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
 
       // Intermediates used for T1 amplitudes
       Tensor<> Kck(2, vo.data(), syms.data(), *Vabij->wrld, "Kck");
@@ -458,7 +459,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       Tensor<complex> Dabij(false, *Rabij);
       calculateExcitationEnergies(Dabij, "abij");
       // diagonal part
-      (*Rabij)["abij"] =  Dabij["abij"] * (*Tabij)["abij"];
+//      (*Rabij)["abij"] =  Dabij["abij"] * (*Tabij)["abij"];
     }
 
     // Read all required integrals
@@ -543,7 +544,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         Lac["ac"]  = Kac["ac"];
       } else {
         // Intermediate tensor Yabij=T2-2*T1*T1
-        Tensor<complex> Yabij(Tabij);
+        Tensor<complex> Yabij(*Tabij);
         Yabij.set_name("Yabij");
         Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
         Lac["ac"]      = (-1.0) * (*Vijab)["klcd"] * Yabij["adkl"]; // Use Yabij in DCSD
@@ -561,7 +562,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         Lki["ki"]  = ( 1.0) *   Kki   ["ki"];
       } else {
         // Intermediate tensor Yabij=T2-2*T1*T1
-        Tensor<complex> Yabij(Tabij);
+        Tensor<complex> Yabij(*Tabij);
         Yabij.set_name("Yabij");
         Yabij["abij"] += ( 2.0) * (*Tai)["ai"] * (*Tai)["bj"];
         Lki["ki"]      = ( 1.0) * (*Vijab)["klcd"] * Yabij["cdil"]; // Use Yabij in DCSD
@@ -770,7 +771,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       Tensor<complex> Dai(false, *Rai);
       calculateExcitationEnergies(Dai, "ai");
       // diagonal part
-      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
+//      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
 
       // Intermediates used for T1 amplitudes
       Tensor<complex> Kck(2, vo.data(), syms.data(), *Vabij->wrld, "Kck");

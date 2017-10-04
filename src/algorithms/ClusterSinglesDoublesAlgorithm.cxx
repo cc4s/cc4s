@@ -189,8 +189,9 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
     // levelshifting can be implemented here
 
     // subtract diagonal part of Hamiltonian
-    (*T)[indices] *= (-1.0) * D[indices];
-    (*T)[indices] += (*R)[indices];
+//    (*T)[indices] *= (-1.0) * D[indices];
+//    (*T)[indices] += (*R)[indices];
+    (*T)[indices] = (*R)[indices];
 
     // divide by -Delta to get new estimate for T
     CTF::Transform<F, F>(

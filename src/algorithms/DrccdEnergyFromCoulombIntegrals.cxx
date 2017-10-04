@@ -69,7 +69,7 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
   else {
     // for the rest iterations compute the drCCD residuum
     // diagonal part
-    (*Rabij)["abij"] =  Dabij["abij"] * (*Tabij)["abij"];
+//    (*Rabij)["abij"] =  Dabij["abij"] * (*Tabij)["abij"];
     // off-diagonal part
     (*Rabij)["abij"] += (*Vabij)["abij"];
     (*Rabij)["abij"] += 2.0 * (*Vaijb)["akic"] * (*Tabij)["cbkj"];
