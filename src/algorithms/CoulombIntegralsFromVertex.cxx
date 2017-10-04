@@ -90,6 +90,13 @@ void CoulombIntegralsFromVertex::run() {
   } else {
     calculateComplexIntegrals();
   }
+
+  delete GammaGij;
+  delete GammaGai;
+  delete GammaGab;
+  if (GammaGia) {
+    delete GammaGia;
+  }
 }
 
 // FIXME: update dryRun to work in the complex case as well
