@@ -5,30 +5,15 @@ CoulombVertexReader [
   HoleEigenEnergies ParticleEigenEnergies
 ].
 
-CoulombIntegralsFromVertex [
-  (CoulombVertex FullCoulombVertex)
-  HoleEigenEnergies ParticleEigenEnergies
-] [
-  (PPHHCoulombIntegrals FullPPHHCoulombIntegrals)
-].
-
-Mp2EnergyFromCoulombIntegrals [
-  (PPHHCoulombIntegrals FullPPHHCoulombIntegrals)
-  HoleEigenEnergies ParticleEigenEnergies
-] [
-  (Mp2Energy FullMp2Energy)
-].
-
-TensorWriter [(Data FullMp2Energy)] [].
-
-% and now approximated:
-
 CoulombVertexSingularVectors [
   FullCoulombVertex
-  (fieldVariables 8)
-  (reduction 0.5)
+  % Set either the Size or the rank (relative to NG) of the fields
+  % variables NF (default rank is 0.5)
+  (fieldVariablesSize 8)
+  (fieldVariablesRank 0.25)
 ] [
   CoulombVertexSingularVectors
+  CoulombVertexSingularValues
 ].
 
 ApproximateCoulombVertex [
@@ -37,17 +22,3 @@ ApproximateCoulombVertex [
 ] [
   CoulombVertex
 ].
-
-CoulombIntegralsFromVertex [
-  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-] [
-  PPHHCoulombIntegrals
-].
-
-Mp2EnergyFromCoulombIntegrals [
-  PPHHCoulombIntegrals HoleEigenEnergies ParticleEigenEnergies
-] [
-  Mp2Energy
-].
-
-TensorWriter [(Data Mp2Energy)] [].

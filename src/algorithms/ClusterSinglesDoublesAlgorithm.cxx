@@ -1,11 +1,16 @@
 #include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
+#include <mixers/Mixer.hpp>
 #include <tcc/DryTensor.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
 #include <Options.hpp>
+#include <Cc4s.hpp>
+
+#include <initializer_list>
 
 using namespace CTF;
 using namespace cc4s;
@@ -36,14 +41,23 @@ template <typename F>
 F ClusterSinglesDoublesAlgorithm::run() {
   int Nv(getTensorArgument<>("ParticleEigenEnergies")->lens[0]);
   int No(getTensorArgument<>("HoleEigenEnergies")->lens[0]);
-  Mixer<F> *TaiMixer(
-    createMixer<F>("Singles", std::vector<int>{{Nv,No}})
-  );
-  Mixer<F> *TabijMixer(
-    createMixer<F>("Doubles", std::vector<int>{{Nv,Nv,No,No}})
+
+  auto amplitudes(
+    createAmplitudes<F>(
+      {"Singles", "Doubles"}, {{Nv,No}, {Nv,Nv,No,No}}, {"ai", "abij"}
+    )
   );
 
-  // Iteration for determining the amplitudes
+  // create a mixer, by default use the linear one
+  std::string mixerName(getTextArgument("mixer", "LinearMixer"));
+  Mixer<F> *mixer( MixerFactory<F>::create(mixerName, this));
+  if (!mixer) {
+    std::stringstream stringStream;
+    stringStream << "Mixer not implemented: " << mixerName;
+    throw new EXCEPTION(stringStream.str());
+  }
+
+  // number of iterations for determining the amplitudes
   int maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );
@@ -51,29 +65,32 @@ F ClusterSinglesDoublesAlgorithm::run() {
   F e(0);
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
-    // call the iterate of the actual algorithm, which is still left open here
-    iterate(i, TaiMixer, TabijMixer);
-
-    e = calculateEnergy(TaiMixer, TabijMixer);
+    // call the getResiduum of the actual algorithm,
+    // which will be specified by inheriting classes
+    auto residuum( getResiduum(i, amplitudes) );
+    mixer->append(amplitudes, residuum);
+    // get mixer's best estimate for amplitudes and residuum
+    amplitudes = mixer->get();
+    // solve for next estimate of amplitudes
+    estimateAmplitudesFromResiduum(amplitudes, mixer->getResiduum());
+    e = getEnergy(amplitudes);
   }
 
   if (maxIterationsCount == 0) {
     LOG(0, getCapitalizedAbbreviation()) <<
       "computing energy from given amplitudes" << std::endl;
-    e = calculateEnergy(TaiMixer, TabijMixer);
+    e = getEnergy(amplitudes);
   }
 
-  storeAmplitudes(TaiMixer, "Singles");
-  storeAmplitudes(TabijMixer, "Doubles");
-
+  storeAmplitudes(amplitudes, {"Singles", "Doubles"});
   return e;
 }
 
 
 
 template <typename F>
-F ClusterSinglesDoublesAlgorithm::calculateEnergy(
-  Mixer<F> *TaiMixer, Mixer<F> *TabijMixer
+F ClusterSinglesDoublesAlgorithm::getEnergy(
+  const PTR(FockVector<F>) &amplitudes
 ) {
   // get the Coulomb integrals to compute the energy
   Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
@@ -83,8 +100,8 @@ F ClusterSinglesDoublesAlgorithm::calculateEnergy(
   energy.set_name("energy");
 
   // singles amplitudes are optional
-  Tensor<F> *Tai( TaiMixer ? &TaiMixer->getNext() : nullptr );
-  Tensor<F> *Tabij(&TabijMixer->getNext());
+  Tensor<F> *Tai( &amplitudes->componentTensors[0] );
+  Tensor<F> *Tabij( &amplitudes->componentTensors[1] );
 
   // direct term
   energy[""] =  +2.0 * (*Tabij)["abij"] * (*Vijab)["ijab"];
@@ -107,50 +124,105 @@ F ClusterSinglesDoublesAlgorithm::calculateEnergy(
 
 
 template <typename F>
-Mixer<F> *ClusterSinglesDoublesAlgorithm::createMixer(
-  const std::string &type, std::vector<int> shape
+PTR(FockVector<F>) ClusterSinglesDoublesAlgorithm::createAmplitudes(
+  std::initializer_list<std::string> amplitudeNames,
+  std::initializer_list<std::initializer_list<int>> amplitudeLens,
+  std::initializer_list<std::string> amplitudeIndices
 ) {
-  // Instantiate mixer for the doubles amplitudes, by default use the linear one
-  std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-  Mixer<F> *mixer( MixerFactory<F>::create(mixerName, this));
-  if (!mixer) {
-    std::stringstream stringStream;
-    stringStream << "Mixer not implemented: " << mixerName;
-    throw new EXCEPTION(stringStream.str());
+  std::vector<CTF::Tensor<F>> amplitudeTensors;
+  auto lensIterator( amplitudeLens.begin() );
+  for (auto name: amplitudeNames) {
+    std::stringstream initialDataName;
+    initialDataName << "initial" << name << "Amplitudes";
+    if (isArgumentGiven(initialDataName.str())) {
+      // use given amplitudes as initial amplitudes
+      amplitudeTensors.push_back(*getTensorArgument<F>(initialDataName.str()));
+    } else {
+      // otherwise, use zeros as initial amplitudes
+      std::vector<int> lens(*lensIterator);
+      std::vector<int> syms(lens.size(), NS);
+      amplitudeTensors.push_back(
+        CTF::Tensor<F>(lens.size(), lens.data(), syms.data(), *Cc4s::world, "T")
+      );
+    }
+    ++lensIterator;
   }
-
-  std::stringstream initialDataName;
-  initialDataName << "initial" << type << "Amplitudes";
-  if (isArgumentGiven(initialDataName.str())) {
-    Tensor<F> *T(getTensorArgument<F>(initialDataName.str()));
-    // use given amplitudes as initial amplitudes
-    mixer->append(*T);
-  } else {
-    Tensor<F> *V(getTensorArgument<F>("PPHHCoulombIntegrals"));
-    std::vector<int> syms(shape.size(), NS);
-    Tensor<F> T(shape.size(), shape.data(), syms.data(), *V->wrld, "T");
-    mixer->append(T);
-  }
-  // The amplitudes will from now on be managed by the mixer
-  return mixer;
+  return NEW(FockVector<F>,
+    amplitudeTensors.begin(), amplitudeTensors.end(),
+    amplitudeIndices.begin(), amplitudeIndices.end()
+  );
 }
 
 
 template <typename F>
 void ClusterSinglesDoublesAlgorithm::storeAmplitudes(
-  Mixer<F> *mixer, const std::string &type
+  const PTR(FockVector<F>) &amplitudes,
+  std::initializer_list<std::string> names
 ) {
-  if (isArgumentGiven(getDataName(type, "Amplitudes"))) {
-    allocatedTensorArgument<F>(
-      getDataName(type, "Amplitudes"), new Tensor<F>(mixer->getNext())
-    );
+  int component(0);
+  for (auto name: names) {
+    if (isArgumentGiven(getDataName(name, "Amplitudes"))) {
+      allocatedTensorArgument<F>(
+        getDataName(name, "Amplitudes"),
+        new Tensor<F>(amplitudes->componentTensors[component])
+      );
+    }
+    ++component;
   }
 }
 
 
 template <typename F>
-void ClusterSinglesDoublesAlgorithm::amplitudesFromResiduum(
-  CTF::Tensor<F> &R, const std::string &indices
+void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
+  const PTR(FockVector<F>) &amplitudes,
+  const PTR(FockVector<F>) &residuum
+) {
+  for (unsigned int i(0); i < amplitudes->componentTensors.size(); ++i) {
+    CTF::Tensor<F> *T( &amplitudes->componentTensors[i] );
+    CTF::Tensor<F> *R( &residuum->componentTensors[i] );
+    const char *indices( amplitudes->componentIndices[i].c_str() );
+    Tensor<F> D(false, R);
+    D.set_name("D");
+    calculateExcitationEnergies(D, amplitudes->componentIndices[i]);
+
+    // TODO:
+    // levelshifting can be implemented here
+
+    // subtract diagonal part of Hamiltonian
+//    (*T)[indices] *= (-1.0) * D[indices];
+//    (*T)[indices] += (*R)[indices];
+    (*T)[indices] = (*R)[indices];
+
+    // divide by -Delta to get new estimate for T
+    CTF::Transform<F, F>(
+      std::function<void(F, F &)>(
+        [](F d, F &t) {
+          t = -t / d;
+        }
+      )
+    ) (
+      D[indices], (*T)[indices]
+    );
+  }
+}
+
+// instantiate
+template
+void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
+  const PTR(FockVector<double>) &amplitudes,
+  const PTR(FockVector<double>) &residuum
+);
+
+template
+void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
+  const PTR(FockVector<complex>) &amplitudes,
+  const PTR(FockVector<complex>) &residuum
+);
+
+
+template <typename F>
+void ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
+  CTF::Tensor<F> &D, const std::string &indices
 ) {
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
@@ -163,40 +235,23 @@ void ClusterSinglesDoublesAlgorithm::amplitudesFromResiduum(
   toComplexTensor(*epsa, Fepsa);
 
   // create excitation energy tensor
-  Tensor<F> D(false, R);
-  D.set_name("D");
   int excitationLevel(D.order/2);
   for (int p(0); p < excitationLevel; ++p) {
-    char epsiIndex[2] = {indices[excitationLevel+p], 0};
-    D[indices.c_str()] += Fepsi[epsiIndex];
     char epsaIndex[2] = {indices[p], 0};
-    D[indices.c_str()] -= Fepsa[epsaIndex];
+    D[indices.c_str()] += Fepsa[epsaIndex];
+    char epsiIndex[2] = {indices[excitationLevel+p], 0};
+    D[indices.c_str()] -= Fepsi[epsiIndex];
   }
-
-  // TODO:
-  // levelshifting can be implemented here
-
-  // use transform to divide T by D
-  CTF::Transform<F, F>(
-    std::function<void(F, F &)>(
-      [](F d, F &t) {
-        t = t / d;
-      }
-    )
-  ) (
-    D[indices.c_str()], R[indices.c_str()]
-  );
 }
 
 // instantiate
 template
-void ClusterSinglesDoublesAlgorithm::amplitudesFromResiduum(
-  CTF::Tensor<double> &R, const std::string &indices
+void ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
+  CTF::Tensor<double> &D, const std::string &indices
 );
-
 template
-void ClusterSinglesDoublesAlgorithm::amplitudesFromResiduum(
-  CTF::Tensor<complex> &R, const std::string &indices
+void ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
+  CTF::Tensor<complex> &D, const std::string &indices
 );
 
 
@@ -221,11 +276,11 @@ void ClusterSinglesDoublesAlgorithm::dryAmplitudesFromResiduum(
 
 
 Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
-  Mixer<double> *TaiMixer,
+  const PTR(FockVector<double>) &amplitudes,
   int a, int b, int integralsSliceSize
 ) {
   // Read the amplitudes Tai
-  Tensor<> *Tai(&TaiMixer->getNext());
+  Tensor<> *Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
 
   // Read the Coulomb vertex GammaGqr
@@ -295,11 +350,11 @@ Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
 }
 
 Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
-  Mixer<complex> *TaiMixer,
+  const PTR(FockVector<complex>) &amplitudes,
   int a, int b, int integralsSliceSize
 ) {
   // Read the amplitudes Tai
-  Tensor<complex> *Tai(&TaiMixer->getNext());
+  Tensor<complex> *Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
 
   // Read the Coulomb vertex GammaGqr
@@ -332,7 +387,7 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   conjTransposeGammaGab.sum(1.0,*GammaGab,"Gba", 0.0,"Gab", fConj);
 
   // Construct dressed Coulomb vertex GammaGab
-  Tensor<complex> DressedGammaGab(GammaGab);
+  Tensor<complex> DressedGammaGab(*GammaGab);
   DressedGammaGab.set_name("DressedGammaGab");
   DressedGammaGab["Gab"] += (-1.0) * (*GammaGia)["Gkb"] * (*Tai)["ak"];
 
@@ -358,6 +413,9 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
 
   // Contract left and right slices of the dressed Coulomb vertices
   (*Vxycd)["xycd"]  = leftGamma["Gxc"] * rightGamma["Gyd"];
+  delete GammaGia;
+  delete GammaGai;
+  delete GammaGab;
   return Vxycd;
 }
 
@@ -365,7 +423,7 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
 Tensor<double> *
   ClusterSinglesDoublesAlgorithm::sliceAmplitudesFromCoupledCoulombFactors
 (
-  Mixer<double> *TaiMixer, Mixer<double> *TabijMixer,
+  const PTR(FockVector<double>) &amplitudes,
   int a, int b, int factorsSliceSize
 ) {
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
@@ -377,9 +435,9 @@ Tensor<double> *
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
 
   // Read the doubles amplitudes Tabij
-  Tensor<> *Tabij(&TabijMixer->getNext());
+  Tensor<> *Tabij( &amplitudes->componentTensors[1] );
   Tabij->set_name("Tabij");
-  Tensor<> *Tai(&TaiMixer->getNext());
+  Tensor<> *Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
 
   // Intermediate tensor Iabij=T2+T1*T1
@@ -513,7 +571,7 @@ Tensor<double> *
 Tensor<complex> *
   ClusterSinglesDoublesAlgorithm::sliceAmplitudesFromCoupledCoulombFactors
 (
-  Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer,
+  const PTR(FockVector<complex>) &amplitudes,
   int a, int b, int factorsSliceSize
 ) {
   Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
@@ -527,13 +585,13 @@ Tensor<complex> *
   Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
 
   // Read the doubles amplitudes Tabij
-  Tensor<complex> *Tabij(&TabijMixer->getNext());
+  Tensor<complex> *Tabij( &amplitudes->componentTensors[1] );
   Tabij->set_name("Tabij");
-  Tensor<complex> *Tai(&TaiMixer->getNext());
+  Tensor<complex> *Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
 
   // Intermediate tensor Iabij=T2+T1*T1
-  Tensor<complex> Iabij(Tabij);
+  Tensor<complex> Iabij(*Tabij);
   Iabij.set_name("Iabij");
   Iabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
 
@@ -648,126 +706,6 @@ Tensor<complex> *
 
   // return sliced amplitudes
   return Fabij;
-}
-
-
-Tensor<double> *
-  ClusterSinglesDoublesAlgorithm::amplitudesFromCoupledCoulombFactors
-(
-  Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-) {
-  // Read the doubles amplitudes Tabij
-  Tensor<> *Tabij(&TabijMixer->getNext());
-  Tabij->set_name("Tabij");
-  Tensor<> *Tai(&TaiMixer->getNext());
-  Tai->set_name("Tai");
-
-  // Intermediate tensor Iabij=T2+T1*T1
-  Tensor<> Iabij(Tabij);
-  Iabij.set_name("Iabij");
-  Iabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
-
-  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-
-  // Read the Coulomb Factors PiqR and LambdaGR
-  Tensor<complex> *PiqR(getTensorArgument<complex>("FactorOrbitals"));
-  PiqR->set_name("PiqR");
-  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
-  LambdaGR->set_name("LambdaGR");
-
-  int Np=No+Nv;
-  int NR(PiqR->lens[1]);
-  int Rvoo[] = { NR, Nv, No, No };
-  int RRoo[] = { NR, NR, No, No };
-  int RR[] = { NR, NR };
-  int syms[] = { NS, NS, NS, NS };
-
-  Tensor<complex> VRS(2, RR, syms, *epsi->wrld, "VRS");
-
-  Tensor<> realXRaij(4, Rvoo, syms, *epsi->wrld, "RealXRaij");
-  Tensor<> imagXRaij(4, Rvoo, syms, *epsi->wrld, "ImagXRaij");
-
-  // Allocate and compute PiaR
-  int aRStart[] = {No , 0};
-  int aREnd[]   = {Np ,NR};
-  Tensor<complex> PiaR(PiqR->slice(aRStart,aREnd));
-  PiaR.set_name("PiaR");
-
-  // Split PiaR into real and imaginary parts
-  Tensor<> realPiaR(2, PiaR.lens, PiaR.sym, *PiaR.wrld, "RealPiaR");
-  Tensor<> imagPiaR(2, PiaR.lens, PiaR.sym, *PiaR.wrld, "ImagPiaR");
-  fromComplexTensor(PiaR, realPiaR, imagPiaR);
-
-  // FIXME: Currently assuming GammaGqr = PiqR*PirR*LambdaGR
-  //        First Pi not conjugated.
-  realXRaij["Rdij"] = +1.0 * Iabij["cdij"] * realPiaR["cR"];
-  imagXRaij["Rdij"] = -1.0 * Iabij["cdij"] * imagPiaR["cR"];
-  Tensor<complex> XRaij(4, Rvoo, syms, *epsi->wrld, "XRaij");
-  toComplexTensor(realXRaij, imagXRaij, XRaij);
-
-  Tensor<complex> XRSij(4, RRoo, syms, *epsi->wrld, "XRSij");
-  XRSij["RSij"] = XRaij["Rdij"] * PiaR["dS"];
-
-  Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  Tensor<complex> conjLambdaGR(false, *LambdaGR);
-  // conjLambdaGR["GR"] = conj(LambdaGR["GR"])
-  conjLambdaGR.set_name("ConjLambdaGR");
-  conjLambdaGR.sum(1.0, *LambdaGR,"GR", 0.0,"GR", fConj);
-  VRS["RS"] = conjLambdaGR["GR"] * (*LambdaGR)["GS"];
-
-  XRSij["RSij"] = XRSij["RSij"] * VRS["RS"];
-
-  // Allocate and compute PiiR
-  int iRStart[] = {0 , 0};
-  int iREnd[]   = {No ,NR};
-  Tensor<complex> PiiR(PiqR->slice(iRStart,iREnd));
-  PiiR.set_name("PiiR");
-
-  // Split PiiR into real and imaginary parts
-  Tensor<> realPiiR(2, PiiR.lens, PiiR.sym, *PiiR.wrld, "RealPiiR");
-  Tensor<> imagPiiR(2, PiiR.lens, PiiR.sym, *PiiR.wrld, "ImagPiiR");
-  fromComplexTensor(PiiR, realPiiR, imagPiiR);
-
-  // Initialize dressedPiaR
-  Tensor<complex> dressedPiaR(PiaR);
-  dressedPiaR.set_name("dressedPiaR");
-
-  // Split dressedPiaR into real and imaginary parts
-  Tensor<> realDressedPiaR(2, dressedPiaR.lens, dressedPiaR.sym, *dressedPiaR.wrld, "RealDressedPiaR");
-  Tensor<> imagDressedPiaR(2, dressedPiaR.lens, dressedPiaR.sym, *dressedPiaR.wrld, "ImagDressedPiaR");
-  fromComplexTensor(dressedPiaR, realDressedPiaR, imagDressedPiaR);
-
-  // Construct dressedPiaR
-  realDressedPiaR["aR"] += (-1.0) * realPiiR["kR"] * (*Tai)["ak"];
-  imagDressedPiaR["aR"] += (-1.0) * imagPiiR["kR"] * (*Tai)["ak"];
-  toComplexTensor(realDressedPiaR, imagDressedPiaR, dressedPiaR);
-
-  // Contract dressedPiaR with XRSij
-  XRaij["Rbij"] = XRSij["RSij"]  * dressedPiaR["bS"];
-  fromComplexTensor(XRaij, realXRaij, imagXRaij);
-
-  // allocate Tensor for T2 amplitudes
-  int vvoo[] = { Nv, Nv, No, No };
-  Tensor<> *Fabij(new Tensor<>(4, vvoo, syms, *PiqR->wrld, "Fabij"));
-
-  // compute sliced amplitudes
-  (*Fabij)["abij"] += realXRaij["Rbij"]  * realDressedPiaR["aR"];
-  (*Fabij)["abij"] += imagXRaij["Rbij"]  * imagDressedPiaR["aR"];
-
-  // return sliced amplitudes
-  return Fabij;
-}
-
-Tensor<complex> *
-  ClusterSinglesDoublesAlgorithm::amplitudesFromCoupledCoulombFactors
-(
-  Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
-) {
-  // FIXME: implement me for complex amplitudes...
-  return nullptr;
 }
 
 

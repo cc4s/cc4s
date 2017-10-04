@@ -1,8 +1,10 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef LINEAR_MIXER_DEFINED 
 #define LINEAR_MIXER_DEFINED
 
 #include <mixers/Mixer.hpp>
+
+#include <util/SharedPointer.hpp>
 
 namespace cc4s {
   template <typename F>
@@ -12,10 +14,15 @@ namespace cc4s {
     LinearMixer(Algorithm *algorithm);
     virtual ~LinearMixer();
 
-    virtual void append(CTF::Tensor<F> &A);
-    virtual CTF::Tensor<F> &getNext();
+    virtual void append(
+      const PTR(FockVector<F>) &A, const PTR(FockVector<F>) &R
+    );
+    virtual PTR(FockVector<F>) get();
+    virtual PTR(FockVector<F>) getResiduum();
 
-    CTF::Tensor<F> *last;
+    PTR(FockVector<F>) last;
+    PTR(FockVector<F>) lastResiduum;
+
     double ratio;
   };
 }

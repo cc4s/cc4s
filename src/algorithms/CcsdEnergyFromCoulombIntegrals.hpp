@@ -31,6 +31,7 @@ namespace cc4s {
     virtual std::string getAbbreviation() { return "Ccsd"; }
 
     static int64_t constexpr DEFAULT_SLICE_SIZE = -1;
+    static int64_t constexpr DEFAULT_DISTINGUISHABLE = 0;
 
   protected:
     /**
@@ -38,16 +39,11 @@ namespace cc4s {
      * routine taken from So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001).
      * \param[in] i Iteration number
      */
-    virtual void iterate(
-      int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
+    virtual PTR(FockVector<double>) getResiduum(
+      const int iteration, const PTR(FockVector<double>) &amplitudes
     );
-    virtual void iterate(
-      int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
-    );
-
-    template <typename F>
-    void iterate(
-      int i, Mixer<F> *TaiMixer, Mixer<F> *TabijMixer
+    virtual PTR(FockVector<complex>) getResiduum(
+      const int iteration, const PTR(FockVector<complex>) &amplitudes
     );
   };
 }

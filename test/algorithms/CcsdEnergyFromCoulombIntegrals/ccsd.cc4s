@@ -1,28 +1,13 @@
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [
-  (CoulombVertex FullCoulombVertex)
-  HoleEigenEnergies ParticleEigenEnergies
-].
-
-CoulombVertexSingularVectors [
-  FullCoulombVertex
-% (fieldVariablesSize 32)
-% (fieldVariablesRank 0.5)
-] [
-  CoulombVertexSingularVectors
-  CoulombVertexSingularValues
-].
-
-ApproximateCoulombVertex [
-  FullCoulombVertex
-  CoulombVertexSingularVectors
-] [
   CoulombVertex
+  HoleEigenEnergies ParticleEigenEnergies
 ].
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  % for a complex calculation use 1, for a real one 0
   (complex 1)
 ] [
   PHPHCoulombIntegrals
@@ -30,6 +15,7 @@ CoulombIntegralsFromVertex [
   PHHPCoulombIntegrals
   HHPPCoulombIntegrals
   HHHHCoulombIntegrals
+  % the two following integrals are only needed for a complex calculation
   HHHPCoulombIntegrals
   PHHHCoulombIntegrals
 ].
@@ -41,12 +27,18 @@ CcsdEnergyFromCoulombIntegrals [
   PHHPCoulombIntegrals
   HHPPCoulombIntegrals
   HHHHCoulombIntegrals
+  % the two following integrals are only needed for a complex calculation
   HHHPCoulombIntegrals
   PHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   (maxIterations 24)
 % (integralsSliceSize 12)
-% (integralsSliceFactor 0.33)
+ (integralsSliceFactor 1)
+% (mixer "LinearMixer")
+% (mixingRatio 0.8)
+  % for a DCSD calculation use the following flag
+  % distinguishable is 0 by default
+% (distinguishable 1)
 ] [
   (CcsdEnergy CcsdEnergy) 
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
@@ -54,48 +46,3 @@ CcsdEnergyFromCoulombIntegrals [
 ].
 
 TensorWriter [(Data CcsdEnergy)] [].
-
-CoulombVertexDecomposition [
-  CoulombVertex
-  % Set the rankSize or the rankFactor (relative to NG) of
-  % the decomposed tensor and the number of iterations.
-  % If both are given, rankSize is taken into account.
-  (rankSize 99)
-  (rankFactor 3.0)
-  (maxIterations 64)
-  (mixer "LinearMixer")
-  (mixingRatio 0.8)
-  % Choose the ansatz, one of "quadratic", "positiveDefinite", "pseudoInverse"
-  (coulombVertexDecompositionAnsatz "positiveDefinite")
-] [
-  FactorOrbitals CoulombFactors
-  % Returns (if given) the Coulomb Vertex from the decomposed tensors.
-  ComposedCoulombVertex
-].
-
-CcsdEnergyFromCoulombIntegrals [
-  CoulombVertex
-  FactorOrbitals
-  CoulombFactors
-  PHPHCoulombIntegrals
-  PPHHCoulombIntegrals
-  PHHPCoulombIntegrals
-  HHPPCoulombIntegrals
-  HHHHCoulombIntegrals
-  HHHPCoulombIntegrals
-  PHHHCoulombIntegrals
-  ParticleEigenEnergies HoleEigenEnergies
-  (maxIterations 24)
-% (factorsSliceSize 64)
-% (factorsSliceFactor 0.33)
-% (mixer "LinearMixer")
-% (mixingRatio 1.5)
-  % Specify the decomposition ansatz, one of "quadratic", "positiveDefinite", "pseudoInverse"
-  (coulombVertexDecompositionAnsatz "positiveDefinite")
-] [
-  (CcsdEnergy CcsdEnergyFactors)
-  (CcsdSinglesAmplitudes CcsdSinglesAmplitudesFactors)
-  (CcsdDoublesAmplitudes CcsdDoublesAmplitudesFactors)
-].
-
-TensorWriter [(Data CcsdEnergyFactors)] [].

@@ -1,7 +1,7 @@
 #include <mixers/LinearMixer.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
-#include <ctf.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -20,25 +20,40 @@ LinearMixer<F>::LinearMixer(
 
 template <typename F>
 LinearMixer<F>::~LinearMixer() {
-  if (last) delete last;
 }
 
 template <typename F>
-void LinearMixer<F>::append(Tensor<F> &A) {
+void LinearMixer<F>::append(
+  const PTR(FockVector<F>) &A, const PTR(FockVector<F>) &R
+) {
   if (!last) {
-    // create new, copying A
-    last = new Tensor<F>(A);
+    // copy pointers
+    last = A;
+    lastResiduum = R;
   } else {
-    // overwrite last with A
-    std::string idx(Mixer<F>::indices(A));
-    // (*last)[] = ratio*A[idx.c_str()] + (1-ratio)*(*last);
-    last->sum(ratio, A, idx.c_str(), 1-ratio, idx.c_str());
+    // create copy and mix accordingly
+    auto next( NEW(FockVector<F>, *A) );
+    *last *= 1-ratio;
+    *next *= ratio;
+    *next += *last;
+    last = next;
+
+    auto nextResiduum( NEW(FockVector<F>, *R) );
+    *lastResiduum *= 1-ratio;
+    *nextResiduum *= ratio;
+    *nextResiduum += *lastResiduum;
+    lastResiduum = nextResiduum;
   }
 }
 
 template <typename F>
-Tensor<F> &LinearMixer<F>::getNext() {
-  return *last;
+PTR(FockVector<F>) LinearMixer<F>::get() {
+    return last;
+}
+
+template <typename F>
+PTR(FockVector<F>) LinearMixer<F>::getResiduum() {
+    return lastResiduum;
 }
 
 // instantiate

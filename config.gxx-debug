@@ -5,7 +5,7 @@ TARGET=Cc4s
 CXX=mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS=-fopenmp
+OPTIONS=-fopenmp -DDEBUG
 
 # optimization options (only for compiling and linking)
 OPTIMIZE=-O0 -g
@@ -20,7 +20,7 @@ SCA=/usr/local/lib/scalapack
 INCLUDE=-I${CTF}/include
 
 # additional library paths and libraries to link to
-LIBS=-L${SCA} -lscalapack -lreflapack -lrefblas -lgfortran -L${CTF}/lib -lctf
+LIBS=-L${CTF}/lib -lctf -L${SCA} -lscalapack -lreflapack -lrefblas -lgfortran
 #LIBS=-L${CTF}/lib -lctf -lblas -llapack -lblacs-openmpi -lblacsCinit-openmpi -lscalapack-openmpi
 
 # destination path for installation

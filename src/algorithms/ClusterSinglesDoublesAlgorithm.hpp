@@ -2,11 +2,15 @@
 #ifndef CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED 
 #define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
 
-#include <algorithms/ClusterDoublesAlgorithm.hpp>
-#include <mixers/Mixer.hpp>
-#include <string>
-#include <ctf.hpp>
+#include <algorithms/Algorithm.hpp>
+#include <math/FockVector.hpp>
 #include <tcc/DryTensor.hpp>
+#include <util/SharedPointer.hpp>
+
+#include <ctf.hpp>
+
+#include <string>
+#include <initializer_list>
 
 namespace cc4s {
   /**
@@ -44,38 +48,48 @@ namespace cc4s {
     F run();
 
     /**
-     * \brief Performs one iteration of the concrete algorithm.
+     * \brief Computes and returns the residuum of the given amplitudes
      **/
-    virtual void iterate(
-      int i, Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
+    virtual PTR(FockVector<double>) getResiduum(
+      const int iteration, const PTR(FockVector<double>) &amplitudes
     ) = 0;
 
     /**
-     * \brief Performs one iteration of the concrete algorithm.
+     * \brief Computes and returns the residuum of the given amplitudes
      **/
-    virtual void iterate(
-      int i, Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
+    virtual PTR(FockVector<complex>) getResiduum(
+      const int iteration, const PTR(FockVector<complex>) &amplitudes
     ) = 0;
 
     /**
-     * \brief Calculates the energy from the amplitudes currently contained
-     * in the mixers. Overrides ClusterDoublesAlgorithm method.
+     * \brief Computes and returns the energy of the given amplitudes.
      **/
     template <typename F>
-    F calculateEnergy(Mixer<F> *TaiMixer, Mixer<F> *TabijMixer);
+    F getEnergy(const PTR(FockVector<F>) &amplitdues);
 
     /**
-     * \brief Calculates the amplitudes from the current residuum and
-     * returns them in-place.
-     * Usually this is done by calculating
-     * \f$T_{ij\ldots}^{ab\ldots} = R_{ij\ldots}^{a\ldots} / (\varepsilon_i+\ldots-\varepsilon_a-\ldots)\f$,
-     * but other methods, such as level shifting may be used.
-     * \param[in] R residuum tensor.
-     * \param[in] indices indices into residuum tensor, e.g. "abij".
+     * \brief Calculates an improved estimate of the amplitudes provided
+     * the given trial amplitudes and their respective residuum.
+     * \f$T_{ij\ldots}^{ab\ldots} =
+     *   (R_{ij\ldots}^{a\ldots} -
+     *   \Delta_{ij\ldots}^{ab\ldots} T_{ij\ldots}^{ab\ldots}) /
+     *  -\Delta_{ij\ldots}^{ab\ldots}\f$
+     * with \f$\Delta_{ij\ldots}^{ab\ldots} =
+     * \varepsilon_i+\ldots-\varepsilon_a-\ldots\f$.
+     * \param[in] amplitudes Fock vector which will be overwritten.
+     * \param[in] residuum Fock vector tensor.
      **/
     template <typename F>
-    void amplitudesFromResiduum(
-      CTF::Tensor<F> &R, const std::string &indices
+    void estimateAmplitudesFromResiduum(
+      const PTR(FockVector<F>) &amplitudes, const PTR(FockVector<F>) &residuum
+    );
+
+    /**
+     * \brief Calculates eps_a+eps_b+...-eps_i-eps_j-... into D^ab..._ij...
+     **/
+    template <typename F>
+    void calculateExcitationEnergies(
+      CTF::Tensor<F> &D, const std::string &indices
     );
 
     /**
@@ -86,10 +100,17 @@ namespace cc4s {
     void dryAmplitudesFromResiduum(cc4s::DryTensor<F> &R);
 
     template <typename F>
-    Mixer<F> *createMixer(const std::string &type, std::vector<int> shape);
+    PTR(FockVector<F>) createAmplitudes(
+      std::initializer_list<std::string> amplitudeNames,
+      std::initializer_list<std::initializer_list<int>> amplitudeLens,
+      std::initializer_list<std::string> amplitudeIndices
+    );
 
     template <typename F>
-    void storeAmplitudes(Mixer<F> *mixer, const std::string &type);
+    void storeAmplitudes(
+      const PTR(FockVector<F>) &amplitudes,
+      std::initializer_list<std::string> names
+    );
 
     /**
      * \brief Calculates and returns one slice Xxycd of the Coulomb integrals \f$V_{cd}^{ab}\f$
@@ -104,11 +125,13 @@ namespace cc4s {
      * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
      */
     CTF::Tensor<double> *sliceCoupledCoulombIntegrals(
-      Mixer<double> *TaiMixer, int a, int b, int integralsSliceSize
+      const PTR(FockVector<double>) &amplitudes,
+      int a, int b, int integralsSliceSize
     );
 
     CTF::Tensor<complex> *sliceCoupledCoulombIntegrals(
-      Mixer<complex> *TaiMixer, int a, int b, int integralsSliceSize
+      const PTR(FockVector<complex>) &amplitudes,
+      int a, int b, int integralsSliceSize
     );
 
 
@@ -125,26 +148,12 @@ namespace cc4s {
      * \param[out] Fabij sliced Residuum
      */
     CTF::Tensor<double> *sliceAmplitudesFromCoupledCoulombFactors(
-      Mixer<double> *TaiMixer, Mixer<double> *TabijMixer,
+      const PTR(FockVector<double>) &amplitudes,
       int a, int b, int factorsSliceSize
     );
     CTF::Tensor<complex> *sliceAmplitudesFromCoupledCoulombFactors(
-      Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer,
+      const PTR(FockVector<complex>) &amplitudes,
       int a, int b, int factorsSliceSize
-    );
-
-    /**
-     * \brief Calculates and returns tensor Fabij of the residuum
-     * from the dressed Coulomb factors. 
-     * The caller is responsible for deleting the dynamically allocated
-     * result tensor. 
-     * \param[out] Fabij sliced Residuum
-     */
-    CTF::Tensor<double> *amplitudesFromCoupledCoulombFactors(
-      Mixer<double> *TaiMixer, Mixer<double> *TabijMixer
-    );
-    CTF::Tensor<complex> *amplitudesFromCoupledCoulombFactors(
-      Mixer<complex> *TaiMixer, Mixer<complex> *TabijMixer
     );
 
     /**

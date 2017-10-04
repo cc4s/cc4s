@@ -6,6 +6,7 @@
 #include <math/RandomTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <mixers/Mixer.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 #include <limits>
 
@@ -27,8 +28,12 @@ CoulombVertexDecomposition::
 CoulombVertexDecomposition::
   ~CoulombVertexDecomposition()
 {
-  if (PiqR) delete PiqR;
-  if (!isArgumentGiven("ComposedCoulombVertex") && composedGammaGqr) delete composedGammaGqr;
+  if (!isArgumentGiven("OutgoingFactorOrbitals") && PiqR) {
+    delete PiqR;
+  }
+  if (!isArgumentGiven("ComposedCoulombVertex") && composedGammaGqr) {
+    delete composedGammaGqr;
+  }
   if (regularizationEstimator) delete regularizationEstimator;
 }
 
@@ -38,7 +43,7 @@ void CoulombVertexDecomposition::run() {
   int Np(GammaGqr->lens[1]);
 
   // calculate decomposition rank
-  rank = getIntegerArgument("rank", DEFAULT_RANK_SIZE);
+  rank = getIntegerArgument("rankSize", DEFAULT_RANK_SIZE);
   // if rank is not given use rank factors (if they are not given use rankFactors=3.0)
   if (rank == -1) {
     double rankFactor(getRealArgument("rankFactor", DEFAULT_RANK_FACTOR));
@@ -125,9 +130,6 @@ void CoulombVertexDecomposition::run() {
     fit(iterationsCount);
     ++iterationsCount;
   }
-
-  if (!isArgumentGiven("OutgoingFactorOrbitals")) { delete PiqR; }
-  if (!isArgumentGiven("ComposedCoulombVertex")) { delete composedGammaGqr; }
 }
 
 void CoulombVertexDecomposition::dryRun() {
@@ -242,13 +244,13 @@ void CoulombVertexDecomposition::dryFit(
 }
 
 void CoulombVertexDecomposition::normalizePi(
-  Matrix<complex> &Pi
+  Tensor<complex> &Pi
 ) {
   Bivar_Function<complex> fDot(&cc4s::dot<complex>);
-  Vector<complex> norm(Pi.lens[0], *Pi.wrld);
+  CTF::Vector<complex> norm(Pi.lens[0], *Pi.wrld);
   // norm["q"] = Pi["qR"] * conj(Pi["qR"])
   norm.contract(1.0, Pi,"qR", Pi,"qR", 0.0,"q", fDot);
-  Matrix<complex> quotient(Pi);
+  Tensor<complex> quotient(Pi);
   Univar_Function<complex> fSqrt(&cc4s::sqrt<complex>);
   // quotient["qR"] = sqrt(norm["q"])
   quotient.sum(1.0, norm,"q", 0.0,"qR", fSqrt);
@@ -258,10 +260,10 @@ void CoulombVertexDecomposition::normalizePi(
 }
 
 void CoulombVertexDecomposition::realizePi(
-  Matrix<complex> &Pi
+  Tensor<complex> &Pi
 ) {
   Univar_Function<complex> fConj(&cc4s::conj<complex>);
-  Matrix<complex> conjX(Pi);
+  Tensor<complex> conjX(Pi);
   // conjX["qR"] = conj(Pi["qR"])
   conjX.sum(1.0, Pi,"qR", 0.0,"qR", fConj);
   Pi["qR"] += conjX["qR"];
@@ -278,50 +280,57 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     throw new EXCEPTION(stringStream.str());
   }
 
-  // initial guess
-  double quadraticDelta(getDelta());
-  fitAlternatingLeastSquaresFactor(
-    *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', *PirR,'r'
+  // initial guess is current Pi^q_R, composedGamma-Gamma is the residuum
+  auto Pi(
+    NEW(FockVector<complex>,
+      std::vector<Tensor<complex>>({*PiqR}), std::vector<std::string>({"qR"})
+    )
   );
-  if (realFactorOrbitals) realizePi(*PirR);
-  if (normalizedFactorOrbitals) normalizePi(*PirR);
-  mixer->append(*PirR);
-  computeOutgoingPi();
-  if (writeSubIterations) {
-    LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << 0 << ")"
-      << "Pi^(" << (i+1) << "," << 0 << ")"
-      << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
-  }
+  double initialDelta(getDelta());
+  auto R(
+    NEW(FockVector<complex>,
+      std::vector<Tensor<complex>>({*composedGammaGqr}),
+      std::vector<std::string>({"Gqr"})
+    )
+  );
+  R->componentTensors[0]["Gqr"] -= (*GammaGqr)["Gqr"];
+  mixer->append(Pi, R);
 
   // Babylonian algorithm to solve quadratic form
   int maxSubIterationsCount(getIntegerArgument("maxSubIterations", 8));
-  int minSubIterationsCount(getIntegerArgument("minSubIterations", 1));
+  int minSubIterationsCount(getIntegerArgument("minSubIterations", 2));
   int j(0);
-  Delta = quadraticDelta;
+  double Delta(2*initialDelta);
   while (
     j < minSubIterationsCount ||
-    (Delta < quadraticDelta && j < maxSubIterationsCount)
+    (initialDelta < Delta && j < maxSubIterationsCount)
   ) {
+    // get the mixer's best estimate for Pi^q_R
+    (*PiqR)["qR"] = mixer->get()->componentTensors[0]["qR"];
+    // then compute Pi_r^R from RALS
     fitAlternatingLeastSquaresFactor(
       *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', *PirR,'r'
     );
     if (realFactorOrbitals) realizePi(*PirR);
     if (normalizedFactorOrbitals) normalizePi(*PirR);
-    mixer->append(*PirR);
-    if (writeSubIterations) {
-      quadraticDelta = getDelta();
-      LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
-        << "Pi^(" << (i+1) << "," << j << ")"
-        << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
-    }
-    (*PirR)["qR"] = mixer->getNext()["qR"];
+    // and the new Pi^q_R by conjugate transposition or pseudo inversion
     computeOutgoingPi();
-    quadraticDelta = getDelta();
+    Pi = NEW(FockVector<complex>,
+      std::vector<Tensor<complex>>({*PiqR}),
+      std::vector<std::string>({"qR"})
+    );
+    // finally, compute the residuum
+    Delta = getDelta();
+    R = NEW(FockVector<complex>,
+      std::vector<Tensor<complex>>({*composedGammaGqr}),
+      std::vector<std::string>({"Gqr"})
+    );
     if (writeSubIterations) {
       LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
-        << "Pi^(" << (i+1) << "," << (j+1) << ")"
-        << "Lambda^(n) - Gamma|=" << quadraticDelta << std::endl;
+        << "Pi*^(" << (i+1) << "," << (j+1) << ")"
+        << "Lambda^(n) - Gamma|=" << Delta << std::endl;
     }
+    mixer->append(Pi, R);
     ++j;
   }
   delete mixer;
@@ -338,7 +347,7 @@ void CoulombVertexDecomposition::computeOutgoingPi() {
   } else if (ansatz == SYMMETRIC) {
     (*PiqR)["qR"] = (*PirR)["qR"];
   } else if (ansatz == PSEUDO_INVERSE) {
-    (*PiqR)["qR"] = IterativePseudoInverse<complex>(*PirR).get()["qR"];
+    (*PiqR)["qR"] = IterativePseudoInverse<complex>(*PirR).get()["Rq"];
   } else {
     std::stringstream stringStream;
     stringStream << "Unknown decomposition ansatz \"" << ansatz << "\"";
