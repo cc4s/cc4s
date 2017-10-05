@@ -33,7 +33,7 @@ void ComplexTensorReader::run() {
     std::string fileName(getTextArgument("file", dataName + ".bin"));
     A = TensorIo::readBinary<complex>(fileName);
   } else {
-    std::string fileName(getTextArgument("file", dataName + ".dat").c_str());
+    std::string fileName(getTextArgument("file", dataName + ".dat"));
     std::string delimiter(getTextArgument("delimiter", " "));
     int64_t bufferSize(getIntegerArgument("bufferSize", 128l*1024*1024));
     A = TensorIo::readText<complex>(fileName, delimiter, bufferSize);
