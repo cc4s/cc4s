@@ -13,7 +13,7 @@ using namespace CTF;
 
 template <typename F>
 IterativePseudoInverse<F>::IterativePseudoInverse(
-  Matrix<F> const &matrix_, double accuracy
+  Tensor<F> const &matrix_, double accuracy
 ):
   matrix(matrix_),
   square(matrix_.lens[0], matrix_.lens[0], NS, *matrix_.wrld),
@@ -107,22 +107,14 @@ Matrix<F> &IterativePseudoInverse<F>::get() {
 
 // instantiate
 template
-IterativePseudoInverse<double>::IterativePseudoInverse(
-  Matrix<double> const &matrix, double accuracy
-);
-template
-Matrix<double> &IterativePseudoInverse<double>::get();
+class IterativePseudoInverse<double>;
 
 template
-IterativePseudoInverse<complex>::IterativePseudoInverse(
-  Matrix<complex> const &matrix, double accuracy
-);
-template
-Matrix<complex> &IterativePseudoInverse<complex>::get();
+class IterativePseudoInverse<complex>;
 
 
 template <typename F>
-void IterativePseudoInverse<F>::generateHilbertMatrix(Matrix<F> &m) {
+void IterativePseudoInverse<F>::generateHilbertMatrix(Tensor<F> &m) {
   int64_t indicesCount, *indices;
   F *values;
   m.read_local(&indicesCount, &indices, &values);
@@ -171,7 +163,7 @@ void IterativePseudoInverse<complex>::test(World *world);
 
 template <typename F>
 DryIterativePseudoInverse<F>::DryIterativePseudoInverse(
-  DryMatrix<F> const &matrix_
+  DryTensor<F> const &matrix_
 ):
   matrix(matrix_),
   square(matrix_.lens[0], matrix_.lens[0], NS),
@@ -189,16 +181,8 @@ DryMatrix<F> &DryIterativePseudoInverse<F>::get() {
 
 // instantiate
 template
-DryIterativePseudoInverse<double>::DryIterativePseudoInverse(
-  DryMatrix<double> const &matrix
-);
-template
-DryMatrix<double> &DryIterativePseudoInverse<double>::get();
+class DryIterativePseudoInverse<double>;
 
 template
-DryIterativePseudoInverse<complex>::DryIterativePseudoInverse(
-  DryMatrix<complex> const &matrix
-);
-template
-DryMatrix<complex> &DryIterativePseudoInverse<complex>::get();
+class DryIterativePseudoInverse<complex>;
 

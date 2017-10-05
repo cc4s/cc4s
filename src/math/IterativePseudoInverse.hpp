@@ -10,7 +10,7 @@ namespace cc4s {
   template <typename F>
   class IterativePseudoInverse {
   public:
-    IterativePseudoInverse(CTF::Matrix<F> const &matrix, double accuracy=1e-10);
+    IterativePseudoInverse(CTF::Tensor<F> const &matrix, double accuracy=1e-10);
     CTF::Matrix<F> &get();
 
     static void test(CTF::World *world);
@@ -21,20 +21,22 @@ namespace cc4s {
       F &value,
       std::mt19937 &random, std::normal_distribution<double> &normalDistribution
     );
-    static void generateHilbertMatrix(CTF::Matrix<F> &matrix);
+    static void generateHilbertMatrix(CTF::Tensor<F> &matrix);
 
-    CTF::Matrix<F> matrix, square, inverse;
+    CTF::Tensor<F> matrix;
+    CTF::Matrix<F> square, inverse;
     double alpha;
   };
 
   template <typename F>
   class DryIterativePseudoInverse {
   public:
-    DryIterativePseudoInverse(DryMatrix<F> const &matrix);
+    DryIterativePseudoInverse(DryTensor<F> const &matrix);
     DryMatrix<F> &get();
 
   protected:
-    DryMatrix<F> matrix, square, inverse;
+    DryTensor<F> matrix;
+    DryMatrix<F> square, inverse;
   };
 }
 
