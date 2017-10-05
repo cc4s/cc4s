@@ -26,24 +26,20 @@ template <typename F>
 void LinearMixer<F>::append(
   const PTR(FockVector<F>) &A, const PTR(FockVector<F>) &R
 ) {
-  if (!last) {
-    // copy pointers
-    last = A;
-    lastResiduum = R;
-  } else {
-    // create copy and mix accordingly
-    auto next( NEW(FockVector<F>, *A) );
+  auto next( NEW(FockVector<F>, *A) );
+  auto nextResiduum( NEW(FockVector<F>, *R) );
+  if (last) {
+    // mix accordingly
     *last *= 1-ratio;
     *next *= ratio;
     *next += *last;
-    last = next;
 
-    auto nextResiduum( NEW(FockVector<F>, *R) );
     *lastResiduum *= 1-ratio;
     *nextResiduum *= ratio;
     *nextResiduum += *lastResiduum;
-    lastResiduum = nextResiduum;
   }
+  last = next;
+  lastResiduum = nextResiduum;
 }
 
 template <typename F>

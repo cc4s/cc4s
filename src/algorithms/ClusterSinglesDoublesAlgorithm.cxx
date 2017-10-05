@@ -72,7 +72,7 @@ F ClusterSinglesDoublesAlgorithm::run() {
     // get mixer's best estimate for amplitudes and residuum
     amplitudes = mixer->get();
     // solve for next estimate of amplitudes
-    estimateAmplitudesFromResiduum(amplitudes, mixer->getResiduum());
+    estimateAmplitudesFromResiduum(amplitudes, residuum);
     e = getEnergy(amplitudes);
   }
 
@@ -189,9 +189,9 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
     // levelshifting can be implemented here
 
     // subtract diagonal part of Hamiltonian
-//    (*T)[indices] *= (-1.0) * D[indices];
-//    (*T)[indices] += (*R)[indices];
-    (*T)[indices] = (*R)[indices];
+    (*T)[indices] *= (-1.0) * D[indices];
+    (*T)[indices] += (*R)[indices];
+//    (*T)[indices] = (*R)[indices];
 
     // divide by -Delta to get new estimate for T
     CTF::Transform<F, F>(
@@ -204,6 +204,7 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
       D[indices], (*T)[indices]
     );
   }
+//  amplitudes->componentTensors[0]["ai"] *= 0.0;
 }
 
 // instantiate
@@ -224,8 +225,8 @@ template <typename F>
 void ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
   CTF::Tensor<F> &D, const std::string &indices
 ) {
-  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+  auto epsi(getTensorArgument<>("HoleEigenEnergies"));
+  auto epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
   // convert to type F (either complex or double)
   Tensor<F> Fepsi(1, &epsi->lens[0], epsi->sym, *epsi->wrld, "Fepsi");
@@ -280,11 +281,11 @@ Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int a, int b, int integralsSliceSize
 ) {
   // Read the amplitudes Tai
-  Tensor<> *Tai( &amplitudes->componentTensors[0] );
+  auto Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
 
   // Read the Coulomb vertex GammaGqr
-  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+  auto GammaGqr( getTensorArgument<complex>("CoulombVertex"));
   GammaGqr->set_name("GammaGqr");
 
   // Compute No,Nv,NG,Np
@@ -298,8 +299,8 @@ Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int GaiEnd[]   = {NG,Np,No};
   int GabStart[] = {0 ,No,No};
   int GabEnd[]   = {NG,Np,Np};
-  Tensor<complex> GammaGai(GammaGqr->slice(GaiStart,GaiEnd));
-  Tensor<complex> GammaGab(GammaGqr->slice(GabStart,GabEnd));
+  auto GammaGai(GammaGqr->slice(GaiStart,GaiEnd));
+  auto GammaGab(GammaGqr->slice(GabStart,GabEnd));
 
   // Split GammaGab,GammaGai into real and imaginary parts
   Tensor<> realGammaGai(3, GammaGai.lens, GammaGai.sym,
@@ -325,15 +326,23 @@ Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int rightGammaStart[] = { 0, b, 0 };
   int rightGammaEnd[] = { NG, std::min(b+integralsSliceSize, Nv), Nv };
 
-  Tensor<complex> leftGamma(GammaGab.slice(leftGammaStart, leftGammaEnd));
-  Tensor<complex> rightGamma(GammaGab.slice(rightGammaStart, rightGammaEnd));
+  auto leftGamma(GammaGab.slice(leftGammaStart, leftGammaEnd));
+  auto rightGamma(GammaGab.slice(rightGammaStart, rightGammaEnd));
 
   // Split into real and imaginary parts
-  Tensor<> realLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld, "realLeftGamma");
-  Tensor<> imagLeftGamma(3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld, "imagLeftGamma");
+  Tensor<> realLeftGamma(
+    3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld, "realLeftGamma"
+  );
+  Tensor<> imagLeftGamma(
+    3, leftGamma.lens, leftGamma.sym, *GammaGqr->wrld, "imagLeftGamma"
+  );
   fromComplexTensor(leftGamma, realLeftGamma, imagLeftGamma);
-  Tensor<> realRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld, "realRightGamma");
-  Tensor<> imagRightGamma(3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld, "imagRightGamma");
+  Tensor<> realRightGamma(
+    3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld, "realRightGamma"
+  );
+  Tensor<> imagRightGamma(
+    3, rightGamma.lens, rightGamma.sym, *GammaGqr->wrld, "imagRightGamma"
+  );
   fromComplexTensor(rightGamma, realRightGamma, imagRightGamma);
 
   // Allocate sliced Coulomb integrals
@@ -341,7 +350,7 @@ Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
     leftGamma.lens[1], rightGamma.lens[1], leftGamma.lens[2], rightGamma.lens[2]
   };
   int syms[] = { NS, NS, NS, NS };
-  Tensor<> *Vxycd(new Tensor<>(4, lens, syms, *GammaGqr->wrld, "Vxycd"));
+  auto Vxycd(new Tensor<>(4, lens, syms, *GammaGqr->wrld, "Vxycd"));
 
   // Contract left and right slices of the dressed Coulomb vertices
   (*Vxycd)["xycd"]  = realLeftGamma["Gxc"] * realRightGamma["Gyd"];
@@ -354,11 +363,11 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int a, int b, int integralsSliceSize
 ) {
   // Read the amplitudes Tai
-  Tensor<complex> *Tai( &amplitudes->componentTensors[0] );
+  auto Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
 
   // Read the Coulomb vertex GammaGqr
-  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+  auto GammaGqr( getTensorArgument<complex>("CoulombVertex"));
   GammaGqr->set_name("GammaGqr");
 
   // Compute No,Nv,NG,Np
@@ -401,15 +410,15 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int rightGammaStart[] = { 0, b, 0 };
   int rightGammaEnd[] = { NG, std::min(b+integralsSliceSize, Nv), Nv };
 
-  Tensor<complex> leftGamma(conjTransposeDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
-  Tensor<complex> rightGamma(DressedGammaGab.slice(rightGammaStart, rightGammaEnd));
+  auto leftGamma(conjTransposeDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
+  auto rightGamma(DressedGammaGab.slice(rightGammaStart, rightGammaEnd));
 
   // Allocate sliced Coulomb integrals
   int lens[] = {
     leftGamma.lens[1], rightGamma.lens[1], leftGamma.lens[2], rightGamma.lens[2]
   };
   int syms[] = { NS, NS, NS, NS };
-  Tensor<complex> *Vxycd(new Tensor<complex>(4, lens, syms, *GammaGqr->wrld, "Vxycd"));
+  auto Vxycd(new Tensor<complex>(4, lens, syms, *GammaGqr->wrld, "Vxycd"));
 
   // Contract left and right slices of the dressed Coulomb vertices
   (*Vxycd)["xycd"]  = leftGamma["Gxc"] * rightGamma["Gyd"];
@@ -426,22 +435,22 @@ Tensor<double> *
   const PTR(FockVector<double>) &amplitudes,
   int a, int b, int factorsSliceSize
 ) {
-  Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
+  auto PirR(getTensorArgument<complex>("FactorOrbitals"));
   PirR->set_name("PirR");
-  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+  auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
   LambdaGR->set_name("LambdaGR");
 
-  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  auto epsi(getTensorArgument("HoleEigenEnergies"));
+  auto epsa(getTensorArgument("ParticleEigenEnergies"));
 
   // Read the doubles amplitudes Tabij
-  Tensor<> *Tabij( &amplitudes->componentTensors[1] );
+  auto Tabij( &amplitudes->componentTensors[1] );
   Tabij->set_name("Tabij");
-  Tensor<> *Tai( &amplitudes->componentTensors[0] );
+  auto Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
 
   // Intermediate tensor Iabij=T2+T1*T1
-  Tensor<> Iabij(Tabij);
+  auto Iabij(*Tabij);
   Iabij.set_name("Iabij");
   Iabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
 
@@ -474,29 +483,37 @@ Tensor<double> *
   int rightPiStart[] = { 0 ,                                b };
   int rightPiEnd[]   = { Nv, std::min(b+factorsSliceSize, NR) };
 
-  Tensor<complex> leftPiaR (PiaR.slice(leftPiStart  ,  leftPiEnd));
+  auto leftPiaR (PiaR.slice(leftPiStart  ,  leftPiEnd));
   leftPiaR.set_name("leftPiaR");
-  Tensor<complex> rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
+  auto rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
   rightPiaR.set_name("rightPiaR");
 
   // Split left and right PiaR into real and imaginary parts
-  Tensor<> realLeftPiaR(2, leftPiaR.lens, leftPiaR.sym, *leftPiaR.wrld, "RealLeftPiaR");
-  Tensor<> imagLeftPiaR(2, leftPiaR.lens, leftPiaR.sym, *leftPiaR.wrld, "ImagRightPiaR");
+  Tensor<> realLeftPiaR(
+    2, leftPiaR.lens, leftPiaR.sym, *leftPiaR.wrld, "RealLeftPiaR"
+  );
+  Tensor<> imagLeftPiaR(
+    2, leftPiaR.lens, leftPiaR.sym, *leftPiaR.wrld, "ImagRightPiaR"
+  );
   fromComplexTensor(leftPiaR, realLeftPiaR, imagLeftPiaR);
 
-  Tensor<> realRightPiaR(2, rightPiaR.lens, rightPiaR.sym, *rightPiaR.wrld, "RealLeftPiaR");
-  Tensor<> imagRightPiaR(2, rightPiaR.lens, rightPiaR.sym, *rightPiaR.wrld, "ImagRightPiaR");
+  Tensor<> realRightPiaR(
+    2, rightPiaR.lens, rightPiaR.sym, *rightPiaR.wrld, "RealLeftPiaR"
+  );
+  Tensor<> imagRightPiaR(
+    2, rightPiaR.lens, rightPiaR.sym, *rightPiaR.wrld, "ImagRightPiaR"
+  );
   fromComplexTensor(leftPiaR, realLeftPiaR, imagLeftPiaR);
 
   // Slice the respective parts from LambdaGR
   int leftLambdaStart[]  = { 0  ,                            a };
   int leftLambdaEnd[]    = { NG , std::min(a+factorsSliceSize, NR) };
-  Tensor<complex> leftLambdaGR (LambdaGR->slice(leftLambdaStart , leftLambdaEnd));
+  auto leftLambdaGR(LambdaGR->slice(leftLambdaStart, leftLambdaEnd));
   leftLambdaGR.set_name("leftLambdaGR");
 
   int rightLambdaStart[]  = { 0  ,                            b };
   int rightLambdaEnd[]    = { NG , std::min(b+factorsSliceSize, NR) };
-  Tensor<complex> rightLambdaGR (LambdaGR->slice(rightLambdaStart , rightLambdaEnd));
+  auto rightLambdaGR(LambdaGR->slice(rightLambdaStart, rightLambdaEnd));
   rightLambdaGR.set_name("rightLambdaGR");
 
   // TODO: specify how the vertex should be computed
@@ -520,7 +537,7 @@ Tensor<double> *
   // Allocate and compute PiiR
   int iRStart[] = {0 , 0};
   int iREnd[]   = {No ,NR};
-  Tensor<complex> PiiR(PirR->slice(iRStart,iREnd));
+  auto PiiR(PirR->slice(iRStart,iREnd));
   PiiR.set_name("PiiR");
 
   // Split PiiR into real and imaginary parts
@@ -529,12 +546,16 @@ Tensor<double> *
   fromComplexTensor(PiiR, realPiiR, imagPiiR);
 
   // Initialize dressedPiaR
-  Tensor<complex> dressedPiaR(PiaR);
+  auto dressedPiaR(PiaR);
   dressedPiaR.set_name("dressedPiaR");
 
   // Split dressedPiaR into real and imaginary parts
-  Tensor<> realDressedPiaR(2, dressedPiaR.lens, dressedPiaR.sym, *dressedPiaR.wrld, "RealDressedPiaR");
-  Tensor<> imagDressedPiaR(2, dressedPiaR.lens, dressedPiaR.sym, *dressedPiaR.wrld, "ImagDressedPiaR");
+  Tensor<> realDressedPiaR(
+    2, dressedPiaR.lens, dressedPiaR.sym, *dressedPiaR.wrld, "RealDressedPiaR"
+  );
+  Tensor<> imagDressedPiaR(
+    2, dressedPiaR.lens, dressedPiaR.sym, *dressedPiaR.wrld, "ImagDressedPiaR"
+  );
   fromComplexTensor(dressedPiaR, realDressedPiaR, imagDressedPiaR);
 
   // Construct dressedPiaR
@@ -543,21 +564,27 @@ Tensor<double> *
   toComplexTensor(realDressedPiaR, imagDressedPiaR, dressedPiaR);
 
   // Slice the respective parts from dressedPiaR
-  Tensor<complex> dressedLeftPiaR (dressedPiaR.slice(leftPiStart  ,  leftPiEnd));
+  auto dressedLeftPiaR (dressedPiaR.slice(leftPiStart  ,  leftPiEnd));
   dressedLeftPiaR.set_name("dressedLeftPiaR");
-  Tensor<complex> dressedRightPiaR(dressedPiaR.slice(rightPiStart , rightPiEnd));
+  auto dressedRightPiaR(dressedPiaR.slice(rightPiStart , rightPiEnd));
   dressedRightPiaR.set_name("dressedRightPiaR");
 
   // Split dressed left PiaR into real and imaginary parts
-  Tensor<> dressedRealLeftPiaR(2, dressedLeftPiaR.lens, dressedLeftPiaR.sym, *dressedLeftPiaR.wrld, "dressedRealLeftPiaR");
-  Tensor<> dressedImagLeftPiaR(2, dressedLeftPiaR.lens, dressedLeftPiaR.sym, *dressedLeftPiaR.wrld, "dressedImagLeftPiaR");
+  Tensor<> dressedRealLeftPiaR(
+    2, dressedLeftPiaR.lens, dressedLeftPiaR.sym, *dressedLeftPiaR.wrld,
+    "dressedRealLeftPiaR"
+  );
+  Tensor<> dressedImagLeftPiaR(
+    2, dressedLeftPiaR.lens, dressedLeftPiaR.sym, *dressedLeftPiaR.wrld,
+    "dressedImagLeftPiaR"
+  );
   fromComplexTensor(dressedLeftPiaR, dressedRealLeftPiaR, dressedImagLeftPiaR);
 
   XRaij["Rbij"] = XRSij["RSij"]  * dressedRightPiaR["bS"];
 
   // allocate Tensor for sliced T2 amplitudes
   int vvoo[] = { Nv, Nv, No, No };
-  Tensor<> *Fabij(new Tensor<>(4, vvoo, syms, *PirR->wrld, "Fabij"));
+  auto Fabij(new Tensor<>(4, vvoo, syms, *PirR->wrld, "Fabij"));
 
   // compute sliced amplitudes
   fromComplexTensor(XRaij, realXRaij, imagXRaij);
@@ -574,24 +601,24 @@ Tensor<complex> *
   const PTR(FockVector<complex>) &amplitudes,
   int a, int b, int factorsSliceSize
 ) {
-  Tensor<complex> *PirR(getTensorArgument<complex>("FactorOrbitals"));
+  auto PirR(getTensorArgument<complex>("FactorOrbitals"));
   PirR->set_name("PirR");
-  Tensor<complex> *PiqR(getTensorArgument<complex>("OutgoingFactorOrbitals"));
+  auto PiqR(getTensorArgument<complex>("OutgoingFactorOrbitals"));
   PiqR->set_name("PiqR");
-  Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+  auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
   LambdaGR->set_name("LambdaGR");
 
-  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  auto epsi(getTensorArgument("HoleEigenEnergies"));
+  auto epsa(getTensorArgument("ParticleEigenEnergies"));
 
   // Read the doubles amplitudes Tabij
-  Tensor<complex> *Tabij( &amplitudes->componentTensors[1] );
+  auto Tabij( &amplitudes->componentTensors[1] );
   Tabij->set_name("Tabij");
-  Tensor<complex> *Tai( &amplitudes->componentTensors[0] );
+  auto Tai( &amplitudes->componentTensors[0] );
   Tai->set_name("Tai");
 
   // Intermediate tensor Iabij=T2+T1*T1
-  Tensor<complex> Iabij(*Tabij);
+  auto Iabij(*Tabij);
   Iabij.set_name("Iabij");
   Iabij["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
 
@@ -616,9 +643,9 @@ Tensor<complex> *
   // Allocate and compute PiaR
   int aRStart[] = {No , 0};
   int aREnd[]   = {Np ,NR};
-  Tensor<complex> PiaR(PirR->slice(aRStart,aREnd));
+  auto PiaR(PirR->slice(aRStart,aREnd));
   PiaR.set_name("PiaR");
-  Tensor<complex> PicR(PiqR->slice(aRStart,aREnd));
+  auto PicR(PiqR->slice(aRStart,aREnd));
   PicR.set_name("PicR");
   
   Tensor<complex> conjPiaR(false, PiaR);
@@ -634,15 +661,15 @@ Tensor<complex> *
   int rightPiStart[] = { 0 ,                                b };
   int rightPiEnd[]   = { Nv, std::min(b+factorsSliceSize, NR) };
 
-  Tensor<complex> leftPiaR(conjPicR.slice(leftPiStart  ,  leftPiEnd));
+  auto leftPiaR(conjPicR.slice(leftPiStart  ,  leftPiEnd));
   leftPiaR.set_name("leftPiaR");
-  Tensor<complex> rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
+  auto rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
   rightPiaR.set_name("rightPiaR");
   
   // Slice the respective parts from LambdaGR
   int leftLambdaStart[]  = { 0  ,                                a };
   int leftLambdaEnd[]    = { NG , std::min(a+factorsSliceSize, NR) };
-  Tensor<complex> leftLambdaGR (LambdaGR->slice(leftLambdaStart , leftLambdaEnd));
+  auto leftLambdaGR (LambdaGR->slice(leftLambdaStart , leftLambdaEnd));
   leftLambdaGR.set_name("leftLambdaGR");
 
   Tensor<complex> conjLeftLambdaGR(false, leftLambdaGR);
@@ -651,7 +678,7 @@ Tensor<complex> *
 
   int rightLambdaStart[]  = { 0  ,                                b };
   int rightLambdaEnd[]    = { NG , std::min(b+factorsSliceSize, NR) };
-  Tensor<complex> rightLambdaGR (LambdaGR->slice(rightLambdaStart , rightLambdaEnd));
+  auto rightLambdaGR (LambdaGR->slice(rightLambdaStart , rightLambdaEnd));
   rightLambdaGR.set_name("rightLambdaGR");
 
   // TODO: specify how the vertex should be computed
@@ -668,9 +695,9 @@ Tensor<complex> *
   // Allocate and compute PiiR
   int iRStart[] = {0 , 0};
   int iREnd[]   = {No ,NR};
-  Tensor<complex> PiiR(PirR->slice(iRStart,iREnd));
+  auto PiiR(PirR->slice(iRStart,iREnd));
   PiiR.set_name("PiiR");
-  Tensor<complex> PijR(PiqR->slice(iRStart,iREnd));
+  auto PijR(PiqR->slice(iRStart,iREnd));
   PijR.set_name("PijR");
   Tensor<complex> conjPiiR(false, PiiR);
   conjPiiR.set_name("ConjPiiR");
@@ -680,26 +707,26 @@ Tensor<complex> *
   conjPijR.sum(1.0, PijR,"iR", 0.0,"iR", fConj);
 
   // Construct dressedPiaR
-  Tensor<complex> dressedPiaR(PicR);
+  auto dressedPiaR(PicR);
   dressedPiaR.set_name("dressedPiaR");
   dressedPiaR["aR"] += (-1.0) * PijR["kR"] * (*Tai)["ak"];
 
-  Tensor<complex> conjDressedPiaR(conjPiaR);
+  auto conjDressedPiaR(conjPiaR);
   conjDressedPiaR.set_name("conjDressedPiaR");
   conjDressedPiaR["aR"] += (-1.0) * conjPiiR["kR"] * (*Tai)["ak"];
 
   // Slice the respective parts from dressedPiaR
-  Tensor<complex> dressedLeftPiaR (conjDressedPiaR.slice(leftPiStart  ,  leftPiEnd));
+  auto dressedLeftPiaR (conjDressedPiaR.slice(leftPiStart  ,  leftPiEnd));
   dressedLeftPiaR.set_name("dressedLeftPiaR");
 
-  Tensor<complex> dressedRightPiaR(dressedPiaR.slice(rightPiStart , rightPiEnd));
+  auto dressedRightPiaR(dressedPiaR.slice(rightPiStart , rightPiEnd));
   dressedRightPiaR.set_name("dressedrightPiaR");
 
   XRaij["Rbij"] = XRSij["RSij"]  * dressedRightPiaR["bS"];
 
   // allocate Tensor for sliced T2 amplitudes
   int vvoo[] = { Nv, Nv, No, No };
-  Tensor<complex> *Fabij(new Tensor<complex>(4, vvoo, syms, *PirR->wrld, "Fabij"));
+  auto Fabij(new Tensor<complex>(4, vvoo, syms, *PirR->wrld, "Fabij"));
 
   // compute sliced amplitudes
   (*Fabij)["abij"]  = XRaij["Rbij"]  * dressedLeftPiaR["aR"];

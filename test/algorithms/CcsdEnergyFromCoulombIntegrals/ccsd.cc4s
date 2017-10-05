@@ -8,7 +8,7 @@ CoulombVertexReader [
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
   % for a complex calculation use 1, for a real one 0
-  (complex 1)
+  (complex 0)
 ] [
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals

@@ -47,7 +47,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
   // get part of Coulomb integrals used whether the amplitudes are zero or not
   Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
-  if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
+  if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes 
     // Since Tabij = 0, Vabij is the only non-zero term
     LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
@@ -58,8 +58,8 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       // construct Dabij = eps_a+eps_b-eps_i-eps_j
       Tensor<double> Dabij(false, *Rabij);
       calculateExcitationEnergies(Dabij, "abij");
-      // diagonal part
-//      (*Rabij)["abij"] = Dabij["abij"] * (*Tabij)["abij"];
+      // diagonal part, 1/2 since R will be symmetrized later
+      (*Rabij)["abij"] = 0.5 * Dabij["abij"] * (*Tabij)["abij"];
     }
 
     // Read all required integrals
@@ -394,7 +394,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       Tensor<double> Dai(false, *Rai);
       calculateExcitationEnergies(Dai, "ai");
       // diagonal part
-//      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
+      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
 
       // Intermediates used for T1 amplitudes
       Tensor<> Kck(2, vo.data(), syms.data(), *Vabij->wrld, "Kck");
@@ -458,8 +458,8 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       // construct Dabij = eps_a+eps_b-eps_i-eps_j
       Tensor<complex> Dabij(false, *Rabij);
       calculateExcitationEnergies(Dabij, "abij");
-      // diagonal part
-//      (*Rabij)["abij"] =  Dabij["abij"] * (*Tabij)["abij"];
+      // diagonal part, 1/2 since R will be symmetrized later
+      (*Rabij)["abij"] = 0.5 * Dabij["abij"] * (*Tabij)["abij"];
     }
 
     // Read all required integrals
@@ -771,7 +771,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       Tensor<complex> Dai(false, *Rai);
       calculateExcitationEnergies(Dai, "ai");
       // diagonal part
-//      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
+      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
 
       // Intermediates used for T1 amplitudes
       Tensor<complex> Kck(2, vo.data(), syms.data(), *Vabij->wrld, "Kck");
