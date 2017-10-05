@@ -41,6 +41,7 @@ T *TensorIo::readText(
   int64_t const bufferSize
 ) {
   std::ifstream stream(fileName.c_str());
+  if (stream.fail()) throw new EXCEPTION("Failed to open file");
   Scanner scanner(&stream);
   std::string name(scanner.nextLine(' '));
   std::stringstream lineStream(scanner.nextLine());
