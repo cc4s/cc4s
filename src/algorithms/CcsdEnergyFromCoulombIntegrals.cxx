@@ -276,9 +276,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*Rabij)["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
 
       // Symmetrize Rabij by applying permutation operator
-      // to save memory we use Xakci as intermediate for the permutation operator 
-      Xakci["aibj"]  = (*Rabij)["abij"];
-      (*Rabij)["abij"] += Xakci["bjai"]; 
+      (*Rabij)["abij"] += (*Rabij)["baji"]; 
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -652,9 +650,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*Rabij)["abij"] += (-1.0) * Xakci["bkci"] * (*Tabij)["ackj"];
 
       // Symmetrize Rabij by applying permutation operator
-      // to save memory we use Xakci as intermediate for the permutation operator 
-      Xakci["aibj"]  = (*Rabij)["abij"];
-      (*Rabij)["abij"] += Xakci["bjai"]; 
+      (*Rabij)["abij"] += (*Rabij)["baji"]; 
     }
 
     //////////////////////////////////////////////////////////////////////
