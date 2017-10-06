@@ -34,7 +34,7 @@ CcsdEnergyFromCoulombIntegrals [
   (maxIterations 24)
 % (integralsSliceSize 12)
   (integralsSliceFactor 1)
-% (mixer "LinearMixeri")
+% (mixer "LinearMixer")
 % (mixingRatio 0.8)
   (mixer "DiisMixer")
   (maxResidua 4)
