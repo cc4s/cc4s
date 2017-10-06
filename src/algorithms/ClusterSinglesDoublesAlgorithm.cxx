@@ -69,7 +69,10 @@ F ClusterSinglesDoublesAlgorithm::run() {
     // which will be specified by inheriting classes
     auto estimatedAmplitudes( getResiduum(i, amplitudes) );
     estimateAmplitudesFromResiduum(estimatedAmplitudes);
-    *amplitudes -= *estimatedAmplitudes;
+    (*amplitudes) *= F(-1.0);
+    (*amplitudes) += (*estimatedAmplitudes);
+// FIXME: why does it depend on the sign of the difference?
+    (*amplitudes) *= F(-1.0);
     mixer->append(estimatedAmplitudes, amplitudes);
     // get mixer's best guess for amplitudes
     amplitudes = mixer->get();

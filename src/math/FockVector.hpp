@@ -4,6 +4,7 @@
 #include <math/ComplexTensor.hpp>
 #include <math/Vector.hpp>
 #include <util/Exception.hpp>
+#include <util/Log.hpp>
 
 #include <vector>
 #include <string>
@@ -17,6 +18,7 @@ namespace cc4s {
   public:
     typedef F FieldType;
 
+    // FIXME: use shared pointers for component tensors
     std::vector<CTF::Tensor<F>> componentTensors;
     std::vector<std::string> componentIndices;
 
@@ -68,7 +70,9 @@ namespace cc4s {
       checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
-        componentTensors[i][indices] += a.componentTensors[i][indices];
+        componentTensors[i].sum(
+          +1.0, a.componentTensors[i], indices, 1.0, indices
+        );
       }
       return *this;
     }
@@ -77,16 +81,19 @@ namespace cc4s {
       checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
-        componentTensors[i][indices] += -1.0 * a.componentTensors[i][indices];
+        componentTensors[i].sum(
+          -1.0, a.componentTensors[i], indices, 1.0, indices
+        );
       }
       return *this;
     }
 
     FockVector<F> &operator *= (const F s) {
-      CTF::Scalar<F> scalar(s);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
-        componentTensors[i][indices] *= scalar[""];
+        componentTensors[i].sum(
+          s, componentTensors[i], indices, 0.0, indices
+        );
       }
       return *this;
     }
@@ -131,7 +138,7 @@ namespace cc4s {
         const char *indices(componentIndices[i].c_str());
         const char *aIndices(a.componentIndices[i].c_str());
         // add to result
-        result +=
+        result[""] +=
           componentTensors[i][indices] * a.componentTensors[i][aIndices];
       }
       return result.get_val();

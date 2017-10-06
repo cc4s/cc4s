@@ -12,7 +12,7 @@ template <typename F>
 LinearMixer<F>::LinearMixer(
   Algorithm *algorithm
 ):
-  Mixer<F>(algorithm), last(nullptr)
+  Mixer<F>(algorithm), last(nullptr), lastResiduum(nullptr)
 {
   ratio = (algorithm->getRealArgument("mixingRatio", 1.0));
   LOG(1,"LinearMixer") << "ratio=" << ratio << std::endl;
