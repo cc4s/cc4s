@@ -77,7 +77,7 @@ namespace cc4s {
       checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
-        componentTensors[i][indices] += F(-1) * a.componentTensors[i][indices];
+        componentTensors[i][indices] += -1.0 * a.componentTensors[i][indices];
       }
       return *this;
     }

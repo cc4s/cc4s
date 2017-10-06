@@ -23,10 +23,15 @@ namespace cc4s {
     virtual PTR(FockVector<F>) getResiduum();
 
     /**
-     * \brief The best estimate for the next amplitudes and residuum as
-     * returned by get() and getResiduum() respectively.
+     * \brief The best estimate for the next amplitudes as returned by get().
      **/
-    PTR(FockVector<F>) next, nextResiduum;
+    PTR(FockVector<F>) next;
+
+    /**
+     * \brief The best estimate for the next residuum as returned by
+     * getResiduum().
+     **/
+    PTR(FockVector<F>) nextResiduum;
 
     /**
      * \brief The amplitudes associated to each residuum in the overlap matrix B
@@ -38,7 +43,7 @@ namespace cc4s {
     std::vector<PTR(FockVector<F>)> residua;
 
     /**
-     * \brief Overlap matrix \f$B(i,j) = 2*Re(\langleR(i)|R(j)\rangle), \
+     * \brief Overlap matrix \f$B(i,j) = 2*Re(\langleR(i)|R(j)\rangle),
        B(i,N) = 1, B(N,j) = 1, B(N,N) = 0\f$ where \f$i,j < N\f$.
      * The coefficients \f$c_j\f$ and the Lagrangian multiplyer are then given
      * by \f$c_j = B^+(j,N), lambda = B^+(N,N)\f$, where $\fB^+\f$ denotes

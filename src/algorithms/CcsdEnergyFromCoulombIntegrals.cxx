@@ -54,13 +54,6 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     (*Rabij)["abij"] = (*Vabij)["abij"];
   } else {
     // For the rest iterations compute the CCSD amplitudes
-    {
-      // construct Dabij = eps_a+eps_b-eps_i-eps_j
-      Tensor<double> Dabij(false, *Rabij);
-      calculateExcitationEnergies(Dabij, "abij");
-      // diagonal part, 1/2 since R will be symmetrized later
-      (*Rabij)["abij"] = 0.5 * Dabij["abij"] * (*Tabij)["abij"];
-    }
 
     // Read all required integrals
     Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
@@ -388,12 +381,6 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
       LOG(1, getCapitalizedAbbreviation()) <<
         "Solving T1 Amplitude Equations" << std::endl;
 
-      // construct Dai = eps_a-eps_i
-      Tensor<double> Dai(false, *Rai);
-      calculateExcitationEnergies(Dai, "ai");
-      // diagonal part
-      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
-
       // Intermediates used for T1 amplitudes
       Tensor<> Kck(2, vo.data(), syms.data(), *Vabij->wrld, "Kck");
 
@@ -452,13 +439,6 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     (*Rabij)["abij"] = (*Vabij)["abij"];
   } else {
     // For the rest iterations compute the CCSD amplitudes
-    {
-      // construct Dabij = eps_a+eps_b-eps_i-eps_j
-      Tensor<complex> Dabij(false, *Rabij);
-      calculateExcitationEnergies(Dabij, "abij");
-      // diagonal part, 1/2 since R will be symmetrized later
-      (*Rabij)["abij"] = 0.5 * Dabij["abij"] * (*Tabij)["abij"];
-    }
 
     // Read all required integrals
     Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
@@ -762,12 +742,6 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     {
       LOG(1, getCapitalizedAbbreviation()) <<
         "Solving T1 Amplitude Equations" << std::endl;
-
-      // construct Dai = eps_a-eps_i
-      Tensor<complex> Dai(false, *Rai);
-      calculateExcitationEnergies(Dai, "ai");
-      // diagonal part
-      (*Rai)["ai"] =  Dai["ai"] * (*Tai)["ai"];
 
       // Intermediates used for T1 amplitudes
       Tensor<complex> Kck(2, vo.data(), syms.data(), *Vabij->wrld, "Kck");

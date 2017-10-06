@@ -69,19 +69,16 @@ namespace cc4s {
 
     /**
      * \brief Calculates an improved estimate of the amplitudes provided
-     * the given trial amplitudes and their respective residuum.
-     * \f$T_{ij\ldots}^{ab\ldots} =
-     *   (R_{ij\ldots}^{a\ldots} -
-     *   \Delta_{ij\ldots}^{ab\ldots} T_{ij\ldots}^{ab\ldots}) /
-     *  -\Delta_{ij\ldots}^{ab\ldots}\f$
+     * the given the residuum.
+     * \f$T_{ij\ldots}^{ab\ldots} = \frac{R_{ij\ldots}^{a\ldots}}
+       {-\Delta_{ij\ldots}^{ab\ldots}}\f$
      * with \f$\Delta_{ij\ldots}^{ab\ldots} =
-     * \varepsilon_i+\ldots-\varepsilon_a-\ldots\f$.
-     * \param[in] amplitudes Fock vector which will be overwritten.
-     * \param[in] residuum Fock vector tensor.
+       \varepsilon_i+\ldots-\varepsilon_a-\ldots\f$.
+     * \param[inout] residuum Fock vector, overwritten with new amplitudes.
      **/
     template <typename F>
     void estimateAmplitudesFromResiduum(
-      const PTR(FockVector<F>) &amplitudes, const PTR(FockVector<F>) &residuum
+      const PTR(FockVector<F>) &residuum
     );
 
     /**

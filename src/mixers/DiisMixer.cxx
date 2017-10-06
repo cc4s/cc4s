@@ -74,7 +74,7 @@ void DiisMixer<F>::append(
       std::array<int,2> rowEnd({i+2,nextIndex+2});
       std::array<int,2> oneBegin({0,0});
       std::array<int,2> oneEnd({1,1});
-      F overlap(2.0*std::real(residua[i]->dot(*R)) );
+      F overlap( 2.0*std::real(residua[i]->dot(*R)) );
       B->slice(
         colBegin.data(), colEnd.data(), 0.0,
         one,
@@ -88,11 +88,9 @@ void DiisMixer<F>::append(
       );
     }
   }
-//  B->print();
-  nextIndex = (nextIndex+1) % N;
   if (count < N) ++count;
 
-  // now, pseudo-invert upper right corner of B and read out its first column
+  // now, pseudo-invert upper left corner of B and read out its first column
   std::array<int,2> upperLeftBegin({0, 0});
   std::array<int,2> lowerRightEnd({count+1, count+1});
   std::array<int,2> firstColEnd({count+1,1});
@@ -108,13 +106,16 @@ void DiisMixer<F>::append(
   *next *= F(0);
   nextResiduum = NEW(FockVector<F>, *R);
   *nextResiduum *= F(0);
-  for (int i(0); i < count; ++i) {
-    LOG(1, "DiisMixer") << "c_" << (i+1) << "=" << column[i+1] << std::endl;
+  for (int j(0); j < count; ++j) {
+    int i( (nextIndex+N-j) % N );
+    LOG(1, "DiisMixer") << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
     auto a( column[i+1] * *amplitudes[i] );
     *next += a;
     auto r( column[i+1] * *residua[i] );
     *nextResiduum += r;
   }
+
+  nextIndex = (nextIndex+1) % N;
 }
 
 template <typename F>

@@ -27,7 +27,7 @@ DrccdEnergyFromCoulombIntegrals [
   PPHHCoulombIntegrals PHHPCoulombIntegrals HHPPCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 32)
-  (mixingRatio 1.0)
+  (mixer "DiisMixer")
 ] [
   DrccdEnergy DrccdDoublesAmplitudes
 ].

@@ -67,12 +67,12 @@ F ClusterSinglesDoublesAlgorithm::run() {
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
-    auto residuum( getResiduum(i, amplitudes) );
-    mixer->append(amplitudes, residuum);
-    // get mixer's best estimate for amplitudes and residuum
+    auto estimatedAmplitudes( getResiduum(i, amplitudes) );
+    estimateAmplitudesFromResiduum(estimatedAmplitudes);
+    *amplitudes -= *estimatedAmplitudes;
+    mixer->append(estimatedAmplitudes, amplitudes);
+    // get mixer's best guess for amplitudes
     amplitudes = mixer->get();
-    // solve for next estimate of amplitudes
-    estimateAmplitudesFromResiduum(amplitudes, residuum);
     e = getEnergy(amplitudes);
   }
 
@@ -174,49 +174,39 @@ void ClusterSinglesDoublesAlgorithm::storeAmplitudes(
 
 template <typename F>
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
-  const PTR(FockVector<F>) &amplitudes,
   const PTR(FockVector<F>) &residuum
 ) {
-  for (unsigned int i(0); i < amplitudes->componentTensors.size(); ++i) {
-    CTF::Tensor<F> *T( &amplitudes->componentTensors[i] );
+  for (unsigned int i(0); i < residuum->componentTensors.size(); ++i) {
     CTF::Tensor<F> *R( &residuum->componentTensors[i] );
-    const char *indices( amplitudes->componentIndices[i].c_str() );
+    const char *indices( residuum->componentIndices[i].c_str() );
     Tensor<F> D(false, R);
     D.set_name("D");
-    calculateExcitationEnergies(D, amplitudes->componentIndices[i]);
+    calculateExcitationEnergies(D, residuum->componentIndices[i]);
 
     // TODO:
     // levelshifting can be implemented here
 
-    // subtract diagonal part of Hamiltonian
-    (*T)[indices] *= (-1.0) * D[indices];
-    (*T)[indices] += (*R)[indices];
-//    (*T)[indices] = (*R)[indices];
-
     // divide by -Delta to get new estimate for T
     CTF::Transform<F, F>(
       std::function<void(F, F &)>(
-        [](F d, F &t) {
-          t = -t / d;
+        [](F d, F &r) {
+          r = -r / d;
         }
       )
     ) (
-      D[indices], (*T)[indices]
+      D[indices], (*R)[indices]
     );
   }
-//  amplitudes->componentTensors[0]["ai"] *= 0.0;
 }
 
 // instantiate
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
-  const PTR(FockVector<double>) &amplitudes,
   const PTR(FockVector<double>) &residuum
 );
 
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
-  const PTR(FockVector<complex>) &amplitudes,
   const PTR(FockVector<complex>) &residuum
 );
 
