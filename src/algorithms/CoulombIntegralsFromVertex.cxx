@@ -99,82 +99,62 @@ void CoulombIntegralsFromVertex::run() {
   }
 }
 
-// FIXME: update dryRun to work in the complex case as well
 void CoulombIntegralsFromVertex::dryRun() {
   // Read the Coulomb vertex GammaGqr
-  DryTensor<complex> *GammaGqr(getTensorArgument<complex, 
-                               DryTensor<complex>>("CoulombVertex"));
+  DryTensor<complex> *GammaGqr(
+    getTensorArgument<complex,DryTensor<complex>>("CoulombVertex")
+  );
 
   // Read the Particle/Hole Eigenenergies
-  DryTensor<> *epsi(getTensorArgument
-                    <double, DryTensor<double>>("HoleEigenEnergies"));
-  DryTensor<> *epsa(getTensorArgument
-                    <double, DryTensor<double>>("ParticleEigenEnergies"));
+  DryTensor<> *epsi(
+    getTensorArgument<double,DryTensor<double>>("HoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double,DryTensor<double>>("ParticleEigenEnergies")
+  );
 
-  // Compute the No,Nv,NG
+  LOG(0, "Integrals") <<
+    "Reading Coulomb integrals form vertex " << GammaGqr->get_name() 
+    << std::endl;
+
+  // Compute the No,Nv,NG,Np
   int NG(GammaGqr->lens[0]);
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
-  int syms[] = { NS, NS, NS, NS };
-  int vvvv[] = { Nv, Nv, Nv, Nv };
-  int vovo[] = { Nv, No, Nv, No };
-  int vvoo[] = { Nv, Nv, No, No };
-  int oooo[] = { No, No, No, No };
-  int ooov[] = { No, No, No, Nv };
-  int vvvo[] = { Nv, Nv, Nv, No };
+  syms = std::array<int,4>{{ NS, NS, NS, NS }};
+  vvvv = std::array<int,4>{{ Nv, Nv, Nv, Nv }};
+  vovo = std::array<int,4>{{ Nv, No, Nv, No }};
+  vvoo = std::array<int,4>{{ Nv, Nv, No, No }};
+  voov = std::array<int,4>{{ Nv, No, No, Nv }};
+  oovv = std::array<int,4>{{ No, No, Nv, Nv }};
+  oooo = std::array<int,4>{{ No, No, No, No }};
+  ooov = std::array<int,4>{{ No, No, No, Nv }};
+  vooo = std::array<int,4>{{ Nv, No, No, No }};
+  vvvo = std::array<int,4>{{ Nv, Nv, Nv, No }};
 
-  DryTensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") 
-                     ?new DryTensor<>(4, vvvv, syms) : nullptr);
-  DryTensor<> *Vaibj(isArgumentGiven("PHPHCoulombIntegrals") 
-                     ?new DryTensor<>(4, vovo, syms) : nullptr);
-  DryTensor<> *Vabij(isArgumentGiven("PPHHCoulombIntegrals") ?
-                     new DryTensor<>(4, vvoo, syms) : nullptr);
-  DryTensor<> *Vijkl(isArgumentGiven("HHHHCoulombIntegrals") ?
-                     new DryTensor<>(4, oooo, syms) : nullptr);
-  DryTensor<> *Vijka(isArgumentGiven("HHHPCoulombIntegrals") ?
-                     new DryTensor<>(4, ooov, syms) : nullptr);
-  DryTensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
-                     new DryTensor<>(4, vvvo, syms) : nullptr);
-
-  if (Vaibj) {
-    allocatedTensorArgument("PHPHCoulombIntegrals", Vaibj);
-  }
-  if (Vabij) {
-    allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
-  }
-  if (Vijkl) {
-    allocatedTensorArgument("HHHHCoulombIntegrals", Vijkl);
-  }
-  if (Vijka) {
-    allocatedTensorArgument("HHHPCoulombIntegrals", Vijka);
-  }
-  if (Vabcd) {
-    allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
-  }
-  if (Vabci) {
-    allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
-  }
+  bool realIntegrals = !getIntegerArgument("complex", 0);
+  LOG(0, "CoulombIntegrals") << "Using "
+    << (realIntegrals ? "real" : "complex") << " Coulomb integrals"
+    << std::endl;
 
   // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
   int GaiLens[]   = {NG,Nv,No};
+  int GiaLens[]   = {NG,No,Nv};
   int GabLens[]   = {NG,Nv,Nv};
   int GijLens[]   = {NG,No,No};
 
-  DryTensor<complex> GammaGai(3, GaiLens, syms);
-  DryTensor<complex> GammaGab(3, GabLens, syms);
-  DryTensor<complex> GammaGij(3, GijLens, syms);
+  DryTensor<complex> GammaGia(3, GiaLens, syms.data());
+  DryTensor<complex> GammaGai(3, GaiLens, syms.data());
+  DryTensor<complex> GammaGab(3, GabLens, syms.data());
+  DryTensor<complex> GammaGij(3, GijLens, syms.data());
 
-  // Split GammaGab,GammaGai,GammaGij into real and imaginary parts
-  DryTensor<> realGammaGai(3, GaiLens, syms);
-  DryTensor<> imagGammaGai(3, GaiLens, syms);
-
-  DryTensor<> realGammaGab(3, GabLens, syms);
-  DryTensor<> imagGammaGab(3, GabLens, syms);
-
-  DryTensor<> realGammaGij(3, GijLens, syms);
-  DryTensor<> imagGammaGij(3, GijLens, syms);
+  if (realIntegrals) {
+    dryCalculateRealIntegrals();
+  } else {
+    dryCalculateComplexIntegrals();
+  }
 }
 
 void CoulombIntegralsFromVertex::calculateRealIntegrals() {
@@ -277,6 +257,73 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
                                << Vabci->get_name() << std::endl;
     (*Vabci)["abci"]  = realGammaGab["Gac"] * realGammaGai["Gbi"];
     (*Vabci)["abci"] += imagGammaGab["Gac"] * imagGammaGai["Gbi"];
+    allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
+  }
+}
+
+void CoulombIntegralsFromVertex::dryCalculateRealIntegrals() {
+  DryTensor<> *Vaibj(
+    isArgumentGiven("PHPHCoulombIntegrals") ?
+    new DryTensor<>(4, vovo.data(), syms.data()) : nullptr
+  );
+  DryTensor<> *Vabij(
+    isArgumentGiven("PPHHCoulombIntegrals") ?
+    new DryTensor<>(4, vvoo.data(), syms.data()) : nullptr
+  );
+  DryTensor<> *Vijab(
+    isArgumentGiven("HHPPCoulombIntegrals") ?
+    new DryTensor<>(4, oovv.data(), syms.data()) : nullptr
+  );
+  DryTensor<> *Vaijb(
+    isArgumentGiven("PHHPCoulombIntegrals") ?
+    new DryTensor<>(4, voov.data(), syms.data()) : nullptr
+  );
+  DryTensor<> *Vijkl(
+    isArgumentGiven("HHHHCoulombIntegrals") ?
+    new DryTensor<>(4, oooo.data(), syms.data()) : nullptr
+  );
+  DryTensor<> *Vijka(
+    isArgumentGiven("HHHPCoulombIntegrals") ?
+    new DryTensor<>(4, ooov.data(), syms.data()) : nullptr
+  );
+  DryTensor<> *Vaijk(
+    isArgumentGiven("PHHHCoulombIntegrals") ?
+    new DryTensor<>(4, vooo.data(), syms.data()) : nullptr
+  );
+  DryTensor<> *Vabcd(
+    isArgumentGiven("PPPPCoulombIntegrals") ?
+    new DryTensor<>(4, vvvv.data(), syms.data()) : nullptr
+  );
+  DryTensor<> *Vabci(
+    isArgumentGiven("PPPHCoulombIntegrals") ?
+    new DryTensor<>(4, vvvo.data(), syms.data()) : nullptr
+  );
+
+  if (Vaibj) {
+    allocatedTensorArgument("PHPHCoulombIntegrals", Vaibj);
+  }
+  if (Vabij) {
+    allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
+  }
+  if (Vijab) {
+    allocatedTensorArgument("HHPPCoulombIntegrals", Vijab);
+  }
+  if (Vaijb) {
+    allocatedTensorArgument("PHHPCoulombIntegrals", Vaijb);
+  }
+  if (Vijkl) {
+    allocatedTensorArgument("HHHHCoulombIntegrals", Vijkl);
+  }
+  if (Vijka) {
+    allocatedTensorArgument("HHHPCoulombIntegrals", Vijka);
+  }
+  if (Vaijk) {
+    allocatedTensorArgument("PHHHCoulombIntegrals", Vaijk);
+  }
+  if (Vabcd) {
+    allocatedTensorArgument("PPPPCoulombIntegrals", Vabcd);
+  }
+  if (Vabci) {
     allocatedTensorArgument("PPPHCoulombIntegrals", Vabci);
   }
 }
@@ -389,3 +436,64 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
     allocatedTensorArgument<complex>("PHHHCoulombIntegrals", Vaijk);
   }
 }
+
+void CoulombIntegralsFromVertex::dryCalculateComplexIntegrals() {
+  DryTensor<complex> *Vaibj(
+    isArgumentGiven("PHPHCoulombIntegrals") ?
+    new DryTensor<complex>(4, vovo.data(), syms.data())
+    : nullptr
+  );
+  DryTensor<complex> *Vabij(
+    isArgumentGiven("PPHHCoulombIntegrals") ?
+    new DryTensor<complex>(4, vvoo.data(), syms.data())
+    : nullptr
+  );
+  DryTensor<complex> *Vijab(
+    isArgumentGiven("HHPPCoulombIntegrals") ?
+    new DryTensor<complex>(4, oovv.data(), syms.data())
+    : nullptr
+  );
+  DryTensor<complex> *Vaijb(
+    isArgumentGiven("PHHPCoulombIntegrals") ?
+    new DryTensor<complex>(4, voov.data(), syms.data())
+    : nullptr
+  );
+  DryTensor<complex> *Vijkl(
+    isArgumentGiven("HHHHCoulombIntegrals") ?
+    new DryTensor<complex>(4, oooo.data(), syms.data())
+    : nullptr
+  );
+  DryTensor<complex> *Vijka(
+    isArgumentGiven("HHHPCoulombIntegrals") ?
+    new DryTensor<complex>(4, ooov.data(), syms.data())
+    : nullptr
+  );
+  DryTensor<complex> *Vaijk(
+    isArgumentGiven("PHHHCoulombIntegrals") ?
+    new DryTensor<complex>(4, vooo.data(), syms.data())
+    : nullptr
+  );
+
+  if (Vaibj) {
+    allocatedTensorArgument<complex,DryTensor<complex>>("PHPHCoulombIntegrals", Vaibj);
+  }
+  if (Vabij) {
+    allocatedTensorArgument<complex,DryTensor<complex>>("PPHHCoulombIntegrals", Vabij);
+  }
+  if (Vijab) {
+    allocatedTensorArgument<complex,DryTensor<complex>>("HHPPCoulombIntegrals", Vijab);
+  }
+  if (Vaijb) {
+    allocatedTensorArgument<complex,DryTensor<complex>>("PHHPCoulombIntegrals", Vaijb);
+  }
+  if (Vijkl) {
+    allocatedTensorArgument<complex,DryTensor<complex>>("HHHHCoulombIntegrals", Vijkl);
+  }
+  if (Vijka) {
+    allocatedTensorArgument<complex,DryTensor<complex>>("HHHPCoulombIntegrals", Vijka);
+  }
+  if (Vaijk) {
+    allocatedTensorArgument<complex,DryTensor<complex>>("PHHHCoulombIntegrals", Vaijk);
+  }
+}
+

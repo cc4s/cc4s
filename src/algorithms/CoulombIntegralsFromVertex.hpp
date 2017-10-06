@@ -37,6 +37,9 @@ namespace cc4s {
     void calculateRealIntegrals();
     void calculateComplexIntegrals();
 
+    void dryCalculateRealIntegrals();
+    void dryCalculateComplexIntegrals();
+
     CTF::Tensor<complex> *GammaGai;
     CTF::Tensor<complex> *GammaGia;
     CTF::Tensor<complex> *GammaGab;
