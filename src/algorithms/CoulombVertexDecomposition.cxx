@@ -283,17 +283,18 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   // initial guess is current Pi^q_R, composedGamma-Gamma is the residuum
   auto Pi(
     NEW(FockVector<complex>,
-      std::vector<Tensor<complex>>({*PiqR}), std::vector<std::string>({"qR"})
+      std::vector<PTR(Tensor<complex>)>({NEW(Tensor<complex>, *PiqR)}),
+      std::vector<std::string>({"qR"})
     )
   );
   double initialDelta(getDelta());
   auto R(
     NEW(FockVector<complex>,
-      std::vector<Tensor<complex>>({*composedGammaGqr}),
+      std::vector<PTR(Tensor<complex>)>({NEW(Tensor<complex>, *composedGammaGqr)}),
       std::vector<std::string>({"Gqr"})
     )
   );
-  R->componentTensors[0]["Gqr"] -= (*GammaGqr)["Gqr"];
+  (*R->get(0))["Gqr"] -= (*GammaGqr)["Gqr"];
   mixer->append(Pi, R);
 
   // Babylonian algorithm to solve quadratic form
@@ -305,8 +306,6 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     j < minSubIterationsCount ||
     (initialDelta < Delta && j < maxSubIterationsCount)
   ) {
-    // get the mixer's best estimate for Pi^q_R
-    (*PiqR)["qR"] = mixer->get()->componentTensors[0]["qR"];
     // then compute Pi_r^R from RALS
     fitAlternatingLeastSquaresFactor(
       *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', *PirR,'r'
@@ -316,13 +315,13 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     // and the new Pi^q_R by conjugate transposition or pseudo inversion
     computeOutgoingPi();
     Pi = NEW(FockVector<complex>,
-      std::vector<Tensor<complex>>({*PiqR}),
+      std::vector<PTR(Tensor<complex>)>({NEW(Tensor<complex>, *PiqR)}),
       std::vector<std::string>({"qR"})
     );
     // finally, compute the residuum
     Delta = getDelta();
     R = NEW(FockVector<complex>,
-      std::vector<Tensor<complex>>({*composedGammaGqr}),
+      std::vector<PTR(Tensor<complex>)>({NEW(Tensor<complex>, *composedGammaGqr)}),
       std::vector<std::string>({"Gqr"})
     );
     if (writeSubIterations) {
@@ -331,6 +330,8 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
         << "Lambda^(n) - Gamma|=" << Delta << std::endl;
     }
     mixer->append(Pi, R);
+    // get the mixer's best estimate for Pi^q_R
+    (*PiqR)["qR"] = (*mixer->get()->get(0))["qR"];
     ++j;
   }
   delete mixer;

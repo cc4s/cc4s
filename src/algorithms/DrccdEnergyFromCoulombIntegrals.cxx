@@ -36,17 +36,17 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
   const int iteration, const PTR(FockVector<F>) &amplitudes
 ) {
   // read all required integrals
-  Tensor<F> *Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
-  Tensor<F> *Vaijb(getTensorArgument<F>("PHHPCoulombIntegrals"));
-  Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
+  auto Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
+  auto Vaijb(getTensorArgument<F>("PHHPCoulombIntegrals"));
+  auto Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
 
   // get amplitude parts
-  Tensor<F> *Tabij( &amplitudes->componentTensors[1] );
+  auto Tabij( amplitudes->get(1) );
 
   // construct residuum
   auto residuum( NEW(FockVector<F>, *amplitudes) );
   *residuum *= F(0);
-  Tensor<F> *Rabij( &residuum->componentTensors[1] );
+  auto Rabij( residuum->get(1) );
 
   int linearized(getIntegerArgument("linearized", 0));
   if (linearized) {

@@ -69,10 +69,10 @@ F ClusterSinglesDoublesAlgorithm::run() {
     // which will be specified by inheriting classes
     auto estimatedAmplitudes( getResiduum(i, amplitudes) );
     estimateAmplitudesFromResiduum(estimatedAmplitudes);
-    (*amplitudes) *= F(-1.0);
-    (*amplitudes) += (*estimatedAmplitudes);
+    *amplitudes *= -1.0;
+    *amplitudes += *estimatedAmplitudes;
 // FIXME: why does it depend on the sign of the difference?
-    (*amplitudes) *= F(-1.0);
+    *amplitudes *= -1.0;
     mixer->append(estimatedAmplitudes, amplitudes);
     // get mixer's best guess for amplitudes
     amplitudes = mixer->get();
@@ -103,8 +103,8 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   energy.set_name("energy");
 
   // singles amplitudes are optional
-  Tensor<F> *Tai( &amplitudes->componentTensors[0] );
-  Tensor<F> *Tabij( &amplitudes->componentTensors[1] );
+  auto Tai( amplitudes->get(0) );
+  auto Tabij( amplitudes->get(1) );
 
   // direct term
   energy[""] =  +2.0 * (*Tabij)["abij"] * (*Vijab)["ijab"];
@@ -132,20 +132,24 @@ PTR(FockVector<F>) ClusterSinglesDoublesAlgorithm::createAmplitudes(
   std::initializer_list<std::initializer_list<int>> amplitudeLens,
   std::initializer_list<std::string> amplitudeIndices
 ) {
-  std::vector<CTF::Tensor<F>> amplitudeTensors;
+  std::vector<PTR(CTF::Tensor<F>)> amplitudeTensors;
   auto lensIterator( amplitudeLens.begin() );
   for (auto name: amplitudeNames) {
     std::stringstream initialDataName;
     initialDataName << "initial" << name << "Amplitudes";
     if (isArgumentGiven(initialDataName.str())) {
       // use given amplitudes as initial amplitudes
-      amplitudeTensors.push_back(*getTensorArgument<F>(initialDataName.str()));
+      amplitudeTensors.push_back(
+        NEW(CTF::Tensor<F>, *getTensorArgument<F>( initialDataName.str() ))
+      );
     } else {
       // otherwise, use zeros as initial amplitudes
       std::vector<int> lens(*lensIterator);
       std::vector<int> syms(lens.size(), NS);
       amplitudeTensors.push_back(
-        CTF::Tensor<F>(lens.size(), lens.data(), syms.data(), *Cc4s::world, "T")
+        NEW(CTF::Tensor<F>,
+          lens.size(), lens.data(), syms.data(), *Cc4s::world, "T"
+        )
       );
     }
     ++lensIterator;
@@ -167,7 +171,7 @@ void ClusterSinglesDoublesAlgorithm::storeAmplitudes(
     if (isArgumentGiven(getDataName(name, "Amplitudes"))) {
       allocatedTensorArgument<F>(
         getDataName(name, "Amplitudes"),
-        new Tensor<F>(amplitudes->componentTensors[component])
+        new Tensor<F>(*amplitudes->get(component))
       );
     }
     ++component;
@@ -180,11 +184,11 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
   const PTR(FockVector<F>) &residuum
 ) {
   for (unsigned int i(0); i < residuum->componentTensors.size(); ++i) {
-    CTF::Tensor<F> *R( &residuum->componentTensors[i] );
-    const char *indices( residuum->componentIndices[i].c_str() );
-    Tensor<F> D(false, R);
+    auto R( residuum->get(i) );
+    const char *indices( residuum->getIndices(i).c_str() );
+    Tensor<F> D(false, *R);
     D.set_name("D");
-    calculateExcitationEnergies(D, residuum->componentIndices[i]);
+    calculateExcitationEnergies(D, residuum->getIndices(i));
 
     // TODO:
     // levelshifting can be implemented here
@@ -274,7 +278,7 @@ Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int a, int b, int integralsSliceSize
 ) {
   // Read the amplitudes Tai
-  auto Tai( &amplitudes->componentTensors[0] );
+  auto Tai( amplitudes->get(0) );
   Tai->set_name("Tai");
 
   // Read the Coulomb vertex GammaGqr
@@ -356,7 +360,7 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
   int a, int b, int integralsSliceSize
 ) {
   // Read the amplitudes Tai
-  auto Tai( &amplitudes->componentTensors[0] );
+  auto Tai( amplitudes->get(0) );
   Tai->set_name("Tai");
 
   // Read the Coulomb vertex GammaGqr
@@ -437,10 +441,10 @@ Tensor<double> *
   auto epsa(getTensorArgument("ParticleEigenEnergies"));
 
   // Read the doubles amplitudes Tabij
-  auto Tabij( &amplitudes->componentTensors[1] );
-  Tabij->set_name("Tabij");
-  auto Tai( &amplitudes->componentTensors[0] );
+  auto Tai( amplitudes->get(0) );
   Tai->set_name("Tai");
+  auto Tabij( amplitudes->get(1) );
+  Tabij->set_name("Tabij");
 
   // Intermediate tensor Iabij=T2+T1*T1
   auto Iabij(*Tabij);
@@ -605,10 +609,10 @@ Tensor<complex> *
   auto epsa(getTensorArgument("ParticleEigenEnergies"));
 
   // Read the doubles amplitudes Tabij
-  auto Tabij( &amplitudes->componentTensors[1] );
-  Tabij->set_name("Tabij");
-  auto Tai( &amplitudes->componentTensors[0] );
+  auto Tai( amplitudes->get(0) );
   Tai->set_name("Tai");
+  auto Tabij( amplitudes->get(1) );
+  Tabij->set_name("Tabij");
 
   // Intermediate tensor Iabij=T2+T1*T1
   auto Iabij(*Tabij);

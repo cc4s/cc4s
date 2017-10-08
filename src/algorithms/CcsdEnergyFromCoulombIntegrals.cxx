@@ -31,21 +31,21 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int i, const PTR(FockVector<double>) &amplitudes
 ) {
   // get singles and doubles part of the amplitudes
-  Tensor<double> *Tai( &amplitudes->componentTensors[0] );
+  auto Tai( amplitudes->get(0) );
   Tai->set_name("Tai");
-  Tensor<double> *Tabij( &amplitudes->componentTensors[1] );
+  auto Tabij( amplitudes->get(1) );
   Tabij->set_name("Tabij");
 
   // create residuum and get their singles and doubles part
   auto residuum( NEW(FockVector<double>, *amplitudes) );
   *residuum *= 0.0;
-  Tensor<double> *Rai( &residuum->componentTensors[0] );
+  auto Rai( residuum->get(0) );
   Rai->set_name("Rai");
-  Tensor<double> *Rabij( &residuum->componentTensors[1] );
+  auto Rabij( residuum->get(1) );
   Rabij->set_name("Rabij");
 
   // get part of Coulomb integrals used whether the amplitudes are zero or not
-  Tensor<> *Vabij(getTensorArgument("PPHHCoulombIntegrals"));
+  auto Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
   if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes 
@@ -56,12 +56,12 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     // For the rest iterations compute the CCSD amplitudes
 
     // Read all required integrals
-    Tensor<> *Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
-    Tensor<> *Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
-    Tensor<> *Vijka(getTensorArgument("HHHPCoulombIntegrals"));
+    auto Vaibj(getTensorArgument("PHPHCoulombIntegrals"));
+    auto Vijkl(getTensorArgument("HHHHCoulombIntegrals"));
+    auto Vijka(getTensorArgument("HHHPCoulombIntegrals"));
 
     // Read the Coulomb vertex GammaGqr
-    Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+    auto GammaGqr( getTensorArgument<complex>("CoulombVertex"));
 
     // Compute the No,Nv,NG,Np
     int No(Vabij->lens[2]);
@@ -307,7 +307,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     if (isArgumentGiven("CoulombFactors")) {
 
       // Read the factorsSliceSize.
-      Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+      auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
       LambdaGR->set_name("LambdaGR");
 
       int NR(LambdaGR->lens[1]);
@@ -329,7 +329,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         for (int a(0); a < NR; a += factorsSliceSize) {
           LOG(1, getCapitalizedAbbreviation()) <<
             "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
-          Tensor<> *Fabij(
+          auto Fabij(
             sliceAmplitudesFromCoupledCoulombFactors(
               amplitudes, a, b, factorsSliceSize
             )
@@ -356,7 +356,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         for (int a(b); a < Nv; a += integralsSliceSize) {
           LOG(1, getCapitalizedAbbreviation()) <<
             "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-          Tensor<> *Vxycd(
+          auto Vxycd(
             sliceCoupledCoulombIntegrals(amplitudes, a, b, integralsSliceSize)
           );
           Vxycd->set_name("Vxycd");
@@ -416,20 +416,20 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int i, const PTR(FockVector<complex>) &amplitudes
 ) {
   // Read Vabij integrals
-  Tensor<complex> *Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
+  auto Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));
 
   // get singles and doubles part of the amplitudes
-  Tensor<complex> *Tai( &amplitudes->componentTensors[0] );
+  auto Tai( amplitudes->get(0) );
   Tai->set_name("Tai");
-  Tensor<complex> *Tabij( &amplitudes->componentTensors[1] );
+  auto Tabij( amplitudes->get(1) );
   Tabij->set_name("Tabij");
 
   // create residuum and get their singles and doubles part
   auto residuum( NEW(FockVector<complex>, *amplitudes) );
   *residuum *= complex(0.0);
-  Tensor<complex> *Rai( &residuum->componentTensors[0] );
+  auto Rai( residuum->get(0) );
   Rai->set_name("Rai");
-  Tensor<complex> *Rabij( &residuum->componentTensors[1] );
+  auto Rabij( residuum->get(1) );
   Rabij->set_name("Rabij");
 
   if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
@@ -441,15 +441,15 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     // For the rest iterations compute the CCSD amplitudes
 
     // Read all required integrals
-    Tensor<complex> *Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
-    Tensor<complex> *Vijab(getTensorArgument<complex>("HHPPCoulombIntegrals"));
-    Tensor<complex> *Vaibj(getTensorArgument<complex>("PHPHCoulombIntegrals"));
-    Tensor<complex> *Vijkl(getTensorArgument<complex>("HHHHCoulombIntegrals"));
-    Tensor<complex> *Vijka(getTensorArgument<complex>("HHHPCoulombIntegrals"));
-    Tensor<complex> *Vaijk(getTensorArgument<complex>("PHHHCoulombIntegrals"));
+    auto Vaijb(getTensorArgument<complex>("PHHPCoulombIntegrals"));
+    auto Vijab(getTensorArgument<complex>("HHPPCoulombIntegrals"));
+    auto Vaibj(getTensorArgument<complex>("PHPHCoulombIntegrals"));
+    auto Vijkl(getTensorArgument<complex>("HHHHCoulombIntegrals"));
+    auto Vijka(getTensorArgument<complex>("HHHPCoulombIntegrals"));
+    auto Vaijk(getTensorArgument<complex>("PHHHCoulombIntegrals"));
 
     // Read the Coulomb vertex GammaGqr
-    Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
+    auto GammaGqr( getTensorArgument<complex>("CoulombVertex"));
 
     // Compute the No,Nv,NG,Np
     int No(Vabij->lens[2]);
@@ -668,7 +668,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
     if (isArgumentGiven("CoulombFactors")) {
 
       // Read the factorsSliceSize.
-      Tensor<complex> *LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+      auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
       LambdaGR->set_name("LambdaGR");
 
       int NR(LambdaGR->lens[1]);
@@ -690,7 +690,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         for (int a(0); a < NR; a += factorsSliceSize) {
           LOG(1, getCapitalizedAbbreviation()) <<
             "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
-          Tensor<complex> *Fabij(
+          auto Fabij(
             sliceAmplitudesFromCoupledCoulombFactors(
               amplitudes, a, b, factorsSliceSize
             )
@@ -717,7 +717,7 @@ PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         for (int a(b); a < Nv; a += integralsSliceSize) {
           LOG(1, getCapitalizedAbbreviation()) <<
             "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-          Tensor<complex> *Vxycd(
+          auto Vxycd(
             sliceCoupledCoulombIntegrals(amplitudes, a, b, integralsSliceSize)
           );
           Vxycd->set_name("Vxycd");

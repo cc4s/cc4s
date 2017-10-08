@@ -3,6 +3,7 @@
 
 #include <math/ComplexTensor.hpp>
 #include <math/Vector.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 
@@ -18,32 +19,45 @@ namespace cc4s {
   public:
     typedef F FieldType;
 
-    // FIXME: use shared pointers for component tensors
-    std::vector<CTF::Tensor<F>> componentTensors;
+    std::vector<PTR(CTF::Tensor<F>)> componentTensors;
     std::vector<std::string> componentIndices;
 
     FockVector() {
     }
 
     FockVector(
-      const FockVector<F> &a
+      const FockVector<F> &&a
     ):
+      // take pointers of rhs tensors when moving a to this
       componentTensors(a.componentTensors),
       componentIndices(a.componentIndices),
       indexEnds(a.componentTensors.size())
     {
-      initializeIndexTranslation();
+      buildIndexTranslation();
     }
 
     FockVector(
-      std::vector<CTF::Tensor<F>> &&tensors,
-      std::vector<std::string> &&indices
+      const FockVector<F> &a
     ):
+      // copy rhs tensors when copying a to this
+      componentTensors(a.componentTensors.size()),
+      componentIndices(a.componentIndices),
+      indexEnds(a.componentTensors.size())
+    {
+      copyComponents(a.componentTensors);
+      buildIndexTranslation();
+    }
+
+    FockVector(
+      const std::vector<PTR(CTF::Tensor<F>)> &tensors,
+      const std::vector<std::string> &indices
+    ):
+      // always take pointers of rhs tensors when explicitly given
       componentTensors(tensors),
       componentIndices(indices),
       indexEnds(componentTensors.size())
     {
-      initializeIndexTranslation();
+      buildIndexTranslation();
     }
 
     template <typename TensorsIterator, typename IndicesIterator>
@@ -51,112 +65,132 @@ namespace cc4s {
       TensorsIterator tensorsBegin, TensorsIterator tensorsEnd,
       IndicesIterator indicesBegin, IndicesIterator indicesEnd
     ):
+      // always take pointers of rhs tensors when explicitly given
       componentTensors(tensorsBegin, tensorsEnd),
       componentIndices(indicesBegin, indicesEnd),
       indexEnds(componentTensors.size())
     {
-      initializeIndexTranslation();
+      buildIndexTranslation();
     }
 
-    FockVector<F> &operator =(const FockVector<F> &a) {
-      // asuume shape of rhs
+    // NOTE: CTF::Tensors cannot be const
+    PTR(CTF::Tensor<F>) operator [](const int i) const {
+      return componentTensors[i];
+    }
+
+    const PTR(CTF::Tensor<F>) &get(const int i) const {
+      return componentTensors[i];
+    }
+
+    PTR(CTF::Tensor<F>) &get(const int i) {
+      return componentTensors[i];
+    }
+
+    const std::string &getIndices(const int i) const {
+      return componentIndices[i];
+    }
+
+    std::string &getIndices(const int i) {
+      return componentIndices[i];
+    }
+
+    FockVector<F> &operator =(const FockVector<F> &&a) {
+      // take pointers of rhs tensors when moving a to this
       componentTensors = a.componentTensors;
       componentIndices = a.componentIndices;
-      initializeIndexTranslation();
+      buildIndexTranslation();
       return *this;
     }
 
-    FockVector<F> &operator += (FockVector<F> &a) {
+    FockVector<F> &operator =(const FockVector<F> &a) {
+      // copy rhs tensors when copying a to this
+      componentIndices = a.componentIndices;
+      copyComponents(a.componentTensors);
+      buildIndexTranslation();
+      return *this;
+    }
+
+    FockVector<F> &operator += (const FockVector<F> &a) {
       checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
-        componentTensors[i].sum(
-          +1.0, a.componentTensors[i], indices, 1.0, indices
-        );
+        get(i)->sum(+1.0, *a.get(i), indices, 1.0, indices);
       }
       return *this;
     }
 
-    FockVector<F> &operator -= (FockVector<F> &a) {
+    FockVector<F> &operator -= (const FockVector<F> &a) {
       checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        const char *indices(componentIndices[i].c_str());
-        componentTensors[i].sum(
-          -1.0, a.componentTensors[i], indices, 1.0, indices
-        );
+        const char *indices(getIndices(i).c_str());
+        get(i)->sum(-1.0, *a.get(i), indices, 1.0, indices);
       }
       return *this;
     }
 
     FockVector<F> &operator *= (const F s) {
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        const char *indices(componentIndices[i].c_str());
-        componentTensors[i].sum(
-          s, componentTensors[i], indices, 0.0, indices
-        );
+        const char *indices(getIndices(i).c_str());
+        get(i)->sum(s, *get(i), indices, 0.0, indices);
       }
       return *this;
     }
 
-    FockVector<F> conjugateTranspose() {
+    FockVector<F> conjugateTranspose() const {
       FockVector<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        int order(componentIndices[i].length() / 2);
-        std::vector<int> transposedLens(
-          componentTensors[i].lens,
-          componentTensors[i].lens + 2*order
-        );
+        int order(getIndices(i).length() / 2);
+        std::vector<int> transposedLens(get(i)->lens, get(i)->lens + 2*order);
         std::rotate(
           transposedLens.begin(),
           transposedLens.begin() + order,
           transposedLens.begin() + 2*order
         );
         result.componentTensors.push_back(
-          CTF::Tensor<F>(
+          NEW(CTF::Tensor<F>,
             transposedLens.size(), transposedLens.data(),
-            componentTensors[i].sym, *componentTensors[i].wrld,
-            (std::string(componentTensors[i].get_name()) + "*").c_str()
+            get(i)->sym, *get(i)->wrld,
+            (std::string(get(i)->get_name()) + "*").c_str()
           )
         );
         result.componentIndices.push_back(
-          componentIndices[i].substr(order, 2*order) +
-          componentIndices[i].substr(0, order)
+          getIndices(i).substr(order, 2*order) + getIndices(i).substr(0, order)
         );
         CTF::Univar_Function<F> fConj(cc4s::conj<F>);
-        result.componentTensors[i].sum(
-          1.0, componentTensors[i], componentIndices[i].c_str(),
-          0.0, result.componentIndices[i].c_str(), fConj
+        result.get(i)->sum(
+          1.0, *get(i), getIndices(i).c_str(),
+          0.0, result.getIndices(i).c_str(), fConj
         );
       }
       return result;
     }
 
-    F braket(FockVector<F> &a) {
+    F braket(const FockVector<F> &a) const {
       checkDualCompatibility(a);
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        const char *indices(componentIndices[i].c_str());
-        const char *aIndices(a.componentIndices[i].c_str());
+        const char *indices(getIndices(i).c_str());
+        const char *aIndices(a.getIndices(i).c_str());
         // add to result
-        result[""] +=
-          componentTensors[i][indices] * a.componentTensors[i][aIndices];
+        result[""] += (*get(i))[indices] * (*a.get(i))[aIndices];
       }
       return result.get_val();
     }
 
-    F dot(FockVector<F> &a) {
+    F dot(FockVector<F> &a) const {
       checkCompatibilityTo(a);
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        const char *indices(componentIndices[i].c_str());
+        const char *indices(getIndices(i).c_str());
         // We need also the indices for a in general, since we might have
         // {{T['ijab']}}.dot(Q['abij']), which is still valid, although
         // the indices are not equal
-        const char *aIndices(a.componentIndices[i].c_str());
+        // FIXME: shouldn't that be a braket?
+        const char *aIndices(a.getIndices(i).c_str());
         CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
         // add to result
         result.contract(
-          1.0, componentTensors[i], indices, a.componentTensors[i], aIndices,
+          1.0, *get(i), indices, *a.get(i), aIndices,
           1.0, "", fDot
         );
       }
@@ -171,14 +205,14 @@ namespace cc4s {
      * \brief Reads out all locally stored values together with their
      * respective indices.
      **/
-    std::vector<std::pair<int64_t,F>> readLocal() {
+    std::vector<std::pair<int64_t,F>> readLocal() const {
       int64_t elementsCount(0);
       std::vector<std::pair<int64_t,F>> elements;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         int64_t componentValuesCount;
         int64_t *componentIndices;
         F *componentValues;
-        componentTensors[i].read_local(
+        get(i)->read_local(
           &componentValuesCount, &componentIndices, &componentValues
         );
 
@@ -215,7 +249,7 @@ namespace cc4s {
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         tensorIndices[i].reserve(tensorIndices[i].size()+1);
         tensorValues[i].reserve(tensorIndices[i].size()+1);
-        componentTensors[i].write(
+        get(i)->write(
           tensorIndices[i].size(),
           tensorIndices[i].data(),
           tensorValues[i].data()
@@ -225,17 +259,25 @@ namespace cc4s {
   protected:
     std::vector<int64_t> indexEnds;
 
+    void copyComponents(const std::vector<PTR(CTF::Tensor<F>)> &components) {
+      componentTensors.resize(components.size());
+      int i(0);
+      for (auto component: components) {
+        componentTensors[i++] = NEW(CTF::Tensor<F>, *component);
+      }
+    }
+
     /**
-     * \Brief Initializes the index ends vector needed for the
+     * \Brief Builds the index ends vector needed for the
      * index translation methods getTotalIndex and fromTotalIndex.
      **/
-    void initializeIndexTranslation() {
+    void buildIndexTranslation() {
       indexEnds.resize(componentTensors.size());
       int64_t indexBase(0);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
         int64_t tensorIndexSize(1);
-        for (int d(0); d < componentTensors[i].order; ++d) {
-          tensorIndexSize *= componentTensors[i].lens[d];
+        for (int d(0); d < get(i)->order; ++d) {
+          tensorIndexSize *= get(i)->lens[d];
         }
         indexEnds[i] = indexBase += tensorIndexSize;
       }
@@ -287,20 +329,15 @@ namespace cc4s {
      */
     void checkDualCompatibility(const FockVector<F> &a) const {
       checkCompatibilityTo(a);
-      for (int i ; i < componentTensors.size() ; i++) {
-        CTF::Tensor<F> *A(a.componentTensors[i]), *B(componentTensors[i]);
-        std::string aIndices(a.componentTensors[i].c_str()),
-          bIndices(componentTensors[i].c_str());
-        int indexLens(A->order());
-        for (int j ; j < indexLens ; j++) {
-          std::size_t bIndexPos(
-            bIndices.find(aIndices[j])
-          );
-          if (bIndexPos == std::string::npos) {
-            throw EXCEPTION("Index of fock vectors do not match");
+      for (int i(0); i < componentTensors.size() ; i++) {
+        int indexLens(a.get(i)->order());
+        for (int j(0); j < indexLens; j++) {
+          int indexPos( get(i).find(a.getIndicies(i)[j]) );
+          if (indexPos == std::string::npos) {
+            throw EXCEPTION("Indices of fock vectors do not match");
           }
-          if (A->lens[j] != B->lens[bIndexPos]) {
-            throw EXCEPTION("Number of component tensors does no match");
+          if (a.get(i)->lens[j] != get(i)->lens[indexPos]) {
+            throw EXCEPTION("Shapes of component tensors does not match");
           }
         }
       }
@@ -319,34 +356,78 @@ namespace cc4s {
 
   template <typename F>
   FockVector<F> inline operator +(
-    FockVector<F> &a, FockVector<F> &b
+    const FockVector<F> &a, const FockVector<F> &b
   ) {
     FockVector<F> result(a);
     result += b;
     return result;
   }
+  // move versions to prevent copying
+  template <typename F>
+  FockVector<F> inline operator +(
+    const FockVector<F> &&a, const FockVector<F> &b
+  ) {
+    a += b;
+    return a;
+  }
+  template <typename F>
+  FockVector<F> inline operator +(
+    const FockVector<F> &a, const FockVector<F> &&b
+  ) {
+    b += a;
+    return b;
+  }
 
   template <typename F>
   FockVector<F> inline operator -(
-    FockVector<F> &a, FockVector<F> &b
+    const FockVector<F> &a, const FockVector<F> &b
   ) {
     FockVector<F> result(a);
     result -= b;
     return result;
   }
+  // move versions to prevent copying
+  template <typename F>
+  FockVector<F> inline operator -(
+    const FockVector<F> &&a, const FockVector<F> &b
+  ) {
+    a -= b;
+    return a;
+  }
+  template <typename F>
+  FockVector<F> inline operator -(
+    const FockVector<F> &a, const FockVector<F> &&b
+  ) {
+    b -= a;
+    // TODO: directly invoke sum to prevent extra multiplication
+    b *= F(-1);
+    return b;
+  }
 
   template <typename F>
-  FockVector<F> inline operator *(FockVector<F> &a, const F &s) {
+  FockVector<F> inline operator *(const FockVector<F> &a, const F &s) {
     FockVector<F> result(a);
     result *= s;
     return result;
   }
+  // move version
+  template <typename F>
+  FockVector<F> inline operator *(const FockVector<F> &&a, const F &s) {
+    a *= s;
+    return a;
+  }
 
   template <typename F>
-  FockVector<F> inline operator *(const F &s, FockVector<F> &a) {
+  FockVector<F> inline operator *(const F &s, const FockVector<F> &a) {
     FockVector<F> result(a);
     result *= s;
     return result;
+  }
+  // move version
+  template <typename F>
+  FockVector<F> inline operator *(const F &s, const FockVector<F> &&a) {
+    a *= s;
+    return a;
   }
 }
 

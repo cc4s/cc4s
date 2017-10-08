@@ -109,10 +109,8 @@ void DiisMixer<F>::append(
   for (int j(0); j < count; ++j) {
     int i( (nextIndex+N-j) % N );
     LOG(1, "DiisMixer") << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
-    auto a( column[i+1] * *amplitudes[i] );
-    *next += a;
-    auto r( column[i+1] * *residua[i] );
-    *nextResiduum += r;
+    *next += column[i+1] * *amplitudes[i];
+    *nextResiduum += column[i+1] * *residua[i];
   }
 
   nextIndex = (nextIndex+1) % N;
