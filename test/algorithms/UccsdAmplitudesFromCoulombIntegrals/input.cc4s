@@ -27,24 +27,33 @@ ApproximateCoulombVertex [
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (antisymmetrize 1)
 ] [
-  PPHHCoulombIntegrals
   HHHHCoulombIntegrals
   PPPPCoulombIntegrals
   PPHHCoulombIntegrals
   HHHPCoulombIntegrals
   PHPHCoulombIntegrals
   PPPHCoulombIntegrals
+  HHPPCoulombIntegrals
+  HPHHCoulombIntegrals
+  HPHPCoulombIntegrals
+  HPPPCoulombIntegrals
+  PPHPCoulombIntegrals
 ].
 
 UccsdAmplitudesFromCoulombIntegrals [
-  PPHHCoulombIntegrals
   HHHHCoulombIntegrals
   PPPPCoulombIntegrals
   PPHHCoulombIntegrals
   HHHPCoulombIntegrals
   PHPHCoulombIntegrals
   PPPHCoulombIntegrals
+  HHPPCoulombIntegrals
+  HPHHCoulombIntegrals
+  HPHPCoulombIntegrals
+  HPPPCoulombIntegrals
+  PPHPCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 10)
   %(mixer "LinearMixer")

@@ -59,50 +59,11 @@ void UccsdAmplitudesFromCoulombIntegrals::run() {
   Vijka = getTensorArgument<double, CTF::Tensor<> >("HHHPCoulombIntegrals");
   Vaibj = getTensorArgument<double, CTF::Tensor<> >("PHPHCoulombIntegrals");
   Vabci = getTensorArgument<double, CTF::Tensor<> >("PPPHCoulombIntegrals");
-
-  int syms[] = {NS, NS, NS, NS};
-
-  //  Vijab
-  int oovv[] = { No, No, Nv, Nv };
-  Vijab =  new CTF::Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab");
-  (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
-  conjugate(*Vijab);
-
-  //  Viajk
-  int ovoo[] = { No, Nv, No, No };
-  Viajk =  new CTF::Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk");
-  (*Viajk)["iajk"] =  (*Vijka)["jkia"]  - (*Vijka)["kjia"];
-  conjugate(*Viajk);
-
-  // Viajb
-  int ovov[] = { No, Nv, No, Nv };
-  int voov[] = { Nv, No, No, Nv };
-  CTF::Tensor<> Vaijb(4, voov, syms, *Cc4s::world, "Vaijb");
-  // Assumes real orbitals
-  Vaijb["aijb"] = (*Vabij)["abji"];
-  Viajb =  new CTF::Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb");
-  (*Viajb)["iajb"] = ( - 1.0 ) * (Vaijb)["aijb"];
-  (*Viajb)["iajb"] +=  (*Vaibj)["aibj"];
-
-  // Viabc
-  int ovvv[] = { No, Nv, Nv, Nv };
-  Viabc =  new CTF::Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc");
-  (*Viabc)["iabc"] =  (*Vabci)["abci"];
-  conjugate(*Viabc);
-  (*Viabc)["iabc"] -= (*Vabci)["acbi"];
-
-  // Vabic
-  int vvov[] = { Nv, Nv, No, Nv };
-  Vabic =  new CTF::Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic");
-  (*Vabic)["abic"] =  (*Vabci)["baci"] - (*Vabci)["abci"];
-
-  // Antisymmetrize integrals that are read in
-  (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
-  (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
-  (*Vijka)["ijka"] -= (*Vijka)["jika"];
-  (*Vaibj)["aibj"] -= (*Vabij)["baij"];
-  (*Vabci)["abci"] -= (*Vabci)["baci"];
-  (*Vabij)["abij"] -= (*Vabij)["abji"];
+  Vijab = getTensorArgument<double, CTF::Tensor<> >("HHPPCoulombIntegrals");
+  Viajk = getTensorArgument<double, CTF::Tensor<> >("HPHHCoulombIntegrals");
+  Viajb = getTensorArgument<double, CTF::Tensor<> >("HPHPCoulombIntegrals");
+  Viabc = getTensorArgument<double, CTF::Tensor<> >("HPPPCoulombIntegrals");
+  Vabic = getTensorArgument<double, CTF::Tensor<> >("PPHPCoulombIntegrals");
 
   ClusterSinglesDoublesAlgorithm::run();
 }
