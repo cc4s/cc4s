@@ -52,8 +52,6 @@ void CoulombIntegralsFromVertex::run() {
   vooo = std::array<int,4>{{ Nv, No, No, No }};
   voov = std::array<int,4>{{ Nv, No, No, Nv }};
   oovv = std::array<int,4>{{ No, No, Nv, Nv }};
-
-  // Indices for integrals created from already existing
   ovoo = std::array<int,4>{{ No, Nv, No, No }};
   ovov = std::array<int,4>{{ No, Nv, No, Nv }};
   ovvv = std::array<int,4>{{ No, Nv, Nv, Nv }};
