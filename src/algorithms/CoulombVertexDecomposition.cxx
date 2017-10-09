@@ -281,21 +281,13 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   }
 
   // initial guess is current Pi^q_R, composedGamma-Gamma is the residuum
-  auto Pi(
+  PTR(FockVector<complex>) Pi(
     NEW(FockVector<complex>,
       std::vector<PTR(Tensor<complex>)>({NEW(Tensor<complex>, *PiqR)}),
       std::vector<std::string>({"qR"})
     )
   );
   double initialDelta(getDelta());
-  auto R(
-    NEW(FockVector<complex>,
-      std::vector<PTR(Tensor<complex>)>({NEW(Tensor<complex>, *composedGammaGqr)}),
-      std::vector<std::string>({"Gqr"})
-    )
-  );
-  (*R->get(0))["Gqr"] -= (*GammaGqr)["Gqr"];
-  mixer->append(Pi, R);
 
   // Babylonian algorithm to solve quadratic form
   int maxSubIterationsCount(getIntegerArgument("maxSubIterations", 8));
@@ -306,32 +298,35 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     j < minSubIterationsCount ||
     (initialDelta < Delta && j < maxSubIterationsCount)
   ) {
-    // then compute Pi_r^R from RALS
+    // first, compute Pi_r^R by least-squares, fit keeping all other fixed
     fitAlternatingLeastSquaresFactor(
       *GammaGqr,"Gqr", *PiqR,'q', *LambdaGR,'G', *PirR,'r'
     );
     if (realFactorOrbitals) realizePi(*PirR);
     if (normalizedFactorOrbitals) normalizePi(*PirR);
-    // and the new Pi^q_R by conjugate transposition or pseudo inversion
+    // then get new Pi^q_R by conjugate transposition or pseudo inversion
     computeOutgoingPi();
+
+    // compute difference to old Pi^q_R as residuum and append to mixer
+    auto PiChange( Pi );
     Pi = NEW(FockVector<complex>,
       std::vector<PTR(Tensor<complex>)>({NEW(Tensor<complex>, *PiqR)}),
       std::vector<std::string>({"qR"})
     );
-    // finally, compute the residuum
+    *PiChange -= *Pi;
+    mixer->append(Pi, PiChange);
+    // get the mixer's best estimate for Pi^q_R
+    Pi = NEW(FockVector<complex>, *mixer->get());
+    // and write it to PiqR
+    (*PiqR)["qR"] = (*Pi->get(0))["qR"];
+
+    // compute fit error
     Delta = getDelta();
-    R = NEW(FockVector<complex>,
-      std::vector<PTR(Tensor<complex>)>({NEW(Tensor<complex>, *composedGammaGqr)}),
-      std::vector<std::string>({"Gqr"})
-    );
     if (writeSubIterations) {
       LOG(1, "Babylonian") << "|Pi^(" << (i+1) << "," << (j+1) << ")"
         << "Pi*^(" << (i+1) << "," << (j+1) << ")"
         << "Lambda^(n) - Gamma|=" << Delta << std::endl;
     }
-    mixer->append(Pi, R);
-    // get the mixer's best estimate for Pi^q_R
-    (*PiqR)["qR"] = (*mixer->get()->get(0))["qR"];
     ++j;
   }
   delete mixer;
