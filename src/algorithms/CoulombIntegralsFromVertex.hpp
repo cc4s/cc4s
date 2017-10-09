@@ -22,17 +22,19 @@ namespace cc4s {
     virtual ~CoulombIntegralsFromVertex();
     /**
      * \brief Calculates Coulomb integrals Vabcd,Vabij,Vaibj,Vabci,Vijka,Vijkl
-     * from GammaGai,GammaGab,GammaGij Coulomb Vertices. Arguments can be
+     * from GammaGai,GammaGab,GammaGij Coulomb Vertices.
+     * Arguments can be any combination of the sort
      * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
     */
     virtual void run();
     /**
      * \brief Dry run for calculating Coulomb integrals
      * Vabcd,Vabij,Vaibj,Vabci,Vijka Vijkl
-     * from GammaGai,GammaGab,GammaGij Coulomb Vertices. Arguments can be
+     * from GammaGai,GammaGab,GammaGij Coulomb Vertices.
+     * Arguments can be any combination of the sort
      * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
     */
-    virtual void dryRun();
+    //virtual void dryRun();
   protected:
     void calculateRealIntegrals();
     void calculateComplexIntegrals();
@@ -41,8 +43,8 @@ namespace cc4s {
     CTF::Tensor<complex> *GammaGia;
     CTF::Tensor<complex> *GammaGab;
     CTF::Tensor<complex> *GammaGij;
-    std::array<int,4> syms, vvvv, vovo, vvoo, voov, oovv, oooo, ooov, vooo, vvvo,
-                      ovoo, ovov, ovvv, vvov;
+    std::array<int,4> syms, vvvv, vovo, vvoo, voov, oovv, oooo, ooov, vooo,
+                            vvvo, ovoo, ovov, ovvv, vvov, ovvo, oovo, vovv;
   };
 }
 

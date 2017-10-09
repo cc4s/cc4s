@@ -58,6 +58,9 @@ void CoulombIntegralsFromVertex::run() {
   ovov = std::array<int,4>{{ No, Nv, No, Nv }};
   ovvv = std::array<int,4>{{ No, Nv, Nv, Nv }};
   vvov = std::array<int,4>{{ Nv, Nv, No, Nv }};
+  ovvo = std::array<int,4>{{ No, Nv, Nv, No }};
+  oovo = std::array<int,4>{{ No, No, Nv, No }};
+  vovv = std::array<int,4>{{ Nv, No, Nv, Nv }};
 
 
   bool realIntegrals = !getIntegerArgument("complex", 0);
@@ -95,26 +98,45 @@ void CoulombIntegralsFromVertex::run() {
 
 void CoulombIntegralsFromVertex::calculateRealIntegrals() {
   int antisymmetrize(getIntegerArgument("antisymmetrize", 0));
-  Tensor<> *Vaibj(isArgumentGiven("PHPHCoulombIntegrals") ?
-    new Tensor<>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaibj") : nullptr);
-  Tensor<> *Vabij(isArgumentGiven("PPHHCoulombIntegrals") ?
-    new Tensor<>(4, vvoo.data(), syms.data(), *Cc4s::world, "Vabij") : nullptr);
-  Tensor<> *Vijab(isArgumentGiven("HHPPCoulombIntegrals") ?
-    new Tensor<>(4, oovv.data(), syms.data(), *Cc4s::world, "Vijab") : nullptr);
-  Tensor<> *Vaijb(isArgumentGiven("PHHPCoulombIntegrals") ?
-    new Tensor<>(4, voov.data(), syms.data(), *Cc4s::world, "Vaijb") : nullptr);
-  Tensor<> *Vijkl(isArgumentGiven("HHHHCoulombIntegrals") ?
-    new Tensor<>(4, oooo.data(), syms.data(), *Cc4s::world, "Vijkl") : nullptr);
-  Tensor<> *Vijka(isArgumentGiven("HHHPCoulombIntegrals") ?
-    new Tensor<>(4, ooov.data(), syms.data(), *Cc4s::world, "Vijka") : nullptr);
-  Tensor<> *Vaijk(isArgumentGiven("PHHHCoulombIntegrals") ?
-    new Tensor<>(4, vooo.data(), syms.data(), *Cc4s::world, "Vaijk") : nullptr);
-  Tensor<> *Vabcd(isArgumentGiven("PPPPCoulombIntegrals") ?
-    new Tensor<>(4, vvvv.data(), syms.data(), *Cc4s::world, "Vabcd") : nullptr);
-  Tensor<> *Vabci(isArgumentGiven("PPPHCoulombIntegrals") ?
-    new Tensor<>(4, vvvo.data(), syms.data(), *Cc4s::world, "Vabci") : nullptr);
+  Tensor<> *Vaibj(
+    isArgumentGiven("PHPHCoulombIntegrals") ?
+    new Tensor<>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaibj") : nullptr
+  );
+  Tensor<> *Vabij(
+    isArgumentGiven("PPHHCoulombIntegrals") ?
+    new Tensor<>(4, vvoo.data(), syms.data(), *Cc4s::world, "Vabij") : nullptr
+  );
+  Tensor<> *Vijkl(
+    isArgumentGiven("HHHHCoulombIntegrals") ?
+    new Tensor<>(4, oooo.data(), syms.data(), *Cc4s::world, "Vijkl") : nullptr
+  );
+  Tensor<> *Vijka(
+    isArgumentGiven("HHHPCoulombIntegrals") ?
+    new Tensor<>(4, ooov.data(), syms.data(), *Cc4s::world, "Vijka") : nullptr
+  );
+  Tensor<> *Vabcd(
+    isArgumentGiven("PPPPCoulombIntegrals") ?
+    new Tensor<>(4, vvvv.data(), syms.data(), *Cc4s::world, "Vabcd") : nullptr
+  );
+  Tensor<> *Vabci(
+    isArgumentGiven("PPPHCoulombIntegrals") ?
+    new Tensor<>(4, vvvo.data(), syms.data(), *Cc4s::world, "Vabci") : nullptr
+  );
+
 
   // Initialization of tensors created from already existing ones
+  Tensor<> *Vaijk(
+    isArgumentGiven("PHHHCoulombIntegrals") ?
+    new Tensor<>(4, vooo.data(), syms.data(), *Cc4s::world, "Vaijk") : nullptr
+  );
+  Tensor<> *Vijab(
+    isArgumentGiven("HHPPCoulombIntegrals") ?
+    new Tensor<>(4, oovv.data(), syms.data(), *Cc4s::world, "Vijab") : nullptr
+  );
+  Tensor<> *Vaijb(
+    isArgumentGiven("PHHPCoulombIntegrals") ?
+    new Tensor<>(4, voov.data(), syms.data(), *Cc4s::world, "Vaijb") : nullptr
+  );
   Tensor<> *Viajk(
     isArgumentGiven("HPHHCoulombIntegrals") ?
     new Tensor<>(4, ovoo.data(), syms.data(), *Cc4s::world, "Viajk") : nullptr
@@ -131,6 +153,19 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
     isArgumentGiven("PPHPCoulombIntegrals") ?
     new Tensor<>(4, vvov.data(), syms.data(), *Cc4s::world, "Vabic") : nullptr
   );
+  Tensor<> *Viabj(
+    isArgumentGiven("HPPHCoulombIntegrals") ?
+    new Tensor<>(4, ovvo.data(), syms.data(), *Cc4s::world, "Viabj") : nullptr
+  );
+  Tensor<> *Vijak(
+    isArgumentGiven("HHPHCoulombIntegrals") ?
+    new Tensor<>(4, oovo.data(), syms.data(), *Cc4s::world, "Vijak") : nullptr
+  );
+  Tensor<> *Vaibc(
+    isArgumentGiven("PHPPCoulombIntegrals") ?
+    new Tensor<>(4, vovv.data(), syms.data(), *Cc4s::world, "Vijak") : nullptr
+  );
+
 
   // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
   Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
@@ -159,25 +194,12 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
     (*Vaibj)["aibj"] += imagGammaGab["Gab"] * imagGammaGij["Gij"];
     allocatedTensorArgument("PHPHCoulombIntegrals", Vaibj);
   }
-  if (Vaijb) {
-    LOG(1, "CoulombIntegrals") << "Evaluating "
-                               << Vaijb->get_name() << std::endl;
-    (*Vaijb)["aijb"]  = realGammaGai["Gaj"] * realGammaGai["Gbi"];
-    (*Vaijb)["aijb"] += imagGammaGai["Gaj"] * imagGammaGai["Gbi"];
-    allocatedTensorArgument("PHHPCoulombIntegrals", Vaijb);
-  }
   if (Vabij) {
     LOG(1, "CoulombIntegrals") << "Evaluating "
                                << Vabij->get_name() << std::endl;
     (*Vabij)["abij"]  = realGammaGai["Gai"] * realGammaGai["Gbj"];
     (*Vabij)["abij"] += imagGammaGai["Gai"] * imagGammaGai["Gbj"];
     allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
-  }
-  if (Vijab) {
-    LOG(1, "CoulombIntegrals") << "Evaluating "
-                               << Vijab->get_name() << std::endl;
-    (*Vijab)["ijab"] = (*Vabij)["abij"];
-    allocatedTensorArgument("HHPPCoulombIntegrals", Vijab);
   }
   if (Vijkl) {
     LOG(1, "CoulombIntegrals") << "Evaluating "
@@ -192,13 +214,6 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
     (*Vijka)["ijka"]  = realGammaGij["Gik"] * realGammaGai["Gaj"];
     (*Vijka)["ijka"] += imagGammaGij["Gik"] * imagGammaGai["Gaj"];
     allocatedTensorArgument("HHHPCoulombIntegrals", Vijka);
-  }
-  if (Vaijk) {
-    LOG(1, "CoulombIntegrals") << "Evaluating "
-                               << Vaijk->get_name() << std::endl;
-    (*Vaijk)["aijk"]  = realGammaGai["Gaj"] * realGammaGij["Gik"];
-    (*Vaijk)["aijk"] += imagGammaGai["Gaj"] * imagGammaGij["Gik"];
-    allocatedTensorArgument("PHHHCoulombIntegrals", Vaijk);
   }
   if (Vabcd) {
     LOG(1, "CoulombIntegrals") << "Evaluating "
@@ -216,51 +231,137 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
   }
 
   // Create the rest of integrals from the already given ones
-  if (Viajk) {
-    //                   -----
-    // Remember: Viajk = Vjkia
-    LOG(1, "CoulombIntegrals") << "Evaluating "
-                               << Viajk->get_name() << std::endl;
-    (*Viajk)["iajk"] =  (*Vijka)["jkia"];
+  // --------------------------------------------------------
+
+  if (Viabj) {
+    // ovvo = hl * vvoo
+    LOG(1, "CoulombIntegrals") << "Evaluating"
+                               << Viabj->get_name() << " using "
+                               << Vabij->get_name() << std::endl;
+
+    (*Viabj)["iabj"] = (*Vabij)["baij"];
     if (antisymmetrize) {
-      (*Viajk)["iajk"] += ( - 1.0 ) * (*Vijka)["kjia"];
+      // ovov = v * vovo
+      (*Viabj)["iabj"] -= (*Vaibj)["aibj"];
     }
-    conjugate(*Viajk);
-    allocatedTensorArgument("HPHHCoulombIntegrals", Viajk);
+    allocatedTensorArgument("HPPHCoulombIntegrals", Viabj);
   }
-  // TODO: Do it and check
   if (Viajb) {
+    // ovov = v * vovo
     LOG(1, "CoulombIntegrals") << "Evaluating "
-                               << Viajb->get_name() << std::endl;
+                               << Viajb->get_name() << " using "
+                               << Vaibj->get_name() << std::endl;
+
+    (*Viajb)["iajb"] = (*Vaibj)["aibj"];
     if (antisymmetrize) {
-      // FIXME: Assumes real orbitals
-      (*Viajb)["iajb"] = ( - 1.0 ) * (*Vaijb)["aijb"];
-      (*Viajb)["iajb"] +=  (*Vaibj)["aibj"];
+      // ovvo = hl * vvoo
+      (*Viajb)["iajb"] -= (*Vabij)["baij"];
     }
     allocatedTensorArgument("HPHPCoulombIntegrals", Viajb);
   }
   if (Viabc) {
-    //                           -----
-    // Remember: Viabc = Vaicb = Vcbai
-    // TODO: review if it is really like this
+    // ovvv = h%v * vvvo
     LOG(1, "CoulombIntegrals") << "Evaluating "
-                               << Viabc->get_name() << std::endl;
-    (*Viabc)["iabc"] =  (*Vabci)["abci"];
-    conjugate(*Viabc);
+                               << Viabc->get_name() << " using "
+                               << Vabci->get_name() << std::endl;
+
+    (*Viabc)["iabc"] = (*Vabci)["cbai"];
     if (antisymmetrize) {
-      (*Viabc)["iabc"] -= (*Vabci)["acbi"];
+      // ovvv = h%v * vvvo
+      (*Viabc)["iabc"] -= (*Vabci)["bcai"];
     }
     allocatedTensorArgument("HPPPCoulombIntegrals", Viabc);
   }
-  if (Vabic) {
-    // Remember: Vabic = Vbaci
+  if (Vijak) {
+    // oovo = v * ooov
     LOG(1, "CoulombIntegrals") << "Evaluating "
-                               << Vabic->get_name() << std::endl;
+                               << Vijak->get_name() << " using "
+                               << Vijka->get_name() << std::endl;
+
+    (*Vijak)["ijak"] = (*Vijka)["jika"];
+    if (antisymmetrize) {
+      // ooov = e * ooov
+      (*Vijak)["ijak"] -= (*Vijka)["ijka"];
+    }
+    allocatedTensorArgument("HHPHCoulombIntegrals", Vijak);
+  }
+  if (Vijab) {
+    // oovv = h * vvoo
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vijab->get_name() << " using "
+                               << Vabij->get_name() << std::endl;
+
+    (*Vijab)["ijab"] = (*Vabij)["abij"];
+    if (antisymmetrize) {
+      // oovv = h * vvoo
+      (*Vijab)["ijab"] -= (*Vabij)["baij"];
+    }
+    allocatedTensorArgument("HHPPCoulombIntegrals", Vijab);
+  }
+  if (Vabic) {
+    // vvov = v * vvvo
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vabic->get_name() << " using "
+                               << Vabci->get_name() << std::endl;
+
     (*Vabic)["abic"] = (*Vabci)["baci"];
     if (antisymmetrize) {
-      (*Vabic)["abic"] = ( - 1.0 ) * (*Vabci)["abci"];
+      // vvvo = e * vvvo
+      (*Vabic)["abic"] -= (*Vabci)["abci"];
     }
     allocatedTensorArgument("PPHPCoulombIntegrals", Vabic);
+  }
+  if (Vaijb) {
+    // voov = hr * vvoo
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vaijb->get_name() << " using "
+                               << Vabij->get_name() << std::endl;
+
+    (*Vaijb)["aijb"] = (*Vabij)["abji"];
+    if (antisymmetrize) {
+      // vovo = e * vovo
+      (*Vaijb)["aijb"] -= (*Vaibj)["aibj"];
+    }
+    allocatedTensorArgument("PHHPCoulombIntegrals", Vaijb);
+  }
+  if (Vaibc) {
+    // vovv = h * vvvo
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vaibc->get_name() << " using "
+                               << Vabci->get_name() << std::endl;
+
+    (*Vaibc)["aibc"] = (*Vabci)["bcai"];
+    if (antisymmetrize) {
+      // vovv = h * vvvo
+      (*Vaibc)["aibc"] -= (*Vabci)["cbai"];
+    }
+    allocatedTensorArgument("PHPPCoulombIntegrals", Vaibc);
+  }
+  if (Vaijk) {
+    // vooo = h%v * ooov
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Vaijk->get_name() << " using "
+                               << Vijka->get_name() << std::endl;
+
+    (*Vaijk)["aijk"] = (*Vijka)["kjia"];
+    if (antisymmetrize) {
+      // vooo = h%v * ooov
+      (*Vaijk)["aijk"] -= (*Vijka)["jkia"];
+    }
+    allocatedTensorArgument("PHHHCoulombIntegrals", Vaijk);
+  }
+  if (Viajk) {
+    // ovoo = h * ooov
+    LOG(1, "CoulombIntegrals") << "Evaluating "
+                               << Viajk->get_name() << " using "
+                               << Vijka->get_name() << std::endl;
+
+    (*Viajk)["iajk"] = (*Vijka)["jkia"];
+    if (antisymmetrize) {
+      // ovoo = h * ooov
+      (*Viajk)["iajk"] -= (*Vijka)["kjia"];
+    }
+    allocatedTensorArgument("HPHHCoulombIntegrals", Viajk);
   }
 
   if (antisymmetrize) {
@@ -270,15 +371,10 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
     if (Vijkl) (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
     if (Vabcd) (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
     if (Vijka) (*Vijka)["ijka"] -= (*Vijka)["jika"];
-    if (Vaibj) (*Vaibj)["aibj"] -= (*Vabij)["baij"];
     if (Vabci) (*Vabci)["abci"] -= (*Vabci)["baci"];
+    // Vaibj depends on Vabij, do not change the order
+    if (Vaibj) (*Vaibj)["aibj"] -= (*Vabij)["baij"];
     if (Vabij) (*Vabij)["abij"] -= (*Vabij)["abji"];
-
-    if (Vijab) (*Vijab)["ijab"] -= (*Vijab)["ijba"]
-    // TODO: do it
-    if (Vaijb) (*Vaijb)["aijb"] -= (*Vaijb)["aijb"]
-    if (Vaijk) (*Vaijk)["aijk"] -= (*Vaijk)["aikj"]
-
   }
 
 }
