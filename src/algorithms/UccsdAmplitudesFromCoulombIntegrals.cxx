@@ -50,9 +50,7 @@ void UccsdAmplitudesFromCoulombIntegrals::run() {
   epsi = getTensorArgument<double, CTF::Tensor<> >("HoleEigenEnergies");
   epsa = getTensorArgument<double, CTF::Tensor<> >("ParticleEigenEnergies");
 
-  int Nv(epsa->lens[0]), No(epsi->lens[0]);
-
-  // Get couloumb integrals (these shoul not be antisymmetrized)
+  // Get couloumb integrals
   Vijkl = getTensorArgument<double, CTF::Tensor<> >("HHHHCoulombIntegrals");
   Vabcd = getTensorArgument<double, CTF::Tensor<> >("PPPPCoulombIntegrals");
   Vabij = getTensorArgument<double, CTF::Tensor<> >("PPHHCoulombIntegrals");
