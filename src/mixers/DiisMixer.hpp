@@ -19,8 +19,8 @@ namespace cc4s {
     virtual void append(
       const PTR(FockVector<F>) &A, const PTR(FockVector<F>) &R
     );
-    virtual PTR(FockVector<F>) get();
-    virtual PTR(FockVector<F>) getResiduum();
+    virtual PTR(const FockVector<F>) get();
+    virtual PTR(const FockVector<F>) getResiduum();
 
     /**
      * \brief The best estimate for the next amplitudes as returned by get().

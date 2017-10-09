@@ -24,10 +24,8 @@ LinearMixer<F>::~LinearMixer() {
 
 template <typename F>
 void LinearMixer<F>::append(
-  const PTR(FockVector<F>) &A, const PTR(FockVector<F>) &R
+  const PTR(FockVector<F>) &next, const PTR(FockVector<F>) &nextResiduum
 ) {
-  auto next( NEW(FockVector<F>, *A) );
-  auto nextResiduum( NEW(FockVector<F>, *R) );
   if (last) {
     // mix accordingly
     *last *= 1-ratio;
@@ -43,12 +41,12 @@ void LinearMixer<F>::append(
 }
 
 template <typename F>
-PTR(FockVector<F>) LinearMixer<F>::get() {
+PTR(const FockVector<F>) LinearMixer<F>::get() {
     return last;
 }
 
 template <typename F>
-PTR(FockVector<F>) LinearMixer<F>::getResiduum() {
+PTR(const FockVector<F>) LinearMixer<F>::getResiduum() {
     return lastResiduum;
 }
 

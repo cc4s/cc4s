@@ -5,11 +5,11 @@
 #include <math/Vector.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
-#include <util/Log.hpp>
 
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <ostream>
 
 #include <ctf.hpp>
 
@@ -261,9 +261,8 @@ namespace cc4s {
 
     void copyComponents(const std::vector<PTR(CTF::Tensor<F>)> &components) {
       componentTensors.resize(components.size());
-      int i(0);
-      for (auto component: components) {
-        componentTensors[i++] = NEW(CTF::Tensor<F>, *component);
+      for (size_t i(0); i < components.size(); ++i) {
+        componentTensors[i] = NEW(CTF::Tensor<F>, *components[i]);
       }
     }
 
@@ -362,20 +361,13 @@ namespace cc4s {
     result += b;
     return result;
   }
-  // move versions to prevent copying
+  // move version to prevent copying
   template <typename F>
   FockVector<F> inline operator +(
-    const FockVector<F> &&a, const FockVector<F> &b
+    FockVector<F> &&a, const FockVector<F> &b
   ) {
     a += b;
     return a;
-  }
-  template <typename F>
-  FockVector<F> inline operator +(
-    const FockVector<F> &a, const FockVector<F> &&b
-  ) {
-    b += a;
-    return b;
   }
 
   template <typename F>
@@ -389,14 +381,14 @@ namespace cc4s {
   // move versions to prevent copying
   template <typename F>
   FockVector<F> inline operator -(
-    const FockVector<F> &&a, const FockVector<F> &b
+    FockVector<F> &&a, const FockVector<F> &b
   ) {
     a -= b;
     return a;
   }
   template <typename F>
   FockVector<F> inline operator -(
-    const FockVector<F> &a, const FockVector<F> &&b
+    const FockVector<F> &a, FockVector<F> &&b
   ) {
     b -= a;
     // TODO: directly invoke sum to prevent extra multiplication
@@ -412,7 +404,7 @@ namespace cc4s {
   }
   // move version
   template <typename F>
-  FockVector<F> inline operator *(const FockVector<F> &&a, const F &s) {
+  FockVector<F> inline operator *(FockVector<F> &&a, const F &s) {
     a *= s;
     return a;
   }
@@ -425,9 +417,19 @@ namespace cc4s {
   }
   // move version
   template <typename F>
-  FockVector<F> inline operator *(const F &s, const FockVector<F> &&a) {
+  FockVector<F> inline operator *(const F &s, FockVector<F> &&a) {
     a *= s;
     return a;
+  }
+
+  template <typename F>
+  std::ostream &operator <<(std::ostream &stream, const FockVector<F> &a) {
+    stream << "( ";
+    stream << a.get(0) << "[" << a.getIndices(0) << "]";
+    for (size_t i(1); i < a.componentTensors.size(); ++i) {
+      stream << ", " << a.get(i) << "[" << a.getIndices(i) << "]";
+    }
+    return stream << " )";
   }
 }
 

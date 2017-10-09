@@ -20,20 +20,20 @@ DrccdEnergyFromCoulombIntegrals::~DrccdEnergyFromCoulombIntegrals() {
 }
 
 PTR(FockVector<double>) DrccdEnergyFromCoulombIntegrals::getResiduum(
-  const int iteration, const PTR(FockVector<double>) &amplitudes
+  const int iteration, const PTR(const FockVector<double>) &amplitudes
 ) {
   return getResiduum<double>(iteration, amplitudes);
 }
 
 PTR(FockVector<complex>) DrccdEnergyFromCoulombIntegrals::getResiduum(
-  const int iteration, const PTR(FockVector<complex>) &amplitudes
+  const int iteration, const PTR(const FockVector<complex>) &amplitudes
 ) {
   return getResiduum<complex>(iteration, amplitudes);
 }
 
 template <typename F>
 PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
-  const int iteration, const PTR(FockVector<F>) &amplitudes
+  const int iteration, const PTR(const FockVector<F>) &amplitudes
 ) {
   // read all required integrals
   auto Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));

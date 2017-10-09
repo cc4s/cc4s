@@ -117,12 +117,12 @@ void DiisMixer<F>::append(
 }
 
 template <typename F>
-PTR(FockVector<F>) DiisMixer<F>::get() {
+PTR(const FockVector<F>) DiisMixer<F>::get() {
   return next;
 }
 
 template <typename F>
-PTR(FockVector<F>) DiisMixer<F>::getResiduum() {
+PTR(const FockVector<F>) DiisMixer<F>::getResiduum() {
   return nextResiduum;
 }
 

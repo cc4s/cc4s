@@ -51,21 +51,21 @@ namespace cc4s {
      * \brief Computes and returns the residuum of the given amplitudes
      **/
     virtual PTR(FockVector<double>) getResiduum(
-      const int iteration, const PTR(FockVector<double>) &amplitudes
+      const int iteration, const PTR(const FockVector<double>) &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the residuum of the given amplitudes
      **/
     virtual PTR(FockVector<complex>) getResiduum(
-      const int iteration, const PTR(FockVector<complex>) &amplitudes
+      const int iteration, const PTR(const FockVector<complex>) &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the energy of the given amplitudes.
      **/
     template <typename F>
-    F getEnergy(const PTR(FockVector<F>) &amplitdues);
+    F getEnergy(const PTR(const FockVector<F>) &amplitdues);
 
     /**
      * \brief Calculates an improved estimate of the amplitudes provided
@@ -105,7 +105,7 @@ namespace cc4s {
 
     template <typename F>
     void storeAmplitudes(
-      const PTR(FockVector<F>) &amplitudes,
+      const PTR(const FockVector<F>) &amplitudes,
       std::initializer_list<std::string> names
     );
 
@@ -122,12 +122,12 @@ namespace cc4s {
      * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
      */
     CTF::Tensor<double> *sliceCoupledCoulombIntegrals(
-      const PTR(FockVector<double>) &amplitudes,
+      const PTR(const FockVector<double>) &amplitudes,
       int a, int b, int integralsSliceSize
     );
 
     CTF::Tensor<complex> *sliceCoupledCoulombIntegrals(
-      const PTR(FockVector<complex>) &amplitudes,
+      const PTR(const FockVector<complex>) &amplitudes,
       int a, int b, int integralsSliceSize
     );
 
@@ -145,11 +145,11 @@ namespace cc4s {
      * \param[out] Fabij sliced Residuum
      */
     CTF::Tensor<double> *sliceAmplitudesFromCoupledCoulombFactors(
-      const PTR(FockVector<double>) &amplitudes,
+      const PTR(const FockVector<double>) &amplitudes,
       int a, int b, int factorsSliceSize
     );
     CTF::Tensor<complex> *sliceAmplitudesFromCoupledCoulombFactors(
-      const PTR(FockVector<complex>) &amplitudes,
+      const PTR(const FockVector<complex>) &amplitudes,
       int a, int b, int factorsSliceSize
     );
 

@@ -28,7 +28,7 @@ CcsdEnergyFromCoulombIntegrals::~CcsdEnergyFromCoulombIntegrals() {
 //////////////////////////////////////////////////////////////////////
 
 PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
-  const int i, const PTR(FockVector<double>) &amplitudes
+  const int i, const PTR(const FockVector<double>) &amplitudes
 ) {
   // get singles and doubles part of the amplitudes
   auto Tai( amplitudes->get(0) );
@@ -413,7 +413,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
 
 
 PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
-  const int i, const PTR(FockVector<complex>) &amplitudes
+  const int i, const PTR(const FockVector<complex>) &amplitudes
 ) {
   // Read Vabij integrals
   auto Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));

@@ -42,7 +42,7 @@ F ClusterSinglesDoublesAlgorithm::run() {
   int Nv(getTensorArgument<>("ParticleEigenEnergies")->lens[0]);
   int No(getTensorArgument<>("HoleEigenEnergies")->lens[0]);
 
-  auto amplitudes(
+  PTR(const FockVector<F>) amplitudes(
     createAmplitudes<F>(
       {"Singles", "Doubles"}, {{Nv,No}, {Nv,Nv,No,No}}, {"ai", "abij"}
     )
@@ -67,13 +67,14 @@ F ClusterSinglesDoublesAlgorithm::run() {
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
+    LOG(1,"CC") << amplitudes << std::endl;
     auto estimatedAmplitudes( getResiduum(i, amplitudes) );
+    LOG(1,"CC") << amplitudes << std::endl;
+    LOG(1,"CC") << estimatedAmplitudes << std::endl;
     estimateAmplitudesFromResiduum(estimatedAmplitudes);
-    *amplitudes *= -1.0;
-    *amplitudes += *estimatedAmplitudes;
-// FIXME: why does it depend on the sign of the difference?
-    *amplitudes *= -1.0;
-    mixer->append(estimatedAmplitudes, amplitudes);
+    auto amplitudesChange( NEW(FockVector<F>, *estimatedAmplitudes) );
+    *amplitudesChange -= *amplitudes;
+    mixer->append(estimatedAmplitudes, amplitudesChange);
     // get mixer's best guess for amplitudes
     amplitudes = mixer->get();
     e = getEnergy(amplitudes);
@@ -93,7 +94,7 @@ F ClusterSinglesDoublesAlgorithm::run() {
 
 template <typename F>
 F ClusterSinglesDoublesAlgorithm::getEnergy(
-  const PTR(FockVector<F>) &amplitudes
+  const PTR(const FockVector<F>) &amplitudes
 ) {
   // get the Coulomb integrals to compute the energy
   Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
@@ -163,7 +164,7 @@ PTR(FockVector<F>) ClusterSinglesDoublesAlgorithm::createAmplitudes(
 
 template <typename F>
 void ClusterSinglesDoublesAlgorithm::storeAmplitudes(
-  const PTR(FockVector<F>) &amplitudes,
+  const PTR(const FockVector<F>) &amplitudes,
   std::initializer_list<std::string> names
 ) {
   int component(0);
@@ -274,7 +275,7 @@ void ClusterSinglesDoublesAlgorithm::dryAmplitudesFromResiduum(
 
 
 Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
-  const PTR(FockVector<double>) &amplitudes,
+  const PTR(const FockVector<double>) &amplitudes,
   int a, int b, int integralsSliceSize
 ) {
   // Read the amplitudes Tai
@@ -356,7 +357,7 @@ Tensor<double> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
 }
 
 Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
-  const PTR(FockVector<complex>) &amplitudes,
+  const PTR(const FockVector<complex>) &amplitudes,
   int a, int b, int integralsSliceSize
 ) {
   // Read the amplitudes Tai
@@ -429,7 +430,7 @@ Tensor<complex> *ClusterSinglesDoublesAlgorithm::sliceCoupledCoulombIntegrals(
 Tensor<double> *
   ClusterSinglesDoublesAlgorithm::sliceAmplitudesFromCoupledCoulombFactors
 (
-  const PTR(FockVector<double>) &amplitudes,
+  const PTR(const FockVector<double>) &amplitudes,
   int a, int b, int factorsSliceSize
 ) {
   auto PirR(getTensorArgument<complex>("FactorOrbitals"));
@@ -595,7 +596,7 @@ Tensor<double> *
 Tensor<complex> *
   ClusterSinglesDoublesAlgorithm::sliceAmplitudesFromCoupledCoulombFactors
 (
-  const PTR(FockVector<complex>) &amplitudes,
+  const PTR(const FockVector<complex>) &amplitudes,
   int a, int b, int factorsSliceSize
 ) {
   auto PirR(getTensorArgument<complex>("FactorOrbitals"));

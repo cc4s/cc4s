@@ -1,4 +1,4 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 #define CCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
@@ -40,10 +40,10 @@ namespace cc4s {
      * \param[in] i Iteration number
      */
     virtual PTR(FockVector<double>) getResiduum(
-      const int iteration, const PTR(FockVector<double>) &amplitudes
+      const int iteration, const PTR(const FockVector<double>) &amplitudes
     );
     virtual PTR(FockVector<complex>) getResiduum(
-      const int iteration, const PTR(FockVector<complex>) &amplitudes
+      const int iteration, const PTR(const FockVector<complex>) &amplitudes
     );
   };
 }
