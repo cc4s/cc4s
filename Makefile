@@ -87,3 +87,8 @@ build/${CONFIG}/bin/Test: ${OBJECTS} $(TESTS_OBJECTS)
 	mkdir -p $(dir $@)
 	${CXX} ${OPTIONS} ${OPTIMIZE} ${OBJECTS} $(TESTS_OBJECTS) ${INCLUDE} ${LIBS} -o $@
 
+ctf:
+	git submodule update -i
+	mkdir -p lib/build/${CONFIG}/ctf
+	cd lib/build/${CONFIG}/ctf && ../../../src/ctf/configure "CXX=$(CXX)"
+	$(MAKE) -C lib/build/${CONFIG}/ctf

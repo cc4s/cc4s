@@ -11,7 +11,10 @@ OPTIONS=-fopenmp -DDEBUG
 OPTIMIZE=-O0 -g
 
 # location of the Cyclops Tensor Framework library depends on the configuration
-CTF=modules/build/gxx/ctf
+CTF=lib/build/$(CONFIG)/ctf
+
+# location of the compiled BLAS,LAPACK and ScaLAPACK libraries
+SCA=/usr/local/lib/scalapack
 
 # location of the compiled BLAS,LAPACK and ScaLAPACK libraries
 SCA=/usr/local/lib/scalapack

@@ -19,8 +19,8 @@ build/${CONFIG}/obj/math/CanonicalPolyadicDecomposition.o \
 build/${CONFIG}/obj/math/RegularizedAlternatingLeastSquares.o \
 build/${CONFIG}/obj/mixers/Mixer.o \
 build/${CONFIG}/obj/mixers/LinearMixer.o \
+build/${CONFIG}/obj/mixers/DiisMixer.o \
 build/${CONFIG}/obj/algorithms/Algorithm.o \
-build/${CONFIG}/obj/algorithms/ClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/ClusterSinglesDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/SliceCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexDecomposition.o \
@@ -47,11 +47,7 @@ build/${CONFIG}/obj/algorithms/CoulombVertexReader.o \
 build/${CONFIG}/obj/algorithms/CoulombIntegralsFromVertex.o \
 build/${CONFIG}/obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/DrccdEnergyFromCoulombVertex.o \
-build/${CONFIG}/obj/algorithms/CcdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/DcdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CcsdEnergyFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/DcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/CoulombVertexSingularVectors.o \
 build/${CONFIG}/obj/algorithms/ParticleHoleCoulombVertexSingularVectors.o \
 build/${CONFIG}/obj/algorithms/ApproximateCoulombVertex.o \

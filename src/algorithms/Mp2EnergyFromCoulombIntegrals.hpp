@@ -21,6 +21,9 @@ namespace cc4s {
      * \brief Dry run for the MP2 energy from Coulomb integrals Vabij
      */
     virtual void dryRun();
+  protected:
+    template <typename F>
+    F calculateMp2Energy(CTF::Tensor<F> &Vabij);
   };
 }
 

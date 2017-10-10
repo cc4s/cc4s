@@ -45,6 +45,17 @@ void cc4s::fromComplexTensor(
 }
 
 void cc4s::fromComplexTensor(
+  CTF::Tensor<double> &C,
+  CTF::Tensor<double> &R, CTF::Tensor<double> &I
+) {
+  AssertCompatibleTensorShapes(C,R,I);
+  char inds[C.order];
+  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  R[inds] = C[inds];
+  I[inds] = 0.0;
+}
+
+void cc4s::fromComplexTensor(
   CTF::Tensor<complex> &C,
   CTF::Tensor<double> &R
 ) {
@@ -104,9 +115,14 @@ void cc4s::toComplexTensor(
   );
 }
 
-void cc4s::conjugate(
-  CTF::Tensor<double> &
+void cc4s::toComplexTensor(
+  CTF::Tensor<double> &R,
+  CTF::Tensor<double> &C
 ) {
+  AssertCompatibleTensorShape(C,R);
+  char inds[C.order];
+  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  C[inds] = R[inds];
 }
 
 void cc4s::conjugate(
@@ -121,5 +137,11 @@ void cc4s::conjugate(
   ) (
     C[inds]
   );
+}
+
+void cc4s::conjugate(
+  CTF::Tensor<double> &C
+) {
+  // ;-)
 }
 

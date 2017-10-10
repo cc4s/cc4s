@@ -15,6 +15,11 @@ namespace cc4s {
     CTF::Tensor<double> &r, CTF::Tensor<double> &i
   );
 
+  void fromComplexTensor(
+    CTF::Tensor<double> &c,
+    CTF::Tensor<double> &r, CTF::Tensor<double> &i
+  );
+
   /**
    * \brief Discards the real part of a complex tensor.
    */
@@ -39,12 +44,21 @@ namespace cc4s {
     CTF::Tensor<complex> &c
   );
 
+  void toComplexTensor(
+    CTF::Tensor<double> &r,
+    CTF::Tensor<double> &c
+  );
+
   void conjugate(
     CTF::Tensor<double> &c
   );
 
   void conjugate(
     CTF::Tensor<complex> &c
+  );
+
+  void conjugate(
+    CTF::Tensor<double> &c
   );
 }
 

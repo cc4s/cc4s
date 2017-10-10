@@ -34,10 +34,13 @@ namespace cc4s {
      * Arguments can be any combination of the sort
      * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
     */
-    //virtual void dryRun();
+    virtual void dryRun();
   protected:
     void calculateRealIntegrals();
     void calculateComplexIntegrals();
+
+    void dryCalculateRealIntegrals();
+    void dryCalculateComplexIntegrals();
 
     CTF::Tensor<complex> *GammaGai;
     CTF::Tensor<complex> *GammaGia;

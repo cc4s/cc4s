@@ -17,6 +17,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
+#include <sstream>
 
 using namespace cc4s;
 using namespace CTF;
@@ -38,9 +39,26 @@ void FiniteSizeCorrection::run() {
     readFromFile();
   } else {
     LOG(0,"FiniteSize") << "Calculating structure factor" << std::endl;
-    calculateStructureFactor();
+
+    Data *Tabij(getArgumentData("DoublesAmplitudes"));
+    TensorData<double> *realTabij(dynamic_cast<TensorData<double>*>(Tabij));
+    if (realTabij) {
+      calculateRealStructureFactor();
+    } else {
+      calculateComplexStructureFactor();
+    }
+
+    /*
+    bool complex = getIntegerArgument("complex", 0);
+    if (complex) {
+      calculateComplexStructureFactor();
+    } else {
+      calculateRealStructureFactor();
+    }
+    */
+    
   }
-  //constructFibonacciGrid();
+
   LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
   interpolation3D();
   LOG(0,"FiniteSize") << "Caclulating finite size correction" << std::endl;
@@ -110,28 +128,49 @@ void FiniteSizeCorrection::readFromFile(){
   LOG(1,"readFromFile") << "Finished" << std::endl;
 }
 
-void FiniteSizeCorrection::calculateStructureFactor() {
+void FiniteSizeCorrection::calculateRealStructureFactor() {
+  // Read the Particle/Hole Eigenenergies
+  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
-  //Definition of the variables
-  Tensor<complex> *GammaFai(
-    getTensorArgument<complex>("ParticleHoleCoulombVertex")
-  );
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
 
+  // Get the Particle Hole Coulomb Vertex
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(GammaFqr->lens[1]);
+  int NF(GammaFqr->lens[0]);
+
+  int aStart(Np-Nv), aEnd(Np);
+  int iStart(0), iEnd(No);
+  int FaiStart[] = {0, aStart,iStart};
+  int FaiEnd[]   = {NF,aEnd,  iEnd};
+
+  // Definition of ParticleHole Coulomb Vertex
   Tensor<complex> *GammaGai;
 
-  if (isArgumentGiven("CoulombVertexSingularVectors")) {
-    Tensor<complex> *UGF(
-      getTensorArgument<complex>("CoulombVertexSingularVectors")
-    );
-    int lens[]= {UGF->lens[0], GammaFai->lens[1], GammaFai->lens[2]};
-    GammaGai = new Tensor<complex>(
-      3, lens, GammaFai->sym, *GammaFai->wrld, "GammaGai"
-    );
-    (*GammaGai)["Gai"] = (*GammaFai)["Fai"] * (*UGF)["GF"];
-  } else {
-    GammaGai = GammaFai;
-  }
+  {
+    Tensor<complex> GammaFai(GammaFqr->slice(FaiStart, FaiEnd));
 
+    if (isArgumentGiven("CoulombVertexSingularVectors")) {
+      Tensor<complex> *UGF(
+        getTensorArgument<complex>("CoulombVertexSingularVectors")
+      );
+      int lens[]= {UGF->lens[0], Nv, No};
+      GammaGai = new Tensor<complex>(
+        3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+      );
+      (*GammaGai)["Gai"] = GammaFai["Fai"] * (*UGF)["GF"];
+    } else {
+      int lens[]= {NF, Nv, No};
+      GammaGai = new Tensor<complex>(
+        3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+      );
+      (*GammaGai) = GammaFai;
+    }
+  }
+  
   Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
   Tensor<> *realVG(new Tensor<>(false, *realInfVG));
   //Define take out inf funciton
@@ -175,6 +214,8 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   Tensor<complex> CGai(*GammaGai);
   CGai["Gai"] *= invSqrtVG["G"];
 
+  delete GammaGai;
+  
   //Conjugate of CGai
   Tensor<complex> conjCGai(false, CGai);
   Univar_Function<complex> fConj(conj<complex>);
@@ -212,6 +253,135 @@ void FiniteSizeCorrection::calculateStructureFactor() {
   structureFactors = new double[NG];
   realSG->read_all(structureFactors);
 }
+
+
+void FiniteSizeCorrection::calculateComplexStructureFactor() {
+  Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
+  Tensor<> *realVG(new Tensor<>(false, *realInfVG));
+  // Define take out inf funciton
+  class TakeOutInf {
+  public:
+    double operator ()(double x){
+      return std::isinf(x) ? 0.0 : x;
+    }
+  };
+  // Take out the inf from realVG.
+  TakeOutInf takeOutInf;
+  Univar_Function<> fTakeOutInf(takeOutInf);
+  realVG->sum(1.0, *realInfVG, "G", 0.0, "G", fTakeOutInf);
+  realVG->set_name("realVG");
+  Tensor<complex> VG(
+    1, realVG->lens, realVG->sym, *realVG->wrld, "VG"
+  );
+  toComplexTensor(*realVG, VG);
+  Tensor<> realInvSqrtVG(false, *realVG);
+  Tensor<complex> invSqrtVG(
+    1, realInvSqrtVG.lens, realInvSqrtVG.sym,
+     *realInvSqrtVG.wrld, "invSqrtVG"
+  );
+
+  //Starting a new space whose memory will be erased after operation
+  //Define operation inverse square root
+  class InvSqrt {
+  public:
+    double operator ()(double x){
+      return std::sqrt(1.0 / x);
+    }
+  };
+
+  //Get the inverted square root of VG
+  InvSqrt invSqrt;
+  Univar_Function<> fInvSqrt(invSqrt);
+  realInvSqrtVG.sum(1.0, *realInfVG, "G", 0.0, "G", fInvSqrt);
+  toComplexTensor(realInvSqrtVG, invSqrtVG);
+
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaFqr( getTensorArgument<complex>("CoulombVertex"));
+  Tensor<complex> *GammaGqr;
+
+  // Read the Particle/Hole Eigenenergies
+  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+
+  if (isArgumentGiven("CoulombVertexSingularVectors")) {
+    Tensor<complex> *UGF(
+      getTensorArgument<complex>("CoulombVertexSingularVectors")
+    );
+    int lens[]= {UGF->lens[0], GammaFqr->lens[1], GammaFqr->lens[2]};
+    GammaGqr = new Tensor<complex>(
+      3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+    );
+    (*GammaGqr)["Gqr"] = (*GammaFqr)["Fqr"] * (*UGF)["GF"];
+  } else {
+    int lens[]= {GammaFqr->lens[0], GammaFqr->lens[1], GammaFqr->lens[2]};
+    GammaGqr = new Tensor<complex>(
+      3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+    );
+    (*GammaGqr) = (*GammaFqr);
+  }
+
+  // Compute the No,Nv,NG,Np
+  NG=GammaGqr->lens[0];
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(GammaGqr->lens[1]);
+
+  int aStart(Np-Nv), aEnd(Np);
+  int iStart(0), iEnd(No);
+  int GiaStart[] = {0, iStart,aStart};
+  int GiaEnd[]   = {NG,iEnd,  aEnd};
+  int GaiStart[] = {0, aStart,iStart};
+  int GaiEnd[]   = {NG,aEnd,  iEnd};
+  //  GammaGia = new Tensor<complex>(GammaGqr->slice(GiaStart, GiaEnd));
+  //  GammaGai = new Tensor<complex>(GammaGqr->slice(GaiStart, GaiEnd));
+  Tensor<complex> GammaGia(GammaGqr->slice(GiaStart, GiaEnd));
+  Tensor<complex> GammaGai(GammaGqr->slice(GaiStart, GaiEnd));
+
+  delete GammaGqr;
+  
+  //Define CGia
+  Tensor<complex> CGia(GammaGia);
+  CGia["Gia"] *= invSqrtVG["G"];
+
+  Tensor<complex> conjTransposeCGia(false, GammaGia);
+  Univar_Function<complex> fConj(conj<complex>);
+  conjTransposeCGia.sum(1.0,GammaGai,"Gai", 0.0,"Gia", fConj);
+  conjTransposeCGia["Gia"] *= invSqrtVG["G"];
+
+  Tensor<complex> conjTransposeGammaGia(false, GammaGia);
+  conjTransposeGammaGia.sum(1.0,GammaGai,"Gai", 0.0,"Gia", fConj);
+
+  /*
+  Tensor<complex> conjCGai(false, GammaGai);
+  Univar_Function<complex> fConj(conj<complex>);
+  conjCGai.sum(1.0,GammaGai,"Gai", 0.0,"Gai", fConj);
+  conjCGai["Gai"] *= invSqrtVG["G"];
+  */
+
+  //Get Tabij
+  Tensor<complex> *Tabij(getTensorArgument<complex>("DoublesAmplitudes"));
+
+  if (isArgumentGiven("SinglesAmplitudes") ) {
+    //Get Tai
+    Tensor<complex> *Tai(getTensorArgument<complex>("SinglesAmplitudes"));
+    (*Tabij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+  }
+
+  //construct SG
+  CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGia.wrld, "SG"));
+  (*SG)["G"]  = ( 2.0) * conjTransposeCGia["Gia"] * CGia["Gjb"] * (*Tabij)["abij"];
+  (*SG)["G"] += (-1.0) * conjTransposeCGia["Gja"] * CGia["Gib"] * (*Tabij)["abij"];
+
+  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGia.wrld, "realSG"));
+  fromComplexTensor(*SG, *realSG);
+  allocatedTensorArgument<>("StructureFactor", realSG);
+
+  VofG = new double[NG];
+  realVG->read_all(VofG);
+  structureFactors = new double[NG];
+  realSG->read_all(structureFactors);
+}
+
 
 void FiniteSizeCorrection::dryCalculateStructureFactor() {
 
@@ -293,6 +463,7 @@ void FiniteSizeCorrection::constructFibonacciGrid(double R) {
 
 void FiniteSizeCorrection::interpolation3D() {
   Tensor<> *momenta(getTensorArgument<>("Momenta"));
+  //  int NG(momenta->lens[1]);
   cc4s::Vector<> *cartesianMomenta(new cc4s::Vector<>[NG]);
   momenta->read_all(&cartesianMomenta[0][0]);
 
@@ -679,24 +850,35 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
   double r1 = integrate(Int1d, 0.0, GC, 1000)*constantFactor*volume*kpoints*4*M_PI;
   double  sumSGVG(0.);
 
-  for (int d(0); d < NG; ++d){
+  // we assume the first entry of cartesianGrid corresponds to G=0
+  for (int d(1); d < NG; ++d) {
     sumSGVG += cartesianGrid[d].vg * cartesianGrid[d].s;
-    }
+  }
 
-  LOG(0,"FiniteSize") << "Uncorrected e= "  << std::setprecision(10) << sumSGVG
-    << std::endl;
-  LOG(0,"FiniteSize") << "Corrected   e= " << std::setprecision(10) 
-    << sumSGVG+inter3D-sum3D << std::endl;
+  LOG(0, "FiniteSize") << "Uncorrected e=" << sumSGVG << std::endl;
+  LOG(0, "FiniteSize") << "Corrected e=" << sumSGVG+inter3D-sum3D << std::endl;
 
-  LOG(1,"FiniteSize") << "Integral within cutoff radius= " 
-    << std::setprecision(10) << inter3D    << std::endl;
-  LOG(1,"FiniteSize") << "Sumation within cutoff radius= " 
-    << std::setprecision(10) << sum3D      << std::endl;
+  {
+    std::stringstream stream;
+    stream << std::setprecision(10) << "Summation within cutoff radius=" << sum3D << std::endl;
+    LOG(1,"FiniteSize") << stream.str();
+  }
+  {
+    std::stringstream stream;
+    stream << std::setprecision(10) << "Integral within cutoff radius="<< inter3D << std::endl;
+    LOG(1,"FiniteSize") << stream.str();
+  }
 
-  LOG(1,"FiniteSize") << "Spherical Averaging Correction  e="
-    << std::setprecision(10)  << r1        << std::endl;
-  LOG(1,"FiniteSize") << "Spherical Averaging Corrected   e="
-    << std::setprecision(10)  << sumSGVG + r1 << std::endl;
+  {
+    std::stringstream stream;
+    stream << std::setprecision(10) << "Spherical Averaging Correction=" << r1 << std::endl;
+    LOG(1,"FiniteSize") << stream.str();
+  }
+  {
+    std::stringstream stream;
+    stream << std::setprecision(10) << "Spherical Averaging Corrected="<< sumSGVG + r1 << std::endl;
+    LOG(1,"FiniteSize") << stream.str();
+  }
 
   setRealArgument("CorrectedEnergy"  , sumSGVG+inter3D-sum3D);
 }

@@ -11,7 +11,7 @@ OPTIONS=-openmp -DINTEL_COMPILER
 OPTIMIZE=-O3 -ipo -xAVX
 
 # location of the Cyclops Tensor Framework library depends on the configuration
-CTF=modules/build/${CONFIG}/ctf
+CTF=lib/build/${CONFIG}/ctf
 
 # additional include directories for header files
 INCLUDE=-I${CTF}/include

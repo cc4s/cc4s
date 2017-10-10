@@ -1,7 +1,7 @@
 #include <mixers/LinearMixer.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
-#include <ctf.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -12,7 +12,7 @@ template <typename F>
 LinearMixer<F>::LinearMixer(
   Algorithm *algorithm
 ):
-  Mixer<F>(algorithm), last(nullptr)
+  Mixer<F>(algorithm), last(nullptr), lastResiduum(nullptr)
 {
   ratio = (algorithm->getRealArgument("mixingRatio", 1.0));
   LOG(1,"LinearMixer") << "ratio=" << ratio << std::endl;
@@ -20,25 +20,34 @@ LinearMixer<F>::LinearMixer(
 
 template <typename F>
 LinearMixer<F>::~LinearMixer() {
-  if (last) delete last;
 }
 
 template <typename F>
-void LinearMixer<F>::append(Tensor<F> &A) {
-  if (!last) {
-    // create new, copying A
-    last = new Tensor<F>(A);
-  } else {
-    // overwrite last with A
-    std::string idx(Mixer<F>::indices(A));
-    // (*last)[] = ratio*A[idx.c_str()] + (1-ratio)*(*last);
-    last->sum(ratio, A, idx.c_str(), 1-ratio, idx.c_str());
+void LinearMixer<F>::append(
+  const PTR(FockVector<F>) &next, const PTR(FockVector<F>) &nextResiduum
+) {
+  if (last) {
+    // mix accordingly
+    *last *= 1-ratio;
+    *next *= ratio;
+    *next += *last;
+
+    *lastResiduum *= 1-ratio;
+    *nextResiduum *= ratio;
+    *nextResiduum += *lastResiduum;
   }
+  last = next;
+  lastResiduum = nextResiduum;
 }
 
 template <typename F>
-Tensor<F> &LinearMixer<F>::getNext() {
-  return *last;
+PTR(const FockVector<F>) LinearMixer<F>::get() {
+    return last;
+}
+
+template <typename F>
+PTR(const FockVector<F>) LinearMixer<F>::getResiduum() {
+    return lastResiduum;
 }
 
 // instantiate

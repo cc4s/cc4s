@@ -1,12 +1,16 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED 
 #define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
 
-#include <algorithms/ClusterDoublesAlgorithm.hpp>
-#include <mixers/Mixer.hpp>
-#include <string>
-#include <ctf.hpp>
+#include <algorithms/Algorithm.hpp>
+#include <math/FockVector.hpp>
 #include <tcc/DryTensor.hpp>
+#include <util/SharedPointer.hpp>
+
+#include <ctf.hpp>
+
+#include <string>
+#include <initializer_list>
 
 namespace cc4s {
   /**
@@ -14,8 +18,8 @@ namespace cc4s {
    * singles and doubles amplitudes. It calculates the energy from the amplitudes
    * \f$T_{a}^{i}\f$ and \f$T_{ab}^{ij}\f$ and the Coulomb integrals \f$V_{ij}^{ab}\f$. For
    * calculating the amplitudes it calls the iteration routine of the actual algorithm.
-   */
-  class ClusterSinglesDoublesAlgorithm: public ClusterDoublesAlgorithm {
+   **/
+  class ClusterSinglesDoublesAlgorithm: public Algorithm {
   public:
     ClusterSinglesDoublesAlgorithm(
       std::vector<Argument> const &argumentList
@@ -25,50 +29,85 @@ namespace cc4s {
      * \brief Calculates the energy of a ClusterSinglesDoubles algorithm
      */
     virtual void run();
+
+    // TODO: dryRun
+
     /**
-     * \brief Returns the abbreviation of the concrete algorithm in camel case,
-     * e.g. "Ccsd", "Dcsd". They will constitute the first part of the
-     * resulting tensors, such as "CcsdDoublesAmplitudes".
+     * \brief Returns the abbreviation of the concrete algorithm, e.g. "Ccd",
+     * "Dcd".
      */
     virtual std::string getAbbreviation() = 0;
+
     /**
-     * \brief Performs a Dry Run
+     * \brief Defines the default number of iterations (16).
      */
-    virtual void dryRun();
+    static int constexpr DEFAULT_MAX_ITERATIONS = 16;
 
   protected:
-    /**
-     * \brief The mixer for the singles amplitudes, additionally to those
-     * of the inheritided doubles amplitudes TabijMixer
-     */
-    Mixer<double> *TaiMixer;
+    template <typename F>
+    F run();
 
     /**
-     * \brief Performs one iteration of the concrete algorithm.
-     */
-    virtual void iterate(int i) = 0;
-
-    /**
-     * \brief Calculates the energy from the amplitudes currently contained
-     * in the mixers. Overrides ClusterDoublesAlgorithm method.
+     * \brief Computes and returns the residuum of the given amplitudes
      **/
-    virtual double calculateEnergy();
+    virtual PTR(FockVector<double>) getResiduum(
+      const int iteration, const PTR(const FockVector<double>) &amplitudes
+    ) = 0;
 
     /**
-     * \brief Calculates the singles amplitudes from the current residuum and
-     * returns them in-place.
-     * Usually this is done by calculating
-     * \f$T_{i}^{a} = R_{i}^{a} / (\varepsilon_i-\varepsilon_a)\f$,
-     * but other methods, such as level shifting may be used.
-     * \param[in] Rai Residuum Tensor.
-     */
-    void singlesAmplitudesFromResiduum(CTF::Tensor<> &Rai);
+     * \brief Computes and returns the residuum of the given amplitudes
+     **/
+    virtual PTR(FockVector<complex>) getResiduum(
+      const int iteration, const PTR(const FockVector<complex>) &amplitudes
+    ) = 0;
 
     /**
-     * \brief Dry run for singlesAmplitudesFromResiduum.
-     * \param[in] Rai Residuum Tensor.
-     */
-    void drySinglesAmplitudesFromResiduum(cc4s::DryTensor<> &Rai);
+     * \brief Computes and returns the energy of the given amplitudes.
+     **/
+    template <typename F>
+    F getEnergy(const PTR(const FockVector<F>) &amplitdues);
+
+    /**
+     * \brief Calculates an improved estimate of the amplitudes provided
+     * the given the residuum.
+     * \f$T_{ij\ldots}^{ab\ldots} = \frac{R_{ij\ldots}^{a\ldots}}
+       {-\Delta_{ij\ldots}^{ab\ldots}}\f$
+     * with \f$\Delta_{ij\ldots}^{ab\ldots} =
+       \varepsilon_i+\ldots-\varepsilon_a-\ldots\f$.
+     * \param[inout] residuum Fock vector, overwritten with new amplitudes.
+     **/
+    template <typename F>
+    void estimateAmplitudesFromResiduum(
+      const PTR(FockVector<F>) &residuum
+    );
+
+    /**
+     * \brief Calculates eps_a+eps_b+...-eps_i-eps_j-... into D^ab..._ij...
+     **/
+    template <typename F>
+    void calculateExcitationEnergies(
+      CTF::Tensor<F> &D, const std::string &indices
+    );
+
+    /**
+     * \brief Dry run for amplitudesFromResiduum.
+     * \param[in] R residuum tensor.
+     **/
+    template <typename F>
+    void dryAmplitudesFromResiduum(cc4s::DryTensor<F> &R);
+
+    template <typename F>
+    PTR(FockVector<F>) createAmplitudes(
+      std::initializer_list<std::string> amplitudeNames,
+      std::initializer_list<std::initializer_list<int>> amplitudeLens,
+      std::initializer_list<std::string> amplitudeIndices
+    );
+
+    template <typename F>
+    void storeAmplitudes(
+      const PTR(const FockVector<F>) &amplitudes,
+      std::initializer_list<std::string> names
+    );
 
     /**
      * \brief Calculates and returns one slice Xxycd of the Coulomb integrals \f$V_{cd}^{ab}\f$
@@ -82,15 +121,16 @@ namespace cc4s {
      * \param[in] integralsSliceSize slicing rank.
      * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
      */
-    CTF::Tensor<> *sliceCoupledCoulombIntegrals(int a, int b, int integralsSliceSize);
+    CTF::Tensor<double> *sliceCoupledCoulombIntegrals(
+      const PTR(const FockVector<double>) &amplitudes,
+      int a, int b, int integralsSliceSize
+    );
 
-    /**
-     * \brief Dry run for sliceCoupledCoulombIntegrals. 
-     * \param[in] a 1st sliced dimension (x).
-     * \param[in] b 2nd sliced dimension (y).
-     * \param[in] integralsSliceSize slicing rank.
-     */
-    cc4s::DryTensor<> *drySliceCoupledCoulombIntegrals(int integralsSliceSize);
+    CTF::Tensor<complex> *sliceCoupledCoulombIntegrals(
+      const PTR(const FockVector<complex>) &amplitudes,
+      int a, int b, int integralsSliceSize
+    );
+
 
     /**
      * \brief Calculates and returns one slice Fabij of the residuum
@@ -104,23 +144,35 @@ namespace cc4s {
      * \param[in] factorsSliceSize slicing rank of NR.
      * \param[out] Fabij sliced Residuum
      */
-    CTF::Tensor<> *sliceAmplitudesFromCoupledCoulombFactors(int a, int b, int factorsSliceSize);
+    CTF::Tensor<double> *sliceAmplitudesFromCoupledCoulombFactors(
+      const PTR(const FockVector<double>) &amplitudes,
+      int a, int b, int factorsSliceSize
+    );
+    CTF::Tensor<complex> *sliceAmplitudesFromCoupledCoulombFactors(
+      const PTR(const FockVector<complex>) &amplitudes,
+      int a, int b, int factorsSliceSize
+    );
 
     /**
-     * \brief Calculates and returns tensor Fabij of the residuum
-     * from the dressed Coulomb factors. 
-     * The caller is responsible for deleting the dynamically allocated
-     * result tensor. 
-     * \param[out] Fabij sliced Residuum
+     * \brief Adds the given slice of the residuum tensor Rxyij to the
+     * entire residuum tensor Rabij at the respective index range.
+     * \param[in] a0 1st sliced dimension (x).
+     * \param[in] b0 2nd sliced dimension (y).
+     * \param[in] Rxyij sliced residuum
+     * \param[in] Rabij entire residuum.
      */
-    CTF::Tensor<> *amplitudesFromCoupledCoulombFactors();
+    template <typename F>
+    void sliceIntoResiduum(
+      CTF::Tensor<F> &Rxyij, int a0, int b0, CTF::Tensor<F> &Rabij
+    );
+
 
     /**
-     * \brief Dry run for sliceAmplitudesFromCoupledCoulombFactors.
-     * \param[in] factorsSliceSize slicing rank of NR.
-     * \param[out] Fabij sliced Residuum
-     */
-    cc4s::DryTensor<> *drySliceAmplitudesFromCoupledCoulombFactors(int factorsSliceSize);
+     * \brief The abbreviation of the algorithm in capital letters.
+     **/
+    std::string getCapitalizedAbbreviation();
+
+    std::string getDataName(const std::string &type, const std::string &data);
   };
 }
 

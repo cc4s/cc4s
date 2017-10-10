@@ -11,22 +11,26 @@ CoulombVertexDecomposition [
   % Give the starting tensors if available. Else random tensors are used.
 % StartingCoulombFactors
 % StartingFactorOrbitals
-  % Set the rank or the rankFactor (relative to NG) of
-  % the decomposed tensor. Default is NR=2*NG.
-  (rank 66)
+  % Set the rankSize or the rankFactor (relative to NG) of
+  % the decomposed tensor. Default is NR=3*NG.
+  (rankSize 66)
   (rankFactor 2.0)
-  (realFactorOrbitals 1)
-  (normalizedFactorOrbitals 1)
+% (realFactorOrbitals 1)
+% (normalizedFactorOrbitals 1)
   % Set the number of iterations. Default is 32.
-  (maxIterations 256)
+  (maxIterations 64)
   (mixer "LinearMixer")
-  (mixingRatio 0.8)
+  (mixingRatio 0.5)
   % Set whether CoulombFactors or FactorOrbitals are fitted
   % or kept fixed during the RALS iterations.
-  (fitCoulombFactors 1)
-  (fitFactorOrbitals 1)
+% (fitCoulombFactors 1)
+% (fitFactorOrbitals 1)
+  % Choose the ansatz, one of "symmetric", "hermitian", "pseudoInverse"
+  (ansatz "pseudoInverse")
+  (writeSubIterations 1)
 ] [
   FactorOrbitals
+  OutgoingFactorOrbitals
   CoulombFactors
   ComposedCoulombVertex
 ].

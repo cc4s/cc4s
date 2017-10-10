@@ -202,16 +202,14 @@ namespace cc4s {
       for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
         V newVector(rightEigenVectors[b]);
         for (unsigned int j(0); j < b; ++j) {
-          V scaledBase( rightEigenVectors[j] * rightEigenVectors[j].dot(rightEigenVectors[b]) );
-          newVector -= scaledBase;
+          newVector -=
+            rightEigenVectors[j] * rightEigenVectors[j].dot(
+              rightEigenVectors[b]
+            );
         }
         // normalize
-        F newVector_norm(
-          std::sqrt(newVector.dot(newVector))
-        );
-        newVector *= F(1) / newVector_norm;
-        rightEigenVectors[b] *= F(0);
-        rightEigenVectors[b] += newVector;
+        rightEigenVectors[b] =
+          1 / std::sqrt(newVector.dot(newVector)) * newVector;
       }
 
       std::vector<V> rightBasis( rightEigenVectors );
@@ -247,12 +245,10 @@ namespace cc4s {
           // compute estimated eigenvector by expansion in rightBasis
           rightEigenVectors[k] *= F(0);
           for (int b(0); b < reducedH.getColumns(); ++b) {
-            V scaledBase(
+            rightEigenVectors[k] +=
               rightBasis[b] * ComplexTraits<F>::convert(
                 reducedEigenSystem.getRightEigenVectors()(b,k)
-              )
-            );
-            rightEigenVectors[k] += scaledBase;
+              );
           }
           double rightNorm(
             rightEigenVectors[k].dot(rightEigenVectors[k])
@@ -265,13 +261,11 @@ namespace cc4s {
 
           // compute residuum
           V residuum( h.rightApply(rightEigenVectors[k]) );
-          V lambdaR(
+          residuum -=
             rightEigenVectors[k] * ComplexTraits<F>::convert(
               //std::sqrt(eigenValues[k])
               eigenValues[k]
-            )
-          );
-          residuum -= lambdaR;
+            );
           rms += std::real(residuum.dot(residuum)) /
             std::real(rightEigenVectors[k].dot(rightEigenVectors[k]));
 
@@ -282,14 +276,11 @@ namespace cc4s {
              correction.componentTensors[1]["abji"];
           // orthonormalize and append to rightBasis
           for (unsigned int b(0); b < rightBasis.size(); ++b) {
-            V scaledBase( rightBasis[b] * rightBasis[b].dot(correction) );
-            correction -= scaledBase;
+            correction -= rightBasis[b] * rightBasis[b].dot(correction);
           }
-          F correction_norm(
-            std::sqrt(correction.dot(correction))
-          );
+          F correction_norm( std::sqrt(correction.dot(correction)) );
           if (std::abs(correction_norm) < 1E-6) continue;
-          correction *= F(1) / correction_norm;
+          correction *= 1 / correction_norm;
           rightBasis.push_back(correction);
           LOG(1,"Davidson") << "Basis size " << rightBasis.size() << std::endl;
         }

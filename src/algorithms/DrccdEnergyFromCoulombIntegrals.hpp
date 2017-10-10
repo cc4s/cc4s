@@ -2,10 +2,12 @@
 #ifndef DRCCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
 #define DRCCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
-#include <algorithms/ClusterDoublesAlgorithm.hpp>
+#include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
+
+#include <util/SharedPointer.hpp>
 
 namespace cc4s {
-  // this algorithm is now based on the ClusterDoublesAlgorithm
+  // this algorithm is now based on the ClusterSinglesDoublesAlgorithm
   // inheriting its iteration and slicing functionality.
   // Only the abstract (left out) methods getAbbreviation and iterate have
   // to be implemented.
@@ -14,7 +16,7 @@ namespace cc4s {
    * amplitudes \f$T_{ab}^{ij}\f$ from the Coulomb Integrals \f$V_{ij}^{ab}\f$
    * in a \f$ \mathcal{O}(N^{6}) \f$ implementation.
    */
-  class DrccdEnergyFromCoulombIntegrals: public ClusterDoublesAlgorithm {
+  class DrccdEnergyFromCoulombIntegrals: public ClusterSinglesDoublesAlgorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(DrccdEnergyFromCoulombIntegrals);
     DrccdEnergyFromCoulombIntegrals(
@@ -32,11 +34,18 @@ namespace cc4s {
      * \brief Implements the iterate method with the DRCCD iteration.
      * \param[in] i Iteration number
      */
-    virtual void iterate(int i);
-    /**
-     * \brief Implements the dry iterate method with the DRCCD iteration.
-     */
-    virtual void dryIterate();
+    virtual PTR(FockVector<double>) getResiduum(
+      const int iteration, const PTR(const FockVector<double>) &amplitudes
+    );
+
+    virtual PTR(FockVector<complex>) getResiduum(
+      const int iteration, const PTR(const FockVector<complex>) &amplitudes
+    );
+
+    template <typename F>
+    PTR(FockVector<F>) getResiduum(
+      const int iteration, const PTR(const FockVector<F>) &amplitudes
+    );
   };
 }
 

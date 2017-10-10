@@ -20,14 +20,20 @@ TEST_CASE( "Basic FockVector testing", "[math]" ) {
   CTF::Tensor<double> Rabij(
     4, vvoo, symsDoubles, CTF::get_universe(), "Rabij");
   cc4s::FockVector<double> R(
-    {Rai, Rabij}, {"ai", "abij"}
+    std::vector<PTR(CTF::Tensor<double>)>(
+      { NEW(CTF::Tensor<double>,Rai), NEW(CTF::Tensor<double>, Rabij) }
+    ),
+    std::vector<std::string>({"ai", "abij"})
   );
 
   CTF::Tensor<double> Lia(2, ov, symsSingles, CTF::get_universe(), "Lia");
   CTF::Tensor<double> Lijab(
     4, oovv, symsDoubles, CTF::get_universe(), "Lijab");
   cc4s::FockVector<double> L(
-    {Lia, Lijab}, {"ia", "ijab"}
+    std::vector<PTR(CTF::Tensor<double>)>(
+      { NEW(CTF::Tensor<double>,Lia), NEW(CTF::Tensor<double>, Lijab) }
+    ),
+    std::vector<std::string>({"ia", "ijab"})
   );
 
   // Test conjugateTranspose
@@ -38,7 +44,7 @@ TEST_CASE( "Basic FockVector testing", "[math]" ) {
     std::string indices(L.componentIndices[i]);
     for (unsigned int j(0) ; j < indices.size() ; j++) {
       REQUIRE(
-        L.componentTensors[i].lens[j] == Rvp.componentTensors[i].lens[j]
+        L.get(i)->lens[j] == Rvp.get(i)->lens[j]
       );
     }
   }

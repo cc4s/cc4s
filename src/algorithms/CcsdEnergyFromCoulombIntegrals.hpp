@@ -1,4 +1,4 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 #define CCSD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
@@ -30,17 +30,21 @@ namespace cc4s {
      */
     virtual std::string getAbbreviation() { return "Ccsd"; }
 
+    static int64_t constexpr DEFAULT_SLICE_SIZE = -1;
+    static int64_t constexpr DEFAULT_DISTINGUISHABLE = 0;
+
   protected:
     /**
      * \brief Implements the iterate method with the CCSD iteration. Iteration
      * routine taken from So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001).
      * \param[in] i Iteration number
      */
-    virtual void iterate(int i);
-    /**
-     * \brief Implements the dry iterate method with the CCSD iteration.
-     */
-    virtual void dryIterate();
+    virtual PTR(FockVector<double>) getResiduum(
+      const int iteration, const PTR(const FockVector<double>) &amplitudes
+    );
+    virtual PTR(FockVector<complex>) getResiduum(
+      const int iteration, const PTR(const FockVector<complex>) &amplitudes
+    );
   };
 }
 

@@ -34,9 +34,9 @@ namespace cc4s {
      */
     int64_t rank;
 
-    static int64_t constexpr DEFAULT_RANK = -1;
+    static int64_t constexpr DEFAULT_RANK_SIZE = -1;
 
-    static double constexpr DEFAULT_RANK_FACTOR = 2.0;
+    static double constexpr DEFAULT_RANK_FACTOR = 3.0;
 
     /**
      * \brief The Frobenius norm of the difference between
@@ -94,13 +94,17 @@ namespace cc4s {
      */
     AlternatingLeastSquaresRegularizationEstimator *regularizationEstimator;
 
-    static int64_t constexpr DEFAULT_MAX_ITERATIONS = 32;
-    static double constexpr DEFAULT_DELTA = 0.0;
-    static double constexpr DEFAULT_SWAMPING_THRESHOLD = 1.0;
-    static double constexpr DEFAULT_REGULARIZATION_FRICTION = 0.125;
-    static bool constexpr DEFAULT_REAL_FACTOR_ORBITALS = false;
-    static bool constexpr DEFAULT_NORMALIZED_FACTOR_ORBITALS = false;
-    static bool constexpr DEFAULT_WRITE_SUB_ITERATIONS = false;
+    static constexpr int64_t DEFAULT_MAX_ITERATIONS = 32;
+    static constexpr double DEFAULT_DELTA = 0.0;
+    static constexpr double DEFAULT_SWAMPING_THRESHOLD = 1.0;
+    static constexpr double DEFAULT_REGULARIZATION_FRICTION = 0.125;
+    static constexpr bool DEFAULT_REAL_FACTOR_ORBITALS = false;
+    static constexpr bool DEFAULT_NORMALIZED_FACTOR_ORBITALS = false;
+    static constexpr bool DEFAULT_WRITE_SUB_ITERATIONS = false;
+
+    static const std::string SYMMETRIC;
+    static const std::string HERMITIAN;
+    static const std::string PSEUDO_INVERSE;
 
   protected:
     /**
@@ -122,11 +126,11 @@ namespace cc4s {
      * \brief Normalizes the given factor orbitals, such that
      * \f${\Pi^\ast}^{qR}\Pi_{qR} = \delta_{qq}\f$.
      */
-    void normalizePi(CTF::Matrix<complex> &Pi);
+    void normalizePi(CTF::Tensor<complex> &Pi);
     /**
      * \brief Discards the imaginary part of the given factor orbitals.
      */
-    void realizePi(CTF::Matrix<complex> &Pi);
+    void realizePi(CTF::Tensor<complex> &Pi);
 
     /**
      * \brief Solves the quadratically occurring factor Pi iteratively
@@ -137,6 +141,19 @@ namespace cc4s {
      * }
      */
     void iterateQuadraticFactor(int iterationsCount);
+
+    /**
+     * \brief Takes the incoming factor orbitals and computes the
+     * outgoing factor orbitals according to the chosen ansatz.
+     * The ansatz is specified as the string argument
+     * ansatz and can be one of the following:
+     * "symmetric", "hermitian", "pseudoInverse"
+     **/
+    void computeOutgoingPi();
+
+    /**
+     * \brief Computes and returns the difference 
+     **/
     double getDelta();
   };
 }

@@ -1,15 +1,3 @@
-%ParticleHoleCoulombVertexReader [
-%  (file "../../resources/ParticleHoleCoulombVertex.bin")
-%] [
-%  ParticleHoleCoulombVertex HoleEigenEnergies ParticleEigenEnergies
-%].
-
-%ParticleHoleCoulombIntegrals [
-%  ParticleHoleCoulombVertex
-%] [
-%  PPHHCoulombIntegrals
-%].
-
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
   (unrestricted 1)
@@ -19,6 +7,8 @@ CoulombVertexReader [
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  % for a complex calculation 1 for a real 0
+  (complex 1)
 ] [
   PPHHCoulombIntegrals
 ].
@@ -28,6 +18,8 @@ Mp2EnergyFromCoulombIntegrals [
   (unrestricted 1)
 ] [
   Mp2Energy
+  % If Mp2DoublesAmplitudes are given they are returned
+% Mp2DoublesAmplitudes
 ].
 
 TensorWriter [(Data Mp2Energy)] [].

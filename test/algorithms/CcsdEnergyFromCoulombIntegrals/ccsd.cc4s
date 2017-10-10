@@ -1,30 +1,46 @@
 CoulombVertexReader [
   (file "../../resources/CoulombVertex.bin")
 ] [
-  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  CoulombVertex
+  HoleEigenEnergies ParticleEigenEnergies
 ].
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  % for a complex calculation use 1, for a real one 0
+  (complex 0)
 ] [
-  PPPPCoulombIntegrals
-  PPPHCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
+  PHHPCoulombIntegrals
+  HHPPCoulombIntegrals
   HHHHCoulombIntegrals
+  % the two following integrals are only needed for a complex calculation
   HHHPCoulombIntegrals
+  PHHHCoulombIntegrals
 ].
 
 CcsdEnergyFromCoulombIntegrals [
   CoulombVertex
-  PPPPCoulombIntegrals
-  PPPHCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
+  PHHPCoulombIntegrals
+  HHPPCoulombIntegrals
   HHHHCoulombIntegrals
+  % the two following integrals are only needed for a complex calculation
   HHHPCoulombIntegrals
+  PHHHCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
-  (maxIterations 32)
+  (maxIterations 24)
+% (integralsSliceSize 12)
+  (integralsSliceFactor 1)
+% (mixer "LinearMixer")
+% (mixingRatio 0.8)
+  (mixer "DiisMixer")
+  (maxResidua 4)
+  % for a DCSD calculation use the following flag
+  % distinguishable is 0 by default
+% (distinguishable 1)
 ] [
   (CcsdEnergy CcsdEnergy) 
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
@@ -32,71 +48,3 @@ CcsdEnergyFromCoulombIntegrals [
 ].
 
 TensorWriter [(Data CcsdEnergy)] [].
-
-CcsdEnergyFromCoulombIntegrals [
-  CoulombVertex
-  PPHHCoulombIntegrals
-  (startingSinglesAmplitudes CcsdSinglesAmplitudes)
-  (startingDoublesAmplitudes CcsdDoublesAmplitudes)
-  (maxIterations 0)
-] [
-  (CcsdEnergy ReevaluatedCcsdEnergy) 
-  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
-  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
-].
-
-TensorWriter [(Data ReevaluatedCcsdEnergy)] [].
-
-CcsdEnergyFromCoulombIntegrals [
-  CoulombVertex
-  PHPHCoulombIntegrals
-  PPHHCoulombIntegrals
-  HHHHCoulombIntegrals
-  HHHPCoulombIntegrals
-  ParticleEigenEnergies HoleEigenEnergies
-  (maxIterations 32)
-  (integralsSliceSize 13)
-] [
-  (CcsdEnergy CcsdEnergySlice)
-  (CcsdSinglesAmplitudes CcsdSinglesAmplitudesSlice)
-  (CcsdDoublesAmplitudes CcsdDoublesAmplitudesSlice)
-].
-
-TensorWriter [(Data CcsdEnergySlice)] [].
-
-CoulombVertexDecomposition [
-  CoulombVertex
-  % Set the rank or the rankFactor (relative to NG) of
-  % the decomposed tensor and the number of iterations.
-  % If both are given, rank is taken into account.
-  (rank 99)
-  (rankFactor 3.0)
-  (maxIterations 64)
-  (mixer "LinearMixer")
-  (mixingRatio 0.8)
-] [
-  FactorOrbitals CoulombFactors
-  % Returns (if given) the Coulomb Vertex from the decomposed tensors.
-  ComposedCoulombVertex
-].
-
-CcsdEnergyFromCoulombIntegrals [
-  CoulombVertex
-  FactorOrbitals CoulombFactors
-  PHPHCoulombIntegrals
-  PPHHCoulombIntegrals
-  HHHHCoulombIntegrals
-  HHHPCoulombIntegrals
-  ParticleEigenEnergies HoleEigenEnergies
-  (maxIterations 32)
-  (integralsSliceSize 13)
-  (factorsSliceSize 33)
-% (mixer "LinearMixer")
-% (mixingRatio 1.5)
-] [
-  (CcsdEnergy CcsdEnergyFactors)
-  (CcsdSinglesAmplitudes CcsdSinglesAmplitudesFactors)
-  (CcsdDoublesAmplitudes CcsdDoublesAmplitudesFactors)
-].
-
-TensorWriter [(Data CcsdEnergyFactors)] [].
