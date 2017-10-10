@@ -30,7 +30,7 @@ void CoulombIntegralsFromVertex::run() {
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
   LOG(0, "Integrals") <<
-    "Reading Coulomb integrals form vertex " << GammaGqr->get_name() 
+    "Reading Coulomb integrals form vertex " << GammaGqr->get_name()
     << std::endl;
 
   // Compute the No,Nv,NG,Np
@@ -166,21 +166,21 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
 
 
   // Split GammaGab,GammaGai,GammaGia,GammaGij into real and imaginary parts
-  Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym, 
+  Tensor<> realGammaGai(3, GammaGai->lens, GammaGai->sym,
                         *GammaGai->wrld, "RealGammaGai");
-  Tensor<> imagGammaGai(3, GammaGai->lens, GammaGai->sym, 
+  Tensor<> imagGammaGai(3, GammaGai->lens, GammaGai->sym,
                         *GammaGai->wrld, "ImagGammaGai");
   fromComplexTensor(*GammaGai, realGammaGai, imagGammaGai);
 
-  Tensor<> realGammaGab(3, GammaGab->lens, GammaGab->sym, 
+  Tensor<> realGammaGab(3, GammaGab->lens, GammaGab->sym,
                         *GammaGab->wrld, "RealGammaGab");
-  Tensor<> imagGammaGab(3, GammaGab->lens, GammaGab->sym, 
+  Tensor<> imagGammaGab(3, GammaGab->lens, GammaGab->sym,
                         *GammaGab->wrld, "ImagGammaGab");
   fromComplexTensor(*GammaGab, realGammaGab, imagGammaGab);
 
-  Tensor<> realGammaGij(3, GammaGij->lens, GammaGij->sym, 
+  Tensor<> realGammaGij(3, GammaGij->lens, GammaGij->sym,
                         *GammaGij->wrld, "RealGammaGij");
-  Tensor<> imagGammaGij(3, GammaGij->lens, GammaGij->sym, 
+  Tensor<> imagGammaGij(3, GammaGij->lens, GammaGij->sym,
                         *GammaGij->wrld, "ImagGammaGij");
   fromComplexTensor(*GammaGij, realGammaGij, imagGammaGij);
 
@@ -379,6 +379,7 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
 
 void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   int antisymmetrize(getIntegerArgument("antisymmetrize", 0));
+
   Tensor<complex> *Vabij(
     isArgumentGiven("PPHHCoulombIntegrals") ?
       new Tensor<complex>(4, vvoo.data(), syms.data(), *Cc4s::world, "Vabij") :
@@ -386,7 +387,6 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
   );
 
   Tensor<complex> *Vijab(
-    // TODO: HHPP is always conj(PPHH)
     isArgumentGiven("HHPPCoulombIntegrals") ?
       new Tensor<complex>(4, oovv.data(), syms.data(), *Cc4s::world, "Vijab") :
       nullptr
@@ -397,7 +397,7 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
       new Tensor<complex>(4, voov.data(), syms.data(), *Cc4s::world, "Vaijb") :
       nullptr
   );
-  
+
   Tensor<complex> *Vaibj(
     isArgumentGiven("PHPHCoulombIntegrals") ?
       new Tensor<complex>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaibj") :
@@ -409,7 +409,7 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
       new Tensor<complex>(4, oooo.data(), syms.data(), *Cc4s::world, "Vijkl") :
       nullptr
   );
-  
+
   Tensor<complex> *Vijka(
     isArgumentGiven("HHHPCoulombIntegrals") ?
       new Tensor<complex>(4, ooov.data(), syms.data(), *Cc4s::world, "Vijka") :
