@@ -4,6 +4,7 @@
 #include <math/ComplexTensor.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
+#include <math/MathFunctions.hpp>
 
 #include <vector>
 #include <string>
