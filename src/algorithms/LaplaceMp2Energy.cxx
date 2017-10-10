@@ -132,8 +132,8 @@ void LaplaceMp2Energy::run() {
 
 
   calculateAnalytically();
-//  double energy(calculateNumerically());
-  double energy(calculateStochastically());
+  double energy(calculateNumerically());
+//  double energy(calculateStochastically());
 
   LOG(0, "MP2") << "e=" << energy << std::endl;
 //  LOG(1, "MP2") << "MP2d=" << dire << std::endl;
@@ -312,6 +312,7 @@ double LaplaceMp2Energy::calculateAnalytically() {
   cDabij["abij"] -= cepsa["b"];
   Bivar_Function<complex> fDivide(&divide<complex>);
   cDabij.contract(1.0, cVabij,"abij", cDabij,"abij", 0.0,"abij", fDivide);
+  cDabij.sum(1.0, cDabij,"abij", 0.0,"abij", fConj);
 
   Scalar<complex> energy(*Cc4s::world);
   energy[""] = 2.0 * cDabij["abij"] * cVabij["abij"];

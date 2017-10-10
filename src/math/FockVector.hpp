@@ -2,7 +2,6 @@
 #define FOCK_VECTOR_DEFINED
 
 #include <math/ComplexTensor.hpp>
-#include <math/Vector.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 

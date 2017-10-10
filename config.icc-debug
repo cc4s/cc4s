@@ -14,7 +14,7 @@ OPTIONS=-openmp -DINTEL_COMPILER -g
 OPTIMIZE=-O0
 
 # location of the Cyclops Tensor Framework library depends on the configuration
-CTF=modules/build/icc/ctf
+CTF=lib/build/icc/ctf
 
 # additional include directories for header files
 INCLUDE=-I${CTF}/include
