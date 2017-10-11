@@ -113,13 +113,13 @@ void CcsdEquationOfMotionDavidson::run() {
   std::vector<FockVector<double>> basis( P.getInitialBasis(4) );
   allocatedTensorArgument(
     "SinglesHamiltonianDiagonal",
-    new CTF::Tensor<>(P.getDiagonalH().componentTensors[0])
+    new CTF::Tensor<>(*P.getDiagonalH().get(0))
   );
   allocatedTensorArgument(
     "DoublesHamiltonianDiagonal",
-    new CTF::Tensor<>(P.getDiagonalH().componentTensors[1])
+    new CTF::Tensor<>(*P.getDiagonalH().get(1))
   );
-  
+
   // Davidson solver
   int eigenStates(getIntegerArgument("eigenstates", 1));
   EigenSystemDavidson<FockVector<double>> eigenSystem(H, eigenStates, P, 1E-4, 8*16);
@@ -139,11 +139,16 @@ void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
   if (Cc4s::world->rank == 0) {
     elements.push_back(std::make_pair(i, F(1)));
   }
-  FockVector<F> basis({Tai, Tabij}, {"ai", "abij"});
+  FockVector<F> basis(
+    std::vector<PTR(CTF::Tensor<double>)>(
+      {NEW(CTF::Tensor<double>, Tai), NEW(CTF::Tensor<double>, Tabij)}
+    ),
+    std::vector<std::string>({"ai", "abij"})
+  );
   basis *= 0.0;
   basis.write(elements);
-  Tai["ai"] = basis.componentTensors[0]["ai"];
-  Tabij["abij"] = basis.componentTensors[1]["abij"];
+  Tai["ai"] = (*basis.get(0))["ai"];
+  Tabij["abij"] = (*basis.get(1))["abij"];
 }
 
 // instantiate template method implementation
@@ -189,10 +194,10 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
 ) {
   FockVector<F> LH(L);
   // get pointers to the component tensors
-  CTF::Tensor<F> *Lia( &L.componentTensors[0] );
-  CTF::Tensor<F> *Lijab( &L.componentTensors[1] );
-  CTF::Tensor<F> *LHia( &LH.componentTensors[0] );
-  CTF::Tensor<F> *LHijab( &LH.componentTensors[1] );
+  PTR(CTF::Tensor<F>) Lia( L.get(0) );
+  PTR(CTF::Tensor<F>) Lijab( L.get(1) );
+  PTR(CTF::Tensor<F>) LHia( LH.get(0) );
+  PTR(CTF::Tensor<F>) LHijab( LH.get(1) );
 
   // Contruct HR (one body part)
   (*LHia)["ja"]  = 0.0;
@@ -258,10 +263,10 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
 ) {
   FockVector<F> HR(R);
   // get pointers to the component tensors
-  CTF::Tensor<F> *Rai( &R.componentTensors[0] );
-  CTF::Tensor<F> *Rabij( &R.componentTensors[1] );
-  CTF::Tensor<F> *HRai( &HR.componentTensors[0] );
-  CTF::Tensor<F> *HRabij( &HR.componentTensors[1] );
+  PTR(CTF::Tensor<F>) Rai( R.get(0) );
+  PTR(CTF::Tensor<F>) Rabij( R.get(1) );
+  PTR(CTF::Tensor<F>) HRai( HR.get(0) );
+  PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
 
   // Contruct HR (one body part)
   // TODO: why "bi" not "ai"?
@@ -539,10 +544,15 @@ CcsdPreConditioner<F>::CcsdPreConditioner(
   CTF::Tensor<F> &Viajb,
   CTF::Tensor<F> &Vijab,
   CTF::Tensor<F> &Vijkl
-): diagonalH({{Tai, Tabij}, {"ai", "abij"}}) {
+): diagonalH(
+    std::vector<PTR(CTF::Tensor<double>)>(
+      {NEW(CTF::Tensor<double>, Tai), NEW(CTF::Tensor<double>, Tabij)}
+    ),
+    std::vector<std::string>({"ai", "abij"})
+  ) {
   // pointers to singles and doubles tensors of diagonal part
-  CTF::Tensor<F> *Dai( &diagonalH.componentTensors[0] );
-  CTF::Tensor<F> *Dabij( &diagonalH.componentTensors[1] );
+  auto Dai( diagonalH.get(0) );
+  auto Dabij( diagonalH.get(1) );
 
   // TODO: Maybe inster the Tai part to the diagonal
 
@@ -641,11 +651,11 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
   }
   MpiCommunicator communicator(*Cc4s::world);
    int lowestElementsCount(
-    diagonalH.componentTensors[0].lens[0] *
-    diagonalH.componentTensors[0].lens[1] +
+    diagonalH.get(0)->lens[0] *
+    diagonalH.get(0)->lens[1] +
     pow(
-      diagonalH.componentTensors[0].lens[0] *
-      diagonalH.componentTensors[0].lens[1],
+      diagonalH.get(0)->lens[0] *
+      diagonalH.get(0)->lens[1],
       3.0
     )
   );
@@ -688,9 +698,9 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
     // b2: 0... 1 (at global position 32) 0 ...i
 
     // Filter out unphysical components from the basisElement
-    (basisElement.componentTensors[1])["abii"]=0.0;
-    (basisElement.componentTensors[1])["aaij"]=0.0;
-    (basisElement.componentTensors[1])["aaii"]=0.0;
+    (*basisElement.get(1))["abii"]=0.0;
+    (*basisElement.get(1))["aaij"]=0.0;
+    (*basisElement.get(1))["aaii"]=0.0;
 
     b++;
     //std::cout << "b" << b << std::endl;
@@ -721,20 +731,20 @@ FockVector<F> CcsdPreConditioner<F>::getCorrection(
 
   FockVector<F> correction(diagonalH);
   // compute ((lambda * id - Diag(diagonal))^-1) . residuum
-  for (unsigned int c(0); c < w.componentTensors.size(); ++c) {
+  for (unsigned int c(0); c < w.getDimension(); ++c) {
     const char *indices( correction.componentIndices[c].c_str() );
-    correction.componentTensors[c].contract(
+    (*correction.get(c)).contract(
       1.0,
-      residuum.componentTensors[c],indices,
-      diagonalH.componentTensors[c],indices,
+      *residuum.get(c),indices,
+      *diagonalH.get(c),indices,
       0.0,indices,
       CTF::Bivar_Function<F>(diagonalCorrection)
     );
   }
   // Filter out unphysical components from the correction
-  (correction.componentTensors[1])["abii"]=0.0;
-  (correction.componentTensors[1])["aaij"]=0.0;
-  (correction.componentTensors[1])["aaii"]=0.0;
+  (*correction.get(1))["abii"]=0.0;
+  (*correction.get(1))["aaij"]=0.0;
+  (*correction.get(1))["aaii"]=0.0;
   return correction;
 }
 
