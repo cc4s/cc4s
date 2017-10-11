@@ -19,34 +19,20 @@ namespace cc4s {
     virtual ~UccsdAmplitudesFromCoulombIntegrals();
 
     virtual void run();
-    double calculateEnergy();
     virtual std::string getAbbreviation() { return "Uccsd"; }
 
   protected:
-    virtual void iterate(int i);
-    CTF::Tensor<> *epsi;
-    CTF::Tensor<> *epsa;
+    /**
+     * \brief Implements the iterate method with the DRCCD iteration.
+     * \param[in] i Iteration number
+     */
+    virtual PTR(FockVector<double>) getResiduum(
+      const int iteration, const PTR(const FockVector<double>) &amplitudes
+    );
 
-    // Get couloumb integrals (these shoul not be antisymmetrized)
-    CTF::Tensor<> *Vijkl;
-    CTF::Tensor<> *Vabcd;
-    CTF::Tensor<> *Vabij;
-    CTF::Tensor<> *Vijka;
-    CTF::Tensor<> *Vaibj;
-    CTF::Tensor<> *Vabci;
-
-    //  Vijab
-    CTF::Tensor<> *Vijab;
-    //  Viajk
-    CTF::Tensor<> *Viajk;
-    // Viajb
-    CTF::Tensor<> *Viajb;
-    // Viabc
-    CTF::Tensor<> *Viabc;
-    // Vabic
-    CTF::Tensor<> *Vabic;
-
-
+    virtual PTR(FockVector<complex>) getResiduum(
+      const int iteration, const PTR(const FockVector<complex>) &amplitudes
+    );
 
   };
 }
