@@ -43,19 +43,19 @@ void ThermalEquationOfMotion::run() {
   std::vector<FockVector<double>> basis( P.getInitialBasis(16) );
   allocatedTensorArgument(
     "VacuumHamiltonianDiagonal",
-    new CTF::Tensor<>(P.getDiagonalH().componentTensors[0])
+    new CTF::Tensor<>(*P.getDiagonalH().get(0))
   );
   allocatedTensorArgument(
     "DoublesHamiltonianDiagonal",
-    new CTF::Tensor<>(P.getDiagonalH().componentTensors[1])
+    new CTF::Tensor<>(*P.getDiagonalH().get(1))
   );
   allocatedTensorArgument(
     "VacuumBasis",
-    new CTF::Tensor<>(basis[8].componentTensors[0])
+    new CTF::Tensor<>(*basis[8].get(0))
   );
   allocatedTensorArgument(
     "DoublesBasis",
-    new CTF::Tensor<>(basis[8].componentTensors[1])
+    new CTF::Tensor<>(*basis[8].get(1))
   );
   // Davidson solver
   EigenSystemDavidson<FockVector<double>> eigenSystem(H, 16, P, 1E-14, 16*16);
@@ -98,10 +98,10 @@ FockVector<F> ThermalHamiltonian<F>::rightApply(
 ) {
   FockVector<F> HR(R);
   // get pointers to the component tensors
-  CTF::Tensor<F> *R0( &R.componentTensors[0] );
-  CTF::Tensor<F> *Rabij( &R.componentTensors[1] );
-  CTF::Tensor<F> *HR0( &HR.componentTensors[0] );
-  CTF::Tensor<F> *HRabij( &HR.componentTensors[1] );
+  PTR(CTF::Tensor<F>) R0( R.get(0) );
+  PTR(CTF::Tensor<F>) Rabij( R.get(1) );
+  PTR(CTF::Tensor<F>) HR0( HR.get(0) );
+  PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
 
 
   // HR (vacuum part)
@@ -136,10 +136,15 @@ ThermalHamiltonianPreConditioner<F>::ThermalHamiltonianPreConditioner(
   CTF::Tensor<F> &epsi,
   CTF::Tensor<F> &epsa,
   CTF::Tensor<F> &Vabij
-): diagonalH({{E0, Vabij}, {"", "abij"}}) {
+): diagonalH(
+    std::vector<PTR(CTF::Tensor<double>)>(
+      {NEW(CTF::Tensor<double>, E0), NEW(CTF::Tensor<double>, Vabij)}
+    ),
+    std::vector<std::string>({"", "abij"})
+  ) {
   // pointers to vacuum and doubles tensors of diagonal part
-  CTF::Tensor<F> *D( &diagonalH.componentTensors[0] );
-  CTF::Tensor<F> *Dabij( &diagonalH.componentTensors[1] );
+  PTR(CTF::Tensor<F>) D( diagonalH.get(0) );
+  PTR(CTF::Tensor<F>) Dabij( diagonalH.get(1) );
 
   // calculate diagonal elements of H
   (*D)[""] = E0[""];
@@ -271,12 +276,12 @@ FockVector<F> ThermalHamiltonianPreConditioner<F>::getCorrection(
 
   FockVector<F> correction(diagonalH);
   // compute ((lambda * id - Diag(diagonal))^-1) . residuum
-  for (unsigned int c(0); c < w.componentTensors.size(); ++c) {
+  for (unsigned int c(0); c < w.getDimension(); ++c) {
     const char *indices( correction.componentIndices[c].c_str() );
-    correction.componentTensors[c].contract(
+    (*correction.get(c)).contract(
       1.0,
-      residuum.componentTensors[c],indices,
-      diagonalH.componentTensors[c],indices,
+      (*residuum.get(c)),indices,
+      (*diagonalH.get(c)),indices,
       0.0,indices,
       CTF::Bivar_Function<F>(diagonalCorrection)
     );
