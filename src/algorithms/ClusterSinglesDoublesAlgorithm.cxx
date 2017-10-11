@@ -97,6 +97,9 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   // get the Coulomb integrals to compute the energy
   Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
 
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  int antisymmetrized(getIntegerArgument("antisymmetrize", 0));
+
   // allocate energy
   Scalar<F> energy(*Vijab->wrld);
   energy.set_name("energy");
@@ -104,23 +107,28 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   // singles amplitudes are optional
   auto Tai( amplitudes->get(0) );
   auto Tabij( amplitudes->get(1) );
+  F e;
 
-  // direct term
-  energy[""] =  +2.0 * (*Tabij)["abij"] * (*Vijab)["ijab"];
-  if (Tai) {
-    energy[""] += +2.0 * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijab"];
+  if (antisymmetrized) {
+    energy[""] += ( + 0.25  ) * (*Tabij)["abkl"] * (*Vijab)["klab"];
+    energy[""] += ( + 0.5  ) * (*Tai)["aj"] * (*Tai)["cl"] * (*Vijab)["jlac"];
+    e = energy.get_val();
+  } else {
+    // direct term
+    energy[""] = 0.5 * spins * spins * (*Tabij)["abij"] * (*Vijab)["ijab"];
+    energy[""] += 0.5 * spins * spins * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijab"];
+    F dire(energy.get_val());
+    // exchange term
+    energy[""] =  ( -0.5 ) * spins * (*Tabij)["abij"] * (*Vijab)["ijba"];
+    energy[""] += ( -0.5 ) * spins * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"];
+    F exce(energy.get_val());
+    LOG(1, getCapitalizedAbbreviation()) << "dir=" << dire << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << "exc=" << exce << std::endl;
+    e = dire + exce;
   }
-  F dire(energy.get_val());
-  // exchange term
-  energy[""] =  -1.0 * (*Tabij)["abij"] * (*Vijab)["ijba"];
-  if (Tai) {
-    energy[""] += -1.0 * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"];
-  }
-  F exce(energy.get_val());
-  F e(dire + exce);
+
   LOG(0, getCapitalizedAbbreviation()) << "e=" << e << std::endl;
-  LOG(1, getCapitalizedAbbreviation()) << "dir=" << dire << std::endl;
-  LOG(1, getCapitalizedAbbreviation()) << "exc=" << exce << std::endl;
+
   return e;
 }
 
