@@ -195,8 +195,8 @@ namespace cc4s {
       // Antisymmetrize initial basis
       LOG(1,"Davidson") << "Antisymmetrize basis" << std::endl;
       for (unsigned int j(0); j < rightEigenVectors.size(); ++j) {
-        rightEigenVectors[j].componentTensors[1]["abij"] -=
-           rightEigenVectors[j].componentTensors[1]["abji"];
+        (*rightEigenVectors[j].get(1))["abij"] -=
+           (*rightEigenVectors[j].get(1))["abji"];
       }
       LOG(1,"Davidson") << "Performing Gramm Schmidt in basis" << std::endl;
       for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
@@ -272,8 +272,8 @@ namespace cc4s {
           // compute correction using preconditioner
           V correction( p.getCorrection(eigenValues[k], residuum) );
 
-          correction.componentTensors[1]["abij"] -=
-             correction.componentTensors[1]["abji"];
+          (*correction.get(1))["abij"] -=
+             (*correction.get(1))["abji"];
           // orthonormalize and append to rightBasis
           for (unsigned int b(0); b < rightBasis.size(); ++b) {
             correction -= rightBasis[b] * rightBasis[b].dot(correction);
