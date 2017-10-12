@@ -151,8 +151,6 @@ void Mp2EquationOfMotion::run() {
   int hSyms[] = {NS, NS};
   T *Hpq( new CTF::Tensor<>(2, hLens, hSyms, *Cc4s::world, "Hpq") );
 
-  int64_t *hIndices;
-  double *hValues;
   int oneBodyLength((*Lia).lens[0] * (*Lia).lens[1]);
   int twoBodyLength(
       Rabij.lens[0] * Rabij.lens[1] * Rabij.lens[2] *  Rabij.lens[3]
@@ -323,7 +321,7 @@ void Mp2EquationOfMotion::writeEOMVectors(
   int64_t *indices;
   F *values;
 
-  for (int i = 0; i < rank; ++i) {
+  for (unsigned int i = 0; i < rank; ++i) {
     nBodyLength *= T.lens[i];
   }
 
@@ -358,9 +356,6 @@ template <typename F>
 void Mp2EquationOfMotion::getCanonicalPerturbationBasis(
     CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, int64_t i) {
   int oneBodyLength(Tai.lens[0] * Tai.lens[1]);
-  int twoBodyLength(
-      Tabij.lens[0] * Tabij.lens[1] * Tabij.lens[2] *  Tabij.lens[3]
-  );
 
   Tabij["abij"] = 0;
   Tai["ai"] = 0;

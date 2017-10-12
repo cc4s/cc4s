@@ -282,9 +282,6 @@ template <typename F>
 void CcdEquationOfMotion::getCanonicalPerturbationBasis(
     CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, int64_t i) {
   int oneBodyLength(Tai.lens[0] * Tai.lens[1]);
-  int twoBodyLength(
-      Tabij.lens[0] * Tabij.lens[1] * Tabij.lens[2] *  Tabij.lens[3]
-  );
 
   Tabij["abij"] = 0;
   Tai["ai"] = 0;
