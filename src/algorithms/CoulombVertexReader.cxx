@@ -155,7 +155,7 @@ void CoulombVertexReader::dryRun() {
 void CoulombVertexReader::handleUnrestricted() {
   int unrestricted(getIntegerArgument("unrestricted", 0));
   // FIXME: This should be integer
-  setRealArgument("unrestricted", unrestricted);
+  //  setRealArgument("unrestricted", unrestricted);
   if (unrestricted) {
     unrestrictVertex();
     unrestrictEigenEnergies("Hole");
