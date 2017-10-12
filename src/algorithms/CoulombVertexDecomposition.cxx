@@ -95,6 +95,23 @@ void CoulombVertexDecomposition::run() {
   }
 
   PiqR = new Matrix<complex>(Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile);
+  std::string ansatz(
+    getTextArgument("ansatz", HERMITIAN)
+  );
+  if (ansatz == HERMITIAN) {
+    LOG(1, "RALS") << "Using " << HERMITIAN
+      << " ansatz for decomposition" << std::endl;
+  } else if (ansatz == SYMMETRIC) {
+    LOG(1, "RALS") << "Using " << SYMMETRIC
+      << " ansatz for decomposition" << std::endl;
+  } else if (ansatz == PSEUDO_INVERSE) {
+    LOG(1, "RALS") << "Using " << PSEUDO_INVERSE
+      << " ansatz for decomposition" << std::endl;
+  } else {
+    std::stringstream stringStream;
+    stringStream << "Unknown decomposition ansatz \"" << ansatz << "\"";
+    throw new EXCEPTION(stringStream.str());
+  }
   computeOutgoingPi();
 
   allocatedTensorArgument<complex>("FactorOrbitals", PirR);
@@ -180,11 +197,34 @@ void CoulombVertexDecomposition::dryRun() {
   DryTensor<complex> *PirR = new DryMatrix<complex>(Np, int(rank), NS);
   DryTensor<complex> *LambdaGR = new DryMatrix<complex>(NG, int(rank), NS);
   allocatedTensorArgument<complex, DryTensor<complex>>(
-    "FactorOrbitals", PiqR
+    "FactorOrbitals", PirR
   );
   allocatedTensorArgument<complex, DryTensor<complex>>(
     "CoulombFactors", LambdaGR
   );
+
+  std::string ansatz(
+    getTextArgument("ansatz", HERMITIAN)
+  );
+  if (ansatz == HERMITIAN) {
+    LOG(1, "RALS") << "Using " << HERMITIAN
+      << " ansatz for decomposition" << std::endl;
+  } else if (ansatz == SYMMETRIC) {
+    LOG(1, "RALS") << "Using " << SYMMETRIC
+      << " ansatz for decomposition" << std::endl;
+  } else if (ansatz == PSEUDO_INVERSE) {
+    LOG(1, "RALS") << "Using " << PSEUDO_INVERSE
+      << " ansatz for decomposition" << std::endl;
+  } else {
+    std::stringstream stringStream;
+    stringStream << "Unknown decomposition ansatz \"" << ansatz << "\"";
+    throw new EXCEPTION(stringStream.str());
+  }
+  if (isArgumentGiven("OutgoingFactorOrbitals")) {
+    allocatedTensorArgument<complex, DryTensor<complex>>(
+      "OutgoingFactorOrbitals", PiqR
+    );
+  }
 
   DryTensor<complex> *composedGammaGqr(new DryTensor<complex>(*GammaGqr));
   if (isArgumentGiven("ComposedCoulombVertex")) {
