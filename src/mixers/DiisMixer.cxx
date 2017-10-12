@@ -26,16 +26,16 @@ DiisMixer<F>::DiisMixer(
   count = 0;
 
   // generate initial overlap matrix
-  std::array<int,2> lens({N+1, N+1});
-  std::array<int,2> syms({NS, NS});
+  std::array<int,2> lens{{N+1, N+1}};
+  std::array<int,2> syms{{NS, NS}};
   B = NEW(CTF::Tensor<F>,
     lens.size(), lens.data(), syms.data(), *Cc4s::world, "B"
   );
   CTF::Tensor<F> one(false, *B);
   one["ij"] += 1.0;
-  std::array<int,2> upperLeftBegin({0,0});
-  std::array<int,2> upperRightEnd({1,N+1});
-  std::array<int,2> lowerLeftEnd({N+1,1});
+  std::array<int,2> upperLeftBegin{{0,0}};
+  std::array<int,2> upperRightEnd{{1,N+1}};
+  std::array<int,2> lowerLeftEnd{{N+1,1}};
   B->slice(
     upperLeftBegin.data(), upperRightEnd.data(), 1.0,
     one,
@@ -62,18 +62,18 @@ void DiisMixer<F>::append(
 
   // generate 1x1 matrix to enter new overlap elements
   const int N(residua.size());
-  std::array<int,2> lens({1, 1});
-  std::array<int,2> syms({NS, NS});
+  std::array<int,2> lens{{1, 1}};
+  std::array<int,2> syms{{NS, NS}};
   CTF::Tensor<F> one(lens.size(), lens.data(), syms.data(), *Cc4s::world, "1");
   one["ij"] += 1.0;
   for (int i(0); i < N; ++i) {
     if (residua[i]) {
-      std::array<int,2> colBegin({nextIndex+1,i+1});
-      std::array<int,2> colEnd({nextIndex+2,i+2});
-      std::array<int,2> rowBegin({i+1,nextIndex+1});
-      std::array<int,2> rowEnd({i+2,nextIndex+2});
-      std::array<int,2> oneBegin({0,0});
-      std::array<int,2> oneEnd({1,1});
+      std::array<int,2> colBegin{{nextIndex+1,i+1}};
+      std::array<int,2> colEnd{{nextIndex+2,i+2}};
+      std::array<int,2> rowBegin{{i+1,nextIndex+1}};
+      std::array<int,2> rowEnd{{i+2,nextIndex+2}};
+      std::array<int,2> oneBegin{{0,0}};
+      std::array<int,2> oneEnd{{1,1}};
       F overlap( 2.0*std::real(residua[i]->dot(*R)) );
       B->slice(
         colBegin.data(), colEnd.data(), 0.0,
@@ -91,9 +91,9 @@ void DiisMixer<F>::append(
   if (count < N) ++count;
 
   // now, pseudo-invert upper left corner of B and read out its first column
-  std::array<int,2> upperLeftBegin({0, 0});
-  std::array<int,2> lowerRightEnd({count+1, count+1});
-  std::array<int,2> firstColEnd({count+1,1});
+  std::array<int,2> upperLeftBegin{{0, 0}};
+  std::array<int,2> lowerRightEnd{{count+1, count+1}};
+  std::array<int,2> firstColEnd{{count+1,1}};
   std::vector<F> column(count+1);
   IterativePseudoInverse<F>(
     B->slice(upperLeftBegin.data(), lowerRightEnd.data())
