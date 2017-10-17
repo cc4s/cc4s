@@ -29,79 +29,53 @@ CcsdEquationOfMotionDavidson::CcsdEquationOfMotionDavidson(
 CcsdEquationOfMotionDavidson::~CcsdEquationOfMotionDavidson() {}
 
 void CcsdEquationOfMotionDavidson::run() {
-  typedef CTF::Tensor<> T;
 
   // Get copy of couloumb integrals
-  T *Vijkl(getTensorArgument<double, T>("HHHHCoulombIntegrals"));
-  T *Vabcd(getTensorArgument<double, T>("PPPPCoulombIntegrals"));
-  T *Vabij(getTensorArgument<double, T>("PPHHCoulombIntegrals"));
-  T *Vijka(getTensorArgument<double, T>("HHHPCoulombIntegrals"));
-  T *Vaibj(getTensorArgument<double, T>("PHPHCoulombIntegrals")); // not in eqs
-  T *Vabci(getTensorArgument<double, T>("PPPHCoulombIntegrals")); // not in eqs
+  CTF::Tensor<> *Vijkl(
+      getTensorArgument<double, CTF::Tensor<> >("HHHHCoulombIntegrals"));
+  CTF::Tensor<> *Vabcd(
+      getTensorArgument<double, CTF::Tensor<> >("PPPPCoulombIntegrals"));
+  CTF::Tensor<> *Vijka(
+      getTensorArgument<double, CTF::Tensor<> >("HHHPCoulombIntegrals"));
+  CTF::Tensor<> *Vijab(
+      getTensorArgument<double, CTF::Tensor<> >("HHPPCoulombIntegrals"));
+  CTF::Tensor<> *Viajk(
+      getTensorArgument<double, CTF::Tensor<> >("HPHHCoulombIntegrals"));
+  CTF::Tensor<> *Viajb(
+      getTensorArgument<double, CTF::Tensor<> >("HPHPCoulombIntegrals"));
+  CTF::Tensor<> *Viabc(
+      getTensorArgument<double, CTF::Tensor<> >("HPPPCoulombIntegrals"));
+  CTF::Tensor<> *Vabic(
+      getTensorArgument<double, CTF::Tensor<> >("PPHPCoulombIntegrals"));
 
+  //CTF::Tensor<> *Vaibj(
+      //getTensorArgument<double, CTF::Tensor<>>("PHPHCoulombIntegrals"));
+  //CTF::Tensor<> *Vabij(
+      //getTensorArgument<double, CTF::Tensor<>>("PPHHCoulombIntegrals"));
+  //CTF::Tensor<> *Vabci(
+      //getTensorArgument<double, CTF::Tensor<>>("PPPHCoulombIntegrals"));
 
   // Get orbital energies
-  T *epsi(getTensorArgument<double, T>("HoleEigenEnergies"));
-  T *epsa(getTensorArgument<double, T>("ParticleEigenEnergies"));
+  CTF::Tensor<> *epsi(
+      getTensorArgument<double, CTF::Tensor<> >("HoleEigenEnergies"));
+  CTF::Tensor<> *epsa(
+      getTensorArgument<double, CTF::Tensor<> >("ParticleEigenEnergies"));
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
-  int syms[] = {NS, NS, NS, NS};
-
-  LOG(1, "CCSD_EOM_DAVIDSON") << "Antisymmetrizing Vpqrs" << std::endl;
-
-  //  Vijab
-  int oovv[] = { No, No, Nv, Nv };
-  T *Vijab(new CTF::Tensor<>(4, oovv, syms, *Cc4s::world, "Vijab"));
-  (*Vijab)["ijab"] =  (*Vabij)["abij"] - (*Vabij)["abji"];
-  conjugate(*Vijab);
-
-  //  Viajk
-  int ovoo[] = { No, Nv, No, No };
-  T *Viajk(new CTF::Tensor<>(4, ovoo, syms, *Cc4s::world, "Viajk"));
-  (*Viajk)["iajk"] =  (*Vijka)["jkia"]  - (*Vijka)["kjia"];
-  conjugate(*Viajk);
-
-  // Viajb
-  int ovov[] = { No, Nv, No, Nv };
-  int voov[] = { Nv, No, No, Nv };
-  T *Vaijb(new CTF::Tensor<>(4, voov, syms, *Cc4s::world, "Vaijb"));
-  // Assumes real orbitals
-  (*Vaijb)["aijb"] = (*Vabij)["abji"];
-  T *Viajb(new CTF::Tensor<>(4, ovov, syms, *Cc4s::world, "Viajb"));
-  (*Viajb)["iajb"] = ( - 1.0 ) * (*Vaijb)["aijb"];
-  (*Viajb)["iajb"] +=  (*Vaibj)["aibj"];
-
-  // Viabc
-  int ovvv[] = { No, Nv, Nv, Nv };
-  T *Viabc(new CTF::Tensor<>(4, ovvv, syms, *Cc4s::world, "Viabc"));
-  (*Viabc)["iabc"] =  (*Vabci)["abci"];
-  conjugate(*Viabc);
-  (*Viabc)["iabc"] -= (*Vabci)["acbi"];
-
-  // Vabic
-  int vvov[] = { Nv, Nv, No, Nv };
-  T *Vabic(new CTF::Tensor<>(4, vvov, syms, *Cc4s::world, "Vabic"));
-  (*Vabic)["abic"] =  (*Vabci)["baci"] - (*Vabci)["abci"];
-
-  // Antisymmetrize integrals
-  (*Vijkl)["ijkl"] -= (*Vijkl)["ijlk"];
-  (*Vabcd)["abcd"] -= (*Vabcd)["abdc"];
-  (*Vijka)["ijka"] -= (*Vijka)["jika"];
-  (*Vaibj)["aibj"] -= (*Vabij)["baij"];
-  (*Vabci)["abci"] -= (*Vabci)["baci"];
-  (*Vabij)["abij"] -= (*Vabij)["abji"];
 
   // HF terms
   int kineticLensVirtual[] = {Nv, Nv};
   int kineticSyms[] = {NS, NS};
-  T Fab(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab");
+  CTF::Tensor<> Fab(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab");
   int kineticLensOccupied[] = {No, No};
-  T Fij(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij");
+  CTF::Tensor<> Fij(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij");
   Fab["aa"] = (*epsa)["a"];
   Fij["ii"] = (*epsi)["i"];
 
   // Get the Uccsd amplitudes
-  T Tai(getTensorArgument<double, T>("SinglesAmplitudes"));
-  T Tabij(getTensorArgument<double, T>("DoublesAmplitudes"));
+  CTF::Tensor<> Tai(
+      getTensorArgument<double, CTF::Tensor<> >("SinglesAmplitudes"));
+  CTF::Tensor<> Tabij(
+      getTensorArgument<double, CTF::Tensor<> >("DoublesAmplitudes"));
 
   CcsdSimilarityTransformedHamiltonian<double> H(
     &Tai, &Tabij, &Fij, &Fab,
@@ -122,6 +96,8 @@ void CcsdEquationOfMotionDavidson::run() {
 
   // Davidson solver
   int eigenStates(getIntegerArgument("eigenstates", 1));
+  LOG(0, "CCSD_EOM_DAVIDSON") << "Computing " << eigenStates << " eigen states"
+                              << std::endl;
   EigenSystemDavidson<FockVector<double>> eigenSystem(H, eigenStates, P, 1E-4, 8*16);
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
