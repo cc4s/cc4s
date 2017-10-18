@@ -2,6 +2,8 @@
 #include "Log.hpp"
 
 #include <math/Complex.hpp>
+#include <sstream>
+#include <string>
 
 using namespace cc4s;
 
@@ -28,6 +30,11 @@ std::ostream &LogStream::prepare(
   Time time(Time::getCurrentRealTime());
   time -= startTime;
   logFile << time << " ";
+  std::stringstream timeStr;
+  timeStr << time.getSeconds() << "."
+          << std::setw(3) << std::setfill('0')
+          << std::to_string(time.getFractions()).substr(0,3);
+  *this << timeStr.str() << " ";
   std::ostream *log(&logFile);
   if (logLevel >= level) {
     for (int i(0); i < level; ++i) {
@@ -42,7 +49,7 @@ std::ostream &LogStream::prepare(
 }
 
 int Log::rank(-1);
-LogStream *Log::logStream(nullptr); 
+LogStream *Log::logStream(nullptr);
 
 void Log::setRank(int const rank_) {
   rank = rank_;

@@ -86,7 +86,7 @@ namespace cc4s {
 
   inline std::ostream &operator <<(std::ostream &stream, Time const &t) {
     std::stringstream time;
-    time << t.getSeconds() << "." 
+    time << t.getSeconds() << "."
       << std::setw(Time::FRACTION_DIGITS) << std::setfill('0')
       << t.getFractions();
     return stream << time.str();
