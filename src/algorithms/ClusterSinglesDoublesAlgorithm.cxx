@@ -66,10 +66,7 @@ F ClusterSinglesDoublesAlgorithm::run() {
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
-    LOG(1,"CC") << amplitudes << std::endl;
     auto estimatedAmplitudes( getResiduum(i, amplitudes) );
-    LOG(1,"CC") << amplitudes << std::endl;
-    LOG(1,"CC") << estimatedAmplitudes << std::endl;
     estimateAmplitudesFromResiduum(estimatedAmplitudes);
     auto amplitudesChange( NEW(FockVector<F>, *estimatedAmplitudes) );
     *amplitudesChange -= *amplitudes;
