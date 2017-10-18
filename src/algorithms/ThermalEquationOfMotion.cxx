@@ -188,7 +188,7 @@ std::vector<FockVector<F>> ThermalHamiltonianPreConditioner<F>::getInitialBasis(
 ) {
   LOG(0, "FT_EOM_DAVIDSON") << "Get initial basis" << std::endl;
   // find K=eigenVectorsCount lowest diagonal elements at each processor
-  std::vector<std::pair<int64_t, F>> localElements( diagonalH.readLocal() );
+  std::vector<std::pair<size_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
     localElements.begin(), localElements.end(),
     EomDiagonalValueComparator<double>()
@@ -196,7 +196,7 @@ std::vector<FockVector<F>> ThermalHamiltonianPreConditioner<F>::getInitialBasis(
 
   // gather all K lowest elements of each processor at root
   //   convert into homogeneous arrays for MPI gather
-  std::vector<int64_t> localLowestElementIndices(eigenVectorsCount);
+  std::vector<size_t> localLowestElementIndices(eigenVectorsCount);
   std::vector<F> localLowestElementValues(eigenVectorsCount);
   for (int i(0); i < eigenVectorsCount; ++i) {
     localLowestElementIndices[i] = localElements[i].first;
@@ -207,12 +207,12 @@ std::vector<FockVector<F>> ThermalHamiltonianPreConditioner<F>::getInitialBasis(
     communicator.getRank() == 0 ?
       eigenVectorsCount * communicator.getProcesses() : 0
   );
-  std::vector<int64_t> lowestElementIndices(lowestElementsCount);
+  std::vector<size_t> lowestElementIndices(lowestElementsCount);
   std::vector<F> lowestElementValues(lowestElementsCount);
   communicator.gather(localLowestElementIndices, lowestElementIndices);
   communicator.gather(localLowestElementValues, lowestElementValues);
   //   convert back into (index,value) pairs for sorting
-  std::vector<std::pair<int64_t, F>> lowestElements(lowestElementsCount);
+  std::vector<std::pair<size_t, F>> lowestElements(lowestElementsCount);
   for (int i(0); i < lowestElementsCount; ++i) {
     lowestElements[i].first = lowestElementIndices[i];
     lowestElements[i].second = lowestElementValues[i];
@@ -234,7 +234,7 @@ std::vector<FockVector<F>> ThermalHamiltonianPreConditioner<F>::getInitialBasis(
   while (bb < eigenVectorsCount) {
     V basisElement(diagonalH);
     basisElement *= 0.0;
-    std::vector<std::pair<int64_t,F>> elements;
+    std::vector<std::pair<size_t,F>> elements;
     if (communicator.getRank() == 0) {
       elements.push_back(
         std::make_pair(lowestElements[b].first, 1.0)
@@ -276,7 +276,7 @@ FockVector<F> ThermalHamiltonianPreConditioner<F>::getCorrection(
 
   FockVector<F> correction(diagonalH);
   // compute ((lambda * id - Diag(diagonal))^-1) . residuum
-  for (unsigned int c(0); c < w.getFockDimension(); ++c) {
+  for (size_t c(0); c < w.getComponentsCount(); ++c) {
     const char *indices( correction.componentIndices[c].c_str() );
     (*correction.get(c)).contract(
       1.0,

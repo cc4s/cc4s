@@ -109,9 +109,9 @@ void CcsdEquationOfMotionDavidson::run() {
 // template method implementation
 template <typename F>
 void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
-  CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, int64_t i
+  CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, size_t i
 ) {
-  std::vector<std::pair<int64_t, F>> elements;
+  std::vector<std::pair<size_t, F>> elements;
   if (Cc4s::world->rank == 0) {
     elements.push_back(std::make_pair(i, F(1)));
   }
@@ -130,7 +130,7 @@ void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
 // instantiate template method implementation
 template
 void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
-  CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, int64_t i
+  CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, size_t i
 );
 
 
@@ -611,7 +611,7 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
 ) {
   LOG(0, "CCSD_EOM_DAVIDSON") << "Getting initial basis " << std::endl;
   // find K=eigenVectorsCount lowest diagonal elements at each processor
-  std::vector<std::pair<int64_t, F>> localElements( diagonalH.readLocal() );
+  std::vector<std::pair<size_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
     localElements.begin(), localElements.end(),
     EomDiagonalValueComparator<double>()
@@ -619,9 +619,9 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
 
   // gather all K elements of all processors at root
   //   convert into homogeneous arrays for MPI gather
-  std::vector<int64_t> localLowestElementIndices(localElements.size());
+  std::vector<size_t> localLowestElementIndices(localElements.size());
   std::vector<F> localLowestElementValues(localElements.size());
-  for (uint64_t i(0); i < localElements.size(); ++i) {
+  for (size_t i(0); i < localElements.size(); ++i) {
     localLowestElementIndices[i] = localElements[i].first;
     localLowestElementValues[i] = localElements[i].second;
   }
@@ -635,12 +635,12 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
       3.0
     )
   );
-  std::vector<int64_t> lowestElementIndices(lowestElementsCount);
+  std::vector<size_t> lowestElementIndices(lowestElementsCount);
   std::vector<F> lowestElementValues(lowestElementsCount);
   communicator.gather(localLowestElementIndices, lowestElementIndices);
   communicator.gather(localLowestElementValues, lowestElementValues);
   //   convert back into (index,value) pairs for sorting
-  std::vector<std::pair<int64_t, F>> lowestElements(lowestElementsCount);
+  std::vector<std::pair<size_t, F>> lowestElements(lowestElementsCount);
   for (int i(0); i < lowestElementsCount; ++i) {
     lowestElements[i].first = lowestElementIndices[i];
     lowestElements[i].second = lowestElementValues[i];
@@ -662,7 +662,7 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
   while (bb < eigenVectorsCount) {
     V basisElement(diagonalH);
     basisElement *= 0.0;
-    std::vector<std::pair<int64_t,F>> elements;
+    std::vector<std::pair<size_t,F>> elements;
     if (communicator.getRank() == 0) {
       elements.push_back(
         std::make_pair(lowestElements[b].first, 1.0)
@@ -709,7 +709,7 @@ FockVector<F> CcsdPreConditioner<F>::getCorrection(
 
   FockVector<F> correction(diagonalH);
   // compute ((lambda * id - Diag(diagonal))^-1) . residuum
-  for (unsigned int c(0); c < w.getFockDimension(); ++c) {
+  for (unsigned int c(0); c < w.getComponentsCount(); ++c) {
     const char *indices( correction.componentIndices[c].c_str() );
     (*correction.get(c)).contract(
       1.0,
