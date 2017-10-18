@@ -23,13 +23,18 @@ namespace cc4s {
     std::vector<PTR(CTF::Tensor<F>)> componentTensors;
     std::vector<std::string> componentIndices;
 
+    /**
+     * \brief Default constructor for an empty Fock vector without elements.
+     **/
     FockVector() {
     }
 
+    /**
+     * \brief Move constructor taking possession of the tensors owned by a.
+     **/
     FockVector(
-      const FockVector<F> &&a
+      FockVector<F> &&a
     ):
-      // take pointers of rhs tensors when moving a to this
       componentTensors(a.componentTensors),
       componentIndices(a.componentIndices),
       indexEnds(a.componentTensors.size())
@@ -37,10 +42,12 @@ namespace cc4s {
       buildIndexTranslation();
     }
 
+    /**
+     * \brief Copy constructor copying the tensors owned by a.
+     **/
     FockVector(
       const FockVector<F> &a
     ):
-      // copy rhs tensors when copying a to this
       componentTensors(a.componentTensors.size()),
       componentIndices(a.componentIndices),
       indexEnds(a.componentTensors.size())
@@ -49,11 +56,13 @@ namespace cc4s {
       buildIndexTranslation();
     }
 
+    /**
+     * \brief Move constructor taking possession of the tensors given.
+     **/
     FockVector(
       const std::vector<PTR(CTF::Tensor<F>)> &tensors,
       const std::vector<std::string> &indices
     ):
-      // always take pointers of rhs tensors when explicitly given
       componentTensors(tensors),
       componentIndices(indices),
       indexEnds(componentTensors.size())
@@ -61,12 +70,15 @@ namespace cc4s {
       buildIndexTranslation();
     }
 
+    /**
+     * \brief Move constructor taking possession of the tensors given
+     * by the iterators.
+     **/
     template <typename TensorsIterator, typename IndicesIterator>
     FockVector(
       TensorsIterator tensorsBegin, TensorsIterator tensorsEnd,
       IndicesIterator indicesBegin, IndicesIterator indicesEnd
     ):
-      // always take pointers of rhs tensors when explicitly given
       componentTensors(tensorsBegin, tensorsEnd),
       componentIndices(indicesBegin, indicesEnd),
       indexEnds(componentTensors.size())
@@ -74,43 +86,60 @@ namespace cc4s {
       buildIndexTranslation();
     }
 
-    // NOTE: CTF::Tensors cannot be const
-    PTR(CTF::Tensor<F>) operator [](const int i) const {
-      return componentTensors[i];
-    }
-
+    /**
+     * \brief Retrieves the i-th component tensor. Note that
+     * the CTF::Tensor is not const since rearrangement may be
+     * required also in non-modifying tensor operations.
+     **/
     const PTR(CTF::Tensor<F>) &get(const int i) const {
       return componentTensors[i];
     }
 
+    /**
+     * \brief Retrieves the i-th component tensor.
+     **/
     PTR(CTF::Tensor<F>) &get(const int i) {
       return componentTensors[i];
     }
 
+    /**
+     * \brief Retrieves the i-th component indices.
+     **/
     const std::string &getIndices(const int i) const {
       return componentIndices[i];
     }
 
+    /**
+     * \brief Retrieves the i-th component indices as modifiable string.
+     **/
     std::string &getIndices(const int i) {
       return componentIndices[i];
     }
 
+    /**
+     * \brief Move assignment operator taking possession of the tensors
+     * owned by a.
+     **/
     FockVector<F> &operator =(const FockVector<F> &&a) {
-      // take pointers of rhs tensors when moving a to this
       componentTensors = a.componentTensors;
       componentIndices = a.componentIndices;
       buildIndexTranslation();
       return *this;
     }
 
+    /**
+     * \brief Copy assignment operator copying the tensors owned by a.
+     **/
     FockVector<F> &operator =(const FockVector<F> &a) {
-      // copy rhs tensors when copying a to this
       componentIndices = a.componentIndices;
       copyComponents(a.componentTensors);
       buildIndexTranslation();
       return *this;
     }
 
+    /**
+     * \brief Add-to assignment operator.
+     **/
     FockVector<F> &operator += (const FockVector<F> &a) {
       checkCompatibilityTo(a);
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
@@ -163,7 +192,7 @@ namespace cc4s {
           0.0, result.getIndices(i).c_str(), fConj
         );
       }
-      return result;
+      return std::move(result);
     }
 
     F braket(const FockVector<F> &a) const {
@@ -178,7 +207,7 @@ namespace cc4s {
       return result.get_val();
     }
 
-    F dot(FockVector<F> &a) const {
+    F dot(const FockVector<F> &a) const {
       checkCompatibilityTo(a);
       CTF::Scalar<F> result;
       for (unsigned int i(0); i < componentTensors.size(); ++i) {
@@ -354,77 +383,92 @@ namespace cc4s {
     }
   };
 
+  // sum of vectors, copy version
   template <typename F>
-  FockVector<F> inline operator +(
+  inline FockVector<F> operator +(
     const FockVector<F> &a, const FockVector<F> &b
   ) {
     FockVector<F> result(a);
     result += b;
-    return result;
+    return std::move(result);
   }
-  // move version to prevent copying
+  // sum of vectors, left operand movable
   template <typename F>
-  FockVector<F> inline operator +(
+  inline FockVector<F> &&operator +(
     FockVector<F> &&a, const FockVector<F> &b
   ) {
     a += b;
-    return a;
+    return std::move(a);
+  }
+  // sum of vectors, right operand movable
+  template <typename F>
+  inline FockVector<F> &&operator +(
+    FockVector<F> &a, const FockVector<F> &&b
+  ) {
+    b += a;
+    return std::move(b);
   }
 
+  // difference of vectors, copy version
   template <typename F>
-  FockVector<F> inline operator -(
+  inline FockVector<F> operator -(
     const FockVector<F> &a, const FockVector<F> &b
   ) {
     FockVector<F> result(a);
     result -= b;
-    return result;
+    return std::move(result);
   }
-  // move versions to prevent copying
+  // difference of vectors, left operand movable
   template <typename F>
-  FockVector<F> inline operator -(
+  inline FockVector<F> &&operator -(
     FockVector<F> &&a, const FockVector<F> &b
   ) {
     a -= b;
-    return a;
+    return std::move(a);
   }
+  // difference of vectors, right operand movable
   template <typename F>
-  FockVector<F> inline operator -(
+  inline FockVector<F> &&operator -(
     const FockVector<F> &a, FockVector<F> &&b
   ) {
     b -= a;
     // TODO: directly invoke sum to prevent extra multiplication
     b *= F(-1);
-    return b;
+    return std::move(b);
   }
 
+  // scalar multiplication from right, copy version
   template <typename F>
-  FockVector<F> inline operator *(const FockVector<F> &a, const F &s) {
+  inline FockVector<F> operator *(const FockVector<F> &a, const F &s) {
     FockVector<F> result(a);
     result *= s;
-    return result;
+    return std::move(result);
   }
-  // move version
+  // scalar multiplication from right, vector operand movable
   template <typename F>
-  FockVector<F> inline operator *(FockVector<F> &&a, const F &s) {
+  inline FockVector<F> &&operator *(FockVector<F> &&a, const F &s) {
     a *= s;
-    return a;
+    return std::move(a);
   }
 
+  // scalar multiplication from left, copy version
   template <typename F>
-  FockVector<F> inline operator *(const F &s, const FockVector<F> &a) {
+  inline FockVector<F> operator *(const F &s, const FockVector<F> &a) {
     FockVector<F> result(a);
     result *= s;
-    return result;
+    return std::move(result);
   }
-  // move version
+  // scalar multiplication from left, vector operand movable
   template <typename F>
-  FockVector<F> inline operator *(const F &s, FockVector<F> &&a) {
+  inline FockVector<F> &&operator *(const F &s, FockVector<F> &&a) {
     a *= s;
-    return a;
+    return std::move(a);
   }
 
   template <typename F>
-  std::ostream &operator <<(std::ostream &stream, const FockVector<F> &a) {
+  inline std::ostream &operator <<(
+    std::ostream &stream, const FockVector<F> &a
+  ) {
     stream << "( ";
     stream << a.get(0) << "[" << a.getIndices(0) << "]";
     for (size_t i(1); i < a.componentTensors.size(); ++i) {
@@ -436,16 +480,3 @@ namespace cc4s {
 
 #endif
 
-/*
-  example usage:
-
-  CTF::Scalar<> nulliesA;
-  CTF::Tensor<> singlesA(2, vo, ...);
-  CTF::Tensor<> doublesA(4, vvoo, ...);
-
-  FockVector<double> fockA({{nulliesA, singlesA, doublesA}}, {{"", "ai", "abij"}});
-  FockVector<double> fockB({{nulliesB, singlesB, doublesB}}, {{"", "ai", "abij"}});
-
-  fockA += fockB;
-  fockA.dot(fockB);
-*/
