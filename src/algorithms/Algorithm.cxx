@@ -319,7 +319,12 @@ void Algorithm::allocatedTensorArgument<
 
 void Algorithm::setRealArgument(std::string const &name, double const value) {
   Data *mentionedData(getArgumentData(name));
-  new RealData(mentionedData->getName(), value);  
+  new RealData(mentionedData->getName(), value);
+}
+
+void Algorithm::setIntegerArgument(std::string const &name, int const value) {
+  Data *mentionedData(getArgumentData(name));
+  new IntegerData(mentionedData->getName(), value);
 }
 
 AlgorithmFactory::AlgorithmMap *AlgorithmFactory::algorithmMap;

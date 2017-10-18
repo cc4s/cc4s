@@ -1,8 +1,8 @@
 CoulombVertexReader [
   %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
   %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands19.ecgw150.POSCAR.0.7")
-  %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
-  (file "../../resources/NV/FTODDUMP")
+  (file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
+  %(file "../../resources/NV/FTODDUMP")
   %(file "../../resources/andreas/FTODDUMP")
   (unrestricted 1)
 ] [
@@ -30,25 +30,36 @@ ApproximateCoulombVertex [
 
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+  (antisymmetrize 1)
 ] [
   HHHHCoulombIntegrals
+  PPPPCoulombIntegrals
+  PPHHCoulombIntegrals
   HHHPCoulombIntegrals
   PHPHCoulombIntegrals
-  PPHHCoulombIntegrals
-  PPHHCoulombIntegrals
   PPPHCoulombIntegrals
-  PPPPCoulombIntegrals
+  HHPPCoulombIntegrals
+  HPHHCoulombIntegrals
+  HPHPCoulombIntegrals
+  HPPPCoulombIntegrals
+  PPHPCoulombIntegrals
 ].
 
 UccsdAmplitudesFromCoulombIntegrals [
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
+  HHPPCoulombIntegrals
+  HPHHCoulombIntegrals
+  HPHPCoulombIntegrals
+  HPPPCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
+  PPHPCoulombIntegrals
   PPPHCoulombIntegrals
   PPPPCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (maxIterations 10)
+  (antisymmetrize 1)
   %(mixer "LinearMixer")
   (mixingRatio 1.0)
 ] [
@@ -57,31 +68,23 @@ UccsdAmplitudesFromCoulombIntegrals [
   (UccsdDoublesAmplitudes UccsdDoublesAmplitudes)
 ].
 
-CoulombIntegralsFromVertex [
-  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
-] [
-  HHHHCoulombIntegrals
-  HHHPCoulombIntegrals
-  PHPHCoulombIntegrals
-  PPHHCoulombIntegrals
-  PPHHCoulombIntegrals
-  PPPHCoulombIntegrals
-  PPPPCoulombIntegrals
-].
-
 CcsdEquationOfMotionDavidson [
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
+  HHPPCoulombIntegrals
+  HPHHCoulombIntegrals
+  HPHPCoulombIntegrals
+  HPPPCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
-  PPHHCoulombIntegrals
+  PPHPCoulombIntegrals
   PPPHCoulombIntegrals
   PPPPCoulombIntegrals
   HoleEigenEnergies ParticleEigenEnergies
   (SinglesAmplitudes UccsdSinglesAmplitudes)
   (DoublesAmplitudes UccsdDoublesAmplitudes)
   (unrestricted 1)
-  (eigenstates 15)
+  (eigenstates 4)
 ] [
   SinglesHamiltonianDiagonal
   DoublesHamiltonianDiagonal

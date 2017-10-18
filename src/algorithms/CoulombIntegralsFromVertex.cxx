@@ -155,6 +155,10 @@ void CoulombIntegralsFromVertex::dryRun() {
 
 void CoulombIntegralsFromVertex::calculateRealIntegrals() {
   int antisymmetrize(getIntegerArgument("antisymmetrize", 0));
+  if (antisymmetrize) {
+    LOG(0, "CoulombIntegrals") << "Calculating antisymmetrized integrals"
+      << std::endl;
+  }
   Tensor<> *Vaibj(
     isArgumentGiven("PHPHCoulombIntegrals") ?
     new Tensor<>(4, vovo.data(), syms.data(), *Cc4s::world, "Vaibj") : nullptr

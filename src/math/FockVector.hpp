@@ -227,6 +227,13 @@ namespace cc4s {
       return result.get_val();
     }
 
+    /**
+     * \brief Get the dimension of the FockVector.
+     */
+    int64_t getFockDimension() const {
+      return componentTensors.size();
+    }
+
     int64_t getDimension() const {
       return indexEnds.back();
     }

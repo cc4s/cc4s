@@ -9,24 +9,23 @@ CoulombVertexReader [
 CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
 ] [
-  PPPPCoulombIntegrals
-  PPPHCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
+  HHPPCoulombIntegrals
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
 ].
 
 CcsdEnergyFromCoulombIntegrals [
   CoulombVertex
-  PPPPCoulombIntegrals
-  PPPHCoulombIntegrals
   PHPHCoulombIntegrals
   PPHHCoulombIntegrals
+  HHPPCoulombIntegrals
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
   (maxIterations 10)
+  (integralsSliceFactor 1)
 ] [
   (CcsdEnergy CcsdEnergy) 
   (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)

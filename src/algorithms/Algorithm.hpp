@@ -65,6 +65,7 @@ namespace cc4s {
       std::string const &argumentName, T *tensor
     );
     void setRealArgument(std::string const &argumentName, double const value);
+    void setIntegerArgument(std::string const &argumentName, int const value);
 
   protected:
     // type promotions:
