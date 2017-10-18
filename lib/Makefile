@@ -1,4 +1,8 @@
-CONFIG=gxx
+CONFIG ?= gxx
+
+$(info )
+$(info Using configuration $(CONFIG))
+$(info )
 
 include config.${CONFIG}
 include Libraries

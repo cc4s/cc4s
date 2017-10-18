@@ -8,7 +8,8 @@ src/ctf/configure:
 
 build/${CONFIG}/ctf/Makefile: src/ctf/configure
 	mkdir -p build/${CONFIG}/ctf
-	cd build/${CONFIG}/ctf && ../../../src/ctf/configure ${CTF_CONFIG}
+	cd build/${CONFIG}/ctf && ../../../src/ctf/configure '${CTF_CONFIG}'
 
 build/${CONFIG}/ctf/lib/libctf.a: build/${CONFIG}/ctf/Makefile
+	$(CTF_CALLBACK)
 	$(MAKE) -C build/${CONFIG}/ctf
