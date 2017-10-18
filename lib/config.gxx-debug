@@ -1,0 +1,10 @@
+# This configuration is to enable some debug features of CTF
+CTF_CONFIG = CXX=mpicxx \
+            CXXFLAGS="-Ofast -march=native -flto -fopenmp leche -DPROFILE" \
+            --blas="-L/usr/local/lib/scalapack -lrefblas -lgfortran" \
+            --scalapack="-L/usr/local/lib/scalapack -lreflapack -lscalapack"
+
+# This should be improved in the future, CTF does not support at this moment
+# to set DEFS from the configure script.
+CTF_CALLBACK = echo "DEFS += -DPROFILE -DPMPI" \
+                >> build/${CONFIG}/ctf/config.mk
