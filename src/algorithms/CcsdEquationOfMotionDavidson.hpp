@@ -88,7 +88,7 @@ namespace cc4s {
 
     template <typename F = double>
     void getCanonicalPerturbationBasis(
-        CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, int64_t i
+        CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, size_t i
     );
 
   };

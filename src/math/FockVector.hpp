@@ -16,6 +16,12 @@
 
 namespace cc4s {
   template <typename F=double>
+  /**
+   * \brief Represents the direct sum of CTF::Tensors and provides the
+   * vector space operations of addition, scalar multiplication, inner product,
+   * complex conjugation to get dual vectors and matrix multiplication
+   * between vectors and duals, which yields a scalar.
+   **/
   class FockVector {
   public:
     typedef F FieldType;
@@ -91,28 +97,28 @@ namespace cc4s {
      * the CTF::Tensor is not const since rearrangement may be
      * required also in non-modifying tensor operations.
      **/
-    const PTR(CTF::Tensor<F>) &get(const int i) const {
+    const PTR(CTF::Tensor<F>) &get(const size_t i) const {
       return componentTensors[i];
     }
 
     /**
      * \brief Retrieves the i-th component tensor.
      **/
-    PTR(CTF::Tensor<F>) &get(const int i) {
+    PTR(CTF::Tensor<F>) &get(const size_t i) {
       return componentTensors[i];
     }
 
     /**
      * \brief Retrieves the i-th component indices.
      **/
-    const std::string &getIndices(const int i) const {
+    const std::string &getIndices(const size_t i) const {
       return componentIndices[i];
     }
 
     /**
      * \brief Retrieves the i-th component indices as modifiable string.
      **/
-    std::string &getIndices(const int i) {
+    std::string &getIndices(const size_t i) {
       return componentIndices[i];
     }
 
@@ -138,38 +144,53 @@ namespace cc4s {
     }
 
     /**
-     * \brief Add-to assignment operator.
+     * \brief Add-to assignment operator adding each component of a
+     * to the respective component of this FockVector.
      **/
     FockVector<F> &operator += (const FockVector<F> &a) {
       checkCompatibilityTo(a);
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+      for (size_t i(0); i < componentTensors.size(); ++i) {
         const char *indices(componentIndices[i].c_str());
         get(i)->sum(+1.0, *a.get(i), indices, 1.0, indices);
       }
       return *this;
     }
 
+    /**
+     * \brief Subtract-from assignment operator subtracting each component of a
+     * from the respective component of this FockVector.
+     **/
     FockVector<F> &operator -= (const FockVector<F> &a) {
       checkCompatibilityTo(a);
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+      for (size_t i(0); i < componentTensors.size(); ++i) {
         const char *indices(getIndices(i).c_str());
         get(i)->sum(-1.0, *a.get(i), indices, 1.0, indices);
       }
       return *this;
     }
 
+    /**
+     * \brief Multiply-by assignment operator scalar multiplying each component
+     * each component of this FockVector by the given scalar.
+     **/
     FockVector<F> &operator *= (const F s) {
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+      for (size_t i(0); i < componentTensors.size(); ++i) {
         const char *indices(getIndices(i).c_str());
         get(i)->sum(s, *get(i), indices, 0.0, indices);
       }
       return *this;
     }
 
+    /**
+     * \brief Creates and returns the conjugate transpose of this FockVector.
+     * The first and the second half of the inidices in each component are
+     * swapped for the transposition. For real types F the conjugation
+     * does nothing.
+     **/
     FockVector<F> conjugateTranspose() const {
       FockVector<F> result;
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        int order(getIndices(i).length() / 2);
+      for (size_t i(0); i < componentTensors.size(); ++i) {
+        size_t order(getIndices(i).length() / 2);
         std::vector<int> transposedLens(get(i)->lens, get(i)->lens + 2*order);
         std::rotate(
           transposedLens.begin(),
@@ -195,22 +216,32 @@ namespace cc4s {
       return std::move(result);
     }
 
-    F braket(const FockVector<F> &a) const {
-      checkDualCompatibility(a);
+    /**
+     * \brief Returns the matrix product of this bra-FockVector with the
+     * given dual ket-FockVector ket.
+     **/
+    F braket(const FockVector<F> &ket) const {
+      checkDualCompatibility(ket);
       CTF::Scalar<F> result;
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+      for (size_t i(0); i < componentTensors.size(); ++i) {
         const char *indices(getIndices(i).c_str());
-        const char *aIndices(a.getIndices(i).c_str());
+        const char *ketIndices(ket.getIndices(i).c_str());
         // add to result
-        result[""] += (*get(i))[indices] * (*a.get(i))[aIndices];
+        result[""] += (*get(i))[indices] * (*ket.get(i))[ketIndices];
       }
       return result.get_val();
     }
 
+    /**
+     * \brief Returns the inner product of this ket-FockVector with the
+     * given ket-FockVector a. The elements of this FockVector are conjugated
+     * in the inner product, i.e. this->dot(a) yields the same results as
+     * this->conjugateTranspose().braket(a).
+     **/
     F dot(const FockVector<F> &a) const {
       checkCompatibilityTo(a);
       CTF::Scalar<F> result;
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+      for (size_t i(0); i < componentTensors.size(); ++i) {
         const char *indices(getIndices(i).c_str());
         // We need also the indices for a in general, since we might have
         // {{T['ijab']}}.dot(Q['abij']), which is still valid, although
@@ -228,37 +259,72 @@ namespace cc4s {
     }
 
     /**
-     * \brief Get the dimension of the FockVector.
+     * \brief Get the number of component tensors of this FockVector.
      */
-    int64_t getFockDimension() const {
+    size_t getComponentsCount() const {
       return componentTensors.size();
     }
 
-    int64_t getDimension() const {
+    /**
+     * \brief Get the total number of degrees of freedom represented by this
+     * FockVector, i.e. the total number of field values contained in all
+     * component tensors. The indices used by read and write are between
+     * 0 and getDimension()-1.
+     */
+    size_t getDimension() const {
       return indexEnds.back();
     }
 
     /**
-     * \brief Reads out all locally stored values together with their
-     * respective indices.
+     * \Brief Translates the given component and component index into
+     * its element into an index between 0 and getDimension()-1.
      **/
-    std::vector<std::pair<int64_t,F>> readLocal() const {
-      int64_t elementsCount(0);
-      std::vector<std::pair<int64_t,F>> elements;
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        int64_t componentValuesCount;
-        int64_t *componentIndices;
+    size_t getIndex(const size_t component, const size_t componentIndex) const {
+      size_t base(component > 0 ? indexEnds[component-1] : 0);
+      return base + componentIndex;
+    }
+
+    /**
+     * \Brief Translates the given index between 0 and getDimension()-1
+     * into a component number and component index into the corresponding
+     * component tensor.
+     **/
+    void fromIndex(
+      const size_t index, size_t &component, size_t &componentIndex
+    ) const {
+      component = 0;
+      size_t base(0);
+      while (component < indexEnds.size()) {
+        if (index < indexEnds[component]) break;
+        base = indexEnds[component++];
+      }
+      if (component >= indexEnds.size()) {
+        throw new EXCEPTION("Index out bounds");
+      }
+      componentIndex = index - base;
+    }
+
+    /**
+     * \brief Reads out all locally stored values together with their
+     * respective indices. The indices are between 0 and getDimension()-1.
+     **/
+    std::vector<std::pair<size_t,F>> readLocal() const {
+      size_t elementsCount(0);
+      std::vector<std::pair<size_t,F>> elements;
+      for (size_t i(0); i < componentTensors.size(); ++i) {
+        size_t componentValuesCount;
+        size_t *componentIndices;
         F *componentValues;
         get(i)->read_local(
-          &componentValuesCount, &componentIndices, &componentValues
+          reinterpret_cast<int64_t *>(&componentValuesCount),
+          reinterpret_cast<int64_t **>(&componentIndices),
+          &componentValues
         );
 
         elements.resize(elementsCount+componentValuesCount);
-        for (int64_t k(0); k < componentValuesCount; ++k) {
-          // translate index within component tensor to Fock vector index
-          elements[elementsCount+k].first = getTotalIndex(
-            i, componentIndices[k]
-          );
+        for (size_t k(0); k < componentValuesCount; ++k) {
+          // translate index within component tensor to FockVector index
+          elements[elementsCount+k].first = getIndex(i, componentIndices[k]);
           elements[elementsCount+k].second = componentValues[k];
         }
         elementsCount += componentValuesCount;
@@ -268,50 +334,53 @@ namespace cc4s {
       return elements;
     }
 
-    void write(const std::vector<std::pair<int64_t,F>> &elements) {
+    /**
+     * \brief Writes the given values together with their
+     * respective indices. The indices are between 0 and getDimension()-1.
+     **/
+    void write(const std::vector<std::pair<size_t,F>> &elements) {
       // vectors to contain indices and values for each component tensor
-      std::vector<std::vector<int64_t>> tensorIndices(componentTensors.size());
+      std::vector<std::vector<size_t>> tensorIndices(componentTensors.size());
       std::vector<std::vector<F>> tensorValues(componentTensors.size());
 
-      for (uint64_t k(0); k < elements.size(); ++k) {
-        int component;
-        int64_t componentIndex;
-        fromTotalIndex(elements[k].first, component, componentIndex);
+      for (size_t k(0); k < elements.size(); ++k) {
+        size_t component;
+        size_t componentIndex;
+        fromIndex(elements[k].first, component, componentIndex);
         // write to respective component tensor
         tensorIndices[component].push_back(componentIndex);
         tensorValues[component].push_back(elements[k].second);
       }
 
       // write data of each tensor
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
+      for (size_t i(0); i < componentTensors.size(); ++i) {
         tensorIndices[i].reserve(tensorIndices[i].size()+1);
         tensorValues[i].reserve(tensorIndices[i].size()+1);
         get(i)->write(
           tensorIndices[i].size(),
-          tensorIndices[i].data(),
+          reinterpret_cast<int64_t *>(tensorIndices[i].data()),
           tensorValues[i].data()
         );
       }
     }
-  protected:
-    std::vector<int64_t> indexEnds;
 
-    void copyComponents(const std::vector<PTR(CTF::Tensor<F>)> &components) {
-      componentTensors.resize(components.size());
-      for (size_t i(0); i < components.size(); ++i) {
-        componentTensors[i] = NEW(CTF::Tensor<F>, *components[i]);
-      }
-    }
+  protected:
+    /**
+     * \brief The end of the FockVector index range for each component.
+     * This vector is used for translating component number and indices
+     * into FockVector indicies.
+     **/
+    std::vector<size_t> indexEnds;
 
     /**
      * \Brief Builds the index ends vector needed for the
-     * index translation methods getTotalIndex and fromTotalIndex.
+     * index translation methods getIndex and fromIndex.
      **/
     void buildIndexTranslation() {
       indexEnds.resize(componentTensors.size());
-      int64_t indexBase(0);
-      for (unsigned int i(0); i < componentTensors.size(); ++i) {
-        int64_t tensorIndexSize(1);
+      size_t indexBase(0);
+      for (size_t i(0); i < componentTensors.size(); ++i) {
+        size_t tensorIndexSize(1);
         for (int d(0); d < get(i)->order; ++d) {
           tensorIndexSize *= get(i)->lens[d];
         }
@@ -320,38 +389,18 @@ namespace cc4s {
     }
 
     /**
-     * \Brief Translates the given component and the index into
-     * its element into a total index between 0 and getDimension()-1.
+     * \brief Sets this FockVector's component tensors by copying the given
+     * component tensors. Called by copy constructors and copy assignments.
      **/
-    int64_t getTotalIndex(
-      const int component, const int64_t componentIndex
-    ) const {
-      int64_t base(component > 0 ? indexEnds[component-1] : 0);
-      return base + componentIndex;
+    void copyComponents(const std::vector<PTR(CTF::Tensor<F>)> &components) {
+      componentTensors.resize(components.size());
+      for (size_t i(0); i < components.size(); ++i) {
+        componentTensors[i] = NEW(CTF::Tensor<F>, *components[i]);
+      }
     }
 
     /**
-     * \Brief Translates the given total index between 0 and getDimension()-1
-     * into a component number and an index into the corresponding component
-     * tensor.
-     **/
-    void fromTotalIndex(
-      const int64_t totalIndex, int &component, int64_t &componentIndex
-    ) const {
-      component = 0;
-      int64_t base(0);
-      while (component < static_cast<int>(indexEnds.size())) {
-        if (totalIndex < indexEnds[component]) break;
-        base = indexEnds[component++];
-      }
-      if (component >= static_cast<int>(indexEnds.size())) {
-        throw new EXCEPTION("Index out bounds");
-      }
-      componentIndex = totalIndex - base;
-    }
-
-    /**
-     * \brief Check if two fock vectors are dual conjugated of each other.
+     * \brief Check if two FockVectors are dual conjugated of each other.
      * e.g.:
      *  Suppose we have Aabij and Bijab,
      *    \f[ A^{ab}_{ij} = c^{+}_a c^{+}_b c_j c_i \f]
@@ -360,15 +409,14 @@ namespace cc4s {
      *  therefore it should check that the length
      *  of the index a in Aabij is the same as the length of
      *  a in Bijab, the len of b in Aabij the same as b in Bijab, etc...
-     *
-     *  TODO: Improve speed?
-     */
+     **/
+    // TODO: Improve speed?
     void checkDualCompatibility(const FockVector<F> &a) const {
       checkCompatibilityTo(a);
-      for (int i(0); i < componentTensors.size() ; i++) {
-        int indexLens(a.get(i)->order());
-        for (int j(0); j < indexLens; j++) {
-          int indexPos( get(i).find(a.getIndicies(i)[j]) );
+      for (size_t i(0); i < componentTensors.size() ; i++) {
+        size_t indexLens(a.get(i)->order());
+        for (size_t j(0); j < indexLens; j++) {
+          size_t indexPos( get(i).find(a.getIndicies(i)[j]) );
           if (indexPos == std::string::npos) {
             throw EXCEPTION("Indices of fock vectors do not match");
           }
@@ -390,7 +438,10 @@ namespace cc4s {
     }
   };
 
-  // sum of vectors, copy version
+  /**
+   * \brief Returns the sum of two FockVectors a and b, where
+   * neither a nor b are modified.
+   **/
   template <typename F>
   inline FockVector<F> operator +(
     const FockVector<F> &a, const FockVector<F> &b
@@ -399,7 +450,10 @@ namespace cc4s {
     result += b;
     return std::move(result);
   }
-  // sum of vectors, left operand movable
+  /**
+   * \brief Returns the sum of two FockVectors a and b, where
+   * a is movable and will be used for the result.
+   **/
   template <typename F>
   inline FockVector<F> &&operator +(
     FockVector<F> &&a, const FockVector<F> &b
@@ -407,7 +461,10 @@ namespace cc4s {
     a += b;
     return std::move(a);
   }
-  // sum of vectors, right operand movable
+  /**
+   * \brief Returns the sum of two FockVectors a and b, where
+   * b is movable and will be used for the result.
+   **/
   template <typename F>
   inline FockVector<F> &&operator +(
     FockVector<F> &a, const FockVector<F> &&b
@@ -416,7 +473,10 @@ namespace cc4s {
     return std::move(b);
   }
 
-  // difference of vectors, copy version
+  /**
+   * \brief Returns the difference between two FockVectors a and b, where
+   * neither a nor b are modified.
+   **/
   template <typename F>
   inline FockVector<F> operator -(
     const FockVector<F> &a, const FockVector<F> &b
@@ -425,7 +485,10 @@ namespace cc4s {
     result -= b;
     return std::move(result);
   }
-  // difference of vectors, left operand movable
+  /**
+   * \brief Returns the difference between two FockVectors a and b, where
+   * a is movable and will be used for the result.
+   **/
   template <typename F>
   inline FockVector<F> &&operator -(
     FockVector<F> &&a, const FockVector<F> &b
@@ -433,45 +496,66 @@ namespace cc4s {
     a -= b;
     return std::move(a);
   }
-  // difference of vectors, right operand movable
+  /**
+   * \brief Returns the difference between two FockVectors a and b, where
+   * b is movable and will be used for the result.
+   **/
   template <typename F>
   inline FockVector<F> &&operator -(
     const FockVector<F> &a, FockVector<F> &&b
   ) {
     b -= a;
-    // TODO: directly invoke sum to prevent extra multiplication
+    // TODO: directly invoke sum to prevent extra multiplication by -1
     b *= F(-1);
     return std::move(b);
   }
 
-  // scalar multiplication from right, copy version
+  /**
+   * \brief Returns the scalar multiple of the FockVector a
+   * right-multiplied with the scalar s, where a is not modified.
+   **/
   template <typename F>
-  inline FockVector<F> operator *(const FockVector<F> &a, const F &s) {
+  inline FockVector<F> operator *(const FockVector<F> &a, const F s) {
     FockVector<F> result(a);
     result *= s;
     return std::move(result);
   }
-  // scalar multiplication from right, vector operand movable
+  /**
+   * \brief Returns the scalar multiple of the FockVector a
+   * right-multiplied with the scalar s, where a movable and will be used
+   * for the result.
+   **/
   template <typename F>
-  inline FockVector<F> &&operator *(FockVector<F> &&a, const F &s) {
+  inline FockVector<F> &&operator *(FockVector<F> &&a, const F s) {
     a *= s;
     return std::move(a);
   }
 
-  // scalar multiplication from left, copy version
+  /**
+   * \brief Returns the scalar multiple of the FockVector a
+   * left-multiplied with the scalar s, where a is not modified.
+   **/
   template <typename F>
-  inline FockVector<F> operator *(const F &s, const FockVector<F> &a) {
+  inline FockVector<F> operator *(const F s, const FockVector<F> &a) {
     FockVector<F> result(a);
     result *= s;
     return std::move(result);
   }
-  // scalar multiplication from left, vector operand movable
+  /**
+   * \brief Returns the scalar multiple of the FockVector a
+   * left-multiplied with the scalar s, where a movable and will be used
+   * for the result.
+   **/
   template <typename F>
-  inline FockVector<F> &&operator *(const F &s, FockVector<F> &&a) {
+  inline FockVector<F> &&operator *(const F s, FockVector<F> &&a) {
     a *= s;
     return std::move(a);
   }
 
+  /**
+   * \brief Writes the FockVector a to the given stream and returns it
+   * for further stream operations.
+   **/
   template <typename F>
   inline std::ostream &operator <<(
     std::ostream &stream, const FockVector<F> &a
