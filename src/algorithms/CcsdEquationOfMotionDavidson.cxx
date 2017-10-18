@@ -693,6 +693,8 @@ FockVector<F> CcsdPreConditioner<F>::getCorrection(
   const complex lambda, FockVector<F> &residuum
 ) {
   FockVector<F> w(diagonalH);
+
+  // Define a helping class for the diagonal correction
   class DiagonalCorrection {
   public:
     DiagonalCorrection(const double lambda_): lambda(lambda_) {
@@ -707,7 +709,7 @@ FockVector<F> CcsdPreConditioner<F>::getCorrection(
 
   FockVector<F> correction(diagonalH);
   // compute ((lambda * id - Diag(diagonal))^-1) . residuum
-  for (unsigned int c(0); c < w.getDimension(); ++c) {
+  for (unsigned int c(0); c < w.getFockDimension(); ++c) {
     const char *indices( correction.componentIndices[c].c_str() );
     (*correction.get(c)).contract(
       1.0,

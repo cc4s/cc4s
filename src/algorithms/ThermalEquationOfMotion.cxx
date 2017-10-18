@@ -276,7 +276,7 @@ FockVector<F> ThermalHamiltonianPreConditioner<F>::getCorrection(
 
   FockVector<F> correction(diagonalH);
   // compute ((lambda * id - Diag(diagonal))^-1) . residuum
-  for (unsigned int c(0); c < w.getDimension(); ++c) {
+  for (unsigned int c(0); c < w.getFockDimension(); ++c) {
     const char *indices( correction.componentIndices[c].c_str() );
     (*correction.get(c)).contract(
       1.0,
