@@ -243,15 +243,10 @@ namespace cc4s {
       CTF::Scalar<F> result;
       for (size_t i(0); i < componentTensors.size(); ++i) {
         const char *indices(getIndices(i).c_str());
-        // We need also the indices for a in general, since we might have
-        // {{T['ijab']}}.dot(Q['abij']), which is still valid, although
-        // the indices are not equal
-        // FIXME: shouldn't that be a braket?
-        const char *aIndices(a.getIndices(i).c_str());
         CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
         // add to result
         result.contract(
-          1.0, *get(i), indices, *a.get(i), aIndices,
+          1.0, *get(i), indices, *a.get(i), indices,
           1.0, "", fDot
         );
       }
@@ -400,15 +395,8 @@ namespace cc4s {
     }
 
     /**
-     * \brief Check if two FockVectors are dual conjugated of each other.
-     * e.g.:
-     *  Suppose we have Aabij and Bijab,
-     *    \f[ A^{ab}_{ij} = c^{+}_a c^{+}_b c_j c_i \f]
-     *  and also
-     *    \f[ (A^{ab}_{ij})^+ = c^{+}_i c^{+}_j c_b c_a \f] = A^{ij}_{ab}
-     *  therefore it should check that the length
-     *  of the index a in Aabij is the same as the length of
-     *  a in Bijab, the len of b in Aabij the same as b in Bijab, etc...
+     * \brief Check if two FockVectors are transpose of each other by swapping
+     * the first and the second half of the component indices.
      **/
     // TODO: Improve speed?
     void checkDualCompatibility(const FockVector<F> &a) const {
