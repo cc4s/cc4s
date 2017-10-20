@@ -96,13 +96,13 @@ void CcsdEquationOfMotionDavidson::run() {
 
   // Davidson solver
   int eigenStates(getIntegerArgument("eigenstates", 1));
-  LOG(0, "CCSD_EOM_DAVIDSON") << "Computing " << eigenStates << " eigen states"
+  LOG(0, "CcsdEomDavid") << "Computing " << eigenStates << " eigen states"
                               << std::endl;
   EigenSystemDavidson<FockVector<double>> eigenSystem(H, eigenStates, P, 1E-4, 8*16);
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
   for (auto &ev: eigenValues) {
-    LOG(0, "CCSD_EOM_DAVIDSON") << "Eigenvalue=" << ev << std::endl;
+    LOG(0, "CcsdEomDavid") << "Eigenvalue=" << ev << std::endl;
   }
 }
 
@@ -609,7 +609,7 @@ template <typename F>
 std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
   const int eigenVectorsCount
 ) {
-  LOG(0, "CCSD_EOM_DAVIDSON") << "Getting initial basis " << std::endl;
+  LOG(0, "CcsdEomDavid") << "Getting initial basis " << std::endl;
   // find K=eigenVectorsCount lowest diagonal elements at each processor
   std::vector<std::pair<size_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
