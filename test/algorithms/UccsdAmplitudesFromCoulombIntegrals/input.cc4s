@@ -30,32 +30,42 @@ CoulombIntegralsFromVertex [
   (antisymmetrize 1)
 ] [
   HHHHCoulombIntegrals
-  PPPPCoulombIntegrals
-  PPHHCoulombIntegrals
   HHHPCoulombIntegrals
-  PHPHCoulombIntegrals
-  PPPHCoulombIntegrals
+  HHPHCoulombIntegrals
   HHPPCoulombIntegrals
   HPHHCoulombIntegrals
   HPHPCoulombIntegrals
+  HPPHCoulombIntegrals
   HPPPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PHPPCoulombIntegrals
+  PPHHCoulombIntegrals
   PPHPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
 ].
 
 UccsdAmplitudesFromCoulombIntegrals [
+
   HHHHCoulombIntegrals
-  PPPPCoulombIntegrals
-  PPHHCoulombIntegrals
   HHHPCoulombIntegrals
-  PHPHCoulombIntegrals
-  PPPHCoulombIntegrals
+  HHPHCoulombIntegrals
   HHPPCoulombIntegrals
   HPHHCoulombIntegrals
   HPHPCoulombIntegrals
+  HPPHCoulombIntegrals
   HPPPCoulombIntegrals
+  PHPHCoulombIntegrals
+  PHPPCoulombIntegrals
+  PPHHCoulombIntegrals
   PPHPCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPHCoulombIntegrals
+  PPPPCoulombIntegrals
+
   HoleEigenEnergies ParticleEigenEnergies
-  (maxIterations 10)
+  (maxIterations 30)
   (antisymmetrize 1)
   %(mixer "LinearMixer")
   (mixingRatio 1.0)
