@@ -43,6 +43,8 @@ namespace cc4s {
      */
     static int constexpr DEFAULT_MAX_ITERATIONS = 16;
 
+    static double constexpr DEFAULT_LEVEL_SHIFT = 0.0;
+
   protected:
     template <typename F>
     F run();
@@ -75,10 +77,12 @@ namespace cc4s {
      * with \f$\Delta_{ij\ldots}^{ab\ldots} =
        \varepsilon_i+\ldots-\varepsilon_a-\ldots\f$.
      * \param[inout] residuum Fock vector, overwritten with new amplitudes.
+     * \param[in] amplitudes Fock vector, previous amplitudes
      **/
     template <typename F>
     void estimateAmplitudesFromResiduum(
-      const PTR(FockVector<F>) &residuum
+      const PTR(FockVector<F>) &residuum,
+      const PTR(const FockVector<F>) &amplitudes
     );
 
     /**
