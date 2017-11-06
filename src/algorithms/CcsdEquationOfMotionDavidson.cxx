@@ -248,6 +248,71 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   //Physics: MBPT and Coupled-Cluster Theory. 2009
   //PAGE: 439
 
+  //This approach defines intermediates:
+  //Wab Wabcd Wabci Waibc Waibcdj Wiabcjk
+  //Wiabj Wiajk Wij Wijakbl Wijka Wijkl
+
+  //Wab
+  Wab["ab"]  = Fab["ab"];
+  Wab["ab"] += Vaibc["aibc"] * Tai["ci"];
+  //Wab["ab"] += ( -1.0) * Fia["ib"] * Tai["ai"];
+  Wab["ab"] += (- 0.5) * Vijab["ijbc"] * Tabij["acij"];
+  Wab["ab"] += (- 0.5) * Vijab["ijbc"] * Tai["ai"] * Tai["cj"];
+
+  //Wij
+  Wij["ij"]  = Fij["ij"];
+  Wij["ij"] += Vijka["imje"] * Tai["em"];
+  //Wij["ij"] += Fia["ie"] * Tai["ej"];
+  Wij["ij"] += (  0.5) * Vijab["ikab"] * Tabij["abjk"];
+  Wij["ij"] += (  0.5) * Vijab["ikab"] * Tai["ai"] * Tai["bk"];
+
+  //Wabcd
+  Wabcd["abcd"]  = Vabcd["abcd"];
+  Wabcd["abcd"] += (-1.0) * Vaibc["aicd"] * Tai["bi"];
+  // P(ab) for making them symmetric
+  Wabcd["abcd"] += ( 1.0) * Vaibc["bicd"] * Tai["ai"];
+  Wabcd["abcd"] += ( 0.5) * Vijab["ijcd"] * Tai["ai"] * Tai["bj"];
+  Wabcd["abcd"] += ( 0.5) * Vijab["ijcd"] * Tabij["abij"];
+
+  //Wabci TODO: REVIEW
+  Wabci["abci"]  = Vabci["abci"];
+  Wabci["abci"] += Vabcd["abce"] * Tai["ei"];
+  Wabci["abci"] += ( -1.0) * Vaicj["amci"] * Tai["bm"];
+  Wabci["abci"] += ( -1.0) * Vaicj["amce"] * Tai["bm"] * Tai["ei"];
+  Wabci["abci"] += ( -1.0) * Vijak["mnci"] * Tai["am"] * Tai["bn"];
+  //Wabci["abci"] += ( -1.0) * Fia ..... (canonical orbitals)
+  Wabci["abci"] += Vaibc["amce"] * Tabij["ebmi"];
+  Wabci["abci"] += Vijak["mnci"] * Tabij["abmn"];
+  Wabci["abci"] += ( -1.0) * Vijab["mnec"] * Tai["em"] * Tabij["abni"];
+  Wabci["abci"] += ( -1.0) * Vijab["mnce"] * Tai["am"] * Tabij["ebni"];
+  Wabci["abci"] += Vijab["mnce"] * Tai["ei"] * Tabij["abmn"];
+  Wabci["abci"] += Vijab["mnce"] * Tai["am"] * Tai["bn"] * Tai["ei"];
+
+  //Waibc
+  Waibc["aibc"]  = Vaibc["aibc"];
+  Waibc["aibc"] += ( -1.0) * Vijab["mibc"] * Tai["am"];
+
+  //Wiabj
+  //This is not listed in the source, however we can write it in terms
+  //of Waijb since it should also have the simmetry of the Tabij amplitudes
+  //and the Coulomb integrals Vpqrs
+  Wiabj["jabi"]  = Vaijb["ajib"];
+  Wiabj["jabi"] += ( -1.0) * Vijka["mjib"] * Tai["am"];
+  Wiabj["jabi"] += Vaibc["ajeb"] * Tai["ei"];
+  Wiabj["jabi"] += ( -1.0) * Vijab["mjeb"] * Tai["ei"] * Tai["am"];
+  //TODO: REVIEW in the book (10.74) and in the paper Wajib,
+  //in the paper there is a minus here, but there should not be a minus,
+  //there is one loop and one hole line contracted, so the sign should be
+  //plus
+  Wiabj["jabi"] += Vijab["mjeb"] * Tabij["aeim"];
+
+  //Wiajk
+  //Wijka
+  //Wijkl
+  //Waibcdj
+  //Wiabcjk
+  //Wijakbl
+
   HRai["ai"]  = 0.0;
   HRai["ai"] += Wab["ad"] * Rai["di"];
   HRai["ai"] += (- 1.0) * Wij["li"] * Rai["di"];
@@ -256,6 +321,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   HRai["ai"] += (   0.5 ) * Waibc["alde"] * Rabij["deil"];
   HRai["ai"] += ( - 0.5 ) * Wijka["lmid"] * Rabij["adlm"];
 
+  // TODO: Deal with permutations automatically
   HRabij["abij"]  = 0.0;
 
   HRabij["abij"] += Wabci["abej"] * Rai["ei"];
