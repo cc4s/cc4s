@@ -67,7 +67,7 @@ F ClusterSinglesDoublesAlgorithm::run() {
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
     auto estimatedAmplitudes( getResiduum(i, amplitudes) );
-    estimateAmplitudesFromResiduum(estimatedAmplitudes);
+    estimateAmplitudesFromResiduum(estimatedAmplitudes, amplitudes);
     auto amplitudesChange( NEW(FockVector<F>, *estimatedAmplitudes) );
     *amplitudesChange -= *amplitudes;
     mixer->append(estimatedAmplitudes, amplitudesChange);
@@ -184,8 +184,24 @@ void ClusterSinglesDoublesAlgorithm::storeAmplitudes(
 
 template <typename F>
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
-  const PTR(FockVector<F>) &residuum
+  const PTR(FockVector<F>) &residuum,
+  const PTR(const FockVector<F>) &amplitudes
 ) {
+  F levelShift( getRealArgument("levelShift", DEFAULT_LEVEL_SHIFT) );
+  // level shifted division for left hand side
+  class LevelShiftedDivision {
+  public:
+    LevelShiftedDivision(F shift_): shift(shift_) { }
+    void operator()(F d, F &r) {
+      r = -r / (d + shift);
+    }
+  protected:
+    F shift;
+  } levelShiftedDivision(levelShift);
+
+  // apply level shifting on right hand side
+  *residuum -= levelShift * *amplitudes;
+
   for (unsigned int i(0); i < residuum->componentTensors.size(); ++i) {
     auto R( residuum->get(i) );
     const char *indices( residuum->getIndices(i).c_str() );
@@ -193,17 +209,8 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
     D.set_name("D");
     calculateExcitationEnergies(D, residuum->getIndices(i));
 
-    // TODO:
-    // levelshifting can be implemented here
-
     // divide by -Delta to get new estimate for T
-    CTF::Transform<F, F>(
-      std::function<void(F, F &)>(
-        [](F d, F &r) {
-          r = -r / d;
-        }
-      )
-    ) (
+    CTF::Transform<F, F>(std::function<void(F, F &)>(levelShiftedDivision)) (
       D[indices], (*R)[indices]
     );
   }
@@ -212,12 +219,14 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
 // instantiate
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
-  const PTR(FockVector<double>) &residuum
+  const PTR(FockVector<double>) &residuum,
+  const PTR(const FockVector<double>) &amplitudes
 );
 
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
-  const PTR(FockVector<complex>) &residuum
+  const PTR(FockVector<complex>) &residuum,
+  const PTR(const FockVector<complex>) &amplitudes
 );
 
 
