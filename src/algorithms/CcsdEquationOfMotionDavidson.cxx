@@ -276,12 +276,17 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   (*Tau_abij)["abij"] += ( - 1.0 ) * (*Tai)["bi"] * (*Tai)["aj"];
 
   //This approach defines intermediates:
-  //Wab Wia Wabcd Wabci Waibc
-  //Wiabj Wiajk Wij Wijka Wijkl
+  //Wab Wia Wabcd Wabci Waibc Wiabj Wiajk Wij Wijka Wijkl
+
+  int No(Fij->lens[0]);
+  int Nv(Fab->lens[0]);
+  int syms[] = {NS, NS};
+  int ov[] = {No, Nv};
+  CTF::Tensor<> Fia(2, ov, syms, *Cc4s::world, "Fia");
 
   Wab   = NEW(CTF::Tensor<>, *Fab);
   Wij   = NEW(CTF::Tensor<>, *Fij);
-  Wia   = NEW(CTF::Tensor<>, *Fia);
+  Wia   = NEW(CTF::Tensor<>,  Fia);
   Wabcd = NEW(CTF::Tensor<>, *Vabcd);
   Wabci = NEW(CTF::Tensor<>, *Vabci);
   Waibc = NEW(CTF::Tensor<>, *Vaibc);
@@ -318,8 +323,8 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   //Wabci TODO: REVIEW
   (*Wabci)["abci"]  = (*Vabci)["abci"];
   (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
-  (*Wabci)["abci"] += ( -1.0) * (*Vaicj)["amci"] * (*Tai)["bm"];
-  (*Wabci)["abci"] += ( -1.0) * (*Vaicj)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
   (*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
   //(*Wabci)["abci"] += ( -1.0) * Fia ..... (canonical orbitals)
   (*Wabci)["abci"] += (*Vaibc)["amce"] * (*Tabij)["ebmi"];
@@ -334,7 +339,7 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   (*Waibc)["aibc"] += ( -1.0) * (*Vijab)["mibc"] * (*Tai)["am"];
 
   //Wiabj
-  (*//)[1] diagram (10.73)
+  //[1] diagram (10.73)
   //This is not listed in the source book, however we can write it in terms
   //of Waijb since it should also have the simmetry of the Tabij amplitudes
   //and the Coulomb integrals Vpqrs
@@ -359,7 +364,7 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
 
   //Wiajk
   //This is built upon the already existing amplitudes
-  (*//)[1] diagram (10.79)
+  //[1] diagram (10.79)
   //Takend directly (*from )[2]
   (*Wiajk)["iajk"]  = (*Viajk)["iajk"];
 
@@ -397,73 +402,73 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
 
 
   // RIGHT APPLY BEGIN
-  HRai["ai"]  = 0.0;
-  HRai["ai"] += Wab["ad"] * Rai["di"];
-  HRai["ai"] += (- 1.0) * Wij["li"] * Rai["di"];
-  HRai["ai"] += Wiabj["ladi"] * Rai["dl"];
-  HRai["ai"] += Wij["ld"] * Rabij["adil"];
-  HRai["ai"] += (   0.5 ) * Waibc["alde"] * Rabij["deil"];
-  HRai["ai"] += ( - 0.5 ) * Wijka["lmid"] * Rabij["adlm"];
+  (*HRai)["ai"]  = 0.0;
+  (*HRai)["ai"] += (*Wab)["ad"] * (*Rai)["di"];
+  (*HRai)["ai"] += (- 1.0) * (*Wij)["li"] * (*Rai)["di"];
+  (*HRai)["ai"] += (*Wiabj)["ladi"] * (*Rai)["dl"];
+  (*HRai)["ai"] += (*Wij)["ld"] * (*Rabij)["adil"];
+  (*HRai)["ai"] += (   0.5 ) * (*Waibc)["alde"] * (*Rabij)["deil"];
+  (*HRai)["ai"] += ( - 0.5 ) * (*Wijka)["lmid"] * (*Rabij)["adlm"];
 
   // TODO: Deal with permutations automatically
-  HRabij["abij"]  = 0.0;
+  (*HRabij)["abij"]  = 0.0;
 
-  HRabij["abij"] += Wabci["abej"] * Rai["ei"];
+  (*HRabij)["abij"] += (*Wabci)["abej"] * (*Rai)["ei"];
   //P(ij)
-  HRabij["abij"] += (-1.0) * Wabci["abei"] * Rai["ej"];
+  (*HRabij)["abij"] += (-1.0) * (*Wabci)["abei"] * (*Rai)["ej"];
 
-  HRabij["abij"] += (- 1.0 ) * Wiajk["lbij"] * Rai["al"];
+  (*HRabij)["abij"] += (- 1.0 ) * (*Wiajk)["lbij"] * (*Rai)["al"];
   //P(ab)
-  HRabij["abij"] += Wiajk["laij"] * Rai["bl"];
+  (*HRabij)["abij"] += (*Wiajk)["laij"] * (*Rai)["bl"];
 
-  HRabij["abij"] +=           Wab["bd"] * Rabij["adij"];
+  (*HRabij)["abij"] +=           (*Wab)["bd"] * (*Rabij)["adij"];
   //P(ab)
-  HRabij["abij"] += ( -1.0) * Wab["ad"] * Rabij["bdij"];
+  (*HRabij)["abij"] += ( -1.0) * (*Wab)["ad"] * (*Rabij)["bdij"];
 
-  HRabij["abij"] += ( -1.0) * Wij["lj"] * Rabij["abil"];
+  (*HRabij)["abij"] += ( -1.0) * (*Wij)["lj"] * (*Rabij)["abil"];
   //P(ij)
-  HRabij["abij"] += Wij["li"] * Rabij["abjl"];
+  (*HRabij)["abij"] += (*Wij)["li"] * (*Rabij)["abjl"];
 
-  HRabij["abij"] += (  0.5) * Wabcd["abde"] * Rabij["deij"];
-  HRabij["abij"] += (  0.5) * Wijkl["lmij"] * Rabij["ablm"];
+  (*HRabij)["abij"] += (  0.5) * (*Wabcd)["abde"] * (*Rabij)["deij"];
+  (*HRabij)["abij"] += (  0.5) * (*Wijkl)["lmij"] * (*Rabij)["ablm"];
 
-  HRabij["abij"] +=            Wiabj["lbdj"] * Rabij["adil"];
+  (*HRabij)["abij"] +=            (*Wiabj)["lbdj"] * (*Rabij)["adil"];
   //-P(ij)
-  HRabij["abij"] +=  ( -1.0) * Wiabj["lbdi"] * Rabij["adjl"];
+  (*HRabij)["abij"] +=  ( -1.0) * (*Wiabj)["lbdi"] * (*Rabij)["adjl"];
   //-P(ab)
-  HRabij["abij"] +=  ( -1.0) * Wiabj["ladj"] * Rabij["bdil"];
+  (*HRabij)["abij"] +=  ( -1.0) * (*Wiabj)["ladj"] * (*Rabij)["bdil"];
   //P(ij)P(ab)
-  HRabij["abij"] +=            Wiabj["ladi"] * Rabij["bdjl"];
+  (*HRabij)["abij"] +=            (*Wiabj)["ladi"] * (*Rabij)["bdjl"];
 
-  // Three body terms from [1]
+  // Three body terms (*from) [1]
   // They would have been to be evaluated if we apply it strictly
   //
-  //    HRabij["abij"] += Wiabcjk["mabeij"] * Rai["em"];
-  //    HRabij["abij"] += (  0.5) *  Waibcdj["ambfej"] * Rabij["feim"];
+  //    (*HRabij)["abij"] += (*Wiabcjk)["mabeij"] * (*Rai)["em"];
+  //    (*HRabij)["abij"] += (  0.5) *  (*Waibcdj)["ambfej"] * (*Rabij)["feim"];
   //    //P(ij)
-  //    HRabij["abij"] += ( -0.5) *  Waibcdj["ambfei"] * Rabij["fejm"];
-  //    HRabij["abij"] += ( -0.5) *  Wijakbl["lmbidj"] * Rabij["adlm"];
+  //    (*HRabij)["abij"] += ( -0.5) *  (*Waibcdj)["ambfei"] * (*Rabij)["fejm"];
+  //    (*HRabij)["abij"] += ( -0.5) *  (*Wijakbl)["lmbidj"] * (*Rabij)["adlm"];
   //    //P(ab)
-  //    HRabij["abij"] += ( 0.5) * Wijakbl["lmaidj"] * Rabij["bdlm"];
+  //    (*HRabij)["abij"] += ( 0.5) * (*Wijakbl)["lmaidj"] * (*Rabij)["bdlm"];
   //
-  //From [2] equation (31) we can get however another representation
-  //involving the T amplitudes, the only part in the right apply
-  //that involves the T amplitudes.
-  HRabij["abij"] += Rai["em"] * Vaibc["bmfe"] * Tabij["afij"];
+  // From [2] equation (31) we can get however another representation
+  // involving the T amplitudes, the only part in the right apply
+  // that involves the T amplitudes.
+  (*HRabij)["abij"] += (*Rai)["em"] * (*Vaibc)["bmfe"] * (*Tabij)["afij"];
   // P(ab)
-  HRabij["abij"] += ( -1.0) * Rai["em"] * Vaibc["amfe"] * Tabij["bfij"];
+  (*HRabij)["abij"] += ( -1.0) * (*Rai)["em"] * (*Vaibc)["amfe"] * (*Tabij)["bfij"];
 
-  HRabij["abij"] += ( -0.5) * Rabij["eamn"] * Vijab["nmfe"] * Tabij["fbij"];
+  (*HRabij)["abij"] += ( -0.5) * (*Rabij)["eamn"] * (*Vijab)["nmfe"] * (*Tabij)["fbij"];
   // P(ab)
-  HRabij["abij"] += ( -0.5) * Rabij["ebmn"] * Vijab["nmfe"] * Tabij["faij"];
+  (*HRabij)["abij"] += ( -0.5) * (*Rabij)["ebmn"] * (*Vijab)["nmfe"] * (*Tabij)["faij"];
 
-  HRabij["abij"] += ( -1.0) * Rai["em"] * Vijka["nmje"] * Tabij["abin"];
+  (*HRabij)["abij"] += ( -1.0) * (*Rai)["em"] * (*Vijka)["nmje"] * (*Tabij)["abin"];
   // P(ij)
-  HRabij["abij"] += ( +1.0) * Rai["em"] * Vijka["nmie"] * Tabij["abjn"];
+  (*HRabij)["abij"] += ( +1.0) * (*Rai)["em"] * (*Vijka)["nmie"] * (*Tabij)["abjn"];
 
-  HRabij["abij"] += ( +0.5) * Rabij["feim"] * Vijab["nmfe"] * Tabij["abjn"];
+  (*HRabij)["abij"] += ( +0.5) * (*Rabij)["feim"] * (*Vijab)["nmfe"] * (*Tabij)["abjn"];
   // P(ij)
-  HRabij["abij"] += ( -0.5) * Rabij["fejm"] * Vijab["nmfe"] * Tabij["abin"];
+  (*HRabij)["abij"] += ( -0.5) * (*Rabij)["fejm"] * (*Vijab)["nmfe"] * (*Tabij)["abin"];
 
   // Filter out non-physical part
   //(*HRabij)["cdii"] = ( 0.0 );
