@@ -30,6 +30,11 @@ namespace cc4s {
     FockVector<F> rightApply(FockVector<F> &v);
     FockVector<F> leftApply(FockVector<F> &v);
 
+    /**
+     * \brief This method should initialize the intermediates.
+     */
+    void buildIntermediates();
+
   protected:
     CTF::Tensor<F> *Tai, *Tabij;
     CTF::Tensor<F> *Fij, *Fab;

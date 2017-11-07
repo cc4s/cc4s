@@ -244,9 +244,23 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   PTR(CTF::Tensor<F>) HRai( HR.get(0) );
   PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
 
+  // Sources:
+
+  //[1]
   //Isaiah Shavitt, Rodney J. Bartlett. Many-Body Methods in Chemistry and
   //Physics: MBPT and Coupled-Cluster Theory. 2009
   //PAGE: 439
+
+  //[2]
+  //John F. Stanton, Rodney J. Bartlett. The equation of motion coupled‐cluster
+  //method. A systematic biorthogonal approach to molecular excitation
+  //energies, transition probabilities, and excited state properties. The
+  //Journal of Chemical Physics 7029--7039  1993
+  // TABLE 1
+
+  auto Tau_abij(NEW(CTF::Tensor<>, *Tabij));
+  (*Tau_abij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+  (*Tau_abij)["abij"] += ( - 1.0 ) * (*Tai)["bi"] * (*Tai)["aj"];
 
   //This approach defines intermediates:
   //Wab Wabcd Wabci Waibc Waibcdj Wiabcjk
@@ -258,6 +272,9 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   //Wab["ab"] += ( -1.0) * Fia["ib"] * Tai["ai"];
   Wab["ab"] += (- 0.5) * Vijab["ijbc"] * Tabij["acij"];
   Wab["ab"] += (- 0.5) * Vijab["ijbc"] * Tai["ai"] * Tai["cj"];
+
+  //Wia ( we need this one to construct the 2-body-amplitudes, not directly )
+  Wia["ia"] = Vijab["imae"] * Tai["em"];
 
   //Wij
   Wij["ij"]  = Fij["ij"];
@@ -293,26 +310,55 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   Waibc["aibc"] += ( -1.0) * Vijab["mibc"] * Tai["am"];
 
   //Wiabj
-  //This is not listed in the source, however we can write it in terms
+  //[1] diagram (10.73)
+  //This is not listed in the source book, however we can write it in terms
   //of Waijb since it should also have the simmetry of the Tabij amplitudes
   //and the Coulomb integrals Vpqrs
   Wiabj["jabi"]  = Vaijb["ajib"];
   Wiabj["jabi"] += ( -1.0) * Vijka["mjib"] * Tai["am"];
   Wiabj["jabi"] += Vaibc["ajeb"] * Tai["ei"];
   Wiabj["jabi"] += ( -1.0) * Vijab["mjeb"] * Tai["ei"] * Tai["am"];
-  //TODO: REVIEW in the book (10.74) and in the paper Wajib,
-  //in the paper there is a minus here, but there should not be a minus,
-  //there is one loop and one hole line contracted, so the sign should be
-  //plus
   Wiabj["jabi"] += Vijab["mjeb"] * Tabij["aeim"];
 
-  //Wiajk
-  //Wijka
-  //Wijkl
-  //Waibcdj
-  //Wiabcjk
-  //Wijakbl
 
+  //Wijka
+  //Taken directly from [2]
+  Wijka["ijka"]  = Vijka["jkia"];
+  Wijka["ijka"] += Tai["ei"] * Vijab["jkea"];
+
+  //Wijkl
+  //Taken directly from [2]
+  Wijkl["klij"]  = Vijkl["klij"];
+  Wijkl["klij"] += Tai["ej"] * Vijka["klie"];
+  Wijkl["klij"] += ( 0.5 ) * Tau_abij["efij"] * Vijab["klef"];
+
+
+  //Wiajk
+  //This is built upon the already existing amplitudes
+  //[1] diagram (10.79)
+  //Takend directly from [2]
+  Wiajk["iajk"]  = Viajk["iajk"];
+
+  //----------------------------------------------------
+  Wiajk["iajk"] += Vijka["imje"] * Tabij["aekm"];
+  // P(ij)
+  Wiajk["iajk"] += ( -1.0 ) * Vijka["jmie"] * Tabij["aekm"];
+  //----------------------------------------------------
+
+  Wiajk["iajk"] += (  0.5 ) * Viabc["iaef"] * Tau_abij["efjk"];
+  Wiajk["iajk"] += Wia["ie"] * Tabij["aejk"];
+  Wiajk["iajk"] += Tai["am"] * Vijkl["imjk"];
+
+  //----------------------------------------------------
+  Wiajk["iajk"] += ( -1.0 ) * Tai["ej"] * Viabj["iaek"];
+  // P(ij)
+  Wiajk["iajk"] += ( +1.0 ) * Tai["ei"] * Viabj["jaek"];
+  //----------------------------------------------------
+
+  Wiajk["iajk"] += ( -1.0 ) * Tabij["afmk"] * Vijab["imef"];
+
+
+  // RIGHT APPLY BEGIN
   HRai["ai"]  = 0.0;
   HRai["ai"] += Wab["ad"] * Rai["di"];
   HRai["ai"] += (- 1.0) * Wij["li"] * Rai["di"];
@@ -331,8 +377,6 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   HRabij["abij"] += (- 1.0 ) * Wiajk["lbij"] * Rai["al"];
   //P(ab)
   HRabij["abij"] += Wiajk["laij"] * Rai["bl"];
-
-  HRabij["abij"] += Wiabcjk["labdij"] * Rai["dl"];
 
   HRabij["abij"] +=           Wab["bd"] * Rabij["adij"];
   //P(ab)
@@ -353,13 +397,35 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   //P(ij)P(ab)
   HRabij["abij"] +=            Wiabj["ladi"] * Rabij["bdjl"];
 
-  HRabij["abij"] += (  0.5) *  Waibcdj["albdej"] * Rabij["deil"];
-  //P(ij)
-  HRabij["abij"] += ( -0.5) *  Waibcdj["albdei"] * Rabij["dejl"];
+  // Three body terms from [1]
+  // They would have been to be evaluated if we apply it strictly
+  //
+  //    HRabij["abij"] += Wiabcjk["mabeij"] * Rai["em"];
+  //    HRabij["abij"] += (  0.5) *  Waibcdj["ambfej"] * Rabij["feim"];
+  //    //P(ij)
+  //    HRabij["abij"] += ( -0.5) *  Waibcdj["ambfei"] * Rabij["fejm"];
+  //    HRabij["abij"] += ( -0.5) *  Wijakbl["lmbidj"] * Rabij["adlm"];
+  //    //P(ab)
+  //    HRabij["abij"] += ( 0.5) * Wijakbl["lmaidj"] * Rabij["bdlm"];
+  //
+  //From [2] equation (31) we can get however another representation
+  //involving the T amplitudes, the only part in the right apply
+  //that involves the T amplitudes.
+  HRabij["abij"] += Rai["em"] * Vaibc["bmfe"] * Tabij["afij"];
+  // P(ab)
+  HRabij["abij"] += ( -1.0) * Rai["em"] * Vaibc["amfe"] * Tabij["bfij"];
 
-  HRabij["abij"] += ( -0.5) *  Wijakbl["lmbidj"] * Rabij["adlm"];
-  //P(ab)
-  HRabij["abij"] += ( 0.5) * Wijakbl["lmaidj"] * Rabij["bdlm"];
+  HRabij["abij"] += ( -0.5) * Rabij["eamn"] * Vijab["nmfe"] * Tabij["fbij"];
+  // P(ab)
+  HRabij["abij"] += ( -0.5) * Rabij["ebmn"] * Vijab["nmfe"] * Tabij["faij"];
+
+  HRabij["abij"] += ( -1.0) * Rai["em"] * Vijka["nmje"] * Tabij["abin"];
+  // P(ij)
+  HRabij["abij"] += ( +1.0) * Rai["em"] * Vijka["nmie"] * Tabij["abjn"];
+
+  HRabij["abij"] += ( +0.5) * Rabij["feim"] * Vijab["nmfe"] * Tabij["abjn"];
+  // P(ij)
+  HRabij["abij"] += ( -0.5) * Rabij["fejm"] * Vijab["nmfe"] * Tabij["abin"];
 
   // Filter out non-physical part
   //(*HRabij)["cdii"] = ( 0.0 );
