@@ -162,6 +162,7 @@ CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   Viajk(Viajk_),
   Vabic(Vabic_)
 {
+  buildIntermediates();
 }
 
 template <typename F>
