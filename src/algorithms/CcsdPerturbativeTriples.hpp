@@ -26,15 +26,31 @@ namespace cc4s {
     virtual void dryRun();
 
   protected:
-    int No, Nv;
-    CTF::Tensor<> *SVabc, *DVabc;
-    CTF::Tensor<> *realGammaFab, *imagGammaFab;
-    SlicedCtfTensor<> *Tai, *Tabij, *Tabil;
-    SlicedCtfTensor<> *Vabij, *Vijla, *realGammaFai,*imagGammaFai;
-    void sliceTensors();
-    CTF::Tensor<> &getSinglesContribution(const Map<3> &);
-    CTF::Tensor<> &getDoublesContribution(const Map<3> &);
-    CTF::Tensor<> &getEnergyDenominator(const Map<3> &);
+    template <typename F>
+    class Calculator;
+
+    template <>
+    class Calculator<double> {
+    public:
+      int No, Nv;
+      
+      CTF::Tensor<> *realGammaFab, *imagGammaFab;
+      SlicedCtfTensor<> *realGammaFai,*imagGammaFai;
+
+      //      CTF::Tensor<complex> *GammaFab;
+      //      SlicedCtfTensor<complex> *GammaFai;
+
+      CTF::Tensor<F> *SVabc, *DVabc;
+      SlicedCtfTensor<F> *Tai, *Tabij, *Tabil;
+      SlicedCtfTensor<F> *Vabij, *Vijla;
+
+      F run();
+
+      void sliceTensors();
+      CTF::Tensor<F> &getSinglesContribution(const Map<3> &);
+      CTF::Tensor<F> &getDoublesContribution(const Map<3> &);
+      CTF::Tensor<F> &getEnergyDenominator(const Map<3> &);
+    };
   };
 }
 
