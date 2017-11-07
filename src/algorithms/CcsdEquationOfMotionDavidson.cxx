@@ -12,6 +12,7 @@
 #include <util/Exception.hpp>
 #include <ctf.hpp>
 #include <Cc4s.hpp>
+#include <util/SharedPointer.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -47,13 +48,21 @@ void CcsdEquationOfMotionDavidson::run() {
       getTensorArgument<double, CTF::Tensor<> >("HPPPCoulombIntegrals"));
   CTF::Tensor<> *Vabic(
       getTensorArgument<double, CTF::Tensor<> >("PPHPCoulombIntegrals"));
+  CTF::Tensor<> *Vabci(
+      getTensorArgument<double, CTF::Tensor<> >("PPPHCoulombIntegrals"));
+  CTF::Tensor<> *Vaibc(
+      getTensorArgument<double, CTF::Tensor<> >("PHPPCoulombIntegrals"));
+  CTF::Tensor<> *Vaibj(
+      getTensorArgument<double, CTF::Tensor<> >("PHPHCoulombIntegrals"));
+  CTF::Tensor<> *Viabj(
+      getTensorArgument<double, CTF::Tensor<> >("HPPHCoulombIntegrals"));
+  CTF::Tensor<> *Vijak(
+      getTensorArgument<double, CTF::Tensor<> >("HHPHCoulombIntegrals"));
+  CTF::Tensor<> *Vaijb(
+      getTensorArgument<double, CTF::Tensor<> >("PHHPCoulombIntegrals"));
 
-  //CTF::Tensor<> *Vaibj(
-      //getTensorArgument<double, CTF::Tensor<>>("PHPHCoulombIntegrals"));
   //CTF::Tensor<> *Vabij(
       //getTensorArgument<double, CTF::Tensor<>>("PPHHCoulombIntegrals"));
-  //CTF::Tensor<> *Vabci(
-      //getTensorArgument<double, CTF::Tensor<>>("PPPHCoulombIntegrals"));
 
   // Get orbital energies
   CTF::Tensor<> *epsi(
@@ -79,7 +88,8 @@ void CcsdEquationOfMotionDavidson::run() {
 
   CcsdSimilarityTransformedHamiltonian<double> H(
     &Tai, &Tabij, &Fij, &Fab,
-    Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic
+    Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic,
+    Vaibc, Vaibj, Viabj, Vijak, Vaijb, Vabci
   );
   CcsdPreConditioner<double> P(
     Tai, Tabij, Fij, Fab, *Vabcd, *Viajb, *Vijab, *Vijkl
@@ -147,7 +157,13 @@ CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   CTF::Tensor<F> *Vijka_,
   CTF::Tensor<F> *Viabc_,
   CTF::Tensor<F> *Viajk_,
-  CTF::Tensor<F> *Vabic_
+  CTF::Tensor<F> *Vabic_,
+  CTF::Tensor<F> *Vaibc_,
+  CTF::Tensor<F> *Vaibj_,
+  CTF::Tensor<F> *Viabj_,
+  CTF::Tensor<F> *Vijak_,
+  CTF::Tensor<F> *Vaijb_,
+  CTF::Tensor<F> *Vabci_
 ):
   Tai(Tai_),
   Tabij(Tabij_),
@@ -160,7 +176,13 @@ CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   Vijka(Vijka_),
   Viabc(Viabc_),
   Viajk(Viajk_),
-  Vabic(Vabic_)
+  Vabic(Vabic_),
+  Vaibc(Vaibc_),
+  Vaibj(Vaibj_),
+  Viabj(Viabj_),
+  Vijak(Vijak_),
+  Vaijb(Vaijb_),
+  Vabci(Vabci_)
 {
   buildIntermediates();
 }
@@ -235,7 +257,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
 }
 
 template <typename F>
-FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
+void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
 
   //[1]
   //Isaiah Shavitt, Rodney J. Bartlett. Many-Body Methods in Chemistry and
