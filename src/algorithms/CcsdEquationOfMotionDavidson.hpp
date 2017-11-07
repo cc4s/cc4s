@@ -38,8 +38,10 @@ namespace cc4s {
   protected:
     CTF::Tensor<F> *Tai, *Tabij;
     CTF::Tensor<F> *Fij, *Fab;
-    CTF::Tensor<F> *Vabcd, *Viajb, *Vijab, *Vijkl;
-    CTF::Tensor<F> *Vijka, *Viabc, *Viajk, *Vabic;
+    CTF::Tensor<F> *Vabcd, *Viajb, *Vijab, *Vijkl,
+                   *Vijka, *Viabc, *Viajk, *Vabic;
+    PTR(CTF::Tensor<F>) Wab, Wia, Wabcd, Wabci, Waibc,
+                        Wiabj, Wiajk, Wij, Wijka, Wijkl;
   };
 
   /**

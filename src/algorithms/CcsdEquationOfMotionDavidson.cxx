@@ -234,17 +234,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
 }
 
 template <typename F>
-FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
-  FockVector<F> &R
-) {
-  FockVector<F> HR(R);
-  // get pointers to the component tensors
-  PTR(CTF::Tensor<F>) Rai( R.get(0) );
-  PTR(CTF::Tensor<F>) Rabij( R.get(1) );
-  PTR(CTF::Tensor<F>) HRai( HR.get(0) );
-  PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
-
-  // Sources:
+FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
 
   //[1]
   //Isaiah Shavitt, Rodney J. Bartlett. Many-Body Methods in Chemistry and
@@ -263,99 +253,124 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   (*Tau_abij)["abij"] += ( - 1.0 ) * (*Tai)["bi"] * (*Tai)["aj"];
 
   //This approach defines intermediates:
-  //Wab Wabcd Wabci Waibc Waibcdj Wiabcjk
-  //Wiabj Wiajk Wij Wijakbl Wijka Wijkl
+  //Wab Wia Wabcd Wabci Waibc
+  //Wiabj Wiajk Wij Wijka Wijkl
+
+  Wab   = NEW(CTF::Tensor<>, *Fab);
+  Wij   = NEW(CTF::Tensor<>, *Fij);
+  Wia   = NEW(CTF::Tensor<>, *Fia);
+  Wabcd = NEW(CTF::Tensor<>, *Vabcd);
+  Wabci = NEW(CTF::Tensor<>, *Vabci);
+  Waibc = NEW(CTF::Tensor<>, *Vaibc);
+  Wiabj = NEW(CTF::Tensor<>, *Viabj);
+  Wiajk = NEW(CTF::Tensor<>, *Viajk);
+  Wijka = NEW(CTF::Tensor<>, *Vijka);
+  Wijkl = NEW(CTF::Tensor<>, *Vijkl);
 
   //Wab
-  Wab["ab"]  = Fab["ab"];
-  Wab["ab"] += Vaibc["aibc"] * Tai["ci"];
-  //Wab["ab"] += ( -1.0) * Fia["ib"] * Tai["ai"];
-  Wab["ab"] += (- 0.5) * Vijab["ijbc"] * Tabij["acij"];
-  Wab["ab"] += (- 0.5) * Vijab["ijbc"] * Tai["ai"] * Tai["cj"];
+  (*Wab)["ab"]  = (*Fab)["ab"];
+  (*Wab)["ab"] += (*Vaibc)["aibc"] * (*Tai)["ci"];
+  //(*Wab)["ab"] += ( -1.0) * (*Fia)["ib"] * (*Tai)["ai"];
+  (*Wab)["ab"] += (- 0.5) * (*Vijab)["ijbc"] * (*Tabij)["acij"];
+  (*Wab)["ab"] += (- 0.5) * (*Vijab)["ijbc"] * (*Tai)["ai"] * (*Tai)["cj"];
 
   //Wia ( we need this one to construct the 2-body-amplitudes, not directly )
-  Wia["ia"] = Vijab["imae"] * Tai["em"];
+  (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
 
   //Wij
-  Wij["ij"]  = Fij["ij"];
-  Wij["ij"] += Vijka["imje"] * Tai["em"];
-  //Wij["ij"] += Fia["ie"] * Tai["ej"];
-  Wij["ij"] += (  0.5) * Vijab["ikab"] * Tabij["abjk"];
-  Wij["ij"] += (  0.5) * Vijab["ikab"] * Tai["ai"] * Tai["bk"];
+  (*Wij)["ij"]  = (*Fij)["ij"];
+  (*Wij)["ij"] += (*Vijka)["imje"] * (*Tai)["em"];
+  //(*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
+  (*Wij)["ij"] += (  0.5) * (*Vijab)["ikab"] * (*Tabij)["abjk"];
+  (*Wij)["ij"] += (  0.5) * (*Vijab)["ikab"] * (*Tai)["ai"] * (*Tai)["bk"];
 
   //Wabcd
-  Wabcd["abcd"]  = Vabcd["abcd"];
-  Wabcd["abcd"] += (-1.0) * Vaibc["aicd"] * Tai["bi"];
+  (*Wabcd)["abcd"]  = (*Vabcd)["abcd"];
+  (*Wabcd)["abcd"] += (-1.0) * (*Vaibc)["aicd"] * (*Tai)["bi"];
   // P(ab) for making them symmetric
-  Wabcd["abcd"] += ( 1.0) * Vaibc["bicd"] * Tai["ai"];
-  Wabcd["abcd"] += ( 0.5) * Vijab["ijcd"] * Tai["ai"] * Tai["bj"];
-  Wabcd["abcd"] += ( 0.5) * Vijab["ijcd"] * Tabij["abij"];
+  (*Wabcd)["abcd"] += ( 1.0) * (*Vaibc)["bicd"] * (*Tai)["ai"];
+  (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["ijcd"] * (*Tai)["ai"] * (*Tai)["bj"];
+  (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["ijcd"] * (*Tabij)["abij"];
 
   //Wabci TODO: REVIEW
-  Wabci["abci"]  = Vabci["abci"];
-  Wabci["abci"] += Vabcd["abce"] * Tai["ei"];
-  Wabci["abci"] += ( -1.0) * Vaicj["amci"] * Tai["bm"];
-  Wabci["abci"] += ( -1.0) * Vaicj["amce"] * Tai["bm"] * Tai["ei"];
-  Wabci["abci"] += ( -1.0) * Vijak["mnci"] * Tai["am"] * Tai["bn"];
-  //Wabci["abci"] += ( -1.0) * Fia ..... (canonical orbitals)
-  Wabci["abci"] += Vaibc["amce"] * Tabij["ebmi"];
-  Wabci["abci"] += Vijak["mnci"] * Tabij["abmn"];
-  Wabci["abci"] += ( -1.0) * Vijab["mnec"] * Tai["em"] * Tabij["abni"];
-  Wabci["abci"] += ( -1.0) * Vijab["mnce"] * Tai["am"] * Tabij["ebni"];
-  Wabci["abci"] += Vijab["mnce"] * Tai["ei"] * Tabij["abmn"];
-  Wabci["abci"] += Vijab["mnce"] * Tai["am"] * Tai["bn"] * Tai["ei"];
+  (*Wabci)["abci"]  = (*Vabci)["abci"];
+  (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vaicj)["amci"] * (*Tai)["bm"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vaicj)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
+  //(*Wabci)["abci"] += ( -1.0) * Fia ..... (canonical orbitals)
+  (*Wabci)["abci"] += (*Vaibc)["amce"] * (*Tabij)["ebmi"];
+  (*Wabci)["abci"] += (*Vijak)["mnci"] * (*Tabij)["abmn"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnec"] * (*Tai)["em"] * (*Tabij)["abni"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
+  (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
+  (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
 
   //Waibc
-  Waibc["aibc"]  = Vaibc["aibc"];
-  Waibc["aibc"] += ( -1.0) * Vijab["mibc"] * Tai["am"];
+  (*Waibc)["aibc"]  = (*Vaibc)["aibc"];
+  (*Waibc)["aibc"] += ( -1.0) * (*Vijab)["mibc"] * (*Tai)["am"];
 
   //Wiabj
-  //[1] diagram (10.73)
+  (*//)[1] diagram (10.73)
   //This is not listed in the source book, however we can write it in terms
   //of Waijb since it should also have the simmetry of the Tabij amplitudes
   //and the Coulomb integrals Vpqrs
-  Wiabj["jabi"]  = Vaijb["ajib"];
-  Wiabj["jabi"] += ( -1.0) * Vijka["mjib"] * Tai["am"];
-  Wiabj["jabi"] += Vaibc["ajeb"] * Tai["ei"];
-  Wiabj["jabi"] += ( -1.0) * Vijab["mjeb"] * Tai["ei"] * Tai["am"];
-  Wiabj["jabi"] += Vijab["mjeb"] * Tabij["aeim"];
+  (*Wiabj)["jabi"]  = (*Vaijb)["ajib"];
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijka)["mjib"] * (*Tai)["am"];
+  (*Wiabj)["jabi"] += (*Vaibc)["ajeb"] * (*Tai)["ei"];
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tai)["ei"] * (*Tai)["am"];
+  (*Wiabj)["jabi"] += (*Vijab)["mjeb"] * (*Tabij)["aeim"];
 
 
   //Wijka
-  //Taken directly from [2]
-  Wijka["ijka"]  = Vijka["jkia"];
-  Wijka["ijka"] += Tai["ei"] * Vijab["jkea"];
+  //Taken directly (*from )[2]
+  (*Wijka)["ijka"]  = (*Vijka)["jkia"];
+  (*Wijka)["ijka"] += (*Tai)["ei"] * (*Vijab)["jkea"];
 
   //Wijkl
-  //Taken directly from [2]
-  Wijkl["klij"]  = Vijkl["klij"];
-  Wijkl["klij"] += Tai["ej"] * Vijka["klie"];
-  Wijkl["klij"] += ( 0.5 ) * Tau_abij["efij"] * Vijab["klef"];
+  //Taken directly (*from )[2]
+  (*Wijkl)["klij"]  = (*Vijkl)["klij"];
+  (*Wijkl)["klij"] += (*Tai)["ej"] * (*Vijka)["klie"];
+  (*Wijkl)["klij"] += ( 0.5 ) * (*Tau_abij)["efij"] * (*Vijab)["klef"];
 
 
   //Wiajk
   //This is built upon the already existing amplitudes
-  //[1] diagram (10.79)
-  //Takend directly from [2]
-  Wiajk["iajk"]  = Viajk["iajk"];
+  (*//)[1] diagram (10.79)
+  //Takend directly (*from )[2]
+  (*Wiajk)["iajk"]  = (*Viajk)["iajk"];
 
   //----------------------------------------------------
-  Wiajk["iajk"] += Vijka["imje"] * Tabij["aekm"];
+  (*Wiajk)["iajk"] += (*Vijka)["imje"] * (*Tabij)["aekm"];
   // P(ij)
-  Wiajk["iajk"] += ( -1.0 ) * Vijka["jmie"] * Tabij["aekm"];
+  (*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["jmie"] * (*Tabij)["aekm"];
   //----------------------------------------------------
 
-  Wiajk["iajk"] += (  0.5 ) * Viabc["iaef"] * Tau_abij["efjk"];
-  Wiajk["iajk"] += Wia["ie"] * Tabij["aejk"];
-  Wiajk["iajk"] += Tai["am"] * Vijkl["imjk"];
+  (*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
+  (*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
+  (*Wiajk)["iajk"] += (*Tai)["am"] * (*Vijkl)["imjk"];
 
   //----------------------------------------------------
-  Wiajk["iajk"] += ( -1.0 ) * Tai["ej"] * Viabj["iaek"];
+  (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viabj)["iaek"];
   // P(ij)
-  Wiajk["iajk"] += ( +1.0 ) * Tai["ei"] * Viabj["jaek"];
+  (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ei"] * (*Viabj)["jaek"];
   //----------------------------------------------------
 
-  Wiajk["iajk"] += ( -1.0 ) * Tabij["afmk"] * Vijab["imef"];
+  (*Wiajk)["iajk"] += ( -1.0 ) * (*Tabij)["afmk"] * (*Vijab)["imef"];
+
+
+}
+
+template <typename F>
+FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
+  FockVector<F> &R
+) {
+  FockVector<F> HR(R);
+  // get pointers to the component tensors
+  PTR(CTF::Tensor<F>) Rai( R.get(0) );
+  PTR(CTF::Tensor<F>) Rabij( R.get(1) );
+  PTR(CTF::Tensor<F>) HRai( HR.get(0) );
+  PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
 
 
   // RIGHT APPLY BEGIN
