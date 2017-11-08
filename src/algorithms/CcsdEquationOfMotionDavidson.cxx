@@ -445,13 +445,13 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   // Three body terms (*from) [1]
   // They would have been to be evaluated if we apply it strictly
   //
-  //    (*HRabij)["abij"] += (*Wiabcjk)["mabeij"] * (*Rai)["em"];
-  //    (*HRabij)["abij"] += (  0.5) *  (*Waibcdj)["ambfej"] * (*Rabij)["feim"];
-  //    //P(ij)
-  //    (*HRabij)["abij"] += ( -0.5) *  (*Waibcdj)["ambfei"] * (*Rabij)["fejm"];
-  //    (*HRabij)["abij"] += ( -0.5) *  (*Wijakbl)["lmbidj"] * (*Rabij)["adlm"];
-  //    //P(ab)
-  //    (*HRabij)["abij"] += ( 0.5) * (*Wijakbl)["lmaidj"] * (*Rabij)["bdlm"];
+  //  (*HRabij)["abij"] += (*Wiabcjk)["mabeij"] * (*Rai)["em"];
+  //  (*HRabij)["abij"] += (  0.5) *  (*Waibcdj)["ambfej"] * (*Rabij)["feim"];
+  //  //P(ij)
+  //  (*HRabij)["abij"] += ( -0.5) *  (*Waibcdj)["ambfei"] * (*Rabij)["fejm"];
+  //  (*HRabij)["abij"] += ( -0.5) *  (*Wijakbl)["lmbidj"] * (*Rabij)["adlm"];
+  //  //P(ab)
+  //  (*HRabij)["abij"] += ( 0.5) * (*Wijakbl)["lmaidj"] * (*Rabij)["bdlm"];
   //
   // From [2] equation (31) we can get however another representation
   // involving the T amplitudes, the only part in the right apply
@@ -467,7 +467,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
     ( -0.5) * (*Rabij)["eamn"] * (*Vijab)["nmfe"] * (*Tabij)["fbij"];
   // P(ab)
   (*HRabij)["abij"] +=
-    ( -0.5) * (*Rabij)["ebmn"] * (*Vijab)["nmfe"] * (*Tabij)["faij"];
+    ( +0.5) * (*Rabij)["ebmn"] * (*Vijab)["nmfe"] * (*Tabij)["faij"];
 
   (*HRabij)["abij"] +=
     ( -1.0) * (*Rai)["em"] * (*Vijka)["nmje"] * (*Tabij)["abin"];
