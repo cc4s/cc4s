@@ -456,21 +456,30 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   // From [2] equation (31) we can get however another representation
   // involving the T amplitudes, the only part in the right apply
   // that involves the T amplitudes.
-  (*HRabij)["abij"] += (*Rai)["em"] * (*Vaibc)["bmfe"] * (*Tabij)["afij"];
+
+  (*HRabij)["abij"] +=
+              (*Rai)["em"] * (*Vaibc)["bmfe"] * (*Tabij)["afij"];
   // P(ab)
-  (*HRabij)["abij"] += ( -1.0) * (*Rai)["em"] * (*Vaibc)["amfe"] * (*Tabij)["bfij"];
+  (*HRabij)["abij"] +=
+    ( -1.0) * (*Rai)["em"] * (*Vaibc)["amfe"] * (*Tabij)["bfij"];
 
-  (*HRabij)["abij"] += ( -0.5) * (*Rabij)["eamn"] * (*Vijab)["nmfe"] * (*Tabij)["fbij"];
+  (*HRabij)["abij"] +=
+    ( -0.5) * (*Rabij)["eamn"] * (*Vijab)["nmfe"] * (*Tabij)["fbij"];
   // P(ab)
-  (*HRabij)["abij"] += ( -0.5) * (*Rabij)["ebmn"] * (*Vijab)["nmfe"] * (*Tabij)["faij"];
+  (*HRabij)["abij"] +=
+    ( -0.5) * (*Rabij)["ebmn"] * (*Vijab)["nmfe"] * (*Tabij)["faij"];
 
-  (*HRabij)["abij"] += ( -1.0) * (*Rai)["em"] * (*Vijka)["nmje"] * (*Tabij)["abin"];
+  (*HRabij)["abij"] +=
+    ( -1.0) * (*Rai)["em"] * (*Vijka)["nmje"] * (*Tabij)["abin"];
   // P(ij)
-  (*HRabij)["abij"] += ( +1.0) * (*Rai)["em"] * (*Vijka)["nmie"] * (*Tabij)["abjn"];
+  (*HRabij)["abij"] +=
+    ( +1.0) * (*Rai)["em"] * (*Vijka)["nmie"] * (*Tabij)["abjn"];
 
-  (*HRabij)["abij"] += ( +0.5) * (*Rabij)["feim"] * (*Vijab)["nmfe"] * (*Tabij)["abjn"];
+  (*HRabij)["abij"] +=
+    ( +0.5) * (*Rabij)["feim"] * (*Vijab)["nmfe"] * (*Tabij)["abjn"];
   // P(ij)
-  (*HRabij)["abij"] += ( -0.5) * (*Rabij)["fejm"] * (*Vijab)["nmfe"] * (*Tabij)["abin"];
+  (*HRabij)["abij"] +=
+    ( -0.5) * (*Rabij)["fejm"] * (*Vijab)["nmfe"] * (*Tabij)["abin"];
 
   // Filter out non-physical part
   //(*HRabij)["cdii"] = ( 0.0 );
