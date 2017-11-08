@@ -372,7 +372,7 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   (*Wiajk)["iajk"]  = (*Viajk)["iajk"];
 
   //----------------------------------------------------
-  (*Wiajk)["iajk"] += (*Vijka)["imje"] * (*Tabij)["aekm"];
+  (*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
   // P(ij)
   (*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["jmie"] * (*Tabij)["aekm"];
   //----------------------------------------------------
@@ -404,10 +404,9 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
 
 
-  // RIGHT APPLY BEGIN
   (*HRai)["ai"]  = 0.0;
   (*HRai)["ai"] += (*Wab)["ad"] * (*Rai)["di"];
-  (*HRai)["ai"] += (- 1.0) * (*Wij)["li"] * (*Rai)["di"];
+  (*HRai)["ai"] += (- 1.0) * (*Wij)["li"] * (*Rai)["al"];
   (*HRai)["ai"] += (*Wiabj)["ladi"] * (*Rai)["dl"];
   (*HRai)["ai"] += (*Wia)["ld"] * (*Rabij)["adil"];
   (*HRai)["ai"] += (   0.5 ) * (*Waibc)["alde"] * (*Rabij)["deil"];
@@ -416,13 +415,13 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   // TODO: Deal with permutations automatically
   (*HRabij)["abij"]  = 0.0;
 
-  (*HRabij)["abij"] += (*Wabci)["abej"] * (*Rai)["ei"];
+  (*HRabij)["abij"] +=          (*Wabci)["abej"] * (*Rai)["ei"];
   //P(ij)
   (*HRabij)["abij"] += (-1.0) * (*Wabci)["abei"] * (*Rai)["ej"];
 
   (*HRabij)["abij"] += (- 1.0 ) * (*Wiajk)["lbij"] * (*Rai)["al"];
   //P(ab)
-  (*HRabij)["abij"] += (*Wiajk)["laij"] * (*Rai)["bl"];
+  (*HRabij)["abij"] +=            (*Wiajk)["laij"] * (*Rai)["bl"];
 
   (*HRabij)["abij"] +=           (*Wab)["bd"] * (*Rabij)["adij"];
   //P(ab)
@@ -430,7 +429,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
 
   (*HRabij)["abij"] += ( -1.0) * (*Wij)["lj"] * (*Rabij)["abil"];
   //P(ij)
-  (*HRabij)["abij"] += (*Wij)["li"] * (*Rabij)["abjl"];
+  (*HRabij)["abij"] +=           (*Wij)["li"] * (*Rabij)["abjl"];
 
   (*HRabij)["abij"] += (  0.5) * (*Wabcd)["abde"] * (*Rabij)["deij"];
   (*HRabij)["abij"] += (  0.5) * (*Wijkl)["lmij"] * (*Rabij)["ablm"];

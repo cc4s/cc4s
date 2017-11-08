@@ -32,6 +32,7 @@ CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
   (antisymmetrize 1)
 ] [
+
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   HHPHCoulombIntegrals
@@ -47,6 +48,7 @@ CoulombIntegralsFromVertex [
   PPHPCoulombIntegrals
   PPPHCoulombIntegrals
   PPPPCoulombIntegrals
+
 ].
 
 UccsdAmplitudesFromCoulombIntegrals [
