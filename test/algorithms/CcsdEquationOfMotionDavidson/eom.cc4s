@@ -40,11 +40,11 @@ CoulombIntegralsFromVertex [
   HPHPCoulombIntegrals
   HPPHCoulombIntegrals
   HPPPCoulombIntegrals
+  PHHPCoulombIntegrals
   PHPHCoulombIntegrals
   PHPPCoulombIntegrals
   PPHHCoulombIntegrals
   PPHPCoulombIntegrals
-  PPPHCoulombIntegrals
   PPPHCoulombIntegrals
   PPPPCoulombIntegrals
 ].
@@ -80,17 +80,23 @@ UccsdAmplitudesFromCoulombIntegrals [
 
 
 CcsdEquationOfMotionDavidson [
+
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
+  HHPHCoulombIntegrals
   HHPPCoulombIntegrals
   HPHHCoulombIntegrals
   HPHPCoulombIntegrals
+  HPPHCoulombIntegrals
   HPPPCoulombIntegrals
+  PHHPCoulombIntegrals
   PHPHCoulombIntegrals
+  PHPPCoulombIntegrals
   PPHHCoulombIntegrals
   PPHPCoulombIntegrals
   PPPHCoulombIntegrals
   PPPPCoulombIntegrals
+
   HoleEigenEnergies ParticleEigenEnergies
   (SinglesAmplitudes UccsdSinglesAmplitudes)
   (DoublesAmplitudes UccsdDoublesAmplitudes)

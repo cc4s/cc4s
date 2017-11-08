@@ -271,6 +271,8 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   //Journal of Chemical Physics 7029--7039  1993
   // TABLE 1
 
+  LOG(0, "CcsdEomDavid") << "Building intermediates Wpqrs and Wpq"
+                         << std::endl;
   auto Tau_abij(NEW(CTF::Tensor<>, *Tabij));
   (*Tau_abij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
   (*Tau_abij)["abij"] += ( - 1.0 ) * (*Tai)["bi"] * (*Tai)["aj"];
@@ -295,17 +297,18 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   Wijka = NEW(CTF::Tensor<>, *Vijka);
   Wijkl = NEW(CTF::Tensor<>, *Vijkl);
 
-  //Wab
+  LOG(0, "CcsdEomDavid") << "Building Wab" << std::endl;
   (*Wab)["ab"]  = (*Fab)["ab"];
   (*Wab)["ab"] += (*Vaibc)["aibc"] * (*Tai)["ci"];
   //(*Wab)["ab"] += ( -1.0) * (*Fia)["ib"] * (*Tai)["ai"];
   (*Wab)["ab"] += (- 0.5) * (*Vijab)["ijbc"] * (*Tabij)["acij"];
   (*Wab)["ab"] += (- 0.5) * (*Vijab)["ijbc"] * (*Tai)["ai"] * (*Tai)["cj"];
 
-  //Wia ( we need this one to construct the 2-body-amplitudes, not directly )
+  LOG(0, "CcsdEomDavid") << "Building Wia" << std::endl;
+  //we need this one to construct the 2-body-amplitudes, not directly
   (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
 
-  //Wij
+  LOG(0, "CcsdEomDavid") << "Building Wij" << std::endl;
   (*Wij)["ij"]  = (*Fij)["ij"];
   (*Wij)["ij"] += (*Vijka)["imje"] * (*Tai)["em"];
   //(*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
@@ -324,7 +327,7 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   (*Wabci)["abci"]  = (*Vabci)["abci"];
   (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
   (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
-  (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
   (*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
   //(*Wabci)["abci"] += ( -1.0) * Fia ..... (canonical orbitals)
   (*Wabci)["abci"] += (*Vaibc)["amce"] * (*Tabij)["ebmi"];
@@ -406,7 +409,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   (*HRai)["ai"] += (*Wab)["ad"] * (*Rai)["di"];
   (*HRai)["ai"] += (- 1.0) * (*Wij)["li"] * (*Rai)["di"];
   (*HRai)["ai"] += (*Wiabj)["ladi"] * (*Rai)["dl"];
-  (*HRai)["ai"] += (*Wij)["ld"] * (*Rabij)["adil"];
+  (*HRai)["ai"] += (*Wia)["ld"] * (*Rabij)["adil"];
   (*HRai)["ai"] += (   0.5 ) * (*Waibc)["alde"] * (*Rabij)["deil"];
   (*HRai)["ai"] += ( - 0.5 ) * (*Wijka)["lmid"] * (*Rabij)["adlm"];
 
