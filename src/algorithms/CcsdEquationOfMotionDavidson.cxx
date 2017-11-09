@@ -286,9 +286,9 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   int ov[] = {No, Nv};
   CTF::Tensor<> Fia(2, ov, syms, *Cc4s::world, "Fia");
 
+  Wia   = NEW(CTF::Tensor<>,  Fia);
   Wab   = NEW(CTF::Tensor<>, *Fab);
   Wij   = NEW(CTF::Tensor<>, *Fij);
-  Wia   = NEW(CTF::Tensor<>,  Fia);
   Wabcd = NEW(CTF::Tensor<>, *Vabcd);
   Wabci = NEW(CTF::Tensor<>, *Vabci);
   Waibc = NEW(CTF::Tensor<>, *Vaibc);
@@ -297,33 +297,33 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   Wijka = NEW(CTF::Tensor<>, *Vijka);
   Wijkl = NEW(CTF::Tensor<>, *Vijkl);
 
+  LOG(0, "CcsdEomDavid") << "Building Wia" << std::endl;
+  //we need this one to construct the 2-body-amplitudes, not directly
+  (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
+
   LOG(0, "CcsdEomDavid") << "Building Wab" << std::endl;
   (*Wab)["ab"]  = (*Fab)["ab"];
   (*Wab)["ab"] += (*Vaibc)["aibc"] * (*Tai)["ci"];
   //(*Wab)["ab"] += ( -1.0) * (*Fia)["ib"] * (*Tai)["ai"];
-  (*Wab)["ab"] += (- 0.5) * (*Vijab)["ijbc"] * (*Tabij)["acij"];
-  (*Wab)["ab"] += (- 0.5) * (*Vijab)["ijbc"] * (*Tai)["ai"] * (*Tai)["cj"];
-
-  LOG(0, "CcsdEomDavid") << "Building Wia" << std::endl;
-  //we need this one to construct the 2-body-amplitudes, not directly
-  (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
+  (*Wab)["ab"] += (- 0.5) * (*Vijab)["mnbe"] * (*Tau_abij)["aemn"];
 
   LOG(0, "CcsdEomDavid") << "Building Wij" << std::endl;
   (*Wij)["ij"]  = (*Fij)["ij"];
   (*Wij)["ij"] += (*Vijka)["imje"] * (*Tai)["em"];
   //(*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
-  (*Wij)["ij"] += (  0.5) * (*Vijab)["ikab"] * (*Tabij)["abjk"];
-  (*Wij)["ij"] += (  0.5) * (*Vijab)["ikab"] * (*Tai)["ai"] * (*Tai)["bk"];
+  (*Wij)["ij"] += (  0.5) * (*Vijab)["imef"] * (*Tau_abij)["efjm"];
 
-  //Wabcd
+  LOG(0, "CcsdEomDavid") << "Building Wabcd" << std::endl;
   (*Wabcd)["abcd"]  = (*Vabcd)["abcd"];
-  (*Wabcd)["abcd"] += (-1.0) * (*Vaibc)["aicd"] * (*Tai)["bi"];
-  // P(ab) for making them symmetric
-  (*Wabcd)["abcd"] += ( 1.0) * (*Vaibc)["bicd"] * (*Tai)["ai"];
-  (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["ijcd"] * (*Tai)["ai"] * (*Tai)["bj"];
-  (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["ijcd"] * (*Tabij)["abij"];
+  //-----------------------------------------------------------
+  (*Wabcd)["abcd"] += (-1.0) * (*Vaibc)["amcd"] * (*Tai)["bm"];
+  // P(ab)
+  (*Wabcd)["abcd"] += ( 1.0) * (*Vaibc)["bmcd"] * (*Tai)["am"];
+  //-----------------------------------------------------------
+  (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["mncd"] * (*Tau_abij)["abmn"];
 
-  //Wabci TODO: REVIEW
+  LOG(0, "CcsdEomDavid") << "Building Wabci" << std::endl;
+  //TODO: REVIEW
   (*Wabci)["abci"]  = (*Vabci)["abci"];
   (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
   (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
@@ -337,11 +337,11 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
   (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
 
-  //Waibc
+  LOG(0, "CcsdEomDavid") << "Building Waibc" << std::endl;
   (*Waibc)["aibc"]  = (*Vaibc)["aibc"];
   (*Waibc)["aibc"] += ( -1.0) * (*Vijab)["mibc"] * (*Tai)["am"];
 
-  //Wiabj
+  LOG(0, "CcsdEomDavid") << "Building Wiabj from Waijb" << std::endl;
   //[1] diagram (10.73)
   //This is not listed in the source book, however we can write it in terms
   //of Waijb since it should also have the simmetry of the Tabij amplitudes
@@ -352,23 +352,21 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tai)["ei"] * (*Tai)["am"];
   (*Wiabj)["jabi"] += (*Vijab)["mjeb"] * (*Tabij)["aeim"];
 
-
-  //Wijka
+  LOG(0, "CcsdEomDavid") << "Building Wijka" << std::endl;
   //Taken directly (*from )[2]
   (*Wijka)["ijka"]  = (*Vijka)["jkia"];
   (*Wijka)["ijka"] += (*Tai)["ei"] * (*Vijab)["jkea"];
 
-  //Wijkl
+  LOG(0, "CcsdEomDavid") << "Building Wijkl" << std::endl;
   //Taken directly (*from )[2]
   (*Wijkl)["klij"]  = (*Vijkl)["klij"];
   (*Wijkl)["klij"] += (*Tai)["ej"] * (*Vijka)["klie"];
   (*Wijkl)["klij"] += ( 0.5 ) * (*Tau_abij)["efij"] * (*Vijab)["klef"];
 
-
-  //Wiajk
+  LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
   //This is built upon the already existing amplitudes
   //[1] diagram (10.79)
-  //Takend directly (*from )[2]
+  //Takend directly from [2]
   (*Wiajk)["iajk"]  = (*Viajk)["iajk"];
 
   //----------------------------------------------------
@@ -378,16 +376,21 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   //----------------------------------------------------
 
   (*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
+
   (*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
-  (*Wiajk)["iajk"] += (*Tai)["am"] * (*Vijkl)["imjk"];
+  (*Wiajk)["iajk"] += (*Tai)["am"] * (*Wijkl)["imjk"];
 
   //----------------------------------------------------
   (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viabj)["iaek"];
   // P(ij)
   (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ei"] * (*Viabj)["jaek"];
   //----------------------------------------------------
-
-  (*Wiajk)["iajk"] += ( -1.0 ) * (*Tabij)["afmk"] * (*Vijab)["imef"];
+  (*Wiajk)["iajk"] +=
+    ( +1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
+  // P(ij)
+  (*Wiajk)["iajk"] +=
+    ( -1.0 ) * (*Tai)["ei"] * (*Tabij)["afmk"] * (*Vijab)["jmef"];
+  //----------------------------------------------------
 
 
 }
