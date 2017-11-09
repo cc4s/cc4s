@@ -313,6 +313,15 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   //(*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
   (*Wij)["ij"] += (  0.5) * (*Vijab)["imef"] * (*Tau_abij)["efjm"];
 
+  LOG(0, "CcsdEomDavid") << "Building Wijkl" << std::endl;
+  //Taken directly (*from )[2]
+  (*Wijkl)["klij"]  = (*Vijkl)["klij"];
+  //------------------------------------------------------------
+  (*Wijkl)["klij"] +=           (*Tai)["ej"] * (*Vijka)["klie"];
+  (*Wijkl)["klij"] += ( -1.0) * (*Tai)["ei"] * (*Vijka)["klje"];
+  //------------------------------------------------------------
+  (*Wijkl)["klij"] += ( 0.5 ) * (*Tau_abij)["efij"] * (*Vijab)["klef"];
+
   LOG(0, "CcsdEomDavid") << "Building Wabcd" << std::endl;
   (*Wabcd)["abcd"]  = (*Vabcd)["abcd"];
   //-----------------------------------------------------------
@@ -356,12 +365,6 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   //Taken directly (*from )[2]
   (*Wijka)["ijka"]  = (*Vijka)["jkia"];
   (*Wijka)["ijka"] += (*Tai)["ei"] * (*Vijab)["jkea"];
-
-  LOG(0, "CcsdEomDavid") << "Building Wijkl" << std::endl;
-  //Taken directly (*from )[2]
-  (*Wijkl)["klij"]  = (*Vijkl)["klij"];
-  (*Wijkl)["klij"] += (*Tai)["ej"] * (*Vijka)["klie"];
-  (*Wijkl)["klij"] += ( 0.5 ) * (*Tau_abij)["efij"] * (*Vijab)["klef"];
 
   LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
   //This is built upon the already existing amplitudes
