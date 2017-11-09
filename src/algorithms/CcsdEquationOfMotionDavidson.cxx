@@ -331,6 +331,28 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   //-----------------------------------------------------------
   (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["mncd"] * (*Tau_abij)["abmn"];
 
+  LOG(0, "CcsdEomDavid") << "Building Waibc" << std::endl;
+  (*Waibc)["aibc"]  = (*Vaibc)["aibc"];
+  (*Waibc)["aibc"] += ( -1.0) * (*Vijab)["mibc"] * (*Tai)["am"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wijka" << std::endl;
+  //Taken directly from[2]
+  (*Wijka)["ijka"]  = (*Vijka)["jkia"];
+  (*Wijka)["ijka"] += (*Tai)["ei"] * (*Vijab)["jkea"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wiabj from Waijb" << std::endl;
+  //[1] diagram (10.73)
+  //This is not listed in the source book, however we can write it in terms
+  //of Waijb since it should also have the simmetry of the Tabij amplitudes
+  //and the Coulomb integrals Vpqrs
+  //Taken directly from [2]
+  (*Wiabj)["jabi"]  = (*Vaijb)["ajib"];
+  (*Wiabj)["jabi"] += (*Vaibc)["ajeb"] * (*Tai)["ei"];
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijka)["mjib"] * (*Tai)["am"];
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tai)["ei"] * (*Tai)["am"];
+  // TODO: REVIEW Compare this term with the book and the paper for the sign
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tabij)["aeim"];
+
   LOG(0, "CcsdEomDavid") << "Building Wabci" << std::endl;
   //TODO: REVIEW
   (*Wabci)["abci"]  = (*Vabci)["abci"];
@@ -346,43 +368,19 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
   (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
 
-  LOG(0, "CcsdEomDavid") << "Building Waibc" << std::endl;
-  (*Waibc)["aibc"]  = (*Vaibc)["aibc"];
-  (*Waibc)["aibc"] += ( -1.0) * (*Vijab)["mibc"] * (*Tai)["am"];
-
-  LOG(0, "CcsdEomDavid") << "Building Wiabj from Waijb" << std::endl;
-  //[1] diagram (10.73)
-  //This is not listed in the source book, however we can write it in terms
-  //of Waijb since it should also have the simmetry of the Tabij amplitudes
-  //and the Coulomb integrals Vpqrs
-  (*Wiabj)["jabi"]  = (*Vaijb)["ajib"];
-  (*Wiabj)["jabi"] += ( -1.0) * (*Vijka)["mjib"] * (*Tai)["am"];
-  (*Wiabj)["jabi"] += (*Vaibc)["ajeb"] * (*Tai)["ei"];
-  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tai)["ei"] * (*Tai)["am"];
-  (*Wiabj)["jabi"] += (*Vijab)["mjeb"] * (*Tabij)["aeim"];
-
-  LOG(0, "CcsdEomDavid") << "Building Wijka" << std::endl;
-  //Taken directly (*from )[2]
-  (*Wijka)["ijka"]  = (*Vijka)["jkia"];
-  (*Wijka)["ijka"] += (*Tai)["ei"] * (*Vijab)["jkea"];
-
   LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
   //This is built upon the already existing amplitudes
   //[1] diagram (10.79)
   //Takend directly from [2]
   (*Wiajk)["iajk"]  = (*Viajk)["iajk"];
-
   //----------------------------------------------------
   (*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
   // P(ij)
   (*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["jmie"] * (*Tabij)["aekm"];
   //----------------------------------------------------
-
   (*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
-
   (*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
   (*Wiajk)["iajk"] += (*Tai)["am"] * (*Wijkl)["imjk"];
-
   //----------------------------------------------------
   (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viabj)["iaek"];
   // P(ij)
