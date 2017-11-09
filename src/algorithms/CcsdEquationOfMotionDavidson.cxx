@@ -350,8 +350,7 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates() {
   (*Wiabj)["jabi"] += (*Vaibc)["ajeb"] * (*Tai)["ei"];
   (*Wiabj)["jabi"] += ( -1.0) * (*Vijka)["mjib"] * (*Tai)["am"];
   (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tai)["ei"] * (*Tai)["am"];
-  // TODO: REVIEW Compare this term with the book and the paper for the sign
-  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tabij)["aeim"];
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tabij)["eaim"];
 
   LOG(0, "CcsdEomDavid") << "Building Wabci" << std::endl;
   //TODO: REVIEW
