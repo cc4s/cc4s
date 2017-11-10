@@ -446,7 +446,6 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
   PTR(CTF::Tensor<F>) HRai( HR.get(0) );
   PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
 
-  LOG(0, "CcsdEomDavidNoInt") << "Non int APPLYING RIGHT" << std::endl;
   // Contruct HR (one body part)
   // TODO: why "bi" not "ai"?
   (*HRai)["bi"]  = 0.0;
