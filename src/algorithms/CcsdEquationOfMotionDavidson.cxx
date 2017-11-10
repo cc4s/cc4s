@@ -328,7 +328,7 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   (*Wij)["ij"] += (  0.5) * (*Vijab)["imef"] * (*Tau_abij)["efjm"];
 
   LOG(0, "CcsdEomDavid") << "Building Wijkl" << std::endl;
-  //Taken directly (*from )[2]
+  //Taken directly from [2]
   (*Wijkl)["klij"]  = (*Vijkl)["klij"];
   //------------------------------------------------------------
   (*Wijkl)["klij"] +=           (*Tai)["ej"] * (*Vijka)["klie"];
@@ -370,16 +370,35 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   //TODO: REVIEW
   (*Wabci)["abci"]  = (*Vabci)["abci"];
   (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
+
+  // Symmetrize?????
   (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
+  (*Wabci)["abci"] += ( +1.0) * (*Vaibj)["bmci"] * (*Tai)["am"];
+
+  // Symmetrize?????
   (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
-  (*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
-  //(*Wabci)["abci"] += ( -1.0) * Fia ..... (canonical orbitals)
-  (*Wabci)["abci"] += (*Vaibc)["amce"] * (*Tabij)["ebmi"];
+  (*Wabci)["abci"] += ( +1.0) * (*Vaibc)["bmce"] * (*Tai)["am"] * (*Tai)["ei"];
+
+  // Symmetrize?????
+  (*Wabci)["abci"] += ( +1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["bm"] * (*Tai)["an"];
+
+  // Symmetrize?????
+  (*Wabci)["abci"] +=          (*Vaibc)["amce"] * (*Tabij)["ebmi"];
+  (*Wabci)["abci"] += (-1.0) * (*Vaibc)["bmce"] * (*Tabij)["eami"];
+
   (*Wabci)["abci"] += (*Vijak)["mnci"] * (*Tabij)["abmn"];
   (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnec"] * (*Tai)["em"] * (*Tabij)["abni"];
+
+  // Symmetrize?????
   (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
+  (*Wabci)["abci"] += ( +1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tabij)["eani"];
+
   (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
-  (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
+
+  // Symmetrize?????
+  (*Wabci)["abci"] +=           (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tai)["an"] * (*Tai)["ei"];
 
   LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
   //This is built upon the already existing amplitudes
