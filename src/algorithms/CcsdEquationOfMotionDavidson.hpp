@@ -24,17 +24,48 @@ namespace cc4s {
       CTF::Tensor<F> *Vijka_,
       CTF::Tensor<F> *Viabc_,
       CTF::Tensor<F> *Viajk_,
-      CTF::Tensor<F> *Vabic_
+      CTF::Tensor<F> *Vabic_,
+      CTF::Tensor<F> *Vaibc_,
+      CTF::Tensor<F> *Vaibj_,
+      CTF::Tensor<F> *Viabj_,
+      CTF::Tensor<F> *Vijak_,
+      CTF::Tensor<F> *Vaijb_,
+      CTF::Tensor<F> *Vabci_
     );
 
+    FockVector<F> rightApplyIntermediates(FockVector<F> &v);
+    FockVector<F> rightApplyHirata(FockVector<F> &v);
     FockVector<F> rightApply(FockVector<F> &v);
     FockVector<F> leftApply(FockVector<F> &v);
+
+    /**
+     * \brief This method should initialize the intermediates.
+     *
+     * \param[in] flag If true, then the rightApply method will be used
+     * with intermediates, else without.
+     */
+    void buildIntermediates(bool flag);
 
   protected:
     CTF::Tensor<F> *Tai, *Tabij;
     CTF::Tensor<F> *Fij, *Fab;
-    CTF::Tensor<F> *Vabcd, *Viajb, *Vijab, *Vijkl;
-    CTF::Tensor<F> *Vijka, *Viabc, *Viajk, *Vabic;
+    CTF::Tensor<F> *Vabcd;
+    CTF::Tensor<F> *Viajb;
+    CTF::Tensor<F> *Vijab;
+    CTF::Tensor<F> *Vijkl;
+    CTF::Tensor<F> *Vijka;
+    CTF::Tensor<F> *Viabc;
+    CTF::Tensor<F> *Viajk;
+    CTF::Tensor<F> *Vabic;
+    CTF::Tensor<F> *Vaibc;
+    CTF::Tensor<F> *Vaibj;
+    CTF::Tensor<F> *Viabj;
+    CTF::Tensor<F> *Vijak;
+    CTF::Tensor<F> *Vaijb;
+    CTF::Tensor<F> *Vabci;
+    bool withIntermediates;
+    PTR(CTF::Tensor<F>) Wab, Wia, Wabcd, Wabci, Waibc,
+                        Wiabj, Wiajk, Wij, Wijka, Wijkl;
   };
 
   /**

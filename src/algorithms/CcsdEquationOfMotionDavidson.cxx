@@ -12,6 +12,7 @@
 #include <util/Exception.hpp>
 #include <ctf.hpp>
 #include <Cc4s.hpp>
+#include <util/SharedPointer.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -47,13 +48,21 @@ void CcsdEquationOfMotionDavidson::run() {
       getTensorArgument<double, CTF::Tensor<> >("HPPPCoulombIntegrals"));
   CTF::Tensor<> *Vabic(
       getTensorArgument<double, CTF::Tensor<> >("PPHPCoulombIntegrals"));
+  CTF::Tensor<> *Vabci(
+      getTensorArgument<double, CTF::Tensor<> >("PPPHCoulombIntegrals"));
+  CTF::Tensor<> *Vaibc(
+      getTensorArgument<double, CTF::Tensor<> >("PHPPCoulombIntegrals"));
+  CTF::Tensor<> *Vaibj(
+      getTensorArgument<double, CTF::Tensor<> >("PHPHCoulombIntegrals"));
+  CTF::Tensor<> *Viabj(
+      getTensorArgument<double, CTF::Tensor<> >("HPPHCoulombIntegrals"));
+  CTF::Tensor<> *Vijak(
+      getTensorArgument<double, CTF::Tensor<> >("HHPHCoulombIntegrals"));
+  CTF::Tensor<> *Vaijb(
+      getTensorArgument<double, CTF::Tensor<> >("PHHPCoulombIntegrals"));
 
-  //CTF::Tensor<> *Vaibj(
-      //getTensorArgument<double, CTF::Tensor<>>("PHPHCoulombIntegrals"));
   //CTF::Tensor<> *Vabij(
       //getTensorArgument<double, CTF::Tensor<>>("PPHHCoulombIntegrals"));
-  //CTF::Tensor<> *Vabci(
-      //getTensorArgument<double, CTF::Tensor<>>("PPPHCoulombIntegrals"));
 
   // Get orbital energies
   CTF::Tensor<> *epsi(
@@ -79,8 +88,15 @@ void CcsdEquationOfMotionDavidson::run() {
 
   CcsdSimilarityTransformedHamiltonian<double> H(
     &Tai, &Tabij, &Fij, &Fab,
-    Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic
+    Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic,
+    Vaibc, Vaibj, Viabj, Vijak, Vaijb, Vabci
   );
+
+  bool intermediates(
+    getIntegerArgument("intermediates", 1) == 1 ? true : false
+  );
+  H.buildIntermediates(intermediates);
+
   CcsdPreConditioner<double> P(
     Tai, Tabij, Fij, Fab, *Vabcd, *Viajb, *Vijab, *Vijkl
   );
@@ -147,7 +163,13 @@ CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   CTF::Tensor<F> *Vijka_,
   CTF::Tensor<F> *Viabc_,
   CTF::Tensor<F> *Viajk_,
-  CTF::Tensor<F> *Vabic_
+  CTF::Tensor<F> *Vabic_,
+  CTF::Tensor<F> *Vaibc_,
+  CTF::Tensor<F> *Vaibj_,
+  CTF::Tensor<F> *Viabj_,
+  CTF::Tensor<F> *Vijak_,
+  CTF::Tensor<F> *Vaijb_,
+  CTF::Tensor<F> *Vabci_
 ):
   Tai(Tai_),
   Tabij(Tabij_),
@@ -160,7 +182,13 @@ CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   Vijka(Vijka_),
   Viabc(Viabc_),
   Viajk(Viajk_),
-  Vabic(Vabic_)
+  Vabic(Vabic_),
+  Vaibc(Vaibc_),
+  Vaibj(Vaibj_),
+  Viabj(Viabj_),
+  Vijak(Vijak_),
+  Vaijb(Vaijb_),
+  Vabci(Vabci_)
 {
 }
 
@@ -234,7 +262,162 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
 }
 
 template <typename F>
+void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
+    bool flag
+  ) {
+
+  withIntermediates = flag;
+
+  if (! flag) {
+    LOG(0, "CcsdEomDavid") << "Not building intermediates" << std::endl;
+    return;
+  }
+
+  //[1]
+  //Isaiah Shavitt, Rodney J. Bartlett. Many-Body Methods in Chemistry and
+  //Physics: MBPT and Coupled-Cluster Theory. 2009
+  //PAGE: 439
+
+  //[2]
+  //John F. Stanton, Rodney J. Bartlett. The equation of motion coupled‐cluster
+  //method. A systematic biorthogonal approach to molecular excitation
+  //energies, transition probabilities, and excited state properties. The
+  //Journal of Chemical Physics 7029--7039  1993
+  // TABLE 1
+
+  LOG(0, "CcsdEomDavid") << "Building intermediates Wpqrs and Wpq"
+                         << std::endl;
+  auto Tau_abij(NEW(CTF::Tensor<>, *Tabij));
+  (*Tau_abij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"];
+  (*Tau_abij)["abij"] += ( - 1.0 ) * (*Tai)["bi"] * (*Tai)["aj"];
+
+  //This approach defines intermediates:
+  //Wab Wia Wabcd Wabci Waibc Wiabj Wiajk Wij Wijka Wijkl
+
+  int No(Fij->lens[0]);
+  int Nv(Fab->lens[0]);
+  int syms[] = {NS, NS};
+  int ov[] = {No, Nv};
+  CTF::Tensor<> Fia(2, ov, syms, *Cc4s::world, "Fia");
+
+  Wia   = NEW(CTF::Tensor<>,  Fia);
+  Wab   = NEW(CTF::Tensor<>, *Fab);
+  Wij   = NEW(CTF::Tensor<>, *Fij);
+  Wabcd = NEW(CTF::Tensor<>, *Vabcd);
+  Wabci = NEW(CTF::Tensor<>, *Vabci);
+  Waibc = NEW(CTF::Tensor<>, *Vaibc);
+  Wiabj = NEW(CTF::Tensor<>, *Viabj);
+  Wiajk = NEW(CTF::Tensor<>, *Viajk);
+  Wijka = NEW(CTF::Tensor<>, *Vijka);
+  Wijkl = NEW(CTF::Tensor<>, *Vijkl);
+
+  LOG(0, "CcsdEomDavid") << "Building Wia" << std::endl;
+  //we need this one to construct the 2-body-amplitudes, not directly
+  (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wab" << std::endl;
+  (*Wab)["ab"]  = (*Fab)["ab"];
+  (*Wab)["ab"] += (*Vaibc)["aibc"] * (*Tai)["ci"];
+  //(*Wab)["ab"] += ( -1.0) * (*Fia)["ib"] * (*Tai)["ai"];
+  (*Wab)["ab"] += (- 0.5) * (*Vijab)["mnbe"] * (*Tau_abij)["aemn"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wij" << std::endl;
+  (*Wij)["ij"]  = (*Fij)["ij"];
+  (*Wij)["ij"] += (*Vijka)["imje"] * (*Tai)["em"];
+  //(*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
+  (*Wij)["ij"] += (  0.5) * (*Vijab)["imef"] * (*Tau_abij)["efjm"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wijkl" << std::endl;
+  //Taken directly (*from )[2]
+  (*Wijkl)["klij"]  = (*Vijkl)["klij"];
+  //------------------------------------------------------------
+  (*Wijkl)["klij"] +=           (*Tai)["ej"] * (*Vijka)["klie"];
+  (*Wijkl)["klij"] += ( -1.0) * (*Tai)["ei"] * (*Vijka)["klje"];
+  //------------------------------------------------------------
+  (*Wijkl)["klij"] += ( 0.5 ) * (*Tau_abij)["efij"] * (*Vijab)["klef"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wabcd" << std::endl;
+  (*Wabcd)["abcd"]  = (*Vabcd)["abcd"];
+  //-----------------------------------------------------------
+  (*Wabcd)["abcd"] += (-1.0) * (*Vaibc)["amcd"] * (*Tai)["bm"];
+  // P(ab)
+  (*Wabcd)["abcd"] += ( 1.0) * (*Vaibc)["bmcd"] * (*Tai)["am"];
+  //-----------------------------------------------------------
+  (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["mncd"] * (*Tau_abij)["abmn"];
+
+  LOG(0, "CcsdEomDavid") << "Building Waibc" << std::endl;
+  (*Waibc)["aibc"]  = (*Vaibc)["aibc"];
+  (*Waibc)["aibc"] += ( -1.0) * (*Vijab)["mibc"] * (*Tai)["am"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wijka" << std::endl;
+  //Taken directly from[2]
+  (*Wijka)["ijka"]  = (*Vijka)["jkia"];
+  (*Wijka)["ijka"] += (*Tai)["ei"] * (*Vijab)["jkea"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wiabj from Waijb" << std::endl;
+  //[1] diagram (10.73)
+  //This is not listed in the source book, however we can write it in terms
+  //of Waijb since it should also have the simmetry of the Tabij amplitudes
+  //and the Coulomb integrals Vpqrs
+  //Taken directly from [2]
+  (*Wiabj)["jabi"]  = (*Vaijb)["ajib"];
+  (*Wiabj)["jabi"] += (*Vaibc)["ajeb"] * (*Tai)["ei"];
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijka)["mjib"] * (*Tai)["am"];
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tai)["ei"] * (*Tai)["am"];
+  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tabij)["eaim"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wabci" << std::endl;
+  //TODO: REVIEW
+  (*Wabci)["abci"]  = (*Vabci)["abci"];
+  (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
+  //(*Wabci)["abci"] += ( -1.0) * Fia ..... (canonical orbitals)
+  (*Wabci)["abci"] += (*Vaibc)["amce"] * (*Tabij)["ebmi"];
+  (*Wabci)["abci"] += (*Vijak)["mnci"] * (*Tabij)["abmn"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnec"] * (*Tai)["em"] * (*Tabij)["abni"];
+  (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
+  (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
+  (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
+
+  LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
+  //This is built upon the already existing amplitudes
+  //[1] diagram (10.79)
+  //Takend directly from [2]
+  (*Wiajk)["iajk"]  = (*Viajk)["iajk"];
+  //----------------------------------------------------
+  (*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
+  // P(ij)
+  (*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["jmie"] * (*Tabij)["aekm"];
+  //----------------------------------------------------
+  (*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
+  (*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
+  (*Wiajk)["iajk"] += (*Tai)["am"] * (*Wijkl)["imjk"];
+  //----------------------------------------------------
+  (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viabj)["iaek"];
+  // P(ij)
+  (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ei"] * (*Viabj)["jaek"];
+  //----------------------------------------------------
+  (*Wiajk)["iajk"] +=
+    ( +1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
+  // P(ij)
+  (*Wiajk)["iajk"] +=
+    ( -1.0 ) * (*Tai)["ei"] * (*Tabij)["afmk"] * (*Vijab)["jmef"];
+  //----------------------------------------------------
+
+
+}
+
+template <typename F>
 FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
+  FockVector<F> &R
+) {
+  return withIntermediates ? rightApplyIntermediates(R) : rightApplyHirata(R);
+}
+
+template <typename F>
+FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
   FockVector<F> &R
 ) {
   FockVector<F> HR(R);
@@ -244,6 +427,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   PTR(CTF::Tensor<F>) HRai( HR.get(0) );
   PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
 
+  LOG(0, "CcsdEomDavidNoInt") << "Non int APPLYING RIGHT" << std::endl;
   // Contruct HR (one body part)
   // TODO: why "bi" not "ai"?
   (*HRai)["bi"]  = 0.0;
@@ -501,6 +685,102 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApply(
   (*HRabij)["cdii"] = ( 0.0 );
   (*HRabij)["ccij"] = ( 0.0 );
   (*HRabij)["ccii"] = ( 0.0 );
+
+  return HR;
+}
+
+template <typename F>
+FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
+  FockVector<F> &R
+) {
+  FockVector<F> HR(R);
+  // get pointers to the component tensors
+  PTR(CTF::Tensor<F>) Rai( R.get(0) );
+  PTR(CTF::Tensor<F>) Rabij( R.get(1) );
+  PTR(CTF::Tensor<F>) HRai( HR.get(0) );
+  PTR(CTF::Tensor<F>) HRabij( HR.get(1) );
+
+  (*HRai)["ai"]  = 0.0;
+  (*HRai)["ai"] += (*Wab)["ad"] * (*Rai)["di"];
+  (*HRai)["ai"] += (- 1.0) * (*Wij)["li"] * (*Rai)["al"];
+  (*HRai)["ai"] += (*Wiabj)["ladi"] * (*Rai)["dl"];
+  (*HRai)["ai"] += (*Wia)["ld"] * (*Rabij)["adil"];
+  (*HRai)["ai"] += (   0.5 ) * (*Waibc)["alde"] * (*Rabij)["deil"];
+  (*HRai)["ai"] += ( - 0.5 ) * (*Wijka)["lmid"] * (*Rabij)["adlm"];
+
+  // TODO: Deal with permutations automatically
+  (*HRabij)["abij"]  = 0.0;
+
+  (*HRabij)["abij"] +=          (*Wabci)["abej"] * (*Rai)["ei"];
+  //P(ij)
+  (*HRabij)["abij"] += (-1.0) * (*Wabci)["abei"] * (*Rai)["ej"];
+
+  (*HRabij)["abij"] += (- 1.0 ) * (*Wiajk)["lbij"] * (*Rai)["al"];
+  //P(ab)
+  (*HRabij)["abij"] +=            (*Wiajk)["laij"] * (*Rai)["bl"];
+
+  (*HRabij)["abij"] +=           (*Wab)["bd"] * (*Rabij)["adij"];
+  //P(ab)
+  (*HRabij)["abij"] += ( -1.0) * (*Wab)["ad"] * (*Rabij)["bdij"];
+
+  (*HRabij)["abij"] += ( -1.0) * (*Wij)["lj"] * (*Rabij)["abil"];
+  //P(ij)
+  (*HRabij)["abij"] +=           (*Wij)["li"] * (*Rabij)["abjl"];
+
+  (*HRabij)["abij"] += (  0.5) * (*Wabcd)["abde"] * (*Rabij)["deij"];
+  (*HRabij)["abij"] += (  0.5) * (*Wijkl)["lmij"] * (*Rabij)["ablm"];
+
+  (*HRabij)["abij"] +=            (*Wiabj)["lbdj"] * (*Rabij)["adil"];
+  //-P(ij)
+  (*HRabij)["abij"] +=  ( -1.0) * (*Wiabj)["lbdi"] * (*Rabij)["adjl"];
+  //-P(ab)
+  (*HRabij)["abij"] +=  ( -1.0) * (*Wiabj)["ladj"] * (*Rabij)["bdil"];
+  //P(ij)P(ab)
+  (*HRabij)["abij"] +=            (*Wiabj)["ladi"] * (*Rabij)["bdjl"];
+
+  // Three body terms (*from) [1]
+  // They would have been to be evaluated if we apply it strictly
+  //
+  //  (*HRabij)["abij"] += (*Wiabcjk)["mabeij"] * (*Rai)["em"];
+  //  (*HRabij)["abij"] += (  0.5) *  (*Waibcdj)["ambfej"] * (*Rabij)["feim"];
+  //  //P(ij)
+  //  (*HRabij)["abij"] += ( -0.5) *  (*Waibcdj)["ambfei"] * (*Rabij)["fejm"];
+  //  (*HRabij)["abij"] += ( -0.5) *  (*Wijakbl)["lmbidj"] * (*Rabij)["adlm"];
+  //  //P(ab)
+  //  (*HRabij)["abij"] += ( 0.5) * (*Wijakbl)["lmaidj"] * (*Rabij)["bdlm"];
+  //
+  // From [2] equation (31) we can get however another representation
+  // involving the T amplitudes, the only part in the right apply
+  // that involves the T amplitudes.
+
+  (*HRabij)["abij"] +=
+              (*Rai)["em"] * (*Vaibc)["bmfe"] * (*Tabij)["afij"];
+  // P(ab)
+  (*HRabij)["abij"] +=
+    ( -1.0) * (*Rai)["em"] * (*Vaibc)["amfe"] * (*Tabij)["bfij"];
+
+  (*HRabij)["abij"] +=
+    ( -0.5) * (*Rabij)["eamn"] * (*Vijab)["nmfe"] * (*Tabij)["fbij"];
+  // P(ab)
+  (*HRabij)["abij"] +=
+    ( +0.5) * (*Rabij)["ebmn"] * (*Vijab)["nmfe"] * (*Tabij)["faij"];
+
+  (*HRabij)["abij"] +=
+    ( -1.0) * (*Rai)["em"] * (*Vijka)["nmje"] * (*Tabij)["abin"];
+  // P(ij)
+  (*HRabij)["abij"] +=
+    ( +1.0) * (*Rai)["em"] * (*Vijka)["nmie"] * (*Tabij)["abjn"];
+
+  (*HRabij)["abij"] +=
+    ( +0.5) * (*Rabij)["feim"] * (*Vijab)["nmfe"] * (*Tabij)["abjn"];
+  // P(ij)
+  (*HRabij)["abij"] +=
+    ( -0.5) * (*Rabij)["fejm"] * (*Vijab)["nmfe"] * (*Tabij)["abin"];
+
+  // Filter out non-physical part
+  //(*HRabij)["cdii"] = ( 0.0 );
+  //(*HRabij)["ccij"] = ( 0.0 );
+  //(*HRabij)["ccii"] = ( 0.0 );
 
   return HR;
 }
