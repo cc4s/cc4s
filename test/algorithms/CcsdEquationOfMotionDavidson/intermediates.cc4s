@@ -103,7 +103,7 @@ CcsdEquationOfMotionDavidson [
   (DoublesAmplitudes UccsdDoublesAmplitudes)
   (unrestricted 1)
   (eigenstates 4)
-  (intermediates 0)
+  (intermediates 1)
 ] [
   SinglesHamiltonianDiagonal
   DoublesHamiltonianDiagonal

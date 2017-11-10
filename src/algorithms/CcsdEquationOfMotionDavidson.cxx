@@ -316,9 +316,9 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
 
   LOG(0, "CcsdEomDavid") << "Building Wab" << std::endl;
+  //diagram (10.54)
   (*Wab)["ab"]  = (*Fab)["ab"];
-  (*Wab)["ab"] += (*Vaibc)["aibc"] * (*Tai)["ci"];
-  //(*Wab)["ab"] += ( -1.0) * (*Fia)["ib"] * (*Tai)["ai"];
+  (*Wab)["ab"] += (*Viabc)["mafb"] * (*Tai)["fm"];
   (*Wab)["ab"] += (- 0.5) * (*Vijab)["mnbe"] * (*Tau_abij)["aemn"];
 
   LOG(0, "CcsdEomDavid") << "Building Wij" << std::endl;
@@ -708,7 +708,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
   (*HRai)["ai"] += (   0.5 ) * (*Waibc)["alde"] * (*Rabij)["deil"];
   (*HRai)["ai"] += ( - 0.5 ) * (*Wijka)["lmid"] * (*Rabij)["adlm"];
 
-  // TODO: Deal with permutations automatically
+  // 2 body part
   (*HRabij)["abij"]  = 0.0;
 
   (*HRabij)["abij"] +=          (*Wabci)["abej"] * (*Rai)["ei"];
