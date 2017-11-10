@@ -1,4 +1,4 @@
-#include <algorithms/CcsdEquationOfMotionDavidson.hpp>
+#include <algorithms/CcsdEquationOfMotionDavidsonIntermediates.hpp>
 
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
@@ -21,15 +21,15 @@
 using namespace cc4s;
 using namespace tcc;
 
-ALGORITHM_REGISTRAR_DEFINITION(CcsdEquationOfMotionDavidson);
+ALGORITHM_REGISTRAR_DEFINITION(CcsdEquationOfMotionDavidsonIntermediates);
 
-CcsdEquationOfMotionDavidson::CcsdEquationOfMotionDavidson(
+CcsdEquationOfMotionDavidsonIntermediates::CcsdEquationOfMotionDavidsonIntermediates(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
-CcsdEquationOfMotionDavidson::~CcsdEquationOfMotionDavidson() {}
+CcsdEquationOfMotionDavidsonIntermediates::~CcsdEquationOfMotionDavidsonIntermediates() {}
 
-void CcsdEquationOfMotionDavidson::run() {
+void CcsdEquationOfMotionDavidsonIntermediates::run() {
 
   // Get copy of couloumb integrals
   CTF::Tensor<> *Vijkl(
@@ -118,7 +118,7 @@ void CcsdEquationOfMotionDavidson::run() {
 
 // template method implementation
 template <typename F>
-void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
+void CcsdEquationOfMotionDavidsonIntermediates::getCanonicalPerturbationBasis(
   CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, size_t i
 ) {
   std::vector<std::pair<size_t, F>> elements;
@@ -139,7 +139,7 @@ void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
 
 // instantiate template method implementation
 template
-void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
+void CcsdEquationOfMotionDavidsonIntermediates::getCanonicalPerturbationBasis(
   CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, size_t i
 );
 

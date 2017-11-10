@@ -98,13 +98,13 @@ namespace cc4s {
     V diagonalH;
   };
 
-  class CcsdEquationOfMotionDavidson: public Algorithm {
+  class CcsdEquationOfMotionDavidsonIntermediates: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CcsdEquationOfMotionDavidson);
-    CcsdEquationOfMotionDavidson(
+    ALGORITHM_REGISTRAR_DECLARATION(CcsdEquationOfMotionDavidsonIntermediates);
+    CcsdEquationOfMotionDavidsonIntermediates(
       std::vector<Argument> const &argumentList
     );
-    virtual ~CcsdEquationOfMotionDavidson();
+    virtual ~CcsdEquationOfMotionDavidsonIntermediates();
 
     virtual void run();
 

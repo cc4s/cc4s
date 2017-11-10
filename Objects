@@ -73,6 +73,7 @@ build/${CONFIG}/obj/algorithms/experimental/StochasticContraction.o \
 build/${CONFIG}/obj/algorithms/DrccdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/Mp2EquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/CcsdEquationOfMotionDavidson.o \
+build/${CONFIG}/obj/algorithms/CcsdEquationOfMotionDavidsonIntermediates.o \
 build/${CONFIG}/obj/algorithms/CcdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/ThermalEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/UccsdAmplitudesFromCoulombIntegrals.o \
