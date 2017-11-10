@@ -100,7 +100,6 @@ void CcsdEquationOfMotionDavidson::run() {
   CcsdPreConditioner<double> P(
     Tai, Tabij, Fij, Fab, *Vabcd, *Viajb, *Vijab, *Vijkl
   );
-  std::vector<FockVector<double>> basis( P.getInitialBasis(4) );
   allocatedTensorArgument(
     "SinglesHamiltonianDiagonal",
     new CTF::Tensor<>(*P.getDiagonalH().get(0))
