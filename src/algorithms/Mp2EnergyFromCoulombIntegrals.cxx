@@ -90,7 +90,7 @@ F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
       }
     )
   ) (
-     Vabij["abij"], (*Tabij)["abij"]
+    Vabij["abij"], (*Tabij)["abij"]
   );
 
 // TODO: below method requires less memory but does not work with current CTF
