@@ -386,14 +386,14 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   (*Wabci)["abci"] +=          (*Vaibc)["amce"] * (*Tabij)["ebmi"];
   (*Wabci)["abci"] += (-1.0) * (*Vaibc)["bmce"] * (*Tabij)["eami"];
 
-  (*Wabci)["abci"] += (*Vijak)["mnci"] * (*Tabij)["abmn"];
+  (*Wabci)["abci"] += (  0.5) * (*Vijak)["mnci"] * (*Tabij)["abmn"];
   (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnec"] * (*Tai)["em"] * (*Tabij)["abni"];
 
   // Symmetrize?????
   (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
   (*Wabci)["abci"] += ( +1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tabij)["eani"];
 
-  (*Wabci)["abci"] += (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
+  (*Wabci)["abci"] += (  0.5) * (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
 
   // Symmetrize?????
   (*Wabci)["abci"] +=           (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];

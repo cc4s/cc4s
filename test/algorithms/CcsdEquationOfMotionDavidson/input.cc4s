@@ -1,6 +1,8 @@
 CoulombVertexReader [
   %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands19.ecgw150.POSCAR.0.7")
   (file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
+  %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.7")
+  %(file "/home/gallo/simulations/CH+/eom/sto3g/FTODDUMP")
   %(file "../../resources/NV/FTODDUMP")
   %(file "../../resources/andreas/FTODDUMP")
   (unrestricted 1)
@@ -103,7 +105,7 @@ CcsdEquationOfMotionDavidson [
   (DoublesAmplitudes UccsdDoublesAmplitudes)
   (unrestricted 1)
   (eigenstates 4)
-  (intermediates 0)
+  (intermediates 1)
 ] [
   SinglesHamiltonianDiagonal
   DoublesHamiltonianDiagonal
