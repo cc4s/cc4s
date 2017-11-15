@@ -350,8 +350,8 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
 
   LOG(0, "CcsdEomDavid") << "Building Wijka" << std::endl;
   //Taken directly from[2]
-  (*Wijka)["ijka"]  = (*Vijka)["jkia"];
-  (*Wijka)["ijka"] += (*Tai)["ei"] * (*Vijab)["jkea"];
+  (*Wijka)["jkia"]  = (*Vijka)["jkia"];
+  (*Wijka)["jkia"] += (*Tai)["ei"] * (*Vijab)["jkea"];
 
   LOG(0, "CcsdEomDavid") << "Building Wiabj from Waijb" << std::endl;
   //[1] diagram (10.73)
