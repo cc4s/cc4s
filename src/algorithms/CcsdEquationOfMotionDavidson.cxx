@@ -92,6 +92,7 @@ void CcsdEquationOfMotionDavidson::run() {
     Vaibc, Vaibj, Viabj, Vijak, Vaijb, Vabci
   );
 
+  unsigned int maxIterations(getIntegerArgument("maxIterations", 32));
   bool intermediates(
     getIntegerArgument("intermediates", 1) == 1 ? true : false
   );
@@ -111,9 +112,14 @@ void CcsdEquationOfMotionDavidson::run() {
 
   // Davidson solver
   int eigenStates(getIntegerArgument("eigenstates", 1));
+  LOG(0, "CcsdEomDavid") << "Max iterations " << maxIterations << std::endl;
   LOG(0, "CcsdEomDavid") << "Computing " << eigenStates << " eigen states"
                               << std::endl;
-  EigenSystemDavidson<FockVector<double>> eigenSystem(H, eigenStates, P, 1E-4, 8*16);
+  EigenSystemDavidson<FockVector<double>> eigenSystem(
+    H, eigenStates, P, 1E-4,
+    No*Nv + (No*(No - 1)/2 ) * (Nv * (Nv - 1)/2),
+    maxIterations
+  );
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
   for (auto &ev: eigenValues) {

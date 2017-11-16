@@ -48,17 +48,18 @@ namespace cc4s {
       P &p,
       const double tolerance = 1E-14,
       const unsigned int maxBasisSize = 1000,
+      const unsigned int maxIterations = 1000,
       const bool dualVersion = false
     ):
       eigenValues(eigenVectorsCount)
     {
       if (dualVersion)
         eigenSystemDualVersion(
-          h, eigenVectorsCount, p, tolerance, maxBasisSize
+          h, eigenVectorsCount, p, tolerance, maxBasisSize, maxIterations
         );
       else
         eigenSystemMonoVersion(
-          h, eigenVectorsCount, p, tolerance, maxBasisSize
+          h, eigenVectorsCount, p, tolerance, maxBasisSize, maxIterations
         );
     }
 
@@ -68,7 +69,8 @@ namespace cc4s {
       const int eigenVectorsCount,
       P &p,
       const double tolerance,
-      const unsigned int maxBasisSize
+      const unsigned int maxBasisSize,
+      const unsigned int maxIterations
     ) {
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
@@ -78,7 +80,7 @@ namespace cc4s {
 
       // begin convergence loop
       double rms;
-      int iterationCount(0);
+      unsigned int iterationCount(0);
       do {
         LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
 
@@ -187,7 +189,8 @@ namespace cc4s {
       const int eigenVectorsCount,
       P &p,
       const double tolerance,
-      const unsigned int maxBasisSize
+      const unsigned int maxBasisSize,
+      const unsigned int maxIterations
     ) {
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
@@ -198,7 +201,8 @@ namespace cc4s {
         (*rightEigenVectors[j].get(1))["abij"] -=
            (*rightEigenVectors[j].get(1))["abji"];
       }
-      LOG(1,"Davidson") << "Performing Gramm Schmidt in basis" << std::endl;
+      LOG(1,"Davidson") <<
+        "Performing Gramm Schmidt in the initial basis" << std::endl;
       for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
         V newVector(rightEigenVectors[b]);
         for (unsigned int j(0); j < b; ++j) {
@@ -212,11 +216,15 @@ namespace cc4s {
           1 / std::sqrt(newVector.dot(newVector)) * newVector;
       }
 
+      for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
+        checkAntisymmetry(*rightEigenVectors[b].get(1));
+      }
+
       std::vector<V> rightBasis( rightEigenVectors );
 
       // begin convergence loop
       double rms;
-      int iterationCount(0);
+      unsigned int iterationCount(0);
       do {
         LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
         // compute reduced H by projection onto subspace spanned by rightBasis
@@ -288,7 +296,8 @@ namespace cc4s {
         // end rightBasis extension loop
       } while (
         rms >= eigenVectorsCount * tolerance &&
-        rightBasis.size() <= maxBasisSize
+        rightBasis.size() <= maxBasisSize    &&
+        iterationCount+1 <= maxIterations
       );
       // end convergence loop
       if (rightBasis.size() > maxBasisSize) {
