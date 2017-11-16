@@ -284,6 +284,9 @@ namespace cc4s {
 
           (*correction.get(1))["abij"] -=
              (*correction.get(1))["abji"];
+          (*correction.get(1))["abij"] -=
+             (*correction.get(1))["baij"];
+          (*correction.get(1))["abij"] = 0.25 * (*correction.get(1))["abij"];
           // orthonormalize and append to rightBasis
           for (unsigned int b(0); b < rightBasis.size(); ++b) {
             correction -= rightBasis[b] * rightBasis[b].dot(correction);
