@@ -200,6 +200,8 @@ namespace cc4s {
       for (unsigned int j(0); j < rightEigenVectors.size(); ++j) {
         (*rightEigenVectors[j].get(1))["abij"] -=
            (*rightEigenVectors[j].get(1))["abji"];
+        (*rightEigenVectors[j].get(1))["abij"] -=
+           (*rightEigenVectors[j].get(1))["baij"];
       }
       LOG(1,"Davidson") <<
         "Performing Gramm Schmidt in the initial basis" << std::endl;
