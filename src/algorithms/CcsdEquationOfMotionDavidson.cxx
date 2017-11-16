@@ -705,9 +705,9 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
 
 
   // Filter out non-physical part
-  (*HRabij)["cdii"] = ( 0.0 );
-  (*HRabij)["ccij"] = ( 0.0 );
-  (*HRabij)["ccii"] = ( 0.0 );
+  //(*HRabij)["cdii"] = ( 0.0 );
+  //(*HRabij)["ccij"] = ( 0.0 );
+  //(*HRabij)["ccii"] = ( 0.0 );
 
   return HR;
 }
