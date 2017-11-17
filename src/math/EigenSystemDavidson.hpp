@@ -5,6 +5,7 @@
 #include <util/LapackGeneralEigenSystem.hpp>
 
 #include <vector>
+#include <iomanip>
 #include <utility>
 
 namespace cc4s {
@@ -198,6 +199,9 @@ namespace cc4s {
       const unsigned int maxIterations,
       const unsigned int minIterations
     ) {
+      LOG(1,"Davidson").flags(
+        std::ios::right | std::ios::scientific | std::ios::showpos
+      );
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
 
@@ -273,7 +277,10 @@ namespace cc4s {
           LOG(1,"Davidson") << "Right norm [" << k << "] "
                             << rightNorm << std::endl;
           LOG(1,"Davidson") << "EV         [" << k << "] "
+                            << std::setprecision(15) << std::setw(23)
                             << eigenValues[k] << std::endl;
+
+
 
           // compute residuum
           V residuum( h.rightApply(rightEigenVectors[k]) );
