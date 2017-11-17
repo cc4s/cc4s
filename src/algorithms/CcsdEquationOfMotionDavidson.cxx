@@ -93,6 +93,7 @@ void CcsdEquationOfMotionDavidson::run() {
   );
 
   unsigned int maxIterations(getIntegerArgument("maxIterations", 32));
+  unsigned int minIterations(getIntegerArgument("minIterations", 1));
   bool intermediates(
     getIntegerArgument("intermediates", 1) == 1 ? true : false
   );
@@ -118,7 +119,7 @@ void CcsdEquationOfMotionDavidson::run() {
   EigenSystemDavidson<FockVector<double>> eigenSystem(
     H, eigenStates, P, 1E-4,
     No*Nv + (No*(No - 1)/2 ) * (Nv * (Nv - 1)/2),
-    maxIterations
+    maxIterations, minIterations
   );
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
