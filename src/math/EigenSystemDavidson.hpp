@@ -49,17 +49,21 @@ namespace cc4s {
       const double tolerance = 1E-14,
       const unsigned int maxBasisSize = 1000,
       const unsigned int maxIterations = 1000,
+      const unsigned int minIterations = 1,
       const bool dualVersion = false
     ):
       eigenValues(eigenVectorsCount)
     {
       if (dualVersion)
         eigenSystemDualVersion(
-          h, eigenVectorsCount, p, tolerance, maxBasisSize, maxIterations
+          h, eigenVectorsCount, p, tolerance, maxBasisSize,
+          maxIterations, minIterations
         );
       else
         eigenSystemMonoVersion(
-          h, eigenVectorsCount, p, tolerance, maxBasisSize, maxIterations
+          h, eigenVectorsCount, p, tolerance, maxBasisSize,
+          maxIterations, minIterations
+
         );
     }
 
@@ -70,7 +74,8 @@ namespace cc4s {
       P &p,
       const double tolerance,
       const unsigned int maxBasisSize,
-      const unsigned int maxIterations
+      const unsigned int maxIterations,
+      const unsigned int minIterations
     ) {
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
@@ -190,7 +195,8 @@ namespace cc4s {
       P &p,
       const double tolerance,
       const unsigned int maxBasisSize,
-      const unsigned int maxIterations
+      const unsigned int maxIterations,
+      const unsigned int minIterations
     ) {
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
@@ -300,9 +306,11 @@ namespace cc4s {
         ++iterationCount;
         // end rightBasis extension loop
       } while (
-        rms >= eigenVectorsCount * tolerance &&
-        rightBasis.size() <= maxBasisSize    &&
-        iterationCount+1 <= maxIterations
+        iterationCount+1 <= minIterations    || (
+          rms >= eigenVectorsCount * tolerance &&
+          rightBasis.size() <= maxBasisSize    &&
+          iterationCount+1 <= maxIterations
+        )
       );
       // end convergence loop
       if (rightBasis.size() > maxBasisSize) {
