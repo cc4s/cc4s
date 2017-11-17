@@ -3,6 +3,7 @@
 
 #include <util/LapackMatrix.hpp>
 #include <util/LapackGeneralEigenSystem.hpp>
+#include <math/MathFunctions.hpp>
 
 #include <vector>
 #include <iomanip>

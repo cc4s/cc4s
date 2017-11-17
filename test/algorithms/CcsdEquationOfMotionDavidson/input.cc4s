@@ -42,6 +42,7 @@ CoulombIntegralsFromVertex [
   HPHPCoulombIntegrals
   HPPHCoulombIntegrals
   HPPPCoulombIntegrals
+  PHHHCoulombIntegrals
   PHHPCoulombIntegrals
   PHPHCoulombIntegrals
   PHPPCoulombIntegrals
@@ -92,6 +93,7 @@ CcsdEquationOfMotionDavidson [
   HPHPCoulombIntegrals
   HPPHCoulombIntegrals
   HPPPCoulombIntegrals
+  PHHHCoulombIntegrals
   PHHPCoulombIntegrals
   PHPHCoulombIntegrals
   PHPPCoulombIntegrals
@@ -105,7 +107,7 @@ CcsdEquationOfMotionDavidson [
   (DoublesAmplitudes UccsdDoublesAmplitudes)
   (unrestricted 1)
   (eigenstates 5)
-  (intermediates 0)
+  (intermediates 1)
 ] [
   SinglesHamiltonianDiagonal
   DoublesHamiltonianDiagonal
