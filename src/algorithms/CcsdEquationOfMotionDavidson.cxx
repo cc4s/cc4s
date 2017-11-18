@@ -319,6 +319,17 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   Wiajk = NEW(CTF::Tensor<>, *Viajk);
   Wijka = NEW(CTF::Tensor<>, *Vijka);
   Wijkl = NEW(CTF::Tensor<>, *Vijkl);
+  // Initialize intermediates to zero
+  (*Wia)["do"] = 0.0;
+  (*Wab)["do"] = 0.0;
+  (*Wij)["do"] = 0.0;
+  (*Wabcd)["blah"] = 0.0;
+  (*Wabci)["blah"] = 0.0;
+  (*Waibc)["blah"] = 0.0;
+  (*Wiabj)["blah"] = 0.0;
+  (*Wiajk)["blah"] = 0.0;
+  (*Wijka)["blah"] = 0.0;
+  (*Wijkl)["blah"] = 0.0;
 
   LOG(0, "CcsdEomDavid") << "Building Wia" << std::endl;
   //we need this one to construct the 2-body-amplitudes, not directly
