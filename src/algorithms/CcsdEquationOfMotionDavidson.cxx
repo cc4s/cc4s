@@ -387,38 +387,37 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tabij)["eaim"];
 
   LOG(0, "CcsdEomDavid") << "Building Wabci" << std::endl;
-  //TODO: REVIEW
+  //--1
   (*Wabci)["abci"]  = (*Vabci)["abci"];
+  //--2
   (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
-
-  // Symmetrize?????
+  //--3
   (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
   (*Wabci)["abci"] += ( +1.0) * (*Vaibj)["bmci"] * (*Tai)["am"];
-
-  // Symmetrize?????
+  //--4
   (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
   (*Wabci)["abci"] += ( +1.0) * (*Vaibc)["bmce"] * (*Tai)["am"] * (*Tai)["ei"];
-
-  // Symmetrize?????
+  //--5
+  //BUG: Apparently Hirata does not seem to antisymmetriz a<>b
   (*Wabci)["abci"] += ( +1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
-  (*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["bm"] * (*Tai)["an"];
-
-  // Symmetrize?????
+  //// original:
+  ////(*Wabci)["abci"] += ( +1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
+  ////(*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["bm"] * (*Tai)["an"];
+  //--6
   (*Wabci)["abci"] +=          (*Vaibc)["amce"] * (*Tabij)["ebmi"];
   (*Wabci)["abci"] += (-1.0) * (*Vaibc)["bmce"] * (*Tabij)["eami"];
-
+  //--7
   (*Wabci)["abci"] += (  0.5) * (*Vijak)["mnci"] * (*Tabij)["abmn"];
+  //--8
   (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnec"] * (*Tai)["em"] * (*Tabij)["abni"];
-
-  // Symmetrize?????
+  //--9
   (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
   (*Wabci)["abci"] += ( +1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tabij)["eani"];
-
+  //--10
   (*Wabci)["abci"] += (  0.5) * (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
-
-  // Symmetrize?????
+  //--11
   (*Wabci)["abci"] +=           (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
-  (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tai)["an"] * (*Tai)["ei"];
+  //(*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tai)["an"] * (*Tai)["ei"];
 
   LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
   //This is built upon the already existing amplitudes
@@ -503,7 +502,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
   (*HRai)["bi"] += ( + 0.5  ) * (*Tai)["bk"] * (*Vijab)["klef"] * (*Rabij)["efli"];
 
 
-  (*HRai)["ai"]  = 0.0; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //(*HRai)["ai"]  = 0.0; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   (*HRabij)["cdij"]  = 0.0;
 
   // Contruct HR (two body part)
@@ -701,14 +700,15 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
   ////--
 
   // WABCI ===================================================================
+  //--1
   (*HRabij)["cdij"] += ( + 1.0 ) * (*Vabic)["cdie"] * (*Rai)["ej"];
   (*HRabij)["cdij"] += ( - 1.0 ) * (*Vabic)["cdje"] * (*Rai)["ei"];
-  //--
+  //--2
   (*HRabij)["cdij"] +=
     ( + 1.0  ) * (*Tai)["ei"] * (*Vabcd)["cdef"] * (*Rai)["fj"];
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tai)["ej"] * (*Vabcd)["cdef"] * (*Rai)["fi"];
-  //--
+  //--3
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tai)["cm"] * (*Viajb)["mdif"] * (*Rai)["fj"];
   (*HRabij)["cdij"] +=
@@ -717,7 +717,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
     ( + 1.0  ) * (*Tai)["cm"] * (*Viajb)["mdjf"] * (*Rai)["fi"];
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tai)["dm"] * (*Viajb)["mcjf"] * (*Rai)["fi"];
-  //--
+  //--4
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tai)["ei"] * (*Tai)["cn"] * (*Viabc)["ndeg"] * (*Rai)["gj"];
   (*HRabij)["cdij"] +=
@@ -726,12 +726,12 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
     ( + 1.0  ) * (*Tai)["ej"] * (*Tai)["cn"] * (*Viabc)["ndeg"] * (*Rai)["gi"];
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tai)["ej"] * (*Tai)["dn"] * (*Viabc)["nceg"] * (*Rai)["gi"];
-  //--
+  //--5
   (*HRabij)["cdij"] +=
     ( + 1.0  ) * (*Tai)["cm"] * (*Tai)["dn"] * (*Vijka)["mnig"] * (*Rai)["gj"];
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tai)["cm"] * (*Tai)["dn"] * (*Vijka)["mnjg"] * (*Rai)["gi"];
-  //--
+  //--6
   (*HRabij)["cdij"] +=
     ( + 1.0 ) * (*Tabij)["ecni"] * (*Viabc)["ndeg"] * (*Rai)["gj"];
   (*HRabij)["cdij"] +=
@@ -740,17 +740,17 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
     ( - 1.0 ) * (*Tabij)["ecnj"] * (*Viabc)["ndeg"] * (*Rai)["gi"];
   (*HRabij)["cdij"] +=
     ( + 1.0 ) * (*Tabij)["ednj"] * (*Viabc)["nceg"] * (*Rai)["gi"];
-  //--
+  //--7
   (*HRabij)["cdij"] +=
     ( + 0.5 ) * (*Tabij)["cdmn"] * (*Vijka)["mnig"] * (*Rai)["gj"];
   (*HRabij)["cdij"] +=
     ( - 0.5 ) * (*Tabij)["cdmn"] * (*Vijka)["mnjg"] * (*Rai)["gi"];
-  //--
+  //--8
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fo"] * (*Vijab)["mofh"] * (*Rai)["hj"];
   (*HRabij)["cdij"] +=
     ( + 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fo"] * (*Vijab)["mofh"] * (*Rai)["hi"];
-  //--
+  //--9
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tabij)["ecni"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hj"];
   (*HRabij)["cdij"] +=
@@ -759,17 +759,16 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
     ( + 1.0  ) * (*Tabij)["ecnj"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hi"];
   (*HRabij)["cdij"] +=
     ( - 1.0  ) * (*Tabij)["ednj"] * (*Tai)["co"] * (*Vijab)["noeh"] * (*Rai)["hi"];
-  //--
+  //--10
   (*HRabij)["cdij"] +=
     ( + 0.5  ) * (*Tabij)["cdmn"] * (*Tai)["gi"] * (*Vijab)["mngh"] * (*Rai)["hj"];
   (*HRabij)["cdij"] +=
     ( - 0.5  ) * (*Tabij)["cdmn"] * (*Tai)["gj"] * (*Vijab)["mngh"] * (*Rai)["hi"];
-  //--
+  //--11
   (*HRabij)["cdij"] +=
     ( + 1.0  ) * (*Tai)["ei"] * (*Tai)["cn"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hj"];
   (*HRabij)["cdij"] +=
    ( - 1.0  ) * (*Tai)["ej"] * (*Tai)["cn"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hi"];
-
 
 
 
@@ -821,7 +820,7 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
   (*HRai)["ai"] += ( - 0.5 ) * (*Wijka)["lmid"] * (*Rabij)["adlm"];
   (*HRai)["ai"] += (   0.5 ) * (*Waibc)["alde"] * (*Rabij)["deil"];
 
-  (*HRai)["ai"]  = 0.0; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //(*HRai)["ai"]  = 0.0; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // 2 body part
   (*HRabij)["abij"]  = 0.0;
 
@@ -877,13 +876,13 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
   // P(ij)
   (*HRabij)["abij"] +=
     ( -0.5) * (*Rabij)["fejm"] * (*Vijab)["nmfe"] * (*Tabij)["abin"];
-
+*/
   // WIAJK ===================================================================
   //(*HRabij)["abij"] += (- 1.0 ) * (*Wiajk)["lbij"] * (*Rai)["al"];
   ////P(ab)
   //(*HRabij)["abij"] +=            (*Wiajk)["laij"] * (*Rai)["bl"];
 
-   // WABCI ===================================================================
+  // WABCI ===================================================================
   (*HRabij)["abij"] +=          (*Wabci)["abej"] * (*Rai)["ei"];
   //P(ij)
   (*HRabij)["abij"] += (-1.0) * (*Wabci)["abei"] * (*Rai)["ej"];
