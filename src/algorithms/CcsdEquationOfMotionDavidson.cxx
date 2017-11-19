@@ -427,26 +427,37 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   //(*Wiajk)["iajk"]  = (*Viajk)["iajk"];
   ////--6
   //(*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
+  //(*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["imke"] * (*Tabij)["aejm"];
+  //original
+  //(*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
   //(*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["jmie"] * (*Tabij)["aekm"];
-  ////--7-5
-  //(*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
-  ////--8
-  //(*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
-  ////--2-4-10-11
-  //(*Wiajk)["iajk"] += (*Tai)["am"] * (*Wijkl)["imjk"];
+  //--7-5
+  (*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
+  //--8
+  //(*Wiajk)["iajk"] += ( -1.0) * (*Wia)["ie"] * (*Tabij)["aejk"];
+  //    original: (Problem, Wia has a minus in the definition, of course
+  //    if you do not put in the definition, you gotta put it somewhere)
+  //    (*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
+  //--2-4-10-11
+  //(*Wiajk)["iajk"] += (-1.0) * (*Tai)["am"] * (*Wijkl)["imjk"];
+  //    original: (minus)
+  //    (*Wiajk)["iajk"] += (*Tai)["am"] * (*Wijkl)["imjk"];
   //--3
-  //BUG: This used to be a bug
-  (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ek"] * (*Viajb)["iaje"];
-  (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viajb)["iake"];
-  //original:
-  //(*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viabj)["iaek"];
-  //(*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ei"] * (*Viabj)["jaek"];
-  ////--9
+  //(*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ek"] * (*Viajb)["iaje"];
+  //(*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viajb)["iake"];
+  //     original:
+  //     (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viabj)["iaek"];
+  //     (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ei"] * (*Viabj)["jaek"];
+  //--9
   //(*Wiajk)["iajk"] +=
-    //( +1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
-    //
+    //( -1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
   //(*Wiajk)["iajk"] +=
-    //( -1.0 ) * (*Tai)["ei"] * (*Tabij)["afmk"] * (*Vijab)["jmef"];
+    //( +1.0 ) * (*Tai)["ek"] * (*Tabij)["afmj"] * (*Vijab)["imef"];
+  //     original: Again it does not make any sense to do Pij, and the minus
+  //     (*Wiajk)["iajk"] +=
+  //       ( +1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
+  //     (*Wiajk)["iajk"] +=
+  //       ( -1.0 ) * (*Tai)["ei"] * (*Tabij)["afmk"] * (*Vijab)["jmef"];
 
 }
 
