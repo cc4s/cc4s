@@ -435,8 +435,9 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   (*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
   //--8
   (*Wiajk)["iajk"] += ( -1.0) * (*Wia)["ie"] * (*Tabij)["aejk"];
-  //    original: (Problem, Wia has a minus in the definition, of course
-  //    if you do not put in the definition, you gotta put it somewhere)
+  //    original: (Problem, The diagram actually says that it
+  //    should be Teajk and not Taejk, so that 'a' stays in the second
+  //    vertex, so we have to either change a<>e or put a minus)
   //    (*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
   //--2-4-10-11
   (*Wiajk)["iajk"] += (-1.0) * (*Tai)["am"] * (*Wijkl)["imjk"];
