@@ -664,6 +664,17 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
   (*HRabij)["cdij"] +=
     ( + 0.5 ) * (*Tabij)["cdmj"] * (*Vijab)["mngh"] * (*Rabij)["ghni"];
 
+  //ORPHAN_1 =================================================================
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fi"] * (*Vijab)["mofh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fj"] * (*Vijab)["mofh"] * (*Rai)["ho"];
+
+  //ORPHAN_2 =================================================================
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["ecij"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["edij"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
 
   // WIAJK ===================================================================
   //--1
@@ -808,20 +819,6 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
    ( - 1.0  ) * (*Tai)["ej"] * (*Tai)["cn"] * (*Tai)["do"] * (*Vijab)["noeh"] * (*Rai)["hi"];
 
 
-  //???? ORPHAN1 ?????????????????????????????????????????????????????????????
-  //(*HRabij)["cdij"] +=
-    //( - 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fi"] * (*Vijab)["mofh"] * (*Rai)["ho"];
-  //(*HRabij)["cdij"] +=
-    //( + 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fj"] * (*Vijab)["mofh"] * (*Rai)["ho"];
-
-  //???? ORPHAN2 ?????????????????????????????????????????????????????????????
-  //(*HRabij)["cdij"] +=
-    //( + 1.0  ) * (*Tabij)["ecij"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
-  //(*HRabij)["cdij"] +=
-    //( - 1.0  ) * (*Tabij)["edij"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
-
-
-
 
 
 
@@ -912,6 +909,18 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
   // P(ij)
   (*HRabij)["abij"] +=
     ( -0.5) * (*Rabij)["fejm"] * (*Vijab)["nmfe"] * (*Tabij)["abin"];
+
+  //ORPHAN_1 =================================================================
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fi"] * (*Vijab)["mofh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fj"] * (*Vijab)["mofh"] * (*Rai)["ho"];
+
+  //ORPHAN_2 =================================================================
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["ecij"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["edij"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
 
   // WIAJK ===================================================================
   (*HRabij)["abij"] += (- 1.0 ) * (*Wiajk)["lbij"] * (*Rai)["al"];
