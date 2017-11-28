@@ -645,6 +645,10 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
     ( + 1.0 ) * (*Tabij)["ecij"] * (*Viabc)["ndeg"] * (*Rai)["gn"];
   (*HRabij)["cdij"] +=
     ( - 1.0 ) * (*Tabij)["edij"] * (*Viabc)["nceg"] * (*Rai)["gn"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["ecij"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["edij"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
 
   //THREE_BODY_TWO ===========================================================
   (*HRabij)["cdij"] +=
@@ -657,24 +661,16 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
     ( - 1.0 ) * (*Tabij)["cdmj"] * (*Vijka)["mnig"] * (*Rai)["gn"];
   (*HRabij)["cdij"] +=
     ( + 1.0 ) * (*Tabij)["cdmi"] * (*Vijka)["mnjg"] * (*Rai)["gn"];
+  (*HRabij)["cdij"] +=
+    ( - 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fi"] * (*Vijab)["mofh"] * (*Rai)["ho"];
+  (*HRabij)["cdij"] +=
+    ( + 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fj"] * (*Vijab)["mofh"] * (*Rai)["ho"];
 
   //THREE_BODY_FOUR ==========================================================
   (*HRabij)["cdij"] +=
     ( - 0.5 ) * (*Tabij)["cdmi"] * (*Vijab)["mngh"] * (*Rabij)["ghnj"];
   (*HRabij)["cdij"] +=
     ( + 0.5 ) * (*Tabij)["cdmj"] * (*Vijab)["mngh"] * (*Rabij)["ghni"];
-
-  //ORPHAN_1 =================================================================
-  (*HRabij)["cdij"] +=
-    ( - 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fi"] * (*Vijab)["mofh"] * (*Rai)["ho"];
-  (*HRabij)["cdij"] +=
-    ( + 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fj"] * (*Vijab)["mofh"] * (*Rai)["ho"];
-
-  //ORPHAN_2 =================================================================
-  (*HRabij)["cdij"] +=
-    ( + 1.0  ) * (*Tabij)["ecij"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
-  (*HRabij)["cdij"] +=
-    ( - 1.0  ) * (*Tabij)["edij"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
 
   // WIAJK ===================================================================
   //--1
@@ -884,10 +880,10 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
 
   //THREE_BODY_ONE ===========================================================
   (*HRabij)["abij"] +=
-              (*Rai)["em"] * (*Vaibc)["bmfe"] * (*Tabij)["afij"];
+              (*Rai)["em"] * (*Waibc)["bmfe"] * (*Tabij)["afij"];
   // P(ab)
   (*HRabij)["abij"] +=
-    ( -1.0) * (*Rai)["em"] * (*Vaibc)["amfe"] * (*Tabij)["bfij"];
+    ( -1.0) * (*Rai)["em"] * (*Waibc)["amfe"] * (*Tabij)["bfij"];
 
   //THREE_BODY_TWO ===========================================================
   (*HRabij)["abij"] +=
@@ -898,10 +894,10 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
 
   //THREE_BODY_THREE =========================================================
   (*HRabij)["abij"] +=
-    ( -1.0) * (*Rai)["em"] * (*Vijka)["nmje"] * (*Tabij)["abin"];
+    ( -1.0) * (*Rai)["em"] * (*Wijka)["nmje"] * (*Tabij)["abin"];
   // P(ij)
   (*HRabij)["abij"] +=
-    ( +1.0) * (*Rai)["em"] * (*Vijka)["nmie"] * (*Tabij)["abjn"];
+    ( +1.0) * (*Rai)["em"] * (*Wijka)["nmie"] * (*Tabij)["abjn"];
 
   //THREE_BODY_FOUR ==========================================================
   (*HRabij)["abij"] +=
@@ -909,18 +905,6 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
   // P(ij)
   (*HRabij)["abij"] +=
     ( -0.5) * (*Rabij)["fejm"] * (*Vijab)["nmfe"] * (*Tabij)["abin"];
-
-  //ORPHAN_1 =================================================================
-  (*HRabij)["cdij"] +=
-    ( - 1.0  ) * (*Tabij)["cdmj"] * (*Tai)["fi"] * (*Vijab)["mofh"] * (*Rai)["ho"];
-  (*HRabij)["cdij"] +=
-    ( + 1.0  ) * (*Tabij)["cdmi"] * (*Tai)["fj"] * (*Vijab)["mofh"] * (*Rai)["ho"];
-
-  //ORPHAN_2 =================================================================
-  (*HRabij)["cdij"] +=
-    ( + 1.0  ) * (*Tabij)["ecij"] * (*Tai)["dn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
-  (*HRabij)["cdij"] +=
-    ( - 1.0  ) * (*Tabij)["edij"] * (*Tai)["cn"] * (*Vijab)["noeh"] * (*Rai)["ho"];
 
   // WIAJK ===================================================================
   (*HRabij)["abij"] += (- 1.0 ) * (*Wiajk)["lbij"] * (*Rai)["al"];
