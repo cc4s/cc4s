@@ -72,13 +72,33 @@ void CcsdEquationOfMotionDavidson::run() {
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
 
   // HF terms
-  int kineticLensVirtual[] = {Nv, Nv};
+  int vv[] = {Nv, Nv};
+  int oo[] = {No, No};
   int kineticSyms[] = {NS, NS};
-  CTF::Tensor<> Fab(2, kineticLensVirtual, kineticSyms, *Cc4s::world, "Fab");
-  int kineticLensOccupied[] = {No, No};
-  CTF::Tensor<> Fij(2, kineticLensOccupied, kineticSyms, *Cc4s::world, "Fij");
-  Fab["aa"] = (*epsa)["a"];
-  Fij["ii"] = (*epsi)["i"];
+  CTF::Tensor<> *Fab(
+    new CTF::Tensor<>(2, vv, kineticSyms, *Cc4s::world, "Fab")
+  );
+  CTF::Tensor<> *Fij(
+    new CTF::Tensor<>(2, oo, kineticSyms, *Cc4s::world, "Fij")
+  );
+  CTF::Tensor<> *Fia;
+
+  if (
+    isArgumentGiven("HPFockMatrix") &&
+    isArgumentGiven("HHFockMatrix") &&
+    isArgumentGiven("PPFockMatrix")
+  ) {
+    LOG(0, "CcsdEomDavid") << "Using non-canonical orbitals" << std::endl;
+    Fia = getTensorArgument<double, CTF::Tensor<> >("HPFockMatrix");
+    Fab = getTensorArgument<double, CTF::Tensor<> >("PPFockMatrix");
+    Fij = getTensorArgument<double, CTF::Tensor<> >("HHFockMatrix");
+  } else {
+    LOG(0, "CcsdEomDavid") << "Using canonical orbitals" << std::endl;
+    Fia = NULL;
+    (*Fab)["aa"] = (*epsa)["a"];
+    (*Fij)["ii"] = (*epsi)["i"];
+  }
+
 
   // Get the Uccsd amplitudes
   CTF::Tensor<> Tai(
@@ -89,15 +109,8 @@ void CcsdEquationOfMotionDavidson::run() {
   //Tai["ai"] = 0.0;
   //Tabij["abij"] = 0.0;
 
-  CTF::Tensor<> *Fia;
-  if (isArgumentGiven("HPFockMatrix")) {
-    Fia = getTensorArgument<double, CTF::Tensor<> >("HPFockMatrix");
-  } else {
-    Fia = NULL;
-  }
-
   CcsdSimilarityTransformedHamiltonian<double> H(
-    &Tai, &Tabij, &Fij, &Fab, Fia,
+    &Tai, &Tabij, Fij, Fab, Fia,
     Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic,
     Vaibc, Vaibj, Viabj, Vijak, Vaijb, Vabci
   );
@@ -110,7 +123,7 @@ void CcsdEquationOfMotionDavidson::run() {
   H.buildIntermediates(intermediates);
 
   CcsdPreConditioner<double> P(
-    Tai, Tabij, Fij, Fab, *Vabcd, *Viajb, *Vijab, *Vijkl
+    Tai, Tabij, *Fij, *Fab, *Vabcd, *Viajb, *Vijab, *Vijkl
   );
   allocatedTensorArgument(
     "SinglesHamiltonianDiagonal",
