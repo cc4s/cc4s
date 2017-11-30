@@ -309,9 +309,9 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   int Nv(Fab->lens[0]);
   int syms[] = {NS, NS};
   int ov[] = {No, Nv};
-  CTF::Tensor<> Fia(2, ov, syms, *Cc4s::world, "Fia");
+  CTF::Tensor<> InitFia(2, ov, syms, *Cc4s::world, "InitFia");
 
-  Wia   = NEW(CTF::Tensor<>,  Fia);
+  Wia   = NEW(CTF::Tensor<>,  InitFia);
   Wab   = NEW(CTF::Tensor<>, *Fab);
   Wij   = NEW(CTF::Tensor<>, *Fij);
   Wabcd = NEW(CTF::Tensor<>, *Vabcd);
@@ -336,17 +336,25 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   LOG(0, "CcsdEomDavid") << "Building Wia" << std::endl;
   //we need this one to construct the 2-body-amplitudes, not directly
   (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
+  if (Fia) {
+    (*Wia)["ia"] += (*Fia)["ia"];
+  }
 
   LOG(0, "CcsdEomDavid") << "Building Wab" << std::endl;
   //diagram (10.54)
   (*Wab)["ab"]  = (*Fab)["ab"];
   (*Wab)["ab"] += (*Viabc)["mafb"] * (*Tai)["fm"];
+  if (Fia) {
+    (*Wab)["ab"] += ( -1.0) * (*Fia)["mb"] * (*Tai)["am"];
+  }
   (*Wab)["ab"] += (- 0.5) * (*Vijab)["mnbe"] * (*Tau_abij)["aemn"];
 
   LOG(0, "CcsdEomDavid") << "Building Wij" << std::endl;
   (*Wij)["ij"]  = (*Fij)["ij"];
   (*Wij)["ij"] += (*Vijka)["imje"] * (*Tai)["em"];
-  //(*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
+  if (Fia) {
+    (*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
+  }
   (*Wij)["ij"] += (  0.5) * (*Vijab)["imef"] * (*Tau_abij)["efjm"];
 
   LOG(0, "CcsdEomDavid") << "Building Wijkl" << std::endl;
@@ -421,11 +429,11 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
     (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
     (*Wabci)["abci"] += ( +1.0) * (*Vaibc)["bmce"] * (*Tai)["am"] * (*Tai)["ei"];
     //--5
-    //BUG: Apparently Hirata does not seem to antisymmetriz a<>b
     (*Wabci)["abci"] += ( +1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
-    //    original:
-    //    (*Wabci)["abci"] += ( +1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
-    //    (*Wabci)["abci"] += ( -1.0) * (*Vijak)["mnci"] * (*Tai)["bm"] * (*Tai)["an"];
+    //--5.1 (non canonical)
+    if (Fia) {
+      (*Wabci)["abci"] += ( -1.0) * (*Fia)["mc"] * (*Tabij)["abmi"];
+    }
     //--6
     (*Wabci)["abci"] +=          (*Vaibc)["amce"] * (*Tabij)["ebmi"];
     (*Wabci)["abci"] += (-1.0) * (*Vaibc)["bmce"] * (*Tabij)["eami"];
@@ -440,7 +448,6 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
     (*Wabci)["abci"] += (  0.5) * (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
     //--11
     (*Wabci)["abci"] +=           (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
-    //(*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tai)["an"] * (*Tai)["ei"];
   }
 
   LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
