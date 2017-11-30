@@ -89,8 +89,15 @@ void CcsdEquationOfMotionDavidson::run() {
   //Tai["ai"] = 0.0;
   //Tabij["abij"] = 0.0;
 
+  CTF::Tensor<> *Fia;
+  if (isArgumentGiven("HPFockMatrix")) {
+    Fia = getTensorArgument<double, CTF::Tensor<> >("HPFockMatrix");
+  } else {
+    Fia = NULL;
+  }
+
   CcsdSimilarityTransformedHamiltonian<double> H(
-    &Tai, &Tabij, &Fij, &Fab, NULL,
+    &Tai, &Tabij, &Fij, &Fab, Fia,
     Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic,
     Vaibc, Vaibj, Viabj, Vijak, Vaijb, Vabci
   );
