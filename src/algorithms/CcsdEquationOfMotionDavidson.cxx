@@ -90,7 +90,7 @@ void CcsdEquationOfMotionDavidson::run() {
   //Tabij["abij"] = 0.0;
 
   CcsdSimilarityTransformedHamiltonian<double> H(
-    &Tai, &Tabij, &Fij, &Fab,
+    &Tai, &Tabij, &Fij, &Fab, NULL,
     Vabcd, Viajb, Vijab, Vijkl, Vijka, Viabc, Viajk, Vabic,
     Vaibc, Vaibj, Viabj, Vijak, Vaijb, Vabci
   );
@@ -165,6 +165,7 @@ CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   CTF::Tensor<F> *Tabij_,
   CTF::Tensor<F> *Fij_,
   CTF::Tensor<F> *Fab_,
+  CTF::Tensor<F> *Fia_,
   CTF::Tensor<F> *Vabcd_,
   CTF::Tensor<F> *Viajb_,
   CTF::Tensor<F> *Vijab_,
@@ -184,6 +185,7 @@ CcsdSimilarityTransformedHamiltonian<F>::CcsdSimilarityTransformedHamiltonian(
   Tabij(Tabij_),
   Fij(Fij_),
   Fab(Fab_),
+  Fia(Fia_),
   Vabcd(Vabcd_),
   Viajb(Viajb_),
   Vijab(Vijab_),

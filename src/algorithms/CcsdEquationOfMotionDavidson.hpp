@@ -17,6 +17,7 @@ namespace cc4s {
       CTF::Tensor<F> *Tabij_,
       CTF::Tensor<F> *Fij_,
       CTF::Tensor<F> *Fab_,
+      CTF::Tensor<F> *Fia_,
       CTF::Tensor<F> *Vabcd_,
       CTF::Tensor<F> *Viajb_,
       CTF::Tensor<F> *Vijab_,
@@ -48,7 +49,7 @@ namespace cc4s {
 
   protected:
     CTF::Tensor<F> *Tai, *Tabij;
-    CTF::Tensor<F> *Fij, *Fab;
+    CTF::Tensor<F> *Fij, *Fab, *Fia;
     CTF::Tensor<F> *Vabcd;
     CTF::Tensor<F> *Viajb;
     CTF::Tensor<F> *Vijab;
