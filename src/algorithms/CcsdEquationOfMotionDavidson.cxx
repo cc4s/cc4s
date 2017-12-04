@@ -1097,15 +1097,7 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
     localLowestElementValues[i] = localElements[i].second;
   }
   MpiCommunicator communicator(*Cc4s::world);
-   int lowestElementsCount(
-    diagonalH.get(0)->lens[0] *
-    diagonalH.get(0)->lens[1] +
-    pow(
-      diagonalH.get(0)->lens[0] *
-      diagonalH.get(0)->lens[1],
-      3.0
-    )
-  );
+  int lowestElementsCount(diagonalH.getDimension());
   std::vector<size_t> lowestElementIndices(lowestElementsCount);
   std::vector<F> lowestElementValues(lowestElementsCount);
   communicator.gather(localLowestElementIndices, lowestElementIndices);
