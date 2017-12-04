@@ -28,6 +28,10 @@ void UccsdAmplitudesFromCoulombIntegrals::run() {
   ClusterSinglesDoublesAlgorithm::run();
 }
 
+void UccsdAmplitudesFromCoulombIntegrals::createMask(){
+
+}
+
 PTR(FockVector<complex>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
   const int iterationStep, const PTR(const FockVector<complex>) &amplitudes
 ) {
@@ -100,7 +104,7 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
   auto Fae(
     NEW(CTF::Tensor<>, 2, vv, oneBodySyms, *Cc4s::world, "Fae")
   );
-   auto Fmi(
+  auto Fmi(
     NEW(CTF::Tensor<>, 2, oo, oneBodySyms, *Cc4s::world, "Fmi")
   );
   int ov[] = {No, Nv};

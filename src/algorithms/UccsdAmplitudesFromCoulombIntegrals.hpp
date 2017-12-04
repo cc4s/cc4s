@@ -18,7 +18,11 @@ namespace cc4s {
     );
     virtual ~UccsdAmplitudesFromCoulombIntegrals();
 
+    // Mask, one and two body parts
+    PTR(CTF::Tensor<>) *Mai, *Mabij;
+
     virtual void run();
+    void createMask();
     virtual std::string getAbbreviation() { return "Uccsd"; }
 
   protected:
