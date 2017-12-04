@@ -67,8 +67,36 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
   auto Vijak(getTensorArgument<double>("HHPHCoulombIntegrals"));
   auto Vabci(getTensorArgument<double>("PPPHCoulombIntegrals"));
 
-
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
+  int vv[] = {Nv, Nv};
+  int oo[] = {No, No};
+  int kineticSyms[] = {NS, NS};
+  CTF::Tensor<> *fab(
+    new CTF::Tensor<>(2, vv, kineticSyms, *Cc4s::world, "fab")
+  );
+  CTF::Tensor<> *fij(
+    new CTF::Tensor<>(2, oo, kineticSyms, *Cc4s::world, "fij")
+  );
+  CTF::Tensor<> *fia;
+
+  if (
+    isArgumentGiven("HPFockMatrix") &&
+    isArgumentGiven("HHFockMatrix") &&
+    isArgumentGiven("PPFockMatrix")
+  ) {
+    LOG(0, "UCcsd") << "Using non-canonical orbitals" << std::endl;
+    fia = getTensorArgument<double, CTF::Tensor<> >("HPFockMatrix");
+    fab = getTensorArgument<double, CTF::Tensor<> >("PPFockMatrix");
+    fij = getTensorArgument<double, CTF::Tensor<> >("HHFockMatrix");
+  } else {
+    LOG(0, "UCcsd") << "Using canonical orbitals" << std::endl;
+    (fia) = NULL;
+    (*fab)["aa"] = (*epsa)["a"];
+    (*fij)["ii"] = (*epsi)["i"];
+  }
+
+
+  LOG(0, "UCcsd") << "Using canonical orbitals 2" << std::endl;
 
   // Create T and R and intermediates
   // Read the amplitudes Tai and Tabij
@@ -89,16 +117,16 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
 
   // kinetic terms
   int oneBodySyms[] = {NS, NS};
-  int vv[] = {Nv, Nv};
-  PTR(CTF::Tensor<>) fab(
-    NEW(CTF::Tensor<>, 2, vv, oneBodySyms, *Cc4s::world, "fab")
-  );
-  int oo[] = {No, No};
-  PTR(CTF::Tensor<>) fij(
-    NEW(CTF::Tensor<>, 2, oo, oneBodySyms, *Cc4s::world, "fij")
-  );
-  (*fab)["aa"] = (*epsa)["a"];
-  (*fij)["ii"] = (*epsi)["i"];
+//  int vv[] = {Nv, Nv};
+//  PTR(CTF::Tensor<>) fab(
+//    NEW(CTF::Tensor<>, 2, vv, oneBodySyms, *Cc4s::world, "fab")
+//  );
+//  int oo[] = {No, No};
+//  PTR(CTF::Tensor<>) fij(
+//    NEW(CTF::Tensor<>, 2, oo, oneBodySyms, *Cc4s::world, "fij")
+//  );
+//  (*fab)["aa"] = (*epsa)["a"];
+//  (*fij)["ii"] = (*epsi)["i"];
 
   // Define intermediates
   auto Fae(
@@ -137,6 +165,9 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
 
   // Equation (5) Stanton et al.
   (*Fme)["me"] = (*Tai)["fn"] * (*Vijab)["mnef"];
+  if (fia) {
+    (*Fme)["me"] += (*fia)["me"];
+  }
 
   // Equation (6)
   auto Wijkl(NEW(CTF::Tensor<>, *Vijkl));
@@ -162,6 +193,11 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
 
   // T1 equations:
   (*Rai)["ai"] = (*Tai)["ei"] * (*Fae)["ae"];
+  if (fia) {
+     (*Rai)["ai"] += (*fia)["ia"] ;
+  }
+
+
   (*Rai)["ai"] += (- 1.0) * (*Tai)["am"] * (*Fmi)["mi"];
   (*Rai)["ai"] += (*Tabij)["aeim"] * (*Fme)["me"];
   (*Rai)["ai"] += (- 1.0) * (*Tai)["fn"] * (*Viajb)["naif"];
