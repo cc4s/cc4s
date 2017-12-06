@@ -45,6 +45,7 @@ void UccsdAmplitudesFromCoulombIntegrals::createMask(){
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
   int vo[] = {Nv, No}, vvoo[] = {Nv,Nv,No,No};
   int syms[] = {NS, NS};
+  int syms_4[] = {NS, NS, NS, NS};
 
   RangeParser virtualRange(getTextArgument("MaskVirtualRange"));
   RangeParser particleRange(getTextArgument("MaskParticleRange"));
@@ -61,22 +62,25 @@ void UccsdAmplitudesFromCoulombIntegrals::createMask(){
   }
 
   Mai = NEW(CTF::Tensor<double>, 2, vo, syms, *Cc4s::world, "Mai");
-  Mabij = NEW(CTF::Tensor<double>, 4, vvoo, syms, *Cc4s::world, "Mabij");
+  Mabij = NEW(CTF::Tensor<double>, 4, vvoo, syms_4, *Cc4s::world, "Mabij");
   (*Mai)["ai"] = 1.0;
+  LOG(0, getAbbreviation()) << "Mai done" << std::endl;
   (*Mabij)["abij"] = 1.0;
+  LOG(0, getAbbreviation()) << "Mabij done" << std::endl;
 
   int64_t *MaiIndex, *MabijIndex;
   double *MaiValue, *MabijValue;
   int64_t MaiCount, MabijCount;
 
+  LOG(1, getAbbreviation()) << "Writing Mai and Mabij" << std::endl;
   for (auto a : virtualRange.getRange()) {
-  for (auto i : virtualRange.getRange()) {
+  for (auto i : particleRange.getRange()) {
     if (Mai->wrld->rank == 0) {
       MaiCount = 1;
       MaiIndex = (int64_t*) malloc(MaiCount);
       MaiValue = (double*) malloc(MaiCount);
       MaiIndex[0] = 0.0;
-      MaiIndex[0] = a + No*i;
+      MaiIndex[0] = a + i*Nv;
     } else {
       MaiCount = 0;
       MaiIndex = (int64_t*) malloc(MaiCount);
@@ -84,13 +88,13 @@ void UccsdAmplitudesFromCoulombIntegrals::createMask(){
     }
     Mai->write(MaiCount, MaiIndex, MaiValue);
   for (auto b : virtualRange.getRange()) {
-  for (auto j : virtualRange.getRange()) {
+  for (auto j : particleRange.getRange()) {
     if (Mabij->wrld->rank == 0) {
       MabijCount = 1;
       MabijIndex = (int64_t*) malloc(MabijCount);
       MabijValue = (double*) malloc(MabijCount);
       MabijIndex[0] = 0.0;
-      MabijIndex[0] = a + No*i;
+      MabijIndex[0] = a + b*Nv + i*Nv*Nv + j*Nv*Nv*No;
     } else {
       MabijCount = 0;
       MabijIndex = (int64_t*) malloc(MabijCount);
@@ -102,9 +106,8 @@ void UccsdAmplitudesFromCoulombIntegrals::createMask(){
   }
   }
 
-  Mai->print();
+  //Mai->print();
   //Mabij->print();
-
 }
 
 PTR(FockVector<complex>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
