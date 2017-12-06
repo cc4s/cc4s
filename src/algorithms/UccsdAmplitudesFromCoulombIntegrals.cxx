@@ -327,6 +327,12 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
 
   }
 
+  if (Mai && Mabij) {
+    LOG(1, getAbbreviation()) << "Masking out range" << std::endl;
+    (*Rai)["ai"] = (*Rai)["ai"] * (*Mai)["ai"];
+    (*Rabij)["abij"] = (*Rabij)["abij"] * (*Mabij)["abij"];
+  }
+
   return residuum;
 }
 
