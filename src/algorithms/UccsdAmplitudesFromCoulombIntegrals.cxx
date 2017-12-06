@@ -24,7 +24,16 @@ UccsdAmplitudesFromCoulombIntegrals::UccsdAmplitudesFromCoulombIntegrals(
 UccsdAmplitudesFromCoulombIntegrals::~UccsdAmplitudesFromCoulombIntegrals() {
 }
 
+bool UccsdAmplitudesFromCoulombIntegrals::maskIsGiven() {
+  return isArgumentGiven("MaskVirtualRange") &&
+          isArgumentGiven("MaskParticleRange");
+}
+
 void UccsdAmplitudesFromCoulombIntegrals::run() {
+  if (maskIsGiven()) {
+    LOG(0, getAbbreviation()) << "Mask selected" << std::endl;
+    createMask();
+  }
   ClusterSinglesDoublesAlgorithm::run();
 }
 
@@ -84,19 +93,17 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
     isArgumentGiven("HHFockMatrix") &&
     isArgumentGiven("PPFockMatrix")
   ) {
-    LOG(0, "UCcsd") << "Using non-canonical orbitals" << std::endl;
+    LOG(0, getAbbreviation()) << "Using non-canonical orbitals" << std::endl;
     fia = getTensorArgument<double, CTF::Tensor<> >("HPFockMatrix");
     fab = getTensorArgument<double, CTF::Tensor<> >("PPFockMatrix");
     fij = getTensorArgument<double, CTF::Tensor<> >("HHFockMatrix");
   } else {
-    LOG(0, "UCcsd") << "Using canonical orbitals" << std::endl;
-    (fia) = NULL;
+    fia = NULL;
     (*fab)["aa"] = (*epsa)["a"];
     (*fij)["ii"] = (*epsi)["i"];
   }
 
 
-  LOG(0, "UCcsd") << "Using canonical orbitals 2" << std::endl;
 
   // Create T and R and intermediates
   // Read the amplitudes Tai and Tabij

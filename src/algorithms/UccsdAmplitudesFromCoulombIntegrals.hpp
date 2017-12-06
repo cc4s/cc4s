@@ -17,8 +17,9 @@ namespace cc4s {
     virtual ~UccsdAmplitudesFromCoulombIntegrals();
 
     // Mask, one and two body parts
-    PTR(CTF::Tensor<>) *Mai, *Mabij;
+    PTR(CTF::Tensor<>) Mai, Mabij;
 
+    bool maskIsGiven();
     virtual void run();
     void createMask();
     virtual std::string getAbbreviation() { return "Uccsd"; }
@@ -54,7 +55,7 @@ namespace cc4s {
       /**
        * \brief Get the range in the form of a vector of integers
        */
-      std::vector<int> getRange() {
+      std::vector<int> getRange() const {
         return parsedRange;
       }
 
@@ -120,6 +121,15 @@ namespace cc4s {
       const std::string rawRange;
       std::vector<int> parsedRange;
   };
+
+  inline std::ostream &operator<<(
+    std::ostream &stream, const RangeParser &parser
+  ) {
+    for (auto i : parser.getRange()) {
+      stream << i << " ";
+    }
+    return stream << std::endl;
+  }
 
 }
 
