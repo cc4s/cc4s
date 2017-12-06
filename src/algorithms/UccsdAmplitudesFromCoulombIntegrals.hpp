@@ -4,6 +4,7 @@
 
 #include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
 #include <vector>
+#include <algorithm>
 #include <memory>
 #include <string>
 
@@ -116,6 +117,11 @@ namespace cc4s {
           buff.clear();
         }
       }
+
+    int get_max() const {
+      auto max_it(std::max_element(parsedRange.begin(), parsedRange.end()));
+      return *max_it;
+    }
 
     protected:
       const std::string rawRange;

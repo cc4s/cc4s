@@ -38,6 +38,72 @@ void UccsdAmplitudesFromCoulombIntegrals::run() {
 }
 
 void UccsdAmplitudesFromCoulombIntegrals::createMask(){
+  LOG(1, getAbbreviation()) << "Creating mask" << std::endl;
+
+  auto epsi(getTensorArgument<double>("HoleEigenEnergies"));
+  auto epsa(getTensorArgument<double>("ParticleEigenEnergies"));
+  int Nv(epsa->lens[0]), No(epsi->lens[0]);
+  int vo[] = {Nv, No}, vvoo[] = {Nv,Nv,No,No};
+  int syms[] = {NS, NS};
+
+  RangeParser virtualRange(getTextArgument("MaskVirtualRange"));
+  RangeParser particleRange(getTextArgument("MaskParticleRange"));
+  LOG(0, getAbbreviation()) << "Nv, No: " << Nv << ", " << No << std::endl;
+  LOG(0, getAbbreviation()) << "Virt. Range: " << virtualRange;
+  LOG(0, getAbbreviation()) << "Part. Range: " << particleRange;
+
+  if (
+    virtualRange.get_max()  >= Nv ||
+    particleRange.get_max() >= No
+  ) {
+    LOG(0, getAbbreviation()) << "Mask range out of bounds" << std::endl;
+    throw new EXCEPTION("Mask range out of bounds");
+  }
+
+  Mai = NEW(CTF::Tensor<double>, 2, vo, syms, *Cc4s::world, "Mai");
+  Mabij = NEW(CTF::Tensor<double>, 4, vvoo, syms, *Cc4s::world, "Mabij");
+  (*Mai)["ai"] = 1.0;
+  (*Mabij)["abij"] = 1.0;
+
+  int64_t *MaiIndex, *MabijIndex;
+  double *MaiValue, *MabijValue;
+  int64_t MaiCount, MabijCount;
+
+  for (auto a : virtualRange.getRange()) {
+  for (auto i : virtualRange.getRange()) {
+    if (Mai->wrld->rank == 0) {
+      MaiCount = 1;
+      MaiIndex = (int64_t*) malloc(MaiCount);
+      MaiValue = (double*) malloc(MaiCount);
+      MaiIndex[0] = 0.0;
+      MaiIndex[0] = a + No*i;
+    } else {
+      MaiCount = 0;
+      MaiIndex = (int64_t*) malloc(MaiCount);
+      MaiValue = (double*) malloc(MaiCount);
+    }
+    Mai->write(MaiCount, MaiIndex, MaiValue);
+  for (auto b : virtualRange.getRange()) {
+  for (auto j : virtualRange.getRange()) {
+    if (Mabij->wrld->rank == 0) {
+      MabijCount = 1;
+      MabijIndex = (int64_t*) malloc(MabijCount);
+      MabijValue = (double*) malloc(MabijCount);
+      MabijIndex[0] = 0.0;
+      MabijIndex[0] = a + No*i;
+    } else {
+      MabijCount = 0;
+      MabijIndex = (int64_t*) malloc(MabijCount);
+      MabijValue = (double*) malloc(MabijCount);
+    }
+    Mabij->write(MabijCount, MabijIndex, MabijValue);
+  }
+  }
+  }
+  }
+
+  Mai->print();
+  //Mabij->print();
 
 }
 
