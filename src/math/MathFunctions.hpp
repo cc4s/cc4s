@@ -7,6 +7,17 @@
 #include <ctf.hpp>
 
 namespace cc4s {
+  // constants
+  template <typename F=double>
+  constexpr F Pi() {
+    return std::acos(F(-1));
+  }
+
+  template <typename F=double>
+  constexpr F Tau() {
+    return 2 * Pi<F>();
+  }
+
   // univariate functions
   template <typename F=double>
   inline F sqrt(F const x) {

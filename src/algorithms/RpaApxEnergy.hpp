@@ -16,6 +16,8 @@ namespace cc4s {
     virtual ~RpaApxEnergy();
 
     virtual void run();
+  protected:
+    void computeFrequencyGrid(const int N);
   };
 }
 

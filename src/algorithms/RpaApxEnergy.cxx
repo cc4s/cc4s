@@ -7,7 +7,9 @@
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
+
 #include <ctf.hpp>
+#include <algorithm>
 
 using namespace cc4s;
 using namespace tcc;
@@ -22,7 +24,112 @@ RpaApxEnergy::RpaApxEnergy(
 RpaApxEnergy::~RpaApxEnergy() {
 }
 
+void RpaApxEnergy::computeFrequencyGrid(const int N) {
+  // current frequency integration grid
+  std::vector<double> ws(N);
+  std::vector<double> nus(N);
+  // gradient of sum_ai(0.5*error(eps_a-eps_i)^2) w.r.t. ws and nus
+  std::vector<double> dws(N);
+  std::vector<double> dnus(N);
+
+  auto epsi(getTensorArgument<>("HoleEigenEnergies"));
+  auto epsa(getTensorArgument<>("ParticleEigenEnergies"));
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  CTF::Tensor<double> Dai(2, std::vector<int>({Nv,No}).data());
+  Dai["ai"]  = (*epsa)["a"];
+  Dai["ai"] -= (*epsi)["i"];
+
+  {
+    // take N quantiles as initial estimates for grid points
+    std::vector<double> deltas(No*Nv);
+    Dai.read_all(deltas.data(), true);
+    std::sort(deltas.begin(), deltas.end());
+    double lastNu(0);
+    for (size_t n(0); n < ws.size(); ++n) {
+      nus[n] = deltas[No*Nv*n/N + No*Nv/(2*N)];
+      ws[n] = nus[n] - lastNu;
+      lastNu = nus[n];
+    }
+  }
+
+  // error of numerical quadrature with current grid wn[n] & nus[n] from
+  // analytic value 1/(eps_a-eps_i) for each ai
+  auto Eai(Dai);
+  CTF::Transform<double>(
+    std::function<void(double &)>(
+      [&ws, &nus](double &delta) {
+        double error(0);
+        // use quadrature to integrate Mp2 propagator
+        for (size_t n(0); n < ws.size(); ++n) {
+          error +=
+            ws[n] * 4*delta*delta / std::pow(delta*delta + nus[n]*nus[n],2);
+        }
+        error /= Pi();
+        error -= 1 / delta;
+        delta = error;
+      }
+    )
+  ) (
+    Eai["ai"]
+  );
+
+  double L(Eai.norm2()*0.5);
+  LOG(1, "RPA") << "L = " << L << std::endl;
+
+  for (size_t n(0); n < ws.size(); ++n) {
+    // derivative of 0.5*error(eps_a-eps_i)^2 with respect to n-th
+    // integration weight ws[n] for each ai
+    auto DWai(Dai);
+    CTF::Transform<double, double>(
+      std::function<void(double, double &)>(
+        [&ws, &nus, n](double error, double &delta) {
+          double diff(
+            error * 4*delta*delta / std::pow(delta*delta + nus[n]*nus[n],2)
+          );
+          delta = diff / Pi();
+        }
+      )
+    ) (
+      Eai["ai"], DWai["ai"]
+    );
+    // sum contributions from all energy gaps eps_a-eps_i
+    CTF::Scalar<double> DW;
+    DW[""] = DWai["ai"];
+    dws[n] = DW.get_val();
+
+    // derivative of 0.5*error(eps_a-eps_i)^2 with respect to n-th
+    // integration point nus[n] for each ai
+    auto DNuai(Dai);
+    CTF::Transform<double, double>(
+      std::function<void(double, double &)>(
+        [&ws, &nus, n](double error, double &delta) {
+          double diff(
+            error *
+            (-2) * ws[n]*4*delta*delta/std::pow(delta*delta + nus[n]*nus[n],3) *
+            2*nus[n]
+          );
+          delta = diff / Pi();
+        }
+      )
+    ) (
+      Eai["ai"], DNuai["ai"]
+    );
+    // sum contributions from all energy gaps eps_a-eps_i
+    CTF::Scalar<double> DNu;
+    DNu[""] = DNuai["ai"];
+    dnus[n] = DNu.get_val();
+
+    LOG(1, "RPA") << "w[" << n << "] = " << ws[n] << std::endl;
+    LOG(1, "RPA") << "nu[" << n << "] = " << nus[n] << std::endl;
+    LOG(1, "RPA") << "dL/dw[" << n << "] = " << dws[n] << std::endl;
+    LOG(1, "RPA") << "dL/dnu[" << n << "] = " << dnus[n] << std::endl;
+  }
+}
+
 void RpaApxEnergy::run() {
+  computeFrequencyGrid(getIntegerArgument("imaginaryFrequencies", 6));
+
   // create tcc infrastructure
   typedef CtfMachineTensor<complex> MachineTensor;
   auto machineTensorFactory(MachineTensor::Factory::create());
@@ -67,13 +174,13 @@ void RpaApxEnergy::run() {
 
   CTF::Tensor<complex> Dain(3, std::vector<int>({Nv,No,Nn}).data());
   Dain["ain"]  = (*epsa)["a"];
-  Dain["ain"] -= (*epsa)["i"];
+  Dain["ain"] -= (*epsi)["i"];
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
       [](double nu, complex &d){ d = 1.0 / (d - complex(0,1)*nu); }
     )
   ) (
-    Dain["ain"]
+    (*realNun)["n"], Dain["ain"]
   );
   CTF::Tensor<complex> conjDain(Dain);
   conjugate(conjDain);
@@ -88,7 +195,7 @@ void RpaApxEnergy::run() {
       (*chiVFGn)["FGn"] <<=
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
       (*chiVFGn)["FGn"] +=
-        (*GammaFai)["Fia"] * (*conjGammaFai)["Gia"] * (*conjPain)["ain"]
+        (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"]
     )
   )->execute();
 
