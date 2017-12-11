@@ -1,7 +1,8 @@
 CoulombVertexReader [
-  %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
   %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands19.ecgw150.POSCAR.0.7")
   (file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands4.ecgw150.POSCAR.0.7")
+  %(file "../../resources/h2_ftodumps/FTODDUMP.kpt1.ecut300.bands2.ecgw150.POSCAR.0.7")
+  %(file "/home/gallo/simulations/CH+/eom/sto3g/FTODDUMP")
   %(file "../../resources/NV/FTODDUMP")
   %(file "../../resources/andreas/FTODDUMP")
   (unrestricted 1)
@@ -32,6 +33,7 @@ CoulombIntegralsFromVertex [
   CoulombVertex HoleEigenEnergies ParticleEigenEnergies
   (antisymmetrize 1)
 ] [
+
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   HHPHCoulombIntegrals
@@ -40,13 +42,15 @@ CoulombIntegralsFromVertex [
   HPHPCoulombIntegrals
   HPPHCoulombIntegrals
   HPPPCoulombIntegrals
+  PHHHCoulombIntegrals
+  PHHPCoulombIntegrals
   PHPHCoulombIntegrals
   PHPPCoulombIntegrals
   PPHHCoulombIntegrals
   PPHPCoulombIntegrals
   PPPHCoulombIntegrals
-  PPPHCoulombIntegrals
   PPPPCoulombIntegrals
+
 ].
 
 UccsdAmplitudesFromCoulombIntegrals [
@@ -80,22 +84,30 @@ UccsdAmplitudesFromCoulombIntegrals [
 
 
 CcsdEquationOfMotionDavidson [
+
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
+  HHPHCoulombIntegrals
   HHPPCoulombIntegrals
   HPHHCoulombIntegrals
   HPHPCoulombIntegrals
+  HPPHCoulombIntegrals
   HPPPCoulombIntegrals
+  PHHHCoulombIntegrals
+  PHHPCoulombIntegrals
   PHPHCoulombIntegrals
+  PHPPCoulombIntegrals
   PPHHCoulombIntegrals
   PPHPCoulombIntegrals
   PPPHCoulombIntegrals
   PPPPCoulombIntegrals
+
   HoleEigenEnergies ParticleEigenEnergies
   (SinglesAmplitudes UccsdSinglesAmplitudes)
   (DoublesAmplitudes UccsdDoublesAmplitudes)
   (unrestricted 1)
-  (eigenstates 4)
+  (eigenstates 5)
+  (intermediates 1)
 ] [
   SinglesHamiltonianDiagonal
   DoublesHamiltonianDiagonal

@@ -24,8 +24,90 @@ UccsdAmplitudesFromCoulombIntegrals::UccsdAmplitudesFromCoulombIntegrals(
 UccsdAmplitudesFromCoulombIntegrals::~UccsdAmplitudesFromCoulombIntegrals() {
 }
 
+bool UccsdAmplitudesFromCoulombIntegrals::maskIsGiven() {
+  return isArgumentGiven("MaskVirtualRange") &&
+          isArgumentGiven("MaskParticleRange");
+}
+
 void UccsdAmplitudesFromCoulombIntegrals::run() {
+  if (maskIsGiven()) {
+    LOG(0, getAbbreviation()) << "Mask selected" << std::endl;
+    createMask();
+  }
   ClusterSinglesDoublesAlgorithm::run();
+}
+
+void UccsdAmplitudesFromCoulombIntegrals::createMask(){
+  LOG(1, getAbbreviation()) << "Creating mask" << std::endl;
+
+  auto epsi(getTensorArgument<double>("HoleEigenEnergies"));
+  auto epsa(getTensorArgument<double>("ParticleEigenEnergies"));
+  int Nv(epsa->lens[0]), No(epsi->lens[0]);
+  int vo[] = {Nv, No}, vvoo[] = {Nv,Nv,No,No};
+  int syms[] = {NS, NS};
+  int syms_4[] = {NS, NS, NS, NS};
+
+  RangeParser virtualRange(getTextArgument("MaskVirtualRange"));
+  RangeParser particleRange(getTextArgument("MaskParticleRange"));
+  LOG(0, getAbbreviation()) << "Nv, No: " << Nv << ", " << No << std::endl;
+  LOG(0, getAbbreviation()) << "Virt. Range: " << virtualRange;
+  LOG(0, getAbbreviation()) << "Part. Range: " << particleRange;
+
+  if (
+    virtualRange.get_max()  >= Nv ||
+    particleRange.get_max() >= No
+  ) {
+    LOG(0, getAbbreviation()) << "Mask range out of bounds" << std::endl;
+    throw new EXCEPTION("Mask range out of bounds");
+  }
+
+  Mai = NEW(CTF::Tensor<double>, 2, vo, syms, *Cc4s::world, "Mai");
+  Mabij = NEW(CTF::Tensor<double>, 4, vvoo, syms_4, *Cc4s::world, "Mabij");
+  (*Mai)["ai"] = 1.0;
+  LOG(0, getAbbreviation()) << "Mai done" << std::endl;
+  (*Mabij)["abij"] = 1.0;
+  LOG(0, getAbbreviation()) << "Mabij done" << std::endl;
+
+  int64_t *MaiIndex, *MabijIndex;
+  double *MaiValue, *MabijValue;
+  int64_t MaiCount, MabijCount;
+
+  LOG(1, getAbbreviation()) << "Writing Mai and Mabij" << std::endl;
+  for (auto a : virtualRange.getRange()) {
+  for (auto i : particleRange.getRange()) {
+    if (Mai->wrld->rank == 0) {
+      MaiCount = 1;
+      MaiIndex = (int64_t*) malloc(MaiCount);
+      MaiValue = (double*) malloc(MaiCount);
+      MaiIndex[0] = 0.0;
+      MaiIndex[0] = a + i*Nv;
+    } else {
+      MaiCount = 0;
+      MaiIndex = (int64_t*) malloc(MaiCount);
+      MaiValue = (double*) malloc(MaiCount);
+    }
+    Mai->write(MaiCount, MaiIndex, MaiValue);
+  for (auto b : virtualRange.getRange()) {
+  for (auto j : particleRange.getRange()) {
+    if (Mabij->wrld->rank == 0) {
+      MabijCount = 1;
+      MabijIndex = (int64_t*) malloc(MabijCount);
+      MabijValue = (double*) malloc(MabijCount);
+      MabijIndex[0] = 0.0;
+      MabijIndex[0] = a + b*Nv + i*Nv*Nv + j*Nv*Nv*No;
+    } else {
+      MabijCount = 0;
+      MabijIndex = (int64_t*) malloc(MabijCount);
+      MabijValue = (double*) malloc(MabijCount);
+    }
+    Mabij->write(MabijCount, MabijIndex, MabijValue);
+  }
+  }
+  }
+  }
+
+  //Mai->print();
+  //Mabij->print();
 }
 
 PTR(FockVector<complex>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
@@ -63,8 +145,34 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
   auto Vijak(getTensorArgument<double>("HHPHCoulombIntegrals"));
   auto Vabci(getTensorArgument<double>("PPPHCoulombIntegrals"));
 
-
   int Nv(epsa->lens[0]), No(epsi->lens[0]);
+  int vv[] = {Nv, Nv};
+  int oo[] = {No, No};
+  int syms[] = {NS, NS};
+  CTF::Tensor<> *fab(
+    new CTF::Tensor<>(2, vv, syms, *Cc4s::world, "fab")
+  );
+  CTF::Tensor<> *fij(
+    new CTF::Tensor<>(2, oo, syms, *Cc4s::world, "fij")
+  );
+  CTF::Tensor<> *fia;
+
+  if (
+    isArgumentGiven("HPFockMatrix") &&
+    isArgumentGiven("HHFockMatrix") &&
+    isArgumentGiven("PPFockMatrix")
+  ) {
+    LOG(0, getAbbreviation()) << "Using non-canonical orbitals" << std::endl;
+    fia = getTensorArgument<double, CTF::Tensor<> >("HPFockMatrix");
+    fab = getTensorArgument<double, CTF::Tensor<> >("PPFockMatrix");
+    fij = getTensorArgument<double, CTF::Tensor<> >("HHFockMatrix");
+  } else {
+    fia = NULL;
+    (*fab)["aa"] = (*epsa)["a"];
+    (*fij)["ii"] = (*epsi)["i"];
+  }
+
+
 
   // Create T and R and intermediates
   // Read the amplitudes Tai and Tabij
@@ -83,29 +191,17 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
   auto Rabij(residuum->get(1));
   Rabij->set_name("Rabij");
 
-  // kinetic terms
-  int oneBodySyms[] = {NS, NS};
-  int vv[] = {Nv, Nv};
-  PTR(CTF::Tensor<>) fab(
-    NEW(CTF::Tensor<>, 2, vv, oneBodySyms, *Cc4s::world, "fab")
-  );
-  int oo[] = {No, No};
-  PTR(CTF::Tensor<>) fij(
-    NEW(CTF::Tensor<>, 2, oo, oneBodySyms, *Cc4s::world, "fij")
-  );
-  (*fab)["aa"] = (*epsa)["a"];
-  (*fij)["ii"] = (*epsi)["i"];
 
   // Define intermediates
   auto Fae(
-    NEW(CTF::Tensor<>, 2, vv, oneBodySyms, *Cc4s::world, "Fae")
+    NEW(CTF::Tensor<>, 2, vv, syms, *Cc4s::world, "Fae")
   );
-   auto Fmi(
-    NEW(CTF::Tensor<>, 2, oo, oneBodySyms, *Cc4s::world, "Fmi")
+  auto Fmi(
+    NEW(CTF::Tensor<>, 2, oo, syms, *Cc4s::world, "Fmi")
   );
   int ov[] = {No, Nv};
   auto Fme(
-    NEW(CTF::Tensor<>, 2, ov, oneBodySyms, *Cc4s::world, "Fme")
+    NEW(CTF::Tensor<>, 2, ov, syms, *Cc4s::world, "Fme")
   );
 
 
@@ -133,6 +229,9 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
 
   // Equation (5) Stanton et al.
   (*Fme)["me"] = (*Tai)["fn"] * (*Vijab)["mnef"];
+  if (fia) {
+    (*Fme)["me"] += (*fia)["me"];
+  }
 
   // Equation (6)
   auto Wijkl(NEW(CTF::Tensor<>, *Vijkl));
@@ -158,6 +257,11 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
 
   // T1 equations:
   (*Rai)["ai"] = (*Tai)["ei"] * (*Fae)["ae"];
+  if (fia) {
+     (*Rai)["ai"] += (*fia)["ia"] ;
+  }
+
+
   (*Rai)["ai"] += (- 1.0) * (*Tai)["am"] * (*Fmi)["mi"];
   (*Rai)["ai"] += (*Tabij)["aeim"] * (*Fme)["me"];
   (*Rai)["ai"] += (- 1.0) * (*Tai)["fn"] * (*Viajb)["naif"];
@@ -221,6 +325,12 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
     // + Pab
     (*Rabij)["abij"] += (+ 1.0) * (*Tai)["bm"] * (*Viajk)["maij"];
 
+  }
+
+  if (Mai && Mabij) {
+    LOG(1, getAbbreviation()) << "Masking out range" << std::endl;
+    (*Rai)["ai"] = (*Rai)["ai"] * (*Mai)["ai"];
+    (*Rabij)["abij"] = (*Rabij)["abij"] * (*Mabij)["abij"];
   }
 
   return residuum;

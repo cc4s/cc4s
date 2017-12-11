@@ -68,6 +68,8 @@ UccsdAmplitudesFromCoulombIntegrals [
   (maxIterations 30)
   (antisymmetrize 1)
   %(mixer "LinearMixer")
+  (MaskParticleRange "1")
+  (MaskVirtualRange "0-35")
   (mixingRatio 1.0)
 ] [
   (UccsdEnergy UccsdEnergy)

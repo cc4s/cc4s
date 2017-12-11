@@ -5,6 +5,7 @@
 #include <cmath>
 #include <string>
 #include <ctf.hpp>
+#include <util/Log.hpp>
 
 namespace cc4s {
   // constants
@@ -97,6 +98,22 @@ namespace cc4s {
   inline void symmetrize(std::string indices, std::string permuted,
       CTF::Tensor<F> &t, F prefactor=1) {
     t[indices.c_str()] += prefactor * t[permuted.c_str()];
+  }
+  template <typename F>
+  inline void checkAntisymmetry(CTF::Tensor<F> &t){
+    CTF::Tensor<F> testResultUp(t);
+    CTF::Tensor<F> testResultDown(t);
+    F normValue;
+    testResultUp["abij"] += testResultUp["baij"];
+    testResultDown["abij"] += testResultDown["abji"];
+    normValue = testResultUp.norm1();
+    normValue += testResultDown.norm1();
+    if (normValue >= 1e-3) {
+      t.print();
+      LOG(0, "AntisymmetryCheck") << t.get_name()
+        << ": zero tensor norm " << normValue << std::endl;
+      exit(1);
+    }
   }
 }
 

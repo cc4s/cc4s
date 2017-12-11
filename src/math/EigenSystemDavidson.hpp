@@ -3,8 +3,10 @@
 
 #include <util/LapackMatrix.hpp>
 #include <util/LapackGeneralEigenSystem.hpp>
+#include <math/MathFunctions.hpp>
 
 #include <vector>
+#include <iomanip>
 #include <utility>
 
 namespace cc4s {
@@ -48,17 +50,22 @@ namespace cc4s {
       P &p,
       const double tolerance = 1E-14,
       const unsigned int maxBasisSize = 1000,
+      const unsigned int maxIterations = 1000,
+      const unsigned int minIterations = 1,
       const bool dualVersion = false
     ):
       eigenValues(eigenVectorsCount)
     {
       if (dualVersion)
         eigenSystemDualVersion(
-          h, eigenVectorsCount, p, tolerance, maxBasisSize
+          h, eigenVectorsCount, p, tolerance, maxBasisSize,
+          maxIterations, minIterations
         );
       else
         eigenSystemMonoVersion(
-          h, eigenVectorsCount, p, tolerance, maxBasisSize
+          h, eigenVectorsCount, p, tolerance, maxBasisSize,
+          maxIterations, minIterations
+
         );
     }
 
@@ -68,7 +75,9 @@ namespace cc4s {
       const int eigenVectorsCount,
       P &p,
       const double tolerance,
-      const unsigned int maxBasisSize
+      const unsigned int maxBasisSize,
+      const unsigned int maxIterations,
+      const unsigned int minIterations
     ) {
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
@@ -78,7 +87,7 @@ namespace cc4s {
 
       // begin convergence loop
       double rms;
-      int iterationCount(0);
+      unsigned int iterationCount(0);
       do {
         LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
 
@@ -187,8 +196,13 @@ namespace cc4s {
       const int eigenVectorsCount,
       P &p,
       const double tolerance,
-      const unsigned int maxBasisSize
+      const unsigned int maxBasisSize,
+      const unsigned int maxIterations,
+      const unsigned int minIterations
     ) {
+      LOG(1,"Davidson").flags(
+        std::ios::right | std::ios::scientific | std::ios::showpos
+      );
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
 
@@ -197,8 +211,11 @@ namespace cc4s {
       for (unsigned int j(0); j < rightEigenVectors.size(); ++j) {
         (*rightEigenVectors[j].get(1))["abij"] -=
            (*rightEigenVectors[j].get(1))["abji"];
+        (*rightEigenVectors[j].get(1))["abij"] -=
+           (*rightEigenVectors[j].get(1))["baij"];
       }
-      LOG(1,"Davidson") << "Performing Gramm Schmidt in basis" << std::endl;
+      LOG(1,"Davidson") <<
+        "Performing Gramm Schmidt in the initial basis" << std::endl;
       for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
         V newVector(rightEigenVectors[b]);
         for (unsigned int j(0); j < b; ++j) {
@@ -212,11 +229,15 @@ namespace cc4s {
           1 / std::sqrt(newVector.dot(newVector)) * newVector;
       }
 
+      for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
+        checkAntisymmetry(*rightEigenVectors[b].get(1));
+      }
+
       std::vector<V> rightBasis( rightEigenVectors );
 
       // begin convergence loop
       double rms;
-      int iterationCount(0);
+      unsigned int iterationCount(0);
       do {
         LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
         // compute reduced H by projection onto subspace spanned by rightBasis
@@ -257,7 +278,10 @@ namespace cc4s {
           LOG(1,"Davidson") << "Right norm [" << k << "] "
                             << rightNorm << std::endl;
           LOG(1,"Davidson") << "EV         [" << k << "] "
+                            << std::setprecision(15) << std::setw(23)
                             << eigenValues[k] << std::endl;
+
+
 
           // compute residuum
           V residuum( h.rightApply(rightEigenVectors[k]) );
@@ -274,6 +298,9 @@ namespace cc4s {
 
           (*correction.get(1))["abij"] -=
              (*correction.get(1))["abji"];
+          (*correction.get(1))["abij"] -=
+             (*correction.get(1))["baij"];
+          (*correction.get(1))["abij"] = 0.25 * (*correction.get(1))["abij"];
           // orthonormalize and append to rightBasis
           for (unsigned int b(0); b < rightBasis.size(); ++b) {
             correction -= rightBasis[b] * rightBasis[b].dot(correction);
@@ -287,8 +314,11 @@ namespace cc4s {
         ++iterationCount;
         // end rightBasis extension loop
       } while (
-        rms >= eigenVectorsCount * tolerance &&
-        rightBasis.size() <= maxBasisSize
+        iterationCount+1 <= minIterations    || (
+          rms >= eigenVectorsCount * tolerance &&
+          rightBasis.size() <= maxBasisSize    &&
+          iterationCount+1 <= maxIterations
+        )
       );
       // end convergence loop
       if (rightBasis.size() > maxBasisSize) {
