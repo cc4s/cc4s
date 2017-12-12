@@ -17,7 +17,7 @@ namespace cc4s {
 
     virtual void run();
   protected:
-    void computeFrequencyGrid(const int N);
+    void computeFrequencyGrid();
   };
 }
 

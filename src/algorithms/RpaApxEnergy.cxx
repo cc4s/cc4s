@@ -24,111 +24,146 @@ RpaApxEnergy::RpaApxEnergy(
 RpaApxEnergy::~RpaApxEnergy() {
 }
 
-void RpaApxEnergy::computeFrequencyGrid(const int N) {
-  // current frequency integration grid
-  std::vector<double> ws(N);
-  std::vector<double> nus(N);
-  // gradient of sum_ai(0.5*error(eps_a-eps_i)^2) w.r.t. ws and nus
-  std::vector<double> dws(N);
-  std::vector<double> dnus(N);
+namespace cc4s {
+  class FrequencyGridOptimizer {
+  public:
+    FrequencyGridOptimizer(
+      const int N, CTF::Tensor<double> epsi, CTF::Tensor<double> epsa
+    ):
+      ws(N), nus(N), dws(N), dnus(N)
+    {
+      int No(epsi.lens[0]);
+      int Nv(epsa.lens[0]);
+      Dai = new CTF::Tensor<double>(2, std::vector<int>({Nv,No}).data());
+      (*Dai)["ai"]  = epsa["a"];
+      (*Dai)["ai"] -= epsi["i"];
 
-  auto epsi(getTensorArgument<>("HoleEigenEnergies"));
-  auto epsa(getTensorArgument<>("ParticleEigenEnergies"));
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-  CTF::Tensor<double> Dai(2, std::vector<int>({Nv,No}).data());
-  Dai["ai"]  = (*epsa)["a"];
-  Dai["ai"] -= (*epsi)["i"];
-
-  {
-    // take N quantiles as initial estimates for grid points
-    std::vector<double> deltas(No*Nv);
-    Dai.read_all(deltas.data(), true);
-    std::sort(deltas.begin(), deltas.end());
-    double lastNu(0);
-    for (size_t n(0); n < ws.size(); ++n) {
-      nus[n] = deltas[No*Nv*n/N + No*Nv/(2*N)];
-      ws[n] = nus[n] - lastNu;
-      lastNu = nus[n];
-    }
-  }
-
-  // error of numerical quadrature with current grid wn[n] & nus[n] from
-  // analytic value 1/(eps_a-eps_i) for each ai
-  auto Eai(Dai);
-  CTF::Transform<double>(
-    std::function<void(double &)>(
-      [&ws, &nus](double &delta) {
-        double error(0);
-        // use quadrature to integrate Mp2 propagator
-        for (size_t n(0); n < ws.size(); ++n) {
-          error +=
-            ws[n] * 4*delta*delta / std::pow(delta*delta + nus[n]*nus[n],2);
-        }
-        error /= Pi();
-        error -= 1 / delta;
-        delta = error;
+      // take N quantiles as initial estimates for grid points
+      std::vector<double> deltas(No*Nv);
+      Dai->read_all(deltas.data(), true);
+      std::sort(deltas.begin(), deltas.end());
+      double lastNu(0);
+      for (size_t n(0); n < ws.size(); ++n) {
+        nus[n] = deltas[No*Nv*n/N + No*Nv/(2*N)];
+        ws[n] = nus[n] - lastNu;
+        lastNu = nus[n];
       }
-    )
-  ) (
-    Eai["ai"]
+    }
+
+    static double propagator(
+      const double delta, const double nu, const int e = 2
+    ) {
+      return 4*delta*delta / std::pow(delta*delta + nu*nu, e);
+    }
+
+    void optimize(const int stepCount, const double stepSize) {
+      NEW_FILE("L.dat");
+      for (int m(0); m < stepCount; ++m) {
+        // error of numerical quadrature with current grid wn[n] & nus[n] from
+        // analytic value 1/(eps_a-eps_i) for each ai
+        auto Eai(*Dai);
+        CTF::Transform<double>(
+          std::function<void(double &)>(
+            [this](double &delta) {
+              double error(0);
+              // use quadrature to integrate Mp2 propagator
+              for (size_t n(0); n < ws.size(); ++n) {
+                error += ws[n] * propagator(delta, nus[n]);
+              }
+              error /= Pi();
+              error -= 1 / delta;
+              delta = error;
+            }
+          )
+        ) (
+          Eai["ai"]
+        );
+
+        // get frobenius norm of errors, which is to be optimized
+        double L(Eai.norm2()*0.5);
+        FILE("L.dat") << m << " " << L;
+
+        for (size_t n(0); n < ws.size(); ++n) {
+          // derivative of 0.5*error(eps_a-eps_i)^2 with respect to n-th
+          // integration weight ws[n] for each ai
+          auto DWai(*Dai);
+          CTF::Transform<double, double>(
+            std::function<void(double, double &)>(
+              [this, n](double error, double &delta) {
+                double diff(error * propagator(delta, nus[n]));
+                delta = diff / Pi();
+              }
+            )
+          ) (
+            Eai["ai"], DWai["ai"]
+          );
+          // sum contributions from all energy gaps eps_a-eps_i
+          CTF::Scalar<double> DW;
+          DW[""] = DWai["ai"];
+          dws[n] = DW.get_val();
+
+          // derivative of 0.5*error(eps_a-eps_i)^2 with respect to n-th
+          // integration point nus[n] for each ai
+          auto DNuai(*Dai);
+          CTF::Transform<double, double>(
+            std::function<void(double, double &)>(
+              [this, n](double error, double &delta) {
+                double diff(
+                  error *
+                  (-2) * ws[n] * propagator(delta, nus[n], 3) *
+                  2*nus[n]
+                );
+                delta = diff / Pi();
+              }
+            )
+          ) (
+            Eai["ai"], DNuai["ai"]
+          );
+          // sum contributions from all energy gaps eps_a-eps_i
+          CTF::Scalar<double> DNu;
+          DNu[""] = DNuai["ai"];
+          dnus[n] = DNu.get_val();
+
+          // update grid
+          ws[n] -= stepSize * dws[n];
+          nus[n] -= stepSize * dnus[n];
+        }
+
+        for (size_t n(0); n < ws.size(); ++n) {
+          FILE("L.dat") << " " << ws[n];
+        }
+        for (size_t n(0); n < ws.size(); ++n) {
+          FILE("L.dat") << " " << nus[n];
+        }
+        FILE("L.dat") << std::endl;
+      }
+    }
+
+    // current frequency integration grid
+    std::vector<double> ws;
+    std::vector<double> nus;
+    // gradient of sum_ai(0.5*error(eps_a-eps_i)^2) w.r.t. ws and nus
+    std::vector<double> dws;
+    std::vector<double> dnus;
+
+    CTF::Tensor<double> *Dai;
+  };
+}
+
+void RpaApxEnergy::computeFrequencyGrid() {
+  FrequencyGridOptimizer optimizer(
+    getIntegerArgument("imaginaryFrequencies", 6),
+    *getTensorArgument<>("HoleEigenEnergies"),
+    *getTensorArgument<>("ParticleEigenEnergies")
   );
-
-  double L(Eai.norm2()*0.5);
-  LOG(1, "RPA") << "L = " << L << std::endl;
-
-  for (size_t n(0); n < ws.size(); ++n) {
-    // derivative of 0.5*error(eps_a-eps_i)^2 with respect to n-th
-    // integration weight ws[n] for each ai
-    auto DWai(Dai);
-    CTF::Transform<double, double>(
-      std::function<void(double, double &)>(
-        [&ws, &nus, n](double error, double &delta) {
-          double diff(
-            error * 4*delta*delta / std::pow(delta*delta + nus[n]*nus[n],2)
-          );
-          delta = diff / Pi();
-        }
-      )
-    ) (
-      Eai["ai"], DWai["ai"]
-    );
-    // sum contributions from all energy gaps eps_a-eps_i
-    CTF::Scalar<double> DW;
-    DW[""] = DWai["ai"];
-    dws[n] = DW.get_val();
-
-    // derivative of 0.5*error(eps_a-eps_i)^2 with respect to n-th
-    // integration point nus[n] for each ai
-    auto DNuai(Dai);
-    CTF::Transform<double, double>(
-      std::function<void(double, double &)>(
-        [&ws, &nus, n](double error, double &delta) {
-          double diff(
-            error *
-            (-2) * ws[n]*4*delta*delta/std::pow(delta*delta + nus[n]*nus[n],3) *
-            2*nus[n]
-          );
-          delta = diff / Pi();
-        }
-      )
-    ) (
-      Eai["ai"], DNuai["ai"]
-    );
-    // sum contributions from all energy gaps eps_a-eps_i
-    CTF::Scalar<double> DNu;
-    DNu[""] = DNuai["ai"];
-    dnus[n] = DNu.get_val();
-
-    LOG(1, "RPA") << "w[" << n << "] = " << ws[n] << std::endl;
-    LOG(1, "RPA") << "nu[" << n << "] = " << nus[n] << std::endl;
-    LOG(1, "RPA") << "dL/dw[" << n << "] = " << dws[n] << std::endl;
-    LOG(1, "RPA") << "dL/dnu[" << n << "] = " << dnus[n] << std::endl;
-  }
+  optimizer.optimize(
+    getIntegerArgument("stepCount", 1024),
+    getRealArgument("stepSize", 1.0)
+  );
 }
 
 void RpaApxEnergy::run() {
-  computeFrequencyGrid(getIntegerArgument("imaginaryFrequencies", 6));
+  computeFrequencyGrid();
 
   // create tcc infrastructure
   typedef CtfMachineTensor<complex> MachineTensor;
