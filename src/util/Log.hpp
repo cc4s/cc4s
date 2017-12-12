@@ -75,10 +75,17 @@ namespace cc4s {
   public:
     static void setRank(const int rank);
     static int getRank();
-    static void setLogStream(LogStream *logStream);
+    static void setFileName(const std::string &fileName);
+    static std::string getFileName();
+    static void setLogLevel(const int logLevel);
+    static int getLogLevel();
+
     static LogStream &getLogStream();
+
   protected:
     static int rank;
+    static std::string fileName;
+    static int logLevel;
     static LogStream *logStream;
   };
 }
@@ -94,6 +101,12 @@ namespace cc4s {
 #define OUT() \
   if (cc4s::Log::getRank() != 0) { \
   } else std::cout
+#define NEW_FILE(NAME) \
+  if (cc4s::Log::getRank() != 0) { \
+  } else std::ofstream(NAME, std::ofstream::out)
+#define FILE(NAME) \
+  if (cc4s::Log::getRank() != 0) { \
+  } else std::ofstream(NAME, std::ofstream::app)
 #define LOG(...) \
   if (cc4s::Log::getRank() != 0) { \
   } else cc4s::Log::getLogStream().prepare(0, __FILE__, __VA_ARGS__)

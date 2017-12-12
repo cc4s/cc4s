@@ -30,16 +30,14 @@ std::ostream &LogStream::prepare(
   Time time(Time::getCurrentRealTime());
   time -= startTime;
   logFile << time << " ";
-  std::stringstream timeStr;
-  timeStr << time.getSeconds() << "."
-          << std::setw(3) << std::setfill('0')
-          << std::to_string(time.getFractions()).substr(0,3);
-  *this << timeStr.str() << " ";
   std::ostream *log(&logFile);
   if (logLevel >= level) {
     for (int i(0); i < level; ++i) {
       std::cout << indent.c_str();
     }
+    std::stringstream fraction;
+    fraction << std::fixed << double(time.getFractions()) / Time::FRACTIONS;
+    std::cout << time.getSeconds() << fraction.str().substr(1,4) << " ";
     // next puts should go to logFile and std::out, done by this->put
     log = this;
   }
@@ -49,6 +47,8 @@ std::ostream &LogStream::prepare(
 }
 
 int Log::rank(-1);
+std::string Log::fileName("cc4s.log");
+int Log::logLevel(0);
 LogStream *Log::logStream(nullptr);
 
 void Log::setRank(int const rank_) {
@@ -59,11 +59,26 @@ int Log::getRank() {
   return rank;
 }
 
-void Log::setLogStream(LogStream *logStream_) {
-  logStream = logStream_;
+void Log::setFileName(const std::string &fileName_) {
+  fileName = fileName_;
+}
+
+std::string Log::getFileName() {
+  return fileName;
+}
+
+void Log::setLogLevel(int const logLevel_) {
+  logLevel = logLevel_;
+}
+
+int Log::getLogLevel() {
+  return logLevel;
 }
 
 LogStream &Log::getLogStream() {
+  if (!logStream) {
+    logStream = new LogStream(fileName, logLevel);
+  }
   return *logStream;
 }
 

@@ -139,10 +139,8 @@ int main(int argumentCount, char **arguments) {
   Cc4s::world = new World(argumentCount, arguments);
   Cc4s::options = new Options(argumentCount, arguments);
   Log::setRank(Cc4s::world->rank);
-  LogStream logStream(
-    Cc4s::options->logFile, Cc4s::options->logLevel
-  );
-  Log::setLogStream(&logStream);
+  Log::setFileName(Cc4s::options->logFile);
+  Log::setLogLevel(Cc4s::options->logLevel);
 
 #ifndef DEBUG
   try {
