@@ -28,15 +28,10 @@ namespace cc4s {
   // provides vector space structure for imaginary frequency grids
   class FrequencyGrid {
   public:
-    FrequencyGrid(const int N): nus(N), ws(N) {
-    }
-    FrequencyGrid(const FrequencyGrid &g): nus(g.nus), ws(g.ws) {
-    }
+    FrequencyGrid(const int N): nus(N), ws(N) { }
+    FrequencyGrid(const FrequencyGrid &g): nus(g.nus), ws(g.ws) { }
     FrequencyGrid &operator =(const FrequencyGrid &g) {
-      for (size_t n(0); n < nus.size(); ++n) {
-        nus[n] = g.nus[n];
-        ws[n] = g.ws[n];
-      }
+      nus = g.nus; ws = g.ws;
       return *this;
     }
     FrequencyGrid &operator +=(const FrequencyGrid &g) {
@@ -46,10 +41,31 @@ namespace cc4s {
       }
       return *this;
     }
+    FrequencyGrid &operator -=(const FrequencyGrid &g) {
+      for (size_t n(0); n < nus.size(); ++n) {
+        nus[n] -= g.nus[n];
+        ws[n] -= g.ws[n];
+      }
+      return *this;
+    }
     FrequencyGrid &operator *=(double s) {
       for (size_t n(0); n < nus.size(); ++n) {
         nus[n] *= s;
         ws[n] *= s;
+      }
+      return *this;
+    }
+    FrequencyGrid &operator /=(double s) {
+      for (size_t n(0); n < nus.size(); ++n) {
+        nus[n] /= s;
+        ws[n] /= s;
+      }
+      return *this;
+    }
+    FrequencyGrid &operator -() {
+      for (size_t n(0); n < nus.size(); ++n) {
+        nus[n] = -nus[n];
+        ws[n] = -ws[n];
       }
       return *this;
     }
@@ -64,6 +80,34 @@ namespace cc4s {
     std::vector<double> nus, ws;
   };
 
+  inline FrequencyGrid operator +(
+    const FrequencyGrid &a, const FrequencyGrid &b
+  ) {
+    FrequencyGrid result(a);
+    return result += b;
+  }
+
+  inline FrequencyGrid operator -(
+    const FrequencyGrid &a, const FrequencyGrid &b
+  ) {
+    FrequencyGrid result(a);
+    return result -= b;
+  }
+
+  inline FrequencyGrid operator *(
+    const double s, const FrequencyGrid &g
+  ) {
+    FrequencyGrid result(g);
+    return result *= s;
+  }
+
+  inline FrequencyGrid operator /(
+    const FrequencyGrid &g, const double s
+  ) {
+    FrequencyGrid result(g);
+    return result /= s;
+  }
+
   class FrequencyGridOptimizer {
   public:
     FrequencyGridOptimizer(
@@ -71,7 +115,6 @@ namespace cc4s {
     ):
       grid(N)
     {
-      LOG(1, "RPA") << "initializing grid optimization" << std::endl;
       int No(epsi.lens[0]);
       int Nv(epsa.lens[0]);
       Dai = new CTF::Tensor<double>(2, std::vector<int>({Nv,No}).data());
@@ -84,49 +127,61 @@ namespace cc4s {
       std::sort(deltas.begin(), deltas.end());
       double lastNu(0);
       for (size_t n(0); n < grid.ws.size(); ++n) {
-        grid.nus[n] = deltas[No*Nv*n/N + No*Nv/(2*N)];
+        grid.nus[n] = deltas[No*Nv*n/N + 0*No*Nv/(2*N)];
         grid.ws[n] = grid.nus[n] - lastNu;
         lastNu = grid.nus[n];
       }
       Eai = new CTF::Tensor<double>(false, *Dai);
     }
 
-    void optimize(const int stepCount, const double stepSize) {
+    void optimize(const int stepCount) {
       LOG(1, "RPA") << "optimizing grid" << std::endl;
-      NEW_FILE("E.dat") << getError(grid) << std::endl;
+      double E(getError(grid));
+      FrequencyGrid lastDelta(-getGradient(grid));
+      FrequencyGrid lastDirection(lastDelta);
+      E = lineSearch(grid, lastDirection);
+      NEW_FILE("E.dat");
+      NEW_FILE("nu.dat");
+      NEW_FILE("w.dat");
       for (int m(0); m < stepCount; ++m) {
-        auto direction(getGradient(grid));
-        direction *= -1.0;
-        FILE("E.dat") << lineSearch(grid, direction) << std::endl;
-//        LOG(1, "RPA") << lineSearch(grid, direction) << std::endl;
+        FrequencyGrid Delta(-getGradient(grid));
+        double beta(
+          std::max(0.0, Delta.dot(Delta-lastDelta) / lastDelta.dot(lastDelta))
+        );
+        FrequencyGrid direction(Delta + beta*lastDirection);
+        E = lineSearch(grid, direction);
+        FILE("E.dat") << m << " " << E << std::endl;
+        FILE("nu.dat") << m;
+        FILE("w.dat") << m;
+        for (size_t n(0); n < grid.nus.size(); ++n) {
+          FILE("nu.dat") << " " << grid.nus[n];
+          FILE("w.dat") << " " << grid.ws[n];
+        }
+        FILE("nu.dat") << std::endl;
+        FILE("w.dat") << std::endl;
+        LOG(1, "RPA") << "error=" << E << ", beta=" << beta << std::endl;
+        lastDirection = direction;
+        lastDelta = Delta;
       }
     }
 
     double lineSearch(FrequencyGrid &grid, const FrequencyGrid &direction) {
-      LOG(1, "RPA") << "line search" << std::endl;
       // starting vectors
-      auto g0(grid);
-      grid += direction;
-      double E0(getError(g0));
-      double E1(getError(grid));
+      double E0(getError(grid));
+      double E1(getError(grid + direction));
       double Em;
-      double alpham;
+      double alpham(0.5);
       double alpha1(1.0);
       // increase alpha until error also increases
       while (E1 <= E0) {
         alpham = alpha1;
         alpha1 *= 2.0;
-        grid = g0;
-        auto dg(direction);
-        grid += dg *= alpha1;
         Em = E1;
-        E1 = getError(grid);
-        LOG(1, "RPA") << "increasing " << alpha1 << std::endl;
+        E1 = getError(grid + alpha1*direction);
       } while (E1 <= E0);
-      LOG(1, "RPA") << "increased to " << alpha1 << std::endl;
-      // interval bisection
       double alpha0(0.0);
-      while (alpha1-alpha0 > 1e-8) {
+      // interval bisection to machine precision
+      while (alpham-alpha0 > 1e-16 && alpha1-alpham > 1e-16) {
         if (E0 < E1) {
           alpha1 = alpham;
           E1 = Em;
@@ -135,13 +190,9 @@ namespace cc4s {
           E0 = Em;
         }
         alpham = 0.5*(alpha0+alpha1);
-        grid = g0;
-        auto dg(direction);
-        grid += dg *= alpham;
-        Em = getError(grid);
-        LOG(1, "RPA") << "bisecting " << alpha1 << std::endl;
+        Em = getError(grid + alpham*direction);
       }
-      LOG(1, "RPA") << "bisected to " << alpham << std::endl;
+      grid += alpham*direction;
       return Em;
     }
 
@@ -263,10 +314,7 @@ void RpaApxEnergy::computeFrequencyGrid() {
     *getTensorArgument<>("HoleEigenEnergies"),
     *getTensorArgument<>("ParticleEigenEnergies")
   );
-  optimizer.optimize(
-    getIntegerArgument("stepCount", 1024),
-    getRealArgument("stepSize", 1.0)
-  );
+  optimizer.optimize(getIntegerArgument("stepCount", 1024));
 }
 
 void RpaApxEnergy::run() {
