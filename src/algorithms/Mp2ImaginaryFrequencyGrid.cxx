@@ -1,18 +1,12 @@
 #include <algorithms/Mp2ImaginaryFrequencyGrid.hpp>
 #include <math/MathFunctions.hpp>
-#include <tcc/Tcc.hpp>
-#include <util/CtfMachineTensor.hpp>
-#include <math/ComplexTensor.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Exception.hpp>
 
 #include <ctf.hpp>
 #include <algorithm>
 
 using namespace cc4s;
-using namespace tcc;
 
 ALGORITHM_REGISTRAR_DEFINITION(Mp2ImaginaryFrequencyGrid);
 
@@ -25,12 +19,33 @@ Mp2ImaginaryFrequencyGrid::~Mp2ImaginaryFrequencyGrid() {
 }
 
 void Mp2ImaginaryFrequencyGrid::run() {
+  int64_t N(getIntegerArgument("imaginaryFrequencies", 6));
   Mp2ImaginaryFrequencyGridOptimizer optimizer(
-    getIntegerArgument("imaginaryFrequencies", 6),
+    N,
     *getTensorArgument<>("HoleEigenEnergies"),
     *getTensorArgument<>("ParticleEigenEnergies")
   );
   optimizer.optimize(getIntegerArgument("stepCount", 1024));
+
+  std::vector<int64_t> indices(N);
+  for (size_t n(0); n < indices.size(); ++n) { indices[n] = n; }
+
+  auto nun(
+    new CTF::Tensor<double>(
+      1, std::vector<int>{int(N)}.data()
+    )
+  );
+  auto wn(
+    new CTF::Tensor<double>(
+      1, std::vector<int>{int(N)}.data()
+    )
+  );
+  int64_t count(nun->wrld->rank == 0 ? N : 0);
+  nun->write(count, indices.data(), optimizer.grid.points.data());
+  wn->write(count, indices.data(), optimizer.grid.weights.data());
+
+  allocatedTensorArgument<>("ImaginaryFrequencyPoints", nun);
+  allocatedTensorArgument<>("ImaginaryFrequencyWeights", wn);
 }
 
 Mp2ImaginaryFrequencyGridOptimizer::Mp2ImaginaryFrequencyGridOptimizer(
@@ -50,7 +65,7 @@ Mp2ImaginaryFrequencyGridOptimizer::Mp2ImaginaryFrequencyGridOptimizer(
   std::sort(deltas.begin(), deltas.end());
   double lastNu(0);
   for (size_t n(0); n < grid.points.size(); ++n) {
-    grid.points[n] = deltas[No*Nv*n/N + 0*No*Nv/(2*N)];
+    grid.points[n] = deltas[No*Nv*n/N + 1*No*Nv/(2*N)];
     grid.weights[n] = grid.points[n] - lastNu;
     lastNu = grid.points[n];
   }
@@ -58,7 +73,7 @@ Mp2ImaginaryFrequencyGridOptimizer::Mp2ImaginaryFrequencyGridOptimizer(
 }
 
 void Mp2ImaginaryFrequencyGridOptimizer::optimize(const int stepCount) {
-  LOG(1, "RPA") << "optimizing grid" << std::endl;
+  LOG(1, "Mp2Grid") << "optimizing grid" << std::endl;
   double E(getError(grid));
   IntegrationGrid lastDelta(-getGradient(grid));
   IntegrationGrid lastDirection(lastDelta);
@@ -82,10 +97,14 @@ void Mp2ImaginaryFrequencyGridOptimizer::optimize(const int stepCount) {
     }
     FILE("nu.dat") << std::endl;
     FILE("w.dat") << std::endl;
-    LOG(1, "RPA") << "error=" << E << ", beta=" << beta << std::endl;
+    if (m % 100 == 0) {
+      LOG(1, "Mp2Grid") <<
+        "iteration " << m << ": error=" << E << ", beta=" << beta << std::endl;
+    }
     lastDirection = direction;
     lastDelta = Delta;
   }
+  LOG(0, "Mp2Grid") << "error=" << E << std::endl;
 }
 
 double Mp2ImaginaryFrequencyGridOptimizer::lineSearch(
@@ -130,7 +149,7 @@ void Mp2ImaginaryFrequencyGridOptimizer::testGradient(const double stepSize) {
     double E1(getError(grid));
     grid.weights[n] -= stepSize;
     numGrad.weights[n] = (E1-E0) / stepSize;
-    LOG(1, "RPA") << "dE/dw[" << n << "] = " <<
+    LOG(1, "Mp2Grid") << "dE/dw[" << n << "] = " <<
       grad.weights[n] << " ~ " << numGrad.weights[n] << std::endl;
   }
   for (size_t n(0); n < grid.points.size(); ++n) {
@@ -138,7 +157,7 @@ void Mp2ImaginaryFrequencyGridOptimizer::testGradient(const double stepSize) {
     double E1(getError(grid));
     grid.points[n] -= stepSize;
     numGrad.points[n] = (E1-E0) / stepSize;
-    LOG(1, "RPA") << "dE/dnu[" << n << "] = " <<
+    LOG(1, "Mp2Grid") << "dE/dnu[" << n << "] = " <<
       grad.points[n] << " ~ " << numGrad.points[n] << std::endl;
   }
 }

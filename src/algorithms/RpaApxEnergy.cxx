@@ -66,6 +66,7 @@ void RpaApxEnergy::run() {
   auto realWn(getTensorArgument("ImaginaryFrequencyWeights"));
   CTF::Tensor<complex> complexWn(1, &Nn, *realWn->wrld);
   toComplexTensor(*realWn, complexWn);
+  auto Wn(tcc->createTensor(MachineTensor::create(complexWn)));
 
   CTF::Tensor<complex> Dain(3, std::vector<int>({Nv,No,Nn}).data());
   Dain["ain"]  = (*epsa)["a"];
@@ -90,12 +91,15 @@ void RpaApxEnergy::run() {
       (*chiVFGn)["FGn"] <<=
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
       (*chiVFGn)["FGn"] +=
-        (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"]
+        (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
+      (*energy)[""] <<= (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"]
     )
   )->execute();
 
   CTF::Scalar<complex> ctfEnergy;
   ctfEnergy[""] = energy->getMachineTensor<MachineTensor>()->tensor[""];
-  LOG(0, "RPA") << std::real(ctfEnergy.get_val());
+  complex e(-ctfEnergy.get_val() / Pi() / 2.0);
+  LOG(0, "RPA") << e << std::endl;
+  setRealArgument("Mp2Energy", std::real(e));
 }
 
