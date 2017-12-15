@@ -2,6 +2,8 @@
 #ifndef LAPACK_MATRIX_DEFINED
 #define LAPACK_MATRIX_DEFINED
 
+#include <vector>
+
 namespace cc4s {
   template <typename F=double>
   class LapackMatrix {
@@ -12,11 +14,8 @@ namespace cc4s {
     LapackMatrix(
       const LapackMatrix<F> &A
     ):
-      rows(A.rows), columns(A.columns), values(new F[rows*columns])
+      rows(A.rows), columns(A.columns), values(A.values)
     {
-      for (int64_t i(0); i < rows*columns; ++i) {
-        values[i] = A.values[i];
-      }
     }
 
     /**
@@ -25,18 +24,8 @@ namespace cc4s {
     LapackMatrix(
       const int rows_, const int columns_
     ):
-      rows(rows_), columns(columns_), values(new F[rows_*columns_])
+      rows(rows_), columns(columns_), values(rows_*columns_)
     {
-      for (int64_t i(0); i < rows*columns; ++i) {
-        values[i] = F(0);
-      }
-    }
-
-    /**
-     * \brief Frees all resources associated with the Lapack matrix
-     **/
-    ~LapackMatrix() {
-      delete[] values;
     }
 
     const F &operator ()(const  int i, const int j) const {
@@ -54,14 +43,14 @@ namespace cc4s {
      * \brief Returns the pointer to the column major data.
      **/
     const F *getValues() const {
-      return values;
+      return values.data();
     }
 
     /**
      * \brief Returns the pointer to the mutable column major data.
      **/
     F *getValues() {
-      return values;
+      return values.data();
     }
 
   protected:
@@ -73,7 +62,7 @@ namespace cc4s {
     /**
      * \brief The column major data.
      */
-    F *values;
+    std::vector<F> values;
   };
 }
 
