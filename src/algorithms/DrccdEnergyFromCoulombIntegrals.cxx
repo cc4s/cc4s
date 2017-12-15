@@ -43,11 +43,13 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
   // Check for spin polarization
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   // get amplitude parts
+  auto Tai( amplitudes->get(0) );
   auto Tabij( amplitudes->get(1) );
 
   // construct residuum
   auto residuum( NEW(FockVector<F>, *amplitudes) );
   *residuum *= F(0);
+  auto Rai( residuum->get(0) );
   auto Rabij( residuum->get(1) );
 
   int linearized(getIntegerArgument("linearized", 0));
@@ -62,7 +64,7 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
   (*Rabij)["abij"] += (*Vabij)["abij"];
 
   if (iteration > 0 || isArgumentGiven("startingDoublesAmplitudes")) {
-    // for the rest iterations compute the drCCD residuum
+    // for the remaining iterations compute the drCCD residuum
     (*Rabij)["abij"] += (*Vabij)["abij"];
     (*Rabij)["abij"] += spins * (*Vaijb)["akic"] * (*Tabij)["cbkj"];
     (*Rabij)["abij"] += spins * (*Vaijb)["bkjc"] * (*Tabij)["acik"];
