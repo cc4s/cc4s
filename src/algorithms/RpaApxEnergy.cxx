@@ -1,10 +1,13 @@
 #include <algorithms/RpaApxEnergy.hpp>
 
+#include <Cc4s.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
 #include <tcc/Tcc.hpp>
 #include <util/CtfMachineTensor.hpp>
 #include <util/SlicedCtfTensor.hpp>
+#include <util/ScaLapackMatrix.hpp>
+#include <util/ScaLapackHermitianEigenSystemDc.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -123,8 +126,36 @@ void RpaApxEnergy::run() {
 
 void RpaApxEnergy::diagonalizeChiV() {
   typedef CtfMachineTensor<complex> MT;
+  // get weights for integration
+  auto wn( getTensorArgument("ImaginaryFrequencyWeights") );
+  std::vector<double> weights(wn->lens[0]);
+  wn->read_all(weights.data(), true);
+
   // slice CTF tensor of chiV along n (=3rd) dimension
-  SlicedCtfTensor<complex>(chiVFGn->getMachineTensor<MT>()->tensor, {2});
-  // TODO: continue here...
+  SlicedCtfTensor<complex> slicedChiVFGn(
+    chiVFGn->getMachineTensor<MT>()->tensor, {2}
+  );
+  BlacsWorld world(Cc4s::world->rank, Cc4s::world->np);
+  double e(0);
+  for (int n(0); n < slicedChiVFGn.slicedLens[0]; ++n) {
+    auto chiVFG( &slicedChiVFGn({n}) );
+    int scaLens[2] = { chiVFG->lens[0], chiVFG->lens[1] };
+    auto scaChiVFG( NEW(ScaLapackMatrix<complex>, *chiVFG, scaLens, &world) );
+    auto scaU( NEW( ScaLapackMatrix<complex>, *scaChiVFG) );
+    ScaLapackHermitianEigenSystemDc<complex> eigenSystem(scaChiVFG, scaU);
+    std::vector<double> lambdas(chiVFG->lens[0]);
+    eigenSystem.solve(lambdas.data());
+    double en(0);
+    for (int L(0); L < chiVFG->lens[0]; ++L) {
+//      LOG(1, "RPA") << "chiV(n=" << n << ", L=" << L << ")=" << lambdas[L] <<
+//        std::endl;
+      // TODO: what is to be done with chiV eigenvalues >= 1?
+      if (lambdas[L] < 1) {
+        en += std::log(1 - lambdas[L]) + lambdas[L];
+      }
+    }
+    e += weights[n] * 1 / Tau() * en;
+  }
+  LOG(1, "RPA") << "RPA=" << e << std::endl;
 }
 
