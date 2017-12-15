@@ -152,10 +152,13 @@ void RpaApxEnergy::diagonalizeChiV() {
       // TODO: what is to be done with chiV eigenvalues >= 1?
       if (lambdas[L] < 1) {
         en += std::log(1 - lambdas[L]) + lambdas[L];
+      } else {
+        en += -lambdas[L]*lambdas[L]/2;
       }
     }
     e += weights[n] * 1 / Tau() * en;
   }
-  LOG(1, "RPA") << "RPA=" << e << std::endl;
+  LOG(1, "RPA") << "e=" << e << std::endl;
+  setRealArgument("RpaEnergy", e);
 }
 
