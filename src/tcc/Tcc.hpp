@@ -19,6 +19,8 @@
 #include <string>
 #include <memory>
 
+// FIXME: tensor <<= sclar * tensor throws static exception
+// TODO: *= operator with scalars
 // TODO: heuristics: limit number of simultaneously considered intermediates
 // TODO: fix max memory assessment
 // TODO: mixed type tensor operations
