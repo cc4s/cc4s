@@ -99,7 +99,7 @@ void Mp2ImaginaryFrequencyGridOptimizer::optimize(const int stepCount) {
       std::max(0.0, Delta.dot(Delta-lastDelta) / lastDelta.dot(lastDelta))
     );
     IntegrationGrid direction(Delta + beta*lastDirection);
-    E = gradientLineSearch(grid, direction);
+    E = lineSearch(grid, direction);
     FILE("E.dat") << m+1 << " " << E << std::endl;
     writeGrid(m+1);
     if (m % 100 == 0) {

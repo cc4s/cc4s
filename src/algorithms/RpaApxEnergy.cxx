@@ -68,21 +68,36 @@ void RpaApxEnergy::run() {
   toComplexTensor(*realWn, complexWn);
   auto Wn(tcc->createTensor(MachineTensor::create(complexWn)));
 
-  CTF::Tensor<complex> Dain(3, std::vector<int>({Nv,No,Nn}).data());
-  Dain["ain"]  = (*epsa)["a"];
-  Dain["ain"] -= (*epsi)["i"];
+  CTF::Tensor<complex> ctfPain(3, std::vector<int>({Nv,No,Nn}).data());
+  ctfPain["ain"]  = (*epsa)["a"];
+  ctfPain["ain"] -= (*epsi)["i"];
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [](double nu, complex &d){ d = 1.0 / (d - complex(0,1)*nu); }
+//      [](double nu, complex &d){ d = 1.0 / (d - complex(0,1)*nu); }
+      [](double nu, complex &d){ d = d / (d*d + nu*nu); }
     )
   ) (
-    (*realNun)["n"], Dain["ain"]
+    (*realNun)["n"], ctfPain["ain"]
   );
-  CTF::Tensor<complex> conjDain(Dain);
-  conjugate(conjDain);
+  CTF::Tensor<complex> ctfConjPain(ctfPain);
+  conjugate(ctfConjPain);
+  ctfPain["ain"] += (1.0) * ctfConjPain["ain"];
 
-  auto Pain(tcc->createTensor(MachineTensor::create(Dain)));
-  auto conjPain(tcc->createTensor(MachineTensor::create(conjDain)));
+  CTF::Tensor<complex> ctfEai(2, std::vector<int>({Nv,No}).data());
+  ctfEai["ai"]  = (*epsa)["a"];
+  ctfEai["ai"] -= (*epsi)["i"];
+  CTF::Transform<complex>(
+    std::function<void(complex &)>(
+      [](complex &d){ d = -1.0 / d; }
+    )
+  ) (
+    ctfEai["ai"]
+  );
+  auto Eai(tcc->createTensor(MachineTensor::create(ctfEai)));
+
+  auto Pain(tcc->createTensor(MachineTensor::create(ctfPain)));
+  auto conjPain(tcc->createTensor(MachineTensor::create(ctfConjPain)));
+  auto Eain(tcc->createTensor(MachineTensor::create(ctfPain)));
 
   auto energy(tcc->createTensor(std::vector<int>(), "energy"));
   auto chiVFGn(tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chiV"));
@@ -92,13 +107,21 @@ void RpaApxEnergy::run() {
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
       (*chiVFGn)["FGn"] +=
         (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
-      (*energy)[""] <<= (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"]
+      (*energy)[""] <<= (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"],
+
+      (*Eain)["ain"] <<= (*Pain)["ain"],
+// FIXME: continue here:
+//      (*Eain)["ain"] += (*conjPain)["ain"],
+      (*Eain)["ain"] <<= (*Eain)["ain"] * (*Eain)["ain"],
+      (*Eai)["ai"] <<= 1 / Pi() * (*Wn)["n"] * (*Eain)["ain"],
+      (*energy)[""] <<= 0.5 * (*Eai)["ai"] * (*Eai)["ai"]
     )
   )->execute();
 
   CTF::Scalar<complex> ctfEnergy;
   ctfEnergy[""] = energy->getMachineTensor<MachineTensor>()->tensor[""];
-  complex e(-ctfEnergy.get_val() / Pi() / 2.0);
+//  complex e(-ctfEnergy.get_val() / Pi());
+  complex e(ctfEnergy.get_val());
   LOG(0, "RPA") << e << std::endl;
   setRealArgument("Mp2Energy", std::real(e));
 }
