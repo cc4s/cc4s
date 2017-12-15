@@ -160,7 +160,6 @@ namespace cc4s {
     stream << v.coordinate[D-1];
     return stream;
   };
-
 }
 
 #endif
