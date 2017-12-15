@@ -5,6 +5,7 @@
 #include <algorithms/Algorithm.hpp>
 
 #include <util/SharedPointer.hpp>
+#include <tcc/Tcc.hpp>
 
 namespace cc4s {
   class RpaApxEnergy: public Algorithm {
@@ -17,7 +18,23 @@ namespace cc4s {
 
     virtual void run();
   protected:
-    void computeFrequencyGrid();
+    void diagonalizeChiV();
+
+    /**
+     * \brief \f$(V^{1/2}.\chi.V^{1/2})^F_G\f$ for each
+     * imaginary freqency point \f$\nu_n\f$.
+     * After diagonalization, it contains its eigenvectors \f$U^L_G\f$ such
+     * than \f$(V^{1/2}.\chi.V^{1/2})^F_G = {U^\ast}^F_L (\chi V)_L U^L_G\f$
+     * where \f$(\chi V)_L\f$ the eigenvalues of
+     * \f$(V^{1/2}.\chi.V^{1/2})^F_G\f$.
+     **/
+    PTR(tcc::Tensor<complex>) chiVFGn;
+    /**
+     * \brief \f$(\chi V)_L\f$ are the eigenvalues of
+     * \f$(V^{1/2}.\chi.V^{1/2})^F_G\f$ for each imaginary frequency point
+     * \f%\nu_n\f$.
+     **/
+    PTR(tcc::Tensor<complex>) chiVLn;
   };
 }
 
