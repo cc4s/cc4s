@@ -29,18 +29,24 @@
     ); \
 }
 
+#define Indices(Tensor) \
+  char indices[(Tensor).order]; \
+  for (int i(0); i < (Tensor).order; ++i) { indices[i] = 'a'+i; } \
+  indices[(Tensor).order] = 0
+
+
+
 void cc4s::fromComplexTensor(
   CTF::Tensor<complex> &C,
   CTF::Tensor<double> &R, CTF::Tensor<double> &I
 ) {
   AssertCompatibleTensorShapes(C,R,I);
-  char inds[C.order];
-  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  Indices(C);
   fromComplexTensor(C, R);
-  I[inds] = CTF::Function<complex, double>(
+  I[indices] = CTF::Function<complex, double>(
     std::function<double(complex)>([](complex c){ return c.imag(); })
   ) (
-    C[inds]
+    C[indices]
   );
 }
 
@@ -49,10 +55,9 @@ void cc4s::fromComplexTensor(
   CTF::Tensor<double> &R, CTF::Tensor<double> &I
 ) {
   AssertCompatibleTensorShapes(C,R,I);
-  char inds[C.order];
-  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
-  R[inds] = C[inds];
-  I[inds] = 0.0;
+  Indices(C);
+  R[indices] = C[indices];
+  I[indices] = 0.0;
 }
 
 void cc4s::fromComplexTensor(
@@ -60,12 +65,11 @@ void cc4s::fromComplexTensor(
   CTF::Tensor<double> &R
 ) {
   AssertCompatibleTensorShape(C,R);
-  char inds[C.order];
-  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
-  R[inds] = CTF::Function<complex, double>(
+  Indices(C);
+  R[indices] = CTF::Function<complex, double>(
     std::function<double(complex)>([](complex c){ return c.real(); })
   ) (
-    C[inds]
+    C[indices]
   );
 }
 
@@ -74,8 +78,7 @@ void cc4s::toComplexTensor(
   CTF::Tensor<complex> &C
 ) {
   AssertCompatibleTensorShapes(C,R,I);
-  char inds[C.order];
-  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  Indices(C);
   toComplexTensor(R, C);
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
@@ -88,7 +91,7 @@ void cc4s::toComplexTensor(
       }
     )
   ) (
-    I[inds], C[inds]
+    I[indices], C[indices]
   );
 }
 
@@ -97,8 +100,7 @@ void cc4s::toComplexTensor(
   CTF::Tensor<complex> &C
 ) {
   AssertCompatibleTensorShape(C,R);
-  char inds[C.order];
-  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
+  Indices(C);
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
       [](double r, complex & c) {
@@ -111,7 +113,7 @@ void cc4s::toComplexTensor(
       }
     )
   ) (
-    R[inds], C[inds]
+    R[indices], C[indices]
   );
 }
 
@@ -120,22 +122,20 @@ void cc4s::toComplexTensor(
   CTF::Tensor<double> &C
 ) {
   AssertCompatibleTensorShape(C,R);
-  char inds[C.order];
-  for (int i(0); i < C.order; ++i) { inds[i] = 'a'+i; }
-  C[inds] = R[inds];
+  Indices(C);
+  C[indices] = R[indices];
 }
 
 void cc4s::conjugate(
   CTF::Tensor<complex> &C
 ) {
-  char inds[C.order];
-  for (int i=0; i<C.order; i++){ inds[i] = 'a'+i; }
+  Indices(C);
   CTF::Transform<complex>(
     std::function<void(complex &)> (
       [](complex &c){ c = std::conj(c); }
     )
   ) (
-    C[inds]
+    C[indices]
   );
 }
 
