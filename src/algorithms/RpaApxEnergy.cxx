@@ -153,6 +153,7 @@ void RpaApxEnergy::diagonalizeChiV() {
       if (lambdas[L] < 1) {
         en += std::log(1 - lambdas[L]) + lambdas[L];
       } else {
+        LOG(0,"RPA") << "WARNING: chiV(n=" << n << ") > 1, taking MP2 value instead." << std::endl;
         en += -lambdas[L]*lambdas[L]/2;
       }
     }
