@@ -19,71 +19,72 @@ Mp2ImaginaryFrequencyGrid::~Mp2ImaginaryFrequencyGrid() {
 }
 
 void Mp2ImaginaryFrequencyGrid::run() {
-  size_t N(getIntegerArgument("imaginaryFrequencies", 6));
-  Mp2ImaginaryFrequencyGridOptimizer optimizer(
-    N,
-    *getTensorArgument<>("HoleEigenEnergies"),
-    *getTensorArgument<>("ParticleEigenEnergies")
-  );
-  optimizer.optimize(getIntegerArgument("stepCount", 1024));
+  auto epsi(getTensorArgument<>("HoleEigenEnergies"));
+  auto epsa(getTensorArgument<>("ParticleEigenEnergies"));
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  Dai = NEW(CTF::Tensor<double>, 2, std::vector<int>({Nv,No}).data());
+  (*Dai)["ai"]  = (*epsa)["a"];
+  (*Dai)["ai"] -= (*epsi)["i"];
 
+  if (isArgumentGiven("ImaginaryFrequencyPoints")) {
+    auto nun(getTensorArgument<>("ImaginaryFrequencyPoints"));
+    auto wn(getTensorArgument<>("ImaginaryFrequencyWeights"));
+    grid = IntegrationGrid(nun->lens[0]);
+    nun->read_all(grid.points.data(), true);
+    wn->read_all(grid.weights.data(), true);
+  } else {
+    size_t N(getIntegerArgument("imaginaryFrequencies", 6));
+    grid = IntegrationGrid(N);
+    std::vector<double> deltas(No*Nv);
+    Dai->read_all(deltas.data(), true);
+    std::sort(deltas.begin(), deltas.end());
+
+    // scale all Deltas to the range [1,R]
+    scale = deltas[0];
+    LOG(1, "Mp2Grid") << "scale=" << scale << std::endl;
+    for (size_t i(0); i < deltas.size(); ++i) {
+//      deltas[i] /= scale;
+    }
+//    (*Dai)["ai"] *= 1.0 / scale;
+
+    // first half: use equidistant grid for head ~ 1/Delta^2 in [0,Delta_0]
+    size_t n(0);
+    for (; n < N/2; ++n) {
+      grid.points[n] = scale * (n+0.5) / (N/2);
+    }
+    // second half: use 1/nu^(1/3) grid for tail ~ Delta^2/nu^4 in [Delta_0,inf]
+    // where Delta_0 = min(eps_a-eps_i)
+    for (; n < N; ++n) {
+      grid.points[n] = scale * std::pow((N-n+0.5) / (N-N/2), -1.0/3);
+    }
+
+    // initialize weights
+    double lastNu(0);
+    for (size_t n(0); n < N; ++n) {
+      grid.weights[n] = grid.points[n] - lastNu;
+      lastNu = grid.points[n];
+    }
+  }
+  Eai = NEW(CTF::Tensor<double>, false, *Dai);
+
+  optimize(getIntegerArgument("stepCount", 1024));
+
+  size_t N(grid.points.size());
   std::vector<int64_t> indices(N);
   for (size_t n(0); n < indices.size(); ++n) { indices[n] = n; }
 
   auto nun( new CTF::Tensor<double>(1, std::vector<int>{int(N)}.data()) );
   auto wn( new CTF::Tensor<double>(1, std::vector<int>{int(N)}.data()) );
   int64_t count(nun->wrld->rank == 0 ? N : 0);
-  nun->write(count, indices.data(), optimizer.grid.points.data());
-  wn->write(count, indices.data(), optimizer.grid.weights.data());
+  nun->write(count, indices.data(), grid.points.data());
+  wn->write(count, indices.data(), grid.weights.data());
 
   allocatedTensorArgument<>("ImaginaryFrequencyPoints", nun);
   allocatedTensorArgument<>("ImaginaryFrequencyWeights", wn);
 }
 
-Mp2ImaginaryFrequencyGridOptimizer::Mp2ImaginaryFrequencyGridOptimizer(
-  const size_t N, CTF::Tensor<double> &epsi, CTF::Tensor<double> &epsa
-):
-  grid(N)
-{
-  int No(epsi.lens[0]);
-  int Nv(epsa.lens[0]);
-  Dai = NEW(CTF::Tensor<double>, 2, std::vector<int>({Nv,No}).data());
-  (*Dai)["ai"]  = epsa["a"];
-  (*Dai)["ai"] -= epsi["i"];
-
-  std::vector<double> deltas(No*Nv);
-  Dai->read_all(deltas.data(), true);
-  std::sort(deltas.begin(), deltas.end());
-
-  // scale all Deltas to the range [1,R]
-  scale = deltas[0];
-  LOG(1, "Mp2Grid") << "scale=" << scale << std::endl;
-  for (size_t i(0); i < deltas.size(); ++i) {
-//    deltas[i] /= scale;
-  }
-//  (*Dai)["ai"] *= 1.0 / scale;
-
-  // first half: use equidistant grid for head ~ 1/Delta^2 in [0,Delta_0]
-  size_t n(0);
-  for (; n < N/2; ++n) {
-    grid.points[n] = scale * (n+0.5) / (N/2);
-  }
-  // second half: use 1/nu^(1/3) grid for tail ~ Delta^2/nu^4 in [Delta_0,inf]
-  // where Delta_0 = min(eps_a-eps_i)
-  for (; n < N; ++n) {
-    grid.points[n] = scale * std::pow((N-n+0.5) / (N-N/2), -1.0/3);
-  }
-
-  // initialize weights
-  double lastNu(0);
-  for (size_t n(0); n < N; ++n) {
-    grid.weights[n] = grid.points[n] - lastNu;
-    lastNu = grid.points[n];
-  }
-  Eai = NEW(CTF::Tensor<double>, false, *Dai);
-}
-
-void Mp2ImaginaryFrequencyGridOptimizer::optimize(const int stepCount) {
+void Mp2ImaginaryFrequencyGrid::optimize(const int stepCount) {
   LOG(1, "Mp2Grid") << "optimizing grid for " << grid.points.size() <<
     " points" << std::endl;
   double E(getError(grid));
@@ -93,8 +94,12 @@ void Mp2ImaginaryFrequencyGridOptimizer::optimize(const int stepCount) {
   writeGrid(0);
   IntegrationGrid lastDelta(-getGradient(grid));
   IntegrationGrid lastDirection(lastDelta);
+  applyConstraints(lastDelta);
+  applyConstraints(lastDirection);
   for (int m(0); m < stepCount; ++m) {
     IntegrationGrid Delta(-getGradient(grid));
+    if (Delta.dot(Delta) < 1e-16) break;
+    applyConstraints(Delta);
     double beta(
       std::max(0.0, Delta.dot(Delta-lastDelta) / lastDelta.dot(lastDelta))
     );
@@ -119,7 +124,14 @@ void Mp2ImaginaryFrequencyGridOptimizer::optimize(const int stepCount) {
   }
 }
 
-double Mp2ImaginaryFrequencyGridOptimizer::lineSearch(
+void Mp2ImaginaryFrequencyGrid::applyConstraints(IntegrationGrid &direction) {
+  for (int n(0); n < getIntegerArgument("firstPoint", 0); ++n) {
+    direction.points[n] = 0.0;
+    direction.weights[n] = 0.0;
+  }
+}
+
+double Mp2ImaginaryFrequencyGrid::lineSearch(
   IntegrationGrid &grid, const IntegrationGrid &direction
 ) {
   // starting vectors
@@ -150,7 +162,7 @@ double Mp2ImaginaryFrequencyGridOptimizer::lineSearch(
   return Em;
 }
 
-double Mp2ImaginaryFrequencyGridOptimizer::gradientLineSearch(
+double Mp2ImaginaryFrequencyGrid::gradientLineSearch(
   IntegrationGrid &grid, const IntegrationGrid &direction
 ) {
   // starting vectors
@@ -188,7 +200,7 @@ double Mp2ImaginaryFrequencyGridOptimizer::gradientLineSearch(
   return E;
 }
 
-void Mp2ImaginaryFrequencyGridOptimizer::testGradient(const double stepSize) {
+void Mp2ImaginaryFrequencyGrid::testGradient(const double stepSize) {
   double E0(getError(grid));
   IntegrationGrid grad(getGradient(grid));
   IntegrationGrid numGrad(grid);
@@ -210,7 +222,7 @@ void Mp2ImaginaryFrequencyGridOptimizer::testGradient(const double stepSize) {
   }
 }
 
-double Mp2ImaginaryFrequencyGridOptimizer::getError(
+double Mp2ImaginaryFrequencyGrid::getError(
   const IntegrationGrid &grid
 ) {
   // error of numerical quadrature with current grid wn[n] & points[n] from
@@ -233,12 +245,13 @@ double Mp2ImaginaryFrequencyGridOptimizer::getError(
   );
 
   // get frobenius norm of errors, which is to be optimized
-  double E(Eai->norm2());
-  return 0.5*E*E;
+  CTF::Scalar<double> E;
+  E[""] = 0.5 * (*Eai)["ai"] * (*Eai)["ai"];
+  return E.get_val();
 }
 
 // expects a call of getError with the same grid first
-IntegrationGrid Mp2ImaginaryFrequencyGridOptimizer::getGradient(
+IntegrationGrid Mp2ImaginaryFrequencyGrid::getGradient(
   const IntegrationGrid &grid
 ) {
   IntegrationGrid gradGrid(grid);
@@ -286,7 +299,7 @@ IntegrationGrid Mp2ImaginaryFrequencyGridOptimizer::getGradient(
   return gradGrid;
 }
 
-void Mp2ImaginaryFrequencyGridOptimizer::writeGrid(const int m) {
+void Mp2ImaginaryFrequencyGrid::writeGrid(const int m) {
   FILE("nu.dat") << m;
   FILE("w.dat") << m;
   for (size_t n(0); n < grid.points.size(); ++n) {

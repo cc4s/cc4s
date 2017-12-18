@@ -74,27 +74,27 @@ void RpaApxEnergy::run() {
   CTF::Tensor<complex> ctfPain(3, std::vector<int>({Nv,No,Nn}).data());
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [](double eps, complex &d){ d = eps; }
+      [](double eps, complex &d) { d = eps; }
     )
   ) (
     (*epsa)["a"], ctfPain["ain"]
   );
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [](double eps, complex &d){ d -= eps; }
+      [](double eps, complex &d) { d -= eps; }
     )
   ) (
     (*epsi)["i"], ctfPain["ain"]
   );
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [](double nu, complex &d){ d = 2.0*d / (d*d + nu*nu); }
+      // particle/hole propagator for positive and negative nu
+      [](double nu, complex &d) { d = 2.0*d / (d*d + nu*nu); }
     )
   ) (
     (*realNun)["n"], ctfPain["ain"]
   );
   CTF::Tensor<complex> ctfConjPain(ctfPain);
-  conjugate(ctfConjPain);
 
   auto Pain(tcc->createTensor(MT::create(ctfPain)));
   auto conjPain(tcc->createTensor(MT::create(ctfConjPain)));
@@ -106,9 +106,9 @@ void RpaApxEnergy::run() {
       // particle/hole bubble propagating forwards
       (*chiVFGn)["FGn"] <<=
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
-      // particle/hole bubble propagating backwards
+      // particle/hole bubble propagating backwards (propagator is real valued)
       (*chiVFGn)["FGn"] +=
-        (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
+        (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*Pain)["ain"],
       // compute Mp2 direct energy for benchmark of frequency grid
       (*mp2Energy)[""] <<= -0.5 / Tau() *
         (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"]
