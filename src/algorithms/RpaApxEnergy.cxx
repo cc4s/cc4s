@@ -89,37 +89,54 @@ void RpaApxEnergy::run() {
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
       // particle/hole propagator for positive and negative nu
-      [](double nu, complex &d) { d = 2.0*d / (d*d + nu*nu); }
+      [](double nu, complex &d) { d = 1.0 / (d- complex(0,1)*nu); }
     )
   ) (
     (*realNun)["n"], ctfPain["ain"]
   );
   CTF::Tensor<complex> ctfConjPain(ctfPain);
+  conjugate(ctfConjPain);
 
   auto Pain(tcc->createTensor(MT::create(ctfPain)));
   auto conjPain(tcc->createTensor(MT::create(ctfConjPain)));
 
-  auto mp2Energy(tcc->createTensor(std::vector<int>(), "mp2Energy"));
+  auto mp2Direct(tcc->createTensor(std::vector<int>(), "mp2Direct"));
+  auto mp2Exchange(tcc->createTensor(std::vector<int>(), "mp2Exchange"));
   chiVFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chiV");
+  PxVFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "PxV");
+  double spins(2.0);
   tcc->compile(
     (
+      // bubble with half V on both ends:
       // particle/hole bubble propagating forwards
-      (*chiVFGn)["FGn"] <<=
+      (*chiVFGn)["FGn"] <<= spins *
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
-      // particle/hole bubble propagating backwards (propagator is real valued)
-      (*chiVFGn)["FGn"] +=
-        (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*Pain)["ain"],
-      // compute Mp2 direct energy for benchmark of frequency grid
-      (*mp2Energy)[""] <<= -0.5 / Tau() *
-        (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"]
+      // particle/hole bubble propagating backwards, positive nu
+      (*chiVFGn)["FGn"] += spins *
+        (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
+
+      // adjacent pairs exchanged
+      (*PxVFGn)["FGn"] <<= spins *
+        (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
+        (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
+
+      // compute Mp2 energy for benchmark of frequency grid
+      // 2 fold rotational and 2 fold mirror symmetry, 1/Pi from +nu and -nu
+      (*mp2Direct)[""] <<= -0.25 / Pi() *
+        (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"],
+      // 2 fold mirror symmetry only, 1/Pi from +nu and -nu
+      (*mp2Exchange)[""] <<= +0.5 / Pi() * (*Wn)["n"] * (*PxVFGn)["FFn"]
     )
   )->execute();
 
   CTF::Scalar<complex> ctfMp2Energy;
-  ctfMp2Energy[""] = mp2Energy->getMachineTensor<MT>()->tensor[""];
-  complex mp2E(ctfMp2Energy.get_val());
-  LOG(0, "RPA") << "Mp2 direct energy=" << mp2E << std::endl;
-  setRealArgument("Mp2Energy", std::real(mp2E));
+  ctfMp2Energy[""] = mp2Direct->getMachineTensor<MT>()->tensor[""];
+  complex mp2D(ctfMp2Energy.get_val());
+  ctfMp2Energy[""] = mp2Exchange->getMachineTensor<MT>()->tensor[""];
+  complex mp2X(ctfMp2Energy.get_val());
+  LOG(0, "RPA") << "Mp2 direct energy=" << mp2D << std::endl;
+  LOG(0, "RPA") << "Mp2 exchange energy=" << mp2X << std::endl;
+  setRealArgument("Mp2Energy", std::real(mp2D+mp2X));
 
   diagonalizeChiV();
 }
@@ -157,7 +174,7 @@ void RpaApxEnergy::diagonalizeChiV() {
         en += -lambdas[L]*lambdas[L]/2;
       }
     }
-    e += weights[n] * 1 / Tau() * en;
+    e += weights[n] * 0.5 / Pi() * en;
   }
   LOG(1, "RPA") << "e=" << e << std::endl;
   setRealArgument("RpaEnergy", e);

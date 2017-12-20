@@ -177,7 +177,6 @@ double Mp2ImaginaryFrequencyGrid::gradientLineSearch(
     newGrid = grid + alpha1*direction;
     E = getError(newGrid);
     grad = getGradient(newGrid);
-//    LOG(1, "Mp2Grid") << "increasing to " << alpha1  << std::endl;
   };
   // interval bisection to machine precision
   double alpham(0.5*(alpha0+alpha1));
@@ -194,7 +193,6 @@ double Mp2ImaginaryFrequencyGrid::gradientLineSearch(
     newGrid = grid + alpham*direction;
     E = getError(newGrid);
     grad = getGradient(newGrid);
-//    LOG(1, "Mp2Grid") << "bisecting to " << alpham << std::endl;
   };
   grid = newGrid;
   return E;
