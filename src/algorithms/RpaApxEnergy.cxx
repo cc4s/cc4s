@@ -165,6 +165,7 @@ void RpaApxEnergy::diagonalizeChiV() {
     auto scaU( NEW( ScaLapackMatrix<complex>, *scaChiVFG) );
     ScaLapackHermitianEigenSystemDc<complex> eigenSystem(scaChiVFG, scaU);
     std::vector<double> lambdas(chiVFG->lens[0]);
+
     eigenSystem.solve(lambdas.data());
 
     // write diagonalizaing transformation to scliced ChiVFL
@@ -179,6 +180,8 @@ void RpaApxEnergy::diagonalizeChiV() {
     for (int64_t i(0); i < localNF; ++i) { lambdaIndices[i] = i; }
     lambdaL.write(localNF, lambdaIndices.data(), lambdas.data());
 
+    // compute matrix functions of chiV on their eigenvalues
+    // Log(1-XV)+XV for RPA total energy
     CTF::Vector<complex> LogChiVL(lambdas.size());
     CTF::Transform<double, complex>(
       std::function<void(double, complex &)>(
@@ -190,6 +193,7 @@ void RpaApxEnergy::diagonalizeChiV() {
       lambdaL["L"], LogChiVL["L"]
     );
 
+    // 1/(1-XV) for APX total energy
     CTF::Vector<complex> InvChiVL(lambdas.size());
     CTF::Transform<double, complex>(
       std::function<void(double, complex &)>(
@@ -210,8 +214,10 @@ void RpaApxEnergy::diagonalizeChiV() {
     }
 
     CTF::Scalar<complex> e;
+    // Tr{Log(1-XV)+XV}
     e[""] = LogChiVL["L"];
     rpa += weights[n] * e.get_val();
+    // Tr{Px(1-XV)^-1}
     e[""] = (*PxVFG)["FG"] * conjChiVFG["GL"] * InvChiVL["L"] * (*chiVFG)["FL"];
     apx += weights[n] * e.get_val();
   }
