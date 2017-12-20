@@ -201,30 +201,26 @@ void RpaApxEnergy::diagonalizeChiV() {
       lambdaL["L"], InvChiVL["L"]
     );
 
-/*
-    double en(0);
     for (int L(0); L < chiVFG->lens[0]; ++L) {
       // TODO: what is to be done with chiV eigenvalues >= 1?
-      if (lambdas[L] < 1) {
-        en += std::log(1 - lambdas[L]) + lambdas[L];
-      } else {
-        LOG(0,"RPA") << "WARNING: chiV(n=" << n << ") > 1, taking MP2 value instead." << std::endl;
-        en += -lambdas[L]*lambdas[L]/2;
+      if (lambdas[L] > 1) {
+        LOG(0,"RPA") << "WARNING: chiV(n=" << n <<
+          ") > 1, taking MP2 value instead." << std::endl;
       }
     }
-*/
+
     CTF::Scalar<complex> e;
     e[""] = LogChiVL["L"];
     rpa += weights[n] * e.get_val();
     e[""] = (*PxVFG)["FG"] * conjChiVFG["GL"] * InvChiVL["L"] * (*chiVFG)["FL"];
     apx += weights[n] * e.get_val();
   }
+
   // 2 fold mirror symmetry, 1/Pi from +nu and -nu
   rpa *= 0.5 / Pi();
   apx *= 0.5 / Pi();
   LOG(1, "RPA") << "rpa=" << rpa << std::endl;
   LOG(1, "RPA") << "apx=" << apx << std::endl;
-  setRealArgument("RpaEnergy", std::real(rpa));
-//  setRealArgument("ApxEnergy", std::real(apx));
+  setRealArgument("RpaApxEnergy", std::real(rpa+apx));
 }
 
