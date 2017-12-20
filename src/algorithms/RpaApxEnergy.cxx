@@ -148,14 +148,18 @@ void RpaApxEnergy::diagonalizeChiV() {
   std::vector<double> weights(wn->lens[0]);
   wn->read_all(weights.data(), true);
 
-  // slice CTF tensor of chiV along n (=3rd) dimension
+  // slice CTF tensor of chiV and PxV along n (=3rd) dimension
   SlicedCtfTensor<complex> slicedChiVFGn(
     chiVFGn->getMachineTensor<MT>()->tensor, {2}
+  );
+  SlicedCtfTensor<complex> slicedPxVFGn(
+    PxVFGn->getMachineTensor<MT>()->tensor, {2}
   );
   BlacsWorld world(Cc4s::world->rank, Cc4s::world->np);
   complex rpa(0), apx(0);
   for (int n(0); n < slicedChiVFGn.slicedLens[0]; ++n) {
     auto chiVFG( &slicedChiVFGn({n}) );
+    auto PxVFG( &slicedPxVFGn({n}) );
     int scaLens[2] = { chiVFG->lens[0], chiVFG->lens[1] };
     auto scaChiVFG( NEW(ScaLapackMatrix<complex>, *chiVFG, scaLens, &world) );
     auto scaU( NEW( ScaLapackMatrix<complex>, *scaChiVFG) );
@@ -165,6 +169,8 @@ void RpaApxEnergy::diagonalizeChiV() {
 
     // write diagonalizaing transformation to scliced ChiVFL
     scaU->write(*chiVFG);
+    auto conjChiVFG(*chiVFG);
+    conjugate(conjChiVFG);
 
     // write eigenvalues to CTF vector
     CTF::Vector<double> lambdaL(lambdas.size());
@@ -176,12 +182,23 @@ void RpaApxEnergy::diagonalizeChiV() {
     CTF::Vector<complex> LogChiVL(lambdas.size());
     CTF::Transform<double, complex>(
       std::function<void(double, complex &)>(
-        [](double chiV, complex &LogChiV) {
-          LogChiV = chiV < 1 ? std::log(1 - chiV) + chiV : -chiV*chiV/2;
+        [](double chiV, complex &logChiV) {
+          logChiV = chiV < 1 ? std::log(1-chiV) + chiV : -chiV*chiV/2;
         }
       )
     ) (
       lambdaL["L"], LogChiVL["L"]
+    );
+
+    CTF::Vector<complex> InvChiVL(lambdas.size());
+    CTF::Transform<double, complex>(
+      std::function<void(double, complex &)>(
+        [](double chiV, complex &invChiV) {
+          invChiV = chiV < 1 ? 1 / (1-chiV) : 1;
+        }
+      )
+    ) (
+      lambdaL["L"], InvChiVL["L"]
     );
 
 /*
@@ -196,13 +213,18 @@ void RpaApxEnergy::diagonalizeChiV() {
       }
     }
 */
-    CTF::Scalar<double> e;
-    e[""] = LogChiVL["L"]; // * (*chiVFG)["LF"] * (*chiVFG)["FL"];
+    CTF::Scalar<complex> e;
+    e[""] = LogChiVL["L"];
     rpa += weights[n] * e.get_val();
+    e[""] = (*PxVFG)["FG"] * conjChiVFG["GL"] * InvChiVL["L"] * (*chiVFG)["FL"];
+    apx += weights[n] * e.get_val();
   }
   // 2 fold mirror symmetry, 1/Pi from +nu and -nu
   rpa *= 0.5 / Pi();
+  apx *= 0.5 / Pi();
   LOG(1, "RPA") << "rpa=" << rpa << std::endl;
+  LOG(1, "RPA") << "apx=" << apx << std::endl;
   setRealArgument("RpaEnergy", std::real(rpa));
+//  setRealArgument("ApxEnergy", std::real(apx));
 }
 
