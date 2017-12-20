@@ -153,7 +153,7 @@ void RpaApxEnergy::diagonalizeChiV() {
     chiVFGn->getMachineTensor<MT>()->tensor, {2}
   );
   BlacsWorld world(Cc4s::world->rank, Cc4s::world->np);
-  double e(0);
+  complex rpa(0), apx(0);
   for (int n(0); n < slicedChiVFGn.slicedLens[0]; ++n) {
     auto chiVFG( &slicedChiVFGn({n}) );
     int scaLens[2] = { chiVFG->lens[0], chiVFG->lens[1] };
@@ -162,10 +162,31 @@ void RpaApxEnergy::diagonalizeChiV() {
     ScaLapackHermitianEigenSystemDc<complex> eigenSystem(scaChiVFG, scaU);
     std::vector<double> lambdas(chiVFG->lens[0]);
     eigenSystem.solve(lambdas.data());
+
+    // write diagonalizaing transformation to scliced ChiVFL
+    scaU->write(*chiVFG);
+
+    // write eigenvalues to CTF vector
+    CTF::Vector<double> lambdaL(lambdas.size());
+    int localNF(lambdaL.wrld->rank == 0 ? lambdas.size() : 0);
+    std::vector<int64_t> lambdaIndices(localNF);
+    for (int64_t i(0); i < localNF; ++i) { lambdaIndices[i] = i; }
+    lambdaL.write(localNF, lambdaIndices.data(), lambdas.data());
+
+    CTF::Vector<complex> LogChiVL(lambdas.size());
+    CTF::Transform<double, complex>(
+      std::function<void(double, complex &)>(
+        [](double chiV, complex &LogChiV) {
+          LogChiV = chiV < 1 ? std::log(1 - chiV) + chiV : -chiV*chiV/2;
+        }
+      )
+    ) (
+      lambdaL["L"], LogChiVL["L"]
+    );
+
+/*
     double en(0);
     for (int L(0); L < chiVFG->lens[0]; ++L) {
-//      LOG(1, "RPA") << "chiV(n=" << n << ", L=" << L << ")=" << lambdas[L] <<
-//        std::endl;
       // TODO: what is to be done with chiV eigenvalues >= 1?
       if (lambdas[L] < 1) {
         en += std::log(1 - lambdas[L]) + lambdas[L];
@@ -174,9 +195,14 @@ void RpaApxEnergy::diagonalizeChiV() {
         en += -lambdas[L]*lambdas[L]/2;
       }
     }
-    e += weights[n] * 0.5 / Pi() * en;
+*/
+    CTF::Scalar<double> e;
+    e[""] = LogChiVL["L"]; // * (*chiVFG)["LF"] * (*chiVFG)["FL"];
+    rpa += weights[n] * e.get_val();
   }
-  LOG(1, "RPA") << "e=" << e << std::endl;
-  setRealArgument("RpaEnergy", e);
+  // 2 fold mirror symmetry, 1/Pi from +nu and -nu
+  rpa *= 0.5 / Pi();
+  LOG(1, "RPA") << "rpa=" << rpa << std::endl;
+  setRealArgument("RpaEnergy", std::real(rpa));
 }
 
