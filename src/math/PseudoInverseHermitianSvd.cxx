@@ -1,6 +1,7 @@
 #include <math/PseudoInverseHermitianSvd.hpp>
 
 #include <math/MathFunctions.hpp>
+#include <math/ComplexTensor.hpp>
 #include <util/BlacsWorld.hpp>
 #include <util/ScaLapackMatrix.hpp>
 #include <util/ScaLapackHermitianEigenSystemDc.hpp>
@@ -45,11 +46,13 @@ PseudoInverseHermitianSvd<F>::PseudoInverseHermitianSvd(
   D.write(localLambdaCount, lambdaIndices, lambdaValues);
   Matrix<F> U(A);
   scaU->write(U);
+  auto conjU(U);
+  conjugate(conjU);
   delete[] lambdaIndices; delete[] lambdaValues;
   delete[] lambda;
 
   // compose the pseudo inverse from S and the unitary transforms
-  inverse["ij"] = U["ik"] * D["k"] * U["kj"];
+  inverse["ij"] = U["ik"] * D["k"] * conjU["jk"];
 }
 
 template <typename F>
