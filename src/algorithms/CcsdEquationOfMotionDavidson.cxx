@@ -100,14 +100,34 @@ void CcsdEquationOfMotionDavidson::run() {
   }
 
 
-  // Get the Uccsd amplitudes
-  CTF::Tensor<> Tai(
-      getTensorArgument<double, CTF::Tensor<> >("SinglesAmplitudes"));
-  CTF::Tensor<> Tabij(
-      getTensorArgument<double, CTF::Tensor<> >("DoublesAmplitudes"));
 
-  //Tai["ai"] = 0.0;
-  //Tabij["abij"] = 0.0;
+  if (getIntegerArgument("CISD", 0) == 1) {
+    LOG(0, "CcsdEomDavid") << "Calculating CISD" << std::endl;
+    int syms2[] = {NS, NS};
+    int syms4[] = {NS, NS};
+    int vvoo = {Nv,Nv,No,No};
+    int vo = {Nv,No};
+    // We initialize the T amplitudes here so that it is not necessary
+    // to do a ccsd calculation before to do the CISD calculation.
+    CTF::Tensor<> Tai(2, vo, syms2, *Cc4s::world, "Tai");
+    CTF::Tensor<> Tabij(4, vvoo, syms4, *Cc4s::world, "Tabij");
+    Tai["ai"] = 0.0;
+    Tabij["abij"] = 0.0;
+  } else {
+    // Get the Uccsd amplitudes from the input file
+    CTF::Tensor<> Tai(
+      getTensorArgument<double, CTF::Tensor<> >("SinglesAmplitudes")
+    );
+    CTF::Tensor<> Tabij(
+      getTensorArgument<double, CTF::Tensor<> >("DoublesAmplitudes")
+    );
+    if (getIntegerArgument("printTensors", 0) == 1) {
+      Tai.set_name("T");
+      Tai.print(stdout, -1e100);
+      Tabij.set_name("T");
+      Tabij.print(stdout, -1e100);
+    }
+  }
 
   CcsdSimilarityTransformedHamiltonian<double> H(
     &Tai, &Tabij, Fij, Fab, Fia,
@@ -146,8 +166,19 @@ void CcsdEquationOfMotionDavidson::run() {
   );
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
+  int eigenCounter(0);
   for (auto &ev: eigenValues) {
-    LOG(0, "CcsdEomDavid") << "Eigenvalue=" << ev << std::endl;
+    eigenCounter++;
+    LOG(0, "CcsdEomDavid") << eigenCounter << ". Eigenvalue=" << ev << std::endl;
+  }
+  if (getIntegerArgument("printTensors", 0) == 1) {
+    eigenCounter = 0;
+    for (auto &eigenState: eigenSystem.getRightEigenVectors()) {
+      eigenCounter++;
+      LOG(0, "CcsdEomDavid") << eigenCounter << ". Eigenstate=" << std::endl;
+      eigenState.get(0)->print(stdout, -1e100);
+      eigenState.get(1)->print(stdout, -1e100);
+    }
   }
 }
 
