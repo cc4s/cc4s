@@ -123,6 +123,18 @@ F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
   LOG(1, "MP2") << "MP2d=" << dire << std::endl;
   LOG(1, "MP2") << "MP2x=" << exce << std::endl;
 
+  // use transform to divide Vabij by Tabij and store in Tabij
+  CTF::Transform<F, F>(
+    std::function<void(F, F &)>(
+      [](F vabij, F &tabij) {
+        tabij = conj(tabij);
+      }
+    )
+  ) (
+    Vabij["abij"], (*Tabij)["abij"]
+  );
+
+
   if (isArgumentGiven("Mp2DoublesAmplitudes")) {
     allocatedTensorArgument<F>("Mp2DoublesAmplitudes", Tabij);
   } else {
