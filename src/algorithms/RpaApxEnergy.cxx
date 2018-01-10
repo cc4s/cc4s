@@ -74,21 +74,22 @@ void RpaApxEnergy::run() {
   CTF::Tensor<complex> ctfPain(3, std::vector<int>({Nv,No,Nn}).data());
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [](double eps, complex &d){ d = eps; }
+      [](double eps, complex &d) { d = eps; }
     )
   ) (
     (*epsa)["a"], ctfPain["ain"]
   );
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [](double eps, complex &d){ d -= eps; }
+      [](double eps, complex &d) { d -= eps; }
     )
   ) (
     (*epsi)["i"], ctfPain["ain"]
   );
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [](double nu, complex &d){ d = 2.0*d / (d*d + nu*nu); }
+      // particle/hole propagator for positive and negative nu
+      [](double nu, complex &d) { d = 1.0 / (d- complex(0,1)*nu); }
     )
   ) (
     (*realNun)["n"], ctfPain["ain"]
@@ -99,27 +100,43 @@ void RpaApxEnergy::run() {
   auto Pain(tcc->createTensor(MT::create(ctfPain)));
   auto conjPain(tcc->createTensor(MT::create(ctfConjPain)));
 
-  auto mp2Energy(tcc->createTensor(std::vector<int>(), "mp2Energy"));
+  auto mp2Direct(tcc->createTensor(std::vector<int>(), "mp2Direct"));
+  auto mp2Exchange(tcc->createTensor(std::vector<int>(), "mp2Exchange"));
   chiVFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chiV");
+  PxVFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "PxV");
+  double spins(2.0);
   tcc->compile(
     (
+      // bubble with half V on both ends:
       // particle/hole bubble propagating forwards
-      (*chiVFGn)["FGn"] <<=
+      (*chiVFGn)["FGn"] <<= spins *
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
-      // particle/hole bubble propagating backwards
-      (*chiVFGn)["FGn"] +=
+      // particle/hole bubble propagating backwards, positive nu
+      (*chiVFGn)["FGn"] += spins *
         (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
-      // compute Mp2 direct energy for benchmark of frequency grid
-      (*mp2Energy)[""] <<= -0.5 / Tau() *
-        (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"]
+
+      // adjacent pairs exchanged
+      (*PxVFGn)["FGn"] <<= spins *
+        (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
+        (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
+
+      // compute Mp2 energy for benchmark of frequency grid
+      // 2 fold rotational and 2 fold mirror symmetry, 1/Pi from +nu and -nu
+      (*mp2Direct)[""] <<= -0.25 / Pi() *
+        (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"],
+      // 2 fold mirror symmetry only, 1/Pi from +nu and -nu
+      (*mp2Exchange)[""] <<= +0.5 / Pi() * (*Wn)["n"] * (*PxVFGn)["FFn"]
     )
   )->execute();
 
   CTF::Scalar<complex> ctfMp2Energy;
-  ctfMp2Energy[""] = mp2Energy->getMachineTensor<MT>()->tensor[""];
-  complex mp2E(ctfMp2Energy.get_val());
-  LOG(0, "RPA") << "Mp2 direct energy=" << mp2E << std::endl;
-  setRealArgument("Mp2Energy", std::real(mp2E));
+  ctfMp2Energy[""] = mp2Direct->getMachineTensor<MT>()->tensor[""];
+  complex mp2D(ctfMp2Energy.get_val());
+  ctfMp2Energy[""] = mp2Exchange->getMachineTensor<MT>()->tensor[""];
+  complex mp2X(ctfMp2Energy.get_val());
+  LOG(0, "RPA") << "Mp2 direct energy=" << mp2D << std::endl;
+  LOG(0, "RPA") << "Mp2 exchange energy=" << mp2X << std::endl;
+  setRealArgument("Mp2Energy", std::real(mp2D+mp2X));
 
   diagonalizeChiV();
 }
@@ -131,35 +148,85 @@ void RpaApxEnergy::diagonalizeChiV() {
   std::vector<double> weights(wn->lens[0]);
   wn->read_all(weights.data(), true);
 
-  // slice CTF tensor of chiV along n (=3rd) dimension
+  // slice CTF tensor of chiV and PxV along n (=3rd) dimension
   SlicedCtfTensor<complex> slicedChiVFGn(
     chiVFGn->getMachineTensor<MT>()->tensor, {2}
   );
+  SlicedCtfTensor<complex> slicedPxVFGn(
+    PxVFGn->getMachineTensor<MT>()->tensor, {2}
+  );
   BlacsWorld world(Cc4s::world->rank, Cc4s::world->np);
-  double e(0);
+  complex rpa(0), apx(0);
   for (int n(0); n < slicedChiVFGn.slicedLens[0]; ++n) {
     auto chiVFG( &slicedChiVFGn({n}) );
+    auto PxVFG( &slicedPxVFGn({n}) );
     int scaLens[2] = { chiVFG->lens[0], chiVFG->lens[1] };
     auto scaChiVFG( NEW(ScaLapackMatrix<complex>, *chiVFG, scaLens, &world) );
     auto scaU( NEW( ScaLapackMatrix<complex>, *scaChiVFG) );
     ScaLapackHermitianEigenSystemDc<complex> eigenSystem(scaChiVFG, scaU);
     std::vector<double> lambdas(chiVFG->lens[0]);
+
     eigenSystem.solve(lambdas.data());
-    double en(0);
+
+    // write diagonalizaing transformation to scliced ChiVFL
+    scaU->write(*chiVFG);
+    auto conjChiVFG(*chiVFG);
+    conjugate(conjChiVFG);
+
+    // write eigenvalues to CTF vector
+    CTF::Vector<double> lambdaL(lambdas.size());
+    int localNF(lambdaL.wrld->rank == 0 ? lambdas.size() : 0);
+    std::vector<int64_t> lambdaIndices(localNF);
+    for (int64_t i(0); i < localNF; ++i) { lambdaIndices[i] = i; }
+    lambdaL.write(localNF, lambdaIndices.data(), lambdas.data());
+
+    // compute matrix functions of chiV on their eigenvalues
+    // Log(1-XV)+XV for RPA total energy
+    CTF::Vector<complex> LogChiVL(lambdas.size());
+    CTF::Transform<double, complex>(
+      std::function<void(double, complex &)>(
+        [](double chiV, complex &logChiV) {
+          logChiV = chiV < 1 ? std::log(1-chiV) + chiV : -chiV*chiV/2;
+        }
+      )
+    ) (
+      lambdaL["L"], LogChiVL["L"]
+    );
+
+    // 1/(1-XV) for APX total energy
+    CTF::Vector<complex> InvChiVL(lambdas.size());
+    CTF::Transform<double, complex>(
+      std::function<void(double, complex &)>(
+        [](double chiV, complex &invChiV) {
+          invChiV = chiV < 1 ? 1 / (1-chiV) : 1;
+        }
+      )
+    ) (
+      lambdaL["L"], InvChiVL["L"]
+    );
+
     for (int L(0); L < chiVFG->lens[0]; ++L) {
-//      LOG(1, "RPA") << "chiV(n=" << n << ", L=" << L << ")=" << lambdas[L] <<
-//        std::endl;
       // TODO: what is to be done with chiV eigenvalues >= 1?
-      if (lambdas[L] < 1) {
-        en += std::log(1 - lambdas[L]) + lambdas[L];
-      } else {
-        LOG(0,"RPA") << "WARNING: chiV(n=" << n << ") > 1, taking MP2 value instead." << std::endl;
-        en += -lambdas[L]*lambdas[L]/2;
+      if (lambdas[L] > 1) {
+        LOG(0,"RPA") << "WARNING: chiV(n=" << n <<
+          ") > 1, taking MP2 value instead." << std::endl;
       }
     }
-    e += weights[n] * 1 / Tau() * en;
+
+    CTF::Scalar<complex> e;
+    // Tr{Log(1-XV)+XV}
+    e[""] = LogChiVL["L"];
+    rpa += weights[n] * e.get_val();
+    // Tr{Px(1-XV)^-1}
+    e[""] = (*PxVFG)["FG"] * (*chiVFG)["GL"] * InvChiVL["L"] * conjChiVFG["FL"];
+    apx += weights[n] * e.get_val();
   }
-  LOG(1, "RPA") << "e=" << e << std::endl;
-  setRealArgument("RpaEnergy", e);
+
+  // 2 fold mirror symmetry, 1/Pi from +nu and -nu
+  rpa *= 0.5 / Pi();
+  apx *= 0.5 / Pi();
+  LOG(1, "RPA") << "rpa=" << rpa << std::endl;
+  LOG(1, "RPA") << "apx=" << apx << std::endl;
+  setRealArgument("RpaApxEnergy", std::real(rpa+apx));
 }
 

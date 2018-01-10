@@ -8,22 +8,12 @@
 #include <ctf.hpp>
 
 namespace cc4s {
-  class Mp2ImaginaryFrequencyGrid: public Algorithm {
-  public:
-    ALGORITHM_REGISTRAR_DECLARATION(Mp2ImaginaryFrequencyGrid);
-    Mp2ImaginaryFrequencyGrid(
-      std::vector<Argument> const &argumentList
-    );
-    virtual ~Mp2ImaginaryFrequencyGrid();
-
-    virtual void run();
-  };
-
   /**
    * \brief Provides vector space structure for integration grids
    **/
   class IntegrationGrid {
   public:
+    IntegrationGrid() { }
     IntegrationGrid(const int N): points(N), weights(N) { }
     IntegrationGrid(const IntegrationGrid &g):
       points(g.points), weights(g.weights)
@@ -106,10 +96,22 @@ namespace cc4s {
 
   class Mp2ImaginaryFrequencyGridOptimizer {
   public:
-    Mp2ImaginaryFrequencyGridOptimizer(
-      const size_t N, CTF::Tensor<double> &epsi, CTF::Tensor<double> &epsa
+  };
+
+  class Mp2ImaginaryFrequencyGrid: public Algorithm {
+  public:
+    ALGORITHM_REGISTRAR_DECLARATION(Mp2ImaginaryFrequencyGrid);
+    Mp2ImaginaryFrequencyGrid(
+      std::vector<Argument> const &argumentList
     );
+    virtual ~Mp2ImaginaryFrequencyGrid();
+
+    virtual void run();
+
+  protected:
     void optimize(const int stepCount);
+
+    void applyConstraints(IntegrationGrid &direction);
 
     double lineSearch(IntegrationGrid &grid, const IntegrationGrid &direction);
     double gradientLineSearch(
