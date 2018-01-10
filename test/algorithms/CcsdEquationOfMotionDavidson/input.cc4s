@@ -105,9 +105,11 @@ CcsdEquationOfMotionDavidson [
   HoleEigenEnergies ParticleEigenEnergies
   (SinglesAmplitudes UccsdSinglesAmplitudes)
   (DoublesAmplitudes UccsdDoublesAmplitudes)
-  (unrestricted 1)
-  (eigenstates 5)
+  (eigenstates 7)
+  %(maxIterations 2)
   (intermediates 1)
+  (CISD 0)
+  (printTensors 1)
 ] [
   SinglesHamiltonianDiagonal
   DoublesHamiltonianDiagonal
