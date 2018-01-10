@@ -218,7 +218,7 @@ void RpaApxEnergy::diagonalizeChiV() {
     e[""] = LogChiVL["L"];
     rpa += weights[n] * e.get_val();
     // Tr{Px(1-XV)^-1}
-    e[""] = (*PxVFG)["FG"] * conjChiVFG["GL"] * InvChiVL["L"] * (*chiVFG)["FL"];
+    e[""] = (*PxVFG)["FG"] * (*chiVFG)["GL"] * InvChiVL["L"] * conjChiVFG["FL"];
     apx += weights[n] * e.get_val();
   }
 
