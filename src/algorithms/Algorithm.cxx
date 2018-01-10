@@ -68,6 +68,33 @@ std::string Algorithm::getTextArgument(
   return isArgumentGiven(name) ? getTextArgument(name) : defaultValue;
 }
 
+bool Algorithm::getBooleanArgument(std::string const &name) {
+  /*
+   *TODO: Do this without the getTextArgument function, because in this
+   *case the parser want to have quotes on the boolean value i.e.
+   *  (myflag "true")
+   */
+  std::string text(getTextArgument(name));
+  if (
+    text.compare(".TRUE.") == 0 ||
+    text.compare("true") == 0 ||
+    text.compare("True") == 0 ||
+    text.compare("TRUE") == 0 ||
+    text.compare("1") == 0 ||
+    text.compare("t") == 0 ||
+    text.compare("T") == 0
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+}
+bool Algorithm::getBooleanArgument(
+  std::string const &name, bool const &defaultValue
+) {
+  return isArgumentGiven(name) ? getBooleanArgument(name) : defaultValue;
+}
+
 int64_t Algorithm::getIntegerArgument(std::string const &name) {
   Data const *data(getArgumentData(name));
   IntegerData const *integerData = dynamic_cast<IntegerData const *>(data);

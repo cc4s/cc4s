@@ -37,6 +37,10 @@ namespace cc4s {
     std::string getTextArgument(
       std::string const &argumentName, std::string const &defaultValue
     );
+    bool getBooleanArgument(std::string const &name);
+    bool getBooleanArgument(
+      std::string const &name, bool const &defaultValue
+    );
     int64_t getIntegerArgument(std::string const &argumentName);
     int64_t getIntegerArgument(
       std::string const &argumentName, int64_t const defaultValue
