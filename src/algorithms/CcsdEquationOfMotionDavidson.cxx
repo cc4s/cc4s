@@ -156,10 +156,12 @@ void CcsdEquationOfMotionDavidson::run() {
   // Davidson solver
   int eigenStates(getIntegerArgument("eigenstates", 1));
   LOG(0, "CcsdEomDavid") << "Max iterations " << maxIterations << std::endl;
+  double ediff(getRealArgument("ediff", 1e-4));
+  LOG(0, "CcsdEomDavid") << "ediff " << ediff << std::endl;
   LOG(0, "CcsdEomDavid") << "Computing " << eigenStates << " eigen states"
                               << std::endl;
   EigenSystemDavidson<FockVector<double>> eigenSystem(
-    H, eigenStates, P, 1E-4,
+    H, eigenStates, P, ediff,
     No*Nv + (No*(No - 1)/2 ) * (Nv * (Nv - 1)/2),
     maxIterations, minIterations
   );
@@ -313,11 +315,6 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
   (*LHijab)["klab"] += ( - 0.25  ) * (*Tabij)["efop"] * (*Vijab)["opab"] * (*Lijab)["klfe"];
   (*LHijab)["klab"] += ( - 0.5  ) * (*Tabij)["efop"] * (*Vijab)["opfb"] * (*Lijab)["klea"];
   (*LHijab)["klab"] += ( + 0.5  ) * (*Tabij)["efop"] * (*Vijab)["opfa"] * (*Lijab)["kleb"];
-
-  // Filter out non-physical part
-  (*LHijab)["iicd"] = ( 0.0 );
-  (*LHijab)["ijcc"] = ( 0.0 );
-  (*LHijab)["iicc"] = ( 0.0 );
 
   return LH;
 }
@@ -895,14 +892,8 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyHirata(
 
   }
 
-
-
-  // Filter out non-physical part
-  //(*HRabij)["cdii"] = ( 0.0 );
-  //(*HRabij)["ccij"] = ( 0.0 );
-  //(*HRabij)["ccii"] = ( 0.0 );
-
   return HR;
+
 }
 
 template <typename F>
@@ -995,14 +986,6 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::rightApplyIntermediates(
   //P(ij)
   (*HRabij)["abij"] += (-1.0) * (*Wabci)["abei"] * (*Rai)["ej"];
 
-
-
-
-  // Filter out non-physical part
-  //(*HRabij)["cdii"] = ( 0.0 );
-  //(*HRabij)["ccij"] = ( 0.0 );
-  //(*HRabij)["ccii"] = ( 0.0 );
-
   return HR;
 }
 
@@ -1067,10 +1050,6 @@ CcsdPreConditioner<F>::CcsdPreConditioner(
   (*Dabij)["ccij"] += ( + 0.5 ) * Tabij["ecno"] * Vijab["noec"];
   (*Dabij)["cdij"] += ( - 0.5 ) * Tabij["ecno"] * Vijab["noec"];
 
-  // Filter out non-physical part
-  (*Dabij)["cdii"] = ( 0.0 );
-  (*Dabij)["ccij"] = ( 0.0 );
-  (*Dabij)["ccii"] = ( 0.0 );
 }
 
 template <typename F>
