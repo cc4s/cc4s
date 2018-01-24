@@ -1110,7 +1110,7 @@ template <typename F>
 std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
   const int eigenVectorsCount
 ) {
-  LOG(0, "CcsdEomDavid") << "Getting initial basis " << std::endl;
+  LOG(0, "CcsdPreConditioner") << "Getting initial basis " << std::endl;
   // find K=eigenVectorsCount lowest diagonal elements at each processor
   std::vector<std::pair<size_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
@@ -1178,26 +1178,49 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
     basis.push_back(basisElement);
     //std::cout << "bb" << bb << std::endl;
   }
+
+  // Now make sure that you are giving an antisymmetric basis
+  // and also that it is grammschmited afterwards
+
+  LOG(1,"CcsdPreConditioner") << "Antisymmetrize basis" << std::endl;
+  for (unsigned int j(0); j < basis.size(); ++j) {
+    (*basis[j].get(1))["abij"] -= (*basis[j].get(1))["abji"];
+    (*basis[j].get(1))["abij"] -= (*basis[j].get(1))["baij"];
+  }
+
+  LOG(1,"CcsdPreConditioner") <<
+      "Performing Gramm Schmidt in the initial basis"
+  << std::endl;
+  for (unsigned int b(0); b < basis.size(); ++b) {
+    V newVector(basis[b]);
+    for (unsigned int j(0); j < b; ++j) {
+      newVector -= basis[j] * basis[j].dot(basis[b]);
+    }
+    // normalize
+    basis[b] = 1 / std::sqrt(newVector.dot(newVector)) * newVector;
+  }
+
   return basis;
 }
 
 template <typename F>
-FockVector<F> CcsdPreConditioner<F>::getCorrection(
+FockVector<F>
+CcsdPreConditioner<F>::getCorrection(
   const complex lambda, FockVector<F> &residuum
 ) {
   FockVector<F> w(diagonalH);
 
-  // Define a helping class for the diagonal correction
+  // Define a singleton helping class for the diagonal correction
   class DiagonalCorrection {
-  public:
-    DiagonalCorrection(const double lambda_): lambda(lambda_) {
-    }
-    F operator ()(const F residuumElement, const F diagonalElement) {
-      return std::abs(lambda - diagonalElement) < 1E-4 ?
-        0.0 : residuumElement / (lambda - diagonalElement);
-    }
-  protected:
-    double lambda;
+    public:
+      DiagonalCorrection(const double lambda_): lambda(lambda_) {
+      }
+      F operator ()(const F residuumElement, const F diagonalElement) {
+        return std::abs(lambda - diagonalElement) < 1E-4 ?
+          0.0 : residuumElement / (lambda - diagonalElement);
+      }
+    protected:
+      double lambda;
   } diagonalCorrection(std::real(lambda));
 
   FockVector<F> correction(diagonalH);
@@ -1216,6 +1239,12 @@ FockVector<F> CcsdPreConditioner<F>::getCorrection(
   (*correction.get(1))["abii"]=0.0;
   (*correction.get(1))["aaij"]=0.0;
   (*correction.get(1))["aaii"]=0.0;
+
+  // Antisymmetrize the correction
+  (*correction.get(1))["abij"] -= (*correction.get(1))["abji"];
+  (*correction.get(1))["abij"] -= (*correction.get(1))["baij"];
+  (*correction.get(1))["abij"] = 0.25 * (*correction.get(1))["abij"];
+
   return correction;
 }
 

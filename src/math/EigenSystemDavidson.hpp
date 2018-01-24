@@ -206,33 +206,6 @@ namespace cc4s {
       // get inital estimates for rEV = initial B matrix
       rightEigenVectors = p.getInitialBasis(eigenVectorsCount);
 
-      // Antisymmetrize initial basis
-      LOG(1,"Davidson") << "Antisymmetrize basis" << std::endl;
-      for (unsigned int j(0); j < rightEigenVectors.size(); ++j) {
-        (*rightEigenVectors[j].get(1))["abij"] -=
-           (*rightEigenVectors[j].get(1))["abji"];
-        (*rightEigenVectors[j].get(1))["abij"] -=
-           (*rightEigenVectors[j].get(1))["baij"];
-      }
-      LOG(1,"Davidson") <<
-        "Performing Gramm Schmidt in the initial basis" << std::endl;
-      for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
-        V newVector(rightEigenVectors[b]);
-        for (unsigned int j(0); j < b; ++j) {
-          newVector -=
-            rightEigenVectors[j] * rightEigenVectors[j].dot(
-              rightEigenVectors[b]
-            );
-        }
-        // normalize
-        rightEigenVectors[b] =
-          1 / std::sqrt(newVector.dot(newVector)) * newVector;
-      }
-
-      for (unsigned int b(0); b < rightEigenVectors.size(); ++b) {
-        checkAntisymmetry(*rightEigenVectors[b].get(1));
-      }
-
       std::vector<V> rightBasis( rightEigenVectors );
 
       // begin convergence loop
@@ -296,11 +269,6 @@ namespace cc4s {
           // compute correction using preconditioner
           V correction( p.getCorrection(eigenValues[k], residuum) );
 
-          (*correction.get(1))["abij"] -=
-             (*correction.get(1))["abji"];
-          (*correction.get(1))["abij"] -=
-             (*correction.get(1))["baij"];
-          (*correction.get(1))["abij"] = 0.25 * (*correction.get(1))["abij"];
           // orthonormalize and append to rightBasis
           for (unsigned int b(0); b < rightBasis.size(); ++b) {
             correction -= rightBasis[b] * rightBasis[b].dot(correction);
