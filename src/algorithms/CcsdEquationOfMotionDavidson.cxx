@@ -177,38 +177,11 @@ void CcsdEquationOfMotionDavidson::run() {
     for (auto &eigenState: eigenSystem.getRightEigenVectors()) {
       eigenCounter++;
       LOG(0, "CcsdEomDavid") << eigenCounter << ". Eigenstate=" << std::endl;
-      eigenState.get(0)->print(stdout, -1e100);
       eigenState.get(1)->print(stdout, -1e100);
+      eigenState.get(2)->print(stdout, -1e100);
     }
   }
 }
-
-// template method implementation
-template <typename F>
-void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
-  CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, size_t i
-) {
-  std::vector<std::pair<size_t, F>> elements;
-  if (Cc4s::world->rank == 0) {
-    elements.push_back(std::make_pair(i, F(1)));
-  }
-  FockVector<F> basis(
-    std::vector<PTR(CTF::Tensor<double>)>(
-      {NEW(CTF::Tensor<double>, Tai), NEW(CTF::Tensor<double>, Tabij)}
-    ),
-    std::vector<std::string>({"ai", "abij"})
-  );
-  basis *= 0.0;
-  basis.write(elements);
-  Tai["ai"] = (*basis.get(0))["ai"];
-  Tabij["abij"] = (*basis.get(1))["abij"];
-}
-
-// instantiate template method implementation
-template
-void CcsdEquationOfMotionDavidson::getCanonicalPerturbationBasis(
-  CTF::Tensor<double> &Tai, CTF::Tensor<double> &Tabij, size_t i
-);
 
 
 template <typename F>

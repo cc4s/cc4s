@@ -118,11 +118,6 @@ namespace cc4s {
   protected:
     static constexpr int DEFAULT_MAX_ITERATIONS = 16;
 
-    template <typename F = double>
-    void getCanonicalPerturbationBasis(
-        CTF::Tensor<F> &Tai, CTF::Tensor<F> &Tabij, size_t i
-    );
-
   };
 }
 
