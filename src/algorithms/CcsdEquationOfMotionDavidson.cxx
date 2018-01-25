@@ -9,6 +9,7 @@
 #include <math/RandomTensor.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
+#include <util/TensorIo.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
 #include <Cc4s.hpp>
@@ -122,10 +123,12 @@ void CcsdEquationOfMotionDavidson::run() {
   }
 
   if (getIntegerArgument("printTensors", 0) == 1) {
-    Tai.set_name("T");
-    Tai.print(stdout, -1e100);
-    Tabij.set_name("T");
-    Tabij.print(stdout, -1e100);
+    TensorIo::writeText<>(
+      "Tai.tensor", Tai, "ij", "", " "
+    );
+    TensorIo::writeText<>(
+      "Tabij.tensor", Tabij, "ijkl", "", " "
+    );
   }
 
   CcsdSimilarityTransformedHamiltonian<double> H(
