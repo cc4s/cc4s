@@ -33,7 +33,9 @@ void GenerateRandomMatrix::run() {
     sym = SH;
   }
   Matrix<> *C(new Matrix<>(m, n, sym, *Cc4s::world, "C"));
-  setRandomTensor(*C);
+  DefaultRandomEngine random;
+  std::normal_distribution<double> normalDistribution(0.0, 1.0);
+  setRandomTensor(*C, normalDistribution, random);
   allocatedTensorArgument("Result", C);
 }
 

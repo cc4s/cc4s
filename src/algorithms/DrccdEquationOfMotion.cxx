@@ -118,7 +118,9 @@ void DrccdEquationOfMotion::run() {
   CTF::Scalar<> ctfDelta(*Cc4s::world);
   CTF::Scalar<> ctfEnergy(*Cc4s::world);
 
-  setRandomTensor(*ctfRabij);
+  DefaultRandomEngine random;
+  std::normal_distribution<double> normalDistribution(0.0, 1.0);
+  setRandomTensor(*ctfRabij, normalDistribution, random);
   (*ctfLabij)["abij"] = (*ctfRabij)["abij"];
 
   // Build beta

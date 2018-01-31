@@ -142,7 +142,9 @@ void IterativePseudoInverse<F>::test(World *world) {
     LOG(3) << n << std::endl;
   }
   {
-    setRandomTensor(m);
+    DefaultRandomEngine random;
+    std::normal_distribution<double> normalDistribution(0.0, 1.0);
+    setRandomTensor(m, normalDistribution, random);
     IterativePseudoInverse pseudoInverse(m);
     Matrix<F> im(pseudoInverse.get());
     im["ij"] = m["ik"] * im["kj"];

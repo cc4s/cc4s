@@ -66,6 +66,9 @@ void CoulombVertexDecomposition::run() {
     "writeSubIterations", DEFAULT_WRITE_SUB_ITERATIONS
   );
 
+  DefaultRandomEngine random;
+  std::normal_distribution<double> normalDistribution(0.0, 1.0);
+
   // allocate factor tensors
   if (isArgumentGiven("StartingFactorOrbitals")) {
     Tensor<complex> *PirRTensor(getTensorArgument<complex>("StartingFactorOrbitals"));
@@ -77,7 +80,7 @@ void CoulombVertexDecomposition::run() {
   else {
     PirR = new Matrix<complex>(Np, int(rank), NS, *GammaGqr->wrld, "PirR", GammaGqr->profile);
     LOG(1, "RALS") << "Initial PirR=RandomTensor" << std::endl;
-    setRandomTensor(*PirR);
+    setRandomTensor(*PirR, normalDistribution, random);
     realizePi(*PirR); normalizePi(*PirR);
   }
 
@@ -91,7 +94,7 @@ void CoulombVertexDecomposition::run() {
   else {
     LambdaGR = new Matrix<complex>(NG, int(rank), NS, *GammaGqr->wrld, "LambdaGR", GammaGqr->profile);
     LOG(1, "RALS") << "Initial LambdaGR=RandomTensor" << std::endl;
-    setRandomTensor(*LambdaGR);
+    setRandomTensor(*LambdaGR, normalDistribution, random);
   }
 
   PiqR = new Matrix<complex>(Np, int(rank), NS, *GammaGqr->wrld, "PiqR", GammaGqr->profile);

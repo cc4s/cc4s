@@ -55,11 +55,13 @@ void ParticleHoleCoulombVertexDecomposition::run() {
   LambdaGR = new Matrix<complex>(
     NG, int(rank), NS, *GammaGai->wrld, "LambdaGR", GammaGai->profile
   );
-  setRandomTensor(*PiiR);
+  DefaultRandomEngine random;
+  std::normal_distribution<double> normalDistribution(0.0, 1.0);
+  setRandomTensor(*PiiR, normalDistribution, random);
   realizePi(*PiiR); normalizePi(*PiiR);
-  setRandomTensor(*PiaR);
+  setRandomTensor(*PiaR, normalDistribution, random);
   realizePi(*PiiR); normalizePi(*PiaR);
-  setRandomTensor(*LambdaGR);
+  setRandomTensor(*LambdaGR, normalDistribution, random);
   allocatedTensorArgument<complex>("HoleFactorOrbitals", PiiR);
   allocatedTensorArgument<complex>("ParticleFactorOrbitals", PiaR);
   allocatedTensorArgument<complex>("ParticleHoleCoulombFactors", LambdaGR);
