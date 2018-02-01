@@ -1075,7 +1075,9 @@ CcsdPreConditioner<F>::getInitialBasis(
   LOG(0, "CcsdPreConditioner") << "Getting initial basis " << std::endl;
   int random(algorithm->getIntegerArgument("preconditionerRandom", 0));
   DefaultRandomEngine randomEngine;
-  std::normal_distribution<double> normalDistribution(0.0, 0.1);
+  std::normal_distribution<double> normalDistribution(
+    0.0, algorithm->getRealArgument("preconditionerRandomSigma", 0.1)
+  );
   if (random == 1) {
     LOG(0, "CcsdPreConditioner") << "Randomizing initial guess" << std::endl;
   }

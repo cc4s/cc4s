@@ -5,7 +5,6 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <math/FockVector.hpp>
-#include <math/DavidsonPreconditioner.hpp>
 #include <vector>
 
 namespace cc4s {
