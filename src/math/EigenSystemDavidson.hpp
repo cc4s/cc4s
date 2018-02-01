@@ -8,6 +8,7 @@
 #include <vector>
 #include <iomanip>
 #include <utility>
+#include <algorithm>
 
 namespace cc4s {
   template <typename V>
@@ -42,6 +43,10 @@ namespace cc4s {
      * used. The dual version of the algorithm calculates both the right and
      * left eigenvectors of the h object. If the dual version is not to be used
      * then only the right eigenvectors are to be calculated.
+     * \param[in] refreshIterations This vector of integers represents
+     * the iterations where the refreshment should be done. Refreshment meaning
+     * that the trial Davidson basis should be thrown away and only keep
+     * the current approximations to the eigenvectors.
      **/
     template <typename H, typename P>
     EigenSystemDavidson(
@@ -52,7 +57,8 @@ namespace cc4s {
       const unsigned int maxBasisSize = 1000,
       const unsigned int maxIterations = 1000,
       const unsigned int minIterations = 1,
-      const bool dualVersion = false
+      const bool dualVersion = false,
+      std::vector<int> refreshIterations = std::vector<int>{{}}
     ):
       eigenValues(eigenVectorsCount)
     {
@@ -64,7 +70,7 @@ namespace cc4s {
       else
         eigenSystemMonoVersion(
           h, eigenVectorsCount, p, tolerance, maxBasisSize,
-          maxIterations, minIterations
+          maxIterations, minIterations, refreshIterations
 
         );
     }
@@ -198,7 +204,8 @@ namespace cc4s {
       const double tolerance,
       const unsigned int maxBasisSize,
       const unsigned int maxIterations,
-      const unsigned int minIterations
+      const unsigned int minIterations,
+      std::vector<int> refreshIterations
     ) {
       LOG(1,"Davidson").flags(
         std::ios::right | std::ios::scientific | std::ios::showpos
@@ -213,8 +220,26 @@ namespace cc4s {
       unsigned int iterationCount(0);
       do {
         LOG(1,"Davidson") << "iteration=" << (iterationCount+1) << std::endl;
+
+        // Check if a refreshment should be done
+        if (
+          std::find(
+            refreshIterations.begin(),
+            refreshIterations.end(),
+            iterationCount + 1
+          ) != refreshIterations.end()
+        ) {
+          LOG(1,"Davidson") << "Refreshing BASIS" << std::endl;
+          rightBasis.resize(eigenVectorsCount);
+          eigenValues.resize(eigenVectorsCount);
+          for (unsigned int i(0) ; i < rightBasis.size() ; i++) {
+            rightBasis[i] = rightEigenVectors[i];
+          }
+        }
+
         // compute reduced H by projection onto subspace spanned by rightBasis
         LapackMatrix<complex> reducedH(rightBasis.size(), rightBasis.size());
+
         for (unsigned int j(0); j < rightBasis.size(); ++j) {
           V HBj( h.rightApply(rightBasis[j]) );
           for (unsigned int i(0); i < rightBasis.size(); ++i) {

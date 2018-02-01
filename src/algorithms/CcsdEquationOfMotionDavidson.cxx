@@ -11,6 +11,7 @@
 #include <util/Log.hpp>
 #include <util/TensorIo.hpp>
 #include <util/Exception.hpp>
+#include <util/RangeParser.hpp>
 #include <ctf.hpp>
 #include <Cc4s.hpp>
 #include <util/SharedPointer.hpp>
@@ -145,7 +146,7 @@ void CcsdEquationOfMotionDavidson::run() {
   H.buildIntermediates(intermediates);
 
   CcsdPreConditioner<double> P(
-    Tai, Tabij, *Fij, *Fab, *Vabcd, *Viajb, *Vijab, *Vijkl
+    Tai, Tabij, *Fij, *Fab, *Vabcd, *Viajb, *Vijab, *Vijkl, this
   );
   allocatedTensorArgument(
     "SinglesHamiltonianDiagonal",
@@ -163,10 +164,13 @@ void CcsdEquationOfMotionDavidson::run() {
   LOG(0, "CcsdEomDavid") << "ediff " << ediff << std::endl;
   LOG(0, "CcsdEomDavid") << "Computing " << eigenStates << " eigen states"
                               << std::endl;
+  std::vector<int> refreshIterations(
+    RangeParser(getTextArgument("refreshIterations", "")).getRange()
+  );
   EigenSystemDavidson<FockVector<double>> eigenSystem(
     H, eigenStates, P, ediff,
     No*Nv + (No*(No - 1)/2 ) * (Nv * (Nv - 1)/2),
-    maxIterations, minIterations
+    maxIterations, minIterations, false, refreshIterations
   );
 
   std::vector<complex> eigenValues(eigenSystem.getEigenValues());
@@ -979,13 +983,15 @@ CcsdPreConditioner<F>::CcsdPreConditioner(
   CTF::Tensor<F> &Vabcd,
   CTF::Tensor<F> &Viajb,
   CTF::Tensor<F> &Vijab,
-  CTF::Tensor<F> &Vijkl
+  CTF::Tensor<F> &Vijkl,
+  Algorithm *algorithm_
 ): diagonalH(
     std::vector<PTR(CTF::Tensor<double>)>(
       {NEW(CTF::Tensor<double>, Tai), NEW(CTF::Tensor<double>, Tabij)}
     ),
     std::vector<std::string>({"ai", "abij"})
-  ) {
+  ), algorithm(algorithm_)
+  {
   // pointers to singles and doubles tensors of diagonal part
   auto Dai( diagonalH.get(0) );
   auto Dabij( diagonalH.get(1) );
@@ -1062,10 +1068,17 @@ public:
 };
 
 template <typename F>
-std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
+std::vector<FockVector<F>>
+CcsdPreConditioner<F>::getInitialBasis(
   const int eigenVectorsCount
 ) {
   LOG(0, "CcsdPreConditioner") << "Getting initial basis " << std::endl;
+  int random(algorithm->getIntegerArgument("preconditionerRandom", 0));
+  DefaultRandomEngine randomEngine;
+  std::normal_distribution<double> normalDistribution(0.0, 0.1);
+  if (random == 1) {
+    LOG(0, "CcsdPreConditioner") << "Randomizing initial guess" << std::endl;
+  }
   // find K=eigenVectorsCount lowest diagonal elements at each processor
   std::vector<std::pair<size_t, F>> localElements( diagonalH.readLocal() );
   std::sort(
@@ -1104,10 +1117,11 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
 
   // create basis vectors for each lowest element
   std::vector<V> basis;
-  //for (int b(0); b < eigenVectorsCount; ++b) {
-  int bb(0);
+
+  int currentEigenVectorCount(0);
   int b(0);
-  while (bb < eigenVectorsCount) {
+  int zeroVectorCount(0);
+  while (currentEigenVectorCount < eigenVectorsCount) {
     V basisElement(diagonalH);
     basisElement *= 0.0;
     std::vector<std::pair<size_t,F>> elements;
@@ -1117,6 +1131,14 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
       );
     }
     basisElement.write(elements);
+    if (random == 1) {
+      auto Rai(*basisElement.get(0));
+      auto Rabij(*basisElement.get(1));
+      setRandomTensor(Rai, normalDistribution, randomEngine);
+      setRandomTensor(Rabij, normalDistribution, randomEngine);
+      (*basisElement.get(0))["ai"] += Rai["ai"];
+      (*basisElement.get(1))["abij"] += Rabij["abij"];
+    }
     // (101, -70), (32, -55), ...
     // b1: 0... 1 (at global position 101) 0 ...
     // b2: 0... 1 (at global position 32) 0 ...i
@@ -1126,34 +1148,58 @@ std::vector<FockVector<F>> CcsdPreConditioner<F>::getInitialBasis(
     (*basisElement.get(1))["aaij"]=0.0;
     (*basisElement.get(1))["aaii"]=0.0;
 
+    // Antisymmetrize the new basis element
+    (*basisElement.get(1))["abij"] -= (*basisElement.get(1))["abji"];
+    (*basisElement.get(1))["abij"] -= (*basisElement.get(1))["baij"];
+
+    // Grams-schmidt it with the other elements of the basis
+    for (unsigned int j(0); j < basis.size(); ++j) {
+      basisElement -= basis[j] * basisElement.dot(basis[j]);
+    }
+
+    // Normalize basisElement
+    F basisElementNorm(std::sqrt(basisElement.dot(basisElement)));
+
+    // Check if basisElementNorm is zero
+    if ( std::abs(basisElementNorm) < 1e-10 ) {
+      zeroVectorCount++;
+      b++;
+      continue;
+    }
+
+    basisElement = 1 / std::sqrt(basisElement.dot(basisElement))*basisElement;
+    basisElementNorm = std::sqrt(basisElement.dot(basisElement));
+
     b++;
-    //std::cout << "b" << b << std::endl;
-    if (std::sqrt(basisElement.dot(basisElement))!=F(1)) continue;
-    bb++;
+
+    if ( std::abs(basisElementNorm - F(1)) > 1e-10 * F(1)) continue;
+
+    currentEigenVectorCount++;
+
+    // If it got here, basisElement is a valid vector
     basis.push_back(basisElement);
-    //std::cout << "bb" << bb << std::endl;
+
   }
 
   // Now make sure that you are giving an antisymmetric basis
   // and also that it is grammschmited afterwards
+  //LOG(1,"CcsdPreConditioner") << "Antisymmetrize basis" << std::endl;
+  //for (unsigned int j(0); j < basis.size(); ++j) {
+    //(*basis[j].get(1))["abij"] -= (*basis[j].get(1))["abji"];
+    //(*basis[j].get(1))["abij"] -= (*basis[j].get(1))["baij"];
+  //}
 
-  LOG(1,"CcsdPreConditioner") << "Antisymmetrize basis" << std::endl;
-  for (unsigned int j(0); j < basis.size(); ++j) {
-    (*basis[j].get(1))["abij"] -= (*basis[j].get(1))["abji"];
-    (*basis[j].get(1))["abij"] -= (*basis[j].get(1))["baij"];
-  }
-
-  LOG(1,"CcsdPreConditioner") <<
-      "Performing Gramm Schmidt in the initial basis"
-  << std::endl;
-  for (unsigned int b(0); b < basis.size(); ++b) {
-    V newVector(basis[b]);
-    for (unsigned int j(0); j < b; ++j) {
-      newVector -= basis[j] * basis[j].dot(basis[b]);
-    }
-    // normalize
-    basis[b] = 1 / std::sqrt(newVector.dot(newVector)) * newVector;
-  }
+  //LOG(1,"CcsdPreConditioner") <<
+      //"Performing Gramm Schmidt in the initial basis"
+  //<< std::endl;
+  //for (unsigned int b(0); b < basis.size(); ++b) {
+    //V newVector(basis[b]);
+    //for (unsigned int j(0); j < b; ++j) {
+      //newVector -= basis[j] * basis[j].dot(basis[b]);
+    //}
+    //// normalize
+    //basis[b] = 1 / std::sqrt(newVector.dot(newVector)) * newVector;
+  //}
 
   return basis;
 }
