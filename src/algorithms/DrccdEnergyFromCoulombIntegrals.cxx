@@ -43,13 +43,11 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
   // Check for spin polarization
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   // get amplitude parts
-  auto Tai( amplitudes->get(0) );
   auto Tabij( amplitudes->get(1) );
 
   // construct residuum
   auto residuum( NEW(FockVector<F>, *amplitudes) );
   *residuum *= F(0);
-  auto Rai( residuum->get(0) );
   auto Rabij( residuum->get(1) );
 
   int linearized(getIntegerArgument("linearized", 0));
@@ -61,7 +59,6 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
       "Solving T2 Amplitude Equations" << std::endl;
   }
 
-  (*Rabij)["abij"] += (*Vabij)["abij"];
 
   if (iteration > 0 || isArgumentGiven("startingDoublesAmplitudes")) {
     // for the remaining iterations compute the drCCD residuum
@@ -74,6 +71,9 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
       Calid["alid"]  = spins * (*Vijab)["klcd"] * (*Tabij)["acik"];
       (*Rabij)["abij"] += spins * Calid["alid"] * (*Tabij)["dblj"];
     }
+  } else {
+    // no amplitudes given: start with MP2 amplitudes
+    (*Rabij)["abij"] += (*Vabij)["abij"];
   }
 
   return residuum;
