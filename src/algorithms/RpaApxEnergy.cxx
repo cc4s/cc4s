@@ -117,7 +117,7 @@ void RpaApxEnergy::run() {
         (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
 
       // adjacent pairs exchanged
-      (*chi1VFGn)["FGn"] <<= -spins *
+      (*chi1VFGn)["FGn"] <<= +spins *
         (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
         (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
 
@@ -126,7 +126,7 @@ void RpaApxEnergy::run() {
       (*mp2Direct)[""] <<= -0.25 / Pi() *
         (*Wn)["n"] * (*chi0VFGn)["FGn"] * (*chi0VFGn)["GFn"],
       // 2 fold mirror symmetry only, 1/Pi from +nu and -nu
-      (*mp2Exchange)[""] <<= -0.5 / Pi() * (*Wn)["n"] * (*chi1VFGn)["FFn"]
+      (*mp2Exchange)[""] <<= +0.5 / Pi() * (*Wn)["n"] * (*chi1VFGn)["FFn"]
     )
   )->execute();
 
@@ -228,12 +228,14 @@ void RpaApxEnergy::diagonalizeChiV() {
     );
 
     // compute matrix functions of chi1W on their eigenvalues
-    // Log(1-X1W)for APX total energy
+    // -Log(1-X1W)for APX total energy
     CTF::Vector<complex> LogChi1WL(chi1WL.lens[0]);
     CTF::Transform<complex, complex>(
       std::function<void(complex, complex &)>(
         [](complex chi1W, complex &logChi1W) {
           logChi1W = std::log(1.0-chi1W);
+//          logChi1W = std::log(1.0-chi1W);
+//          LOG(1,"RPA") << "chi1W(L)=" << chi1W << std::endl;
         }
       )
     ) (
@@ -252,8 +254,8 @@ void RpaApxEnergy::diagonalizeChiV() {
   }
 
   // 2 fold mirror symmetry, 1/Pi from +nu and -nu
-  rpa *= 0.5 / Pi();
-  apx *= 0.5 / Pi();
+  rpa *= +0.5 / Pi();
+  apx *= -0.5 / Pi();
   LOG(1, "RPA") << "rpa=" << rpa << std::endl;
   LOG(1, "RPA") << "apx=" << apx << std::endl;
   setRealArgument("RpaApxEnergy", std::real(rpa+apx));
