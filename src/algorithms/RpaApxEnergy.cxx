@@ -6,8 +6,9 @@
 #include <tcc/Tcc.hpp>
 #include <util/CtfMachineTensor.hpp>
 #include <util/SlicedCtfTensor.hpp>
-#include <util/ScaLapackMatrix.hpp>
-#include <util/ScaLapackHermitianEigenSystemDc.hpp>
+#include <math/IterativePseudoInverse.hpp>
+#include <util/LapackMatrix.hpp>
+#include <util/LapackGeneralEigenSystem.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -157,40 +158,41 @@ void RpaApxEnergy::diagonalizeChiV() {
   );
   BlacsWorld world(Cc4s::world->rank, Cc4s::world->np);
   complex rpa(0), apx(0);
+  // TODO: distribute over nu
   for (int n(0); n < slicedChiVFGn.slicedLens[0]; ++n) {
     LOG(1,"RPA") << "evaluating imaginary frequency "
       << n << "/" << slicedChiVFGn.slicedLens[0] << std::endl;
     auto chiVFG( &slicedChiVFGn({n}) );
     auto PxVFG( &slicedPxVFGn({n}) );
-    int scaLens[2] = { chiVFG->lens[0], chiVFG->lens[1] };
-    auto scaChiVFG( NEW(ScaLapackMatrix<complex>, *chiVFG, scaLens, &world) );
-    auto scaU( NEW( ScaLapackMatrix<complex>, *scaChiVFG) );
-    ScaLapackHermitianEigenSystemDc<complex> eigenSystem(scaChiVFG, scaU);
-    std::vector<double> lambdas(chiVFG->lens[0]);
 
-    eigenSystem.solve(lambdas.data());
+    LapackMatrix<complex> laChiVFG(*chiVFG);
+    // NOTE: chiV is not hermitian in the complex case
+    LapackGeneralEigenSystem<complex> eigenSystem(laChiVFG);
 
-    // write diagonalizaing transformation to scliced ChiVFL
-    scaU->write(*chiVFG);
-    auto conjChiVFG(*chiVFG);
-    conjugate(conjChiVFG);
+    // write diagonalizaing transformation to U
+    auto UFL(*chiVFG);
+    eigenSystem.getRightEigenVectors().write(UFL);
+    IterativePseudoInverse<complex> invUFL(UFL);
+//    LOG(1,"RPA") << "right eigen error=" << eigenSystem.rightEigenError(laChiVFG) << std::endl;
+//    LOG(1,"RPA") << "left eigen error=" << eigenSystem.leftEigenError(laChiVFG) << std::endl;
+//    LOG(1,"RPA") << "biorthogonal error=" << eigenSystem.biorthogonalError() << std::endl;
 
     // write eigenvalues to CTF vector
-    CTF::Vector<double> lambdaL(lambdas.size());
-    int localNF(lambdaL.wrld->rank == 0 ? lambdas.size() : 0);
+    CTF::Vector<complex> lambdaL(eigenSystem.getEigenValues().size());
+    int localNF(lambdaL.wrld->rank == 0 ? lambdaL.lens[0] : 0);
     std::vector<int64_t> lambdaIndices(localNF);
     for (int64_t i(0); i < localNF; ++i) { lambdaIndices[i] = i; }
-    lambdaL.write(localNF, lambdaIndices.data(), lambdas.data());
+    lambdaL.write(
+      localNF, lambdaIndices.data(), eigenSystem.getEigenValues().data()
+    );
 
     // compute matrix functions of chiV on their eigenvalues
     // Log(1-XV)+XV for RPA total energy
-    CTF::Vector<complex> LogChiVL(lambdas.size());
-    CTF::Transform<double, complex>(
-      std::function<void(double, complex &)>(
-        [](double chiV, complex &logChiV) {
-//          logChiV = chiV < 1 ? std::log(1-chiV) + chiV : -chiV*chiV/2;
-          logChiV = -chiV*chiV/2 + chiV*chiV*chiV/3;
-          LOG(1,"RPA") << "lambda(chiV)=" << chiV << std::endl;
+    CTF::Vector<complex> LogChiVL(lambdaL.lens[0]);
+    CTF::Transform<complex, complex>(
+      std::function<void(complex, complex &)>(
+        [](complex chiV, complex &logChiV) {
+          logChiV = std::log(1.0-chiV) + chiV;
         }
       )
     ) (
@@ -198,23 +200,31 @@ void RpaApxEnergy::diagonalizeChiV() {
     );
 
     // 1/(1-XV) for APX total energy
-    CTF::Vector<complex> InvChiVL(lambdas.size());
-    CTF::Transform<double, complex>(
-      std::function<void(double, complex &)>(
-        [](double chiV, complex &invChiV) {
-          invChiV = chiV < 1 ? 1 / (1-chiV) : 1;
+    CTF::Vector<complex> InvChiVL(lambdaL.lens[0]);
+    CTF::Transform<complex, complex>(
+      std::function<void(complex, complex &)>(
+        [](complex chiV, complex &invChiV) {
+          invChiV = 1.0 / (1.0-chiV);
         }
       )
     ) (
       lambdaL["L"], InvChiVL["L"]
     );
 
+/*
+    // check if UFL diagonalizes chiVFG
+    UFL["FGn"] = UFL["FLn"] * lambdaL["L"] * invUFL.get()["LG"];
+    UFL["FGn"] += (-1.0) * (*chiVFG)["FGn"];
+    double norm = frobeniusNorm(UFL);
+    LOG(1,"RPA") << "|X_F^G - U*_F^L lambda_L U_L^G|=" << norm << std::endl;
+*/
+
     CTF::Scalar<complex> e;
     // Tr{Log(1-XV)+XV}
     e[""] = LogChiVL["L"];
     rpa += weights[n] * e.get_val();
     // Tr{Px(1-XV)^-1}
-    e[""] = (*PxVFG)["FG"] * (*chiVFG)["GL"] * InvChiVL["L"] * conjChiVFG["FL"];
+    e[""] = (*PxVFG)["FGn"] * UFL["GLn"] * InvChiVL["L"] * invUFL.get()["LF"];
     apx += weights[n] * e.get_val();
   }
 
