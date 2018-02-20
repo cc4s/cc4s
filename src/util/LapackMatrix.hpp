@@ -1,8 +1,10 @@
-/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef LAPACK_MATRIX_DEFINED
 #define LAPACK_MATRIX_DEFINED
 
 #include <vector>
+#include <sstream>
+#include <ctf.hpp>
 
 namespace cc4s {
   template <typename F=double>
@@ -28,6 +30,25 @@ namespace cc4s {
     {
     }
 
+    /**
+     * \brief Constructs an LapackMatrix from a CTF tensor on all ranks
+     **/
+    LapackMatrix(
+      CTF::Tensor<F> &ctfA
+    ):
+      rows(ctfA.lens[0]), columns(ctfA.lens[1])
+    {
+      values.resize(ctfA.lens[0]*ctfA.lens[1]);
+      ctfA.read_all(values.data(), true);
+    }
+
+    LapackMatrix<F> &operator =(const LapackMatrix<F> &A) {
+      rows = A.rows;
+      columns = A.columns;
+      values = A.values;
+      return *this;
+    }
+
     const F &operator ()(const  int i, const int j) const {
       return values[i+j*rows];
     }
@@ -51,6 +72,28 @@ namespace cc4s {
      **/
     F *getValues() {
       return values.data();
+    }
+
+    /**
+     * \brief Writes the data of this Lapack matrix to the CTF tensor.
+     **/
+    void write(CTF::Tensor<F> &ctfA) const {
+      if (ctfA.lens[0] != rows || ctfA.lens[1] != columns) {
+        std::stringstream stream;
+        stream << "Tensor is not of correct shape to receive ("
+          << rows << "x" << columns << ") matrix: ";
+        std::string join("");
+        for (int d(0); d < ctfA.order; ++d) {
+          stream << join << ctfA.lens[d];
+          join = "x";
+        }
+        throw new EXCEPTION(stream.str());
+      }
+      int64_t size(values.size());
+      int64_t localSize(ctfA.wrld->rank == 0 ? size : 0);
+      std::vector<int64_t> indices(localSize);
+      for (int64_t i(0); i < localSize; ++i) { indices[i] = i; }
+      ctfA.write(localSize, indices.data(), values.data());
     }
 
   protected:

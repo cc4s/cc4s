@@ -1,4 +1,4 @@
-/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef LAPACK_GENERAL_EIGEN_SYSTEM_DEFINED
 #define LAPACK_GENERAL_EIGEN_SYSTEM_DEFINED
 
@@ -190,6 +190,50 @@ namespace cc4s {
 
     const LapackMatrix<complex> &getLeftEigenVectors() const {
       return L;
+    }
+
+    double rightEigenError(const LapackMatrix<complex> &A) {
+      double error(0);
+      for (int i(0); i < A.getRows(); ++i) {
+        for (int k(0); k < A.getRows(); ++k) {
+          complex element(0);
+          for (int j(0); j < A.getRows(); ++j) {
+            element += A(i,j) * R(j,k);
+          }
+          element -= lambdas[k] * R(i,k);
+          error += std::real(element*std::conj(element));
+        }
+      }
+      return error;
+    }
+    double leftEigenError(const LapackMatrix<complex> &A) {
+      double error(0);
+      for (int j(0); j < A.getRows(); ++j) {
+        for (int k(0); k < A.getRows(); ++k) {
+          complex element(0);
+          for (int i(0); i < A.getRows(); ++i) {
+            element += std::conj(L(i,k)) * A(i,j);
+          }
+          element -= std::conj(L(j,k)) * lambdas[k];
+          error += std::real(element*std::conj(element));
+        }
+      }
+      return error;
+    }
+
+    double biorthogonalError() {
+      double error(0);
+      for (int i(0); i < R.getRows(); ++i) {
+        for (int j(0); j < R.getRows(); ++j) {
+          complex element(0);
+          for (int k(0); k < R.getRows(); ++k) {
+            element += std::conj(R(i,k)) * R(j,k);
+          }
+          element -= i == j ? 1.0 : 0.0;
+          error += i == j ? 0.0 : std::real(element*std::conj(element));
+        }
+      }
+      return error;
     }
 
     class EigenValueComparator {
