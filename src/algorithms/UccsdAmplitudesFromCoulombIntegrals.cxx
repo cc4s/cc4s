@@ -7,6 +7,7 @@
 #include <math/RandomTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
+#include <util/RangeParser.hpp>
 #include <ctf.hpp>
 #include <Cc4s.hpp>
 
