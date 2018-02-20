@@ -129,6 +129,11 @@ void Mp2ImaginaryFrequencyGrid::applyConstraints(IntegrationGrid &direction) {
     direction.points[n] = 0.0;
     direction.weights[n] = 0.0;
   }
+  if (getIntegerArgument("weightsOnly", 0) > 0) {
+    for (auto &point: direction.points) {
+      point = 0;
+    }
+  }
 }
 
 double Mp2ImaginaryFrequencyGrid::lineSearch(

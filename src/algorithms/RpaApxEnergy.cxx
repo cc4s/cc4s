@@ -109,10 +109,10 @@ void RpaApxEnergy::run() {
     (
       // bubble with half V on both ends:
       // particle/hole bubble propagating forwards
-      (*chiVFGn)["FGn"] <<= spins *
+      (*chiVFGn)["FGn"] <<= -spins *
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
       // particle/hole bubble propagating backwards, positive nu
-      (*chiVFGn)["FGn"] += spins *
+      (*chiVFGn)["FGn"] += -spins *
         (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
 
       // adjacent pairs exchanged
@@ -158,6 +158,8 @@ void RpaApxEnergy::diagonalizeChiV() {
   BlacsWorld world(Cc4s::world->rank, Cc4s::world->np);
   complex rpa(0), apx(0);
   for (int n(0); n < slicedChiVFGn.slicedLens[0]; ++n) {
+    LOG(1,"RPA") << "evaluating imaginary frequency "
+      << n << "/" << slicedChiVFGn.slicedLens[0] << std::endl;
     auto chiVFG( &slicedChiVFGn({n}) );
     auto PxVFG( &slicedPxVFGn({n}) );
     int scaLens[2] = { chiVFG->lens[0], chiVFG->lens[1] };
@@ -186,7 +188,9 @@ void RpaApxEnergy::diagonalizeChiV() {
     CTF::Transform<double, complex>(
       std::function<void(double, complex &)>(
         [](double chiV, complex &logChiV) {
-          logChiV = chiV < 1 ? std::log(1-chiV) + chiV : -chiV*chiV/2;
+//          logChiV = chiV < 1 ? std::log(1-chiV) + chiV : -chiV*chiV/2;
+          logChiV = -chiV*chiV/2 + chiV*chiV*chiV/3;
+          LOG(1,"RPA") << "lambda(chiV)=" << chiV << std::endl;
         }
       )
     ) (
@@ -204,14 +208,6 @@ void RpaApxEnergy::diagonalizeChiV() {
     ) (
       lambdaL["L"], InvChiVL["L"]
     );
-
-    for (int L(0); L < chiVFG->lens[0]; ++L) {
-      // TODO: what is to be done with chiV eigenvalues >= 1?
-      if (lambdas[L] > 1) {
-        LOG(0,"RPA") << "WARNING: chiV(n=" << n <<
-          ") > 1, taking MP2 value instead." << std::endl;
-      }
-    }
 
     CTF::Scalar<complex> e;
     // Tr{Log(1-XV)+XV}
