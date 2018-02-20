@@ -103,30 +103,30 @@ void RpaApxEnergy::run() {
 
   auto mp2Direct(tcc->createTensor(std::vector<int>(), "mp2Direct"));
   auto mp2Exchange(tcc->createTensor(std::vector<int>(), "mp2Exchange"));
-  chiVFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chiV");
-  PxVFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "PxV");
+  chi0VFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chi0V");
+  chi1VFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chi1V");
   double spins(2.0);
   tcc->compile(
     (
       // bubble with half V on both ends:
       // particle/hole bubble propagating forwards
-      (*chiVFGn)["FGn"] <<= -spins *
+      (*chi0VFGn)["FGn"] <<= -spins *
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
       // particle/hole bubble propagating backwards, positive nu
-      (*chiVFGn)["FGn"] += -spins *
+      (*chi0VFGn)["FGn"] += -spins *
         (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
 
       // adjacent pairs exchanged
-      (*PxVFGn)["FGn"] <<= spins *
+      (*chi1VFGn)["FGn"] <<= -spins *
         (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
         (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
 
       // compute Mp2 energy for benchmark of frequency grid
       // 2 fold rotational and 2 fold mirror symmetry, 1/Pi from +nu and -nu
       (*mp2Direct)[""] <<= -0.25 / Pi() *
-        (*Wn)["n"] * (*chiVFGn)["FGn"] * (*chiVFGn)["GFn"],
+        (*Wn)["n"] * (*chi0VFGn)["FGn"] * (*chi0VFGn)["GFn"],
       // 2 fold mirror symmetry only, 1/Pi from +nu and -nu
-      (*mp2Exchange)[""] <<= +0.5 / Pi() * (*Wn)["n"] * (*PxVFGn)["FFn"]
+      (*mp2Exchange)[""] <<= -0.5 / Pi() * (*Wn)["n"] * (*chi1VFGn)["FFn"]
     )
   )->execute();
 
@@ -149,82 +149,105 @@ void RpaApxEnergy::diagonalizeChiV() {
   std::vector<double> weights(wn->lens[0]);
   wn->read_all(weights.data(), true);
 
-  // slice CTF tensor of chiV and PxV along n (=3rd) dimension
-  SlicedCtfTensor<complex> slicedChiVFGn(
-    chiVFGn->getMachineTensor<MT>()->tensor, {2}
+  // slice CTF tensor of chi0V and chi1V along n (=3rd) dimension
+  SlicedCtfTensor<complex> slicedChi0VFGn(
+    chi0VFGn->getMachineTensor<MT>()->tensor, {2}
   );
-  SlicedCtfTensor<complex> slicedPxVFGn(
-    PxVFGn->getMachineTensor<MT>()->tensor, {2}
+  SlicedCtfTensor<complex> slicedChi1VFGn(
+    chi1VFGn->getMachineTensor<MT>()->tensor, {2}
   );
-  BlacsWorld world(Cc4s::world->rank, Cc4s::world->np);
   complex rpa(0), apx(0);
   // TODO: distribute over nu
-  for (int n(0); n < slicedChiVFGn.slicedLens[0]; ++n) {
+  for (int n(0); n < slicedChi0VFGn.slicedLens[0]; ++n) {
     LOG(1,"RPA") << "evaluating imaginary frequency "
-      << n << "/" << slicedChiVFGn.slicedLens[0] << std::endl;
-    auto chiVFG( &slicedChiVFGn({n}) );
-    auto PxVFG( &slicedPxVFGn({n}) );
+      << n << "/" << slicedChi0VFGn.slicedLens[0] << std::endl;
+    auto chi0VFG( &slicedChi0VFGn({n}) );
+    auto chi1VFG( &slicedChi1VFGn({n}) );
 
-    LapackMatrix<complex> laChiVFG(*chiVFG);
-    // NOTE: chiV is not hermitian in the complex case
-    LapackGeneralEigenSystem<complex> eigenSystem(laChiVFG);
+    LapackMatrix<complex> laChi0VFG(*chi0VFG);
+    // NOTE: chi0V is not hermitian in the complex case
+    LapackGeneralEigenSystem<complex> chi0VEigenSystem(laChi0VFG);
 
     // write diagonalizaing transformation to U
-    auto UFL(*chiVFG);
-    eigenSystem.getRightEigenVectors().write(UFL);
+    auto UFL(*chi0VFG);
+    chi0VEigenSystem.getRightEigenVectors().write(UFL);
+    // compute pseudo inverse for eigendecomposition
     IterativePseudoInverse<complex> invUFL(UFL);
-//    LOG(1,"RPA") << "right eigen error=" << eigenSystem.rightEigenError(laChiVFG) << std::endl;
-//    LOG(1,"RPA") << "left eigen error=" << eigenSystem.leftEigenError(laChiVFG) << std::endl;
-//    LOG(1,"RPA") << "biorthogonal error=" << eigenSystem.biorthogonalError() << std::endl;
+//    LOG(1,"RPA") << "right eigen error=" << chi0VEigenSystem.rightEigenError(laChi0VFG) << std::endl;
+//    LOG(1,"RPA") << "left eigen error=" << chi0VEigenSystem.leftEigenError(laChi0VFG) << std::endl;
+//    LOG(1,"RPA") << "biorthogonal error=" << chi0VEigenSystem.biorthogonalError() << std::endl;
 
     // write eigenvalues to CTF vector
-    CTF::Vector<complex> lambdaL(eigenSystem.getEigenValues().size());
-    int localNF(lambdaL.wrld->rank == 0 ? lambdaL.lens[0] : 0);
+    CTF::Vector<complex> chi0VL(chi0VEigenSystem.getEigenValues().size());
+    int localNF(chi0VL.wrld->rank == 0 ? chi0VL.lens[0] : 0);
     std::vector<int64_t> lambdaIndices(localNF);
     for (int64_t i(0); i < localNF; ++i) { lambdaIndices[i] = i; }
-    lambdaL.write(
-      localNF, lambdaIndices.data(), eigenSystem.getEigenValues().data()
+    chi0VL.write(
+      localNF, lambdaIndices.data(), chi0VEigenSystem.getEigenValues().data()
     );
 
-    // compute matrix functions of chiV on their eigenvalues
-    // Log(1-XV)+XV for RPA total energy
-    CTF::Vector<complex> LogChiVL(lambdaL.lens[0]);
+    // compute matrix functions of chi0V on their eigenvalues
+    // Log(1-X0V)+X0V for RPA total energy
+    CTF::Vector<complex> LogChi0VL(chi0VL.lens[0]);
     CTF::Transform<complex, complex>(
       std::function<void(complex, complex &)>(
-        [](complex chiV, complex &logChiV) {
-          logChiV = std::log(1.0-chiV) + chiV;
+        [](complex chi0V, complex &logChi0V) {
+          logChi0V = std::log(1.0-chi0V) + chi0V;
         }
       )
     ) (
-      lambdaL["L"], LogChiVL["L"]
+      chi0VL["L"], LogChi0VL["L"]
     );
 
-    // 1/(1-XV) for APX total energy
-    CTF::Vector<complex> InvChiVL(lambdaL.lens[0]);
+    // 1/(1-XV) for W
+    CTF::Vector<complex> InvChi0VL(chi0VL.lens[0]);
     CTF::Transform<complex, complex>(
       std::function<void(complex, complex &)>(
-        [](complex chiV, complex &invChiV) {
-          invChiV = 1.0 / (1.0-chiV);
+        [](complex chi0V, complex &invChi0V) {
+          invChi0V = 1.0 / (1.0-chi0V);
         }
       )
     ) (
-      lambdaL["L"], InvChiVL["L"]
+      chi0VL["L"], InvChi0VL["L"]
     );
 
-/*
-    // check if UFL diagonalizes chiVFG
-    UFL["FGn"] = UFL["FLn"] * lambdaL["L"] * invUFL.get()["LG"];
-    UFL["FGn"] += (-1.0) * (*chiVFG)["FGn"];
-    double norm = frobeniusNorm(UFL);
-    LOG(1,"RPA") << "|X_F^G - U*_F^L lambda_L U_L^G|=" << norm << std::endl;
-*/
+    // setup chi1W for APX total energy
+    auto chi1WFG(*chi1VFG);
+    chi1WFG["FGn"] =
+      (*chi1VFG)["FHn"] * UFL["HLn"] * InvChi0VL["L"] * invUFL.get()["LG"];
+
+    // diagonalize chi1W
+    LapackMatrix<complex> laChi1WFG(chi1WFG);
+    // NOTE: chi1W is not hermitian in the complex case
+    LapackGeneralEigenSystem<complex> chi1WEigenSystem(laChi1WFG);
+
+    // write eigenvalues to CTF vector
+    CTF::Vector<complex> chi1WL(chi1WEigenSystem.getEigenValues().size());
+    chi1WL.write(
+      localNF, lambdaIndices.data(), chi1WEigenSystem.getEigenValues().data()
+    );
+
+    // compute matrix functions of chi1W on their eigenvalues
+    // Log(1-X1W)for APX total energy
+    CTF::Vector<complex> LogChi1WL(chi1WL.lens[0]);
+    CTF::Transform<complex, complex>(
+      std::function<void(complex, complex &)>(
+        [](complex chi1W, complex &logChi1W) {
+          logChi1W = std::log(1.0-chi1W);
+        }
+      )
+    ) (
+      chi1WL["L"], LogChi1WL["L"]
+    );
+
 
     CTF::Scalar<complex> e;
-    // Tr{Log(1-XV)+XV}
-    e[""] = LogChiVL["L"];
+    // Tr{Log(1-X0V)+XV}
+    e[""] = LogChi0VL["L"];
     rpa += weights[n] * e.get_val();
-    // Tr{Px(1-XV)^-1}
-    e[""] = (*PxVFG)["FGn"] * UFL["GLn"] * InvChiVL["L"] * invUFL.get()["LF"];
+
+    // Tr{Log(1-X1W)}
+    e[""] = LogChi1WL["L"];
     apx += weights[n] * e.get_val();
   }
 

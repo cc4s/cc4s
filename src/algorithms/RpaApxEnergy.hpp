@@ -28,13 +28,13 @@ namespace cc4s {
      * where \f$(\chi V)_L\f$ the eigenvalues of
      * \f$(V^{1/2}.\chi.V^{1/2})^F_G\f$.
      **/
-    PTR(tcc::Tensor<complex>) chiVFGn, PxVFGn;
+    PTR(tcc::Tensor<complex>) chi0VFGn, chi1VFGn;
     /**
      * \brief \f$(\chi V)_L\f$ are the eigenvalues of
      * \f$(V^{1/2}.\chi.V^{1/2})^F_G\f$ for each imaginary frequency point
      * \f%\nu_n\f$.
      **/
-    PTR(tcc::Tensor<complex>) chiVLn;
+    PTR(tcc::Tensor<complex>) chi0VLn;
   };
 }
 
