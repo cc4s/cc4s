@@ -9,6 +9,7 @@
 #include <math/IterativePseudoInverse.hpp>
 #include <util/LapackMatrix.hpp>
 #include <util/LapackGeneralEigenSystem.hpp>
+#include <util/MpiCommunicator.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -109,6 +110,7 @@ void RpaApxEnergy::run() {
   tcc->compile(
     (
       // bubble with half V on both ends:
+      // sign: 1xhole, 1xinteraction, 1xloop: (-1)^3
       // particle/hole bubble propagating forwards
       (*chi0VFGn)["FGn"] <<= -spins *
         (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
@@ -117,16 +119,18 @@ void RpaApxEnergy::run() {
         (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
 
       // adjacent pairs exchanged
-      (*chi1VFGn)["FGn"] <<= +spins *
+      // sign: 2xholes, 2xinteraction, 1xloop: (-1)^5
+      (*chi1VFGn)["FGn"] <<= -spins *
         (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
         (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
 
       // compute Mp2 energy for benchmark of frequency grid
       // 2 fold rotational and 2 fold mirror symmetry, 1/Pi from +nu and -nu
+      // sign: 1xdiagram: (-1)
       (*mp2Direct)[""] <<= -0.25 / Pi() *
         (*Wn)["n"] * (*chi0VFGn)["FGn"] * (*chi0VFGn)["GFn"],
       // 2 fold mirror symmetry only, 1/Pi from +nu and -nu
-      (*mp2Exchange)[""] <<= +0.5 / Pi() * (*Wn)["n"] * (*chi1VFGn)["FFn"]
+      (*mp2Exchange)[""] <<= -0.5 / Pi() * (*Wn)["n"] * (*chi1VFGn)["FFn"]
     )
   )->execute();
 
@@ -149,6 +153,7 @@ void RpaApxEnergy::diagonalizeChiV() {
   std::vector<double> weights(wn->lens[0]);
   wn->read_all(weights.data(), true);
 
+  LOG(1, "RPA") << "slicing along imaginary frequencies..." << std::endl;
   // slice CTF tensor of chi0V and chi1V along n (=3rd) dimension
   SlicedCtfTensor<complex> slicedChi0VFGn(
     chi0VFGn->getMachineTensor<MT>()->tensor, {2}
@@ -156,8 +161,18 @@ void RpaApxEnergy::diagonalizeChiV() {
   SlicedCtfTensor<complex> slicedChi1VFGn(
     chi1VFGn->getMachineTensor<MT>()->tensor, {2}
   );
-  complex rpa(0), apx(0);
-  // TODO: distribute over nu
+  // we need non-hermitian diagonlization routines, which are not parallel,
+  // so rather distribute over frequencies
+  complex localRpa(0), localApx(0);
+/*
+  MpiCommunicator communicator(*wn->wrld);
+  for (
+    int n(communicator.getRank());
+    n < slicedChi0VFGn.slicedLens[0];
+    n += communicator.getProcesses()
+  ) {
+*/
+  // TODO: distribute over frequencies
   for (int n(0); n < slicedChi0VFGn.slicedLens[0]; ++n) {
     LOG(1,"RPA") << "evaluating imaginary frequency "
       << n << "/" << slicedChi0VFGn.slicedLens[0] << std::endl;
@@ -187,12 +202,12 @@ void RpaApxEnergy::diagonalizeChiV() {
     );
 
     // compute matrix functions of chi0V on their eigenvalues
-    // Log(1-X0V)+X0V for RPA total energy
+    // -(Log(1-X0V)+X0V) for RPA total energy
     CTF::Vector<complex> LogChi0VL(chi0VL.lens[0]);
     CTF::Transform<complex, complex>(
       std::function<void(complex, complex &)>(
         [](complex chi0V, complex &logChi0V) {
-          logChi0V = std::log(1.0-chi0V) + chi0V;
+          logChi0V = -(std::log(1.0-chi0V) + chi0V);
         }
       )
     ) (
@@ -228,12 +243,12 @@ void RpaApxEnergy::diagonalizeChiV() {
     );
 
     // compute matrix functions of chi1W on their eigenvalues
-    // -Log(1-X1W)for APX total energy
+    // -Log(1-X1W) for APX total energy
     CTF::Vector<complex> LogChi1WL(chi1WL.lens[0]);
     CTF::Transform<complex, complex>(
       std::function<void(complex, complex &)>(
         [](complex chi1W, complex &logChi1W) {
-          logChi1W = std::log(1.0-chi1W);
+          logChi1W = -std::log(1.0-chi1W);
 //          logChi1W = std::log(1.0-chi1W);
 //          LOG(1,"RPA") << "chi1W(L)=" << chi1W << std::endl;
         }
@@ -244,17 +259,27 @@ void RpaApxEnergy::diagonalizeChiV() {
 
 
     CTF::Scalar<complex> e;
-    // Tr{Log(1-X0V)+XV}
+    // Tr{-(Log(1-X0V)+XV)}
     e[""] = LogChi0VL["L"];
-    rpa += weights[n] * e.get_val();
+    localRpa += weights[n] * e.get_val();
 
-    // Tr{Log(1-X1W)}
+    // Tr{-Log(1-X1W)}
     e[""] = LogChi1WL["L"];
-    apx += weights[n] * e.get_val();
+    localApx += weights[n] * e.get_val();
   }
 
+  // wait for all processes to finish their frequencies
+//  communicator.barrier();
+
+  // reduce from all nodes
+//  complex rpa, apx;
+//  communicator.allReduce(localRpa, rpa);
+//  communicator.allReduce(localApx, apx);
+  complex rpa(localRpa), apx(localApx);
+
   // 2 fold mirror symmetry, 1/Pi from +nu and -nu
-  rpa *= +0.5 / Pi();
+  // sign: 1xdiagram: (-1)
+  rpa *= -0.5 / Pi();
   apx *= -0.5 / Pi();
   LOG(1, "RPA") << "rpa=" << rpa << std::endl;
   LOG(1, "RPA") << "apx=" << apx << std::endl;
