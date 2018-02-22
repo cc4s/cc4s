@@ -6,8 +6,8 @@
 #include <tcc/Tcc.hpp>
 #include <util/CtfMachineTensor.hpp>
 #include <util/SlicedCtfTensor.hpp>
-#include <math/IterativePseudoInverse.hpp>
 #include <util/LapackMatrix.hpp>
+#include <util/LapackInverse.hpp>
 #include <util/LapackGeneralEigenSystem.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <tcc/DryTensor.hpp>
@@ -154,128 +154,99 @@ void RpaApxEnergy::diagonalizeChiV() {
   wn->read_all(weights.data(), true);
 
   LOG(1, "RPA") << "slicing along imaginary frequencies..." << std::endl;
+  MpiCommunicator communicator(*wn->wrld);
   // slice CTF tensor of chi0V and chi1V along n (=3rd) dimension
-  SlicedCtfTensor<complex> slicedChi0VFGn(
-    chi0VFGn->getMachineTensor<MT>()->tensor, {2}
-  );
-  SlicedCtfTensor<complex> slicedChi1VFGn(
-    chi1VFGn->getMachineTensor<MT>()->tensor, {2}
-  );
+  auto ctfChi0VFGn( &chi0VFGn->getMachineTensor<MT>()->tensor );
+  auto ctfChi1VFGn( &chi1VFGn->getMachineTensor<MT>()->tensor );
+  size_t sliceElementCount(ctfChi0VFGn->lens[0] * ctfChi0VFGn->lens[1]);
+  std::map<int, std::vector<complex>> localChi0VFGn;
+  std::map<int, std::vector<complex>> localChi1VFGn;
+  for (
+    int pass(0);
+    pass < (ctfChi0VFGn->lens[2]-1) / communicator.getProcesses() + 1;
+    ++pass
+  ) {
+    // get local slice number
+    int n( pass * communicator.getProcesses() + communicator.getRank() );
+    std::vector<int64_t> indices;
+    if (n < ctfChi0VFGn->lens[2]) {
+      indices.resize(sliceElementCount);
+      localChi0VFGn[n].resize(sliceElementCount);
+      localChi1VFGn[n].resize(sliceElementCount);
+    }
+    for (size_t i(0); i < indices.size(); ++i) {
+      indices[i] = n*sliceElementCount + i;
+    }
+    ctfChi0VFGn->read(indices.size(), indices.data(), localChi0VFGn[n].data());
+    ctfChi1VFGn->read(indices.size(), indices.data(), localChi1VFGn[n].data());
+  }
   // we need non-hermitian diagonlization routines, which are not parallel,
   // so rather distribute over frequencies
   complex localRpa(0), localApx(0);
-/*
-  MpiCommunicator communicator(*wn->wrld);
   for (
     int n(communicator.getRank());
-    n < slicedChi0VFGn.slicedLens[0];
+    n < ctfChi0VFGn->lens[2];
     n += communicator.getProcesses()
   ) {
-*/
-  // TODO: distribute over frequencies
-  for (int n(0); n < slicedChi0VFGn.slicedLens[0]; ++n) {
     LOG(1,"RPA") << "evaluating imaginary frequency "
-      << n << "/" << slicedChi0VFGn.slicedLens[0] << std::endl;
-    auto chi0VFG( &slicedChi0VFGn({n}) );
-    auto chi1VFG( &slicedChi1VFGn({n}) );
+      << n << "/" << ctfChi0VFGn->lens[2] << std::endl;
+    LapackMatrix<complex> laChi0VFG(
+      ctfChi0VFGn->lens[0], ctfChi0VFGn->lens[1], localChi0VFGn[n]
+    );
+    LapackMatrix<complex> laChi1VFG(
+      ctfChi1VFGn->lens[0], ctfChi1VFGn->lens[1], localChi1VFGn[n]
+    );
 
-    LapackMatrix<complex> laChi0VFG(*chi0VFG);
     // NOTE: chi0V is not hermitian in the complex case
     LapackGeneralEigenSystem<complex> chi0VEigenSystem(laChi0VFG);
 
-    // write diagonalizaing transformation to U
-    auto UFL(*chi0VFG);
-    chi0VEigenSystem.getRightEigenVectors().write(UFL);
-    // compute pseudo inverse for eigendecomposition
-    IterativePseudoInverse<complex> invUFL(UFL);
-//    LOG(1,"RPA") << "right eigen error=" << chi0VEigenSystem.rightEigenError(laChi0VFG) << std::endl;
-//    LOG(1,"RPA") << "left eigen error=" << chi0VEigenSystem.leftEigenError(laChi0VFG) << std::endl;
-//    LOG(1,"RPA") << "biorthogonal error=" << chi0VEigenSystem.biorthogonalError() << std::endl;
-
-    // write eigenvalues to CTF vector
-    CTF::Vector<complex> chi0VL(chi0VEigenSystem.getEigenValues().size());
-    int localNF(chi0VL.wrld->rank == 0 ? chi0VL.lens[0] : 0);
-    std::vector<int64_t> lambdaIndices(localNF);
-    for (int64_t i(0); i < localNF; ++i) { lambdaIndices[i] = i; }
-    chi0VL.write(
-      localNF, lambdaIndices.data(), chi0VEigenSystem.getEigenValues().data()
-    );
+    auto RFL( chi0VEigenSystem.getRightEigenVectors() );
+    // compute inverse for eigen decomposition
+    LapackInverse<complex> invRFL(RFL);
 
     // compute matrix functions of chi0V on their eigenvalues
-    // -(Log(1-X0V)+X0V) for RPA total energy
-    CTF::Vector<complex> LogChi0VL(chi0VL.lens[0]);
-    CTF::Transform<complex, complex>(
-      std::function<void(complex, complex &)>(
-        [](complex chi0V, complex &logChi0V) {
-          logChi0V = -(std::log(1.0-chi0V) + chi0V);
-        }
-      )
-    ) (
-      chi0VL["L"], LogChi0VL["L"]
-    );
+    // Tr{-(Log(1-X0V)+X0V)} for RPA total energy
+    auto chi0VL( &chi0VEigenSystem.getEigenValues() );
+    complex trLogChi0V(0);
+    for (size_t l(0); l < chi0VL->size(); ++l) {
+      trLogChi0V -= std::log(1.0 - (*chi0VL)[l]) + (*chi0VL)[l];
+    }
 
-    // 1/(1-XV) for W
-    CTF::Vector<complex> InvChi0VL(chi0VL.lens[0]);
-    CTF::Transform<complex, complex>(
-      std::function<void(complex, complex &)>(
-        [](complex chi0V, complex &invChi0V) {
-          invChi0V = 1.0 / (1.0-chi0V);
-        }
-      )
-    ) (
-      chi0VL["L"], InvChi0VL["L"]
-    );
+    // multiply RFL with 1/(1-XV) for each eigenvalue
+    for (size_t l(0); l < chi0VL->size(); ++l) {
+      for (int f(0); f < RFL.getRows(); ++f) {
+        RFL(f,l) /= 1.0 - (*chi0VL)[l];
+      }
+    }
+    // multiply with invRFL to get V^-1.W = (1-chi0V)^-1
+    auto invVWFG( RFL * invRFL.get() );
 
     // setup chi1W for APX total energy
-    auto chi1WFG(*chi1VFG);
-    chi1WFG["FGn"] =
-      (*chi1VFG)["FHn"] * UFL["HLn"] * InvChi0VL["L"] * invUFL.get()["LG"];
+    auto chi1WFG( laChi1VFG * invVWFG );
 
-    // diagonalize chi1W
-    LapackMatrix<complex> laChi1WFG(chi1WFG);
+    // diagonalize chi1W, now we only need the eigenvalues
     // NOTE: chi1W is not hermitian in the complex case
-    LapackGeneralEigenSystem<complex> chi1WEigenSystem(laChi1WFG);
-
-    // write eigenvalues to CTF vector
-    CTF::Vector<complex> chi1WL(chi1WEigenSystem.getEigenValues().size());
-    chi1WL.write(
-      localNF, lambdaIndices.data(), chi1WEigenSystem.getEigenValues().data()
-    );
+    LapackGeneralEigenSystem<complex> chi1WEigenSystem(chi1WFG, false);
 
     // compute matrix functions of chi1W on their eigenvalues
-    // -Log(1-X1W) for APX total energy
-    CTF::Vector<complex> LogChi1WL(chi1WL.lens[0]);
-    CTF::Transform<complex, complex>(
-      std::function<void(complex, complex &)>(
-        [](complex chi1W, complex &logChi1W) {
-          logChi1W = -std::log(1.0-chi1W);
-//          logChi1W = std::log(1.0-chi1W);
-//          LOG(1,"RPA") << "chi1W(L)=" << chi1W << std::endl;
-        }
-      )
-    ) (
-      chi1WL["L"], LogChi1WL["L"]
-    );
+    // Tr{-Log(1-X1W)} for APX total energy
+    auto chi1WL( &chi1WEigenSystem.getEigenValues() );
+    complex trLogChi1W(0);
+    for (size_t l(0); l < chi0VL->size(); ++l) {
+      trLogChi1W -= std::log(1.0 - (*chi1WL)[l]);
+    }
 
-
-    CTF::Scalar<complex> e;
-    // Tr{-(Log(1-X0V)+XV)}
-    e[""] = LogChi0VL["L"];
-    localRpa += weights[n] * e.get_val();
-
-    // Tr{-Log(1-X1W)}
-    e[""] = LogChi1WL["L"];
-    localApx += weights[n] * e.get_val();
+    localRpa += weights[n] * trLogChi0V;
+    localApx += weights[n] * trLogChi1W;
   }
 
   // wait for all processes to finish their frequencies
-//  communicator.barrier();
+  communicator.barrier();
 
   // reduce from all nodes
-//  complex rpa, apx;
-//  communicator.allReduce(localRpa, rpa);
-//  communicator.allReduce(localApx, apx);
-  complex rpa(localRpa), apx(localApx);
+  complex rpa, apx;
+  communicator.allReduce(localRpa, rpa);
+  communicator.allReduce(localApx, apx);
 
   // 2 fold mirror symmetry, 1/Pi from +nu and -nu
   // sign: 1xdiagram: (-1)
