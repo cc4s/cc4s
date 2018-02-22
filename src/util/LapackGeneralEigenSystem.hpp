@@ -116,10 +116,18 @@ namespace cc4s {
   class LapackGeneralEigenSystem<complex> {
   public:
     LapackGeneralEigenSystem(
-      const LapackMatrix<complex> &A_
+      const LapackMatrix<complex> &A_,
+      bool computeRightEigenvectors = true,
+      bool computeLeftEigenvectors = false
     ):
-      R(A_.getRows(), A_.getColumns()),
-      L(A_.getRows(), A_.getColumns()),
+      R(
+        computeRightEigenvectors ?
+          NEW(LapackMatrix<complex>, A_.getRows(), A_.getColumns()) : nullptr
+      ),
+      L(
+        computeLeftEigenvectors ?
+          NEW(LapackMatrix<complex>, A_.getRows(), A_.getColumns()) : nullptr
+      ),
       lambdas(A_.getRows())
     {
       if (A_.getRows() != A_.getColumns()) {
@@ -133,12 +141,13 @@ namespace cc4s {
       int workCount(-1);
       int info;
       zgeev_(
-        "V", "V",
+        computeLeftEigenvectors ? "V" : "N",
+        computeRightEigenvectors ? "V" : "N",
         &rows,
         A.getValues(), &rows,
         lambdas.data(),
-        L.getValues(), &rows,
-        R.getValues(), &rows,
+        computeLeftEigenvectors ? L->getValues() : nullptr, &rows,
+        computeRightEigenvectors ? R->getValues() : nullptr, &rows,
         &optimalWork, &workCount,
         realWork.data(),
         &info
@@ -148,12 +157,13 @@ namespace cc4s {
       std::vector<complex> work(workCount);
 
       zgeev_(
-        "V", "V",
+        computeLeftEigenvectors ? "V" : "N",
+        computeRightEigenvectors ? "V" : "N",
         &rows,
         A.getValues(), &rows,
         lambdas.data(),
-        L.getValues(), &rows,
-        R.getValues(), &rows,
+        computeLeftEigenvectors ? L->getValues() : nullptr, &rows,
+        computeRightEigenvectors ? R->getValues() : nullptr, &rows,
         work.data(), &workCount,
         realWork.data(),
         &info
@@ -170,8 +180,12 @@ namespace cc4s {
         EigenValueComparator()
       );
       // order eigenvectors and returned eigenvalues in the same way
-      orderEigenVectors(sortedEigenValues, R);
-      orderEigenVectors(sortedEigenValues, L);
+      if (computeRightEigenvectors) {
+        orderEigenVectors(sortedEigenValues, *R);
+      }
+      if (computeLeftEigenvectors) {
+        orderEigenVectors(sortedEigenValues, *L);
+      }
       for (int i(0); i < rows; ++i) {
         lambdas[i] = sortedEigenValues[i].second;
       }
@@ -185,11 +199,17 @@ namespace cc4s {
     }
 
     const LapackMatrix<complex> &getRightEigenVectors() const {
-      return R;
+      if (!R) {
+        throw new EXCEPTION("Right eigenvectors were not computed in constructor.");
+      }
+      return *R;
     }
 
     const LapackMatrix<complex> &getLeftEigenVectors() const {
-      return L;
+      if (!L) {
+        throw new EXCEPTION("Left eigenvectors were not computed in constructor.");
+      }
+      return *L;
     }
 
     double rightEigenError(const LapackMatrix<complex> &A) {
@@ -198,9 +218,9 @@ namespace cc4s {
         for (int k(0); k < A.getRows(); ++k) {
           complex element(0);
           for (int j(0); j < A.getRows(); ++j) {
-            element += A(i,j) * R(j,k);
+            element += A(i,j) * (*R)(j,k);
           }
-          element -= lambdas[k] * R(i,k);
+          element -= lambdas[k] * (*R)(i,k);
           error += std::real(element*std::conj(element));
         }
       }
@@ -212,9 +232,9 @@ namespace cc4s {
         for (int k(0); k < A.getRows(); ++k) {
           complex element(0);
           for (int i(0); i < A.getRows(); ++i) {
-            element += std::conj(L(i,k)) * A(i,j);
+            element += std::conj((*L)(i,k)) * A(i,j);
           }
-          element -= std::conj(L(j,k)) * lambdas[k];
+          element -= std::conj((*L)(j,k)) * lambdas[k];
           error += std::real(element*std::conj(element));
         }
       }
@@ -223,11 +243,11 @@ namespace cc4s {
 
     double biorthogonalError() {
       double error(0);
-      for (int i(0); i < R.getRows(); ++i) {
-        for (int j(0); j < R.getRows(); ++j) {
+      for (int i(0); i < R->getRows(); ++i) {
+        for (int j(0); j < R->getRows(); ++j) {
           complex element(0);
-          for (int k(0); k < R.getRows(); ++k) {
-            element += std::conj(R(i,k)) * R(j,k);
+          for (int k(0); k < R->getRows(); ++k) {
+            element += std::conj((*R)(i,k)) * (*R)(j,k);
           }
           element -= i == j ? 1.0 : 0.0;
           error += i == j ? 0.0 : std::real(element*std::conj(element));
@@ -261,7 +281,7 @@ namespace cc4s {
     };
 
   protected:
-    LapackMatrix<complex> R, L;
+    PTR(LapackMatrix<complex>) R, L;
     std::vector<complex> lambdas;
 
     void orderEigenVectors(

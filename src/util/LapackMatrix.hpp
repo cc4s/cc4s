@@ -2,12 +2,13 @@
 #ifndef LAPACK_MATRIX_DEFINED
 #define LAPACK_MATRIX_DEFINED
 
+#include <math/Complex.hpp>
 #include <vector>
 #include <sstream>
 #include <ctf.hpp>
 
 namespace cc4s {
-  template <typename F=double>
+  template <typename F=real>
   class LapackMatrix {
   public:
     /**
@@ -21,12 +22,23 @@ namespace cc4s {
     }
 
     /**
-     * \brief Construct a zero nxm Lapack.
+     * \brief Construct a zero nxm Lapack matrix.
      **/
     LapackMatrix(
       const int rows_, const int columns_
     ):
       rows(rows_), columns(columns_), values(rows_*columns_)
+    {
+    }
+
+    /**
+     * \brief Construct an nxm Lapack matrix from a given vector of values.
+     **/
+    LapackMatrix(
+      const int rows_, const int columns_,
+      const std::vector<F> &values_
+    ):
+      rows(rows_), columns(columns_), values(values_)
     {
     }
 
@@ -107,6 +119,31 @@ namespace cc4s {
      */
     std::vector<F> values;
   };
+
+  // TODO: use blas (D|Z)GEMM for matrix multiplication
+  // TODO: support move semantics
+  template <typename F=real>
+  LapackMatrix<F> operator *(
+    const LapackMatrix<F> &A, const LapackMatrix<F> &B
+  ) {
+    if (A.getColumns() != B.getRows()) {
+      std::stringstream stream;
+      stream << "Matrix shapes not compatible for multiplication: ("
+        << A.getRows() << "x" << A.getColumns() << ") . ("
+        << B.getRows() << "x" << B.getColumns() << ")";
+      throw new EXCEPTION(stream.str());
+    }
+    LapackMatrix<F> C(A.getRows(), B.getColumns());
+    for (int i(0); i < A.getRows(); ++i) {
+      for (int j(0); j < B.getColumns(); ++j) {
+        C(i,j) = 0;
+        for (int k(0); k < A.getColumns(); ++k) {
+          C(i,j) += A(i,k) * B(k,j);
+        }
+      }
+    }
+    return C;
+  }
 }
 
 #endif

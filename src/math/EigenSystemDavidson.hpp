@@ -115,7 +115,10 @@ namespace cc4s {
         }
 
         // compute K lowest reduced eigenvalues and vectors of reduced H
-        LapackGeneralEigenSystem<complex> reducedEigenSystem(reducedH);
+        // also compute left eigenvectors
+        LapackGeneralEigenSystem<complex> reducedEigenSystem(
+          reducedH, true, true
+        );
 
         // begin rightBasis extension loop for each k
         rms = 0.0;

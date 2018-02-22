@@ -1,4 +1,4 @@
-/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef LAPACK_DEFINED
 #define LAPACK_DEFINED
 
@@ -11,32 +11,67 @@ extern "C" {
     const char *jobvLeft,
     const char *jobvRight,
     const int *n,
-    double *a,
+    cc4s::RealTypes<8>::real *a,
     const int *lda,
-    double *wReal,
-    double *wImag,
-    double *vLeft,
+    cc4s::RealTypes<8>::real *wReal,
+    cc4s::RealTypes<8>::real *wImag,
+    cc4s::RealTypes<8>::real *vLeft,
     const int *ldvLeft,
-    double *vRight,
+    cc4s::RealTypes<8>::real *vRight,
     const int *ldvRight,
-    double *work,
-    const int *lwork,
+    cc4s::RealTypes<8>::real *work,
+    const int *workSize,
     int *info
   );
   void zgeev_(
     const char *jobvLeft,
     const char *jobvRight,
     const int *n,
-    const cc4s::complex *a,
+    const cc4s::RealTypes<8>::complex *a,
     const int *lda,
-    cc4s::complex *w,
-    cc4s::complex *vLeft,
+    cc4s::RealTypes<8>::complex *w,
+    cc4s::RealTypes<8>::complex *vLeft,
     const int *ldvLeft,
-    cc4s::complex *vRight,
+    cc4s::RealTypes<8>::complex *vRight,
     const int *ldvRight,
-    cc4s::complex *work,
-    const int *lwork,
-    double *rwork,
+    cc4s::RealTypes<8>::complex *work,
+    const int *workSize,
+    cc4s::RealTypes<8>::real *rwork,
+    int *info
+  );
+
+  void dgetrf_(
+    const int *m,
+    const int *n,
+    cc4s::RealTypes<8>::real *a,
+    const int *lda,
+    const int *rowPermutation,
+    int *info
+  );
+  void zgetrf_(
+    const int *m,
+    const int *n,
+    cc4s::RealTypes<8>::complex *a,
+    const int *lda,
+    const int *rowPermutation,
+    int *info
+  );
+  void dgetri_(
+    const int *n,
+    cc4s::RealTypes<8>::real *a,
+    const int *lda,
+    const int *rowPermutation,
+    cc4s::RealTypes<8>::real *work,
+    const int *workSize,
+    int *info
+  );
+  void zgetri_(
+    const int *n,
+    cc4s::RealTypes<8>::complex *a,
+    const int *lda,
+    const int *rowPermutation,
+    cc4s::RealTypes<8>::complex *work,
+    const int *workSize,
     int *info
   );
 };
