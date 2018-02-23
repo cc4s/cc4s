@@ -134,13 +134,13 @@ PTR(FockVector<double>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
   // Get couloumb integrals
   auto Vijkl(getTensorArgument<double>("HHHHCoulombIntegrals"));
   auto Vabcd(getTensorArgument<double>("PPPPCoulombIntegrals"));
-  auto Vabij(getTensorArgument<double>("PPHHCoulombIntegrals"));
+//  auto Vabij(getTensorArgument<double>("PPHHCoulombIntegrals"));
   auto Vijka(getTensorArgument<double>("HHHPCoulombIntegrals"));
   auto Vijab(getTensorArgument<double>("HHPPCoulombIntegrals"));
   auto Viajk(getTensorArgument<double>("HPHHCoulombIntegrals"));
   auto Viajb(getTensorArgument<double>("HPHPCoulombIntegrals"));
   auto Viabc(getTensorArgument<double>("HPPPCoulombIntegrals"));
-  auto Vabic(getTensorArgument<double>("PPHPCoulombIntegrals"));
+//  auto Vabic(getTensorArgument<double>("PPHPCoulombIntegrals"));
   auto Viabj(getTensorArgument<double>("HPPHCoulombIntegrals"));
   auto Vaibc(getTensorArgument<double>("PHPPCoulombIntegrals"));
   auto Vijak(getTensorArgument<double>("HHPHCoulombIntegrals"));
