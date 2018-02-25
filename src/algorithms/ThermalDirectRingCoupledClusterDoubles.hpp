@@ -28,7 +28,7 @@ namespace cc4s {
      * \brief Implements the iterate method with the DRCCD iteration.
      * \param[in] i Iteration number
      */
-    virtual void iterate(int n);
+    virtual void getResiduum(CTF::Tensor<complex> &Tabijn);
     /**
      * \brief Implements the dry iterate method with the DRCCD iteration.
      */

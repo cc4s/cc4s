@@ -1,6 +1,8 @@
 #include <algorithms/ThermalClusterDoublesAlgorithm.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
+#include <math/IterativePseudoInverse.hpp>
+#include <util/LapackMatrix.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -21,48 +23,114 @@ ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
 
 void ThermalClusterDoublesAlgorithm::run() {
   beta = 1 / getRealArgument("Temperature");
-
-  recursionLength = getIntegerArgument(
-    "recursionLength", DEFAULT_RECURSION_LENGTH
-  );
-  recursionScaling = getRecursionScaling(recursionLength);
-  double energyScale( getEnergyScale() );
-  int64_t N(std::ceil(std::log(beta*energyScale) / std::log(recursionScaling)));
-  N += getIntegerArgument("minIterations", DEFAULT_MIN_ITERATIONS);
-  N = std::min(N, getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS));
-
   LOG(1, getCapitalizedAbbreviation()) << "beta=" << beta << std::endl;
-  LOG(1, getCapitalizedAbbreviation())
-    << "Imaginart time recursion length=" << recursionLength << std::endl;
-  LOG(1, getCapitalizedAbbreviation())
-    << "Imaginary time recursion scaling q=" << recursionScaling << std::endl;
-  LOG(1, getCapitalizedAbbreviation())
-    << "Imaginary time recursion iterations=" << N << std::endl;
 
-  initializeRecursion(N);
+  // get imaginary time and frequency grids on all nodes
+  auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
+  std::vector<real> taus(tn->lens[0]);
+  tn->read_all(taus.data());
+  auto twn( getTensorArgument<real>("ImaginaryTimeWeights") );
+  std::vector<real> tauWeights(twn->lens[0]);
+  twn->read_all(tauWeights.data());
+  auto nun( getTensorArgument<real>("EvenImaginaryFrequencyPoints") );
+  std::vector<real> nus(nun->lens[0]);
+  nun->read_all(nus.data());
+  auto nuwn( getTensorArgument<real>("EvenImaginaryFrequencyWeights") );
+  std::vector<real> nuWeights(nuwn->lens[0]);
+  nuwn->read_all(nuWeights.data());
 
-  int n;
+  // get forward and backward Laplace transform on all nodes
+  auto ctfCTvn( getTensorArgument<real>("CosineTransform") );
+  auto ctfSTvn( getTensorArgument<real>("SineTransform") );
+  CTF::Matrix<complex> ctfLTvn(ctfCTvn->lens[0], ctfCTvn->lens[1]);
+  (*ctfSTvn)["vn"] *= -1;
+  toComplexTensor(*ctfCTvn, *ctfSTvn, ctfLTvn);
+  double eta( getRealArgument("EnergyShift", 1.0) );
+  // apply shift from forward transformation, which is not done in VASP
+  CTF::Transform<real, complex>(
+    std::function<void(real, complex &)>(
+      [eta](real tau, complex &T) {
+        T *= std::exp(-eta*tau);
+      }
+    )
+  ) (
+    (*tn)["n"], ctfLTvn["n"]
+  );
+  IterativePseudoInverse<complex> ctfInvLTnv(ctfLTvn);
+  LapackMatrix<complex> LTvn(ctfLTvn);
+  LapackMatrix<complex> invLTnv(ctfInvLTnv.get());
+
+  // get energy differences for propagation
+  auto Vabij( getTensorArgument<complex>("PPHHCoulombIntegrals") );
+  Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
+  fetchDelta(*Dabij);
+
+  // allocate doubles amplitudes on imaginary time and frequency grid
+  Tabijn.resize(taus.size());
+  for (size_t n(0); n < taus.size(); ++n) {
+    Tabijn[n] = NEW(CTF::Tensor<complex>, false, *Vabij);
+  }
+  Tabijv.resize(nus.size());
+  for (size_t v(0); v < nus.size(); ++v) {
+    Tabijv[v] = NEW(CTF::Tensor<complex>, false, *Vabij);
+  }
+
   double energy;
-  for (n = N; n > 0; --n) {
-    const double betam( beta*std::pow(recursionScaling,-(n-1)) );
-    LOG(0, getCapitalizedAbbreviation()) <<
-      "calculating imaginary time scale=beta*q^-" << n-1 <<
-      "=" << betam << std::endl;
+  // number of iterations for determining the amplitudes
+  int maxIterationsCount(
+    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
+  );
+  for (int i(0); i < maxIterationsCount; ++i) {
+    LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
+    for (size_t n(0); n < taus.size(); ++n) {
+      LOG(1, getCapitalizedAbbreviation())
+        << "computing residues at tau_" << n << "=" << taus[n] << std::endl;
+      // iterate amplitudes on time grid
+      getResiduum(*Tabijn[n]);
+    }
+    // transform to frequency grid
+    LOG(1, getCapitalizedAbbreviation())
+      << "transforming to frequency grid" << std::endl;
+    for (size_t v(0); v < nus.size(); ++v) {
+      Tabijv[v]->sum(LTvn(v,0), *Tabijn[0],"abij", 0.0,"abij");
+      for (size_t n(1); n < taus.size(); ++n) {
+        Tabijv[v]->sum(LTvn(v,n), *Tabijn[n],"abij", 1.0,"abij");
+      }
+    }
+    // convolve with propagator
+    class Convolution {
+    public:
+      Convolution(real nu_, real eta_): nu(nu_), eta(eta_) { }
+      void operator()(real Delta, complex &T) {
+        T /= complex(Delta+eta, nu);
+      }
+    protected:
+      real nu, eta;
+    };
+    for (size_t v(0); v < nus.size(); ++v) {
+      LOG(1, getCapitalizedAbbreviation())
+        << "computing convolution at nu_" << v << "=" << nus[v] << std::endl;
+      Convolution convolution(nus[v], eta);
+      CTF::Transform<real, complex>(
+        std::function<void(real, complex &)>(convolution)
+      ) (
+        (*Dabij)["abij"], (*Tabijv[v])["abij"]
+      );
+    }
 
-    // iterate the next amplitudes according to the algorithm implementation
-    iterate(n);
+    // transform to time grid
+    LOG(1, getCapitalizedAbbreviation())
+      << "transforming back to time grid" << std::endl;
+    for (size_t n(1); n < taus.size(); ++n) {
+      Tabijn[n]->sum(invLTnv(n,0), *Tabijv[0],"abij", 0.0,"abij");
+      for (size_t v(0); v < nus.size(); ++v) {
+        Tabijn[n]->sum(invLTnv(n,v), *Tabijv[v],"abij", 1.0,"abij");
+      }
+    }
 
-    energy = recurse(n);
+    energy = 0.0;
     LOG(1, getCapitalizedAbbreviation()) << "e=" << energy << std::endl;
   }
-  energy = energies[0]->get_val()/beta;
-
-  // currently, we can just dispose them
-  for (int i(0); i <= recursionLength; ++i) {
-    delete energies[i];
-    delete amplitudes[i];
-  }
-  delete Dai;
 
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
@@ -91,8 +159,6 @@ void ThermalClusterDoublesAlgorithm::dryRun() {
   // Allocate the energy e
   DryScalar<> energy(SOURCE_LOCATION);
 
-  getIntegerArgument("recursionLength", DEFAULT_RECURSION_LENGTH);
-
   // Call the dry iterate of the actual algorithm, which is left open here
   dryIterate();
 
@@ -106,92 +172,6 @@ void ThermalClusterDoublesAlgorithm::dryIterate() {
     << getAbbreviation() << std::endl;
 }
 
-void ThermalClusterDoublesAlgorithm::initializeRecursion(const int N) {
-  // Read the Coulomb Integrals Vabij required for the energy
-  Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
-  Tensor<> Dabij(false, *Vabij);
-  Tensor<> Tabij(false, *Vabij);
-
-  // Allocate the doubles amplitudes
-  energies.resize(recursionLength+1);
-  amplitudes.resize(recursionLength+1);
-  for (int i(recursionLength); i >= 0; --i) {
-    const int n(N+i);
-    const double betan( beta*std::pow(recursionScaling,-n) );
-    LOG(0, getCapitalizedAbbreviation()) <<
-      "initializing imaginary time scale=beta*q^-" << n <<
-      "=" << betan << std::endl;
-    amplitudes[i] = new Tensor<>(*Vabij);
-    amplitudes[i]->set_name("Tabij");
-    fetchDelta(Dabij);
-    SameSideConnectedImaginaryTimePropagation propagation(betan);
-    Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(propagation));
-    (*amplitudes[i])["abij"] *= (-1.0) * Dabij["abij"];
-
-    Tabij["abij"] =   4.0 * (*Vabij)["abij"];
-    Tabij["abij"] += -2.0 * (*Vabij)["abji"];
-    Tabij["abij"] *=  0.5 * (*Vabij)["abij"];
-    fetchDelta(Dabij);
-    Mp2ImaginaryTimePropagation mp2Propagation(betan);
-    Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(mp2Propagation));
-    thermalContraction(Dabij);
-    energies[i] = new Scalar<>(*Vabij->wrld);
-    energies[i]->set_name("F");
-    (*energies[i])[""] = (-1.0) * Tabij["abij"] * Dabij["abij"];
-  }
-}
-
-double ThermalClusterDoublesAlgorithm::recurse(const int n) {
-  Tensor<> *Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
-  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
-  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
-  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
-  Tensor<> Dabij(false, *Vabij);
-
-  Tensor<> nextT( *amplitudes[recursionLength] );
-  Dabij["abij"] =  (*epsa)["a"];
-  Dabij["abij"] += (*epsa)["b"];
-  Dabij["abij"] -= (*epsi)["i"];
-  Dabij["abij"] -= (*epsi)["j"];
-  const int m(n+recursionLength);
-  const double betam( beta*std::pow(recursionScaling,-m) );
-  FreeImaginaryTimePropagation freePropagation(betam);
-  Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(freePropagation));
-  nextT["abij"] += (*amplitudes[0])["abij"] * Dabij["abij"];
-
-  Dabij["abij"] =  (*epsa)["a"];
-  Dabij["abij"] += (*epsa)["b"];
-  Dabij["abij"] -= (*epsi)["i"];
-  Dabij["abij"] -= (*epsi)["j"];
-  SameSideConnectedImaginaryTimePropagation propagation(betam);
-  Dabij.sum(1.0, Dabij,"abij", 0.0,"abij", Univar_Function<>(propagation));
-  Dabij["abij"] *= (*Vabij)["abij"];
-  Dabij["abij"] *= (*Na)["a"];
-  Dabij["abij"] *= (*Na)["b"];
-  Dabij["abij"] *= (*Ni)["i"];
-  Dabij["abij"] *= (*Ni)["j"];
-
-  Scalar<> nextF( *energies[recursionLength] );
-  nextF[""] += (*energies[0])[""];
-  nextF[""] += 2.0 * Dabij["abij"] * (*amplitudes[0])["abij"];
-  nextF[""] -= 1.0 * Dabij["abji"] * (*amplitudes[0])["abij"];
-
-  // rotate amplitude and energy pointers to make the T[M] the new head T[0]
-  Tensor<> *nextTPointer(amplitudes[recursionLength]);
-  Scalar<> *nextFPointer(energies[recursionLength]);
-  for (int i(recursionLength); i > 0; --i) {
-    amplitudes[i] = amplitudes[i-1];
-    energies[i] = energies[i-1];
-  }
-  amplitudes[0] = nextTPointer;
-  energies[0] = nextFPointer;
-  (*nextTPointer)["abij"] = nextT["abij"];
-  (*nextFPointer)[""] = nextF[""];
-
-  return energies[0]->get_val()/beta;
-}
-
 std::string ThermalClusterDoublesAlgorithm::getCapitalizedAbbreviation() {
   std::string abbreviation(getAbbreviation());
   std::transform(
@@ -199,30 +179,6 @@ std::string ThermalClusterDoublesAlgorithm::getCapitalizedAbbreviation() {
     abbreviation.begin(), ::toupper
   );
   return abbreviation;
-}
-
-/**
- * \brief Calculates and returns the scaling factor \f$q\f$ satisfying
- * \f$q^{M+1}-q^M-1 = 0\f$.
- **/
-double ThermalClusterDoublesAlgorithm::getRecursionScaling(const int M) {
-  double q(2.0);
-  double delta;
-  do {
-    const double qM(std::pow(q,M));
-    q -= delta = (qM*(q-1) - 1) / (qM*(M*(q-1)/q+1));
-  } while (std::abs(delta) > 1e-15);
-  return q;
-}
-
-double ThermalClusterDoublesAlgorithm::getEnergyScale() {
-  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
-  std::vector<double> holeEnergies(epsi->lens[0]);
-  epsi->read_all(holeEnergies.data());
-  std::vector<double> particleEnergies(epsa->lens[0]);
-  epsa->read_all(particleEnergies.data());
-  return particleEnergies.back() - holeEnergies.front();
 }
 
 std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
