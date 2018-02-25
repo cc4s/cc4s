@@ -42,9 +42,9 @@ void ThermalClusterDoublesAlgorithm::run() {
   // get forward and backward Laplace transform on all nodes
   auto ctfCTvn( getTensorArgument<real>("CosineTransform") );
   auto ctfSTvn( getTensorArgument<real>("SineTransform") );
-  CTF::Matrix<complex> ctfLTvn(ctfCTvn->lens[0], ctfCTvn->lens[1]);
+  auto ctfLTvn( new CTF::Tensor<complex>(2, ctfCTvn->lens, ctfCTvn->sym) );
   (*ctfSTvn)["vn"] *= -1;
-  toComplexTensor(*ctfCTvn, *ctfSTvn, ctfLTvn);
+  toComplexTensor(*ctfCTvn, *ctfSTvn, *ctfLTvn);
   double eta( getRealArgument("EnergyShift", 1.0) );
   // apply shift from forward transformation, which is not done in VASP
   CTF::Transform<real, complex>(
@@ -54,14 +54,88 @@ void ThermalClusterDoublesAlgorithm::run() {
       }
     )
   ) (
-    (*tn)["n"], ctfLTvn["n"]
+    (*tn)["n"], (*ctfLTvn)["vn"]
   );
-  IterativePseudoInverse<complex> ctfInvLTnv(ctfLTvn);
-  LapackMatrix<complex> LTvn(ctfLTvn);
+  IterativePseudoInverse<complex> ctfInvLTnv(*ctfLTvn);
+  LapackMatrix<complex> LTvn(*ctfLTvn);
   LapackMatrix<complex> invLTnv(ctfInvLTnv.get());
 
-  // get energy differences for propagation
   auto Vabij( getTensorArgument<complex>("PPHHCoulombIntegrals") );
+
+  // test Laplace transform
+  CTF::Tensor<real> Dai(2, &Vabij->lens[1], &Vabij->sym[1]);
+  fetchDelta(Dai);
+  int lens[] = {Vabij->lens[0], Vabij->lens[2], tn->lens[0]};
+  int syms[] = {NS, NS, NS};
+  auto Tain( new CTF::Tensor<complex>(3, lens, syms) );
+  CTF::Transform<real, complex>(
+    std::function<void(real, complex &)>(
+      [](real Delta, complex &T) {
+        T = Delta;
+      }
+    )
+  ) (
+    Dai["ai"], (*Tain)["ain"]
+  );
+  auto Taiv( new CTF::Tensor<complex>(*Tain) );
+  // compute propagator in imaginary time
+  CTF::Transform<real, complex>(
+    std::function<void(real, complex &)>(
+      [](real tau, complex &T) {
+        T = std::exp(-T*tau);
+      }
+    )
+  ) (
+    (*tn)["n"], (*Tain)["ain"]
+  );
+  // compute propagator in imaginary frequency
+  CTF::Transform<real, complex>(
+    std::function<void(real, complex &)>(
+      [eta](real nu, complex &T) {
+        T = 1.0 / complex(std::real(T)+eta, nu);
+      }
+    )
+  ) (
+    (*nun)["v"], (*Taiv)["aiv"]
+  );
+  // numericall transform from time to frequency
+  auto NTaiv( new CTF::Tensor<complex>(false, *Taiv) );
+  (*NTaiv)["aiv"] = (*Tain)["ain"] * (*ctfLTvn)["vn"];
+  CTF::Tensor<complex> diffTaiv(*NTaiv);
+  diffTaiv["aiv"] += (-1.0) * (*Taiv)["aiv"];
+  double forwardError(frobeniusNorm(diffTaiv));
+  LOG(0, getCapitalizedAbbreviation())
+    << "forward Laplace transform error=" << forwardError << std::endl;
+  // numericall transform from frequency to time
+  auto NTain( new CTF::Tensor<complex>(false, *Tain) );
+  (*NTain)["aiv"] = (*Taiv)["aiv"] * ctfInvLTnv.get()["vn"];
+  CTF::Tensor<complex> diffTain(*NTain);
+  diffTain["ain"] += (-1.0) * (*Tain)["ain"];
+  double inverseError(frobeniusNorm(diffTain));
+  LOG(0, getCapitalizedAbbreviation())
+    << "inverse Laplace transform error=" << inverseError << std::endl;
+
+  allocatedTensorArgument<complex>(
+    "LaplaceTransform", ctfLTvn
+  );
+  allocatedTensorArgument<complex>(
+    "ExactImaginaryFrequencyPropagators", Taiv
+  );
+  allocatedTensorArgument<complex>(
+    "ExactImaginaryFrequencyPropagators", Taiv
+  );
+  allocatedTensorArgument<complex>(
+    "NumericalImaginaryFrequencyPropagators", NTaiv
+  );
+
+  allocatedTensorArgument<complex>(
+    "ExactImaginaryTimePropagators", Tain
+  );
+  allocatedTensorArgument<complex>(
+    "NumericalImaginaryTimePropagators", NTain
+  );
+
+  // get energy differences for propagation
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
   fetchDelta(*Dabij);
 
