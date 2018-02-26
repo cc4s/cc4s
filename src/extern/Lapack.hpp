@@ -11,15 +11,15 @@ extern "C" {
     const char *jobvLeft,
     const char *jobvRight,
     const int *n,
-    cc4s::RealTypes<8>::real *a,
+    cc4s::FloatTypes<8>::real *a,
     const int *lda,
-    cc4s::RealTypes<8>::real *wReal,
-    cc4s::RealTypes<8>::real *wImag,
-    cc4s::RealTypes<8>::real *vLeft,
+    cc4s::FloatTypes<8>::real *wReal,
+    cc4s::FloatTypes<8>::real *wImag,
+    cc4s::FloatTypes<8>::real *vLeft,
     const int *ldvLeft,
-    cc4s::RealTypes<8>::real *vRight,
+    cc4s::FloatTypes<8>::real *vRight,
     const int *ldvRight,
-    cc4s::RealTypes<8>::real *work,
+    cc4s::FloatTypes<8>::real *work,
     const int *workSize,
     int *info
   );
@@ -27,23 +27,23 @@ extern "C" {
     const char *jobvLeft,
     const char *jobvRight,
     const int *n,
-    const cc4s::RealTypes<8>::complex *a,
+    const cc4s::FloatTypes<8>::complex *a,
     const int *lda,
-    cc4s::RealTypes<8>::complex *w,
-    cc4s::RealTypes<8>::complex *vLeft,
+    cc4s::FloatTypes<8>::complex *w,
+    cc4s::FloatTypes<8>::complex *vLeft,
     const int *ldvLeft,
-    cc4s::RealTypes<8>::complex *vRight,
+    cc4s::FloatTypes<8>::complex *vRight,
     const int *ldvRight,
-    cc4s::RealTypes<8>::complex *work,
+    cc4s::FloatTypes<8>::complex *work,
     const int *workSize,
-    cc4s::RealTypes<8>::real *rwork,
+    cc4s::FloatTypes<8>::real *rwork,
     int *info
   );
 
   void dgetrf_(
     const int *m,
     const int *n,
-    cc4s::RealTypes<8>::real *a,
+    cc4s::FloatTypes<8>::real *a,
     const int *lda,
     const int *rowPermutation,
     int *info
@@ -51,26 +51,26 @@ extern "C" {
   void zgetrf_(
     const int *m,
     const int *n,
-    cc4s::RealTypes<8>::complex *a,
+    cc4s::FloatTypes<8>::complex *a,
     const int *lda,
     const int *rowPermutation,
     int *info
   );
   void dgetri_(
     const int *n,
-    cc4s::RealTypes<8>::real *a,
+    cc4s::FloatTypes<8>::real *a,
     const int *lda,
     const int *rowPermutation,
-    cc4s::RealTypes<8>::real *work,
+    cc4s::FloatTypes<8>::real *work,
     const int *workSize,
     int *info
   );
   void zgetri_(
     const int *n,
-    cc4s::RealTypes<8>::complex *a,
+    cc4s::FloatTypes<8>::complex *a,
     const int *lda,
     const int *rowPermutation,
-    cc4s::RealTypes<8>::complex *work,
+    cc4s::FloatTypes<8>::complex *work,
     const int *workSize,
     int *info
   );

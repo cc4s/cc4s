@@ -18,7 +18,7 @@ namespace cc4s {
 
   // specialization for complex
   template <>
-  class LapackInverse<RealTypes<8>::complex> {
+  class LapackInverse<FloatTypes<8>::complex> {
   public:
     LapackInverse(
       const LapackMatrix<complex> &A_

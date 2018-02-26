@@ -6,8 +6,11 @@
 #include <quadmath.h>
 #endif
 
-// TODO: use configuration for setting default real type sizes
-#define DEFAULT_REAL_SIZE 8
+// TODO: use configuration for setting default float type sizes
+/**
+ * \brief Default size of IEEE floating pointer number in bytes.
+ **/
+#define DEFAULT_FLOAT_SIZE 8
 
 /*
 #ifdef INTEL_COMPILER
@@ -34,25 +37,25 @@ namespace std {
 #endif
 */
 namespace cc4s {
-  template <int RealSize=DEFAULT_REAL_SIZE>
-  class RealTypes;
+  template <int FloatSize=DEFAULT_FLOAT_SIZE>
+  class FloatTypes;
 
   template <>
-  class RealTypes<4> {
+  class FloatTypes<4> {
   public:
     typedef float real;
     typedef std::complex<float> complex;
   };
 
   template <>
-  class RealTypes<8> {
+  class FloatTypes<8> {
   public:
     typedef double real;
     typedef std::complex<double> complex;
   };
 
   template <>
-  class RealTypes<16> {
+  class FloatTypes<16> {
   public:
 #ifdef INTEL_COMPILER
     typedef _Quad real;
@@ -63,9 +66,37 @@ namespace cc4s {
 #endif
   };
 
-  // define types of default real size:
-  typedef RealTypes<>::real real;
-  typedef RealTypes<>::complex complex;
+  // define types of default Float size:
+  typedef FloatTypes<>::real real;
+  typedef FloatTypes<>::complex complex;
+
+  // default cast template
+  template <typename TargetType>
+  class Cast {
+  public:
+    template <typename SourceType>
+    static TargetType from(const SourceType x) { return TargetType(x); }
+  };
+
+  #define CAST_DEFINITION(SIZE) \
+  template <> \
+  class Cast<typename FloatTypes<SIZE>::real> { \
+  public: \
+    static FloatTypes<SIZE>::real from( \
+      const real x \
+    ) { \
+      return x; \
+    } \
+    static FloatTypes<SIZE>::real from( \
+      const FloatTypes<SIZE>::complex x \
+    ) { \
+      return std::real(x); \
+    } \
+  };
+
+  CAST_DEFINITION(4)
+  CAST_DEFINITION(8)
+  CAST_DEFINITION(16)
 
   inline real absSqr(const real x) {
     return x*x;
@@ -74,23 +105,6 @@ namespace cc4s {
   inline real absSqr(const complex z) {
     return absSqr(z.real()) + absSqr(z.imag());
   }
-
-  // base template
-  template <typename F>
-  class ComplexTraits {
-  public:
-    static F convert(const complex x) {
-      return F(x);
-    }
-  };
-
-  template <>
-  class ComplexTraits<real> {
-  public:
-    static real convert(const complex x) {
-      return std::real(x);
-    }
-  };
 }
 
 #endif
