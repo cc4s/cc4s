@@ -120,11 +120,11 @@ void FiniteSizeCorrection::readFromFile(){
   Tensor<> *realSG(getTensorArgument<>("StructureFactor"));
   LOG(1,"readFromFile") << "success\n Loading into Vectors " << std::endl;
   NG=realVG->lens[0];
-  VofG = new double[NG];
-  realVG->read_all(VofG);
+  VofG.resize(NG);
+  realVG->read_all(VofG.data());
   LOG(1,"readFromFile") << "VofG Finished" << std::endl;
-  structureFactors = new double[NG];
-  realSG->read_all(structureFactors);
+  structureFactors.resize(NG);
+  realSG->read_all(structureFactors.data());
   LOG(1,"readFromFile") << "Finished" << std::endl;
 }
 
@@ -248,10 +248,10 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
 
-  VofG = new double[NG];
-  realVG->read_all(VofG);
-  structureFactors = new double[NG];
-  realSG->read_all(structureFactors);
+  VofG.resize(NG);
+  realVG->read_all(VofG.data());
+  structureFactors.resize(NG);
+  realSG->read_all(structureFactors.data());
 }
 
 
@@ -376,10 +376,10 @@ void FiniteSizeCorrection::calculateComplexStructureFactor() {
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
 
-  VofG = new double[NG];
-  realVG->read_all(VofG);
-  structureFactors = new double[NG];
-  realSG->read_all(structureFactors);
+  VofG.resize(NG);
+  realVG->read_all(VofG.data());
+  structureFactors.resize(NG);
+  realSG->read_all(structureFactors.data());
 }
 
 

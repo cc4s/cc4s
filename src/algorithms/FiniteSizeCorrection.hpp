@@ -28,8 +28,8 @@ namespace cc4s {
     const int  N=128;//The # of points on the fibonacciGrid, fixed #.
     std::vector<double> GLengths;
     std::vector<double> averageSGs;
-    double *structureFactors;
-    double *VofG;
+    std::vector<double> structureFactors;
+    std::vector<double> VofG;
     double GC;
     double inter3D;
     double sum3D;
