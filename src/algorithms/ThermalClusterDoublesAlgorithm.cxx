@@ -39,30 +39,51 @@ void ThermalClusterDoublesAlgorithm::run() {
   std::vector<real> nuWeights(nuwn->lens[0]);
   nuwn->read_all(nuWeights.data());
 
-  // get forward and backward Laplace transform on all nodes
+  double eta( getRealArgument("EnergyShift", 1.0) );
+
+  // forward and inverse Laplace transform weights
   auto ctfCTvn( getTensorArgument<real>("CosineTransform") );
   auto ctfSTvn( getTensorArgument<real>("SineTransform") );
-  auto ctfLTvn( new CTF::Tensor<complex>(2, ctfCTvn->lens, ctfCTvn->sym) );
-  (*ctfSTvn)["vn"] *= -1;
-  toComplexTensor(*ctfCTvn, *ctfSTvn, *ctfLTvn);
-  double eta( getRealArgument("EnergyShift", 1.0) );
-  // apply shift from forward transformation, which is not done in VASP
-  CTF::Transform<real, complex>(
-    std::function<void(real, complex &)>(
-      [eta](real tau, complex &T) {
-        T *= std::exp(-eta*tau);
-      }
-    )
-  ) (
-    (*tn)["n"], (*ctfLTvn)["vn"]
-  );
-  IterativePseudoInverse<complex> ctfInvLTnv(*ctfLTvn);
-  LapackMatrix<complex> LTvn(*ctfLTvn);
-  LapackMatrix<complex> invLTnv(ctfInvLTnv.get());
+  auto ctfICTnv( getTensorArgument<real>("InverseCosineTransform") );
+  auto ctfISTnv( getTensorArgument<real>("InverseSineTransform") );
 
-  auto Vabij( getTensorArgument<complex>("PPHHCoulombIntegrals") );
+  // for testing
+  CTF::Tensor<complex> cCTvn(2, ctfCTvn->lens, ctfCTvn->sym);
+  toComplexTensor(*ctfCTvn, cCTvn);
+  CTF::Tensor<complex> cSTvn(2, ctfSTvn->lens, ctfSTvn->sym);
+  toComplexTensor(*ctfSTvn, cSTvn);
+  CTF::Tensor<complex> cICTnv(2, ctfICTnv->lens, ctfICTnv->sym);
+  toComplexTensor(*ctfICTnv, cICTnv);
+  CTF::Tensor<complex> cISTnv(2, ctfISTnv->lens, ctfISTnv->sym);
+  toComplexTensor(*ctfISTnv, cISTnv);
+
+  LapackMatrix<real> CTvn(*ctfCTvn);
+  LapackMatrix<real> STvn(*ctfSTvn);
+  LapackMatrix<real> ICTnv(*ctfICTnv);
+  LapackMatrix<real> ISTnv(*ctfISTnv);
+
+  // cos(nu_v*tau_n) and sin(nu_v*tau_n)
+  LapackMatrix<real> Cvn(CTvn);
+  LapackMatrix<real> Svn(CTvn);
+  for (size_t n(0); n < taus.size(); ++n) {
+    for (size_t v(0); v < nus.size(); ++v) {
+      Cvn(v,n) = std::cos(nus[v]*taus[n]);
+      Svn(v,n) = std::sin(nus[v]*taus[n]);
+    }
+  }
+
 
   // test Laplace transform
+  auto ctfCvn( *ctfCTvn );
+  Cvn.write(ctfCvn);
+  auto ctfSvn( *ctfSTvn );
+  Svn.write(ctfSvn);
+  CTF::Tensor<complex> cCvn(2, ctfCvn.lens, ctfCvn.sym);
+  toComplexTensor(ctfCvn, cCvn);
+  CTF::Tensor<complex> cSvn(2, ctfSvn.lens, ctfSvn.sym);
+  toComplexTensor(ctfSvn, cSvn);
+
+  auto Vabij( getTensorArgument<complex>("PPHHCoulombIntegrals") );
   CTF::Tensor<real> Dai(2, &Vabij->lens[1], &Vabij->sym[1]);
   fetchDelta(Dai);
   int lens[] = {Vabij->lens[0], Vabij->lens[2], tn->lens[0]};
@@ -70,45 +91,89 @@ void ThermalClusterDoublesAlgorithm::run() {
   auto Tain( new CTF::Tensor<complex>(3, lens, syms) );
   CTF::Transform<real, complex>(
     std::function<void(real, complex &)>(
-      [](real Delta, complex &T) {
-        T = Delta;
-      }
+      [](real Delta, complex &T) { T = Delta; }
     )
   ) (
     Dai["ai"], (*Tain)["ain"]
   );
-  auto Taiv( new CTF::Tensor<complex>(*Tain) );
-  // compute propagator in imaginary time
+  auto TRaiv( new CTF::Tensor<complex>(*Tain) );
+  auto TIaiv( new CTF::Tensor<complex>(*Tain) );
+  // propagator in imaginary time
   CTF::Transform<real, complex>(
     std::function<void(real, complex &)>(
-      [](real tau, complex &T) {
-        T = std::exp(-T*tau);
-      }
+      [](real tau, complex &T) { T = std::exp(-std::real(T)*tau); }
     )
   ) (
     (*tn)["n"], (*Tain)["ain"]
   );
-  // compute propagator in imaginary frequency
+  // propagator in imaginary frequency, real part
   CTF::Transform<real, complex>(
     std::function<void(real, complex &)>(
       [eta](real nu, complex &T) {
-        T = 1.0 / complex(std::real(T)+eta, nu);
+        real Delta_( std::real(T)+eta );
+        T = Delta_ / (Delta_*Delta_ + nu*nu);
       }
     )
   ) (
-    (*nun)["v"], (*Taiv)["aiv"]
+    (*nun)["v"], (*TRaiv)["aiv"]
+  );
+  // propagator in imaginary frequency, imaginary part
+  CTF::Transform<real, complex>(
+    std::function<void(real, complex &)>(
+      [eta](real nu, complex &T) {
+        real Delta_( std::real(T)+eta );
+        T = -nu / (Delta_*Delta_ + nu*nu);
+      }
+    )
+  ) (
+    (*nun)["v"], (*TIaiv)["aiv"]
   );
   // numericall transform from time to frequency
-  auto NTaiv( new CTF::Tensor<complex>(false, *Taiv) );
-  (*NTaiv)["aiv"] = (*Tain)["ain"] * (*ctfLTvn)["vn"];
-  CTF::Tensor<complex> diffTaiv(*NTaiv);
-  diffTaiv["aiv"] += (-1.0) * (*Taiv)["aiv"];
-  double forwardError(frobeniusNorm(diffTaiv));
-  LOG(0, getCapitalizedAbbreviation())
-    << "forward Laplace transform error=" << forwardError << std::endl;
+  auto T_ain( *Tain );
+  CTF::Transform<real, complex>(
+    std::function<void(real, complex &)>(
+      [eta](real tau, complex &T) { T *= std::exp(-eta*tau); }
+    )
+  ) (
+    (*tn)["n"], T_ain["ain"]
+  );
+  auto NTRaiv( new CTF::Tensor<complex>(false, *TRaiv) );
+  (*NTRaiv)["aiv"] = (+1.0) * T_ain["ain"] * cCTvn["vn"] * cCvn["vn"];
+  auto NTIaiv( new CTF::Tensor<complex>(false, *TIaiv) );
+  (*NTIaiv)["aiv"] = (-1.0) * T_ain["ain"] * cSTvn["vn"] * cSvn["vn"];
+  {
+    CTF::Tensor<complex> diffTaiv(*NTRaiv);
+    diffTaiv["aiv"] += (-1.0) * (*TRaiv)["aiv"];
+    double forwardError(frobeniusNorm(diffTaiv));
+    LOG(0, getCapitalizedAbbreviation())
+      << "forward Laplace transform error real=" << forwardError << std::endl;
+  }
+  {
+    CTF::Tensor<complex> diffTaiv(*NTIaiv);
+    diffTaiv["aiv"] += (-1.0) * (*TIaiv)["aiv"];
+    double forwardError(frobeniusNorm(diffTaiv));
+    LOG(0, getCapitalizedAbbreviation())
+      << "forward Laplace transform error imag=" << forwardError << std::endl;
+  }
+  allocatedTensorArgument<complex>(
+    "Cosine", new CTF::Tensor<complex>(cCvn)
+  );
+  allocatedTensorArgument<complex>(
+    "ExactImaginaryFrequencyPropagatorsReal", TRaiv
+  );
+  allocatedTensorArgument<complex>(
+    "ExactImaginaryFrequencyPropagatorsImag", TIaiv
+  );
+  allocatedTensorArgument<complex>(
+    "NumericalImaginaryFrequencyPropagatorsReal", NTRaiv
+  );
+  allocatedTensorArgument<complex>(
+    "NumericalImaginaryFrequencyPropagatorsImag", NTIaiv
+  );
+/*
   // numericall transform from frequency to time
   auto NTain( new CTF::Tensor<complex>(false, *Tain) );
-  (*NTain)["aiv"] = (*Taiv)["aiv"] * ctfInvLTnv.get()["vn"];
+  (*NTain)["ain"] = (*Taiv)["aiv"] * (*ctfInvLTnv)["nv"];
   CTF::Tensor<complex> diffTain(*NTain);
   diffTain["ain"] += (-1.0) * (*Tain)["ain"];
   double inverseError(frobeniusNorm(diffTain));
@@ -116,24 +181,12 @@ void ThermalClusterDoublesAlgorithm::run() {
     << "inverse Laplace transform error=" << inverseError << std::endl;
 
   allocatedTensorArgument<complex>(
-    "LaplaceTransform", ctfLTvn
-  );
-  allocatedTensorArgument<complex>(
-    "ExactImaginaryFrequencyPropagators", Taiv
-  );
-  allocatedTensorArgument<complex>(
-    "ExactImaginaryFrequencyPropagators", Taiv
-  );
-  allocatedTensorArgument<complex>(
-    "NumericalImaginaryFrequencyPropagators", NTaiv
-  );
-
-  allocatedTensorArgument<complex>(
     "ExactImaginaryTimePropagators", Tain
   );
   allocatedTensorArgument<complex>(
     "NumericalImaginaryTimePropagators", NTain
   );
+*/
 
   // get energy differences for propagation
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
@@ -155,6 +208,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );
   for (int i(0); i < maxIterationsCount; ++i) {
+/*
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
     for (size_t n(0); n < taus.size(); ++n) {
       LOG(1, getCapitalizedAbbreviation())
@@ -201,7 +255,7 @@ void ThermalClusterDoublesAlgorithm::run() {
         Tabijn[n]->sum(invLTnv(n,v), *Tabijv[v],"abij", 1.0,"abij");
       }
     }
-
+*/
     energy = 0.0;
     LOG(1, getCapitalizedAbbreviation()) << "e=" << energy << std::endl;
   }
