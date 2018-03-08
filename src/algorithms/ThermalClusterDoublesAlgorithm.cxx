@@ -156,9 +156,6 @@ void ThermalClusterDoublesAlgorithm::run() {
       << "forward Laplace transform error imag=" << forwardError << std::endl;
   }
   allocatedTensorArgument<complex>(
-    "Cosine", new CTF::Tensor<complex>(cCvn)
-  );
-  allocatedTensorArgument<complex>(
     "ExactImaginaryFrequencyPropagatorsReal", TRaiv
   );
   allocatedTensorArgument<complex>(
@@ -170,23 +167,30 @@ void ThermalClusterDoublesAlgorithm::run() {
   allocatedTensorArgument<complex>(
     "NumericalImaginaryFrequencyPropagatorsImag", NTIaiv
   );
-/*
+
   // numericall transform from frequency to time
   auto NTain( new CTF::Tensor<complex>(false, *Tain) );
-  (*NTain)["ain"] = (*Taiv)["aiv"] * (*ctfInvLTnv)["nv"];
-  CTF::Tensor<complex> diffTain(*NTain);
-  diffTain["ain"] += (-1.0) * (*Tain)["ain"];
-  double inverseError(frobeniusNorm(diffTain));
-  LOG(0, getCapitalizedAbbreviation())
-    << "inverse Laplace transform error=" << inverseError << std::endl;
-
+  (*NTain)["ain"] = (+4.0) * (*TRaiv)["aiv"] * cICTnv["nv"] * cCvn["vn"];
+  CTF::Transform<real, complex>(
+    std::function<void(real, complex &)>(
+      [eta](real tau, complex &T) { T *= std::exp(+eta*tau); }
+    )
+  ) (
+    (*tn)["n"], (*NTain)["ain"]
+  );
+  {
+    CTF::Tensor<complex> diffTain(*NTain);
+    diffTain["ain"] += (-1.0) * (*Tain)["ain"];
+    double inverseError(frobeniusNorm(diffTain));
+    LOG(0, getCapitalizedAbbreviation())
+      << "inverse Laplace transform error=" << inverseError << std::endl;
+  }
   allocatedTensorArgument<complex>(
     "ExactImaginaryTimePropagators", Tain
   );
   allocatedTensorArgument<complex>(
     "NumericalImaginaryTimePropagators", NTain
   );
-*/
 
   // get energy differences for propagation
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
