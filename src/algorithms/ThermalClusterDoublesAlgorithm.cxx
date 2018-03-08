@@ -39,7 +39,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   std::vector<real> nuWeights(nuwn->lens[0]);
   nuwn->read_all(nuWeights.data());
 
-  double eta( getRealArgument("EnergyShift", 1.0) );
+  real eta( getRealArgument("EnergyShift", 1.0) );
 
   // forward and inverse Laplace transform weights
   auto ctfCTvn( getTensorArgument<real>("CosineTransform") );
@@ -144,14 +144,14 @@ void ThermalClusterDoublesAlgorithm::run() {
   {
     CTF::Tensor<complex> diffTaiv(*NTRaiv);
     diffTaiv["aiv"] += (-1.0) * (*TRaiv)["aiv"];
-    double forwardError(frobeniusNorm(diffTaiv));
+    real forwardError(frobeniusNorm(diffTaiv));
     LOG(0, getCapitalizedAbbreviation())
       << "forward Laplace transform error real=" << forwardError << std::endl;
   }
   {
     CTF::Tensor<complex> diffTaiv(*NTIaiv);
     diffTaiv["aiv"] += (-1.0) * (*TIaiv)["aiv"];
-    double forwardError(frobeniusNorm(diffTaiv));
+    real forwardError(frobeniusNorm(diffTaiv));
     LOG(0, getCapitalizedAbbreviation())
       << "forward Laplace transform error imag=" << forwardError << std::endl;
   }
@@ -169,27 +169,46 @@ void ThermalClusterDoublesAlgorithm::run() {
   );
 
   // numericall transform from frequency to time
-  auto NTain( new CTF::Tensor<complex>(false, *Tain) );
-  (*NTain)["ain"] = (+4.0) * (*TRaiv)["aiv"] * cICTnv["nv"] * cCvn["vn"];
+  auto NRTain( new CTF::Tensor<complex>(false, *Tain) );
+  (*NRTain)["ain"] = (+4.0) * (*TRaiv)["aiv"] * cICTnv["nv"] * cCvn["vn"];
   CTF::Transform<real, complex>(
     std::function<void(real, complex &)>(
       [eta](real tau, complex &T) { T *= std::exp(+eta*tau); }
     )
   ) (
-    (*tn)["n"], (*NTain)["ain"]
+    (*tn)["n"], (*NRTain)["ain"]
+  );
+  auto NITain( new CTF::Tensor<complex>(false, *Tain) );
+  (*NITain)["ain"] = (-4.0) * (*TIaiv)["aiv"] * cISTnv["nv"] * cSvn["vn"];
+  CTF::Transform<real, complex>(
+    std::function<void(real, complex &)>(
+      [eta](real tau, complex &T) { T *= std::exp(+eta*tau); }
+    )
+  ) (
+    (*tn)["n"], (*NITain)["ain"]
   );
   {
-    CTF::Tensor<complex> diffTain(*NTain);
+    CTF::Tensor<complex> diffTain(*NRTain);
     diffTain["ain"] += (-1.0) * (*Tain)["ain"];
-    double inverseError(frobeniusNorm(diffTain));
+    real inverseError(frobeniusNorm(diffTain));
     LOG(0, getCapitalizedAbbreviation())
-      << "inverse Laplace transform error=" << inverseError << std::endl;
+      << "inverse Laplace transform error real=" << inverseError << std::endl;
+  }
+  {
+    CTF::Tensor<complex> diffTain(*NITain);
+    diffTain["ain"] += (-1.0) * (*Tain)["ain"];
+    real inverseError(frobeniusNorm(diffTain));
+    LOG(0, getCapitalizedAbbreviation())
+      << "inverse Laplace transform error imag=" << inverseError << std::endl;
   }
   allocatedTensorArgument<complex>(
     "ExactImaginaryTimePropagators", Tain
   );
   allocatedTensorArgument<complex>(
-    "NumericalImaginaryTimePropagators", NTain
+    "NumericalImaginaryTimePropagatorsReal", NRTain
+  );
+  allocatedTensorArgument<complex>(
+    "NumericalImaginaryTimePropagatorsImag", NITain
   );
 
   // get energy differences for propagation
@@ -206,7 +225,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     Tabijv[v] = NEW(CTF::Tensor<complex>, false, *Vabij);
   }
 
-  double energy;
+  real energy;
   // number of iterations for determining the amplitudes
   int maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
@@ -271,14 +290,14 @@ void ThermalClusterDoublesAlgorithm::run() {
 
 void ThermalClusterDoublesAlgorithm::dryRun() {
   // Read the Coulomb Integrals Vabij required for the energy
-  getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
+  getTensorArgument<real, DryTensor<real>>("PPHHCoulombIntegrals");
 
   // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
   DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<double>>("ThermalHoleEigenEnergies")
+    getTensorArgument<real, DryTensor<real>>("ThermalHoleEigenEnergies")
   );
   DryTensor<> *epsa(
-    getTensorArgument<double, DryTensor<double>>("ThermalParticleEigenEnergies")
+    getTensorArgument<real, DryTensor<real>>("ThermalParticleEigenEnergies")
   );
 
   int No(epsi->lens[0]);
@@ -328,7 +347,7 @@ void ThermalClusterDoublesAlgorithm::fetchDelta(Tensor<> &Delta) {
   Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
   std::string indices(getAmplitudeIndices(Delta));
-  double factor(0.0);
+  real factor(0.0);
   const int excitationLevel(Delta.order/2);
   for (int i(0); i < excitationLevel; ++i) {
     char aIndex[] = {static_cast<char>('a'+i), 0};
