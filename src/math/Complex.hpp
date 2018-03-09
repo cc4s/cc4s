@@ -6,8 +6,9 @@
 #include <quadmath.h>
 #endif
 
-// TODO: use configuration for setting default real type sizes
-#define DEFAULT_REAL_SIZE 8
+// TODO: move to own header file
+// TODO: use configuration for setting default real type sizes in bits
+#define DEFAULT_REAL_BIT_SIZE 64
 
 /*
 #ifdef INTEL_COMPILER
@@ -33,26 +34,27 @@ namespace std {
 #else
 #endif
 */
+
 namespace cc4s {
-  template <int RealSize=DEFAULT_REAL_SIZE>
-  class RealTypes;
+  template <int FloatSize=DEFAULT_REAL_BIT_SIZE>
+  class FloatTypes;
 
   template <>
-  class RealTypes<4> {
+  class FloatTypes<32> {
   public:
     typedef float real;
     typedef std::complex<float> complex;
   };
 
   template <>
-  class RealTypes<8> {
+  class FloatTypes<64> {
   public:
     typedef double real;
     typedef std::complex<double> complex;
   };
 
   template <>
-  class RealTypes<16> {
+  class FloatTypes<128> {
   public:
 #ifdef INTEL_COMPILER
     typedef _Quad real;
@@ -64,8 +66,8 @@ namespace cc4s {
   };
 
   // define types of default real size:
-  typedef RealTypes<>::real real;
-  typedef RealTypes<>::complex complex;
+  typedef FloatTypes<>::real real;
+  typedef FloatTypes<>::complex complex;
 
   inline real absSqr(const real x) {
     return x*x;
@@ -92,6 +94,19 @@ namespace cc4s {
     }
   };
 }
+
+// define stream output for quadruple precision numbers
+#ifdef INTEL_COMPILER
+  // TODO: implement for intel
+#else
+inline std::ostream &operator <<(
+  std::ostream &stream, const cc4s::FloatTypes<128>::real x
+) {
+  char buffer[1024];
+  quadmath_snprintf(buffer, sizeof(buffer), "%*.36Qe", x);
+  return stream << buffer;
+}
+#endif
 
 #endif
 

@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <util/TensorIo.hpp>
 #include <util/BinaryTensorFormat.hpp>
 #include <util/Scanner.hpp>
@@ -259,12 +259,25 @@ T *TensorIo::readBinaryHeader(MPI_File &file, int64_t &offset) {
 
 // instantiate
 template
-Tensor<double> *TensorIo::readBinary<double>(std::string const &fileName);
+Tensor<FloatTypes<64>::real> *TensorIo::readBinary<FloatTypes<64>::real>(
+  std::string const &fileName
+);
 template
-Tensor<complex> *TensorIo::readBinary<complex>(std::string const &fileName);
+Tensor<FloatTypes<64>::complex> *TensorIo::readBinary<FloatTypes<64>::complex>(
+  std::string const &fileName
+);
+template
+Tensor<FloatTypes<128>::real> *TensorIo::readBinary<FloatTypes<128>::real>(
+  std::string const &fileName
+);
+template
+Tensor<FloatTypes<128>::complex>
+*TensorIo::readBinary<FloatTypes<128>::complex>(
+  std::string const &fileName
+);
 
 template
-Tensor<double> *TensorIo::readText<double>(
+Tensor<real> *TensorIo::readText<real>(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize
@@ -276,15 +289,15 @@ Tensor<complex> *TensorIo::readText<complex>(
   int64_t const bufferSize
 );
 
-template void TensorIo::writeBinary<double>(
-  std::string const &fileName, Tensor<double> &A
+template void TensorIo::writeBinary<real>(
+  std::string const &fileName, Tensor<real> &A
 );
 template void TensorIo::writeBinary<complex>(
   std::string const &fileName, Tensor<complex> &A
 );
 
-template void TensorIo::writeText<double>(
-  std::string const &fileName, Tensor<double> &A,
+template void TensorIo::writeText<real>(
+  std::string const &fileName, Tensor<real> &A,
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );

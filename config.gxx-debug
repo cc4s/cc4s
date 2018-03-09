@@ -23,7 +23,7 @@ SCA=/usr/local/lib/scalapack
 INCLUDE=-I${CTF}/include
 
 # additional library paths and libraries to link to
-LIBS=-L${SCA} -L${CTF}/lib -lctf -lscalapack -lreflapack -lrefblas -lgfortran
+LIBS=-L${SCA} -L${CTF}/lib -lctf -lscalapack -lreflapack -lrefblas -lgfortran -lquadmath
 #LIBS=-L${CTF}/lib -lctf -lblas -llapack -lblacs-openmpi -lblacsCinit-openmpi -lscalapack-openmpi
 
 # destination path for installation

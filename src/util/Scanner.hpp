@@ -30,7 +30,9 @@ namespace cc4s {
         // fill the rest of the buffer from the file
         int64_t size(buffer+BUFFER_SIZE-end);
         int64_t count(stream->read(end, size).gcount());
+#ifdef DEBUG
         LOG(2, "Scanner") << count << " bytes fetched." << std::endl;
+#endif
         // account the read characters to the buffer
         end += count;
         // if not all requested characters could be read the file is done
@@ -75,35 +77,75 @@ namespace cc4s {
     friend class NumberScanner;
   };
 
-  template <typename NumberType=double>
+  // double precision float
+  template <typename NumberType=FloatTypes<64>::real>
   class NumberScanner {
   };
   template <>
-  class NumberScanner<double> {
+  class NumberScanner<FloatTypes<64>::real> {
     public:
     NumberScanner(Scanner *scanner_): scanner(scanner_) {
     }
-    double nextNumber() {
+    FloatTypes<64>::real nextNumber() {
       scanner->refillBuffer();
       return std::strtod(scanner->pos, &scanner->pos);
     }
   protected:
     Scanner *scanner;
   };
+
+  // quadruple precision float
   template <>
-  class NumberScanner<complex> {
+  class NumberScanner<FloatTypes<128>::real> {
     public:
     NumberScanner(Scanner *scanner_): scanner(scanner_) {
     }
-    complex nextNumber() {
+    FloatTypes<128>::real nextNumber() {
+      scanner->refillBuffer();
+      return strtoflt128(scanner->pos, &scanner->pos);
+    }
+  protected:
+    Scanner *scanner;
+  };
+
+  // double precision complex
+  template <>
+  class NumberScanner<FloatTypes<64>::complex> {
+    public:
+    NumberScanner(Scanner *scanner_): scanner(scanner_) {
+    }
+    FloatTypes<64>::complex nextNumber() {
       scanner->refillBuffer();
       while (isspace(*scanner->pos) || *scanner->pos == '(') ++scanner->pos;
       // read real part
-      double r(std::strtod(scanner->pos, &scanner->pos));
+      FloatTypes<64>::real r(std::strtod(scanner->pos, &scanner->pos));
       // skip ','
       ++scanner->pos;
       // read imaginary part
-      double i(std::strtod(scanner->pos, &scanner->pos));
+      FloatTypes<64>::real i(std::strtod(scanner->pos, &scanner->pos));
+      // skip ')'
+      ++scanner->pos;
+      return complex(r, i);
+    }
+  protected:
+    Scanner *scanner;
+  };
+
+  // quadruple precision complex
+  template <>
+  class NumberScanner<FloatTypes<128>::complex> {
+    public:
+    NumberScanner(Scanner *scanner_): scanner(scanner_) {
+    }
+    FloatTypes<128>::complex nextNumber() {
+      scanner->refillBuffer();
+      while (isspace(*scanner->pos) || *scanner->pos == '(') ++scanner->pos;
+      // read real part
+      FloatTypes<128>::real r(strtoflt128(scanner->pos, &scanner->pos));
+      // skip ','
+      ++scanner->pos;
+      // read imaginary part
+      FloatTypes<128>::real i(strtoflt128(scanner->pos, &scanner->pos));
       // skip ')'
       ++scanner->pos;
       return complex(r, i);
