@@ -16,7 +16,6 @@ LaplaceTransform::LaplaceTransform(
 }
 
 LaplaceTransform::~LaplaceTransform() {
-  
 }
 
 void LaplaceTransform::run() {
