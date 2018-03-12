@@ -266,6 +266,7 @@ template
 Tensor<Complex<Float64>> *TensorIo::readBinary<Complex<Float64>>(
   std::string const &fileName
 );
+#ifndef INTEL_COMPILER
 template
 Tensor<Float128> *TensorIo::readBinary<Float128>(
   std::string const &fileName
@@ -275,6 +276,7 @@ Tensor<Complex<Float128>>
 *TensorIo::readBinary<Complex<Float128>>(
   std::string const &fileName
 );
+#endif
 
 template
 Tensor<Float64> *TensorIo::readText<Float64>(
@@ -288,6 +290,7 @@ Tensor<Complex<Float64>> *TensorIo::readText<Complex<Float64>>(
   std::string const &delimiter,
   int64_t const bufferSize
 );
+#ifndef INTEL_COMPILER
 template
 Tensor<Float128> *TensorIo::readText<Float128>(
   std::string const &fileName,
@@ -300,6 +303,7 @@ Tensor<Complex<Float128>> *TensorIo::readText<Complex<Float128>>(
   std::string const &delimiter,
   int64_t const bufferSize
 );
+#endif
 
 template void TensorIo::writeBinary<Float64>(
   std::string const &fileName, Tensor<Float64> &A
@@ -307,12 +311,14 @@ template void TensorIo::writeBinary<Float64>(
 template void TensorIo::writeBinary<Complex<Float64>>(
   std::string const &fileName, Tensor<Complex<Float64>> &A
 );
+#ifndef INTEL_COMPILER
 template void TensorIo::writeBinary<Float128>(
   std::string const &fileName, Tensor<Float128> &A
 );
 template void TensorIo::writeBinary<Complex<Float128>>(
   std::string const &fileName, Tensor<Complex<Float128>> &A
 );
+#endif
 
 template void TensorIo::writeText<Float64>(
   std::string const &fileName, Tensor<Float64> &A,
@@ -324,6 +330,7 @@ template void TensorIo::writeText<Complex<Float64>>(
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );
+#ifndef INTEL_COMPILER
 template void TensorIo::writeText<Float128>(
   std::string const &fileName, Tensor<Float128> &A,
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
@@ -334,4 +341,5 @@ template void TensorIo::writeText<Complex<Float128>>(
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );
+#endif
 

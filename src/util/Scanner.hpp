@@ -98,6 +98,7 @@ namespace cc4s {
     Scanner *scanner;
   };
 
+#ifndef INTEL_COMPILER
   // quadruple precision float
   template <>
   class NumberScanner<Float128> {
@@ -114,6 +115,7 @@ namespace cc4s {
   protected:
     Scanner *scanner;
   };
+#endif
 
   // complex numbers
   template <typename Real>

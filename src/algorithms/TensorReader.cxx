@@ -34,9 +34,13 @@ void TensorReader::run() {
     );
     break;
   case 128:
+#ifndef INTEL_COMPILER
     allocatedTensorArgument<Float128>(
       "Data", read<Float128>(name)
     );
+#else
+    throw new EXCEPTION("Quadruple precision not supported for Intel");
+#endif
     break;
   }
 }
