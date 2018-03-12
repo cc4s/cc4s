@@ -133,7 +133,7 @@ namespace cc4s {
             // Get the rightEigenVectors in the coordinates of the
             // original basis (rightBasis)
             V rightScaledBase(
-              rightBasis[b] * ComplexTraits<F>::convert(
+              rightBasis[b] * Conversion<F, complex>::from(
                 reducedEigenSystem.getRightEigenVectors()(b,k)
               )
             );
@@ -141,7 +141,7 @@ namespace cc4s {
 
             // Do the same for the leftEigenVectors
             V leftScaledBase(
-              leftBasis[b] * ComplexTraits<F>::convert(
+              leftBasis[b] * Conversion<F, complex>::from(
                 reducedEigenSystem.getLeftEigenVectors()(b,k)
               )
             );
@@ -160,14 +160,14 @@ namespace cc4s {
           // compute residuum
           V rightResiduum( h.rightApply(rightEigenVectors[k]) );
           V rightLambdaR(
-            rightEigenVectors[k] * ComplexTraits<F>::convert(eigenValues[k])
+            rightEigenVectors[k] * Conversion<F, complex>::from(eigenValues[k])
           );
           rightResiduum -= rightLambdaR;
 
           std::cout << "Applying left" << std::endl;
           V leftResiduum( h.leftApply(leftEigenVectors[k]) );
           V leftLambdaR(
-            leftEigenVectors[k] * ComplexTraits<F>::convert(eigenValues[k])
+            leftEigenVectors[k] * Conversion<F, complex>::from(eigenValues[k])
           );
           leftResiduum -= leftLambdaR;
 
@@ -268,7 +268,7 @@ namespace cc4s {
           rightEigenVectors[k] *= F(0);
           for (int b(0); b < reducedH.getColumns(); ++b) {
             rightEigenVectors[k] +=
-              rightBasis[b] * ComplexTraits<F>::convert(
+              rightBasis[b] * Conversion<F, complex>::from(
                 reducedEigenSystem.getRightEigenVectors()(b,k)
               );
           }
@@ -287,7 +287,7 @@ namespace cc4s {
           // compute residuum
           V residuum( h.rightApply(rightEigenVectors[k]) );
           residuum -=
-            rightEigenVectors[k] * ComplexTraits<F>::convert(
+            rightEigenVectors[k] * Conversion<F, complex>::from(
               //std::sqrt(eigenValues[k])
               eigenValues[k]
             );
