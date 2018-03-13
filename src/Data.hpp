@@ -154,11 +154,11 @@ namespace cc4s {
 
   class RealData: public NumericData {
   public:
-    RealData(double value_): NumericData("real"), value(value_) { }
+    RealData(real value_): NumericData("real"), value(value_) { }
     RealData(
-      std::string const &name_, double const value_
+      std::string const &name_, const real value_
     ): NumericData(name_, "real"), value(value_) { }
-    double value;
+    real value;
   };
 
   class IntegerData: public NumericData {

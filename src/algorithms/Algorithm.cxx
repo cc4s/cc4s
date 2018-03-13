@@ -165,21 +165,40 @@ T *Algorithm::getTensorArgument(std::string const &name) {
 }
 // instantiate
 template
-CTF::Tensor<real> *Algorithm::getTensorArgument<
-  real, CTF::Tensor<real>
+CTF::Tensor<Float64> *Algorithm::getTensorArgument<
+  Float64, CTF::Tensor<Float64>
 >(std::string const &);
 template
-CTF::Tensor<complex> *Algorithm::getTensorArgument<
-  complex, CTF::Tensor<complex>
+CTF::Tensor<Complex64> *Algorithm::getTensorArgument<
+  Complex64, CTF::Tensor<Complex64>
 >(std::string const &);
 template
-DryTensor<real> *Algorithm::getTensorArgument<
-  real, DryTensor<real>
+DryTensor<Float64> *Algorithm::getTensorArgument<
+  Float64, DryTensor<Float64>
 >(std::string const &);
 template
-DryTensor<complex> *Algorithm::getTensorArgument<
-  complex, DryTensor<complex>
+DryTensor<Complex64> *Algorithm::getTensorArgument<
+  Complex64, DryTensor<Complex64>
 >(std::string const &);
+
+#ifndef INTEL_COMPILER
+template
+CTF::Tensor<Float128> *Algorithm::getTensorArgument<
+  Float128, CTF::Tensor<Float128>
+>(std::string const &);
+template
+CTF::Tensor<Complex128> *Algorithm::getTensorArgument<
+  Complex128, CTF::Tensor<Complex128>
+>(std::string const &);
+template
+DryTensor<Float128> *Algorithm::getTensorArgument<
+  Float128, DryTensor<Float128>
+>(std::string const &);
+template
+DryTensor<Complex128> *Algorithm::getTensorArgument<
+  Complex128, DryTensor<Complex128>
+>(std::string const &);
+#endif
 
 
 /**
@@ -248,21 +267,40 @@ T *Algorithm::getTensorArgumentFromReal(RealData *realData) {
 }
 // instantiate
 template
-CTF::Tensor<real> *Algorithm::getTensorArgumentFromReal<
-  real, CTF::Tensor<real>
+CTF::Tensor<Float64> *Algorithm::getTensorArgumentFromReal<
+  Float64, CTF::Tensor<Float64>
 >(RealData *);
 template
-CTF::Tensor<complex> *Algorithm::getTensorArgumentFromReal<
-  complex, CTF::Tensor<complex>
+CTF::Tensor<Complex64> *Algorithm::getTensorArgumentFromReal<
+  Complex64, CTF::Tensor<Complex64>
 >(RealData *);
 template
-DryTensor<real> *Algorithm::getTensorArgumentFromReal<
-  real, DryTensor<real>
+DryTensor<Float64> *Algorithm::getTensorArgumentFromReal<
+  Float64, DryTensor<Float64>
 >(RealData *);
 template
-DryTensor<complex> *Algorithm::getTensorArgumentFromReal<
-  complex, DryTensor<complex>
+DryTensor<Complex64> *Algorithm::getTensorArgumentFromReal<
+  Complex64, DryTensor<Complex64>
 >(RealData *);
+
+#ifndef INTEL_COMPILER
+template
+CTF::Tensor<Float128> *Algorithm::getTensorArgumentFromReal<
+  Float128, CTF::Tensor<Float128>
+>(RealData *);
+template
+CTF::Tensor<Complex128> *Algorithm::getTensorArgumentFromReal<
+  Complex128, CTF::Tensor<Complex128>
+>(RealData *);
+template
+DryTensor<Float128> *Algorithm::getTensorArgumentFromReal<
+  Float128, DryTensor<Float128>
+>(RealData *);
+template
+DryTensor<Complex128> *Algorithm::getTensorArgumentFromReal<
+  Complex128, DryTensor<Complex128>
+>(RealData *);
+#endif
 
 template <typename F, typename T>
 void Algorithm::allocatedTensorArgument(
@@ -280,10 +318,6 @@ template
 void Algorithm::allocatedTensorArgument<
   Float64, CTF::Tensor<Float64>
 >(std::string const &name, CTF::Tensor<Float64> *tensor);
-template
-void Algorithm::allocatedTensorArgument<
-  Float128, CTF::Tensor<Float128>
->(std::string const &name, CTF::Tensor<Float128> *tensor);
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
 void Algorithm::allocatedTensorArgument<
@@ -302,10 +336,6 @@ template
 void Algorithm::allocatedTensorArgument<
   Complex64, CTF::Tensor<Complex64>
 >(std::string const &name, CTF::Tensor<Complex64> *tensor);
-template
-void Algorithm::allocatedTensorArgument<
-  Complex128, CTF::Tensor<Complex128>
->(std::string const &name, CTF::Tensor<Complex128> *tensor);
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
 void Algorithm::allocatedTensorArgument<
@@ -324,10 +354,6 @@ template
 void Algorithm::allocatedTensorArgument<
   Float64, DryTensor<Float64>
 >(std::string const &name, DryTensor<Float64> *tensor);
-template
-void Algorithm::allocatedTensorArgument<
-  Float128, DryTensor<Float128>
->(std::string const &name, DryTensor<Float128> *tensor);
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
 void Algorithm::allocatedTensorArgument<
@@ -344,7 +370,7 @@ void Algorithm::allocatedTensorArgument<
 
 template
 void Algorithm::allocatedTensorArgument<
-  complex, DryTensor<complex>
+  complex, DryTensor<Complex64>
 >(std::string const &name, DryTensor<complex> *tensor);
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
@@ -359,6 +385,26 @@ template
 void Algorithm::allocatedTensorArgument<
   complex, DryScalar<complex>
 >(std::string const &name, DryScalar<complex> *tensor);
+
+#ifndef INTEL_COMPILER
+template
+void Algorithm::allocatedTensorArgument<
+  Float128, CTF::Tensor<Float128>
+>(std::string const &name, CTF::Tensor<Float128> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  Complex128, CTF::Tensor<Complex128>
+>(std::string const &name, CTF::Tensor<Complex128> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  Float128, DryTensor<Float128>
+>(std::string const &name, DryTensor<Float128> *tensor);
+template
+void Algorithm::allocatedTensorArgument<
+  Complex128, DryTensor<Complex128>
+>(std::string const &name, DryTensor<Complex128> *tensor);
+#endif
+
 
 void Algorithm::setRealArgument(std::string const &name, const real value) {
   Data *mentionedData(getArgumentData(name));

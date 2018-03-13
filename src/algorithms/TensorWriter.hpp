@@ -16,6 +16,10 @@ namespace cc4s {
      * \brief Writes the real tensor data given as Data argument to a file.
      */
     virtual void run();
+
+  protected:
+    template <typename F>
+    void write(const std::string &name);
   };
 }
 
