@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <algorithms/TensorReader.hpp>
 #include <util/TensorIo.hpp>
 #include <util/Log.hpp>
@@ -20,24 +20,45 @@ TensorReader::~TensorReader() {
 }
 
 void TensorReader::run() {
-  std::string dataName(getArgumentData("Data")->getName());
+  std::string name(getArgumentData("Data")->getName());
 
   // make sure all processes start reading the file at the same time in case
   // it has been modified before
   MPI_Barrier(Cc4s::world->comm);
 
+  int64_t precision(getIntegerArgument("precision", 64));
+  switch (precision) {
+  case 64:
+    allocatedTensorArgument<Float64>(
+      "Data", read<Float64>(name)
+    );
+    break;
+  case 128:
+#ifndef INTEL_COMPILER
+    allocatedTensorArgument<Float128>(
+      "Data", read<Float128>(name)
+    );
+#else
+    throw new EXCEPTION("Quadruple precision not supported for Intel");
+#endif
+    break;
+  }
+}
+
+template <typename F>
+Tensor<F> *TensorReader::read(const std::string &name) {
+  Tensor<F> *A;
   std::string mode(getTextArgument("mode", "text"));
-  Tensor<> *A;
   if (mode == "binary") {
-    std::string fileName(getTextArgument("file", dataName + ".bin"));
-    A = TensorIo::readBinary(fileName);
+    std::string fileName(getTextArgument("file", name + ".bin"));
+    A = TensorIo::readBinary<F>(fileName);
   } else {
-    std::string fileName(getTextArgument("file", dataName + ".dat").c_str());
+    std::string fileName(getTextArgument("file", name + ".dat").c_str());
     std::string delimiter(getTextArgument("delimiter", " "));
     int64_t bufferSize(getIntegerArgument("bufferSize", 128l*1024*1024));
-    A = TensorIo::readText(fileName, delimiter, bufferSize);
+    A = TensorIo::readText<F>(fileName, delimiter, bufferSize);
   }
-  A->set_name(dataName.c_str());
-  allocatedTensorArgument<>("Data", A);
+  A->set_name(name.c_str());
+  return A;
 }
 

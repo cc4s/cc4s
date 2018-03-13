@@ -45,11 +45,11 @@ namespace cc4s {
     int64_t getIntegerArgument(
       std::string const &argumentName, int64_t const defaultValue
     );
-    double getRealArgument(std::string const &argumentName);
-    double getRealArgument(
-      std::string const &argumentName, double const defaultValue
+    real getRealArgument(std::string const &argumentName);
+    real getRealArgument(
+      std::string const &argumentName, real const defaultValue
     );
-    template < typename F=double, typename T=CTF::Tensor<F> >
+    template < typename F=real, typename T=CTF::Tensor<F> >
     T *getTensorArgument(std::string const &argumentName);
 
     // typing, allocating and setting output arguments
@@ -64,18 +64,18 @@ namespace cc4s {
      * allocatedTensorArgument<complex>(complexTensor);
      * \endcode
      */
-    template < typename F=double, typename T=CTF::Tensor<F> >
+    template < typename F=real, typename T=CTF::Tensor<F> >
     void allocatedTensorArgument(
       std::string const &argumentName, T *tensor
     );
-    void setRealArgument(std::string const &argumentName, double const value);
+    void setRealArgument(std::string const &argumentName, real const value);
     void setIntegerArgument(std::string const &argumentName, int const value);
 
   protected:
     // type promotions:
-    double getRealArgumentFromInteger(IntegerData *data);
-    double getRealArgumentFromTensor(TensorData<double> *data);
-    template < typename F=double, typename T=CTF::Tensor<F> >
+    real getRealArgumentFromInteger(IntegerData *data);
+    real getRealArgumentFromTensor(TensorData<real> *data);
+    template < typename F=real, typename T=CTF::Tensor<F> >
     T *getTensorArgumentFromReal(RealData *realData);
 
     Data *getArgumentData(std::string const &argumentName);

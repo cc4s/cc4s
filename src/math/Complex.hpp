@@ -1,110 +1,62 @@
 #ifndef COMPLEX_DEFINED
 #define COMPLEX_DEFINED
 
+#include <math/Float.hpp>
 #include <complex>
-#ifndef INTEL_COMPILER
-#include <quadmath.h>
-#endif
 
-// TODO: use configuration for setting default float type sizes
-/**
- * \brief Default size of IEEE floating pointer number in bytes.
- **/
-#define DEFAULT_FLOAT_SIZE 8
-
-/*
-#ifdef INTEL_COMPILER
 namespace cc4s {
-  class complex: public std::complex<real> {
-  public:
-    void real(real value) {
-      this->real(value);
-    }
-    void imag(real value) {
-      this->imag(value);
-    }
-  };
-}
-namespace std {
-  real real(cc4s::complex c) {
-    return std::real(std::complex<real>(c));
-  }
-  real imag(cc4s::complex c) {
-    return std::imag(std::complex<real>(c));
-  }
-}
-#else
-#endif
-*/
-namespace cc4s {
-  template <int FloatSize=DEFAULT_FLOAT_SIZE>
-  class FloatTypes;
+  // use standard library complex number support
+  template <typename Real>
+  using Complex = std::complex<Real>;
 
-  template <>
-  class FloatTypes<4> {
-  public:
-    typedef float real;
-    typedef std::complex<float> complex;
-  };
+  // define explicit size complex types
+  typedef Complex<Float32> Complex32;
+  typedef Complex<Float64> Complex64;
+  typedef Complex<Float128> Complex128;
 
-  template <>
-  class FloatTypes<8> {
-  public:
-    typedef double real;
-    typedef std::complex<double> complex;
-  };
+  // define complex field over machine supported reals as default complex type
+  typedef Complex<real> complex;
 
-  template <>
-  class FloatTypes<16> {
-  public:
-#ifdef INTEL_COMPILER
-    typedef _Quad real;
-    typedef std::complex<_Quad> complex;
-#else
-    typedef __float128 real;
-    typedef std::complex<__float128> complex;
-#endif
-  };
 
-  // define types of default Float size:
-  typedef FloatTypes<>::real real;
-  typedef FloatTypes<>::complex complex;
-
-  // default cast template
-  template <typename TargetType>
-  class Cast {
-  public:
-    template <typename SourceType>
-    static TargetType from(const SourceType x) { return TargetType(x); }
-  };
-
-  #define CAST_DEFINITION(SIZE) \
-  template <> \
-  class Cast<typename FloatTypes<SIZE>::real> { \
-  public: \
-    static FloatTypes<SIZE>::real from( \
-      const real x \
-    ) { \
-      return x; \
-    } \
-    static FloatTypes<SIZE>::real from( \
-      const FloatTypes<SIZE>::complex x \
-    ) { \
-      return std::real(x); \
-    } \
-  };
-
-  CAST_DEFINITION(4)
-  CAST_DEFINITION(8)
-  CAST_DEFINITION(16)
-
-  inline real absSqr(const real x) {
+  template <typename Real>
+  inline Real absSqr(const Real x) {
     return x*x;
   }
 
-  inline real absSqr(const complex z) {
+  template <typename Real>
+  inline Real absSqr(const Complex<Real> z) {
     return absSqr(z.real()) + absSqr(z.imag());
   }
+
+  // numeric conversions
+  template <typename Target, typename Source>
+  class Conversion;
+
+  template <typename Target, typename Real>
+  class Conversion<Target, Complex<Real>> {
+  public:
+    static Target from(const Complex<Real> x) {
+      return Target(x);
+    }
+  };
+
+  template <typename Real>
+  class Conversion<Real, Complex<Real>> {
+  public:
+    static Real from(const Complex<Real> x) {
+      return std::real(x);
+    }
+  };
+
+#ifdef INTEL_COMPILER
+    // TODO: implement for intel
+#else
+  inline std::ostream &operator <<(
+    std::ostream &stream, const Complex128 z
+  ) {
+    return stream << '(' << std::real(z) << ',' << std::imag(z) << ')';
+  }
+#endif
 }
 
 #endif
