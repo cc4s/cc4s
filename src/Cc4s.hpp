@@ -15,6 +15,8 @@ namespace cc4s {
     void run();
     void dryRun();
 
+    static bool isDebugged();
+
     // static properties, accessible from everywhere
     static CTF::World *world;
     static Options *options;

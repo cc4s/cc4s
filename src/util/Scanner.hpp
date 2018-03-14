@@ -2,6 +2,7 @@
 #ifndef SCANNER_DEFINED
 #define SCANNER_DEFINED
 
+#include <math/Float.hpp>
 #include <math/Complex.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -30,7 +31,9 @@ namespace cc4s {
         // fill the rest of the buffer from the file
         int64_t size(buffer+BUFFER_SIZE-end);
         int64_t count(stream->read(end, size).gcount());
+#ifdef DEBUG
         LOG(2, "Scanner") << count << " bytes fetched." << std::endl;
+#endif
         // account the read characters to the buffer
         end += count;
         // if not all requested characters could be read the file is done
@@ -75,35 +78,60 @@ namespace cc4s {
     friend class NumberScanner;
   };
 
-  template <typename NumberType=double>
+  // double precision float
+  template <typename NumberType=Float64>
   class NumberScanner {
   };
   template <>
-  class NumberScanner<double> {
+  class NumberScanner<Float64> {
     public:
     NumberScanner(Scanner *scanner_): scanner(scanner_) {
     }
-    double nextNumber() {
+    Float64 nextNumber() {
       scanner->refillBuffer();
-      return std::strtod(scanner->pos, &scanner->pos);
+      return scanReal(&scanner->pos);
+    }
+    static Float64 scanReal(char **position) {
+      return std::strtod(*position, position);
     }
   protected:
     Scanner *scanner;
   };
+
+#ifndef INTEL_COMPILER
+  // quadruple precision float
   template <>
-  class NumberScanner<complex> {
+  class NumberScanner<Float128> {
     public:
     NumberScanner(Scanner *scanner_): scanner(scanner_) {
     }
-    complex nextNumber() {
+    Float128 nextNumber() {
+      scanner->refillBuffer();
+      return scanReal(&scanner->pos);
+    }
+    static Float128 scanReal(char **position) {
+      return strtoflt128(*position, position);
+    }
+  protected:
+    Scanner *scanner;
+  };
+#endif
+
+  // complex numbers
+  template <typename Real>
+  class NumberScanner<Complex<Real>> {
+    public:
+    NumberScanner(Scanner *scanner_): scanner(scanner_) {
+    }
+    Complex<Real> nextNumber() {
       scanner->refillBuffer();
       while (isspace(*scanner->pos) || *scanner->pos == '(') ++scanner->pos;
       // read real part
-      double r(std::strtod(scanner->pos, &scanner->pos));
+      Real r(NumberScanner<Real>::scanReal(&scanner->pos));
       // skip ','
       ++scanner->pos;
       // read imaginary part
-      double i(std::strtod(scanner->pos, &scanner->pos));
+      Real i(NumberScanner<Real>::scanReal(&scanner->pos));
       // skip ')'
       ++scanner->pos;
       return complex(r, i);

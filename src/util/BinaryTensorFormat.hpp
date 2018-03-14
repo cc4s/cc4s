@@ -41,12 +41,18 @@ namespace cc4s {
   class BinaryTensorHeader: public BinaryTensorHeaderBase {
   public:
     BinaryTensorHeader(): BinaryTensorHeaderBase() { }
-    BinaryTensorHeader(CTF::Tensor<double> const &T): BinaryTensorHeaderBase(
-      sizeof(double), 1, T.order
+    template <typename Real>
+    BinaryTensorHeader(
+      CTF::Tensor<Real> const &T
+    ): BinaryTensorHeaderBase(
+      sizeof(Real), 1, T.order
     ) {
     }
-    BinaryTensorHeader(CTF::Tensor<complex> const &T): BinaryTensorHeaderBase(
-      sizeof(double), 2, T.order
+    template <typename Real>
+    BinaryTensorHeader(
+      CTF::Tensor<Complex<Real>> const &T
+    ): BinaryTensorHeaderBase(
+      sizeof(Complex<Real>), 2, T.order
     ) {
     }
   };

@@ -1,30 +1,24 @@
-#include <algorithms/ThermalClusterDoublesAlgorithm.hpp>
+#include <algorithms/LaplaceTransform.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
-#include <math/IterativePseudoInverse.hpp>
 #include <util/LapackMatrix.hpp>
-#include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
-#include <util/Exception.hpp>
 #include <ctf.hpp>
-#include <Options.hpp>
 
 using namespace CTF;
 using namespace cc4s;
 
-ThermalClusterDoublesAlgorithm::ThermalClusterDoublesAlgorithm(
+ALGORITHM_REGISTRAR_DEFINITION(LaplaceTransform);
+
+LaplaceTransform::LaplaceTransform(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
-  
+LaplaceTransform::~LaplaceTransform() {
 }
 
-void ThermalClusterDoublesAlgorithm::run() {
-  beta = 1 / getRealArgument("Temperature");
-  LOG(1, getCapitalizedAbbreviation()) << "beta=" << beta << std::endl;
-
+void LaplaceTransform::run() {
   // get imaginary time and frequency grids on all nodes
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
   std::vector<real> taus(tn->lens[0]);
@@ -39,9 +33,10 @@ void ThermalClusterDoublesAlgorithm::run() {
   std::vector<real> nuWeights(nuwn->lens[0]);
   nuwn->read_all(nuWeights.data());
 
+  // contour shift on real axis, such that s = eta + i*nu
   real eta( getRealArgument("EnergyShift", 1.0) );
 
-  // forward and inverse Laplace transform weights
+  // forward and inverse cosine and sin transform weights
   auto ctfCTvn( getTensorArgument<real>("CosineTransform") );
   auto ctfSTvn( getTensorArgument<real>("SineTransform") );
   auto ctfICTnv( getTensorArgument<real>("InverseCosineTransform") );
@@ -62,7 +57,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   LapackMatrix<real> ICTnv(*ctfICTnv);
   LapackMatrix<real> ISTnv(*ctfISTnv);
 
-  // cos(nu_v*tau_n) and sin(nu_v*tau_n)
+  // cos(nu_v*tau_n) and sin(nu_v*tau_n), could also be done in CTF
   LapackMatrix<real> Cvn(CTvn);
   LapackMatrix<real> Svn(CTvn);
   for (size_t n(0); n < taus.size(); ++n) {
@@ -72,7 +67,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     }
   }
 
-  // test Laplace transform
+  // convert to complex CTF tensors
   auto ctfCvn( *ctfCTvn );
   Cvn.write(ctfCvn);
   auto ctfSvn( *ctfSTvn );
@@ -82,12 +77,12 @@ void ThermalClusterDoublesAlgorithm::run() {
   CTF::Tensor<complex> cSvn(2, ctfSvn.lens, ctfSvn.sym);
   toComplexTensor(ctfSvn, cSvn);
 
-  auto Vabij( getTensorArgument<complex>("PPHHCoulombIntegrals") );
-  CTF::Tensor<real> Dai(2, &Vabij->lens[1], &Vabij->sym[1]);
+  auto No( getTensorArgument<real>("ThermalHoleEigenEnergies")->lens[0] );
+  auto Nv( getTensorArgument<real>("ThermalParticleEigenEnergies")->lens[0] );
+  auto Nt( tn->lens[0] );
+  CTF::Tensor<real> Dai(2, std::vector<int>({Nv,No}).data());
   fetchDelta(Dai);
-  int lens[] = {Vabij->lens[0], Vabij->lens[2], tn->lens[0]};
-  int syms[] = {NS, NS, NS};
-  auto Tain( new CTF::Tensor<complex>(3, lens, syms) );
+  auto Tain( new CTF::Tensor<complex>(3, std::vector<int>({Nv,No,Nt}).data()) );
   CTF::Transform<real, complex>(
     std::function<void(real, complex &)>(
       [](real Delta, complex &T) { T = Delta; }
@@ -144,14 +139,14 @@ void ThermalClusterDoublesAlgorithm::run() {
     CTF::Tensor<complex> diffTaiv(*NTRaiv);
     diffTaiv["aiv"] += (-1.0) * (*TRaiv)["aiv"];
     real forwardError(frobeniusNorm(diffTaiv));
-    LOG(0, getCapitalizedAbbreviation())
+    LOG(0, "Laplace")
       << "forward Laplace transform error real=" << forwardError << std::endl;
   }
   {
     CTF::Tensor<complex> diffTaiv(*NTIaiv);
     diffTaiv["aiv"] += (-1.0) * (*TIaiv)["aiv"];
     real forwardError(frobeniusNorm(diffTaiv));
-    LOG(0, getCapitalizedAbbreviation())
+    LOG(0, "Laplace")
       << "forward Laplace transform error imag=" << forwardError << std::endl;
   }
   allocatedTensorArgument<complex>(
@@ -190,14 +185,14 @@ void ThermalClusterDoublesAlgorithm::run() {
     CTF::Tensor<complex> diffTain(*NRTain);
     diffTain["ain"] += (-1.0) * (*Tain)["ain"];
     real inverseError(frobeniusNorm(diffTain));
-    LOG(0, getCapitalizedAbbreviation())
+    LOG(0, "Laplace")
       << "inverse Laplace transform error real=" << inverseError << std::endl;
   }
   {
     CTF::Tensor<complex> diffTain(*NITain);
     diffTain["ain"] += (-1.0) * (*Tain)["ain"];
     real inverseError(frobeniusNorm(diffTain));
-    LOG(0, getCapitalizedAbbreviation())
+    LOG(0, "Laplace")
       << "inverse Laplace transform error imag=" << inverseError << std::endl;
   }
   allocatedTensorArgument<complex>(
@@ -209,129 +204,9 @@ void ThermalClusterDoublesAlgorithm::run() {
   allocatedTensorArgument<complex>(
     "NumericalImaginaryTimePropagatorsImag", NITain
   );
-
-  // get energy differences for propagation
-  Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
-  fetchDelta(*Dabij);
-
-  // allocate doubles amplitudes on imaginary time and frequency grid
-  Tabijn.resize(taus.size());
-  for (size_t n(0); n < taus.size(); ++n) {
-    Tabijn[n] = NEW(CTF::Tensor<complex>, false, *Vabij);
-  }
-  Tabijv.resize(nus.size());
-  for (size_t v(0); v < nus.size(); ++v) {
-    Tabijv[v] = NEW(CTF::Tensor<complex>, false, *Vabij);
-  }
-
-  real energy;
-  // number of iterations for determining the amplitudes
-  int maxIterationsCount(
-    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
-  );
-  for (int i(0); i < maxIterationsCount; ++i) {
-/*
-    LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
-    for (size_t n(0); n < taus.size(); ++n) {
-      LOG(1, getCapitalizedAbbreviation())
-        << "computing residues at tau_" << n << "=" << taus[n] << std::endl;
-      // iterate amplitudes on time grid
-      getResiduum(*Tabijn[n]);
-    }
-    // transform to frequency grid
-    LOG(1, getCapitalizedAbbreviation())
-      << "transforming to frequency grid" << std::endl;
-    for (size_t v(0); v < nus.size(); ++v) {
-      Tabijv[v]->sum(LTvn(v,0), *Tabijn[0],"abij", 0.0,"abij");
-      for (size_t n(1); n < taus.size(); ++n) {
-        Tabijv[v]->sum(LTvn(v,n), *Tabijn[n],"abij", 1.0,"abij");
-      }
-    }
-    // convolve with propagator
-    class Convolution {
-    public:
-      Convolution(real nu_, real eta_): nu(nu_), eta(eta_) { }
-      void operator()(real Delta, complex &T) {
-        T /= complex(Delta+eta, nu);
-      }
-    protected:
-      real nu, eta;
-    };
-    for (size_t v(0); v < nus.size(); ++v) {
-      LOG(1, getCapitalizedAbbreviation())
-        << "computing convolution at nu_" << v << "=" << nus[v] << std::endl;
-      Convolution convolution(nus[v], eta);
-      CTF::Transform<real, complex>(
-        std::function<void(real, complex &)>(convolution)
-      ) (
-        (*Dabij)["abij"], (*Tabijv[v])["abij"]
-      );
-    }
-
-    // transform to time grid
-    LOG(1, getCapitalizedAbbreviation())
-      << "transforming back to time grid" << std::endl;
-    for (size_t n(1); n < taus.size(); ++n) {
-      Tabijn[n]->sum(invLTnv(n,0), *Tabijv[0],"abij", 0.0,"abij");
-      for (size_t v(0); v < nus.size(); ++v) {
-        Tabijn[n]->sum(invLTnv(n,v), *Tabijv[v],"abij", 1.0,"abij");
-      }
-    }
-*/
-    energy = 0.0;
-    LOG(1, getCapitalizedAbbreviation()) << "e=" << energy << std::endl;
-  }
-
-  std::stringstream energyName;
-  energyName << "Thermal" << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), energy);
 }
 
-void ThermalClusterDoublesAlgorithm::dryRun() {
-  // Read the Coulomb Integrals Vabij required for the energy
-  getTensorArgument<real, DryTensor<real>>("PPHHCoulombIntegrals");
-
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<> *epsi(
-    getTensorArgument<real, DryTensor<real>>("ThermalHoleEigenEnergies")
-  );
-  DryTensor<> *epsa(
-    getTensorArgument<real, DryTensor<real>>("ThermalParticleEigenEnergies")
-  );
-
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-  int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { Nv, Nv, No, No };
-  DryTensor<> Tabij0(4, vvoo, syms, SOURCE_LOCATION);
-  DryTensor<> Tabij1(4, vvoo, syms, SOURCE_LOCATION);
-
-  // Allocate the energy e
-  DryScalar<> energy(SOURCE_LOCATION);
-
-  // Call the dry iterate of the actual algorithm, which is left open here
-  dryIterate();
-
-  std::stringstream energyName;
-  energyName << "Thermal" << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), 0.0);
-}
-
-void ThermalClusterDoublesAlgorithm::dryIterate() {
-  LOG(0, "CluserDoubles") << "Dry run for iterate not given for Thermal"
-    << getAbbreviation() << std::endl;
-}
-
-std::string ThermalClusterDoublesAlgorithm::getCapitalizedAbbreviation() {
-  std::string abbreviation(getAbbreviation());
-  std::transform(
-    abbreviation.begin(), abbreviation.end(), 
-    abbreviation.begin(), ::toupper
-  );
-  return abbreviation;
-}
-
-std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
+std::string LaplaceTransform::getAmplitudeIndices(Tensor<> &T) {
   char indices[T.order+1];
   const int excitationLevel(T.order/2);
   for (int i(0); i < excitationLevel; ++i) {
@@ -342,9 +217,9 @@ std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
   return indices;
 }
 
-void ThermalClusterDoublesAlgorithm::fetchDelta(Tensor<> &Delta) {
-  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+void LaplaceTransform::fetchDelta(Tensor<> &Delta) {
+  Tensor<real> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
+  Tensor<real> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
   std::string indices(getAmplitudeIndices(Delta));
   real factor(0.0);
   const int excitationLevel(Delta.order/2);
@@ -354,19 +229,6 @@ void ThermalClusterDoublesAlgorithm::fetchDelta(Tensor<> &Delta) {
     factor = 1.0;
     char iIndex[] = {static_cast<char>('i'+i), 0};
     Delta.sum(-1.0, *epsi,iIndex, 1.0,indices.c_str());
-  }
-}
-
-void ThermalClusterDoublesAlgorithm::thermalContraction(Tensor<> &T) {
-  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
-  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
-  std::string indices(getAmplitudeIndices(T));
-  const int excitationLevel(T.order/2);
-  for (int i(0); i < excitationLevel; ++i) {
-    char aIndex[] = {static_cast<char>('a'+i), 0};
-    T[indices.c_str()] *= (*Na)[aIndex];;
-    char iIndex[] = {static_cast<char>('i'+i), 0};
-    T[indices.c_str()] *= (*Ni)[iIndex];;
   }
 }
 

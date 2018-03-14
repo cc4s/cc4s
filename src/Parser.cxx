@@ -169,7 +169,9 @@ NumericData *Parser::parseNumber() {
   else return new IntegerData(sign * integer);
 }
 
-RealData *Parser::parseReal(int64_t const sign, int64_t const integerPart){
+RealData *Parser::parseReal(
+  const int64_t sign, const int64_t integerPart
+) {
   // the first character is expected to be the decimal point
   stream.get();
   int64_t numerator(0), denominator(1);
@@ -178,7 +180,9 @@ RealData *Parser::parseReal(int64_t const sign, int64_t const integerPart){
     numerator += stream.get() - '0';
   }
   // TODO: parse scientific notatoin e-1
-  return new RealData(sign * (integerPart + double(numerator) / denominator));
+  return new RealData(
+    sign * (integerPart + double(numerator) / denominator)
+  );
 }
 
 void Parser::skipIrrelevantCharacters() {

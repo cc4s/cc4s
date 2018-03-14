@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <util/TensorIo.hpp>
 #include <util/BinaryTensorFormat.hpp>
 #include <util/Scanner.hpp>
@@ -259,38 +259,87 @@ T *TensorIo::readBinaryHeader(MPI_File &file, int64_t &offset) {
 
 // instantiate
 template
-Tensor<double> *TensorIo::readBinary<double>(std::string const &fileName);
+Tensor<Float64> *TensorIo::readBinary<Float64>(
+  std::string const &fileName
+);
 template
-Tensor<complex> *TensorIo::readBinary<complex>(std::string const &fileName);
+Tensor<Complex<Float64>> *TensorIo::readBinary<Complex<Float64>>(
+  std::string const &fileName
+);
+#ifndef INTEL_COMPILER
+template
+Tensor<Float128> *TensorIo::readBinary<Float128>(
+  std::string const &fileName
+);
+template
+Tensor<Complex<Float128>>
+*TensorIo::readBinary<Complex<Float128>>(
+  std::string const &fileName
+);
+#endif
 
 template
-Tensor<double> *TensorIo::readText<double>(
+Tensor<Float64> *TensorIo::readText<Float64>(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize
 );
 template
-Tensor<complex> *TensorIo::readText<complex>(
+Tensor<Complex<Float64>> *TensorIo::readText<Complex<Float64>>(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize
 );
-
-template void TensorIo::writeBinary<double>(
-  std::string const &fileName, Tensor<double> &A
+#ifndef INTEL_COMPILER
+template
+Tensor<Float128> *TensorIo::readText<Float128>(
+  std::string const &fileName,
+  std::string const &delimiter,
+  int64_t const bufferSize
 );
-template void TensorIo::writeBinary<complex>(
-  std::string const &fileName, Tensor<complex> &A
+template
+Tensor<Complex<Float128>> *TensorIo::readText<Complex<Float128>>(
+  std::string const &fileName,
+  std::string const &delimiter,
+  int64_t const bufferSize
 );
+#endif
 
-template void TensorIo::writeText<double>(
-  std::string const &fileName, Tensor<double> &A,
+template void TensorIo::writeBinary<Float64>(
+  std::string const &fileName, Tensor<Float64> &A
+);
+template void TensorIo::writeBinary<Complex<Float64>>(
+  std::string const &fileName, Tensor<Complex<Float64>> &A
+);
+#ifndef INTEL_COMPILER
+template void TensorIo::writeBinary<Float128>(
+  std::string const &fileName, Tensor<Float128> &A
+);
+template void TensorIo::writeBinary<Complex<Float128>>(
+  std::string const &fileName, Tensor<Complex<Float128>> &A
+);
+#endif
+
+template void TensorIo::writeText<Float64>(
+  std::string const &fileName, Tensor<Float64> &A,
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );
-template void TensorIo::writeText<complex>(
-  std::string const &fileName, Tensor<complex> &A,
+template void TensorIo::writeText<Complex<Float64>>(
+  std::string const &fileName, Tensor<Complex<Float64>> &A,
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );
+#ifndef INTEL_COMPILER
+template void TensorIo::writeText<Float128>(
+  std::string const &fileName, Tensor<Float128> &A,
+  std::string const &rowIndexOrder, std::string const &columnIndexOrder,
+  std::string const &delimiter
+);
+template void TensorIo::writeText<Complex<Float128>>(
+  std::string const &fileName, Tensor<Complex<Float128>> &A,
+  std::string const &rowIndexOrder, std::string const &columnIndexOrder,
+  std::string const &delimiter
+);
+#endif
 

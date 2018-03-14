@@ -16,6 +16,9 @@ namespace cc4s {
      * \brief Reads real tensor data into the tensor Data.
      */
     virtual void run();
+  protected:
+    template <typename F>
+    CTF::Tensor<F> *read(const std::string &name);
   };
 }
 

@@ -10,6 +10,7 @@
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
+#include <string>
 
 // TODO: to be removed from the main class
 #include <math/MathFunctions.hpp>
@@ -102,7 +103,7 @@ void Cc4s::printStatistics(
     utime, stime, cutime, cstime, priority, nice,
     O, itrealvalue, starttime;
   int64_t vsize, rss;
-  // assuming LINUX 
+  // assuming LINUX
   std::ifstream statStream("/proc/self/stat", std::ios_base::in);
   statStream >> pid >> comm >> state >> ppid >> pgrp >> session >> ttyNr
     >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
@@ -128,6 +129,26 @@ void Cc4s::printStatistics(
     << ", overall virtual memory=" << globalVSize / 1e9 << " GB" << std::endl;
 }
 
+bool Cc4s::isDebugged() {
+  // assuming LINUX
+  std::ifstream statusStream("/proc/self/status", std::ios_base::in);
+  while (!statusStream.eof()) {
+    std::string line;
+    std::getline(statusStream, line);
+    std::string pidField("TracerPid:");
+    size_t position(line.find(pidField));
+    if (position != std::string::npos) {
+      std::stringstream pidStream(line.substr(position + pidField.length()));
+      size_t pid; pidStream >> pid;
+      if (pid > 0) {
+        LOG(0, "root") << "Debugger present" << std::endl;
+      }
+      return pid > 0;
+    }
+  }
+  return false;
+}
+
 
 World *Cc4s::world;
 Options *Cc4s::options;
@@ -142,17 +163,20 @@ int main(int argumentCount, char **arguments) {
   Log::setFileName(Cc4s::options->logFile);
   Log::setLogLevel(Cc4s::options->logLevel);
 
-#ifndef DEBUG
-  try {
-#endif
-    Cc4s cc4s;
+  Cc4s cc4s;
+  if (Cc4s::isDebugged()) {
+    // run without try-catch in debugger to allow tracing throwing code
     if (Cc4s::options->dryRun) cc4s.dryRun();
     else cc4s.run();
-#ifndef DEBUG
-  } catch (DetailedException *cause) {
-    LOG(0) << std::endl << cause->getMessage() << std::endl;
+  } else {
+    // without debugger: catch and write exception cause
+    try {
+      if (Cc4s::options->dryRun) cc4s.dryRun();
+      else cc4s.run();
+    } catch (DetailedException *cause) {
+      LOG(0) << std::endl << cause->getMessage() << std::endl;
+    }
   }
-#endif
   MPI_Finalize();
   return 0;
 }

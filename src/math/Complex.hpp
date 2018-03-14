@@ -1,96 +1,62 @@
 #ifndef COMPLEX_DEFINED
 #define COMPLEX_DEFINED
 
+#include <math/Float.hpp>
 #include <complex>
-#ifndef INTEL_COMPILER
-#include <quadmath.h>
-#endif
 
-// TODO: use configuration for setting default real type sizes
-#define DEFAULT_REAL_SIZE 8
-
-/*
-#ifdef INTEL_COMPILER
 namespace cc4s {
-  class complex: public std::complex<real> {
-  public:
-    void real(real value) {
-      this->real(value);
-    }
-    void imag(real value) {
-      this->imag(value);
-    }
-  };
-}
-namespace std {
-  real real(cc4s::complex c) {
-    return std::real(std::complex<real>(c));
-  }
-  real imag(cc4s::complex c) {
-    return std::imag(std::complex<real>(c));
-  }
-}
-#else
-#endif
-*/
-namespace cc4s {
-  template <int RealSize=DEFAULT_REAL_SIZE>
-  class RealTypes;
+  // use standard library complex number support
+  template <typename Real>
+  using Complex = std::complex<Real>;
 
-  template <>
-  class RealTypes<4> {
-  public:
-    typedef float real;
-    typedef std::complex<float> complex;
-  };
+  // define explicit size complex types
+  typedef Complex<Float32> Complex32;
+  typedef Complex<Float64> Complex64;
+  typedef Complex<Float128> Complex128;
 
-  template <>
-  class RealTypes<8> {
-  public:
-    typedef double real;
-    typedef std::complex<double> complex;
-  };
+  // define complex field over machine supported reals as default complex type
+  typedef Complex<real> complex;
 
-  template <>
-  class RealTypes<16> {
-  public:
-#ifdef INTEL_COMPILER
-    typedef _Quad real;
-    typedef std::complex<_Quad> complex;
-#else
-    typedef __float128 real;
-    typedef std::complex<__float128> complex;
-#endif
-  };
 
-  // define types of default real size:
-  typedef RealTypes<>::real real;
-  typedef RealTypes<>::complex complex;
-
-  inline real absSqr(const real x) {
+  template <typename Real>
+  inline Real absSqr(const Real x) {
     return x*x;
   }
 
-  inline real absSqr(const complex z) {
+  template <typename Real>
+  inline Real absSqr(const Complex<Real> z) {
     return absSqr(z.real()) + absSqr(z.imag());
   }
 
-  // base template
-  template <typename F>
-  class ComplexTraits {
+  // numeric conversions
+  template <typename Target, typename Source>
+  class Conversion;
+
+  template <typename Target, typename Real>
+  class Conversion<Target, Complex<Real>> {
   public:
-    static F convert(const complex x) {
-      return F(x);
+    static Target from(const Complex<Real> x) {
+      return Target(x);
     }
   };
 
-  template <>
-  class ComplexTraits<real> {
+  template <typename Real>
+  class Conversion<Real, Complex<Real>> {
   public:
-    static real convert(const complex x) {
+    static Real from(const Complex<Real> x) {
       return std::real(x);
     }
   };
+
+#ifdef INTEL_COMPILER
+    // TODO: implement for intel
+#else
+  inline std::ostream &operator <<(
+    std::ostream &stream, const Complex128 z
+  ) {
+    return stream << '(' << std::real(z) << ',' << std::imag(z) << ')';
+  }
+#endif
 }
 
 #endif

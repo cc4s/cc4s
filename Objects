@@ -77,6 +77,7 @@ build/${CONFIG}/obj/algorithms/ThermalEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/UccsdAmplitudesFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/Mp2ImaginaryFrequencyGrid.o \
 build/${CONFIG}/obj/algorithms/RpaApxEnergy.o \
+build/${CONFIG}/obj/algorithms/LaplaceTransform.o \
 
 
 TESTS_OBJECTS = \
