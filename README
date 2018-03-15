@@ -1,7 +1,7 @@
 ====== Coupled Cluster for Solids ======
 
-===== Module dependencies =====
-  * go to the modules subdirectory and execute:
+===== Library dependencies =====
+  * go to the lib subdirectory and execute:
   make [CONFIG=<config>] [Options]
   * this should automatically fetch the submodules' source from the respective maintainers, configure the modules for the given configuration (See below) and build the modules for that configuration.
   * by default the configuration ''icc'' is used.

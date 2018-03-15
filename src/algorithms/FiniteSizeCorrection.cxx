@@ -1,4 +1,5 @@
 #include <algorithms/FiniteSizeCorrection.hpp>
+
 #include <math/Complex.hpp>
 #include <math/ComplexTensor.hpp>
 #include <tcc/DryTensor.hpp>
@@ -10,6 +11,7 @@
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
+#include <util/SharedPointer.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
 #include <iostream>
@@ -89,11 +91,9 @@ class FiniteSizeCorrection::Momentum {
     double vg;
     Momentum(): s(0.0), l(0.0), vg(0.) {
     }
-    Momentum(cc4s::Vector<> v_, double s_=0., double vg_=0.) {
-      v = v_;
-      s = s_;
-      l = v_.length();
-      vg = vg_;
+    Momentum(
+      cc4s::Vector<> v_, double s_=0., double vg_=0.
+    ): v(v_), s(s_), l(v_.length()), vg(vg_) {
     }
     double locate(Momentum *m, int const n) {
       cc4s::Vector<> u(v);
@@ -148,7 +148,7 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   int FaiEnd[]   = {NF,aEnd,  iEnd};
 
   // Definition of ParticleHole Coulomb Vertex
-  Tensor<complex> *GammaGai;
+  PTR(Tensor<complex>) GammaGai;
 
   {
     Tensor<complex> GammaFai(GammaFqr->slice(FaiStart, FaiEnd));
@@ -158,13 +158,13 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
         getTensorArgument<complex>("CoulombVertexSingularVectors")
       );
       int lens[]= {UGF->lens[0], Nv, No};
-      GammaGai = new Tensor<complex>(
+      GammaGai = NEW(Tensor<complex>,
         3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
       );
       (*GammaGai)["Gai"] = GammaFai["Fai"] * (*UGF)["GF"];
     } else {
       int lens[]= {NF, Nv, No};
-      GammaGai = new Tensor<complex>(
+      GammaGai = NEW(Tensor<complex>,
         3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
       );
       (*GammaGai) = GammaFai;
@@ -213,8 +213,6 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   //Define CGai
   Tensor<complex> CGai(*GammaGai);
   CGai["Gai"] *= invSqrtVG["G"];
-
-  delete GammaGai;
   
   //Conjugate of CGai
   Tensor<complex> conjCGai(false, CGai);
