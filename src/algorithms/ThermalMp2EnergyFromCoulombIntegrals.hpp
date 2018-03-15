@@ -30,9 +30,30 @@ namespace cc4s {
   template <typename F=real>
   class ThermalMp2Propagation {
   public:
-    ThermalMp2Propagation(const real beta_, const int n_): beta(beta_), n(n_) {
+    ThermalMp2Propagation(
+      const real beta_, const int n_ = 0
+    ): beta(beta_), n(n_) {
     }
     void operator()(const real Delta, F &t) {
+      const real e( std::exp(-beta*Delta) );
+      switch (n) {
+      case 0:
+        if (std::abs(Delta) > 1e-8) {
+          t *= (e - 1.0 + Delta*beta) / (Delta*Delta);
+        } else {
+          t *= beta/2*(beta - beta/3*beta*Delta);
+        }
+        break;
+      case 1:
+        if (std::abs(Delta) > 1e-8) {
+          t *= (1.0 - e) / Delta;
+        } else {
+          t *= beta*(1-beta*Delta/2);
+        }
+        break;
+      default:
+        t *= std::pow(-Delta,n-2) * e;
+      }
     }
   protected:
     real beta;

@@ -22,64 +22,55 @@ ThermalMp2EnergyFromCoulombIntegrals::~ThermalMp2EnergyFromCoulombIntegrals() {
 void ThermalMp2EnergyFromCoulombIntegrals::run() {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
-  Tensor<> *Ni(getTensorArgument("ThermalHoleOccupancies"));
-  Tensor<> *Na(getTensorArgument("ThermalParticleOccupancies"));
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
+  real beta( 1/getRealArgument("Temperature") );
 
   // first, compute \Delta^{ab}_{ij}, note that its sign is opposite than usual
-  Tensor<> Tabij(false, Vabij);
-  Tabij["abij"] =  (*epsa)["a"];
-  Tabij["abij"] += (*epsa)["b"];
-  Tabij["abij"] -= (*epsi)["i"];
-  Tabij["abij"] -= (*epsi)["j"];
+  Tensor<> Dabij(false, *Vabij);
+  Dabij["abij"] =  (*epsa)["a"];
+  Dabij["abij"] += (*epsa)["b"];
+  Dabij["abij"] -= (*epsi)["i"];
+  Dabij["abij"] -= (*epsi)["j"];
 
-  // then, compute the factor from the time integration for each abij
-  // from the \Delta^{ab}_{ij}
-  // treat \Delta = 0 specially
-  class timeIntegral {
-  public:
-    timeIntegral(double kT_): kT(kT_) { }
-    void operator()(double &eps) {
-      eps = std::abs(eps) > 1e-8 ?
-        (std::exp(-eps/kT) - 1.0 + eps/kT) / (eps*eps/kT) :
-        0.5/kT - eps*(kT*kT*6);
-    }
-  protected:
-    double kT;
-  };
-  Transform<>(
-    std::function<void(double &)>(timeIntegral(getRealArgument("Temperature")))
+  Tensor<> Tabij(*Vabij);
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalContraction<>(+beta))
   ) (
-    Tabij["abij"]
+    (*epsa)["a"], Tabij["abij"]
+  );
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalContraction<>(+beta))
+  ) (
+    (*epsa)["b"], Tabij["abij"]
+  );
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalContraction<>(-beta))
+  ) (
+    (*epsi)["i"], Tabij["abij"]
+  );
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalContraction<>(-beta))
+  ) (
+    (*epsi)["j"], Tabij["abij"]
+  );
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalMp2Propagation<>(beta))
+  ) (
+    Dabij["abij"], Tabij["abij"]
   );
 
-  // finally aggregate the Fermi occupancies for a,b,i and j in the
-  // same tensor
-  Tabij["abij"] *= (*Na)["a"];
-  Tabij["abij"] *= (*Na)["b"];
-  Tabij["abij"] *= (*Ni)["i"];
-  Tabij["abij"] *= (*Ni)["j"];
+  real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  Scalar<> energy;
+  energy[""] = +0.5 * spins * spins * Tabij["abij"] * (*Vabij)["abij"];
+  real direct( -energy.get_val()/beta );
+  energy[""] = -0.5 * spins * Tabij["abij"] * (*Vabij)["abji"];
+  real exchange( -energy.get_val()/beta );
 
-  // then it can be multiplied with Vabij before continuing with the contractions
-  Tabij["abij"] *= (*Vabij)["abij"];
+  LOG(0, "FT-MP2") << "FT-MP2=" << direct+exchange << std::endl;
+  LOG(1, "FT-MP2") << "FT-MP2d=" << direct << std::endl;
+  LOG(1, "FT-MP2") << "FT-MP2x=" << exchange << std::endl;
 
-  // do the contractions pretty much the same way as in the zero T case
-  // note that the tensors are larger from the overlap
-  Scalar<> energy(*Cc4s::world);
-  double e, dire, exce;
-
-  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
-  energy[""] = 0.5 * spins * spins * Tabij["abij"] * (*Vabij)["abij"];
-  dire = energy.get_val();
-  energy[""] = 0.5 * spins * Tabij["abji"] * (*Vabij)["abij"];
-  exce = -1.0 * energy.get_val();
-  e = dire + exce;
-
-  LOG(0, "FT-MP2") << "FT-MP2=" << e << std::endl;
-  LOG(1, "FT-MP2") << "FT-MP2d=" << dire << std::endl;
-  LOG(1, "FT-MP2") << "FT-MP2x=" << exce << std::endl;
-
-  setRealArgument("ThermalMp2Energy", e);
+  setRealArgument("ThermalMp2Energy", direct+exchange);
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
