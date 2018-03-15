@@ -23,11 +23,11 @@ DryMatrix<F>::DryMatrix(
 }
 // instantiate
 template
-DryMatrix<double>::DryMatrix(
+DryMatrix<Float64>::DryMatrix(
   int rows, int cols, int sym, SourceLocation const &location
 );
 template
-DryMatrix<complex>::DryMatrix(
+DryMatrix<Complex64>::DryMatrix(
   int rows, int cols, int sym, SourceLocation const &location
 );
 
@@ -44,9 +44,9 @@ DryVector<F>::DryVector(
 }
 // instantiate
 template
-DryVector<double>::DryVector(int elements, SourceLocation const &location);
+DryVector<Float64>::DryVector(int elements, SourceLocation const &location);
 template
-DryVector<complex>::DryVector(int elements, SourceLocation const &location);
+DryVector<Complex64>::DryVector(int elements, SourceLocation const &location);
 
 
 template <typename F>
@@ -62,9 +62,9 @@ DryScalar<F>::DryScalar(
 }
 // instantiate
 template
-DryScalar<double>::DryScalar(SourceLocation const &location);
+DryScalar<Float64>::DryScalar(SourceLocation const &location);
 template
-DryScalar<complex>::DryScalar(SourceLocation const &location);
+DryScalar<Complex64>::DryScalar(SourceLocation const &location);
 
 template <typename F>
 DryScalar<F>::DryScalar(
@@ -80,11 +80,18 @@ DryScalar<F>::DryScalar(
 }
 // instantiate
 template
-DryScalar<double>::DryScalar(
-  double const value, SourceLocation const &location
+DryScalar<Float64>::DryScalar(
+  const Float64 value, SourceLocation const &location
 );
 template
-DryScalar<complex>::DryScalar(
-  complex const value, SourceLocation const &location
+DryScalar<Complex64>::DryScalar(
+  const Complex64 value, SourceLocation const &location
 );
-
+template
+DryScalar<Float128>::DryScalar(
+  const Float128 value, SourceLocation const &location
+);
+template
+DryScalar<Complex128>::DryScalar(
+  const Complex128 value, SourceLocation const &location
+);
