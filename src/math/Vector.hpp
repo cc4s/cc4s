@@ -21,21 +21,7 @@ namespace cc4s {
       }
     }
 
-    Vector<F,D> operator + (Vector<F,D> const &v) {
-      Vector<F,D> t;
-      for (int d(0); d<D; ++d) {
-        t.coordinate[d] = coordinate[d] + v.coordinate[d];
-      }
-      return t;
-    }
-
-    Vector<F,D> operator - (Vector<F,D> const &v) {
-      Vector<F,D> t;
-      for (int d(0); d<D; ++d) {
-        t.coordinate[d] = coordinate[d] - v.coordinate[d];
-      }
-      return t;
-    }
+    // TODO: fully support move semantics
 
     Vector<F,D> &operator = (Vector<F,D> const &v) {
       for (int d(0); d<D; ++d) {
@@ -58,7 +44,37 @@ namespace cc4s {
       return *this;
     }
 
-    Vector<F,D> operator / (F r){
+    Vector<F,D> &operator *= (const F r) {
+      for (int d(0); d<D; ++d){
+        coordinate[d] *= r;
+      }
+      return *this;
+    }
+
+    Vector<F,D> &operator /= (const F r) {
+      for (int d(0); d<D; ++d) {
+        coordinate[d] /= r;
+      }
+      return *this;
+    }
+
+    Vector<F,D> operator + (Vector<F,D> const &v) const {
+      Vector<F,D> t;
+      for (int d(0); d<D; ++d) {
+        t.coordinate[d] = coordinate[d] + v.coordinate[d];
+      }
+      return t;
+    }
+
+    Vector<F,D> operator - (Vector<F,D> const &v) const {
+      Vector<F,D> t;
+      for (int d(0); d<D; ++d) {
+        t.coordinate[d] = coordinate[d] - v.coordinate[d];
+      }
+      return t;
+    }
+
+    Vector<F,D> operator / (const F r) const {
       Vector<F, D> t;
       for (int d(0); d<D; ++d){
         t.coordinate[d] = coordinate[d] / r;
@@ -66,19 +82,12 @@ namespace cc4s {
       return t;
     }
 
-    Vector<F,D> operator * (F r){
+    Vector<F,D> operator * (const F r) const {
       Vector<F, D> t;
       for (int d(0); d<D; ++d){
         t.coordinate[d] = coordinate[d] * r;
       }
       return t;
-    }
-
-    Vector<F,D> &operator *= (const F r) {
-      for (int d(0); d<D; ++d) {
-        coordinate[d] *= r;
-      }
-      return *this;
     }
 
     // Specialization for D=3
@@ -93,7 +102,7 @@ namespace cc4s {
       return t;
     }
 
-    F dot(Vector<F,D> const &v) {
+    F dot(Vector<F,D> const &v) const {
       F sum(0);
       for (int d(0); d<D; ++d) {
         sum += cc4s::dot(coordinate[d], v.coordinate[d]);
@@ -101,12 +110,14 @@ namespace cc4s {
       return sum;
     }
 
+    // TODO: improve name
     int approximately(Vector<F,D> const &v, const double epsilon = 1e-10) const {
       Vector<F,D> u(*this);
       u -= v;
       return std::real(u.dot(u)) < epsilon;
     }
 
+    // TODO: improve name
     double distance(Vector<F, D> const &v) const {
       Vector<F,D> u(*this);
       u -= v;
@@ -134,6 +145,7 @@ namespace cc4s {
       return coordinate[d];
     }
 
+    // TODO: rename to less(n,m) or similar
     static bool sortByLength(Vector<F, D> const &n, Vector<F,D> const &m){
       return n.length() < m.length();
     }
@@ -151,6 +163,17 @@ namespace cc4s {
     }
     F coordinate[D];
   };
+
+  template <typename F=double, int D=3>
+  inline Vector<F,D> operator *(const F f, const Vector<F,D> &v) {
+    return Vector<F,D>(v*f);
+  }
+
+  template <typename F=double, int D=3>
+  inline Vector<F,D> &&operator *(const F f, Vector<F,D> &&v) {
+    v *= f;
+    return v;
+  }
 
   template <typename F=double, int D=3>
   inline std::ostream &operator << (std::ostream &stream, cc4s::Vector<F,D> const &v) {

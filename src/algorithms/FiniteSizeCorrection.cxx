@@ -544,11 +544,35 @@ void FiniteSizeCorrection::interpolation3D() {
   LOG(2, "GridSearch") << "b3=" << c << std::endl;
 
   //construct the transformation matrix
-  cc4s::Vector<> *T(new cc4s::Vector<>[3]);
+  std::vector<Vector<>> T(3);
   double Omega((a.cross(b)).dot(c));
   T[0] = b.cross(c)/Omega;
   T[1] = c.cross(a)/Omega;
   T[2] = a.cross(b)/Omega;
+
+  std::vector<Vector<>> ReciprocalLattice(3);
+  ReciprocalLattice[0] = a*M_PI*2.;
+  ReciprocalLattice[1] = b*M_PI*2.;
+  ReciprocalLattice[2] = c*M_PI*2.;
+
+  auto ctfReciprocalLattice(
+    new CTF::Tensor<>(2, std::vector<int>({3,3}).data())
+  );
+  auto ctfRealLattice(
+    new CTF::Tensor<>(2, std::vector<int>({3,3}).data())
+  );
+  
+  std::vector<int64_t> indices(ctfReciprocalLattice->wrld->rank == 0 ? 3*3 : 0);
+  for (size_t i(0); i < indices.size(); ++i) { indices[i] = i; }
+  ctfReciprocalLattice->write(
+    indices.size(), indices.data(), ReciprocalLattice.data()->coordinate
+  );
+  ctfRealLattice->write(
+    indices.size(), indices.data(), T.data()->coordinate
+  );
+
+  allocatedTensorArgument<>("ReciprocalLattice", ctfReciprocalLattice);
+  allocatedTensorArgument<>("RealLattice", ctfRealLattice);
 
   // determine bounding box in direct (reciprocal) coordinates
   Vector<> directMin, directMax;
