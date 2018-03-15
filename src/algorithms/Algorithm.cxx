@@ -357,34 +357,34 @@ void Algorithm::allocatedTensorArgument<
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
 void Algorithm::allocatedTensorArgument<
-  real, DryMatrix<real>
->(std::string const &name, DryMatrix<real> *tensor);
+  Float64, DryMatrix<Float64>
+>(std::string const &name, DryMatrix<Float64> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  real, DryVector<real>
->(std::string const &name, DryVector<real> *tensor);
+  Float64, DryVector<Float64>
+>(std::string const &name, DryVector<Float64> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  real, DryScalar<real>
->(std::string const &name, DryScalar<real> *tensor);
+  Float64, DryScalar<Float64>
+>(std::string const &name, DryScalar<Float64> *tensor);
 
 template
 void Algorithm::allocatedTensorArgument<
-  complex, DryTensor<Complex64>
->(std::string const &name, DryTensor<complex> *tensor);
+  Complex64, DryTensor<Complex64>
+>(std::string const &name, DryTensor<Complex64> *tensor);
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
 void Algorithm::allocatedTensorArgument<
-  complex, DryMatrix<complex>
->(std::string const &name, DryMatrix<complex> *tensor);
+  Complex64, DryMatrix<Complex64>
+>(std::string const &name, DryMatrix<Complex64> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  complex, DryVector<complex>
->(std::string const &name, DryVector<complex> *tensor);
+  Complex64, DryVector<Complex64>
+>(std::string const &name, DryVector<Complex64> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  complex, DryScalar<complex>
->(std::string const &name, DryScalar<complex> *tensor);
+  Complex64, DryScalar<Complex64>
+>(std::string const &name, DryScalar<Complex64> *tensor);
 
 #ifndef INTEL_COMPILER
 template
