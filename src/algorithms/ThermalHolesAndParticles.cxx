@@ -96,7 +96,8 @@ void ThermalHolesAndParticles::determineChemicalPotential() {
   double muLower(eigenStates[0].first);
   double muUpper(eigenStates[No].first);
   // actual number of electrons (states for spin restricted) in the system
-  double NElectrons(0.5 * getRealArgument("Electrons"));
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  double NElectrons(getRealArgument("Electrons") / spins);
   kT = getRealArgument("Temperature");
   // current estimate for the chemical potential
   mu = 0.0;
@@ -119,9 +120,9 @@ void ThermalHolesAndParticles::determineChemicalPotential() {
       break;
     }
   }
+  LOG(1, "ThermalHolesAndParticles") << "Chemical potential=" << mu << std::endl;
   if (iterations == maxIterations)
     throw new EXCEPTION("Failed to determine chemical potential.");
-  LOG(1, "ThermalHolesAndParticles") << "Chemical potential=" << mu << std::endl;
   setRealArgument("ChemicalPotential", mu);
 }
 

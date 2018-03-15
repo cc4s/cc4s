@@ -68,9 +68,10 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   Scalar<> energy(*Cc4s::world);
   double e, dire, exce;
 
-  energy[""] = 2.0 * Tabij["abij"] * (*Vabij)["abij"];
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  energy[""] = 0.5 * spins * spins * Tabij["abij"] * (*Vabij)["abij"];
   dire = energy.get_val();
-  energy[""] = Tabij["abji"] * (*Vabij)["abij"];
+  energy[""] = 0.5 * spins * Tabij["abji"] * (*Vabij)["abij"];
   exce = -1.0 * energy.get_val();
   e = dire + exce;
 

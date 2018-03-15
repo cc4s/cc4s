@@ -21,6 +21,65 @@ namespace cc4s {
      */
     virtual void dryRun();
   };
+
+  /**
+   * \brief provides a transformation function for the n-th derivative of the
+   * thermal second order propagation
+   * t = t * d^n/dbeta^n int_t1^beta dt2 int_0^beta dt1 exp(-Delta*(t2-t1))
+   **/
+  template <typename F=real>
+  class ThermalMp2Propagation {
+  public:
+    ThermalMp2Propagation(const real beta_, const int n_): beta(beta_), n(n_) {
+    }
+    void operator()(const real Delta, F &t) {
+    }
+  protected:
+    real beta;
+    int n;
+  };
+
+  /**
+   * \brief provides a transformation function for the n-th derivative of the
+   * thermal contraction t = t * d^n/dbeta^n 1/(1+exp(-eps*beta))
+   **/
+  template <typename F=real>
+  class ThermalContraction {
+  public:
+    ThermalContraction(const real beta_, const int n = 0): beta(beta_), a(n) {
+      if (n > 0) {
+        std::vector<int64_t> nextA(n);
+        a[0] = 1;
+        for (int m(3); m <= n+1; ++m) {
+          nextA[0] = 1;
+          for (int k(1); k < m-1; ++k) {
+            // build coefficients for n-th derivative
+            nextA[k] = (k+1)*a[k] - (m-k-1)*a[k-1];
+          }
+          a = nextA;
+        }
+      }
+    }
+    void operator()(const real eps, F &t) {
+      F x( 1/(1+std::exp(-beta*eps)) );
+      if (a.size() == 0) {
+        // 0th derivative
+        t *= x;
+      } else {
+        // 1st or higher derivative
+        F y(0);
+        for (size_t k(0); k < a.size(); ++k) {
+          // TODO: optimize
+          // compose from precomputed coefficients
+          y += a[k] * std::pow(x,k+1) * std::pow(1-x,a.size()-k);
+        }
+        t *= std::pow(eps,a.size()) * y;
+      }
+    }
+  protected:
+    real beta;
+    std::vector<int64_t> a;
+  };
 }
 
 #endif
