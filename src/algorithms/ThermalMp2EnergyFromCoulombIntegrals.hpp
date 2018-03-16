@@ -4,6 +4,8 @@
 
 #include <algorithms/Algorithm.hpp>
 
+#include <util/SharedPointer.hpp>
+
 namespace cc4s {
   class ThermalMp2EnergyFromCoulombIntegrals: public Algorithm {
   public:
@@ -20,12 +22,24 @@ namespace cc4s {
      * \brief Dry run for the thermal MP2 energy from Coulomb integrals Vabij
      */
     virtual void dryRun();
+
+  protected:
+    real beta;
+    PTR(CTF::Tensor<>) Dabij;
+
+    void computeFreeEnergy();
+    void computeEnergyMoments();
+    real evaluate(
+      const std::string &contribution,
+      CTF::Tensor<> &Tabij,
+      const real factor = 1.0
+    );
   };
 
   /**
-   * \brief provides a transformation function for the n-th derivative of the
+   * \brief Provides a transformation function for the nth derivative of the
    * thermal second order propagation
-   * t = t * d^n/dbeta^n int_t1^beta dt2 int_0^beta dt1 exp(-Delta*(t2-t1))
+   * t = t * d^n/d(-beta)^n int_t1^beta dt2 int_0^beta dt1 exp(-Delta*(t2-t1)).
    **/
   template <typename F=real>
   class ThermalMp2Propagation {
@@ -46,13 +60,13 @@ namespace cc4s {
         break;
       case 1:
         if (std::abs(Delta) > 1e-8) {
-          t *= (1.0 - e) / Delta;
+          t *= (e - 1.0) / Delta;
         } else {
-          t *= beta*(1-beta*Delta/2);
+          t *= beta*(-1.0 + beta*Delta/2);
         }
         break;
       default:
-        t *= std::pow(-Delta,n-2) * e;
+        t *= std::pow(Delta,n-2) * e;
       }
     }
   protected:
@@ -61,20 +75,23 @@ namespace cc4s {
   };
 
   /**
-   * \brief provides a transformation function for the n-th derivative of the
-   * thermal contraction t = t * d^n/dbeta^n 1/(1+exp(-eps*beta))
+   * \brief Provides a transformation function for the nth derivative of the
+   * thermal contraction t = t * d^n/d(-beta)^n 1/(1+exp(-/+eps*beta)).
+   * For -/+ is used for particles/holes, respectively.
    **/
   template <typename F=real>
   class ThermalContraction {
   public:
-    ThermalContraction(const real beta_, const int n = 0): beta(beta_), a(n) {
+    ThermalContraction(
+      const real beta_, const bool particle, const int n = 0
+    ): beta(beta_), sign(particle ? -1.0 : +1.0), a(n) {
       if (n > 0) {
         std::vector<int64_t> nextA(n);
         a[0] = 1;
         for (int m(3); m <= n+1; ++m) {
           nextA[0] = 1;
           for (int k(1); k < m-1; ++k) {
-            // build coefficients for n-th derivative
+            // build coefficients for nth derivative
             nextA[k] = (k+1)*a[k] - (m-k-1)*a[k-1];
           }
           a = nextA;
@@ -82,7 +99,7 @@ namespace cc4s {
       }
     }
     void operator()(const real eps, F &t) {
-      F x( 1/(1+std::exp(-beta*eps)) );
+      F x( 1/(1+std::exp(sign*eps*beta)) );
       if (a.size() == 0) {
         // 0th derivative
         t *= x;
@@ -94,11 +111,11 @@ namespace cc4s {
           // compose from precomputed coefficients
           y += a[k] * std::pow(x,k+1) * std::pow(1-x,a.size()-k);
         }
-        t *= std::pow(eps,a.size()) * y;
+        t *= std::pow(sign*eps,a.size()) * y;
       }
     }
   protected:
-    real beta;
+    real beta, sign;
     std::vector<int64_t> a;
   };
 }
