@@ -29,10 +29,13 @@ namespace cc4s {
 
     void computeFreeEnergy();
     void computeEnergyMoments();
+    void computeThermalMp2Amplitudes(CTF::Tensor<> &Tabij, const int n);
+    void addThermalMp2Amplitudes(
+      CTF::Tensor<> &Tabij, const std::vector<int> &degrees
+    );
     real evaluate(
-      const std::string &contribution,
-      CTF::Tensor<> &Tabij,
-      const real factor = 1.0
+      const std::string &contribution, CTF::Tensor<> &Tabij,
+      const real alpha = 1.0
     );
   };
 

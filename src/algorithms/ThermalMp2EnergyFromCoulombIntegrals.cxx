@@ -63,113 +63,21 @@ void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::computeFreeEnergy() {
-  Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
-  Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
-  Tensor<> Tabij(*Vabij);
-  // apply the 5 terms:
-  // Tabij *= f^a = 1/(1+exp(-eps_a*beta))
-  Transform<real, real>(
-    std::function<void(real, real &)>(ThermalContraction<>(beta, true))
-  ) (
-    (*epsa)["a"], Tabij["abij"]
-  );
-  // Tabij *= f^b
-  Transform<real, real>(
-    std::function<void(real, real &)>(ThermalContraction<>(beta, true))
-  ) (
-    (*epsa)["b"], Tabij["abij"]
-  );
-  // Tabij *= f_i = 1/(1+exp(+eps_i*beta))
-  Transform<real, real>(
-    std::function<void(real, real &)>(ThermalContraction<>(beta, false))
-  ) (
-    (*epsi)["i"], Tabij["abij"]
-  );
-  // Tabij *= f_j
-  Transform<real, real>(
-    std::function<void(real, real &)>(ThermalContraction<>(beta, false))
-  ) (
-    (*epsi)["j"], Tabij["abij"]
-  );
-  // Tabij *=
-  // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
-  Transform<real, real>(
-    std::function<void(real, real &)>(ThermalMp2Propagation<>(beta))
-  ) (
-    (*Dabij)["abij"], Tabij["abij"]
-  );
+  Tensor<> Tabij(false, *getTensorArgument("ThermalPPHHCoulombIntegrals"));
+  computeThermalMp2Amplitudes(Tabij, 0);
   real F(evaluate("F", Tabij, -getRealArgument("Temperature")));
   setRealArgument("ThermalMp2FreeEnergy", F);
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::computeEnergyMoments() {
-  Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
-  Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
-
   unsigned int n( std::max(getIntegerArgument("maxEnergyMoment", 2),1l) );
   std::vector<real> energyMoments(n);
 
   for (unsigned int k(1); k <= n; ++k) {
-    // build amplitudes for n-th derivative
-    Tensor<> Tabij(false, *Vabij);
-    LOG(1, "FT-MP2") << "computing d^" << k << " log(S(beta)) / d(-beta)^" << k
-      << " ..." << std::endl;
-    // there are 5 terms that can be derived and k derivatives to distribute
-    for (auto &derivedTerms: MultiCombinations(5, k)) {
-      // convert to degree of derivative for each term
-      std::vector<int> degrees(5);
-      for (auto term: derivedTerms) { ++degrees[term]; };
-      // build contribution from current combination of derived terms
-      Tensor<> tabij(*Vabij);
-      // apply the derivative of the 5 terms of the respective degrees:
-      // Tabij *= f^a = 1/(1+exp(-eps_a*beta))
-      Transform<real, real>(
-        std::function<void(real, real &)>(
-          ThermalContraction<>(beta, true, degrees[0])
-        )
-      ) (
-        (*epsa)["a"], tabij["abij"]
-      );
-      // Tabij *= f^b
-      Transform<real, real>(
-        std::function<void(real, real &)>(
-          ThermalContraction<>(beta, true, degrees[1])
-        )
-      ) (
-        (*epsa)["b"], tabij["abij"]
-      );
-      // Tabij *= f_i = 1/(1+exp(+eps_i*beta))
-      Transform<real, real>(
-        std::function<void(real, real &)>(
-          ThermalContraction<>(beta, false, degrees[2])
-        )
-      ) (
-        (*epsi)["i"], tabij["abij"]
-      );
-      // Tabij *= f_j
-      Transform<real, real>(
-        std::function<void(real, real &)>(
-          ThermalContraction<>(beta, false, degrees[3])
-        )
-      ) (
-        (*epsi)["j"], tabij["abij"]
-      );
-      // Tabij *=
-      // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
-      Transform<real, real>(
-        std::function<void(real, real &)>(
-          ThermalMp2Propagation<>(beta, degrees[4])
-        )
-      ) (
-        (*Dabij)["abij"], tabij["abij"]
-      );
-      // add this contribution
-      Tabij["abij"] += tabij["abij"];
-    }
     std::stringstream contribution;
     contribution << k << ".central moment of H";
+    Tensor<> Tabij(false, *getTensorArgument("ThermalPPHHCoulombIntegrals"));
+    computeThermalMp2Amplitudes(Tabij, k);
     energyMoments[k-1] = evaluate(contribution.str(), Tabij);
   }
   std::vector<int64_t> indices(Dabij->wrld->rank == 0 ? n : 0);
@@ -177,6 +85,96 @@ void ThermalMp2EnergyFromCoulombIntegrals::computeEnergyMoments() {
   auto ctfEnergyMoments(new CTF::Tensor<>(1, std::vector<int>({int(n)}).data()) );
   ctfEnergyMoments->write(indices.size(), indices.data(), energyMoments.data());
   allocatedTensorArgument("ThermalMp2EnergyMoments", ctfEnergyMoments);
+}
+
+/**
+ * \brief Computes the nth derivative of the thermal MP2 amplitudes
+ * \f$ \int_{\tau_1}^\beta{\rm d}\tau_2\int_0^\beta{\rm d}\tau_1\,V^{ab}_{ij}\,
+ * f^a\, F^b\, f_i\, f_j\,{\rm e}^{-\beta\Delta^{ab}_{ij}}} \f$
+ * and returns the result in the tensor Tabij.
+ * Expects Tabij to be zero on entry.
+ **/
+void ThermalMp2EnergyFromCoulombIntegrals::computeThermalMp2Amplitudes(
+  Tensor<> &Tabij, const int n
+) {
+  if (n == 0) {
+    // all derivative degrees are zero
+    addThermalMp2Amplitudes(Tabij, std::vector<int>(5));
+  } else {
+    LOG(1, "FT-MP2") << "computing MP2 contribution of d^"
+      << n << " log(Z(beta)) / d(-beta)^" << n << " ..." << std::endl;
+    // go through all possiblities to distribute n derivatives among 5 terms
+    for (auto &derivedTerms: MultiCombinations(5, n)) {
+      // convert to degree of derivative for each term
+      std::vector<int> degrees(5);
+      for (auto term: derivedTerms) {
+        ++degrees[term];
+      };
+      addThermalMp2Amplitudes(Tabij, degrees);
+    }
+  }
+}
+
+/**
+ * \brief Adds the contribution of the thermal MP2 amplitudes
+ * \f$ \int_{\tau_1}^\beta{\rm d}\tau_2\int_0^\beta{\rm d}\tau_1\,V^{ab}_{ij}\,
+ * f^a\, F^b\, f_i\, f_j\,{\rm e}^{-\beta\Delta^{ab}_{ij}}} \f$
+ * to the tensor Tabij where the derivative degrees w.r.t. \f$(-\beta)$\f of
+ * each of the 5 \f$\beta$\f dependent terms is specified by the
+ * argument vector.
+ **/
+void ThermalMp2EnergyFromCoulombIntegrals::addThermalMp2Amplitudes(
+  Tensor<> &Tabij, const std::vector<int> &degrees
+) {
+  Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
+  Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
+  // start with Vabij
+  Tensor<> tabij(*Vabij);
+  // apply the derivative of the 5 terms of the respective degrees:
+  // Tabij *= f^a = 1/(1+exp(-eps_a*beta))
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalContraction<>(beta, true, degrees[0])
+    )
+  ) (
+    (*epsa)["a"], tabij["abij"]
+  );
+  // Tabij *= f^b
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalContraction<>(beta, true, degrees[1])
+    )
+  ) (
+    (*epsa)["b"], tabij["abij"]
+  );
+  // Tabij *= f_i = 1/(1+exp(+eps_i*beta))
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalContraction<>(beta, false, degrees[2])
+    )
+  ) (
+    (*epsi)["i"], tabij["abij"]
+  );
+  // Tabij *= f_j
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalContraction<>(beta, false, degrees[3])
+    )
+  ) (
+    (*epsi)["j"], tabij["abij"]
+  );
+  // Tabij *=
+  // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalMp2Propagation<>(beta, degrees[4])
+    )
+  ) (
+    (*Dabij)["abij"], tabij["abij"]
+  );
+  // add this contribution
+  Tabij["abij"] += tabij["abij"];
 }
 
 real ThermalMp2EnergyFromCoulombIntegrals::evaluate(
