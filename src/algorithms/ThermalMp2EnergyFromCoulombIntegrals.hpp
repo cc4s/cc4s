@@ -33,8 +33,17 @@ namespace cc4s {
     void addThermalMp2Amplitudes(
       CTF::Tensor<> &Tabij, const std::vector<int> &degrees
     );
-    real evaluate(
+    real evaluateMp2(
       const std::string &contribution, CTF::Tensor<> &Tabij,
+      const real alpha = 1.0
+    );
+
+    void computeThermalHfAmplitudes(CTF::Tensor<> &Tij, const int n);
+    void addThermalHfAmplitudes(
+      CTF::Tensor<> &Tij, const std::vector<int> &degrees
+    );
+    real evaluateHf(
+      const std::string &contribution, CTF::Tensor<> &Tij,
       const real alpha = 1.0
     );
   };
