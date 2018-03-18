@@ -29,22 +29,26 @@ namespace cc4s {
 
     void computeFreeEnergy();
     void computeEnergyMoments();
-    void computeThermalMp2Amplitudes(CTF::Tensor<> &Tabij, const int n);
-    void addThermalMp2Amplitudes(
+
+    /**
+     * \brief Computes the nth derivative of the logarithm of the grand
+     * canonical partition function Z(beta) w.r.t. (-beta).
+     **/
+    real getDerivativeLogZ(const int n = 0);
+
+    real getDerivativeLogZMp2(const int n = 0);
+    real getDerivativeLogZHf(const int n = 0);
+    real getDerivativeLogZH0(const int n = 0);
+
+    void addLogZMp2Amplitudes(
       CTF::Tensor<> &Tabij, const std::vector<int> &degrees
     );
-    real evaluateMp2(
-      const std::string &contribution, CTF::Tensor<> &Tabij,
-      const real alpha = 1.0
-    );
-
-    void computeThermalHfAmplitudes(CTF::Tensor<> &Tij, const int n);
-    void addThermalHfAmplitudes(
+    void addLogZHfAmplitudes(
       CTF::Tensor<> &Tij, const std::vector<int> &degrees
     );
-    real evaluateHf(
-      const std::string &contribution, CTF::Tensor<> &Tij,
-      const real alpha = 1.0
+
+    void writeContribution(
+      const std::string &contribution, const int n, const real derivativeLogZ
     );
   };
 
