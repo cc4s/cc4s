@@ -63,12 +63,16 @@ void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::computeFreeEnergy() {
+  // MP2 contribution (2nd order FT-MBPT)
   Tensor<> Tabij(false, *getTensorArgument("ThermalPPHHCoulombIntegrals"));
   computeThermalMp2Amplitudes(Tabij, 0);
   real F(evaluateMp2("F^MP2", Tabij, -getRealArgument("Temperature")));
+  // Hartree--Fock energy correction (1st order FT-MBPT)
   Tensor<> Tij(2, &Tabij.lens[2]);
   computeThermalHfAmplitudes(Tij, 0);
-  F += evaluateMp2("F^HF", Tij, -getRealArgument("Temperature"));
+  allocatedTensorArgument<>("ThermalHfAmplitudes", new Tensor<>(Tij));
+  F += evaluateHf("F^HF", Tij, -getRealArgument("Temperature"));
+  // TODO: H_0 contribution: log(Z_0(beta)) = sum_1^Np log(1+exp(-eps_p*beta))
   setRealArgument("ThermalMp2FreeEnergy", F);
 }
 
@@ -77,15 +81,18 @@ void ThermalMp2EnergyFromCoulombIntegrals::computeEnergyMoments() {
   std::vector<real> energyMoments(n);
 
   for (unsigned int k(1); k <= n; ++k) {
+    // MP2 contribution (2nd FT-MBPT)
     std::stringstream mp2Contribution;
     mp2Contribution << k << ".central moment of H^MP2";
     Tensor<> Tabij(false, *getTensorArgument("ThermalPPHHCoulombIntegrals"));
     computeThermalMp2Amplitudes(Tabij, k);
     energyMoments[k-1] = evaluateMp2(mp2Contribution.str(), Tabij);
+    // Hartree--Fock correction (1st FT-MBPT)
     Tensor<> Tij(2, &Tabij.lens[2]);
     computeThermalHfAmplitudes(Tij, k);
     std::stringstream hfContribution;
     hfContribution << k << ".central moment of H^HF";
+    // TODO: H_0 contribution: log(Z_0(beta)) = sum_1^Np log(1+exp(-eps_p*beta))
     energyMoments[k-1] += evaluateHf(hfContribution.str(), Tij);
   }
   std::vector<int64_t> indices(Dabij->wrld->rank == 0 ? n : 0);
@@ -207,8 +214,7 @@ real ThermalMp2EnergyFromCoulombIntegrals::evaluateMp2(
 
 /**
  * \brief Computes the nth derivative of the thermal HF amplitudes
- * \f$ \int_{\tau_1}^\beta{\rm d}\tau_2\int_0^\beta{\rm d}\tau_1\,V^{ab}_{ij}\,
- * f^a\, F^b\, f_i\, f_j\,{\rm e}^{-\beta\Delta^{ab}_{ij}}} \f$
+ * \f$ (-1) \int_0^\beta{\rm d}\tau_1\,f_i\, f_j \f$
  * and returns the result in the tensor Tij.
  * Expects Tij to be zero on entry.
  **/
@@ -235,31 +241,29 @@ void ThermalMp2EnergyFromCoulombIntegrals::computeThermalHfAmplitudes(
 
 /**
  * \brief Computes the nth derivative of the thermal HF amplitudes
- * \f$ \int_{\tau_1}^\beta{\rm d}\tau_2\int_0^\beta{\rm d}\tau_1\,V^{ab}_{ij}\,
- * f^a\, F^b\, f_i\, f_j\,{\rm e}^{-\beta\Delta^{ab}_{ij}}} \f$
+ * \f$ \int_0^\beta{\rm d}\tau\, f_i\, f_j \f$
  * to the tensor Tij where the derivative degrees w.r.t. \f$(-\beta)$\f of
- * each of the  \f$\beta$\f dependent terms is specified by the
+ * each of the 3 \f$\beta$\f dependent terms is specified by the
  * argument vector.
  **/
 void ThermalMp2EnergyFromCoulombIntegrals::addThermalHfAmplitudes(
   Tensor<> &Tij, const std::vector<int> &degrees
 ) {
-  Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
-  // the first term is int_0^beta dtau = beta
-  Tensor<> tij(2, Vijkl->lens);
-  // start with Vijij
-  tij["ij"] = (*Vijkl)["ijij"];
+  Tensor<> tij(false, Tij);
+  // start with 1
 
+  // the first term is (-1) int_0^beta dtau = -beta
   switch (degrees[0]) {
   case 0:
-    tij["ij"] *= beta;
+    tij["ij"] = -beta;
     break;
   case 1:
-    tij["ij"] *= -1;
+    tij["ij"] = 1;
     break;
   default:
-    // all higher derivatives of beta w.r.t. (-beta) are zero
+    // all higher derivatives of -beta w.r.t. (-beta) are zero
+    // add nothing to Tabij and return
     return;
   }
   // apply the derivative of the other 2 terms of the respective degrees:
@@ -293,7 +297,7 @@ real ThermalMp2EnergyFromCoulombIntegrals::evaluateHf(
   Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
   energy[""] = f * (+0.5) * spins * spins * Tij["ij"] * (*Vijkl)["ijij"];
   real direct( energy.get_val() );
-  energy[""] = f *(-0.5) * spins * Tij["ij"] * (*Vijkl)["ijji"];
+  energy[""] = f * (-0.5) * spins * Tij["ij"] * (*Vijkl)["ijji"];
   real exchange( energy.get_val() );
 
   LOG(0, "FT-MP2") << contribution << "=" << direct+exchange << std::endl;
