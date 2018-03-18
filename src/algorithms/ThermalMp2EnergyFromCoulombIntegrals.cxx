@@ -85,10 +85,17 @@ void ThermalMp2EnergyFromCoulombIntegrals::computeEnergyMoments() {
 }
 
 real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZ(const int n) {
-  return
-    +getDerivativeLogZMp2(n)
-    +getDerivativeLogZHf(n)
-    +getDerivativeLogZH0(n);
+  real derivativeLogZ;
+  derivativeLogZ = getDerivativeLogZMp2(n);
+  derivativeLogZ += getDerivativeLogZHf(n);
+  derivativeLogZ += getDerivativeLogZH0(n);
+  if (n == 1) {
+    real mu(getRealArgument("ChemicalPotential"));
+    int N(getIntegerArgument("Electrons"));
+    writeContribution("mu*N", n, mu*N);
+    derivativeLogZ += mu*N;
+  }
+  return derivativeLogZ;
 }
 
 /**
@@ -217,9 +224,10 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZHf(const int n) {
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   Scalar<> energy;
   Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
-  energy[""] = (+0.5) * spins * spins * Tij["ij"] * (*Vijkl)["ijij"];
+  // we compute -Veff + HF = -2*HF + HF = -HF, so the sign is negative
+  energy[""] = (-1.0) * (+0.5) * spins * spins * Tij["ij"] * (*Vijkl)["ijij"];
   real direct( energy.get_val() );
-  energy[""] = (-0.5) * spins * Tij["ij"] * (*Vijkl)["ijji"];
+  energy[""] = (-1.0) * (-0.5) * spins * Tij["ij"] * (*Vijkl)["ijji"];
   real exchange( energy.get_val() );
 
   writeContribution("Hartree", n, direct);
@@ -276,8 +284,40 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZHfAmplitudes(
 }
 
 real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZH0(const int n) {
-  // TODO: H_0 contribution: log(Z_0(beta)) = sum_1^Np log(1+exp(-eps_p*beta))
-  return 0;
+  Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
+  Tensor<> Ti(false, *epsi);
+  // TODO: H_0 contribution: log(Z_0(beta)) = sum_1^Np log(1+exp(-beta*eps_p))
+  switch (n) {
+  case 0:
+    Transform<real, real>(
+      std::function<void(real, real &)>(
+        [this](real eps, real &T) {
+          T = std::log(1 + std::exp(-beta*eps));
+        }
+      )
+    ) (
+      (*epsi)["i"], Ti["i"]
+    );
+    break;
+  default:
+    // the first derivative is eps_i*f_i,
+    // use the ThermalContraction clas providing arbitrary derivatives of f_i
+    Ti["i"] = (*epsi)["i"];
+    Transform<real, real>(
+      std::function<void(real, real &)>(
+        ThermalContraction<>(beta, false, n-1)
+      )
+    ) (
+      (*epsi)["i"], Ti["i"]
+    );
+    break;
+  }
+  real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  Scalar<> derivativeLogZH0;
+  // sum over all relevant (thermal hole) states
+  derivativeLogZH0[""] = spins * Ti["i"];
+  writeContribution("single body reference", n, derivativeLogZH0.get_val());
+  return derivativeLogZH0.get_val();
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::writeContribution(
