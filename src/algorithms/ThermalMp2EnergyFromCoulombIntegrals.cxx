@@ -33,13 +33,23 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   (*Dabij)["abij"] -= (*epsi)["i"];
   (*Dabij)["abij"] -= (*epsi)["j"];
 
+/* tests:
+  LOG(1, "FT-MP2") <<
+    MultiCombinations(5,3).multinomial(std::vector<unsigned int>({2,0,1,0,0}))
+    << std::endl;
   testDerivativeLogZMp2(0);
   testDerivativeLogZMp2(1);
+  testDerivativeLogZMp2(2);
+  testDerivativeLogZMp2(3);
   testDerivativeLogZHf(0);
   testDerivativeLogZHf(1);
+  testDerivativeLogZHf(2);
+  testDerivativeLogZHf(3);
   testDerivativeLogZH0(0);
   testDerivativeLogZH0(1);
   testDerivativeLogZH0(2);
+*/
+
   computeFreeEnergy();
   computeEnergyMoments();
 }
@@ -86,16 +96,19 @@ void ThermalMp2EnergyFromCoulombIntegrals::computeEnergyMoments() {
 
   std::vector<int64_t> indices(Dabij->wrld->rank == 0 ? n : 0);
   for (size_t i(0); i < indices.size(); ++i) { indices[i] = i; };
-  auto ctfEnergyMoments(new CTF::Tensor<>(1, std::vector<int>({int(n)}).data()) );
+  auto ctfEnergyMoments(new CTF::Tensor<>(1, std::vector<int>({int(n)}).data()));
   ctfEnergyMoments->write(indices.size(), indices.data(), energyMoments.data());
   allocatedTensorArgument("ThermalEnergyMoments", ctfEnergyMoments);
 }
 
-real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZ(const int n) {
+real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZ(
+  const unsigned int n
+) {
   real derivativeLogZ;
   derivativeLogZ = getDerivativeLogZMp2(n);
   derivativeLogZ += getDerivativeLogZHf(n);
   derivativeLogZ += getDerivativeLogZH0(n);
+/*
   real mu(getRealArgument("ChemicalPotential"));
   int N(getIntegerArgument("Electrons"));
   switch (n) {
@@ -108,6 +121,7 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZ(const int n) {
     derivativeLogZ += mu*N;
     break;
   }
+*/
   return derivativeLogZ;
 }
 
@@ -117,22 +131,26 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZ(const int n) {
  * f^a\, F^b\, f_i\, f_j\,{\rm e}^{-\beta\Delta^{ab}_{ij}}} \f$
  * w.r.t. (-beta)
  **/
-real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZMp2(const int n) {
+real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZMp2(
+  const unsigned int n
+) {
   Tensor<> Tabij(false, *getTensorArgument("ThermalPPHHCoulombIntegrals"));
   if (n == 0) {
     // all derivative degrees are zero
-    addLogZMp2Amplitudes(Tabij, std::vector<int>(5));
+    addLogZMp2Amplitudes(Tabij, std::vector<unsigned int>(5));
   } else {
-    LOG(1, "FT-MP2") << "computing MP2 contribution of d^"
+    LOG(2, "FT-MP2") << "computing MP2 contribution of d^"
       << n << " log(Z(beta)) / d(-beta)^" << n << " ..." << std::endl;
     // go through all possiblities to distribute n derivatives among 5 terms
     for (auto &derivedTerms: MultiCombinations(5, n)) {
       // convert to degree of derivative for each term
-      std::vector<int> degrees(5);
+      std::vector<unsigned int> degrees(5);
       for (auto term: derivedTerms) {
         ++degrees[term];
       };
-      addLogZMp2Amplitudes(Tabij, degrees);
+      std::stringstream contribution;
+      real multiplicity( MultiCombinations(5, n).multinomial(degrees) );
+      addLogZMp2Amplitudes(Tabij, degrees, multiplicity);
     }
   }
 
@@ -157,7 +175,8 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZMp2(const int n) {
  * argument vector.
  **/
 void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
-  Tensor<> &Tabij, const std::vector<int> &degrees
+  Tensor<> &Tabij,
+  const std::vector<unsigned int> &degrees, const real multiplicity
 ) {
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
@@ -207,7 +226,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
     (*Dabij)["abij"], tabij["abij"]
   );
   // add this contribution
-  Tabij["abij"] += tabij["abij"];
+  Tabij["abij"] += multiplicity * tabij["abij"];
 }
 
 /**
@@ -215,22 +234,25 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
  * \f$ (-1) \int_0^\beta{\rm d}\tau_1\,f_i\, f_j \f$
  * and returns the result in the tensor Tij.
  **/
-real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZHf(const int n) {
+real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZHf(
+  const unsigned int n
+) {
   Tensor<> Tij(2, getTensorArgument("ThermalHHHHCoulombIntegrals")->lens);
   if (n == 0) {
     // all derivative degrees are zero
-    addLogZHfAmplitudes(Tij, std::vector<int>(3));
+    addLogZHfAmplitudes(Tij, std::vector<unsigned int>(3));
   } else {
-    LOG(1, "FT-MP2") << "computing HF contribution of d^"
+    LOG(2, "FT-MP2") << "computing HF contribution of d^"
       << n << " log(Z(beta)) / d(-beta)^" << n << " ..." << std::endl;
     // go through all possiblities to distribute n derivatives among 3 terms
     for (auto &derivedTerms: MultiCombinations(3, n)) {
       // convert to degree of derivative for each term
-      std::vector<int> degrees(3);
+      std::vector<unsigned int> degrees(3);
       for (auto term: derivedTerms) {
         ++degrees[term];
       };
-      addLogZHfAmplitudes(Tij, degrees);
+      real multiplicity( MultiCombinations(3, n).multinomial(degrees) );
+      addLogZHfAmplitudes(Tij, degrees, multiplicity);
     }
   }
 
@@ -256,7 +278,8 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZHf(const int n) {
  * argument vector.
  **/
 void ThermalMp2EnergyFromCoulombIntegrals::addLogZHfAmplitudes(
-  Tensor<> &Tij, const std::vector<int> &degrees
+  Tensor<> &Tij,
+  const std::vector<unsigned int> &degrees, const real multiplicity
 ) {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> tij(false, Tij);
@@ -293,10 +316,12 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZHfAmplitudes(
     (*epsi)["j"], tij["ij"]
   );
   // add this contribution
-  Tij["ij"] += tij["ij"];
+  Tij["ij"] += multiplicity * tij["ij"];
 }
 
-real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZH0(const int n) {
+real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZH0(
+  const unsigned int n
+) {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> Ti(false, *epsi);
   // TODO: H_0 contribution: log(Z_0(beta)) = sum_1^Np log(1+exp(-beta*eps_p))
@@ -334,7 +359,8 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZH0(const int n) {
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::writeContribution(
-  const std::string &contribution, const int n, const real derivativeLogZ
+  const std::string &contribution,
+  const unsigned int n, const real derivativeLogZ
 ) {
   std::stringstream term;
   real m(derivativeLogZ);
@@ -351,7 +377,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::writeContribution(
   LOG(0, "FT-MP2") << term.str() << "=" << m << std::endl;
 }
 
-void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZMp2(const int n) {
+void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZMp2(
+  const unsigned int n
+) {
   real b(beta), db(0.00001);
   beta = b+db;
   real dLogZ( getDerivativeLogZMp2(n) );
@@ -366,7 +394,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZMp2(const int n) {
     << (n+1) << ") = " << exactDLogZ << std::endl;
 }
 
-void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZHf(const int n) {
+void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZHf(
+  const unsigned int n
+) {
   real b(beta), db(0.00001);
   beta = b+db;
   real dLogZ( getDerivativeLogZHf(n) );
@@ -381,7 +411,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZHf(const int n) {
     << (n+1) << ") = " << exactDLogZ << std::endl;
 }
 
-void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZH0(const int n) {
+void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZH0(
+  const unsigned int n
+) {
   real b(beta), db(0.00001);
   beta = b+db;
   real dLogZ( getDerivativeLogZH0(n) );
