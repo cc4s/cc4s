@@ -33,6 +33,13 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   (*Dabij)["abij"] -= (*epsi)["i"];
   (*Dabij)["abij"] -= (*epsi)["j"];
 
+  testDerivativeLogZMp2(0);
+  testDerivativeLogZMp2(1);
+  testDerivativeLogZHf(0);
+  testDerivativeLogZHf(1);
+  testDerivativeLogZH0(0);
+  testDerivativeLogZH0(1);
+  testDerivativeLogZH0(2);
   computeFreeEnergy();
   computeEnergyMoments();
 }
@@ -89,11 +96,17 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDerivativeLogZ(const int n) {
   derivativeLogZ = getDerivativeLogZMp2(n);
   derivativeLogZ += getDerivativeLogZHf(n);
   derivativeLogZ += getDerivativeLogZH0(n);
-  if (n == 1) {
-    real mu(getRealArgument("ChemicalPotential"));
-    int N(getIntegerArgument("Electrons"));
+  real mu(getRealArgument("ChemicalPotential"));
+  int N(getIntegerArgument("Electrons"));
+  switch (n) {
+  case 0:
+    writeContribution("mu*N", n, -beta*mu*N);
+    derivativeLogZ += -beta*mu*N;
+    break;
+  case 1:
     writeContribution("mu*N", n, mu*N);
     derivativeLogZ += mu*N;
+    break;
   }
   return derivativeLogZ;
 }
@@ -337,3 +350,49 @@ void ThermalMp2EnergyFromCoulombIntegrals::writeContribution(
   }
   LOG(0, "FT-MP2") << term.str() << "=" << m << std::endl;
 }
+
+void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZMp2(const int n) {
+  real b(beta), db(0.00001);
+  beta = b+db;
+  real dLogZ( getDerivativeLogZMp2(n) );
+  beta = b-db;
+  dLogZ -= getDerivativeLogZMp2(n);
+  beta = b;
+  dLogZ /= -2*db;
+  real exactDLogZ( getDerivativeLogZMp2(n+1) );
+  LOG(1, "FT-MP2") << "MP2 numerical(d^" << (n+1) << " log(Z(beta)) / d^"
+    << (n+1) << ") = " << dLogZ << std::endl;
+  LOG(1, "FT-MP2") << "MP2     exact(d^" << (n+1) << " log(Z(beta)) / d^"
+    << (n+1) << ") = " << exactDLogZ << std::endl;
+}
+
+void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZHf(const int n) {
+  real b(beta), db(0.00001);
+  beta = b+db;
+  real dLogZ( getDerivativeLogZHf(n) );
+  beta = b-db;
+  dLogZ -= getDerivativeLogZHf(n);
+  beta = b;
+  dLogZ /= -2*db;
+  real exactDLogZ( getDerivativeLogZHf(n+1) );
+  LOG(1, "FT-MP2") << "HF numerical(d^" << (n+1) << " log(Z(beta)) / d^"
+    << (n+1) << ") = " << dLogZ << std::endl;
+  LOG(1, "FT-MP2") << "HF     exact(d^" << (n+1) << " log(Z(beta)) / d^"
+    << (n+1) << ") = " << exactDLogZ << std::endl;
+}
+
+void ThermalMp2EnergyFromCoulombIntegrals::testDerivativeLogZH0(const int n) {
+  real b(beta), db(0.00001);
+  beta = b+db;
+  real dLogZ( getDerivativeLogZH0(n) );
+  beta = b-db;
+  dLogZ -= getDerivativeLogZH0(n);
+  beta = b;
+  dLogZ /= -2*db;
+  real exactDLogZ( getDerivativeLogZH0(n+1) );
+  LOG(1, "FT-MP2") << "H0 numerical(d^" << (n+1) << " log(Z(beta)) / d^"
+    << (n+1) << ") = " << dLogZ << std::endl;
+  LOG(1, "FT-MP2") << "H0     exact(d^" << (n+1) << " log(Z(beta)) / d^"
+    << (n+1) << ") = " << exactDLogZ << std::endl;
+}
+

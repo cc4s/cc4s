@@ -40,6 +40,10 @@ namespace cc4s {
     real getDerivativeLogZHf(const int n = 0);
     real getDerivativeLogZH0(const int n = 0);
 
+    void testDerivativeLogZMp2(const int n = 0);
+    void testDerivativeLogZHf(const int n = 0);
+    void testDerivativeLogZH0(const int n = 0);
+
     void addLogZMp2Amplitudes(
       CTF::Tensor<> &Tabij, const std::vector<int> &degrees
     );
