@@ -140,10 +140,9 @@ void CcsdEquationOfMotionDavidson::run() {
 
   unsigned int maxIterations(getIntegerArgument("maxIterations", 32));
   unsigned int minIterations(getIntegerArgument("minIterations", 1));
-  bool intermediates(
-    getIntegerArgument("intermediates", 1) == 1 ? true : false
-  );
-  H.buildIntermediates(intermediates);
+  bool intermediates(getIntegerArgument("intermediates", 1));
+  bool singleParticleOnly(getIntegerArgument("singleParticleOnly", 0));
+  H.buildIntermediates(intermediates, singleParticleOnly);
 
   CcsdPreConditioner<double> P(
     Tai, Tabij, *Fij, *Fab, *Vabcd, *Viajb, *Vijab, *Vijkl, this
@@ -301,12 +300,12 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
 
 template <typename F>
 void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
-    bool flag
+    bool intermediates, bool singleParticleOnly
   ) {
 
-  withIntermediates = flag;
+  withIntermediates = intermediates;
 
-  if (! flag) {
+  if (! intermediates) {
     LOG(0, "CcsdEomDavid") << "Not building intermediates" << std::endl;
     return;
   }
@@ -365,14 +364,14 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
   if (Fia) {
     (*Wia)["ia"] += (*Fia)["ia"];
   }
-  if (!getIntegerArgument("singleParticleOnly", 0)) {
+  if (!singleParticleOnly) {
     (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
   }
 
   LOG(0, "CcsdEomDavid") << "Building Wab" << std::endl;
   //diagram (10.54)
   (*Wab)["ab"]  = (*Fab)["ab"];
-  if (!getIntegerArgument("singleParticleOnly", 0)) {
+  if (!singleParticleOnly) {
     (*Wab)["ab"] += (*Viabc)["mafb"] * (*Tai)["fm"];
     if (Fia) {
       (*Wab)["ab"] += ( -1.0) * (*Fia)["mb"] * (*Tai)["am"];
@@ -382,7 +381,7 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
 
   LOG(0, "CcsdEomDavid") << "Building Wij" << std::endl;
   (*Wij)["ij"]  = (*Fij)["ij"];
-  if (!getIntegerArgument("singleParticleOnly", 0)) {
+  if (!singleParticleOnly) {
     (*Wij)["ij"] += (*Vijka)["imje"] * (*Tai)["em"];
     if (Fia) {
       (*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
@@ -522,7 +521,7 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
     //       ( +1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
     //     (*Wiajk)["iajk"] +=
     //       ( -1.0 ) * (*Tai)["ei"] * (*Tabij)["afmk"] * (*Vijab)["jmef"];
-
+  }
 }
 
 template <typename F>
