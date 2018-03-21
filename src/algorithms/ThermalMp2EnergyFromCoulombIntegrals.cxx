@@ -65,7 +65,6 @@ void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
 
 void ThermalMp2EnergyFromCoulombIntegrals::computeFreeEnergy() {
   real F( -getRealArgument("Temperature") * getDerivativeLogZ(0) );
-  // TODO: H_0 contribution: log(Z_0(beta)) = sum_1^Np log(1+exp(-eps_p*beta))
   setRealArgument("ThermalFreeEnergy", F);
 }
 
