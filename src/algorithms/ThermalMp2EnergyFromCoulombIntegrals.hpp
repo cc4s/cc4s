@@ -34,21 +34,28 @@ namespace cc4s {
      * \brief Computes the nth derivative of the logarithm of the grand
      * canonical partition function Z(beta) w.r.t. (-beta).
      **/
-    real getDerivativeLogZ(const int n = 0);
+    real getDerivativeLogZ(const unsigned int n = 0);
 
-    real getDerivativeLogZMp2(const int n = 0);
-    real getDerivativeLogZHf(const int n = 0);
-    real getDerivativeLogZH0(const int n = 0);
+    real getDerivativeLogZMp2(const unsigned int n = 0);
+    real getDerivativeLogZHf(const unsigned int n = 0);
+    real getDerivativeLogZH0(const unsigned int n = 0);
+
+    void testDerivativeLogZMp2(const unsigned int n = 0);
+    void testDerivativeLogZHf(const unsigned int n = 0);
+    void testDerivativeLogZH0(const unsigned int n = 0);
 
     void addLogZMp2Amplitudes(
-      CTF::Tensor<> &Tabij, const std::vector<int> &degrees
+      CTF::Tensor<> &Tabij,
+      const std::vector<unsigned int> &degrees, const real multiplicity = 1.0
     );
     void addLogZHfAmplitudes(
-      CTF::Tensor<> &Tij, const std::vector<int> &degrees
+      CTF::Tensor<> &Tij,
+      const std::vector<unsigned int> &degrees, const real multiplicity = 1.0
     );
 
     void writeContribution(
-      const std::string &contribution, const int n, const real derivativeLogZ
+      const std::string &contribution,
+      const unsigned int n, const real derivativeLogZ
     );
   };
 
@@ -61,7 +68,7 @@ namespace cc4s {
   class ThermalMp2Propagation {
   public:
     ThermalMp2Propagation(
-      const real beta_, const int n_ = 0
+      const real beta_, const unsigned int n_ = 0
     ): beta(beta_), n(n_) {
     }
     void operator()(const real Delta, F &t) {
@@ -87,7 +94,7 @@ namespace cc4s {
     }
   protected:
     real beta;
-    int n;
+    unsigned int n;
   };
 
   /**
@@ -99,14 +106,14 @@ namespace cc4s {
   class ThermalContraction {
   public:
     ThermalContraction(
-      const real beta_, const bool particle, const int n = 0
+      const real beta_, const bool particle, const unsigned int n = 0
     ): beta(beta_), sign(particle ? -1.0 : +1.0), a(n) {
       if (n > 0) {
         std::vector<int64_t> nextA(n);
         a[0] = 1;
-        for (int m(3); m <= n+1; ++m) {
+        for (unsigned int m(3); m <= n+1; ++m) {
           nextA[0] = 1;
-          for (int k(1); k < m-1; ++k) {
+          for (unsigned int k(1); k < m-1; ++k) {
             // build coefficients for nth derivative
             nextA[k] = (k+1)*a[k] - (m-k-1)*a[k-1];
           }

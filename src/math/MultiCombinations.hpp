@@ -19,6 +19,22 @@ namespace cc4s {
     ): n(n_), k(k_) {
     }
 
+    /**
+     * \brief Returns the number of possibilities to permute the balls
+     * where the number of balls in each slot is given. This is
+     * the multinomial coefficient k!/(slots[0]!*...*slots[n-1]!)
+     **/
+    size_t multinomial(const std::vector<unsigned int> slots) {
+      size_t result(1), numerator(k);
+      for (auto slot: slots) {
+        for (unsigned int i(1); i <= slot; ++i) {
+          result *= numerator--;
+          result /= i;
+        }
+      }
+      return result;
+    }
+
     class Iterator:
       public std::iterator<std::input_iterator_tag, std::vector<unsigned int>>
     {
