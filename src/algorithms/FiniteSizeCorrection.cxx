@@ -571,8 +571,13 @@ void FiniteSizeCorrection::interpolation3D() {
     indices.size(), indices.data(), T.data()->coordinate
   );
 
-  allocatedTensorArgument<>("ReciprocalLattice", ctfReciprocalLattice);
-  allocatedTensorArgument<>("RealLattice", ctfRealLattice);
+  if (isArgumentGiven("ReciprocalLattice")) {
+    allocatedTensorArgument<>("ReciprocalLattice", ctfReciprocalLattice);
+  }
+
+  if (isArgumentGiven("RealLattice")) {
+    allocatedTensorArgument<>("RealLattice", ctfRealLattice);
+  }
 
   // determine bounding box in direct (reciprocal) coordinates
   Vector<> directMin, directMax;
