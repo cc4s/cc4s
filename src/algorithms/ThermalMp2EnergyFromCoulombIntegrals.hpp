@@ -99,15 +99,18 @@ namespace cc4s {
 
   /**
    * \brief Provides a transformation function for the nth derivative of the
-   * thermal contraction t = t * d^n/d(-beta)^n 1/(1+exp(-/+eps*beta)).
-   * For -/+ is used for particles/holes, respectively.
+   * thermal contraction t = t * 1/(1+exp(-/+eps*beta))
+   * either d/(-dbeta) or d/(beta*dmu), -/+ is used for particles/holes,
+   * respectively.
    **/
   template <typename F=real>
   class ThermalContraction {
   public:
     ThermalContraction(
-      const real beta_, const bool particle, const unsigned int n = 0
-    ): beta(beta_), sign(particle ? -1.0 : +1.0), a(n) {
+      const real beta_,
+      const bool particle,
+      const unsigned int n = 0, const bool dbeta_ = true
+    ): beta(beta_), sign(particle ? -1 : +1), dbeta(dbeta_), a(n) {
       if (n > 0) {
         std::vector<int64_t> nextA(n);
         a[0] = 1;
@@ -134,11 +137,18 @@ namespace cc4s {
           // compose from precomputed coefficients
           y += a[k] * std::pow(x,k+1) * std::pow(1-x,a.size()-k);
         }
-        t *= std::pow(sign*eps,a.size()) * y;
+        if (dbeta) {
+          t *= std::pow(sign*eps,a.size()) * y;
+        } else {
+          // d/dmu
+          t *= std::pow(sign,a.size()) * y;
+        }
       }
     }
   protected:
-    real beta, sign;
+    real beta;
+    int sign;
+    bool dbeta;
     std::vector<int64_t> a;
   };
 }
