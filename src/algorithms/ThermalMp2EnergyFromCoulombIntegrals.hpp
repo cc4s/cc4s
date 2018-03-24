@@ -29,33 +29,41 @@ namespace cc4s {
 
     void computeFreeEnergy();
     void computeEnergyMoments();
+    void computeNumberMoments();
+
+    static constexpr bool D_BETA = true;
+    static constexpr bool D_MU = false;
 
     /**
      * \brief Computes the nth derivative of the logarithm of the grand
-     * canonical partition function Z(beta) w.r.t. (-beta).
+     * canonical partition function Z(beta,mu) w.r.t. (-beta) and mu.
      **/
-    real getDerivativeLogZ(const unsigned int n = 0);
+    real getDLogZ(const unsigned int n = 0, const bool dbeta = D_BETA);
 
-    real getDerivativeLogZMp2(const unsigned int n = 0);
-    real getDerivativeLogZHf(const unsigned int n = 0);
-    real getDerivativeLogZH0(const unsigned int n = 0);
+    real getDLogZMp2(const unsigned int n = 0, const bool dbeta = D_BETA);
+    real getDLogZHf(const unsigned int n = 0, const bool dbeta = D_BETA);
+    real getDLogZH0(const unsigned int n = 0, const bool dbeta = D_BETA);
 
-    void testDerivativeLogZMp2(const unsigned int n = 0);
-    void testDerivativeLogZHf(const unsigned int n = 0);
-    void testDerivativeLogZH0(const unsigned int n = 0);
+    void testDLogZMp2(const unsigned int n = 0, const bool dbeta = D_BETA);
+    void testDLogZHf(const unsigned int n = 0, const bool dbeta = D_BETA);
+    void testDLogZH0(const unsigned int n = 0, const bool dbeta = D_BETA);
 
     void addLogZMp2Amplitudes(
       CTF::Tensor<> &Tabij,
-      const std::vector<unsigned int> &degrees, const real multiplicity = 1.0
+      const std::vector<unsigned int> &degrees,
+      const bool dbeta = D_BETA,
+      const real multiplicity = 1.0
     );
     void addLogZHfAmplitudes(
       CTF::Tensor<> &Tij,
-      const std::vector<unsigned int> &degrees, const real multiplicity = 1.0
+      const std::vector<unsigned int> &degrees,
+      const bool dbeta = D_BETA,
+      const real multiplicity = 1.0
     );
 
     void writeContribution(
       const std::string &contribution,
-      const unsigned int n, const real derivativeLogZ
+      const unsigned int n, const bool dbeta, const real dLogZ
     );
   };
 
