@@ -1094,21 +1094,25 @@ CcsdPreConditioner<F>::getInitialBasis(
 
   // gather all K elements of all processors at root
   //   convert into homogeneous arrays for MPI gather
-  std::vector<size_t> localLowestElementIndices(localElements.size());
-  std::vector<F> localLowestElementValues(localElements.size());
-  for (size_t i(0); i < localElements.size(); ++i) {
+  const int trialEigenVectorsCount(10*eigenVectorsCount)
+  std::vector<size_t> localLowestElementIndices(trialEigenVectorsCount);
+  std::vector<F> localLowestElementValues(trailEigenVectorsCount);
+  for (
+    size_t i(0);
+    i < std::min(localElements.size(), trailEigenVectorsCount);
+    ++i
+  ) {
     localLowestElementIndices[i] = localElements[i].first;
     localLowestElementValues[i] = localElements[i].second;
   }
   MpiCommunicator communicator(*Cc4s::world);
-  int lowestElementsCount(diagonalH.getDimension());
-  std::vector<size_t> lowestElementIndices(lowestElementsCount);
-  std::vector<F> lowestElementValues(lowestElementsCount);
+  std::vector<size_t> lowestElementIndices;
+  std::vector<F> lowestElementValues;
   communicator.gather(localLowestElementIndices, lowestElementIndices);
   communicator.gather(localLowestElementValues, lowestElementValues);
   //   convert back into (index,value) pairs for sorting
-  std::vector<std::pair<size_t, F>> lowestElements(lowestElementsCount);
-  for (int i(0); i < lowestElementsCount; ++i) {
+  std::vector<std::pair<size_t, F>> lowestElements(lowestElementValues.size());
+  for (int i(0); i < lowestElementValues.size(); ++i) {
     lowestElements[i].first = lowestElementIndices[i];
     lowestElements[i].second = lowestElementValues[i];
   }
@@ -1118,7 +1122,7 @@ CcsdPreConditioner<F>::getInitialBasis(
     lowestElements.begin(), lowestElements.end(),
     EomDiagonalValueComparator<double>()
   );
-  // at rank==0 (root) lowestElements contains N*Np entries
+  // at rank==0 (root) lowestElements contains K*Np entries
   // rank > 0 has an empty list
 
   // create basis vectors for each lowest element

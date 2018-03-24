@@ -47,12 +47,18 @@ namespace cc4s {
       );
     }
 
+    /**
+     * \Brief Gathers the src vectors of all ranks together to the dst
+     * vector at the given root rank, by default rank 0.
+     **/
     template <typename F>
     void gather(
       const std::vector<F> &src, std::vector<F> &dst, int rootRank = 0
     ) {
       if (rank == rootRank) {
         dst.resize(src.size() * processes);
+      } else {
+        dst.resize(0);
       }
       MPI_Gather(
         src.data(), src.size() * MpiTypeTraits<F>::ElementCount,
