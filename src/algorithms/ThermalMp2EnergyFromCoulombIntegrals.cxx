@@ -48,9 +48,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   testDLogZH0(0);
   testDLogZH0(1);
   testDLogZH0(2);
-*/
   testDLogZHf(0, D_MU);
   testDLogZHf(1, D_MU);
+*/
 
   computeFreeEnergy();
   computeEnergyMoments();
@@ -319,6 +319,7 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDLogZHf(
   Scalar<> energy;
   Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
   // we compute -Veff + HF = -2*HF + HF = -HF, so the sign is negative
+// TODO: what about Hartree term?
   energy[""] = (-1.0) * (+0.5) * spins * spins * Tij["ij"] * (*Vijkl)["ijij"];
   real direct( energy.get_val() );
   energy[""] = (-1.0) * (-0.5) * spins * Tij["ij"] * (*Vijkl)["ijji"];
