@@ -1091,15 +1091,16 @@ CcsdPreConditioner<F>::getInitialBasis(
     localElements.begin(), localElements.end(),
     EomDiagonalValueComparator<double>()
   );
+  int localElementsSize( localElements.size() );
 
   // gather all K elements of all processors at root
   //   convert into homogeneous arrays for MPI gather
-  const int trialEigenVectorsCount(10*eigenVectorsCount)
+  const int trialEigenVectorsCount(10*eigenVectorsCount);
   std::vector<size_t> localLowestElementIndices(trialEigenVectorsCount);
-  std::vector<F> localLowestElementValues(trailEigenVectorsCount);
+  std::vector<F> localLowestElementValues(trialEigenVectorsCount);
   for (
     size_t i(0);
-    i < std::min(localElements.size(), trailEigenVectorsCount);
+    i < std::min(localElementsSize, trialEigenVectorsCount);
     ++i
   ) {
     localLowestElementIndices[i] = localElements[i].first;
