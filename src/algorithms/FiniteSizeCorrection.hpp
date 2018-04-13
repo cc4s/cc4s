@@ -25,9 +25,10 @@ namespace cc4s {
     virtual void dryRun();
   protected:
     int NG;
-    const int  N=128;//The # of points on the fibonacciGrid, fixed #.
+    static constexpr int DEFAULT_NUM_FIBONACCI = 128;
     std::vector<double> GLengths;
     std::vector<double> averageSGs;
+    std::vector<double> meanErrorSG;
     std::vector<double> structureFactors;
     std::vector<double> VofG;
     double GC;
@@ -44,7 +45,7 @@ namespace cc4s {
 
     void calculateComplexStructureFactor();
 
-    void constructFibonacciGrid(double R);
+    void constructFibonacciGrid(double R, int N);
     void interpolation3D();
     bool IsInSmallBZ(
       Vector<double> point, double scale, std::vector<cc4s::Vector<double>> smallBZ
@@ -63,6 +64,13 @@ namespace cc4s {
     void dryCalculateStructureFactor();
     void dryInterpolation3D();
     void dryCalculateFiniteSizeCorrection();
+
+    void extrapolation(double minG, double maxG, int basisSetExtrapolation);
+    double simplestWindow(double Gmin, double Gmax, double G);
+    double integrateSimplestWindow(double Gmin, double Gmax);
+    double leastSquareFit(std::vector<double> fitabsG, std::vector<double> fitSF);
+
+    void basisSetCompleteness();
   };
 }
 

@@ -14,10 +14,8 @@ namespace cc4s {
       std::vector<Argument> const &argumentList
     );
     virtual ~PairCorrelationFunction();
-    
     virtual void run();
 
-    
   protected:
     int NG;
     void GtoRFourier();

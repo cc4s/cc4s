@@ -27,9 +27,8 @@ void PairCorrelationFunction::run() {
 
 
 
-
 void PairCorrelationFunction::GtoRFourier(){
-  Tensor<> *ctfMomenta(getTensorArgument<>("Momenta"));
+  Tensor<> *ctfMomenta(getTensorArgument<>("GGrid"));
   Tensor<> *ctfStructureFactor(getTensorArgument<>("StructureFactor"));
   Tensor<> *ctfReciprocalLattice(getTensorArgument<>("ReciprocalLattice"));
   Tensor<> *ctfRealLattice(getTensorArgument<>("RealLattice"));
@@ -38,13 +37,13 @@ void PairCorrelationFunction::GtoRFourier(){
   std::vector<double> structureFactor;
   std::vector<Vector<>> reciprocalLattice;
   std::vector<Vector<>> realLattice;
-  
+
   int NG(ctfMomenta->lens[1]);
   momenta.resize(NG);
   structureFactor.resize(NG);
   reciprocalLattice.resize(3);
   realLattice.resize(3);
-  
+
   ctfMomenta->read_all(momenta.data()->coordinate);
   ctfStructureFactor->read_all(structureFactor.data());
   ctfReciprocalLattice->read_all(reciprocalLattice.data()->coordinate);
@@ -71,7 +70,7 @@ void PairCorrelationFunction::GtoRFourier(){
     directMin[2] = std::min(directMin[2], directComponentz);
     directMax[2] = std::max(directMax[2], directComponentz);
   }
-  
+
   Vector<int> boxDimension;
   for (int d(0);d < 3; ++d){
     boxDimension[d] = std::floor(directMax[d]-directMin[d] + 1.5);
@@ -81,22 +80,8 @@ void PairCorrelationFunction::GtoRFourier(){
   int minx((int) (directMin[0]-0.5));   int maxx((int) (directMax[0]+0.5));
   int miny((int) (directMin[1]-0.5));   int maxy((int) (directMax[1]+0.5));
   int minz((int) (directMin[2]-0.5));   int maxz((int) (directMax[2]+0.5));
-
-  /*
-  LOG(1,"PCF") << minx << " " << miny << " " << minz  << std::endl;
-  LOG(1,"PCF") << maxx << " " << maxy << " " << maxz  << std::endl;
-
-
-  LOG(1,"PCF") << "directx: " << directMin[0] << " " << directMax[0] << std::endl;
-  LOG(1,"PCF") << "directy: " << directMin[1] << " " << directMax[1] << std::endl;
-  LOG(1,"PCF") << "directz: " << directMin[2] << " " << directMax[2] << std::endl;
-  LOG(1,"PCF") << "Boxdims:: " << boxDimension[0] << " " << boxDimension[1]
-	       << " " << boxDimension[2] << std::endl;
-	       LOG(1,"PCF") << "Boxsize:: " << boxSize << std::endl;*/
-
   std::vector<double> realStructureFactor;
-  std::vector<Vector<complex>> realSpaceMesh;
-  
+  std::vector<Vector<double>> realSpaceMesh;
   realStructureFactor.resize(boxSize);
   realSpaceMesh.resize(boxSize);
   int u(0);
@@ -113,36 +98,33 @@ void PairCorrelationFunction::GtoRFourier(){
 	realSpaceMesh[u][2]  = static_cast<double>(i)/static_cast<double>(boxDimension[0])*realLattice[0][2];
 	realSpaceMesh[u][2] += static_cast<double>(j)/static_cast<double>(boxDimension[1])*realLattice[1][2];
 	realSpaceMesh[u][2] += static_cast<double>(k)/static_cast<double>(boxDimension[2])*realLattice[2][2];
-	//	LOG(1,"PCF") << "Index: " << u << ":: " << realSpaceMesh[u][0] << " " <<
-	//	     realSpaceMesh[u][1] << " " << realSpaceMesh[u][2] <<  std::endl;
 	u++;
-      }
+      }						
     }
   }
 
-  /*  const std::complex<double> i(0,1);
-  
+  LOG(0,"Dimensions:") << "x: " << minx << " " << maxx << std::endl;
+  LOG(0,"Dimensions:") << "y: " << miny << " " << maxz << std::endl;
+  LOG(0,"Dimensions:") << "z: " << minz << " " << maxz << std::endl;
+  LOG(0,"Dimensions:") << "#X*#Y*#Z = " << maxx-minx+1 << " " << maxy-miny+1 << " " << maxz-minz +1 << std::endl;
+  LOG(0,"Dimensions:") << "Real space mesh:" << std::endl;
+  LOG(0,"Dimensions:") << realLattice[0][0]/static_cast<double>(boxDimension[0]) << " "
+		       << realLattice[0][1]/static_cast<double>(boxDimension[0]) << " "
+		       << realLattice[0][2]/static_cast<double>(boxDimension[0]) << std::endl;
+  LOG(0,"Dimensions:") << realLattice[1][0]/static_cast<double>(boxDimension[1]) << " "
+		       << realLattice[1][1]/static_cast<double>(boxDimension[1]) << " "
+		       << realLattice[1][2]/static_cast<double>(boxDimension[1]) << std::endl;
+  LOG(0,"Dimensions:") << realLattice[2][0]/static_cast<double>(boxDimension[2]) << " "
+		       << realLattice[2][1]/static_cast<double>(boxDimension[2]) << " "
+		       << realLattice[2][2]/static_cast<double>(boxDimension[2]) << std::endl;
+
   for ( int i(0); i<boxSize; ++i ) {
     for ( int j(0); j<NG; ++j) {
-      complex phase(i*realSpaceMesh[i].dot(momenta[j]));
-      cout << i << " " << j << " " << phase << std::endl;
+      double phase(2.*M_PI*realSpaceMesh[i].dot(momenta[j]));
+      realStructureFactor[i] += cos(phase)*structureFactor[j];
     }
-    }*/
-    
-      
-    
-  
-  
-	
-      
-
-  
-
-  
-  
-}  
-  
-  
-  
-
+    LOG(2,"Structure") << realSpaceMesh[i][0] << " " << realSpaceMesh[i][1] << " "
+		       << realSpaceMesh[i][2] << " " << realStructureFactor[i] << std::endl;
+  }
+}
 

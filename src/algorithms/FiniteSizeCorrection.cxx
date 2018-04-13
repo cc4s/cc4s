@@ -58,13 +58,22 @@ void FiniteSizeCorrection::run() {
       calculateRealStructureFactor();
     }
     */
-    
+
   }
 
   LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
   interpolation3D();
   LOG(0,"FiniteSize") << "Caclulating finite size correction" << std::endl;
   calculateFiniteSizeCorrection();
+  int basisSetExtrapolation(getIntegerArgument("basisSetExtrapolation",0));
+  if (basisSetExtrapolation > 0) {
+    double minG(getRealArgument("minG",-2.));
+    double maxG(getRealArgument("maxG",-1.));
+    if ( (minG > maxG) || (minG <=  0.) ) basisSetExtrapolation = 0;
+    extrapolation(minG,maxG,basisSetExtrapolation);
+  }
+  basisSetCompleteness();
+
 }
 
 void FiniteSizeCorrection::dryRun() {
@@ -170,7 +179,7 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
       (*GammaGai) = GammaFai;
     }
   }
-  
+
   Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
   Tensor<> *realVG(new Tensor<>(false, *realInfVG));
   //Define take out inf funciton
@@ -213,7 +222,7 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   //Define CGai
   Tensor<complex> CGai(*GammaGai);
   CGai["Gai"] *= invSqrtVG["G"];
-  
+
   //Conjugate of CGai
   Tensor<complex> conjCGai(false, CGai);
   Univar_Function<complex> fConj(conj<complex>);
@@ -245,6 +254,23 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
+
+
+  int lens[] = {NG, No, No};
+  auto SGij(
+    new CTF::Tensor<complex>(3, lens)
+  );
+
+  (*SGij)["Gij"]  = ( 2.0) * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
+  (*SGij)["Gij"] += (-1.0) * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
+
+  auto realSGij(
+    new CTF::Tensor<>(3, lens)
+  );
+
+  fromComplexTensor(*SGij, *realSGij);
+  allocatedTensorArgument<>("StructureFactorij",realSGij);
+
 
   VofG.resize(NG);
   realVG->read_all(VofG.data());
@@ -336,7 +362,7 @@ void FiniteSizeCorrection::calculateComplexStructureFactor() {
   Tensor<complex> GammaGai(GammaGqr->slice(GaiStart, GaiEnd));
 
   delete GammaGqr;
-  
+
   //Define CGia
   Tensor<complex> CGia(GammaGia);
   CGia["Gia"] *= invSqrtVG["G"];
@@ -366,13 +392,29 @@ void FiniteSizeCorrection::calculateComplexStructureFactor() {
   }
 
   //construct SG
+
+  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGia.wrld, "realSG"));
   CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGia.wrld, "SG"));
   (*SG)["G"]  = ( 2.0) * conjTransposeCGia["Gia"] * CGia["Gjb"] * (*Tabij)["abij"];
   (*SG)["G"] += (-1.0) * conjTransposeCGia["Gja"] * CGia["Gib"] * (*Tabij)["abij"];
-
-  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGia.wrld, "realSG"));
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
+
+
+  int lens[] = {NG, No, No};
+  auto SGij(
+    new CTF::Tensor<complex>(3, lens)
+  );
+
+  (*SGij)["Gij"]  = ( 2.0) * conjTransposeCGia["Gia"] * CGia["Gjb"] * (*Tabij)["abij"];
+  (*SGij)["Gij"] += (-1.0) * conjTransposeCGia["Gja"] * CGia["Gib"] * (*Tabij)["abij"];
+
+  auto realSGij(
+    new CTF::Tensor<>(3, lens)
+  );
+
+  fromComplexTensor(*SGij, *realSGij);
+  allocatedTensorArgument<>("StructureFactorij",realSGij);
 
   VofG.resize(NG);
   realVG->read_all(VofG.data());
@@ -440,7 +482,7 @@ void FiniteSizeCorrection::dryCalculateStructureFactor() {
 }
 
 
-void FiniteSizeCorrection::constructFibonacciGrid(double R) {
+void FiniteSizeCorrection::constructFibonacciGrid(double R, int N) {
   //This function construct a Fibonacci grid on a sphere with a certain radius.
   //Returns a vector of vectors: {x,y,z}
   //The N should be fixed and R should be a vector which is selected by another
@@ -467,10 +509,10 @@ void FiniteSizeCorrection::interpolation3D() {
 
   // FIXME: give direct or reciprocal grid and calaculate all properties,
   // such as a,b,c and omega from it.
-  
-  // Detecting whether a grid is half or full by summming up all 
-  // G vectors. If it is full and symmetric, the length of the sum 
-  // should be equal to 0. But in case where the grid is not symmetric, 
+
+  // Detecting whether a grid is half or full by summming up all
+  // G vectors. If it is full and symmetric, the length of the sum
+  // should be equal to 0. But in case where the grid is not symmetric,
   // this method will fail.
   cc4s::Vector<> check_grid;
   for (int g(0); g < NG; ++g){
@@ -479,9 +521,9 @@ void FiniteSizeCorrection::interpolation3D() {
   LOG(1, "interpolation3D")<< "Length of the sum of all G vectors="
     << check_grid.length() << std::endl;
   if (check_grid.length() > 1e-10){
-    LOG(1, "interpolation3D")<< 
+    LOG(1, "interpolation3D")<<
       "Working with half G grid, completing the other half..."<< std::endl;
-    LOG(1, "interpolation3D")<< 
+    LOG(1, "interpolation3D")<<
       "!!! Always check if you are indeed working with half G grid !!!"
       << std::endl;
     cartesianGrid = new Momentum[(2*NG-1)];
@@ -500,7 +542,7 @@ void FiniteSizeCorrection::interpolation3D() {
   }
   else {
     LOG(1, "interpolation3D")<< "Working with full G grid." << std::endl;
-    LOG(1, "interpolation3D")<< 
+    LOG(1, "interpolation3D")<<
       "!!! Always check if you are indeed working with full G grid !!!"
       << std::endl;
     cartesianGrid = new Momentum[NG];
@@ -508,7 +550,7 @@ void FiniteSizeCorrection::interpolation3D() {
       cartesianGrid[g] = Momentum(
         cartesianMomenta[g], structureFactors[g], VofG[g]
       );
-  } 
+  }
 
   // sort according to vector length.
   std::sort(cartesianGrid, &cartesianGrid[NG], Momentum::sortByLength);
@@ -561,7 +603,7 @@ void FiniteSizeCorrection::interpolation3D() {
   auto ctfRealLattice(
     new CTF::Tensor<>(2, std::vector<int>({3,3}).data())
   );
-  
+
   std::vector<int64_t> indices(ctfReciprocalLattice->wrld->rank == 0 ? 3*3 : 0);
   for (size_t i(0); i < indices.size(); ++i) { indices[i] = i; }
   ctfReciprocalLattice->write(
@@ -661,13 +703,22 @@ void FiniteSizeCorrection::interpolation3D() {
     );
   **/
   // spherically sample
+  int64_t N(
+    getIntegerArgument("gridPointsFibonacci",DEFAULT_NUM_FIBONACCI)
+  );
   double lastLength(-1);
   averageSGs.clear(); GLengths.clear();
-  for (int g(0); g < NG; ++g) {
-    double length(cartesianGrid[g].l);
+  meanErrorSG.clear();
+  double maxlength(cartesianGrid[0].l);
+  for (int g(1); g < NG; ++g) {
+    maxlength = std::max(maxlength,cartesianGrid[g].l);
+  }
+  int num=1000;
+  for (int g(0); g < num; ++g) {
+    double length(maxlength/1000.*double(g));
     if (abs(length - lastLength) > 1e-3) {
-      constructFibonacciGrid(length);
-      double sumSG(0);
+      constructFibonacciGrid(length,N);
+      double sumSG(0.);
       // TODO: use parameter instead of fixed Fibonacci grid size
       for (int f(0); f < N; ++f) {
         Vector<> directG;
@@ -677,10 +728,25 @@ void FiniteSizeCorrection::interpolation3D() {
         // lookup interpolated value in direct coordinates
         sumSG += interpolatedSG(directG[0], directG[1], directG[2]);
       }
-      averageSGs.push_back(sumSG / N);
+      sumSG /= N;
+      averageSGs.push_back(sumSG);
       GLengths.push_back(length);
+      double meanError(0.);
+      for (int f(0); f < N; ++f) {
+        Vector<> directG;
+        for (int d(0); d < 3; ++d) {
+          directG[d] = T[d].dot(fibonacciGrid[f].v);
+        }
+	double interpol(interpolatedSG(directG[0], directG[1], directG[2]));
+	meanError += std::abs(interpol - sumSG);
+      }
+      meanErrorSG.push_back(meanError/N);
       lastLength = length;
     }
+  }
+
+  for (int g(0); g<num; ++g){
+    LOG(2,"sphericalAv") << GLengths[g] << " " << averageSGs[g] << " " << meanErrorSG[g] << std::endl;
   }
 
   //Define the 3D zone close to the Gamma point which needed to be
@@ -697,7 +763,7 @@ void FiniteSizeCorrection::interpolation3D() {
     }
   }
 
-  LOG(1,"interpolation3D") << "Number of basis vectors of small BZ="  
+  LOG(1,"interpolation3D") << "Number of basis vectors of small BZ="
     << smallBZ.size() << std::endl;
   for (std::vector<int>::size_type i = 0; i != smallBZ.size(); i++){
     LOG(2,"interpolation3D") << "smallBZ basis vector: " << smallBZ[i] << std::endl;
@@ -706,9 +772,10 @@ void FiniteSizeCorrection::interpolation3D() {
   //integration in 3D
   double constantFactor(getRealArgument("constantFactor"));
   //cutOffRadius is set to a big default value 100 to ensure
-  //the integration is over the whole G grid. 
+  //the integration is over the whole G grid.
   double cutOffRadius(getRealArgument("cutOffRadius", 100));
-  int N0(51), N1(51), N2(51);
+  // for convenience dont take 1 million grid points
+  int N0(11), N1(11), N2(11);
   inter3D = 0.;
   sum3D   = 0.;
   int countNO(0);
@@ -720,6 +787,9 @@ void FiniteSizeCorrection::interpolation3D() {
       if (cartesianGrid[i].l > epsilon) {
         sum3D += constantFactor/cartesianGrid[i].l/cartesianGrid[i].l
                  *cartesianGrid[i].s;
+	//	LOG(2,"REAL StructureFactor") << cartesianGrid[i].v[0] << " " <<
+	//  cartesianGrid[i].v[1] << " " <<  cartesianGrid[i].v[2] << " " <<
+	//  cartesianGrid[i].s << std::endl;
       }
     }
   }
@@ -737,8 +807,8 @@ void FiniteSizeCorrection::interpolation3D() {
           Vector<double> gb(((b/double(N1))*double(t1)));
           Vector<double> gc(((c/double(N2))*double(t2)));
           Vector<double> g(ga+gb+gc);
-          //for each g that is within smallBZ, add its contribution 
-          //and that of all its 
+          //for each g that is within smallBZ, add its contribution
+          //and that of all its
           //periodic images that differ only in a reciprocal lattice
           //to inter3D
           if (IsInSmallBZ(g, 2, smallBZ)){
@@ -752,18 +822,22 @@ void FiniteSizeCorrection::interpolation3D() {
                 directg[d]=T[d].dot(g);
               }
               countNO++;
+	      double interpol;
               if (g.length() > epsilon) {
-                inter3D += interpolatedSG(
-                  directg[0], directg[1],
-                  directg[2]
-                ) * constantFactor/g.length()/g.length();
-              }
-            }
+		interpol = interpolatedSG(directg[0], directg[1], directg[2]);
+                inter3D += interpol * constantFactor/g.length()/g.length();
+
+		//		LOG(2,"Full Grid") << g[0] << " " << g[1] << " " <<
+		//  g[2] << " " << interpol << std::endl;
+	      }
+	    }
           }
         }
       }
     }
   }
+
+
   double totalInter3D(0);
   int totalCountNOg(0);
   communicator.allReduce(inter3D, totalInter3D);
@@ -799,7 +873,7 @@ void FiniteSizeCorrection::dryInterpolation3D() {
 //scale=1 is used to search for the vectors which
 //define smallBZ; scale = 2 is used to tell if a vector is
 //within the smallBZ or not. For a vector that is within the smallBZ,
-//its projection on any vectors which define smallBZ must be less 
+//its projection on any vectors which define smallBZ must be less
 //than 1/2.
 bool FiniteSizeCorrection::IsInSmallBZ(
   Vector<> point, double scale, std::vector<Vector<>> smallBZ
@@ -857,14 +931,17 @@ void FiniteSizeCorrection::calculateFiniteSizeCorrection() {
     GLengths.size(), GLengths.data(), averageSGs.data()
   );
   Int1d.cubicSpline(0., 0., "M");
-  double x=0.;
-  for (int i(1); i<1000; i++){
-    LOG(2, "Interpolation") << x << " " << Int1d.getValue(x) << std::endl;
-    x = i*0.001;
-  }
-  for (unsigned int i(0); i < GLengths.size(); ++i){
-    LOG(2, "StructureFactor") << GLengths[i] << " " << averageSGs[i] << std::endl;
-  }
+  //double x=0.;
+  //  for (int i(1); i<1000; i++){
+  //  LOG(2, "Interpolation") << x << " " << Int1d.getValue(x) << std::endl;
+  //  x = i*0.001;
+  //}
+  /*for (unsigned int i(0); i < GLengths.size() - 1 ; ++i){
+    LOG(2, "StructureFactor") << GLengths[i] << " " << averageSGs[i] << " "
+			      << (averageSGs[i]-averageSGs[i+1])/double(GLengths.size())
+			      << " " << meanErrorSG[i] << std::endl;
+  }*/
+
   int kpoints(getIntegerArgument("kpoints",1));
   double volume(getRealArgument("volume"));
   double constantFactor(getRealArgument("constantFactor"));
@@ -912,3 +989,422 @@ void FiniteSizeCorrection::dryCalculateFiniteSizeCorrection() {
 
   setRealArgument("CorrectedEnergy", 0.0);
 }
+
+
+void FiniteSizeCorrection::extrapolation(
+  double Gmin, double Gmax, int itype){
+
+  double constantFactor(getRealArgument("constantFactor"));
+  double augmentationFactor(getRealArgument("augmentationFactor",1.0));
+  double gridEnergy(0.);
+  double longRangeEnergyExplicit(0.);
+  double coeff(0.);
+  std::vector<double> fitabsG; std::vector<double> fitSF;
+
+  for (int d(1); d < NG; ++d) {
+    gridEnergy  += cartesianGrid[d].vg * cartesianGrid[d].s;
+  }
+
+  LOG(0,"ReferenceEnergy:") << gridEnergy << std::endl;
+
+  if ( itype > 0){
+    for (int d(1); d < NG; ++d) {
+      double fac(1.);
+      fac = simplestWindow(Gmin,Gmax,cartesianGrid[d].l);
+      longRangeEnergyExplicit += fac*cartesianGrid[d].vg * cartesianGrid[d].s;
+      if ( (fac > 0.) && ( fac < 1.)){
+	fitabsG.push_back(cartesianGrid[d].l);
+	fitSF.push_back(cartesianGrid[d].s);
+      }
+    }
+    LOG(2,"LongRangeEnergyExplicit:") << longRangeEnergyExplicit << std::endl;
+    if ( fitSF.size() == 0) throw new EXCEPTION("No |G|-values in fitting range");
+    //  for (unsigned int d(0); d< fitSF.size(); ++d){
+    //  LOG(2,"PrepFit") << fitabsG[d] << " " << fitSF[d] << std::endl;
+    //}
+
+    coeff = leastSquareFit(fitabsG,fitSF);
+
+    LOG(2,"Fitting") << "coeff: " << coeff << std::endl;
+    double residuum(0.);
+    for (unsigned int d(0); d < fitabsG.size(); ++d){
+      double res;
+      res = coeff/pow(fitabsG[d],4) - fitSF[d];
+      residuum += res*res;
+    }
+    LOG(2,"Fitting") << "Residuum: " << residuum << std::endl;
+  }
+  // Scheme 1: Fill the full reciprocal mesh with perfect 1/G**4 values
+
+  std::vector<double> extrapolatedSF;
+  std::vector<Vector<>> extrapolatedGrid;
+
+
+  if ( itype == 0) {
+    LOG(0,"IO") << "Writing unmodified Grid" << std::endl;
+    for (int d(0); d < NG; ++d){
+      extrapolatedSF.push_back(cartesianGrid[d].s);
+      extrapolatedGrid.push_back(cartesianGrid[d].v);
+    }
+    auto ctfExtrapolatedSF(
+      new CTF::Tensor<>(1, std::vector<int>( {NG}).data())
+    );
+    std::vector<int64_t> indices(ctfExtrapolatedSF->wrld->rank == 0 ? NG : 0);
+    for (size_t i(0); i < indices.size(); ++i) { indices[i] = i; }
+
+    ctfExtrapolatedSF->write(
+      indices.size(), indices.data(), extrapolatedSF.data()
+    );
+
+    allocatedTensorArgument<>("ExtrapolatedSF", ctfExtrapolatedSF);
+
+    auto ctfExtrapolatedGrid(
+      new CTF::Tensor<>(2, std::vector<int>( {3,NG} ).data())
+    );
+    std::vector<int64_t> indices3(ctfExtrapolatedGrid->wrld->rank == 0 ? 3*NG : 0);
+    for (size_t i(0); i < indices3.size(); ++i) { indices3[i] = i; }
+
+    ctfExtrapolatedGrid->write(
+      indices3.size(), indices3.data(), extrapolatedGrid.data()->coordinate
+    );
+
+    allocatedTensorArgument<>("ExtrapolatedGrid", ctfExtrapolatedGrid);
+  }
+
+  if ( itype > 0) {
+    for (int d(0); d < NG; ++d){
+      if ( cartesianGrid[d].l < Gmax){
+	extrapolatedSF.push_back(cartesianGrid[d].s);
+	extrapolatedGrid.push_back(cartesianGrid[d].v);
+      }
+      else{
+	extrapolatedSF.push_back(coeff/pow(cartesianGrid[d].l,4));
+	extrapolatedGrid.push_back(cartesianGrid[d].v);
+      }
+    }
+    double basisSetExtrapolatedEnergy(0.);
+
+    for (int d(1); d < NG; ++d){
+    // LOG(2,"ExtrapolatedBasis") << cartesianGrid[d].l << " " <<
+    //  cartesianGrid[d].s << " " << extrapolatedSF[d] << std::endl;
+      basisSetExtrapolatedEnergy += cartesianGrid[d].vg*extrapolatedSF[d];
+    }
+    LOG(0,"ExtrapolatedEnergy:") << basisSetExtrapolatedEnergy << std::endl;
+  }
+
+  if ( itype == 1) {
+    LOG(0,"IO") << "Writing Extrapolated Grid" << std::endl;
+    auto ctfExtrapolatedSF(
+      new CTF::Tensor<>(1, std::vector<int>( {NG}).data())
+    );
+    std::vector<int64_t> indices(ctfExtrapolatedSF->wrld->rank == 0 ? NG : 0);
+    for (size_t i(0); i < indices.size(); ++i) { indices[i] = i; }
+
+    ctfExtrapolatedSF->write(
+      indices.size(), indices.data(), extrapolatedSF.data()
+    );
+
+    allocatedTensorArgument<>("ExtrapolatedSF", ctfExtrapolatedSF);
+
+    auto ctfExtrapolatedGrid(
+      new CTF::Tensor<>(2, std::vector<int>( {3,NG} ).data())
+    );
+    std::vector<int64_t> indices3(ctfExtrapolatedGrid->wrld->rank == 0 ? 3*NG : 0);
+    for (size_t i(0); i < indices3.size(); ++i) { indices3[i] = i; }
+
+    ctfExtrapolatedGrid->write(
+      indices3.size(), indices3.data(), extrapolatedGrid.data()->coordinate
+    );
+
+    allocatedTensorArgument<>("ExtrapolatedGrid", ctfExtrapolatedGrid);
+  }
+
+  // Scheme 2: Augment the reciprocal lattice and calculate the extrapolated
+  //           Structure Factor
+
+  Tensor<> *ctfReciprocalLattice(getTensorArgument<>("ReciprocalLattice"));
+
+  std::vector<Vector<>> reciprocalLattice(3);
+  reciprocalLattice.resize(3);
+  ctfReciprocalLattice->read_all(reciprocalLattice.data()->coordinate);
+
+  reciprocalLattice[0] /= M_PI*2.;
+  reciprocalLattice[1] /= M_PI*2.;
+  reciprocalLattice[2] /= M_PI*2.;
+
+  double maxabsG(cartesianGrid[0].l);
+  for ( int d(1); d < NG ; ++d){
+    maxabsG = std::max(maxabsG,cartesianGrid[d].l);
+  }
+  //  maxabsG = sqrt(2.)*maxabsG;  // double the plane-wave cutoff
+
+  double maxAugmentedAbsG(0.);
+
+  maxAugmentedAbsG = sqrt(augmentationFactor)*maxabsG;
+
+  LOG(0,"MaxAbsG") << maxabsG << " " << maxAugmentedAbsG<< std::endl;
+
+
+  // Purpose: construct augmented reciprocal lattice with larger G-vectors
+  //          than the used lattice.
+  // This is high quality Fortran influenced coding
+  // enlarge the triples until no further elements are included
+
+  int m(1);
+  std::vector<Vector<>> augmentedGrid;
+  std::vector<double> augmentedSF;
+
+  int current(1);
+  while(current > 0){
+    current = 0;
+    for ( int i(-m); i<=m; ++i){
+      for ( int j(-m); j<=m; ++j){
+	for ( int k(-m); k<=m; ++k){
+	  if ( ( std::abs(i) < m ) && ( std::abs(j) < m )
+	       &&  ( std::abs(k) < m ) ) continue;
+	  Vector<> GridPoint(double(i)*reciprocalLattice[0]+
+	     double(j)*reciprocalLattice[1]+double(k)*reciprocalLattice[2]);
+	  if ( GridPoint.length() < maxAugmentedAbsG ) {
+	    current++;
+	    if ( GridPoint.length() > maxabsG ) {
+	      augmentedGrid.push_back(GridPoint);
+	      double locSF(coeff/pow(GridPoint.length(),4));
+	      augmentedSF.push_back(locSF);
+	    }
+	  }
+	}
+      }
+    }
+    m++;
+  }
+
+  double ExtrapolatedAugmentedEnergy(0.);
+  for ( unsigned int d(0); d< augmentedGrid.size(); ++d){
+    double vg(constantFactor);
+    vg /= augmentedGrid[d].length()*augmentedGrid[d].length();
+    ExtrapolatedAugmentedEnergy += vg*augmentedSF[d];
+  }
+
+  LOG(0,"ExtrapolatedEnergy:") << " Grid Points: " <<  NG
+                               << " Augmented Grid points: " << NG + augmentedGrid.size()
+			       << " Energy: " << ExtrapolatedAugmentedEnergy << std::endl;
+
+  if ( itype == 2) {
+    int doubledNG(extrapolatedGrid.size()+augmentedGrid.size());
+
+    std::vector<double> totalSF;
+    std::vector<Vector<>> totalGrid;
+
+    totalSF.reserve(doubledNG);
+    totalGrid.reserve(doubledNG);
+
+    totalSF.insert(totalSF.end(),extrapolatedSF.begin(),extrapolatedSF.end());
+    totalSF.insert(totalSF.end(),augmentedSF.begin(),augmentedSF.end());
+
+    totalGrid.insert(totalGrid.end(),extrapolatedGrid.begin(),extrapolatedGrid.end());
+    totalGrid.insert(totalGrid.end(),augmentedGrid.begin(),augmentedGrid.end());
+
+    LOG(0,"IO") << "Writing Augmented Extrapolated Grid" << std::endl;
+    auto ctfExtrapolatedSF(
+      new CTF::Tensor<>(1, std::vector<int>( {doubledNG}).data())
+    );
+    std::vector<int64_t> indices(ctfExtrapolatedSF->wrld->rank == 0 ? doubledNG : 0);
+    for (size_t i(0); i < indices.size(); ++i) { indices[i] = i; }
+
+    ctfExtrapolatedSF->write(
+      indices.size(), indices.data(), totalSF.data()
+    );
+
+    allocatedTensorArgument<>("ExtrapolatedSF", ctfExtrapolatedSF);
+
+    auto ctfExtrapolatedGrid(
+      new CTF::Tensor<>(2, std::vector<int>( {3,doubledNG} ).data())
+    );
+    std::vector<int64_t> indices3(ctfExtrapolatedGrid->wrld->rank == 0 ? 3*doubledNG : 0);
+    for (size_t i(0); i < indices3.size(); ++i) { indices3[i] = i; }
+
+    ctfExtrapolatedGrid->write(
+      indices3.size(), indices3.data(), totalGrid.data()->coordinate
+    );
+
+    allocatedTensorArgument<>("ExtrapolatedGrid", ctfExtrapolatedGrid);
+  }
+}
+
+
+void FiniteSizeCorrection::basisSetCompleteness(){
+
+  // Read the Particle/Hole Eigenenergies
+  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
+
+  // Read the Coulomb vertex GammaGqr
+  Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
+
+  // Get the Particle Hole Coulomb Vertex
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+  int Np(GammaFqr->lens[1]);
+  int NF(GammaFqr->lens[0]);
+
+  int aStart(Np-Nv), aEnd(Np);
+  int iStart(0), iEnd(No);
+  int FaiStart[] = {0, aStart,iStart};
+  int FaiEnd[]   = {NF,aEnd,  iEnd};
+  int FijStart[] = {0, iStart, iStart};
+  int FijEnd[]   = {NF,iEnd, iEnd};
+
+  PTR(Tensor<complex>) GammaGij;
+  // Definition of ParticleHole Coulomb Vertex
+  PTR(Tensor<complex>) GammaGai;
+
+  {
+    Tensor<complex> GammaFai(GammaFqr->slice(FaiStart, FaiEnd));
+    Tensor<complex> GammaFij(GammaFqr->slice(FijStart, FijEnd));
+
+    if (isArgumentGiven("CoulombVertexSingularVectors")) {
+      Tensor<complex> *UGF(
+        getTensorArgument<complex>("CoulombVertexSingularVectors")
+      );
+      int lens[]= {UGF->lens[0], Nv, No};
+      GammaGai = NEW(Tensor<complex>,
+        3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+      );
+      (*GammaGai)["Gai"] = GammaFai["Fai"] * (*UGF)["GF"];
+
+      //
+      int lensocc[] = {UGF->lens[0], No, No};
+      GammaGij = NEW(Tensor<complex>,
+        3, lensocc, GammaFqr->sym, *GammaFqr-> wrld, "GammaGij"
+      );
+      (*GammaGij)["Gij"] = GammaFij["Fij"] * (*UGF)["GF"];
+
+    } else {
+      int lens[]= {NF, Nv, No};
+      GammaGai = NEW(Tensor<complex>,
+        3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
+      );
+      (*GammaGai) = GammaFai;
+
+      int lensocc[]= {NF, No, No};
+      GammaGij = NEW(Tensor<complex>,
+        3, lensocc, GammaFqr->sym, *GammaFqr->wrld, "GammaGij"
+      );
+      (*GammaGij) = GammaFij;
+    }
+  }
+
+  Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
+  Tensor<> *realVG(new Tensor<>(false, *realInfVG));
+  //Define take out inf funciton
+  class TakeOutInf {
+  public:
+    double operator ()(double x){
+      return std::isinf(x) ? 0.0 : x;
+    }
+  };
+  //Take out the inf from realVG.
+  TakeOutInf takeOutInf;
+  Univar_Function<> fTakeOutInf(takeOutInf);
+  realVG->sum(1.0, *realInfVG, "G", 0.0, "G", fTakeOutInf);
+  realVG->set_name("realVG");
+  Tensor<complex> VG(
+    1, realVG->lens, realVG->sym, *realVG->wrld, "VG"
+  );
+  toComplexTensor(*realVG, VG);
+  Tensor<> realInvSqrtVG(false, *realVG);
+  Tensor<complex> invSqrtVG(
+    1, realInvSqrtVG.lens, realInvSqrtVG.sym,
+    *realInvSqrtVG.wrld, "invSqrtVG"
+  );
+
+  //Starting a new space whose memory will be erased after operation
+  //Define operation inverse square root
+  class InvSqrt {
+  public:
+    double operator ()(double x){
+      return std::sqrt(1.0 / x);
+    }
+  };
+
+  //Get the inverted square root of VG
+  InvSqrt invSqrt;
+  Univar_Function<> fInvSqrt(invSqrt);
+  realInvSqrtVG.sum(1.0, *realInfVG, "G", 0.0, "G", fInvSqrt);
+  toComplexTensor(realInvSqrtVG, invSqrtVG);
+
+  //Define CGai
+  Tensor<complex> CGai(*GammaGai);
+  CGai["Gai"] *= invSqrtVG["G"];
+
+  //Conjugate of CGai
+  Tensor<complex> conjCGai(false, CGai);
+  Univar_Function<complex> fConj(conj<complex>);
+  conjCGai.sum(1.0, CGai, "Gai", 0.0, "Gai", fConj);
+
+
+  Tensor<complex> CGij(*GammaGij);
+  CGij["Gij"] *= invSqrtVG["G"];
+
+
+
+  Tensor<complex> conjCGij(false, CGij);
+  conjCGij.sum(1.0, CGij, "Gij", 0.0, "Gij", fConj);
+
+
+
+
+  int Nocc[] = {NF, No};
+
+
+  auto sumOccupied(new Tensor<complex>(2,Nocc));
+  auto sumUnoccupied(new Tensor<complex>(2,Nocc));
+  (*sumOccupied)["Gi"] += CGij["Gij"]*conjCGij["Gij"];
+  (*sumUnoccupied)["Gi"] += CGai["Gai"]*conjCGai["Gai"];
+
+
+
+  auto realSumOccupied(new Tensor<double>(2,Nocc));
+  auto realSumUnoccupied(new Tensor<double>(2,Nocc));
+
+
+  fromComplexTensor(*sumOccupied,*realSumOccupied);
+  fromComplexTensor(*sumUnoccupied,*realSumUnoccupied);
+
+  allocatedTensorArgument<>("SumOccupied", realSumOccupied);
+  allocatedTensorArgument<>("SumUnoccupied", realSumUnoccupied);
+}
+
+double FiniteSizeCorrection::leastSquareFit(
+  std::vector<double> fitabsG, std::vector<double> fitSF){
+
+  // simple fit of data points with the curve f(x) = a/x**4
+
+
+  double num(0.); double denum(0.);
+  for (unsigned int d(0); d < fitabsG.size(); ++d){
+    num += fitSF[d]/pow(fitabsG[d],4);
+    denum += pow(fitabsG[d],-8);
+  }
+
+  return num/denum;
+}
+double FiniteSizeCorrection::simplestWindow(
+  double Gmin, double Gmax, double G)
+{
+  //  double x(G-Gmin/(Gmax-Gmin));
+  //return 6.*x**5-15.*x**4+10.*x**3;
+  double output(1.);
+  if ( G > Gmin ) output = (Gmax-G)/(Gmax-Gmin);
+  if ( G > Gmax ) output = 0.;
+
+
+  return output;
+}
+
+double FiniteSizeCorrection::integrateSimplestWindow(
+  double Gmin, double Gmax)
+{
+  return log(Gmax/Gmin)/(Gmax-Gmin);
+}
+
