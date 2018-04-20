@@ -49,31 +49,26 @@ void FiniteSizeCorrection::run() {
     } else {
       calculateComplexStructureFactor();
     }
-
-    /*
-    bool complex = getIntegerArgument("complex", 0);
-    if (complex) {
-      calculateComplexStructureFactor();
-    } else {
-      calculateRealStructureFactor();
-    }
-    */
-
   }
 
   LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
   interpolation3D();
   LOG(0,"FiniteSize") << "Caclulating finite size correction" << std::endl;
   calculateFiniteSizeCorrection();
-  int basisSetExtrapolation(getIntegerArgument("basisSetExtrapolation",0));
-  if (basisSetExtrapolation > 0) {
+
+  int fbasisSetExtrapolation(getIntegerArgument("basisSetExtrapolation",0));
+  if (fbasisSetExtrapolation > 0) {
     double minG(getRealArgument("minG",-2.));
     double maxG(getRealArgument("maxG",-1.));
-    if ( (minG > maxG) || (minG <=  0.) ) basisSetExtrapolation = 0;
-    extrapolation(minG,maxG,basisSetExtrapolation);
+    if ( (minG > maxG) || (minG <=  0.) ) fbasisSetExtrapolation = 0;
+    LOG(0,"BasisSetExtrapolation") << fbasisSetExtrapolation << std::endl;
+    extrapolation(minG,maxG,fbasisSetExtrapolation);
   }
-  basisSetCompleteness();
-
+  int fbasisSetCompleteness(getIntegerArgument("basisSetCompleteness",0));
+  if (fbasisSetCompleteness > 0) {
+    LOG(0,"BasisSetCompleteness") << "run" << std::endl;
+    basisSetCompleteness();
+  }
 }
 
 void FiniteSizeCorrection::dryRun() {
@@ -94,33 +89,33 @@ void FiniteSizeCorrection::dryRun() {
 
 class FiniteSizeCorrection::Momentum {
   public:
-    cc4s::Vector<> v;
-    double s;
-    double l;
-    double vg;
-    Momentum(): s(0.0), l(0.0), vg(0.) {
-    }
-    Momentum(
-      cc4s::Vector<> v_, double s_=0., double vg_=0.
-    ): v(v_), s(s_), l(v_.length()), vg(vg_) {
-    }
-    double locate(Momentum *m, int const n) {
-      cc4s::Vector<> u(v);
-      //if (v[3] < 0.) u= v*(-1.);
-      for (int d(0); d < n; ++d) {
-        if (u.approximately(m[d].v)) {
-          return m[d].s;
-        }
+  cc4s::Vector<> v;
+  double s;
+  double l;
+  double vg;
+  Momentum(): s(0.0), l(0.0), vg(0.) {
+  }
+  Momentum(
+    cc4s::Vector<> v_, double s_=0., double vg_=0.
+  ): v(v_), s(s_), l(v_.length()), vg(vg_) {
+  }
+  double locate(Momentum *m, int const n) {
+    cc4s::Vector<> u(v);
+    //if (v[3] < 0.) u= v*(-1.);
+    for (int d(0); d < n; ++d) {
+      if (u.approximately(m[d].v)) {
+	return m[d].s;
       }
-      return 0;
     }
+    return 0;
+  }
 
-    static bool sortByLength (Momentum const &n, Momentum const &m) {
-      return n.l < m.l;
-    }
-    static bool sortByVector (Momentum const &n, Momentum const &m) {
-      return n.v < m.v;
-    }
+  static bool sortByLength (Momentum const &n, Momentum const &m) {
+    return n.l < m.l;
+  }
+  static bool sortByVector (Momentum const &n, Momentum const &m) {
+    return n.v < m.v;
+  }
 };
 
 void FiniteSizeCorrection::readFromFile(){
@@ -141,27 +136,26 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   // Read the Particle/Hole Eigenenergies
   Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
-
-  // Read the Coulomb vertex GammaGqr
-  Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
-
-  // Get the Particle Hole Coulomb Vertex
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
-  int Np(GammaFqr->lens[1]);
-  int NF(GammaFqr->lens[0]);
-
-  int aStart(Np-Nv), aEnd(Np);
-  int iStart(0), iEnd(No);
-  int FaiStart[] = {0, aStart,iStart};
-  int FaiEnd[]   = {NF,aEnd,  iEnd};
-
-  // Definition of ParticleHole Coulomb Vertex
+  int Np(No+Nv);
   PTR(Tensor<complex>) GammaGai;
 
-  {
+  // Read the Coulomb vertex GammaGqr
+  if ( isArgumentGiven("CoulombVertex")){
+    Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
+    // Get the Particle Hole Coulomb Vertex
+    int NF(GammaFqr->lens[0]);
+    
+    int aStart(Np-Nv), aEnd(Np);
+    int iStart(0), iEnd(No);
+    int FaiStart[] = {0, aStart,iStart};
+    int FaiEnd[]   = {NF,aEnd,  iEnd};
+
     Tensor<complex> GammaFai(GammaFqr->slice(FaiStart, FaiEnd));
 
+
+    
     if (isArgumentGiven("CoulombVertexSingularVectors")) {
       Tensor<complex> *UGF(
         getTensorArgument<complex>("CoulombVertexSingularVectors")
@@ -171,13 +165,20 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
         3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
       );
       (*GammaGai)["Gai"] = GammaFai["Fai"] * (*UGF)["GF"];
-    } else {
+    }
+    else {
       int lens[]= {NF, Nv, No};
       GammaGai = NEW(Tensor<complex>,
         3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
       );
       (*GammaGai) = GammaFai;
     }
+  }
+  else if (isArgumentGiven("ParticleHoleCoulombVertex")){
+    GammaGai = NEW(Tensor<complex>,getTensorArgument<complex>("ParticleHoleCoulombVertex"));
+  }
+  else {
+    throw new EXCEPTION("Need Appropriate Coulomb Vertex");    
   }
 
   Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
@@ -255,8 +256,7 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
 
-
-  int lens[] = {NG, No, No};
+  /*  int lens[] = {NG, No, No};
   auto SGij(
     new CTF::Tensor<complex>(3, lens)
   );
@@ -270,7 +270,7 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
 
   fromComplexTensor(*SGij, *realSGij);
   allocatedTensorArgument<>("StructureFactorij",realSGij);
-
+  */
 
   VofG.resize(NG);
   realVG->read_all(VofG.data());
@@ -400,7 +400,7 @@ void FiniteSizeCorrection::calculateComplexStructureFactor() {
   fromComplexTensor(*SG, *realSG);
   allocatedTensorArgument<>("StructureFactor", realSG);
 
-
+  /*
   int lens[] = {NG, No, No};
   auto SGij(
     new CTF::Tensor<complex>(3, lens)
@@ -415,7 +415,7 @@ void FiniteSizeCorrection::calculateComplexStructureFactor() {
 
   fromComplexTensor(*SGij, *realSGij);
   allocatedTensorArgument<>("StructureFactorij",realSGij);
-
+  */
   VofG.resize(NG);
   realVG->read_all(VofG.data());
   structureFactors.resize(NG);
@@ -534,7 +534,7 @@ void FiniteSizeCorrection::interpolation3D() {
       cartesianGrid[g] = Momentum(
         cartesianMomenta[g], 0.5*structureFactors[g], VofG[g]
       );
-      cartesianGrid[(g+NG-1)] = Momentum(
+     cartesianGrid[(g+NG-1)] = Momentum(
         cartesianMomenta[g]*(-1.), 0.5*structureFactors[g], VofG[g]
       );
     }
@@ -1362,11 +1362,8 @@ void FiniteSizeCorrection::basisSetCompleteness(){
   (*sumOccupied)["Gi"] += CGij["Gij"]*conjCGij["Gij"];
   (*sumUnoccupied)["Gi"] += CGai["Gai"]*conjCGai["Gai"];
 
-
-
   auto realSumOccupied(new Tensor<double>(2,Nocc));
   auto realSumUnoccupied(new Tensor<double>(2,Nocc));
-
 
   fromComplexTensor(*sumOccupied,*realSumOccupied);
   fromComplexTensor(*sumUnoccupied,*realSumUnoccupied);

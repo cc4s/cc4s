@@ -75,14 +75,35 @@ void PairCorrelationFunction::GtoRFourier(){
   for (int d(0);d < 3; ++d){
     boxDimension[d] = std::floor(directMax[d]-directMin[d] + 1.5);
   }
-  int64_t boxSize(boxDimension[0]*boxDimension[1]*boxDimension[2]);
+
+  //int64_t boxSize(boxDimension[0]*boxDimension[1]*boxDimension[2]);
 
   int minx((int) (directMin[0]-0.5));   int maxx((int) (directMax[0]+0.5));
   int miny((int) (directMin[1]-0.5));   int maxy((int) (directMax[1]+0.5));
   int minz((int) (directMin[2]-0.5));   int maxz((int) (directMax[2]+0.5));
+
+  int augfac(2.);
+  minx *=augfac; maxx *= augfac;
+  miny *=augfac; maxy *= augfac;
+  minz *=augfac; maxz *= augfac;
+  boxDimension[0] *= augfac;
+  boxDimension[1] *= augfac;
+  boxDimension[2] *= augfac;
+  int64_t boxSize((maxx-minx+1)*(maxy-miny+1)*(maxz-minz+1));
+
   std::vector<double> realStructureFactor;
+  std::vector<double> realdxStructureFactor;
+  std::vector<double> realdyStructureFactor;
+  std::vector<double> realdzStructureFactor;
+  std::vector<double> realdrStructureFactor;
+  std::vector<double> realddrStructureFactor;
   std::vector<Vector<double>> realSpaceMesh;
   realStructureFactor.resize(boxSize);
+  realdxStructureFactor.resize(boxSize);
+  realdyStructureFactor.resize(boxSize);
+  realdzStructureFactor.resize(boxSize);
+  realdrStructureFactor.resize(boxSize);
+  realddrStructureFactor.resize(boxSize);
   realSpaceMesh.resize(boxSize);
   int u(0);
   // set up real space mesh
@@ -119,12 +140,21 @@ void PairCorrelationFunction::GtoRFourier(){
 		       << realLattice[2][2]/static_cast<double>(boxDimension[2]) << std::endl;
 
   for ( int i(0); i<boxSize; ++i ) {
-    for ( int j(0); j<NG; ++j) {
-      double phase(2.*M_PI*realSpaceMesh[i].dot(momenta[j]));
-      realStructureFactor[i] += cos(phase)*structureFactor[j];
+    if ( realSpaceMesh[i].length() < 3.){
+      for ( int j(0); j<NG; ++j) {
+	double phase(2.*M_PI*realSpaceMesh[i].dot(momenta[j]));
+	realStructureFactor[i] += cos(phase)*structureFactor[j];
+	double deri(phase/realSpaceMesh[i].length());
+	realdrStructureFactor[i] += sin(phase)*structureFactor[j]*deri;
+	realddrStructureFactor[i] += cos(phase)*structureFactor[j]*deri*deri;
+      }
+      LOG(2,"Structure") << realSpaceMesh[i][0] << " " << realSpaceMesh[i][1] << " "
+			 << realSpaceMesh[i][2] << " " << realStructureFactor[i] << std::endl;
+      LOG(2,"drS")       << realSpaceMesh[i][0] << " " << realSpaceMesh[i][1] << " "
+			 << realSpaceMesh[i][2] << " " << realdrStructureFactor[i] << std::endl;
+      LOG(2,"d2rS")      << realSpaceMesh[i][0] << " " << realSpaceMesh[i][1] << " "
+			 << realSpaceMesh[i][2] << " " << realddrStructureFactor[i] << std::endl;
     }
-    LOG(2,"Structure") << realSpaceMesh[i][0] << " " << realSpaceMesh[i][1] << " "
-		       << realSpaceMesh[i][2] << " " << realStructureFactor[i] << std::endl;
   }
 }
 
