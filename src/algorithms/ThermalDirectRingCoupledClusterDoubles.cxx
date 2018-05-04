@@ -20,8 +20,10 @@ ThermalDirectRingCoupledClusterDoubles::
 ) {
 }
 
-void ThermalDirectRingCoupledClusterDoubles::getResiduum(
-  CTF::Tensor<complex> &Tabijn
+void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
+  const CTF::Tensor<real> &T0abij,
+  CTF::Tensor<real> &T1abij,
+  real DTau
 ) {
 /*
   // * interaction V
@@ -31,24 +33,5 @@ void ThermalDirectRingCoupledClusterDoubles::getResiduum(
   thermalContraction(Fck);
   Wabij["acik"] *= Fck["ck"];
 */
-}
-
-
-void ThermalDirectRingCoupledClusterDoubles::dryIterate() {
-  // Read the DRCCD amplitudes Tabij
-  //DryTensor<> *Tabij(
-  getTensorArgument<double, DryTensor<double>>("DrccdDoublesAmplitudes");
-  //);
-
-  // Read the Coulomb Integrals Vabij
-  DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
-
-  // Allocate Tensors for T2 amplitudes
-  DryTensor<> Rabij(*Vabij);
-
-  // Define intermediates
-  DryTensor<> Cabij(*Vabij);
-
-  DryTensor<> Dabij(*Vabij);
 }
 

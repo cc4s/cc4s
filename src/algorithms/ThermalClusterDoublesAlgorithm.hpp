@@ -40,11 +40,7 @@ namespace cc4s {
     /**
      * \brief doubles amplitudes on the imaginary time grid
      **/
-    std::vector<PTR(CTF::Tensor<complex>)> Tabijn;
-    /**
-     * \brief doubles amplitudes on the imaginary frequency grid
-     **/
-    std::vector<PTR(CTF::Tensor<complex>)> Tabijv;
+    std::vector<PTR(CTF::Tensor<real>)> Tabijn;
 
     /**
      * \brief The eigenenergy difference of between the state a,b and i,j.
@@ -57,27 +53,66 @@ namespace cc4s {
      * \f$k_{\rm B}T\f$ is given in the same unit as the eigenenergies
      * \f$\varepsilon_p\f$.
      **/
-    double beta;
+    real beta;
 
 
     /**
-     * \brief Calculates the residuum for the given imaginary time amplitudes.
      */
-    virtual void getResiduum(CTF::Tensor<complex> &Tabij) = 0;
-
-    /**
-     * \brief Performs a dry run of an iterate according to the concrete
-     * algorithm.
-     * The base class does not perform accounting and writes a warning about
-     * that.
-     */
-    virtual void dryIterate();
+    virtual void applyHamiltonian(
+      const CTF::Tensor<real> &T0abij,
+      CTF::Tensor<real> &T1abij,
+      real DTau
+    ) = 0;
 
     std::string getCapitalizedAbbreviation();
     std::string getAmplitudeIndices(CTF::Tensor<> &T);
     void fetchDelta(CTF::Tensor<> &Delta);
     void thermalContraction(CTF::Tensor<> &T);
   };
+
+/*
+  class ImaginaryTimeTransform {
+  protected:
+    ImaginaryTimeTransform(
+      real DTau_
+    ): DTau(DTau_) {
+    }
+    real DTau;
+  };
+
+  class FreeImaginaryTimePropagation: public ImaginaryTimeTransform {
+  public:
+    FreeImaginaryTimePropagation(
+      real DTau_
+    ): ImaginaryTimeTransform(DTau_) {
+    }
+    void operator ()(const real Delta, real &T) const {
+      T *= std::exp(-Delta*DTau);
+    }
+  };
+
+  class ImaginaryTimeConvolution: public ImaginaryTimeTransform {
+  public:
+    static constexpr real EPSILON = 1e-6;
+    ImaginaryTimeConvolution(
+      real DTau_
+    ): ImaginaryTimeTransform(DTau_) {
+    }
+     // \brief Requires P = -DeltaJ*DTau + log(f^J) + log(f^(K\J)) - log(f^I)
+    void operator ()(const real DeltaK, real &P) {
+      if (DeltaK*DTau > EPSILON) {
+        P -= std::log1p(-std::exp(-DeltaK*DTau));
+        P = std::exp(P) / (+DeltaK);
+      } else if ((DeltaK*DTau < EPSILON) {
+        P -= std::log1p(-std::exp(+DeltaK*DTau)) + DeltaK*DTau;
+        P = std::exp(P) / (-DeltaK);
+      } else {
+        P -= DeltaK*DTau/2 + (DeltaK*DTau)*(DeltaK*DTau)/24;
+        P = std::exp(P) * DTau;
+      }
+    }
+  };
+*/
 }
 
 #endif
