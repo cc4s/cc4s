@@ -51,6 +51,8 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   testDLogZHf(0, D_MU);
   testDLogZHf(1, D_MU);
 */
+  testDLogZMp2(0, D_MU);
+  testDLogZMp2(1, D_MU);
 
   computeFreeEnergy();
   computeEnergyMoments();
@@ -447,18 +449,35 @@ void ThermalMp2EnergyFromCoulombIntegrals::writeContribution(
 void ThermalMp2EnergyFromCoulombIntegrals::testDLogZMp2(
   const unsigned int n, const bool dbeta
 ) {
-  real b(beta), db(0.00001);
-  beta = b+db;
-  real dLogZ( getDLogZMp2(n) );
-  beta = b-db;
-  dLogZ -= getDLogZMp2(n);
-  beta = b;
-  dLogZ /= -2*db;
-  real exactDLogZ( getDLogZMp2(n+1) );
-  LOG(1, "FT-MP2") << "MP2 numerical(d^" << (n+1) << " log(Z(beta)) / d^"
-    << (n+1) << ") = " << dLogZ << std::endl;
-  LOG(1, "FT-MP2") << "MP2     exact(d^" << (n+1) << " log(Z(beta)) / d^"
-    << (n+1) << ") = " << exactDLogZ << std::endl;
+  real dLogZ, exactDLogZ;
+  std::string d;
+  if (dbeta) {
+    real b(beta), db(0.00001);
+    beta = b+db;
+    dLogZ = getDLogZMp2(n);
+    beta = b-db;
+    dLogZ -= getDLogZMp2(n);
+    beta = b;
+    dLogZ /= -2*db;
+    exactDLogZ = getDLogZMp2(n+1);
+    d = "-dbeta";
+  } else {
+    Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
+    Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
+    real dmu( 0.00001 );
+    (*epsi)["i"] -= dmu; (*epsa)["a"] -= dmu;
+    dLogZ = getDLogZMp2(n, dbeta);
+    (*epsi)["i"] -= -2.0*dmu; (*epsa)["a"] -= -2.0*dmu;
+    dLogZ -= getDLogZMp2(n, dbeta);
+    (*epsi)["i"] -= dmu; (*epsa)["a"] -= dmu;
+    dLogZ /= 2*beta*dmu;
+    exactDLogZ = getDLogZMp2(n+1, dbeta);
+    d = "beta*dmu";
+  }
+  LOG(1, "FT-MP2") << "MP2 numerical(d^" << (n+1) << " log(Z(beta)) / (" << d
+    << ")^"  << (n+1) << " = " << dLogZ << std::endl;
+  LOG(1, "FT-MP2") << "MP2     exact(d^" << (n+1) << " log(Z(beta)) / (" << d
+    << ")^"  << (n+1) << " = " << exactDLogZ << std::endl;
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::testDLogZHf(
