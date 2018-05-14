@@ -31,12 +31,16 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   int Nv(Vabij->lens[0]), No(Vabij->lens[2]);
   int voov[] = {Nv, No, No, Nv};
   int oovv[] = {No, No, Nv, Nv};
-  auto Vaijb(NEW(Tensor<real>, 4, voov, Vabij->sym));
+  int vo[] = {Nv, No};
+  auto fVaijb(NEW(Tensor<real>, 4, voov, Vabij->sym));
   auto Vijab(NEW(Tensor<real>, 4, oovv, Vabij->sym));
-  (*Vaijb)["ajib"] = (*Vabij)["abij"];
+  CTF::Tensor<real> fai(2, vo, &Vabij->sym[1]);
+  thermalContraction(fai);
+  (*fVaijb)["ajib"] = (*Vabij)["abij"] * fai["ai"];
   (*Vijab)["ijab"] = (*Vabij)["abij"];
 
   // constant term:
+  LOG(1, "FT-DRCCD") << "constant term..." << std::endl;  
   CTF::Tensor<real> Sabij(*Vabij);
   thermalContraction(Sabij);
   Transform<real, real>(
@@ -47,11 +51,10 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   S1abij["abij"] -= Sabij["abij"];
 
   // linear terms:
-  CTF::Tensor<real> fai(2, &Vabij->lens[1], &Vabij->sym[1]);
-  thermalContraction(fai);
+  LOG(1, "FT-DRCCD") << "linear terms..." << std::endl;  
   //   T^I(tau_n-1):
-  Sabij["abij"] =  T0abij["acik"] * (*Vaijb)["bkjc"] * fai["bj"];
-  Sabij["abij"] += T0abij["dblj"] * (*Vaijb)["alid"] * fai["ai"];
+  Sabij["abij"] =  T0abij["acik"] * (*fVaijb)["bkjc"];
+  Sabij["abij"] += T0abij["dblj"] * (*fVaijb)["alid"];
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution0(DTau) )
   ) (
@@ -59,15 +62,16 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   );
   S1abij["abij"] -= Sabij["abij"];
   //   T^I(tau_n):
-  Sabij["abij"] =  T1abij["acik"] * (*Vaijb)["bkjc"] * fai["bj"];
-  Sabij["abij"] += T1abij["dblj"] * (*Vaijb)["alid"] * fai["ai"];
+  Sabij["abij"] =  T1abij["acik"] * (*fVaijb)["bkjc"];
+  Sabij["abij"] += T1abij["dblj"] * (*fVaijb)["alid"];
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution1(DTau) )
   ) (
     (*Dabij)["abij"], Sabij["abij"]
   );
   S1abij["abij"] -= Sabij["abij"];
-  
+
+  LOG(1, "FT-DRCCD") << "quadratic terms..." << std::endl;  
   // quadratic terms:
   //   T^I1(tau_n-1)*T^I2(tau_n-1)
   Sabij["abij"] =  T0abij["acik"] * (*Vijab)["klcd"] * T0abij["dblj"];
