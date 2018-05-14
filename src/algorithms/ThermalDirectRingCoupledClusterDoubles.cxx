@@ -26,9 +26,15 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   const real DTau,
   CTF::Tensor<real> &S1abij
 ) {
-  auto Vabij(getTensorArgument<real>("PPHHCoulombIntegrals"));
-  auto Vaijb(getTensorArgument<real>("PHHPCoulombIntegrals"));
-  auto Vijab(getTensorArgument<real>("HHPPCoulombIntegrals"));
+  auto Vabij(getTensorArgument<real>("ThermalPPHHCoulombIntegrals"));
+  // TODO: only for real code:
+  int Nv(Vabij->lens[0]), No(Vabij->lens[2]);
+  int voov[] = {Nv, No, No, Nv};
+  int oovv[] = {No, No, Nv, Nv};
+  auto Vaijb(NEW(Tensor<real>, 4, voov, Vabij->sym));
+  auto Vijab(NEW(Tensor<real>, 4, oovv, Vabij->sym));
+  (*Vaijb)["ajib"] = (*Vabij)["abij"];
+  (*Vijab)["ijab"] = (*Vabij)["abij"];
 
   // constant term:
   CTF::Tensor<real> Sabij(*Vabij);

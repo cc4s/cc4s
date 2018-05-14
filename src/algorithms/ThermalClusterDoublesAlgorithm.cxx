@@ -33,7 +33,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   std::vector<real> tauWeights(twn->lens[0]);
   twn->read_all(tauWeights.data());
 
-  auto Vabij( getTensorArgument<real>("PPHHCoulombIntegrals") );
+  auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
   // get energy differences for propagation
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
   fetchDelta(*Dabij);
