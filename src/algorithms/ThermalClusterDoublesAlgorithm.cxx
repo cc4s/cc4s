@@ -33,72 +33,64 @@ void ThermalClusterDoublesAlgorithm::run() {
   std::vector<real> tauWeights(twn->lens[0]);
   twn->read_all(tauWeights.data());
 
-  auto Vabij( getTensorArgument<complex>("PPHHCoulombIntegrals") );
+  auto Vabij( getTensorArgument<real>("PPHHCoulombIntegrals") );
   // get energy differences for propagation
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
   fetchDelta(*Dabij);
 
-  // allocate doubles amplitudes on imaginary time and frequency grid
+  // allocate doubles amplitudes on imaginary time grid
   Tabijn.resize(taus.size());
   for (size_t n(0); n < taus.size(); ++n) {
     Tabijn[n] = NEW(CTF::Tensor<real>, false, *Vabij);
   }
 
   real energy;
+  real spins(2.0);
   // number of iterations for determining the amplitudes
   int maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );
   for (int i(0); i < maxIterationsCount; ++i) {
-/*
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
+    real tau0(0.0);
+    CTF::Tensor<real> T0abij(false, *Vabij);
+    CTF::Tensor<real> S1abij(false, *Vabij);
+    CTF::Scalar<real> direct, exchange;
     for (size_t n(0); n < taus.size(); ++n) {
-      LOG(1, getCapitalizedAbbreviation())
-        << "computing residues at tau_" << n << "=" << taus[n] << std::endl;
-      // iterate amplitudes on time grid
-      getResiduum(*Tabijn[n]);
-    }
-    // transform to frequency grid
-    LOG(1, getCapitalizedAbbreviation())
-      << "transforming to frequency grid" << std::endl;
-    for (size_t v(0); v < nus.size(); ++v) {
-      Tabijv[v]->sum(LTvn(v,0), *Tabijn[0],"abij", 0.0,"abij");
-      for (size_t n(1); n < taus.size(); ++n) {
-        Tabijv[v]->sum(LTvn(v,n), *Tabijn[n],"abij", 1.0,"abij");
-      }
-    }
-    // convolve with propagator
-    class Convolution {
-    public:
-      Convolution(real nu_, real eta_): nu(nu_), eta(eta_) { }
-      void operator()(real Delta, complex &T) {
-        T /= complex(Delta+eta, nu);
-      }
-    protected:
-      real nu, eta;
-    };
-    for (size_t v(0); v < nus.size(); ++v) {
-      LOG(1, getCapitalizedAbbreviation())
-        << "computing convolution at nu_" << v << "=" << nus[v] << std::endl;
-      Convolution convolution(nus[v], eta);
-      CTF::Transform<real, complex>(
-        std::function<void(real, complex &)>(convolution)
-      ) (
-        (*Dabij)["abij"], (*Tabijv[v])["abij"]
-      );
-    }
+      real DTau(taus[n] - tau0);
+      // energy contribution from previously convolved amplitudes S^I(tau_n-1)
+      direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
+      exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
 
-    // transform to time grid
-    LOG(1, getCapitalizedAbbreviation())
-      << "transforming back to time grid" << std::endl;
-    for (size_t n(1); n < taus.size(); ++n) {
-      Tabijn[n]->sum(invLTnv(n,0), *Tabijv[0],"abij", 0.0,"abij");
-      for (size_t v(0); v < nus.size(); ++v) {
-        Tabijn[n]->sum(invLTnv(n,v), *Tabijv[v],"abij", 1.0,"abij");
+      // get T0abij at tau_n-1 and write previously convolved amplitudes
+      // note T(0) is implicitly 0
+      if (n > 0) {
+        T0abij["abij"] = (*Tabijn[n-1])["abij"];
+        (*Tabijn[n-1]) = S1abij["abij"];
       }
+
+      LOG(1, getCapitalizedAbbreviation())
+        << "convolving amplitudes at tau_" << n << "=" << taus[n] << std::endl;
+
+      // propagate previously convolved amplitudes S^I(tau_n-1) to this tau_n
+      Transform<real, real>(
+        std::function<void(real, real &)>( ImaginaryTimePropagation(DTau) )
+      ) (
+        (*Dabij)["abij"], S1abij["abij"]
+      );
+
+      // apply hamiltonian between tau_n-1 and tau_n to update to S^I(tau_n)
+      applyHamiltonian(T0abij, *Tabijn[n], DTau, S1abij);
+
+      // energy contribution from convolved amplitudes S^I(tau_n)
+      direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
+      exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
     }
-*/
-    energy = 0.0;
+    real d(direct.get_val());
+    real x(exchange.get_val());
+    energy = d + x;
+    LOG(2, getCapitalizedAbbreviation()) << "e_d=" << d << std::endl;
+    LOG(2, getCapitalizedAbbreviation()) << "e_x=" << x << std::endl;
     LOG(1, getCapitalizedAbbreviation()) << "e=" << energy << std::endl;
   }
 

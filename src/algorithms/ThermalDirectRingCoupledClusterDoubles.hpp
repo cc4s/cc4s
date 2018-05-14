@@ -25,9 +25,10 @@ namespace cc4s {
 
   protected:
     virtual void applyHamiltonian(
-      const CTF::Tensor<real> &T0abij,
+      CTF::Tensor<real> &T0abij,
       CTF::Tensor<real> &T1abij,
-      real DTau
+      const real DTau,
+      CTF::Tensor<real> &C1abij
     );
   };
 }

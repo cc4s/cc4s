@@ -59,15 +59,16 @@ namespace cc4s {
     /**
      */
     virtual void applyHamiltonian(
-      const CTF::Tensor<real> &T0abij,
+      CTF::Tensor<real> &T0abij,
       CTF::Tensor<real> &T1abij,
-      real DTau
+      const real DTau,
+      CTF::Tensor<real> &S1abij
     ) = 0;
 
     std::string getCapitalizedAbbreviation();
-    std::string getAmplitudeIndices(CTF::Tensor<> &T);
-    void fetchDelta(CTF::Tensor<> &Delta);
-    void thermalContraction(CTF::Tensor<> &T);
+    std::string getAmplitudeIndices(CTF::Tensor<real> &T);
+    void fetchDelta(CTF::Tensor<real> &Delta);
+    void thermalContraction(CTF::Tensor<real> &T);
 
     class ImaginaryTimeTransform {
     protected:
@@ -78,62 +79,137 @@ namespace cc4s {
       real DTau;
     };
 
-    class FreeImaginaryTimePropagation: public ImaginaryTimeTransform {
+    class ImaginaryTimePropagation: public ImaginaryTimeTransform {
     public:
-      FreeImaginaryTimePropagation(
+      ImaginaryTimePropagation(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
       }
-      void operator ()(const real Delta, real &T) const {
-        T *= std::exp(-Delta*DTau);
+      void operator ()(const real DeltaJ, real &T) const {
+        T *= std::exp(-DeltaJ*DTau);
       }
     };
 
-    // convolves the T^I(tau_m-1) contribution to T'^I(tau_m)
-    // = f^(J\I) * (1-(1+DeltaJ*Tau)*exp(-DeltaJ*Tau))/(DeltaJ^2*Tau)
-    class BeginConvolution: public ImaginaryTimeTransform {
+    // constant V^J=C contribution to T'^J(tau_m),
+    // independent of the amplitudes T^I(tau)
+    // = f^(J/I) * int_0^Tau dtau exp(-DeltaJ*(Tau-tau))
+    class ConvolutionC: public ImaginaryTimeTransform {
     public:
       static constexpr real SMALL = 1e-6;
-      BeginConvolution(
+      ConvolutionC(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
       }
-      // \brief Requires P = log(f^(J\I))
-      void operator ()(const real DeltaJ, real &P) {
+      // \brief Requires T = f^J
+      void operator ()(const real DeltaJ, real &T) const {
         const real x(DTau*DeltaJ);
-        if (x > SMALL) {
-          P += std::log1p(-(1+x)*std::exp(-x)) - std::log(+x);
-          P = std::exp(P) / (+DeltaJ);
-        } else if (x < -SMALL) {
-          P += std::log1p(-(1+x)*std::exp(-x)) - std::log(-x);
-          P = std::exp(P) / (-DeltaJ);
+        if (std::abs(x) < SMALL) {
+          T *= DTau * ( 1 - x*(1./2 - x*(1./6 - x/24)) );
         } else {
-          P = std::exp(P) * DTau * ( 0.5 - x*(1./3 + x*(1./8 - x/30)) );
+          T *= (1-std::exp(-x))/DeltaJ;
         }
       }
     };
-  };
 
-    // convolves the T^I(tau_m) contribution to T'^I(tau_m)
-    // = f^(J/I) * (DeltaJ*Tau-(1-exp(-DeltaJ*Tau)))/(DeltaJ^2*Tau)
-    class EndConvolution: public ImaginaryTimeTransform {
+    // linear T^I(tau_m-1)=T0 contribution to T'^J(tau_m)
+    // = f^(J/I) * int_0^Tau dtau (Tau-tau)/Tau * exp(-DeltaJ*(Tau-tau))
+    class Convolution0: public ImaginaryTimeTransform {
     public:
       static constexpr real SMALL = 1e-6;
-      static constexpr real LARGE = 42.0;
-      EndConvolution(
+      Convolution0(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
       }
-      // \brief Requires P = log(f^(J\I))
-      void operator ()(const real DeltaJ, real &P) {
+      // \brief Requires T = f^(J\I)
+      void operator ()(const real DeltaJ, real &T) {
         const real x(DTau*DeltaJ);
         if (std::abs(x) < SMALL) {
-          P = std::exp(P) * DTau * ( 0.5 - x*(1./6 + x*(1./24 - x/120)) );
-        } else if (x > -LARGE) {
-          P = std::exp(P) * (1-(1-std::exp(-x))/x) / DeltaJ;
-        } else
-          P += -x - std::log(-x);
-          P = std::exp(P) / (-DeltaJ);
+          T *= DTau * ( 1./2 - x*(1./3 - x*(1./8 - x/30)) );
+        } else {
+          T *= (1-(1+x)*std::exp(-x)) / (x*DeltaJ);
+        }
+      }
+    };
+
+    // linear T^I(tau_m)=T1 contribution to T'^J(tau_m)
+    // = f^(J/I) * int_0^Tau dtau tau/Tau * exp(-DeltaJ*(Tau-tau))
+    class Convolution1: public ImaginaryTimeTransform {
+    public:
+      static constexpr real SMALL = 1e-6;
+      Convolution1(
+        real DTau_
+      ): ImaginaryTimeTransform(DTau_) {
+      }
+      // \brief Requires T = f^(J\I)
+      void operator ()(const real DeltaJ, real &T) {
+        const real x(DTau*DeltaJ);
+        if (std::abs(x) < SMALL) {
+          T *= DTau * ( 1./2 - x*(1./6 - x*(1./24 - x/120)) );
+        } else {
+          T *= (1-(1-std::exp(-x))/x) / DeltaJ;
+        }
+      }
+    };
+
+    // quadratic T^I1(tau_m-1)*T^I2(tau_m-1)=T0*T0 contribution to T'^J(tau_m)
+    // = f^(J/I)
+    // * int_0^Tau dtau (Tau-tau)/Tau * (Tau-tau)/Tau * exp(-DeltaJ*(Tau-tau))
+    class Convolution00: public ImaginaryTimeTransform {
+    public:
+      static constexpr real SMALL = 1e-6;
+      Convolution00(
+        real DTau_
+      ): ImaginaryTimeTransform(DTau_) {
+      }
+      // \brief Requires T = f^(J\I)
+      void operator ()(const real DeltaJ, real &T) {
+        const real x(DTau*DeltaJ);
+        if (std::abs(x) < SMALL) {
+          T *= DTau * ( 1./3 - x*(1./4 - x*(1./10 - x/36)) );
+        } else {
+          T *= (2-((2+2*x+x*x)*std::exp(-x))) / (x*x*DeltaJ);
+        }
+      }
+    };
+
+    // quadratic T^I1(tau_m-1)*T^I2(tau_m)=T0*T1 contribution to T'^J(tau_m)
+    // = f^(J/I)
+    // * int_0^Tau dtau (Tau-tau)/Tau * tau/Tau * exp(-DeltaJ*(Tau-tau))
+    class Convolution01: public ImaginaryTimeTransform {
+    public:
+      static constexpr real SMALL = 1e-6;
+      Convolution01(
+        real DTau_
+      ): ImaginaryTimeTransform(DTau_) {
+      }
+      // \brief Requires T = f^(J\I)
+      void operator ()(const real DeltaJ, real &T) {
+        const real x(DTau*DeltaJ);
+        if (std::abs(x) < SMALL) {
+          T *= DTau * ( 1./6 - x*(1./12 - x*(1./40 - x/180)) );
+        } else {
+          T *= ((x-2)+((x+2)*std::exp(-x))) / (x*x*DeltaJ);
+        }
+      }
+    };
+
+    // quadratic T^I1(tau_m)*T^I2(tau_m)=T1*T1 contribution to T'^J(tau_m)
+    // = f^(J/I)
+    // * int_0^Tau dtau tau/Tau * tau/Tau * exp(-DeltaJ*(Tau-tau))
+    class Convolution11: public ImaginaryTimeTransform {
+    public:
+      static constexpr real SMALL = 1e-6;
+      Convolution11(
+        real DTau_
+      ): ImaginaryTimeTransform(DTau_) {
+      }
+      // \brief Requires T = f^(J\I)
+      void operator ()(const real DeltaJ, real &T) {
+        const real x(DTau*DeltaJ);
+        if (std::abs(x) < SMALL) {
+          T *= DTau * ( 1./3 - x*(1./12 - x*(1./60 - x/360)) );
+        } else {
+          T *= ((2-2*x+x*x)-(2*std::exp(-x)))/ (x*x*DeltaJ);
         }
       }
     };
