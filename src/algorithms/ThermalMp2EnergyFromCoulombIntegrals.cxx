@@ -50,9 +50,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   testDLogZH0(2);
   testDLogZHf(0, D_MU);
   testDLogZHf(1, D_MU);
-*/
   testDLogZMp2(0, D_MU);
   testDLogZMp2(1, D_MU);
+*/
 
   computeFreeEnergy();
   computeEnergyMoments();

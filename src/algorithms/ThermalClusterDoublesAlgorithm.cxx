@@ -46,6 +46,8 @@ void ThermalClusterDoublesAlgorithm::run() {
 
   real energy;
   real spins(2.0);
+  CTF::Tensor<real> T0abij(false, *Vabij);
+  CTF::Tensor<real> S1abij(false, *Vabij);
   // number of iterations for determining the amplitudes
   int maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
@@ -53,9 +55,10 @@ void ThermalClusterDoublesAlgorithm::run() {
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
     real tau0(0.0);
-    CTF::Tensor<real> T0abij(false, *Vabij);
-    CTF::Tensor<real> S1abij(false, *Vabij);
+    T0abij["abij"] = 0.0;
+    S1abij["abij"] = 0.0;
     CTF::Scalar<real> direct, exchange;
+    real d, x;
     for (size_t n(0); n < taus.size(); ++n) {
       real DTau(taus[n] - tau0);
       // energy contribution from previously convolved amplitudes S^I(tau_n-1)
@@ -66,11 +69,12 @@ void ThermalClusterDoublesAlgorithm::run() {
       // note T(0) is implicitly 0
       if (n > 0) {
         T0abij["abij"] = (*Tabijn[n-1])["abij"];
-        (*Tabijn[n-1]) = S1abij["abij"];
+        (*Tabijn[n-1])["abij"] = S1abij["abij"];
       }
 
       LOG(1, getCapitalizedAbbreviation())
-        << "convolving amplitudes at tau_" << n << "=" << taus[n] << std::endl;
+        << "convolving amplitudes at tau_" << (n+1) << "=" << taus[n]
+        << std::endl;
 
       // propagate previously convolved amplitudes S^I(tau_n-1) to this tau_n
       Transform<real, real>(
@@ -85,13 +89,15 @@ void ThermalClusterDoublesAlgorithm::run() {
       // energy contribution from convolved amplitudes S^I(tau_n)
       direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
       exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
+      d = direct.get_val();
+      x = exchange.get_val();
+      LOG(2, getCapitalizedAbbreviation()) << "e_d=" << d/beta << std::endl;
+      LOG(2, getCapitalizedAbbreviation()) << "e_x=" << x/beta << std::endl;
+
+      tau0 = taus[n];
     }
-    real d(direct.get_val());
-    real x(exchange.get_val());
     energy = d + x;
-    LOG(2, getCapitalizedAbbreviation()) << "e_d=" << d << std::endl;
-    LOG(2, getCapitalizedAbbreviation()) << "e_x=" << x << std::endl;
-    LOG(1, getCapitalizedAbbreviation()) << "e=" << energy << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << "e=" << energy/beta << std::endl;
   }
 
   std::stringstream energyName;

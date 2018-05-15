@@ -40,6 +40,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   (*Vijab)["ijab"] = (*Vabij)["abij"];
 
   // constant term:
+  real spins(2.0);
   LOG(1, "FT-DRCCD") << "constant term..." << std::endl;  
   CTF::Tensor<real> Sabij(*Vabij);
   thermalContraction(Sabij);
@@ -50,11 +51,13 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   );
   S1abij["abij"] -= Sabij["abij"];
 
+/*
   // linear terms:
   LOG(1, "FT-DRCCD") << "linear terms..." << std::endl;  
   //   T^I(tau_n-1):
   Sabij["abij"] =  T0abij["acik"] * (*fVaijb)["bkjc"];
   Sabij["abij"] += T0abij["dblj"] * (*fVaijb)["alid"];
+  Sabij["abij"] *= spins;
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution0(DTau) )
   ) (
@@ -64,6 +67,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   //   T^I(tau_n):
   Sabij["abij"] =  T1abij["acik"] * (*fVaijb)["bkjc"];
   Sabij["abij"] += T1abij["dblj"] * (*fVaijb)["alid"];
+  Sabij["abij"] *= spins;
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution1(DTau) )
   ) (
@@ -72,9 +76,11 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   S1abij["abij"] -= Sabij["abij"];
 
   LOG(1, "FT-DRCCD") << "quadratic terms..." << std::endl;  
+
   // quadratic terms:
   //   T^I1(tau_n-1)*T^I2(tau_n-1)
-  Sabij["abij"] =  T0abij["acik"] * (*Vijab)["klcd"] * T0abij["dblj"];
+  Sabij["abij"] = T0abij["acik"] * (*Vijab)["klcd"] * T0abij["dblj"];
+  Sabij["abij"] *= spins*spins;
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution00(DTau) )
   ) (
@@ -84,6 +90,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   //   T^I1(tau_n-1)*T^I2(tau_n) and T^I1(tau_n)*T^I2(tau_n-1)
   Sabij["abij"] =  T0abij["acik"] * (*Vijab)["klcd"] * T1abij["dblj"];
   Sabij["abij"] += T1abij["acik"] * (*Vijab)["klcd"] * T0abij["dblj"];
+  Sabij["abij"] *= spins*spins;
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution01(DTau) )
   ) (
@@ -92,10 +99,12 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   S1abij["abij"] -= Sabij["abij"];
   //   T^I1(tau_n)*T^I2(tau_n)
   Sabij["abij"] =  T1abij["acik"] * (*Vijab)["klcd"] * T1abij["dblj"];
+  Sabij["abij"] *= spins*spins;
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution11(DTau) )
   ) (
     (*Dabij)["abij"], Sabij["abij"]
   );
+*/
 }
 
