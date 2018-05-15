@@ -38,10 +38,13 @@ void ThermalClusterDoublesAlgorithm::run() {
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
   fetchDelta(*Dabij);
 
+//  std::vector<PTR(CTF::Tensor<real>)> Sabijn(taus.size());
+
   // allocate doubles amplitudes on imaginary time grid
   Tabijn.resize(taus.size());
   for (size_t n(0); n < taus.size(); ++n) {
     Tabijn[n] = NEW(CTF::Tensor<real>, false, *Vabij);
+//    Sabijn[n] = NEW(CTF::Tensor<real>, false, *Vabij);
   }
 
   real energy;
@@ -86,18 +89,44 @@ void ThermalClusterDoublesAlgorithm::run() {
       // apply hamiltonian between tau_n-1 and tau_n to update to S^I(tau_n)
       applyHamiltonian(T0abij, *Tabijn[n], DTau, S1abij);
 
+//      (*Sabijn[n])["abij"] = S1abij["abij"];
+
       // energy contribution from convolved amplitudes S^I(tau_n)
       direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
       exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
       d = direct.get_val();
       x = exchange.get_val();
-      LOG(2, getCapitalizedAbbreviation()) << "e_d=" << d/beta << std::endl;
-      LOG(2, getCapitalizedAbbreviation()) << "e_x=" << x/beta << std::endl;
+      LOG(2, getCapitalizedAbbreviation()) << "F_d=" << d/beta << std::endl;
+      LOG(2, getCapitalizedAbbreviation()) << "F_x=" << x/beta << std::endl;
 
       tau0 = taus[n];
+//      T0abij["abij"] = (*Tabijn[n])["abij"];
     }
+    (*Tabijn[taus.size()-1])["abij"] = S1abij["abij"];
+
+    // swap amplitudes
+//    for (size_t n(0); n < taus.size(); ++n) {
+//      std::swap(Tabijn[n], Sabijn[n]);
+//    }
+    
     energy = d + x;
-    LOG(1, getCapitalizedAbbreviation()) << "e=" << energy/beta << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/beta << std::endl;
+  }
+
+  if (isArgumentGiven("plotAmplitudes")) {
+    auto Aai(new CTF::Tensor<real>(2, &S1abij.lens[1], &S1abij.sym[1]));
+    (*Aai)["ai"] = S1abij["aaii"];
+    allocatedTensorArgument<real>("plotAmplitudes", Aai);
+  }
+  if (isArgumentGiven("plotDeltas")) {
+    auto Dai(new CTF::Tensor<real>(2, &S1abij.lens[1], &S1abij.sym[1]));
+    (*Dai)["ai"] = (*Dabij)["aaii"];
+    allocatedTensorArgument<real>("plotDeltas", Dai);
+  }
+  if (isArgumentGiven("plotCoulomb")) {
+    auto Vai(new CTF::Tensor<real>(2, &S1abij.lens[1], &S1abij.sym[1]));
+    (*Vai)["ai"] = (*Vabij)["aaii"];
+    allocatedTensorArgument<real>("plotCoulomb", Vai);
   }
 
   std::stringstream energyName;
@@ -150,9 +179,9 @@ void ThermalClusterDoublesAlgorithm::thermalContraction(Tensor<> &T) {
   const int excitationLevel(T.order/2);
   for (int i(0); i < excitationLevel; ++i) {
     char aIndex[] = {static_cast<char>('a'+i), 0};
-    T[indices.c_str()] *= (*Na)[aIndex];;
+    T[indices.c_str()] *= (*Na)[aIndex];
     char iIndex[] = {static_cast<char>('i'+i), 0};
-    T[indices.c_str()] *= (*Ni)[iIndex];;
+    T[indices.c_str()] *= (*Ni)[iIndex];
   }
 }
 

@@ -95,7 +95,7 @@ namespace cc4s {
     // = f^(J/I) * int_0^Tau dtau exp(-DeltaJ*(Tau-tau))
     class ConvolutionC: public ImaginaryTimeTransform {
     public:
-      static constexpr real SMALL = 1e-6;
+      static constexpr real SMALL = 1e-2;
       ConvolutionC(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
@@ -104,9 +104,15 @@ namespace cc4s {
       void operator ()(const real DeltaJ, real &T) const {
         const real x(DTau*DeltaJ);
         if (std::abs(x) < SMALL) {
-          T *= DTau * ( 1 - x*(1./2 - x*(1./6 - x/24)) );
+          T *= DTau * (
+            1. - x*(
+              1./2 - x*(
+                1./6 - x*(1./24 - x*(1./120 - x*(1./720 - x/5040)))
+              )
+            )
+          );
         } else {
-          T *= (1-std::exp(-x))/DeltaJ;
+          T *= (1-std::exp(-x)) / DeltaJ;
         }
       }
     };
@@ -115,7 +121,7 @@ namespace cc4s {
     // = f^(J/I) * int_0^Tau dtau (Tau-tau)/Tau * exp(-DeltaJ*(Tau-tau))
     class Convolution0: public ImaginaryTimeTransform {
     public:
-      static constexpr real SMALL = 1e-6;
+      static constexpr real SMALL = 1e-1;
       Convolution0(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
@@ -124,9 +130,17 @@ namespace cc4s {
       void operator ()(const real DeltaJ, real &T) {
         const real x(DTau*DeltaJ);
         if (std::abs(x) < SMALL) {
-          T *= DTau * ( 1./2 - x*(1./3 - x*(1./8 - x/30)) );
+          T *= DTau * (
+            1./2 - x*(
+              1./3 - x*(
+                1./8 - x*(
+                  1./30 - x*(1./144 - x*(1./840 - x*(1./5760 - x/45360)))
+                )
+              )
+            )
+          );
         } else {
-          T *= (1-(1+x)*std::exp(-x)) / (x*DeltaJ);
+          T *= (1-(x+1)*std::exp(-x)) / (x*DeltaJ);
         }
       }
     };
@@ -135,7 +149,7 @@ namespace cc4s {
     // = f^(J/I) * int_0^Tau dtau tau/Tau * exp(-DeltaJ*(Tau-tau))
     class Convolution1: public ImaginaryTimeTransform {
     public:
-      static constexpr real SMALL = 1e-6;
+      static constexpr real SMALL = 1e-1;
       Convolution1(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
@@ -144,13 +158,22 @@ namespace cc4s {
       void operator ()(const real DeltaJ, real &T) {
         const real x(DTau*DeltaJ);
         if (std::abs(x) < SMALL) {
-          T *= DTau * ( 1./2 - x*(1./6 - x*(1./24 - x/120)) );
+          T *= DTau * (
+            1./2 - x*(
+              1./6 - x*(
+                1./24 - x*(
+                  1./120 - x*(1./720 - x*(1./5040 - x*(1./40320 - x/362880)))
+                )
+              )
+            )
+          );
         } else {
-          T *= (1-(1-std::exp(-x))/x) / DeltaJ;
+          T *= (std::exp(-x)+x-1) / (x*DeltaJ);
         }
       }
     };
 
+    // TODO: improve low x behaviour
     // quadratic T^I1(tau_m-1)*T^I2(tau_m-1)=T0*T0 contribution to T'^J(tau_m)
     // = f^(J/I)
     // * int_0^Tau dtau (Tau-tau)/Tau * (Tau-tau)/Tau * exp(-DeltaJ*(Tau-tau))

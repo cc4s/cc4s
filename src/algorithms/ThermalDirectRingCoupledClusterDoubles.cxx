@@ -35,9 +35,14 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   auto fVaijb(NEW(Tensor<real>, 4, voov, Vabij->sym));
   auto Vijab(NEW(Tensor<real>, 4, oovv, Vabij->sym));
   CTF::Tensor<real> fai(2, vo, &Vabij->sym[1]);
+  fai["ai"] = 1.0;
   thermalContraction(fai);
   (*fVaijb)["ajib"] = (*Vabij)["abij"] * fai["ai"];
   (*Vijab)["ijab"] = (*Vabij)["abij"];
+
+  real t0(T0abij.norm2()), t1(T1abij.norm2());
+  LOG(1, "FT-DRCCD") << "|T^I(tau_n-1)|=" << t0 << std::endl;
+  LOG(1, "FT-DRCCD") << "|T^I(tau_n)|=" << t1 << std::endl;
 
   // constant term:
   real spins(2.0);
@@ -51,7 +56,6 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   );
   S1abij["abij"] -= Sabij["abij"];
 
-/*
   // linear terms:
   LOG(1, "FT-DRCCD") << "linear terms..." << std::endl;  
   //   T^I(tau_n-1):
@@ -75,8 +79,8 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   );
   S1abij["abij"] -= Sabij["abij"];
 
+/*
   LOG(1, "FT-DRCCD") << "quadratic terms..." << std::endl;  
-
   // quadratic terms:
   //   T^I1(tau_n-1)*T^I2(tau_n-1)
   Sabij["abij"] = T0abij["acik"] * (*Vijab)["klcd"] * T0abij["dblj"];
