@@ -38,13 +38,10 @@ void ThermalClusterDoublesAlgorithm::run() {
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
   fetchDelta(*Dabij);
 
-//  std::vector<PTR(CTF::Tensor<real>)> Sabijn(taus.size());
-
   // allocate doubles amplitudes on imaginary time grid
   Tabijn.resize(taus.size());
   for (size_t n(0); n < taus.size(); ++n) {
     Tabijn[n] = NEW(CTF::Tensor<real>, false, *Vabij);
-//    Sabijn[n] = NEW(CTF::Tensor<real>, false, *Vabij);
   }
 
   real energy;
@@ -55,13 +52,13 @@ void ThermalClusterDoublesAlgorithm::run() {
   int maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
   );
+  real d, x;
   for (int i(0); i < maxIterationsCount; ++i) {
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
     real tau0(0.0);
     T0abij["abij"] = 0.0;
     S1abij["abij"] = 0.0;
     CTF::Scalar<real> direct, exchange;
-    real d, x;
     for (size_t n(0); n < taus.size(); ++n) {
       real DTau(taus[n] - tau0);
       // energy contribution from previously convolved amplitudes S^I(tau_n-1)
@@ -89,26 +86,17 @@ void ThermalClusterDoublesAlgorithm::run() {
       // apply hamiltonian between tau_n-1 and tau_n to update to S^I(tau_n)
       applyHamiltonian(T0abij, *Tabijn[n], DTau, S1abij);
 
-//      (*Sabijn[n])["abij"] = S1abij["abij"];
-
       // energy contribution from convolved amplitudes S^I(tau_n)
       direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
       exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
       d = direct.get_val();
       x = exchange.get_val();
-      LOG(2, getCapitalizedAbbreviation()) << "F_d=" << d/beta << std::endl;
-      LOG(2, getCapitalizedAbbreviation()) << "F_x=" << x/beta << std::endl;
+      LOG(2, getCapitalizedAbbreviation()) << "F_d=" << d/taus[n] << std::endl;
+      LOG(2, getCapitalizedAbbreviation()) << "F_x=" << x/taus[n] << std::endl;
 
       tau0 = taus[n];
-//      T0abij["abij"] = (*Tabijn[n])["abij"];
     }
     (*Tabijn[taus.size()-1])["abij"] = S1abij["abij"];
-
-    // swap amplitudes
-//    for (size_t n(0); n < taus.size(); ++n) {
-//      std::swap(Tabijn[n], Sabijn[n]);
-//    }
-    
     energy = d + x;
     LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/beta << std::endl;
   }
