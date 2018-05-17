@@ -18,7 +18,6 @@ ThermalClusterDoublesAlgorithm::ThermalClusterDoublesAlgorithm(
 }
 
 ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
-  
 }
 
 void ThermalClusterDoublesAlgorithm::run() {
@@ -48,18 +47,23 @@ void ThermalClusterDoublesAlgorithm::run() {
   real spins(2.0);
   CTF::Tensor<real> T0abij(false, *Vabij);
   CTF::Tensor<real> S1abij(false, *Vabij);
-  // number of iterations for determining the amplitudes
-  int maxIterationsCount(
-    getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
+  // number of iterations for determining the amplitudes at each point in time
+  int outerIterationsCount(
+    getIntegerArgument("maxOuterIterations", DEFAULT_MAX_ITERATIONS)
+  );
+  int innerIterationsCount(
+    getIntegerArgument("maxInnerIterations", DEFAULT_MAX_ITERATIONS)
   );
   real d, x;
-  for (int i(0); i < maxIterationsCount; ++i) {
+  for (int I(0); I < outerIterationsCount; ++I) {
+  for (size_t N(1); N < taus.size(); ++N) {
+  for (int i(0); i < innerIterationsCount; ++i) {
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
     real tau0(0.0);
     T0abij["abij"] = 0.0;
     S1abij["abij"] = 0.0;
     CTF::Scalar<real> direct, exchange;
-    for (size_t n(0); n < taus.size(); ++n) {
+    for (size_t n(0); n <= N; ++n) {
       real DTau(taus[n] - tau0);
       // energy contribution from previously convolved amplitudes S^I(tau_n-1)
       direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
@@ -83,7 +87,7 @@ void ThermalClusterDoublesAlgorithm::run() {
         (*Dabij)["abij"], S1abij["abij"]
       );
 
-      // apply hamiltonian between tau_n-1 and tau_n to update to S^I(tau_n)
+      // apply hamiltonian between tau_n-1 and tau_n
       applyHamiltonian(T0abij, *Tabijn[n], DTau, S1abij);
 
       // energy contribution from convolved amplitudes S^I(tau_n)
@@ -96,9 +100,11 @@ void ThermalClusterDoublesAlgorithm::run() {
 
       tau0 = taus[n];
     }
-    (*Tabijn[taus.size()-1])["abij"] = S1abij["abij"];
+    (*Tabijn[N])["abij"] = S1abij["abij"];
     energy = d + x;
-    LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/beta << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/taus[N] << std::endl;
+  }
+  }
   }
 
   if (isArgumentGiven("plotAmplitudes")) {
@@ -128,7 +134,7 @@ void ThermalClusterDoublesAlgorithm::dryRun() {
 std::string ThermalClusterDoublesAlgorithm::getCapitalizedAbbreviation() {
   std::string abbreviation(getAbbreviation());
   std::transform(
-    abbreviation.begin(), abbreviation.end(), 
+    abbreviation.begin(), abbreviation.end(),
     abbreviation.begin(), ::toupper
   );
   return abbreviation;

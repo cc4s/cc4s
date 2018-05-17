@@ -61,6 +61,5 @@ namespace cc4s {
   }
 #endif
 }
-
 #endif
 
