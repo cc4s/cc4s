@@ -40,84 +40,74 @@ void ThermalClusterDoublesAlgorithm::run() {
   // number of iterations for determining the amplitudes at each point in time
   int I( getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS) );
   // allocate doubles amplitudes on imaginary time grid
-  Tabijn.resize(I * taus.size());
-  for (size_t n(0); n < I * taus.size(); ++n) {
+  Tabijn.resize(taus.size());
+  for (size_t n(0); n < taus.size(); ++n) {
     Tabijn[n] = NEW(CTF::Tensor<real>, false, *Vabij);
   }
-  std::vector<real> energies(I * taus.size());
+  std::vector<real> energies(taus.size());
+
+  int R( getIntegerArgument("renormalizations", 5) );
 
   real energy;
   real spins(2.0);
   CTF::Tensor<real> T0abij(false, *Vabij);
   CTF::Tensor<real> S1abij(false, *Vabij);
   real d, x;
-  for (size_t N(0); N < taus.size(); ++N) {
-    for (int i(0); i < I; ++i) {
-      LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
-      real tau0(0.0);
-      T0abij["abij"] = 0.0;
-      S1abij["abij"] = 0.0;
-      CTF::Scalar<real> direct, exchange;
-      for (size_t n(0); n <= N; ++n) {
-        real DTau(taus[n] - tau0);
-        // energy contribution from previously convolved amplitudes S^I(tau_n-1)
-        direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
-        exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
+  for (int r(-R); r <= 0; ++r) {
+    real scale( std::pow(taus.back()/taus.front(),r) );
+    LOG(0, getCapitalizedAbbreviation()) << "renormalization level: " << r << std::endl;
+    for (size_t N(0); N < taus.size(); ++N) {
+      real lastEnergy(0);
+      for (int i(0); i < I; ++i) {
+        LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
+        real tau0(0.0);
+        T0abij["abij"] = 0.0;
+        S1abij["abij"] = 0.0;
+        CTF::Scalar<real> direct, exchange;
+        for (size_t n(0); n <= N; ++n) {
+          real tau1(scale*taus[n]);
+          real DTau(tau1-tau0);
+          // energy contribution from previously convolved amplitudes S^I(tau_n-1)
+          direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
+          exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
 
-        // get T0abij at tau_n-1 and write previously convolved amplitudes
-        // note T(0) is implicitly 0
-        if (n > 0) {
-          T0abij["abij"] = (*Tabijn[i+I*(n-1)])["abij"];
-          (*Tabijn[i+I*(n-1)])["abij"] = S1abij["abij"];
+          // get T0abij at tau_n-1 and write previously convolved amplitudes
+          // note T(0) is implicitly 0
+          if (n > 0) {
+            T0abij["abij"] = (*Tabijn[n-1])["abij"];
+            (*Tabijn[n-1])["abij"] = S1abij["abij"];
+          }
+
+          LOG(1, getCapitalizedAbbreviation())
+            << "convolving amplitudes at tau_" << (n+1) << "=" << tau1
+            << std::endl;
+
+          // propagate previously convolved amplitudes S^I(tau_n-1) to this tau_n
+          Transform<real, real>(
+            std::function<void(real, real &)>( ImaginaryTimePropagation(DTau) )
+          ) (
+            (*Dabij)["abij"], S1abij["abij"]
+          );
+
+          // apply hamiltonian between tau_n-1 and tau_n
+          applyHamiltonian(T0abij, *Tabijn[n], DTau, S1abij);
+
+          // energy contribution from convolved amplitudes S^I(tau_n)
+          direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
+          exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
+          d = direct.get_val();
+          x = exchange.get_val();
+          real a(S1abij.norm2());
+          LOG(2, getCapitalizedAbbreviation()) << "F_d=" << d/tau1 << std::endl;
+          LOG(2, getCapitalizedAbbreviation()) << "F_x=" << x/tau1 << std::endl;
+          LOG(2, getCapitalizedAbbreviation()) << "|T|=" << a << std::endl;
+          tau0 = tau1;
         }
-
-        LOG(1, getCapitalizedAbbreviation())
-          << "convolving amplitudes at tau_" << (n+1) << "=" << taus[n]
-          << std::endl;
-
-        // propagate previously convolved amplitudes S^I(tau_n-1) to this tau_n
-        Transform<real, real>(
-          std::function<void(real, real &)>( ImaginaryTimePropagation(DTau) )
-        ) (
-          (*Dabij)["abij"], S1abij["abij"]
-        );
-
-        // apply hamiltonian between tau_n-1 and tau_n
-        applyHamiltonian(T0abij, *Tabijn[i+I*n], DTau, S1abij);
-
-        // energy contribution from convolved amplitudes S^I(tau_n)
-        direct[""] += 0.5*spins*spins* DTau/2 * S1abij["abij"] * (*Vabij)["abij"];
-        exchange[""] -= 0.5*spins    * DTau/2 * S1abij["abij"] * (*Vabij)["abji"];
-        d = direct.get_val();
-        x = exchange.get_val();
-        real a(S1abij.norm2());
-        LOG(2, getCapitalizedAbbreviation()) << "F_d=" << d/taus[n] << std::endl;
-        LOG(2, getCapitalizedAbbreviation()) << "F_x=" << x/taus[n] << std::endl;
-        LOG(2, getCapitalizedAbbreviation()) << "|T|=" << a << std::endl;
-        tau0 = taus[n];
-      }
-      (*Tabijn[i+I*N])["abij"] = S1abij["abij"];
-      energies[i+I*N] = energy = d + x;
-      LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/taus[N] << std::endl;
-    }
-    // apply Shanks transform
-    for (int i(1); i < I-1; ++i) {
-      for (size_t n(0); n <= N; ++n) {
-/*
-        S1abij["abij"]  = (*Tabijn[(i+1)+I*n])["abij"];
-        S1abij["abij"] -= 2.0*(*Tabijn[i+I*n])["abij"];
-        S1abij["abij"] += (*Tabijn[(i-1)+I*n])["abij"];
-        (*Tabijn[(i-1)+I*n])["abij"] *= (*Tabijn[(i+1)+I*n])["abij"];
-        (*Tabijn[(i-1)+I*n])["abij"] -=
-          (*Tabijn[i+I*n])["abij"] * (*Tabijn[i+I*n])["abij"];
-        Transform<real, real>(
-          std::function<void(real, real &)>(
-            [](const real D, real &N){ N /= D; }
-          )
-       ) (
-          S1abij["abij"], (*Tabijn[(i-1)+I*n])["abij"]
-        );
-*/
+        (*Tabijn[N])["abij"] = S1abij["abij"];
+        energies[N] = energy = d + x;
+        LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/tau0 << std::endl;
+        if (std::abs(1-lastEnergy/energy) < 1e-6) break;
+        lastEnergy = energy;
       }
     }
   }
