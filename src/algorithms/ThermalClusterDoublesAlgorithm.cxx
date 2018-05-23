@@ -3,6 +3,9 @@
 #include <math/ComplexTensor.hpp>
 #include <math/IterativePseudoInverse.hpp>
 #include <util/LapackMatrix.hpp>
+#include <util/BlacsWorld.hpp>
+#include <util/ScaLapackMatrix.hpp>
+#include <util/ScaLapackHermitianEigenSystemDc.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -23,6 +26,9 @@ ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
 void ThermalClusterDoublesAlgorithm::run() {
   beta = 1 / getRealArgument("Temperature");
   LOG(1, getCapitalizedAbbreviation()) << "beta=" << beta << std::endl;
+
+  diagonalizeSinglesHamiltonian();
+  return;
 
   // get imaginary time and frequency grids on all nodes
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
@@ -182,5 +188,70 @@ void ThermalClusterDoublesAlgorithm::thermalContraction(Tensor<> &T) {
     char iIndex[] = {static_cast<char>('i'+i), 0};
     T[indices.c_str()] *= (*Ni)[iIndex];
   }
+}
+
+void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
+  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
+  Tensor<> *Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
+
+  Tensor<> fi(*Ni);
+  Transform<real>(
+    std::function<void(real &)>([](real &f) { f = std::sqrt(f); } )
+  ) (
+    (*Ni)["i"]
+  );
+  Tensor<> fa(*Na);
+  Transform<real>(
+    std::function<void(real &)>([](real &f) { f = std::sqrt(f); } )
+  ) (
+    (*Na)["a"]
+  );
+
+  // build to Hbjai
+  int Nv(epsa->lens[0]); int No(epsi->lens[0]);
+  int lens[] = { Nv,No, Nv,No };
+  auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
+  // bubble from H_1
+  (*Hbjai)["bjai"] = (*Vbija)["bija"];
+  (*Hbjai)["bjai"] *= fa["a"];
+  (*Hbjai)["bjai"] *= fa["b"];
+  (*Hbjai)["bjai"] *= fi["i"];
+  (*Hbjai)["bjai"] *= fi["j"];
+  // particle from H_0
+  (*Hbjai)["bjbj"] += (*epsa)["b"] * (*Na)["b"];
+  // hole from H_0, note
+  (*Hbjai)["bjbj"] -= (*epsi)["j"] * (*Ni)["j"];
+
+  // H(bj)(ai) = U.S.U^T, seen as a matrix with compound indices
+  BlacsWorld world(Hbjai->wrld->rank, Hbjai->wrld->np);
+  int NvNo(Nv*No);
+  int scaHLens[2] = { NvNo, NvNo };
+  auto scaHbjai(NEW(ScaLapackMatrix<>, *Hbjai, scaHLens, &world));
+  // release unneeded resources early
+  Hbjai = nullptr;
+
+  // use ScaLapack routines to diagonalise the matrix U.Lambda.U^T
+  auto scaU(NEW(ScaLapackMatrix<>, *scaHbjai));
+  ScaLapackHermitianEigenSystemDc<> eigenSystem(scaHbjai, scaU);
+  std::vector<real> lambdas(NvNo);
+  eigenSystem.solve(lambdas.data());
+  scaHbjai = nullptr;
+
+  // write unitary matrix U(ai)(F) back to CTF as tensor UaiF
+  int ULens[3] = { Nv, No, NvNo };
+  UaiF = NEW(Tensor<>, 3, ULens, Vbija->sym, *Vbija->wrld, "UaiF");
+  scaU->write(*UaiF);
+  scaU = nullptr;
+
+  // write Lambda and conj(sqrt(Lambda)) back to CTF
+  std::vector<int64_t> lambdaIndices(UaiF->wrld->rank == 0 ? NvNo : 0);
+  for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
+  auto LambdaF( new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda") );
+  LambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
+
+  allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", LambdaF);
 }
 

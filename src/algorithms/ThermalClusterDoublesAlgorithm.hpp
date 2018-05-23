@@ -1,4 +1,4 @@
-/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef THERMAL_CLUSTER_DOUBLES_ALGORITHM_DEFINED 
 #define THERMAL_CLUSTER_DOUBLES_ALGORITHM_DEFINED
 
@@ -55,6 +55,10 @@ namespace cc4s {
      **/
     real beta;
 
+    /**
+     * \brief eigenvectors of singles part of the Hamiltonian
+     **/
+    PTR(CTF::Tensor<>) UaiF;
 
     /**
      */
@@ -69,6 +73,8 @@ namespace cc4s {
     std::string getAmplitudeIndices(CTF::Tensor<real> &T);
     void fetchDelta(CTF::Tensor<real> &Delta);
     void thermalContraction(CTF::Tensor<real> &T);
+
+    void diagonalizeSinglesHamiltonian();
 
     class ImaginaryTimeTransform {
     protected:
