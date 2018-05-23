@@ -60,6 +60,8 @@ namespace cc4s {
      **/
     PTR(CTF::Tensor<>) UaiF;
 
+    CTF::Tensor<> *LambdaF;
+
     /**
      */
     virtual void applyHamiltonian(

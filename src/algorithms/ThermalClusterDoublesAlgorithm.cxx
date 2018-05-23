@@ -28,17 +28,59 @@ void ThermalClusterDoublesAlgorithm::run() {
   LOG(1, getCapitalizedAbbreviation()) << "beta=" << beta << std::endl;
 
   diagonalizeSinglesHamiltonian();
-  return;
 
   // get imaginary time and frequency grids on all nodes
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
   std::vector<real> taus(tn->lens[0]);
   tn->read_all(taus.data());
   auto twn( getTensorArgument<real>("ImaginaryTimeWeights") );
-  std::vector<real> tauWeights(twn->lens[0]);
-  twn->read_all(tauWeights.data());
+  std::vector<real> weights(twn->lens[0]);
+  twn->read_all(weights.data());
 
   auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
+
+  // compute Tamn-Dankoff Approximation (TDA)
+  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
+
+  Tensor<> fi(*Ni);
+  Transform<real>(
+    std::function<void(real &)>([](real &f) { f = std::sqrt(f); } )
+  ) (
+    (*Ni)["i"]
+  );
+  Tensor<> fa(*Na);
+  Transform<real>(
+    std::function<void(real &)>([](real &f) { f = std::sqrt(f); } )
+  ) (
+    (*Na)["a"]
+  );
+  Scalar<> e;
+  for (size_t n(0); n < taus.size()-1; ++n) {
+    for (size_t m(n+1); m < taus.size(); ++m) {
+      Tensor<> Uacik(false, *Vabij);
+      Tensor<> expTauLambdaF(*LambdaF);
+      real DTau(taus[m] - taus[n]);
+      Transform<real>(
+        std::function<void(real &)>(
+          [DTau](real &lambda) { lambda = std::exp(-lambda * DTau); }
+        )
+      ) (
+        expTauLambdaF["F"]
+      );
+      Uacik["acik"] = (*UaiF)["aiF"] * expTauLambdaF["F"] * (*UaiF)["ckF"];
+      e[""] += weights[n] * weights[m] *
+        (*Vabij)["abij"] * Uacik["acik"] * Uacik["bdjl"] * (*Vabij)["cdkl"];
+    }
+  }
+  real tda(-e.get_val() / beta);
+  LOG(0, getCapitalizedAbbreviation()) << "F=" << tda << std::endl;
+  std::stringstream energyName;
+  energyName << "Thermal" << getAbbreviation() << "Energy";
+  setRealArgument(energyName.str(), tda);
+
+  return;
+
   // get energy differences for propagation
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
   fetchDelta(*Dabij);
@@ -133,10 +175,6 @@ void ThermalClusterDoublesAlgorithm::run() {
     (*Vai)["ai"] = (*Vabij)["aaii"];
     allocatedTensorArgument<real>("plotCoulomb", Vai);
   }
-
-  std::stringstream energyName;
-  energyName << "Thermal" << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), energy);
 }
 
 void ThermalClusterDoublesAlgorithm::dryRun() {
@@ -249,7 +287,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   // write Lambda and conj(sqrt(Lambda)) back to CTF
   std::vector<int64_t> lambdaIndices(UaiF->wrld->rank == 0 ? NvNo : 0);
   for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
-  auto LambdaF( new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda") );
+  LambdaF = new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda");
   LambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
 
   allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", LambdaF);
