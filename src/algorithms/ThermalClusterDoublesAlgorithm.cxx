@@ -55,12 +55,17 @@ void ThermalClusterDoublesAlgorithm::run() {
   ) (
     (*Na)["a"]
   );
+  real integratedWeight(0);
   Scalar<> e;
   for (size_t n(0); n < taus.size()-1; ++n) {
     for (size_t m(n+1); m < taus.size(); ++m) {
       Tensor<> Uacik(false, *Vabij);
       Tensor<> expTauLambdaF(*LambdaF);
       real DTau(taus[m] - taus[n]);
+      real weight(weights[m] * weights[n]);
+      integratedWeight += weight;
+      LOG(1, getCapitalizedAbbreviation()) << "Tau=" << DTau << std::endl;
+      LOG(1, getCapitalizedAbbreviation()) << "w_n*w_m=" << weights[n] * weights[m] << std::endl;
       Transform<real>(
         std::function<void(real &)>(
           [DTau](real &lambda) { lambda = std::exp(-lambda * DTau); }
@@ -69,11 +74,15 @@ void ThermalClusterDoublesAlgorithm::run() {
         expTauLambdaF["F"]
       );
       Uacik["acik"] = (*UaiF)["aiF"] * expTauLambdaF["F"] * (*UaiF)["ckF"];
-      e[""] += weights[n] * weights[m] *
-        (*Vabij)["abij"] * Uacik["acik"] * Uacik["bdjl"] * (*Vabij)["cdkl"];
+      Uacik["acik"] *= fa["a"];
+      Uacik["acik"] *= fa["c"];
+      Uacik["acik"] *= fi["i"];
+      Uacik["acik"] *= fi["k"];
+      e[""] += weight
+        * (*Vabij)["abij"] * Uacik["acik"] * Uacik["bdjl"] * (*Vabij)["cdkl"];
     }
   }
-  real tda(-e.get_val() / beta);
+  real tda(-e.get_val() / integratedWeight * beta/2);
   LOG(0, getCapitalizedAbbreviation()) << "F=" << tda << std::endl;
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
