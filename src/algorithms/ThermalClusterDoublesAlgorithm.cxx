@@ -29,17 +29,9 @@ void ThermalClusterDoublesAlgorithm::run() {
 
   diagonalizeSinglesHamiltonian();
 
-  // get imaginary time and frequency grids on all nodes
-  auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
-  std::vector<real> taus(tn->lens[0]);
-  tn->read_all(taus.data());
-  auto twn( getTensorArgument<real>("ImaginaryTimeWeights") );
-  std::vector<real> weights(twn->lens[0]);
-  twn->read_all(weights.data());
-
   auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
 
-  // compute Tamn-Dankoff Approximation (TDA)
+  // compute Tamm-Dancoff Approximation (TDA)
   Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
   Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
 
@@ -68,10 +60,30 @@ void ThermalClusterDoublesAlgorithm::run() {
     std::function<void(real, real &)>(
       [this](real lambda, real &vv) {
         const real x(lambda * beta);
-        if (std::abs(x) > 1e-6) {
-          vv *= (std::exp(-x) - 1.0 + x) / (x*lambda);
+        if (std::abs(x) > 0.25) {
+          vv *= beta * (std::exp(-x) - 1.0 + x) / (x*x);
         } else {
-          vv *= beta/2*(1 - x/3*(1 - x/4));
+          vv *= beta/2*(
+            1 - x/3*(
+              1 - x/4*(
+                1 - x/5*(
+                  1 - x/6*(
+                    1 - x/7*(
+                      1 - x/8*(
+                        1 - x/9*(
+                          1 - x/10*(
+                            1 - x/11*(
+                              1 - x/12
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          );
         }
       }
     )
@@ -86,6 +98,14 @@ void ThermalClusterDoublesAlgorithm::run() {
   setRealArgument(energyName.str(), tda);
 
   return;
+
+  // get imaginary time and frequency grids on all nodes
+  auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
+  std::vector<real> taus(tn->lens[0]);
+  tn->read_all(taus.data());
+  auto twn( getTensorArgument<real>("ImaginaryTimeWeights") );
+  std::vector<real> weights(twn->lens[0]);
+  twn->read_all(weights.data());
 
   // get energy differences for propagation
   Dabij = NEW(CTF::Tensor<real>, Vabij->order, Vabij->lens, Vabij->sym);
@@ -269,6 +289,8 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   // hole from H_0, note
   (*Hbjai)["bjbj"] -= (*epsi)["j"] * (*Ni)["j"];
 
+  LOG(1, getCapitalizedAbbreviation())
+    << "diagonalizing singles part of Hamiltonian..." << std::endl;
   // H(bj)(ai) = U.S.U^T, seen as a matrix with compound indices
   BlacsWorld world(Hbjai->wrld->rank, Hbjai->wrld->np);
   int NvNo(Nv*No);
