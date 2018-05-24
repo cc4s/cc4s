@@ -55,34 +55,31 @@ void ThermalClusterDoublesAlgorithm::run() {
   ) (
     (*Na)["a"]
   );
-  real integratedWeight(0);
   Scalar<> e;
-  for (size_t n(0); n < taus.size()-1; ++n) {
-    for (size_t m(n+1); m < taus.size(); ++m) {
-      Tensor<> Uacik(false, *Vabij);
-      Tensor<> expTauLambdaF(*LambdaF);
-      real DTau(taus[m] - taus[n]);
-      real weight(weights[m] * weights[n]);
-      integratedWeight += weight;
-      LOG(1, getCapitalizedAbbreviation()) << "Tau=" << DTau << std::endl;
-      LOG(1, getCapitalizedAbbreviation()) << "w_n*w_m=" << weights[n] * weights[m] << std::endl;
-      Transform<real>(
-        std::function<void(real &)>(
-          [DTau](real &lambda) { lambda = std::exp(-lambda * DTau); }
-        )
-      ) (
-        expTauLambdaF["F"]
-      );
-      Uacik["acik"] = (*UaiF)["aiF"] * expTauLambdaF["F"] * (*UaiF)["ckF"];
-      Uacik["acik"] *= fa["a"];
-      Uacik["acik"] *= fa["c"];
-      Uacik["acik"] *= fi["i"];
-      Uacik["acik"] *= fi["k"];
-      e[""] += weight
-        * (*Vabij)["abij"] * Uacik["acik"] * Uacik["bdjl"] * (*Vabij)["cdkl"];
-    }
-  }
-  real tda(-e.get_val() / integratedWeight * beta/2);
+  int NF(LambdaF->lens[0]);
+  Tensor<> ringFG(2, std::vector<int>({NF,NF}).data());
+  ringFG["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"]
+    * fa["c"] * fa["d"] * fi["k"] * fi["l"] * (*Vabij)["cdkl"];
+  ringFG["FG"] *= ringFG["FG"];
+  Tensor<> lambdaFG(false, ringFG);
+  lambdaFG["FG"] =  (*LambdaF)["F"];
+  lambdaFG["FG"] += (*LambdaF)["G"];
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      [this](real lambda, real &vv) {
+        const real x(lambda * beta);
+        if (std::abs(x) > 1e-6) {
+          vv *= (std::exp(-x) - 1.0 + x) / (x*lambda);
+        } else {
+          vv *= beta/2*(1 - x/3*(1 - x/4));
+        }
+      }
+    )
+  ) (
+    lambdaFG["FG"], ringFG["FG"]
+  );
+  e[""] = 0.5*2.0*2.0*ringFG["FG"];
+  real tda(-e.get_val());
   LOG(0, getCapitalizedAbbreviation()) << "F=" << tda << std::endl;
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
@@ -262,7 +259,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   int lens[] = { Nv,No, Nv,No };
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
   // bubble from H_1
-  (*Hbjai)["bjai"] = (*Vbija)["bija"];
+  (*Hbjai)["bjai"] = 2.0*(*Vbija)["bija"];
   (*Hbjai)["bjai"] *= fa["a"];
   (*Hbjai)["bjai"] *= fa["b"];
   (*Hbjai)["bjai"] *= fi["i"];
