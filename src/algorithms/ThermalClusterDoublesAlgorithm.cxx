@@ -51,17 +51,17 @@ void ThermalClusterDoublesAlgorithm::run() {
   // compute Tamm-Dancoff Approximation (TDA)
   Scalar<> e;
   int NF(lambdaF->lens[0]);
-  Tensor<real> VdFG(2, std::vector<int>({NF,NF}).data());
-  VdFG["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"]
+  VdFG = NEW(Tensor<real>, 2, std::vector<int>({NF,NF}).data());
+  (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"]
     * (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] * (*Vabij)["cdkl"];
-  Tensor<real> VxFG(false, VdFG);
+  Tensor<real> VxFG(false, *VdFG);
   VxFG["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"]
     * (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] * (*Vabij)["cdlk"];
 
-  lambdaFG = NEW(Tensor<real>, false, VdFG);
+  lambdaFG = NEW(Tensor<real>, false, *VdFG);
   (*lambdaFG)["FG"] =  (*lambdaF)["F"];
   (*lambdaFG)["FG"] += (*lambdaF)["G"];
-  Tensor<real> TFG(VdFG);
+  Tensor<real> TFG(*VdFG);
   Transform<real, real>(
     std::function<void(real, real &)>(
       [this](real lambda, real &vv) {
@@ -96,7 +96,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   ) (
     (*lambdaFG)["FG"], TFG["FG"]
   );
-  e[""] = 0.5 * spins*spins * TFG["FG"] * VdFG["FG"];
+  e[""] = 0.5 * spins*spins * TFG["FG"] * (*VdFG)["FG"];
   real tda(-e.get_val());
   LOG(0, getCapitalizedAbbreviation()) << "TDA F=" << tda << std::endl;
   std::stringstream energyName;
@@ -104,7 +104,6 @@ void ThermalClusterDoublesAlgorithm::run() {
   setRealArgument(energyName.str(), tda);
 
   // compute the other contributions perturbatively
-  return;
 
   // get imaginary time and frequency grids on all nodes
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
@@ -119,20 +118,21 @@ void ThermalClusterDoublesAlgorithm::run() {
   // allocate doubles amplitudes on imaginary time grid
   TFGn.resize(taus.size());
   for (size_t n(0); n < taus.size(); ++n) {
-    TFGn[n] = NEW(CTF::Tensor<real>, false, VdFG);
+    TFGn[n] = NEW(CTF::Tensor<real>, false, *VdFG);
   }
   std::vector<real> energies(taus.size());
 
   int R( getIntegerArgument("renormalizations", 5) );
 
   real energy;
-  CTF::Tensor<real> T0FG(false, *lambdaFG);
-  CTF::Tensor<real> S1FG(false, *lambdaFG);
+  CTF::Tensor<real> T0FG(false, *VdFG);
+  CTF::Tensor<real> S1FG(false, *VdFG);
   real d, x;
   for (int r(-R); r <= 0; ++r) {
     real scale( std::pow(taus.back()/taus.front(),r) );
     LOG(0, getCapitalizedAbbreviation()) << "renormalization level: " << r << std::endl;
-    for (size_t N(0); N < taus.size(); ++N) {
+    size_t N(taus.size()-1);
+//    for (size_t N(0); N < taus.size(); ++N) {
       real lastEnergy(0);
       for (int i(0); i < I; ++i) {
         LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
@@ -144,7 +144,7 @@ void ThermalClusterDoublesAlgorithm::run() {
           real tau1(scale*taus[n]);
           real DTau(tau1-tau0);
           // energy contribution from previously convolved amplitudes S^I(tau_n-1)
-          direct[""] += 0.5*spins*spins* DTau/2 * S1FG["FG"] * VdFG["FG"];
+          direct[""] += 0.5*spins*spins* DTau/2 * S1FG["FG"] * (*VdFG)["FG"];
           exchange[""] -= 0.5*spins    * DTau/2 * S1FG["FG"] * VxFG["FG"];
 
           // get T0FG at tau_n-1 and write previously convolved amplitudes
@@ -169,7 +169,7 @@ void ThermalClusterDoublesAlgorithm::run() {
           applyHamiltonian(T0FG, *TFGn[n], DTau, S1FG);
 
           // energy contribution from convolved amplitudes S^I(tau_n)
-          direct[""] += 0.5*spins*spins* DTau/2 * S1FG["FG"] * VdFG["FG"];
+          direct[""] += 0.5*spins*spins* DTau/2 * S1FG["FG"] * (*VdFG)["FG"];
           exchange[""] -= 0.5*spins    * DTau/2 * S1FG["FG"] * VxFG["FG"];
           d = direct.get_val();
           x = exchange.get_val();
@@ -185,7 +185,7 @@ void ThermalClusterDoublesAlgorithm::run() {
         if (std::abs(1-lastEnergy/energy) < 1e-6) break;
         lastEnergy = energy;
       }
-    }
+//    }
   }
 
   if (isArgumentGiven("plotAmplitudes")) {
@@ -197,7 +197,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     allocatedTensorArgument<real>("plotLambdas", newLambdaFG);
   }
   if (isArgumentGiven("plotCoulomb")) {
-    auto newVdFG(new CTF::Tensor<real>(VdFG));
+    auto newVdFG(new CTF::Tensor<real>(*VdFG));
     allocatedTensorArgument<real>("plotCoulomb", newVdFG);
   }
 }
@@ -260,12 +260,14 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
   Tensor<> *Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
 
+  real spins(2.0);
+
   // build to Hbjai
   int Nv(epsa->lens[0]); int No(epsi->lens[0]);
   int lens[] = { Nv,No, Nv,No };
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
   // bubble from H_1
-  (*Hbjai)["bjai"] = 2.0*(*Vbija)["bija"];
+  (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
   (*Hbjai)["bjai"] *= (*ga)["a"];
   (*Hbjai)["bjai"] *= (*ga)["b"];
   (*Hbjai)["bjai"] *= (*gi)["i"];

@@ -50,6 +50,11 @@ namespace cc4s {
     PTR(CTF::Tensor<real>) lambdaFG;
 
     /**
+     * \brief direct Vabij in left and right singles eigensystem F & G
+     **/
+    PTR(CTF::Tensor<real>) VdFG;
+
+    /**
      * \brief sqrt(occupancies)
      **/
     PTR(CTF::Tensor<real>) gi, ga;
@@ -104,7 +109,7 @@ namespace cc4s {
 
     // constant V^J=C contribution to T'^J(tau_m),
     // independent of the amplitudes T^I(tau)
-    // = f^(J/I) * int_0^Tau dtau exp(-lambdaFG*(Tau-tau))
+    // = int_0^Tau dtau exp(-lambdaFG*(Tau-tau))
     class ConvolutionC: public ImaginaryTimeTransform {
     public:
       static constexpr real SMALL = 1e-2;
@@ -130,7 +135,7 @@ namespace cc4s {
     };
 
     // linear T^I(tau_m-1)=T0 contribution to T'^J(tau_m)
-    // = f^(J/I) * int_0^Tau dtau (Tau-tau)/Tau * exp(-lambdaFG*(Tau-tau))
+    // = int_0^Tau dtau (Tau-tau)/Tau * exp(-lambdaFG*(Tau-tau))
     class Convolution0: public ImaginaryTimeTransform {
     public:
       static constexpr real SMALL = 1e-1;
@@ -158,7 +163,7 @@ namespace cc4s {
     };
 
     // linear T^I(tau_m)=T1 contribution to T'^J(tau_m)
-    // = f^(J/I) * int_0^Tau dtau tau/Tau * exp(-lambdaFG*(Tau-tau))
+    // = int_0^Tau dtau tau/Tau * exp(-lambdaFG*(Tau-tau))
     class Convolution1: public ImaginaryTimeTransform {
     public:
       static constexpr real SMALL = 1e-1;
