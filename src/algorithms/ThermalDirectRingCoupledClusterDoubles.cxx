@@ -52,7 +52,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Transform<real, real>(
     std::function<void(real, real &)>( ConvolutionC(DTau) )
   ) (
-    (*Dabij)["abij"], Sabij["abij"]
+    (*lambdaFG)["abij"], Sabij["abij"]
   );
   S1abij["abij"] -= Sabij["abij"];
 
@@ -65,7 +65,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution0(DTau) )
   ) (
-    (*Dabij)["abij"], Sabij["abij"]
+    (*lambdaFG)["abij"], Sabij["abij"]
   );
   S1abij["abij"] -= Sabij["abij"];
   //   T^I(tau_n):
@@ -75,7 +75,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution1(DTau) )
   ) (
-    (*Dabij)["abij"], Sabij["abij"]
+    (*lambdaFG)["abij"], Sabij["abij"]
   );
   S1abij["abij"] -= Sabij["abij"];
 
@@ -87,7 +87,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution00(DTau) )
   ) (
-    (*Dabij)["abij"], Sabij["abij"]
+    (*lambdaFG)["abij"], Sabij["abij"]
   );
   S1abij["abij"] -= Sabij["abij"];
   //   T^I1(tau_n-1)*T^I2(tau_n) and T^I1(tau_n)*T^I2(tau_n-1)
@@ -97,7 +97,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution01(DTau) )
   ) (
-    (*Dabij)["abij"], Sabij["abij"]
+    (*lambdaFG)["abij"], Sabij["abij"]
   );
   S1abij["abij"] -= Sabij["abij"];
   //   T^I1(tau_n)*T^I2(tau_n)
@@ -106,7 +106,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution11(DTau) )
   ) (
-    (*Dabij)["abij"], Sabij["abij"]
+    (*lambdaFG)["abij"], Sabij["abij"]
   );
 }
 
