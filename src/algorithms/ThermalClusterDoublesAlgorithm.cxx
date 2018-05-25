@@ -104,6 +104,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   setRealArgument(energyName.str(), tda);
 
   // compute the other contributions perturbatively
+//  return;
 
   // get imaginary time and frequency grids on all nodes
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
@@ -120,6 +121,10 @@ void ThermalClusterDoublesAlgorithm::run() {
   for (size_t n(0); n < taus.size(); ++n) {
     TFGn[n] = NEW(CTF::Tensor<real>, false, *VdFG);
   }
+  std::vector<PTR(Tensor<real>)> SFGn(taus.size());
+  for (size_t n(0); n < taus.size(); ++n) {
+    SFGn[n] = NEW(CTF::Tensor<real>, false, *VdFG);
+  }
   std::vector<real> energies(taus.size());
 
   int R( getIntegerArgument("renormalizations", 5) );
@@ -131,7 +136,8 @@ void ThermalClusterDoublesAlgorithm::run() {
   for (int r(-R); r <= 0; ++r) {
     real scale( std::pow(taus.back()/taus.front(),r) );
     LOG(0, getCapitalizedAbbreviation()) << "renormalization level: " << r << std::endl;
-    size_t N(taus.size()-1);
+    {
+      size_t N(taus.size()-1);
 //    for (size_t N(0); N < taus.size(); ++N) {
       real lastEnergy(0);
       for (int i(0); i < I; ++i) {
@@ -151,7 +157,7 @@ void ThermalClusterDoublesAlgorithm::run() {
           // note T(0) is implicitly 0
           if (n > 0) {
             T0FG["FG"] = (*TFGn[n-1])["FG"];
-            (*TFGn[n-1])["FG"] = S1FG["FG"];
+            (*SFGn[n-1])["FG"] = S1FG["FG"];
           }
 
           LOG(1, getCapitalizedAbbreviation())
@@ -179,13 +185,18 @@ void ThermalClusterDoublesAlgorithm::run() {
           LOG(2, getCapitalizedAbbreviation()) << "|T|=" << a << std::endl;
           tau0 = tau1;
         }
-        (*TFGn[N])["FG"] = S1FG["FG"];
+        (*SFGn[N])["FG"] = S1FG["FG"];
         energies[N] = energy = d + x;
         LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/tau0 << std::endl;
         if (std::abs(1-lastEnergy/energy) < 1e-6) break;
         lastEnergy = energy;
+        real mixingRatio( getRealArgument("mixingRatio", 1.0) );
+        for (size_t n(0); n <= N; ++n) {
+          (*TFGn[n])["FG"] *= (1-mixingRatio);
+          (*TFGn[n])["FG"] += mixingRatio * (*SFGn[n])["FG"];
+        }
       }
-//    }
+    }
   }
 
   if (isArgumentGiven("plotAmplitudes")) {
@@ -276,6 +287,8 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   (*Hbjai)["bjbj"] += (*epsa)["b"] * (*Na)["b"];
   // hole from H_0, note
   (*Hbjai)["bjbj"] -= (*epsi)["j"] * (*Ni)["j"];
+  // shift
+//  (*Hbjai)["aiai"] += 0.1;
 
   LOG(1, getCapitalizedAbbreviation())
     << "diagonalizing singles part of Hamiltonian..." << std::endl;

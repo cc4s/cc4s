@@ -68,5 +68,8 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
     (*lambdaFG)["FG"], SFG["FG"]
   );
   S1FG["FG"] -= SFG["FG"];
+
+  // shift back
+//  S1FG["FG"] += 0.1;
 }
 
