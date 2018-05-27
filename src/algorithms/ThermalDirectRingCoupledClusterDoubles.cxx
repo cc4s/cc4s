@@ -37,7 +37,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
     (*lambdaFG)["FG"], SFG["FG"]
   );
   S1FG["FG"] -= SFG["FG"];
-
+/*
   LOG(1, "FT-DRCCD") << "quadratic terms..." << std::endl;
   // quadratic terms:
   //   T^I1(tau_n-1)*T^I2(tau_n-1)
@@ -68,7 +68,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
     (*lambdaFG)["FG"], SFG["FG"]
   );
   S1FG["FG"] -= SFG["FG"];
-
+*/
   // shift back
 //  S1FG["FG"] += 0.1;
 }

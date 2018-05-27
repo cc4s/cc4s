@@ -211,6 +211,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     auto newVdFG(new CTF::Tensor<real>(*VdFG));
     allocatedTensorArgument<real>("plotCoulomb", newVdFG);
   }
+  diagonalizeDoublesAmplitudes();
 }
 
 void ThermalClusterDoublesAlgorithm::dryRun() {
@@ -313,12 +314,41 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   scaU->write(*UaiF);
   scaU = nullptr;
 
-  // write Lambda and conj(sqrt(Lambda)) back to CTF
+  // write Lambda back to CTF
   std::vector<int64_t> lambdaIndices(UaiF->wrld->rank == 0 ? NvNo : 0);
   for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
   lambdaF = new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda");
   lambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
 
   allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", lambdaF);
+}
+
+void ThermalClusterDoublesAlgorithm::diagonalizeDoublesAmplitudes() {
+  LOG(1, getCapitalizedAbbreviation())
+    << "diagonalizing doubles amplitudes at tau_1..." << std::endl;
+  BlacsWorld world(TFGn.back()->wrld->rank, TFGn.back()->wrld->np);
+  auto scaTFG(NEW(ScaLapackMatrix<>, *TFGn.back(), TFGn.back()->lens, &world));
+
+  // use ScaLapack routines to diagonalise the matrix U.Lambda.U^T
+  auto scaU(NEW(ScaLapackMatrix<>, *scaTFG));
+  ScaLapackHermitianEigenSystemDc<> eigenSystem(scaTFG, scaU);
+  std::vector<real> lambdas(TFGn.back()->lens[0]);
+  eigenSystem.solve(lambdas.data());
+  scaTFG = nullptr;
+
+  if (isArgumentGiven("DoublesAmplitudesEigenvalues")) {
+    // write Lambda back to CTF
+    std::vector<int64_t> lambdaIndices(
+      UaiF->wrld->rank == 0 ? lambdas.size() : 0
+    );
+    for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
+    auto lambdaL(
+      new Tensor<>(
+        1, TFGn.front()->lens, TFGn.front()->sym, *TFGn.front()->wrld, "L"
+      )
+    );
+    lambdaL->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
+    allocatedTensorArgument<>("DoublesAmplitudesEigenvalues", lambdaF);
+  }
 }
 

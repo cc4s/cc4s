@@ -86,6 +86,7 @@ namespace cc4s {
     void thermalContraction(CTF::Tensor<real> &T);
 
     void diagonalizeSinglesHamiltonian();
+    void diagonalizeDoublesAmplitudes();
 
     class ImaginaryTimeTransform {
     protected:
