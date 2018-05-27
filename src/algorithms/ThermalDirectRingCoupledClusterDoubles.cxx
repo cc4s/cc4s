@@ -51,7 +51,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   S1FG["FG"] -= SFG["FG"];
   //   T^I1(tau_n-1)*T^I2(tau_n) and T^I1(tau_n)*T^I2(tau_n-1)
   SFG["FG"] =  T0FG["FH"] * (*VdFG)["HI"] * T1FG["IG"];
-  SFG["FG"] += T1FG["FH"] * (*VdFG)["HI"] * T0FG["IG"];
+  SFG["FG"] += SFG["GF"];
   SFG["FG"] *= spins*spins;
   Transform<real, real>(
     std::function<void(real, real &)>( Convolution01(DTau) )
