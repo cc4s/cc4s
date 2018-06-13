@@ -132,7 +132,11 @@ void ThermalHolesAndParticles::defineThermalHolesAndParticles() {
   int Np(epsp->lens[0]);
 
   // determine the thermal hole and particle index set
-  double maxDelta(eigenStates[Np-1].first - eigenStates[0].first);
+  double maxDelta(
+    getRealArgument(
+      "maxDenominator", eigenStates[Np-1].first - eigenStates[0].first
+    )
+  );
   double overlap(std::sqrt(32*maxDelta*kT));
   LOG(1, "ThermalHolesAndParticles") << "overlap of thermal particle and hole states=" << overlap << std::endl;
   int holeEnd(No), particleStart(-1);
