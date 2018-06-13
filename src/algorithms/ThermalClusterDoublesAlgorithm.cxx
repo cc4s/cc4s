@@ -149,7 +149,7 @@ void ThermalClusterDoublesAlgorithm::run() {
         for (size_t n(0); n <= N; ++n) {
           real tau1(scale*taus[n]);
           real DTau(tau1-tau0);
-          // energy contribution from previously convolved amplitudes S^I(tau_n-1)
+          // energy contribution from previously convolved amplitudes ST^I(tau_n-1)
           direct[""] += 0.5*spins*spins* DTau/2 * S1FG["FG"] * (*VdFG)["FG"];
           exchange[""] -= 0.5*spins    * DTau/2 * S1FG["FG"] * VxFG["FG"];
 
@@ -164,9 +164,10 @@ void ThermalClusterDoublesAlgorithm::run() {
             << "convolving amplitudes at tau_" << (n+1) << "=" << tau1
             << std::endl;
 
-          // propagate previously convolved amplitudes S^I(tau_n-1) to this tau_n
+          // propagate previously convolved amplitudes ST^I(tau_n-1) to this tau_n
+          ImaginaryTimePropagation imaginaryTimePropagation(DTau);
           Transform<real, real>(
-            std::function<void(real, real &)>( ImaginaryTimePropagation(DTau) )
+            std::function<void(real, real &)>( imaginaryTimePropagation )
           ) (
             (*lambdaFG)["FG"], S1FG["FG"]
           );
@@ -174,7 +175,7 @@ void ThermalClusterDoublesAlgorithm::run() {
           // apply hamiltonian between tau_n-1 and tau_n
           applyHamiltonian(T0FG, *TFGn[n], DTau, S1FG);
 
-          // energy contribution from convolved amplitudes S^I(tau_n)
+          // energy contribution from convolved amplitudes ST^I(tau_n)
           direct[""] += 0.5*spins*spins* DTau/2 * S1FG["FG"] * (*VdFG)["FG"];
           exchange[""] -= 0.5*spins    * DTau/2 * S1FG["FG"] * VxFG["FG"];
           d = direct.get_val();

@@ -31,8 +31,9 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   real spins(2.0);
   LOG(1, "FT-DRCCD") << "constant term..." << std::endl;
   CTF::Tensor<real> SFG(*VdFG);
+  ConvolutionC convolutionC(DTau);
   Transform<real, real>(
-    std::function<void(real, real &)>( ConvolutionC(DTau) )
+    std::function<void(real, real &)>( convolutionC )
   ) (
     (*lambdaFG)["FG"], SFG["FG"]
   );
@@ -43,8 +44,9 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   //   T^I1(tau_n-1)*T^I2(tau_n-1)
   SFG["FG"] = T0FG["FH"] * (*VdFG)["HI"] * T0FG["IG"];
   SFG["FG"] *= spins*spins;
+  Convolution00 convolution00(DTau);
   Transform<real, real>(
-    std::function<void(real, real &)>( Convolution00(DTau) )
+    std::function<void(real, real &)>( convolution00 )
   ) (
     (*lambdaFG)["FG"], SFG["FG"]
   );
@@ -53,8 +55,9 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   SFG["FG"] =  T0FG["FH"] * (*VdFG)["HI"] * T1FG["IG"];
   SFG["FG"] += SFG["GF"];
   SFG["FG"] *= spins*spins;
+  Convolution01 convolution01(DTau);
   Transform<real, real>(
-    std::function<void(real, real &)>( Convolution01(DTau) )
+    std::function<void(real, real &)>( convolution01 )
   ) (
     (*lambdaFG)["FG"], SFG["FG"]
   );
@@ -62,8 +65,9 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   //   T^I1(tau_n)*T^I2(tau_n)
   SFG["FG"] =  T1FG["FH"] * (*VdFG)["HI"] * T1FG["IG"];
   SFG["FG"] *= spins*spins;
+  Convolution11 convolution11(DTau);
   Transform<real, real>(
-    std::function<void(real, real &)>( Convolution11(DTau) )
+    std::function<void(real, real &)>( convolution11 )
   ) (
     (*lambdaFG)["FG"], SFG["FG"]
   );
