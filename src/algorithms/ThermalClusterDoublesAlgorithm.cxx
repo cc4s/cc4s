@@ -96,15 +96,18 @@ void ThermalClusterDoublesAlgorithm::run() {
   ) (
     (*lambdaFG)["FG"], TFG["FG"]
   );
-  e[""] = 0.5 * spins*spins * TFG["FG"] * (*VdFG)["FG"];
-  real tda(-e.get_val());
-  LOG(0, getCapitalizedAbbreviation()) << "TDA F=" << tda << std::endl;
+  e[""] = -0.5 * spins*spins * TFG["FG"] * (*VdFG)["FG"];
+  real tdad(e.get_val());
+  LOG(1, getCapitalizedAbbreviation()) << "TDA F_d=" << tdad << std::endl;
+  e[""] = +0.5 * spins * TFG["FG"] * VxFG["FG"];
+  real tdax(e.get_val());
+  LOG(1, getCapitalizedAbbreviation()) << "TDA F_x=" << tdax << std::endl;
+  LOG(1, getCapitalizedAbbreviation()) << "TDA F=" << tdad+tdax << std::endl;
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), tda);
+  setRealArgument(energyName.str(), tdad+tdax);
 
   // compute the other contributions perturbatively
-//  return;
 
   // get imaginary time and frequency grids on all nodes
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
