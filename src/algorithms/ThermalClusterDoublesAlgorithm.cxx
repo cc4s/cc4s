@@ -113,6 +113,9 @@ void ThermalClusterDoublesAlgorithm::run() {
   auto twn( getTensorArgument<real>("ImaginaryTimeWeights") );
   std::vector<real> weights(twn->lens[0]);
   twn->read_all(weights.data());
+  // scale to [0,beta]
+  for (auto &tau: taus) { tau *= beta; }
+  for (auto &w: weights) { w *= beta; }
 
   // number of iterations for determining the amplitudes at each point in time
   int I( getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS) );
