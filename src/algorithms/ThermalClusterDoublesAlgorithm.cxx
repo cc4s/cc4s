@@ -103,9 +103,9 @@ void ThermalClusterDoublesAlgorithm::run() {
   real tdax(e.get_val());
   LOG(1, getCapitalizedAbbreviation()) << "TDA F_x=" << tdax << std::endl;
   LOG(1, getCapitalizedAbbreviation()) << "TDA F=" << tdad+tdax << std::endl;
-  std::stringstream energyName;
-  energyName << "Thermal" << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), tdad+tdax);
+  if (isArgumentGiven("ThermalTdaEnergy")) {
+    setRealArgument("ThermalTdaEnergy", tdad+tdax);
+  }
 
   // compute the other contributions perturbatively
 
@@ -136,6 +136,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   int R( getIntegerArgument("renormalizations", 5) );
 
   real energy;
+  real accuracy(getRealArgument("accuracy", 1e-7));
   CTF::Tensor<real> T0FG(false, *VdFG);
   CTF::Tensor<real> S1FG(false, *VdFG);
   real d, x;
@@ -195,7 +196,7 @@ void ThermalClusterDoublesAlgorithm::run() {
         (*SFGn[N])["FG"] = S1FG["FG"];
         energies[N] = energy = d + x;
         LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/tau0 << std::endl;
-        if (std::abs(1-lastEnergy/energy) < 1e-6) break;
+        if (std::abs(1-lastEnergy/energy) < accuracy) break;
         lastEnergy = energy;
         real mixingRatio( getRealArgument("mixingRatio", 1.0) );
         for (size_t n(0); n <= N; ++n) {
@@ -205,6 +206,10 @@ void ThermalClusterDoublesAlgorithm::run() {
       }
     }
   }
+
+  std::stringstream energyName;
+  energyName << "Thermal" << getAbbreviation() << "Energy";
+  setRealArgument(energyName.str(), energy);
 
   if (isArgumentGiven("plotAmplitudes")) {
     auto newTFG(new CTF::Tensor<real>(S1FG));
