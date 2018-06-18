@@ -209,7 +209,7 @@ void ThermalClusterDoublesAlgorithm::run() {
 
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
-  setRealArgument(energyName.str(), energy);
+  setRealArgument(energyName.str(), energy/beta);
 
   if (isArgumentGiven("plotAmplitudes")) {
     auto newTFG(new CTF::Tensor<real>(S1FG));
