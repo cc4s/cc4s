@@ -106,6 +106,12 @@ void ThermalClusterDoublesAlgorithm::run() {
   if (isArgumentGiven("ThermalTdaEnergy")) {
     setRealArgument("ThermalTdaEnergy", tdad+tdax);
   }
+  if (isArgumentGiven("SinglesHamiltonianWeights")) {
+    auto singlesWeights(new Tensor<real>(1, std::vector<int>({NF}).data()) );
+    (*singlesWeights)["F"] = 0.5 * spins*spins * TFG["FF"] * (*VdFG)["FF"];
+    allocatedTensorArgument<real>("SinglesHamiltonianWeights", singlesWeights);
+  }
+  
 
   // compute the other contributions perturbatively
 
@@ -223,7 +229,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     auto newVdFG(new CTF::Tensor<real>(*VdFG));
     allocatedTensorArgument<real>("plotCoulomb", newVdFG);
   }
-  diagonalizeDoublesAmplitudes();
+  // diagonalizeDoublesAmplitudes();
 }
 
 void ThermalClusterDoublesAlgorithm::dryRun() {
