@@ -73,12 +73,13 @@ build/${CONFIG}/obj/algorithms/DrccdEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/Mp2EquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/CcsdEquationOfMotionDavidson.o \
 build/${CONFIG}/obj/algorithms/CcdEquationOfMotion.o \
-build/${CONFIG}/obj/algorithms/ThermalEquationOfMotion.o \
 build/${CONFIG}/obj/algorithms/UccsdAmplitudesFromCoulombIntegrals.o \
-build/${CONFIG}/obj/algorithms/Mp2ImaginaryFrequencyGrid.o \
 build/${CONFIG}/obj/algorithms/RpaApxEnergy.o \
 build/${CONFIG}/obj/algorithms/LaplaceTransform.o \
-build/${CONFIG}/obj/algorithms/PairCorrelationFunction.o \
+build/${CONFIG}/obj/algorithms/BasisSetExtrapolation.o \
+
+#build/${CONFIG}/obj/algorithms/ThermalEquationOfMotion.o \
+#build/${CONFIG}/obj/algorithms/Mp2ImaginaryFrequencyGrid.o \
 
 TESTS_OBJECTS = \
 build/${CONFIG}/obj/test/math/Antisymmetrize.o \
