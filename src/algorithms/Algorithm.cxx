@@ -143,10 +143,10 @@ real Algorithm::getRealArgumentFromTensor(TensorData<real> *data) {
     data->value->order == 0,
     "Scalar expected in conversion from tensor to real."
   );
-  int64_t index(0); real value;
   // retrieve the real value from the tensor
-  data->value->read(1, &index, &value);
-  return value;
+  CTF::Scalar<real> scalar;
+  scalar[""] = (*data->value)[""];
+  return scalar.get_val();
 }
 
 template <typename F, typename T>

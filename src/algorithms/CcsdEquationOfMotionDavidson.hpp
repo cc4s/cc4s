@@ -42,10 +42,10 @@ namespace cc4s {
         /**
          * \brief This method should initialize the intermediates.
          *
-         * \param[in] flag If true, then the rightApply method will be used
+         * \param[in] intermediates If true, then the rightApply method will be used
          * with intermediates, else without.
          */
-        void buildIntermediates(bool flag);
+        void buildIntermediates(bool intermediates, bool singleParticleOnly = false);
 
       protected:
         CTF::Tensor<F> *Tai, *Tabij;

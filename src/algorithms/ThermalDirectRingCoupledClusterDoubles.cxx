@@ -20,35 +20,57 @@ ThermalDirectRingCoupledClusterDoubles::
 ) {
 }
 
-void ThermalDirectRingCoupledClusterDoubles::getResiduum(
-  CTF::Tensor<complex> &Tabijn
+void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
+  CTF::Tensor<real> &T0FG,
+  CTF::Tensor<real> &T1FG,
+  const real DTau,
+  CTF::Tensor<real> &S1FG
 ) {
-/*
-  // * interaction V
-  Tabij["acik"] *= (*Vabij)["acik"];
-  // * thermal weight of contracted indices ck
-  Fck["ck"] = 1.0;
-  thermalContraction(Fck);
-  Wabij["acik"] *= Fck["ck"];
-*/
-}
+  // TODO: only for real code:
+  // constant term:
+  real spins(2.0);
+  LOG(1, "FT-DRCCD") << "constant term..." << std::endl;
+  CTF::Tensor<real> SFG(*VdFG);
+  ConvolutionC convolutionC(DTau);
+  Transform<real, real>(
+    std::function<void(real, real &)>( convolutionC )
+  ) (
+    (*lambdaFG)["FG"], SFG["FG"]
+  );
+  S1FG["FG"] -= SFG["FG"];
 
-
-void ThermalDirectRingCoupledClusterDoubles::dryIterate() {
-  // Read the DRCCD amplitudes Tabij
-  //DryTensor<> *Tabij(
-  getTensorArgument<double, DryTensor<double>>("DrccdDoublesAmplitudes");
-  //);
-
-  // Read the Coulomb Integrals Vabij
-  DryTensor<> *Vabij(getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals"));
-
-  // Allocate Tensors for T2 amplitudes
-  DryTensor<> Rabij(*Vabij);
-
-  // Define intermediates
-  DryTensor<> Cabij(*Vabij);
-
-  DryTensor<> Dabij(*Vabij);
+  LOG(1, "FT-DRCCD") << "quadratic terms..." << std::endl;
+  // quadratic terms:
+  //   T^I1(tau_n-1)*T^I2(tau_n-1)
+  SFG["FG"] = T0FG["FH"] * (*VdFG)["HI"] * T0FG["IG"];
+  SFG["FG"] *= spins*spins;
+  Convolution00 convolution00(DTau);
+  Transform<real, real>(
+    std::function<void(real, real &)>( convolution00 )
+  ) (
+    (*lambdaFG)["FG"], SFG["FG"]
+  );
+  S1FG["FG"] -= SFG["FG"];
+  //   T^I1(tau_n-1)*T^I2(tau_n) and T^I1(tau_n)*T^I2(tau_n-1)
+  SFG["FG"] =  T0FG["FH"] * (*VdFG)["HI"] * T1FG["IG"];
+  SFG["FG"] += SFG["GF"];
+  SFG["FG"] *= spins*spins;
+  Convolution01 convolution01(DTau);
+  Transform<real, real>(
+    std::function<void(real, real &)>( convolution01 )
+  ) (
+    (*lambdaFG)["FG"], SFG["FG"]
+  );
+  S1FG["FG"] -= SFG["FG"];
+  //   T^I1(tau_n)*T^I2(tau_n)
+  SFG["FG"] =  T1FG["FH"] * (*VdFG)["HI"] * T1FG["IG"];
+  SFG["FG"] *= spins*spins;
+  Convolution11 convolution11(DTau);
+  Transform<real, real>(
+    std::function<void(real, real &)>( convolution11 )
+  ) (
+    (*lambdaFG)["FG"], SFG["FG"]
+  );
+  S1FG["FG"] -= SFG["FG"];
 }
 

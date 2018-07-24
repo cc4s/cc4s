@@ -24,15 +24,12 @@ namespace cc4s {
     }
 
   protected:
-    /**
-     * \brief Implements the iterate method with the DRCCD iteration.
-     * \param[in] i Iteration number
-     */
-    virtual void getResiduum(CTF::Tensor<complex> &Tabijn);
-    /**
-     * \brief Implements the dry iterate method with the DRCCD iteration.
-     */
-    virtual void dryIterate();
+    virtual void applyHamiltonian(
+      CTF::Tensor<real> &T0abij,
+      CTF::Tensor<real> &T1abij,
+      const real DTau,
+      CTF::Tensor<real> &C1abij
+    );
   };
 }
 

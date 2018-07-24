@@ -7,6 +7,7 @@
   * by default the configuration ''icc'' is used.
 
 ===== Building =====
+  * check gcc version. Need at least gcc 4.7.2 (As tested, gcc 4.6 does not work).
   * write or edit a ''config.<config>'' file for your build environment.
   * the configuration files ''config.gxx'' and ''config.icc'' contain predifined retail environments for ''gxx'' and ''icc'', respectively, using full optimization and without debugging info.
   * for the gxx configuration the following additional libraries are required

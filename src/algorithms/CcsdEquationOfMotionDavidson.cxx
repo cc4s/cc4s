@@ -96,7 +96,7 @@ void CcsdEquationOfMotionDavidson::run() {
     Fij = getTensorArgument<double, CTF::Tensor<> >("HHFockMatrix");
   } else {
     LOG(0, "CcsdEomDavid") << "Using canonical orbitals" << std::endl;
-    Fia = NULL;
+    Fia = nullptr;
     (*Fab)["aa"] = (*epsa)["a"];
     (*Fij)["ii"] = (*epsi)["i"];
   }
@@ -140,10 +140,9 @@ void CcsdEquationOfMotionDavidson::run() {
 
   unsigned int maxIterations(getIntegerArgument("maxIterations", 32));
   unsigned int minIterations(getIntegerArgument("minIterations", 1));
-  bool intermediates(
-    getIntegerArgument("intermediates", 1) == 1 ? true : false
-  );
-  H.buildIntermediates(intermediates);
+  bool intermediates(getIntegerArgument("intermediates", 1));
+  bool singleParticleOnly(getIntegerArgument("singleParticleOnly", 0));
+  H.buildIntermediates(intermediates, singleParticleOnly);
 
   CcsdPreConditioner<double> P(
     Tai, Tabij, *Fij, *Fab, *Vabcd, *Viajb, *Vijab, *Vijkl, this
@@ -301,12 +300,12 @@ FockVector<F> CcsdSimilarityTransformedHamiltonian<F>::leftApply(
 
 template <typename F>
 void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
-    bool flag
+    bool intermediates, bool singleParticleOnly
   ) {
 
-  withIntermediates = flag;
+  withIntermediates = intermediates;
 
-  if (! flag) {
+  if (! intermediates) {
     LOG(0, "CcsdEomDavid") << "Not building intermediates" << std::endl;
     return;
   }
@@ -362,162 +361,167 @@ void CcsdSimilarityTransformedHamiltonian<F>::buildIntermediates(
 
   LOG(0, "CcsdEomDavid") << "Building Wia" << std::endl;
   //we need this one to construct the 2-body-amplitudes, not directly
-  (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
   if (Fia) {
     (*Wia)["ia"] += (*Fia)["ia"];
+  }
+  if (!singleParticleOnly) {
+    (*Wia)["ia"] = (*Vijab)["imae"] * (*Tai)["em"];
   }
 
   LOG(0, "CcsdEomDavid") << "Building Wab" << std::endl;
   //diagram (10.54)
   (*Wab)["ab"]  = (*Fab)["ab"];
-  (*Wab)["ab"] += (*Viabc)["mafb"] * (*Tai)["fm"];
-  if (Fia) {
-    (*Wab)["ab"] += ( -1.0) * (*Fia)["mb"] * (*Tai)["am"];
+  if (!singleParticleOnly) {
+    (*Wab)["ab"] += (*Viabc)["mafb"] * (*Tai)["fm"];
+    if (Fia) {
+      (*Wab)["ab"] += ( -1.0) * (*Fia)["mb"] * (*Tai)["am"];
+    }
+    (*Wab)["ab"] += (- 0.5) * (*Vijab)["mnbe"] * (*Tau_abij)["aemn"];
   }
-  (*Wab)["ab"] += (- 0.5) * (*Vijab)["mnbe"] * (*Tau_abij)["aemn"];
 
   LOG(0, "CcsdEomDavid") << "Building Wij" << std::endl;
   (*Wij)["ij"]  = (*Fij)["ij"];
-  (*Wij)["ij"] += (*Vijka)["imje"] * (*Tai)["em"];
-  if (Fia) {
-    (*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
-  }
-  (*Wij)["ij"] += (  0.5) * (*Vijab)["imef"] * (*Tau_abij)["efjm"];
-
-  LOG(0, "CcsdEomDavid") << "Building Wijkl" << std::endl;
-  //Taken directly from [2]
-  (*Wijkl)["klij"]  = (*Vijkl)["klij"];
-  //------------------------------------------------------------
-  (*Wijkl)["klij"] +=           (*Tai)["ej"] * (*Vijka)["klie"];
-  (*Wijkl)["klij"] += ( -1.0) * (*Tai)["ei"] * (*Vijka)["klje"];
-  //------------------------------------------------------------
-  (*Wijkl)["klij"] += ( 0.5 ) * (*Tau_abij)["efij"] * (*Vijab)["klef"];
-
-  LOG(0, "CcsdEomDavid") << "Building Wabcd" << std::endl;
-  (*Wabcd)["abcd"]  = (*Vabcd)["abcd"];
-  //-----------------------------------------------------------
-  (*Wabcd)["abcd"] += (-1.0) * (*Vaibc)["amcd"] * (*Tai)["bm"];
-  // P(ab)
-  (*Wabcd)["abcd"] += ( 1.0) * (*Vaibc)["bmcd"] * (*Tai)["am"];
-  //-----------------------------------------------------------
-  (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["mncd"] * (*Tau_abij)["abmn"];
-
-  LOG(0, "CcsdEomDavid") << "Building Waibc" << std::endl;
-  (*Waibc)["aibc"]  = (*Vaibc)["aibc"];
-  (*Waibc)["aibc"] += ( -1.0) * (*Vijab)["mibc"] * (*Tai)["am"];
-
-  LOG(0, "CcsdEomDavid") << "Building Wijka" << std::endl;
-  //Taken directly from[2]
-  (*Wijka)["jkia"]  = (*Vijka)["jkia"];
-  (*Wijka)["jkia"] += (*Tai)["ei"] * (*Vijab)["jkea"];
-
-  LOG(0, "CcsdEomDavid") << "Building Wiabj from Waijb" << std::endl;
-  //[1] diagram (10.73)
-  //This is not listed in the source book, however we can write it in terms
-  //of Waijb since it should also have the simmetry of the Tabij amplitudes
-  //and the Coulomb integrals Vpqrs
-  //Taken directly from [2]
-  (*Wiabj)["jabi"]  = (*Vaijb)["ajib"];
-  (*Wiabj)["jabi"] += (*Vaibc)["ajeb"] * (*Tai)["ei"];
-  (*Wiabj)["jabi"] += ( -1.0) * (*Vijka)["mjib"] * (*Tai)["am"];
-  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tai)["ei"] * (*Tai)["am"];
-  (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tabij)["eaim"];
-
-  bool wabciIntermediates(true);
-  if (wabciIntermediates) {
-    LOG(0, "CcsdEomDavid") << "Building Wabci from Wabcd and Wia" << std::endl;
-    //--1
-    (*Wabci)["abci"]  = (*Vabci)["abci"];
-    //--3
-    (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
-    (*Wabci)["abci"] += ( +1.0) * (*Vaibj)["bmci"] * (*Tai)["am"];
-    //--6
-    (*Wabci)["abci"] += ( +1.0) * (*Vaibc)["amce"] * (*Tabij)["ebmi"];
-    (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["bmce"] * (*Tabij)["eami"];
-    //--9
-    (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
-    (*Wabci)["abci"] += ( +1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tabij)["eani"];
-    //--8
-    (*Wabci)["abci"] += ( -1.0) * (*Wia)["mc"] * (*Tabij)["abmi"];
-    //--2-4-10-11
-    (*Wabci)["abci"] += ( +1.0) * (*Tai)["ei"] * (*Wabcd)["abce"];
-    //--7-5
-    (*Wabci)["abci"] += (  0.5 ) * (*Vijak)["nmci"] * (*Tau_abij)["abnm"];
-  } else {
-    LOG(0, "CcsdEomDavid") << "Building Wabci" << std::endl;
-    //--1
-    (*Wabci)["abci"]  = (*Vabci)["abci"];
-    //--2
-    (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
-    //--3
-    (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
-    (*Wabci)["abci"] += ( +1.0) * (*Vaibj)["bmci"] * (*Tai)["am"];
-    //--4
-    (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
-    (*Wabci)["abci"] += ( +1.0) * (*Vaibc)["bmce"] * (*Tai)["am"] * (*Tai)["ei"];
-    //--5
-    (*Wabci)["abci"] += ( +1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
-    //--5.1 (non canonical)
+  if (!singleParticleOnly) {
+    (*Wij)["ij"] += (*Vijka)["imje"] * (*Tai)["em"];
     if (Fia) {
-      (*Wabci)["abci"] += ( -1.0) * (*Fia)["mc"] * (*Tabij)["abmi"];
+      (*Wij)["ij"] += (*Fia)["ie"] * (*Tai)["ej"];
     }
+    (*Wij)["ij"] += (  0.5) * (*Vijab)["imef"] * (*Tau_abij)["efjm"];
+
+    LOG(0, "CcsdEomDavid") << "Building Wijkl" << std::endl;
+    //Taken directly from [2]
+    (*Wijkl)["klij"]  = (*Vijkl)["klij"];
+    //------------------------------------------------------------
+    (*Wijkl)["klij"] +=           (*Tai)["ej"] * (*Vijka)["klie"];
+    (*Wijkl)["klij"] += ( -1.0) * (*Tai)["ei"] * (*Vijka)["klje"];
+    //------------------------------------------------------------
+    (*Wijkl)["klij"] += ( 0.5 ) * (*Tau_abij)["efij"] * (*Vijab)["klef"];
+
+    LOG(0, "CcsdEomDavid") << "Building Wabcd" << std::endl;
+    (*Wabcd)["abcd"]  = (*Vabcd)["abcd"];
+    //-----------------------------------------------------------
+    (*Wabcd)["abcd"] += (-1.0) * (*Vaibc)["amcd"] * (*Tai)["bm"];
+    // P(ab)
+    (*Wabcd)["abcd"] += ( 1.0) * (*Vaibc)["bmcd"] * (*Tai)["am"];
+    //-----------------------------------------------------------
+    (*Wabcd)["abcd"] += ( 0.5) * (*Vijab)["mncd"] * (*Tau_abij)["abmn"];
+
+    LOG(0, "CcsdEomDavid") << "Building Waibc" << std::endl;
+    (*Waibc)["aibc"]  = (*Vaibc)["aibc"];
+    (*Waibc)["aibc"] += ( -1.0) * (*Vijab)["mibc"] * (*Tai)["am"];
+
+    LOG(0, "CcsdEomDavid") << "Building Wijka" << std::endl;
+    //Taken directly from[2]
+    (*Wijka)["jkia"]  = (*Vijka)["jkia"];
+    (*Wijka)["jkia"] += (*Tai)["ei"] * (*Vijab)["jkea"];
+
+    LOG(0, "CcsdEomDavid") << "Building Wiabj from Waijb" << std::endl;
+    //[1] diagram (10.73)
+    //This is not listed in the source book, however we can write it in terms
+    //of Waijb since it should also have the simmetry of the Tabij amplitudes
+    //and the Coulomb integrals Vpqrs
+    //Taken directly from [2]
+    (*Wiabj)["jabi"]  = (*Vaijb)["ajib"];
+    (*Wiabj)["jabi"] += (*Vaibc)["ajeb"] * (*Tai)["ei"];
+    (*Wiabj)["jabi"] += ( -1.0) * (*Vijka)["mjib"] * (*Tai)["am"];
+    (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tai)["ei"] * (*Tai)["am"];
+    (*Wiabj)["jabi"] += ( -1.0) * (*Vijab)["mjeb"] * (*Tabij)["eaim"];
+
+    bool wabciIntermediates(true);
+    if (wabciIntermediates) {
+      LOG(0, "CcsdEomDavid") << "Building Wabci from Wabcd and Wia" << std::endl;
+      //--1
+      (*Wabci)["abci"]  = (*Vabci)["abci"];
+      //--3
+      (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
+      (*Wabci)["abci"] += ( +1.0) * (*Vaibj)["bmci"] * (*Tai)["am"];
+      //--6
+      (*Wabci)["abci"] += ( +1.0) * (*Vaibc)["amce"] * (*Tabij)["ebmi"];
+      (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["bmce"] * (*Tabij)["eami"];
+      //--9
+      (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
+      (*Wabci)["abci"] += ( +1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tabij)["eani"];
+      //--8
+      (*Wabci)["abci"] += ( -1.0) * (*Wia)["mc"] * (*Tabij)["abmi"];
+      //--2-4-10-11
+      (*Wabci)["abci"] += ( +1.0) * (*Tai)["ei"] * (*Wabcd)["abce"];
+      //--7-5
+      (*Wabci)["abci"] += (  0.5 ) * (*Vijak)["nmci"] * (*Tau_abij)["abnm"];
+    } else {
+      LOG(0, "CcsdEomDavid") << "Building Wabci" << std::endl;
+      //--1
+      (*Wabci)["abci"]  = (*Vabci)["abci"];
+      //--2
+      (*Wabci)["abci"] += (*Vabcd)["abce"] * (*Tai)["ei"];
+      //--3
+      (*Wabci)["abci"] += ( -1.0) * (*Vaibj)["amci"] * (*Tai)["bm"];
+      (*Wabci)["abci"] += ( +1.0) * (*Vaibj)["bmci"] * (*Tai)["am"];
+      //--4
+      (*Wabci)["abci"] += ( -1.0) * (*Vaibc)["amce"] * (*Tai)["bm"] * (*Tai)["ei"];
+      (*Wabci)["abci"] += ( +1.0) * (*Vaibc)["bmce"] * (*Tai)["am"] * (*Tai)["ei"];
+      //--5
+      (*Wabci)["abci"] += ( +1.0) * (*Vijak)["mnci"] * (*Tai)["am"] * (*Tai)["bn"];
+      //--5.1 (non canonical)
+      if (Fia) {
+        (*Wabci)["abci"] += ( -1.0) * (*Fia)["mc"] * (*Tabij)["abmi"];
+      }
+      //--6
+      (*Wabci)["abci"] +=          (*Vaibc)["amce"] * (*Tabij)["ebmi"];
+      (*Wabci)["abci"] += (-1.0) * (*Vaibc)["bmce"] * (*Tabij)["eami"];
+      //--7
+      (*Wabci)["abci"] += (  0.5) * (*Vijak)["mnci"] * (*Tabij)["abmn"];
+      //--8
+      (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnec"] * (*Tai)["em"] * (*Tabij)["abni"];
+      //--9
+      (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
+      (*Wabci)["abci"] += ( +1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tabij)["eani"];
+      //--10
+      (*Wabci)["abci"] += (  0.5) * (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
+      //--11
+      (*Wabci)["abci"] +=           (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
+    }
+
+    LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
+    //This is built upon the already existing amplitudes
+    //[1] diagram (10.79)
+    //Takend directly from [2]
+    //--1
+    (*Wiajk)["iajk"]  = (*Viajk)["iajk"];
     //--6
-    (*Wabci)["abci"] +=          (*Vaibc)["amce"] * (*Tabij)["ebmi"];
-    (*Wabci)["abci"] += (-1.0) * (*Vaibc)["bmce"] * (*Tabij)["eami"];
-    //--7
-    (*Wabci)["abci"] += (  0.5) * (*Vijak)["mnci"] * (*Tabij)["abmn"];
+    (*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
+    (*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["imke"] * (*Tabij)["aejm"];
+    //    original
+    //    (*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
+    //    (*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["jmie"] * (*Tabij)["aekm"];
+    //--7-5
+    (*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
     //--8
-    (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnec"] * (*Tai)["em"] * (*Tabij)["abni"];
+    (*Wiajk)["iajk"] += ( -1.0) * (*Wia)["ie"] * (*Tabij)["aejk"];
+    //    original: (Problem, The diagram actually says that it
+    //    should be Teajk and not Taejk, so that 'a' stays in the second
+    //    vertex, so we have to either change a<>e or put a minus)
+    //    (*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
+    //--2-4-10-11
+    (*Wiajk)["iajk"] += (-1.0) * (*Tai)["am"] * (*Wijkl)["imjk"];
+    //    original: (minus)
+    //    (*Wiajk)["iajk"] += (*Tai)["am"] * (*Wijkl)["imjk"];
+    //--3
+    (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ek"] * (*Viajb)["iaje"];
+    (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viajb)["iake"];
+    //     original:
+    //     (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viabj)["iaek"];
+    //     (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ei"] * (*Viabj)["jaek"];
     //--9
-    (*Wabci)["abci"] += ( -1.0) * (*Vijab)["mnce"] * (*Tai)["am"] * (*Tabij)["ebni"];
-    (*Wabci)["abci"] += ( +1.0) * (*Vijab)["mnce"] * (*Tai)["bm"] * (*Tabij)["eani"];
-    //--10
-    (*Wabci)["abci"] += (  0.5) * (*Vijab)["mnce"] * (*Tai)["ei"] * (*Tabij)["abmn"];
-    //--11
-    (*Wabci)["abci"] +=           (*Vijab)["mnce"] * (*Tai)["am"] * (*Tai)["bn"] * (*Tai)["ei"];
+    (*Wiajk)["iajk"] +=
+      ( -1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
+    (*Wiajk)["iajk"] +=
+      ( +1.0 ) * (*Tai)["ek"] * (*Tabij)["afmj"] * (*Vijab)["imef"];
+    //     original: Again it does not make any sense to do Pij, and the minus
+    //     (*Wiajk)["iajk"] +=
+    //       ( +1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
+    //     (*Wiajk)["iajk"] +=
+    //       ( -1.0 ) * (*Tai)["ei"] * (*Tabij)["afmk"] * (*Vijab)["jmef"];
   }
-
-  LOG(0, "CcsdEomDavid") << "Building Wiajk from Wia and Wijkl" << std::endl;
-  //This is built upon the already existing amplitudes
-  //[1] diagram (10.79)
-  //Takend directly from [2]
-  //--1
-  (*Wiajk)["iajk"]  = (*Viajk)["iajk"];
-  //--6
-  (*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
-  (*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["imke"] * (*Tabij)["aejm"];
-  //    original
-  //    (*Wiajk)["iajk"] +=            (*Vijka)["imje"] * (*Tabij)["aekm"];
-  //    (*Wiajk)["iajk"] += ( -1.0 ) * (*Vijka)["jmie"] * (*Tabij)["aekm"];
-  //--7-5
-  (*Wiajk)["iajk"] += (  0.5 ) * (*Viabc)["iaef"] * (*Tau_abij)["efjk"];
-  //--8
-  (*Wiajk)["iajk"] += ( -1.0) * (*Wia)["ie"] * (*Tabij)["aejk"];
-  //    original: (Problem, The diagram actually says that it
-  //    should be Teajk and not Taejk, so that 'a' stays in the second
-  //    vertex, so we have to either change a<>e or put a minus)
-  //    (*Wiajk)["iajk"] += (*Wia)["ie"] * (*Tabij)["aejk"];
-  //--2-4-10-11
-  (*Wiajk)["iajk"] += (-1.0) * (*Tai)["am"] * (*Wijkl)["imjk"];
-  //    original: (minus)
-  //    (*Wiajk)["iajk"] += (*Tai)["am"] * (*Wijkl)["imjk"];
-  //--3
-  (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ek"] * (*Viajb)["iaje"];
-  (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viajb)["iake"];
-  //     original:
-  //     (*Wiajk)["iajk"] += ( -1.0 ) * (*Tai)["ej"] * (*Viabj)["iaek"];
-  //     (*Wiajk)["iajk"] += ( +1.0 ) * (*Tai)["ei"] * (*Viabj)["jaek"];
-  //--9
-  (*Wiajk)["iajk"] +=
-    ( -1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
-  (*Wiajk)["iajk"] +=
-    ( +1.0 ) * (*Tai)["ek"] * (*Tabij)["afmj"] * (*Vijab)["imef"];
-  //     original: Again it does not make any sense to do Pij, and the minus
-  //     (*Wiajk)["iajk"] +=
-  //       ( +1.0 ) * (*Tai)["ej"] * (*Tabij)["afmk"] * (*Vijab)["imef"];
-  //     (*Wiajk)["iajk"] +=
-  //       ( -1.0 ) * (*Tai)["ei"] * (*Tabij)["afmk"] * (*Vijab)["jmef"];
-
 }
 
 template <typename F>
@@ -1087,24 +1091,29 @@ CcsdPreConditioner<F>::getInitialBasis(
     localElements.begin(), localElements.end(),
     EomDiagonalValueComparator<double>()
   );
+  int localElementsSize( localElements.size() );
 
   // gather all K elements of all processors at root
   //   convert into homogeneous arrays for MPI gather
-  std::vector<size_t> localLowestElementIndices(localElements.size());
-  std::vector<F> localLowestElementValues(localElements.size());
-  for (size_t i(0); i < localElements.size(); ++i) {
+  const int trialEigenVectorsCount(10*eigenVectorsCount);
+  std::vector<size_t> localLowestElementIndices(trialEigenVectorsCount);
+  std::vector<F> localLowestElementValues(trialEigenVectorsCount);
+  for (
+    size_t i(0);
+    i < std::min(localElementsSize, trialEigenVectorsCount);
+    ++i
+  ) {
     localLowestElementIndices[i] = localElements[i].first;
     localLowestElementValues[i] = localElements[i].second;
   }
   MpiCommunicator communicator(*Cc4s::world);
-  int lowestElementsCount(diagonalH.getDimension());
-  std::vector<size_t> lowestElementIndices(lowestElementsCount);
-  std::vector<F> lowestElementValues(lowestElementsCount);
+  std::vector<size_t> lowestElementIndices;
+  std::vector<F> lowestElementValues;
   communicator.gather(localLowestElementIndices, lowestElementIndices);
   communicator.gather(localLowestElementValues, lowestElementValues);
   //   convert back into (index,value) pairs for sorting
-  std::vector<std::pair<size_t, F>> lowestElements(lowestElementsCount);
-  for (int i(0); i < lowestElementsCount; ++i) {
+  std::vector<std::pair<size_t, F>> lowestElements(lowestElementValues.size());
+  for (int i(0); i < lowestElementValues.size(); ++i) {
     lowestElements[i].first = lowestElementIndices[i];
     lowestElements[i].second = lowestElementValues[i];
   }
@@ -1114,7 +1123,7 @@ CcsdPreConditioner<F>::getInitialBasis(
     lowestElements.begin(), lowestElements.end(),
     EomDiagonalValueComparator<double>()
   );
-  // at rank==0 (root) lowestElements contains N*Np entries
+  // at rank==0 (root) lowestElements contains K*Np entries
   // rank > 0 has an empty list
 
   // create basis vectors for each lowest element

@@ -88,16 +88,17 @@ void ThermalHolesAndParticles::orderStates() {
 }
 
 void ThermalHolesAndParticles::determineChemicalPotential() {
-  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-  int No(epsi->lens[0]);
   int Np(epsp->lens[0]);
 
   // get lower and upper bounds for the chemical potential
-  double muLower(eigenStates[0].first);
-  double muUpper(eigenStates[No].first);
+  double muLower(2*eigenStates[0].first-eigenStates[Np-1].first);
+  double muUpper(2*eigenStates[Np-1].first-eigenStates[0].first);
   // actual number of electrons (states for spin restricted) in the system
-  double NElectrons(0.5 * getRealArgument("Electrons"));
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  double NElectrons(getRealArgument("Electrons") / spins);
   kT = getRealArgument("Temperature");
+  LOG(1,"FT")
+    << "searching for mu in [" << muLower << "," << muUpper << "]" << std::endl;
   // current estimate for the chemical potential
   mu = 0.0;
   // expectation value of the number operator for current mu
@@ -119,9 +120,9 @@ void ThermalHolesAndParticles::determineChemicalPotential() {
       break;
     }
   }
+  LOG(1, "ThermalHolesAndParticles") << "Chemical potential=" << mu << std::endl;
   if (iterations == maxIterations)
     throw new EXCEPTION("Failed to determine chemical potential.");
-  LOG(1, "ThermalHolesAndParticles") << "Chemical potential=" << mu << std::endl;
   setRealArgument("ChemicalPotential", mu);
 }
 
@@ -131,7 +132,11 @@ void ThermalHolesAndParticles::defineThermalHolesAndParticles() {
   int Np(epsp->lens[0]);
 
   // determine the thermal hole and particle index set
-  double maxDelta(eigenStates[Np-1].first - eigenStates[0].first);
+  double maxDelta(
+    getRealArgument(
+      "maxDenominator", eigenStates[Np-1].first - eigenStates[0].first
+    )
+  );
   double overlap(std::sqrt(32*maxDelta*kT));
   LOG(1, "ThermalHolesAndParticles") << "overlap of thermal particle and hole states=" << overlap << std::endl;
   int holeEnd(No), particleStart(-1);

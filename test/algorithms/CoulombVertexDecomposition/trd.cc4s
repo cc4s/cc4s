@@ -19,8 +19,10 @@ CoulombVertexDecomposition [
 % (normalizedFactorOrbitals 1)
   % Set the number of iterations. Default is 32.
   (maxIterations 64)
-  (mixer "LinearMixer")
-  (mixingRatio 0.5)
+% (mixer "LinearMixer")
+% (mixingRatio 0.5)
+  (mixer "DiisMixer")
+  (MaxResidua 4)
   % Set whether CoulombFactors or FactorOrbitals are fitted
   % or kept fixed during the RALS iterations.
 % (fitCoulombFactors 1)

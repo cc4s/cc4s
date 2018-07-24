@@ -21,7 +21,11 @@ T *TensorIo::readBinary(std::string const &fileName) {
       MPI_INFO_NULL, &file
     )
   );
-  if (mpiError) throw new EXCEPTION("Failed to open file");
+  if (mpiError) {
+    std::stringstream explanation;
+    explanation << "Failed to open file \"" << fileName << "\"";
+    throw new EXCEPTION(explanation.str());
+  }
 
   int64_t offset(0);
   T *A(readBinaryHeader<F,T>(file, offset));
@@ -41,7 +45,11 @@ T *TensorIo::readText(
   int64_t const bufferSize
 ) {
   std::ifstream stream(fileName.c_str());
-  if (stream.fail()) throw new EXCEPTION("Failed to open file");
+  if (stream.fail()) {
+    std::stringstream explanation;
+    explanation << "Failed to open file \"" << fileName << "\"";
+    throw new EXCEPTION(explanation.str());
+  }
   Scanner scanner(&stream);
   std::string name(scanner.nextLine(' '));
   std::stringstream lineStream(scanner.nextLine());
