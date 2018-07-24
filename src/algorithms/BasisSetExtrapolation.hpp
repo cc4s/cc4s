@@ -41,9 +41,8 @@ namespace cc4s {
     void constructRealSpaceMesh(int augfac,std::vector<Vector<>>& realSpaceMesh);
     void fourierCompleteness();
     void inverseConvolution();
-    void QGG();
-    void QGGSliced(int iStart, int iEnd);
-    void dryQGG();	  //    void convolutionInR()
+    void QGG(int iStart, int iEnd);
+    void dryQGG(int iStart, int iEnd);
     void realCGi();
     void fitF12(int type, int iter, real minG, real maxG);
     void calculateNewSF(int type, real gamma, CTF::Tensor<> *coulombKernel, CTF::Tensor<> *newSF, CTF::Tensor<> *resNewSF);

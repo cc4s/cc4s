@@ -39,7 +39,7 @@ namespace cc4s {
     Momentum *cartesianGrid;
     void readFromFile();
     void calculateRealStructureFactor();
-
+    void calculateRealStructureFactorSliced(int iStart, int iEnd);
     //    template <typename F>
     //    F calculateStructureFactor(CTF::Tensor<F> &Vabij);
 
@@ -71,7 +71,8 @@ namespace cc4s {
     double leastSquareFit(std::vector<double> fitabsG, std::vector<double> fitSF);
 
     void basisSetCompleteness();
-  };
+ 
+ };
 }
 
 #endif
