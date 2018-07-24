@@ -8,7 +8,7 @@ TARGET=Cc4s
 CXX=mpiicc
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS=-openmp -DINTEL_COMPILER -g
+OPTIONS=-openmp -DINTEL_COMPILER -Qoption,cpp,--extended_float_types
 
 # optimization options (only for compiling and linking)
 OPTIMIZE=-O0
