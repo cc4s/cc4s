@@ -23,15 +23,17 @@ ThermalMp2EnergyFromCoulombIntegrals::~ThermalMp2EnergyFromCoulombIntegrals() {
 void ThermalMp2EnergyFromCoulombIntegrals::run() {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
+  Tensor<> *Ni(getTensorArgument("ThermalHoleOccupancies"));
+  Tensor<> *Na(getTensorArgument("ThermalParticleOccupancies"));
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
   beta = 1/getRealArgument("Temperature");
 
   // compute \Delta^{ab}_{ij} = eps_a + eps_b - eps_i - eps_j
   Dabij = NEW(Tensor<>, false, *Vabij);
-  (*Dabij)["abij"] =  (*epsa)["a"];
-  (*Dabij)["abij"] += (*epsa)["b"];
-  (*Dabij)["abij"] -= (*epsi)["i"];
-  (*Dabij)["abij"] -= (*epsi)["j"];
+  (*Dabij)["abij"] =  (*epsa)["a"] * (*Na)["a"];
+  (*Dabij)["abij"] += (*epsa)["b"] * (*Na)["b"];
+  (*Dabij)["abij"] -= (*epsi)["i"] * (*Ni)["i"];
+  (*Dabij)["abij"] -= (*epsi)["j"] * (*Ni)["j"];
 
 /* tests:
   LOG(1, "FT-MP2") <<
