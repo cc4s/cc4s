@@ -96,7 +96,7 @@ void ThermalClusterDoublesAlgorithm::run() {
 
   LOG(1, getCapitalizedAbbreviation()) << "TDA F=" << tdad+tdax+tdas << std::endl;
   if (isArgumentGiven("ThermalTdaEnergy")) {
-    setRealArgument("ThermalTdaEnergy", tdad+tdax);
+    setRealArgument("ThermalTdaEnergy", tdad+tdax+tdas);
   }
   if (isArgumentGiven("SinglesHamiltonianWeights")) {
     auto singlesWeights(new Tensor<real>(1, std::vector<int>({NF}).data()) );
