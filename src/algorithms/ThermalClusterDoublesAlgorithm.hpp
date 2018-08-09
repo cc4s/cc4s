@@ -60,6 +60,13 @@ namespace cc4s {
     PTR(CTF::Tensor<real>) gi, ga;
 
     /**
+     * \brief \f$\delta^a_i\f$ where \f$a\f$ and \f$i\f$ are thermal
+     * particle and hole indices, respectively. It is one iff the
+     * indices refer to the same orbital.
+     **/
+    PTR(CTF::Tensor<real>) deltaai;
+
+    /**
      * \brief Inverse temperature \f$\beta=1/k_{\rm B}T\f$, where
      * \f$k_{\rm B}T\f$ is given in the same unit as the eigenenergies
      * \f$\varepsilon_p\f$.
@@ -84,6 +91,7 @@ namespace cc4s {
     std::string getAmplitudeIndices(CTF::Tensor<real> &T);
     void fetchDelta(CTF::Tensor<real> &Delta);
     void thermalContraction(CTF::Tensor<real> &T);
+    void getKroneckerDelta();
 
     void diagonalizeSinglesHamiltonian();
     void diagonalizeDoublesAmplitudes();
@@ -95,6 +103,42 @@ namespace cc4s {
       ): DTau(DTau_) {
       }
       real DTau;
+    };
+
+    class SecondOrderIntegral: public ImaginaryTimeTransform {
+    public:
+      SecondOrderIntegral(
+        real DTau_
+      ): ImaginaryTimeTransform(DTau_) {
+      }
+      void operator ()(const real lambda, real &hh) const {
+        const real x(lambda * DTau);
+        if (std::abs(x) > 0.25) {
+          hh *= DTau * (std::exp(-x) - 1.0 + x) / (x*x);
+        } else {
+          hh *= DTau/2*(
+            1 - x/3*(
+              1 - x/4*(
+                1 - x/5*(
+                  1 - x/6*(
+                    1 - x/7*(
+                      1 - x/8*(
+                        1 - x/9*(
+                          1 - x/10*(
+                            1 - x/11*(
+                              1 - x/12
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          );
+        }
+      }
     };
 
     class ImaginaryTimePropagation: public ImaginaryTimeTransform {
