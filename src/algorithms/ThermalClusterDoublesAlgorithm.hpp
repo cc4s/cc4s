@@ -50,9 +50,14 @@ namespace cc4s {
     PTR(CTF::Tensor<real>) lambdaFG;
 
     /**
-     * \brief direct Vabij in left and right singles eigensystem F & G
+     * \brief direct & exchange Vabij in left/right singles eigensystem F/G
      **/
-    PTR(CTF::Tensor<real>) VdFG;
+    PTR(CTF::Tensor<real>) VdFG, VxFG;
+
+    /**
+     * \brief H_0^a_i in singles eigensystem F
+     **/
+    PTR(CTF::Tensor<real>) H0F;
 
     /**
      * \brief sqrt(occupancies)
@@ -89,10 +94,12 @@ namespace cc4s {
 
     std::string getCapitalizedAbbreviation();
     std::string getAmplitudeIndices(CTF::Tensor<real> &T);
-    void fetchDelta(CTF::Tensor<real> &Delta);
-    void thermalContraction(CTF::Tensor<real> &T);
-    void getKroneckerDelta();
-
+    real getTammDancoffEnergy();
+    void computeEnergyContribution(
+      CTF::Tensor<real> &T1F, CTF::Tensor<real> &T2FG, const real DTau,
+      real &direct, real &exchange, real &singles
+    );
+    void computeSqrtOccupancies();
     void diagonalizeSinglesHamiltonian();
     void diagonalizeDoublesAmplitudes();
 

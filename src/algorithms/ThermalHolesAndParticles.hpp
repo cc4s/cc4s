@@ -34,6 +34,7 @@ namespace cc4s {
     void determineChemicalPotential();
     void defineThermalHolesAndParticles();
     void determineThermalOccupancies();
+    void computeParticleHoleOverlap();
 
     CTF::Vector<> *epsp;
     std::vector<std::pair<double, int>> eigenStates;

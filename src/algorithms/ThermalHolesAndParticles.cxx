@@ -27,6 +27,9 @@ void ThermalHolesAndParticles::run() {
   determineChemicalPotential();
   defineThermalHolesAndParticles();
   determineThermalOccupancies();
+  if (isArgumentGiven("ThermalParticleHoleOverlap")) {
+    computeParticleHoleOverlap();
+  }
 
   delete epsp;
 //  return 1.0 / (1.0 + std::exp(-(eps-mu)/kT));
@@ -199,5 +202,28 @@ void ThermalHolesAndParticles::determineThermalOccupancies() {
     (*ftNa)["a"]
   );
   allocatedTensorArgument("ThermalParticleOccupancies", ftNa);
+}
+
+void ThermalHolesAndParticles::computeParticleHoleOverlap() {
+  auto epsi( getTensorArgument<>("ThermalHoleEigenEnergies") );
+  int No(epsi->lens[0]);
+  auto epsa( getTensorArgument<>("ThermalParticleEigenEnergies") );
+  int Nv(epsa->lens[0]);
+  Tensor<real> *deltaai(new Tensor<real>(2, std::vector<int>({Nv,No}).data()));
+  auto GammaFqr( getTensorArgument<complex>("CoulombVertex") );
+  int Np(GammaFqr->lens[1]);
+  // there as many entries in delta^a_i as there is overlap between No and Nv
+  size_t elementsCount(epsi->wrld->rank == 0 ? No+Nv-Np : 0);
+  std::vector<real> elements(elementsCount);
+  std::vector<int64_t> indices(elementsCount);
+  for (size_t a(0); a < elementsCount; ++a) {
+    elements[a] = 1.0;
+    // delta^a_i = 1.0 iff a and i refer to the same index q
+    int i = No - elementsCount + a;
+    // assign the appropriate position
+    indices[a] = a + Nv*i;
+  }
+  deltaai->write(elementsCount, indices.data(), elements.data());
+  allocatedTensorArgument("ThermalParticleHoleOverlap", deltaai);
 }
 
