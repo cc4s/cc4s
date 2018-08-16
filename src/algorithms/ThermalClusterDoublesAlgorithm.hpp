@@ -35,12 +35,13 @@ namespace cc4s {
     virtual std::string getAbbreviation() = 0;
 
     static constexpr int DEFAULT_MAX_ITERATIONS = 12;
+    static constexpr int DEFAULT_SINGLES_ENERGY = 1;
 
   protected:
     /**
-     * \brief doubles amplitudes on the imaginary time grid
+     * \brief singles and doubles amplitudes on the imaginary time grid
      **/
-    std::vector<PTR(CTF::Tensor<real>)> TFGn;
+    std::vector<PTR(CTF::Tensor<real>)> TFn, TFGn;
 
     CTF::Tensor<real> *lambdaF;
 
@@ -65,13 +66,6 @@ namespace cc4s {
     PTR(CTF::Tensor<real>) gi, ga;
 
     /**
-     * \brief \f$\delta^a_i\f$ where \f$a\f$ and \f$i\f$ are thermal
-     * particle and hole indices, respectively. It is one iff the
-     * indices refer to the same orbital.
-     **/
-    PTR(CTF::Tensor<real>) deltaai;
-
-    /**
      * \brief Inverse temperature \f$\beta=1/k_{\rm B}T\f$, where
      * \f$k_{\rm B}T\f$ is given in the same unit as the eigenenergies
      * \f$\varepsilon_p\f$.
@@ -86,9 +80,12 @@ namespace cc4s {
     /**
      */
     virtual void applyHamiltonian(
+      CTF::Tensor<real> &T0F,
       CTF::Tensor<real> &T0FG,
+      CTF::Tensor<real> &T1F,
       CTF::Tensor<real> &T1FG,
       const real DTau,
+      CTF::Tensor<real> &S1F,
       CTF::Tensor<real> &S1FG
     ) = 0;
 

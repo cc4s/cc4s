@@ -47,12 +47,15 @@ void ThermalClusterDoublesAlgorithm::run() {
   // number of iterations for determining the amplitudes at each point in time
   int I( getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS) );
   // allocate doubles amplitudes on imaginary time grid
+  TFn.resize(taus.size());
   TFGn.resize(taus.size());
   for (size_t n(0); n < taus.size(); ++n) {
+    TFn[n] = NEW(CTF::Tensor<real>, false, *H0F);
     TFGn[n] = NEW(CTF::Tensor<real>, false, *VdFG);
   }
-  std::vector<PTR(Tensor<real>)> SFGn(taus.size());
+  std::vector<PTR(Tensor<real>)> SFn(taus.size()), SFGn(taus.size());
   for (size_t n(0); n < taus.size(); ++n) {
+    SFn[n] = NEW(CTF::Tensor<real>, false, *H0F);
     SFGn[n] = NEW(CTF::Tensor<real>, false, *VdFG);
   }
   std::vector<real> energies(taus.size());
@@ -62,6 +65,7 @@ void ThermalClusterDoublesAlgorithm::run() {
 
   real energy;
   real accuracy(getRealArgument("accuracy", 1e-7));
+  CTF::Tensor<real> T0F(false, *H0F);
   CTF::Tensor<real> T0FG(false, *VdFG);
   CTF::Tensor<real> S1F(false, *H0F);
   CTF::Tensor<real> S1FG(false, *VdFG);
@@ -104,7 +108,7 @@ void ThermalClusterDoublesAlgorithm::run() {
           );
 
           // apply hamiltonian between tau_n-1 and tau_n
-          applyHamiltonian(T0FG, *TFGn[n], DTau, S1FG);
+          applyHamiltonian(T0F, T0FG, *TFn[n], *TFGn[n], DTau, S1F, S1FG);
 
           // energy contribution from convolved amplitudes ST^I(tau_n)
           computeEnergyContribution(S1F, S1FG, DTau, direct, exchange, singles);
@@ -113,8 +117,10 @@ void ThermalClusterDoublesAlgorithm::run() {
             << "F_d=" << direct/tau1 << std::endl;
           LOG(2, getCapitalizedAbbreviation())
             << "F_x=" << exchange/tau1 << std::endl;
-          LOG(2, getCapitalizedAbbreviation())
-            << "F_s=" << singles/tau1 << std::endl;
+          if (getIntegerArgument("singlesEnergy", DEFAULT_SINGLES_ENERGY)) {
+            LOG(2, getCapitalizedAbbreviation())
+              << "F_s=" << singles/tau1 << std::endl;
+          }
           LOG(2, getCapitalizedAbbreviation()) << "|T|=" << a << std::endl;
           tau0 = tau1;
         }
@@ -179,6 +185,9 @@ real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   auto Vabij( getTensorArgument<>("ThermalPPHHCoulombIntegrals") );
   auto deltaai( getTensorArgument<>("ThermalParticleHoleOverlap") );
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
+  bool singlesEnergy(
+    getIntegerArgument("singlesEnergy", DEFAULT_SINGLES_ENERGY)
+  );
 
   // compute Tamm-Dancoff Approximation (TDA)
   Scalar<> e;
@@ -201,15 +210,8 @@ real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   (*lambdaFG)["FG"] += (*lambdaF)["G"];
   Tensor<real> TFG(*VdFG);
   SecondOrderIntegral secondOrderIntegral(beta);
-  Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral)
-  )(
+  Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
     (*lambdaFG)["FG"], TFG["FG"]
-  );
-  // propagate singles
-  Tensor<real> TF(*H0F);
-  Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral)
-  )(
-    (*lambdaF)["F"], TF["F"]
   );
 
   e[""] = -0.5 * spins*spins * TFG["FG"] * (*VdFG)["FG"];
@@ -220,9 +222,17 @@ real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   real tdax(e.get_val());
   LOG(1, getCapitalizedAbbreviation()) << "TDA F_x=" << tdax << std::endl;
 
-  e[""] = -spins * TF["F"] * (*H0F)["F"];
-  real tdas(e.get_val());
-  LOG(1, getCapitalizedAbbreviation()) << "TDA F_s=" << tdas << std::endl;
+  real tdas(0.0);
+  if (singlesEnergy) {
+    // propagate singles
+    Tensor<real> TF(*H0F);
+    Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
+      (*lambdaF)["F"], TF["F"]
+    );
+    e[""] = -spins * TF["F"] * (*H0F)["F"];
+    tdas = e.get_val();
+    LOG(1, getCapitalizedAbbreviation()) << "TDA F_s=" << tdas << std::endl;
+  }
 
   if (isArgumentGiven("SinglesHamiltonianWeights")) {
     auto singlesWeights(new Tensor<real>(1, std::vector<int>({NF}).data()) );
@@ -241,7 +251,12 @@ void ThermalClusterDoublesAlgorithm::computeEnergyContribution(
   Scalar<real> energy;
   // combine singles and doubles
   Tensor<real> TFG(T2FG);
-  TFG["FG"] += T1F["F"] * T1F["G"];
+  bool singlesEnergy(
+    getIntegerArgument("singlesEnergy", DEFAULT_SINGLES_ENERGY)
+  );
+  if (singlesEnergy) {
+    TFG["FG"] += T1F["F"] * T1F["G"];
+  }
 
   // direct term
   energy[""] = 0.5 * spins * spins * DTau/2 * TFG["FG"] * (*VdFG)["FG"];
@@ -249,9 +264,11 @@ void ThermalClusterDoublesAlgorithm::computeEnergyContribution(
   // exchange term
   energy[""] = (-0.5) * spins * DTau/2 * TFG["FG"] * (*VxFG)["FG"];
   exchange += energy.get_val();
-  // singles term
-  energy[""] = spins * DTau/2 * T1F["F"] * (*H0F)["F"];
-  singles += energy.get_val();
+  if (singlesEnergy) {
+    // singles term
+    energy[""] = spins * DTau/2 * T1F["F"] * (*H0F)["F"];
+    singles += energy.get_val();
+  }
 }
 
 void ThermalClusterDoublesAlgorithm::computeSqrtOccupancies() {
@@ -273,11 +290,11 @@ void ThermalClusterDoublesAlgorithm::computeSqrtOccupancies() {
 }
 
 void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
-  Tensor<> *epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
-  Tensor<> *Ni(getTensorArgument<>("ThermalHoleOccupancies"));
-  Tensor<> *Na(getTensorArgument<>("ThermalParticleOccupancies"));
-  Tensor<> *Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
+  auto epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
+  auto epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  auto Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  auto Na(getTensorArgument<>("ThermalParticleOccupancies"));
+  auto Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   // build to Hbjai
