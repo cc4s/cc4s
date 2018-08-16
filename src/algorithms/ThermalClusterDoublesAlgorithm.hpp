@@ -36,6 +36,7 @@ namespace cc4s {
 
     static constexpr int DEFAULT_MAX_ITERATIONS = 12;
     static constexpr int DEFAULT_SINGLES_ENERGY = 1;
+    static constexpr int DEFAULT_SINGLES = 1;
 
   protected:
     /**
