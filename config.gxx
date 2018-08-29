@@ -10,18 +10,23 @@ OPTIONS=-fopenmp
 # optimization options (only for compiling and linking)
 OPTIMIZE=-Ofast -march=native -flto
 
-# location of the Cyclops Tensor Framework library depends on the configuration
-CTF=lib/build/${CONFIG}/ctf
+# Cyclops Tensor Framework libraray
+CTF_PATH=lib/build/${CONFIG}/ctf
+CTF_LIB=-L${CTF_PATH}/lib -lctf
+CTF_INCLUDE=-I${CTF_PATH}/include
 
-# location of the compiled BLAS,LAPACK and ScaLAPACK libraries
-SCA=/usr/local/lib/scalapack
+# BLAS and LAPACK library, expects BLAS_PATH to be set
+BLAS_LIB= -L${BLAS_PATH}/lib -lopenblas
+BLAS_INCLUDE=-I${BLAS_PATH}/include
+
+# ScaLAPACK libarary, expects SCALAPACK_PATH to be set
+SCALAPACK_LIB=-L${SCALAPACK_PATH}/lib -lscalapack
 
 # additional include directories for header files
-INCLUDE=-I${CTF}/include
+INCLUDE=${CTF_INCLUDE} ${BLAS_INCLUDE}
 
 # additional library paths and libraries to link to
-LIBS=-L${SCA} -L${CTF}/lib -lctf -lscalapack -lreflapack -lrefblas -lgfortran -lquadmath
-#LIBS=-L${CTF}/lib -lctf -lblas -llapack -lblacs-openmpi -lblacsCinit-openmpi -lscalapack-openmpi
+LIBS=-Wl,-Bstatic ${CTF_LIB} ${SCALAPACK_LIB} ${BLAS_LIB} -lgfortran -lquadmath -Wl,-Bdynamic
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
