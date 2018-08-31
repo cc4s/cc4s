@@ -34,154 +34,125 @@ namespace cc4s {
 }
 
 
-void CcsdPerturbativeTriples::run() {
-  auto epsi( getTensorArgument<double>("HoleEigenEnergies") );
-  auto epsa( getTensorArgument<double>("ParticleEigenEnergies") );
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-  // slice GammaFab,GammaFai from GammaFqr
-  auto GammaFqr( getTensorArgument<complex>("CoulombVertex") );
+void CcsdPerturbativeTriples::sliceTensors() {
+  // slice Tai in dimension 1, i.e. in i
+  Tai = new SlicedCtfTensor<>(
+    *getTensorArgument("CcsdSinglesAmplitudes"), {1}
+  );
+  // slice Tabij in dimension 2&3, i.e. in i,j
+  Tabij = new SlicedCtfTensor<>(
+    *getTensorArgument("CcsdDoublesAmplitudes"), {2,3}
+  );
+  // slice Tabil in dimension 2
+  Tabil = new SlicedCtfTensor<>(
+    *getTensorArgument("CcsdDoublesAmplitudes"), {2}
+  );
+  // slice Vabij in dimension 2&3, i.e. in i,j
+  Vabij = new SlicedCtfTensor<>(
+    *getTensorArgument("PPHHCoulombIntegrals"), {2,3}
+  );
+  // slice Vijla in dimension 0&1, i.e. in i,j
+  Vijla = new SlicedCtfTensor<>(
+    *getTensorArgument("HHHPCoulombIntegrals"), {0,1}
+  );
+
+  Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
+  // Allocate and compute GammaFab,GammaFai from GammaFqr
   int NF(GammaFqr->lens[0]);
   int Np(GammaFqr->lens[1]);
   int iStart(0), iEnd(No);
   int aStart(Np-Nv), aEnd(Np);
-  int FabStart[] = { 0, aStart, aStart };
-  int FabEnd[] = { NF, aEnd, aEnd };
   int FaiStart[] = { 0, aStart, iStart};
   int FaiEnd[] = { NF, aEnd, iEnd };
-  auto GammaFab( new Tensor<complex>(GammaFqr->slice(FabStart,FabEnd)) );
-  auto GammaFai( new Tensor<complex>(GammaFqr->slice(FaiStart,FaiEnd)) );
+  int FabStart[] = { 0, aStart, aStart };
+  int FabEnd[] = { NF, aEnd, aEnd };
+  Tensor<complex> GammaFai(GammaFqr->slice(FaiStart,FaiEnd));
+  Tensor<complex> GammaFab(GammaFqr->slice(FabStart,FabEnd));
+  // Split GammaFai,GammaFab into real and imaginary parts
+  Tensor<> unslicedRealGammaFai(
+    3, GammaFai.lens, GammaFai.sym, *GammaFai.wrld, "RealGammaFai"
+  );
+  Tensor<> unslicedImagGammaFai(unslicedRealGammaFai);
+  fromComplexTensor(GammaFai, unslicedRealGammaFai, unslicedImagGammaFai);
+  // slice real and imag GammaFai in dimension 2, i.e. in i
+  realGammaFai = new SlicedCtfTensor<>(unslicedRealGammaFai, {2});
+  imagGammaFai = new SlicedCtfTensor<>(unslicedImagGammaFai, {2});
 
-  double eTriples(0.0);
-  Data *Vabij(getArgumentData("PPHHCoulombIntegrals"));
-  TensorData<double> *realVabij(dynamic_cast<TensorData<double> *>(Vabij));
-  if (realVabij) {
-    eTriples = Calculator<double>(
-      getTensorArgument<double>("CcsdSinglesAmplitudes"),
-      getTensorArgument<double>("CcsdDoublesAmplitudes"),
-      getTensorArgument<double>("PPHHCoulombIntegrals"),
-      getTensorArgument<double>("PHHHCoulombIntegrals"),
-      GammaFab, GammaFai,
-      epsi, epsa
-    ).calculate();
-    LOG(1, "CcsdPerturbativeTriples") << "triples=" << eTriples << std::endl;
-  } else {
-    complex complexETriples(
-      Calculator<complex>(
-        getTensorArgument<complex>("CcsdSinglesAmplitudes"),
-        getTensorArgument<complex>("CcsdDoublesAmplitudes"),
-        getTensorArgument<complex>("PPHHCoulombIntegrals"),
-        getTensorArgument<complex>("PHHHCoulombIntegrals"),
-        GammaFab, GammaFai,
-        epsi, epsa
-      ).calculate()
-    );
-    eTriples = std::real(complexETriples);
-    LOG(1, "CcsdPerturbativeTriples") << "triples=" << complexETriples << std::endl;
-  }
-  double eCcsd(getRealArgument("CcsdEnergy"));
-  LOG(1, "CcsdPerturbativeTriples") << "ccsd=" << eCcsd << std::endl;
-  double e(eCcsd + eTriples);
-  LOG(0, "CcsdPerturbativeTriples") << "e=" << e << std::endl;
-  setRealArgument("CcsdPerturbativeTriplesEnergy", e);
+  realGammaFab = new Tensor<>(
+    3, GammaFab.lens, GammaFab.sym, *GammaFab.wrld, "RealGammaFab"
+  );
+  imagGammaFab = new Tensor<>(*realGammaFab);
+  fromComplexTensor(GammaFab, *realGammaFab, *imagGammaFab);
 }
 
-
-template <typename F>
-CcsdPerturbativeTriples::Calculator<F>::Calculator(
-  Tensor<F> *Tai_, Tensor<F> *Tabij_,
-  Tensor<F> *Vabij_, Tensor<F> *Valij_,
-  Tensor<complex> *GammaFab_,
-  Tensor<complex> *GammaFai_,
-  Tensor<double> *epsi_, Tensor<double> *epsa_
-):
-  // slice Tai in dimension 1, i.e. in i
-  Tai( new SlicedCtfTensor<F>(*Tai_, {1}) ),
-  // slice Tabij in dimension 2&3, i.e. in i,j
-  Tabij( new SlicedCtfTensor<F>(*Tabij_, {2,3}) ),
-  // slice Tabil in dimension 2
-  Tabil( new SlicedCtfTensor<F>(*Tabij_, {2}) ),
-  // slice Vabij in dimension 2&3, i.e. in i,j
-  Vabij( new SlicedCtfTensor<F>(*Vabij_, {2,3}) ),
-  // slice Valij in dimension 2&3, i.e. in i,j
-  Valij( new SlicedCtfTensor<F>(*Valij_, {2,3}) ),
-  // build coulomb vertex for the respective type (complex or double)
-  Gamma(GammaFab_, GammaFai_)
-{
-  Tensor<F> unslicedEpsi(1, epsi_->lens, epsi_->sym, *epsi_->wrld, "epsi");
-  // convert real tensor epsi_ into tensor of type F unslicedEpsi
-  toComplexTensor(*epsi_, unslicedEpsi);
-  // slice in dimension 0
-  epsi = new SlicedCtfTensor<F>(unslicedEpsi, {0});
-
-  epsa = new Tensor<F>(1, epsa_->lens, epsa_->sym, *epsa_->wrld, "epsa");
-  // convert real tensor epsa_ into tensor of type F epsa
-  toComplexTensor(*epsa_, *epsa);
-}
-
-template <typename F>
-CcsdPerturbativeTriples::Calculator<F>::~Calculator() {
-  delete Tai; delete Tabij; delete Tabil;
-  delete Vabij; delete Valij;
-  delete epsi; delete epsa;
-}
-
-template <typename F>
-void CcsdPerturbativeTriples::Calculator<F>::addDoublesHoleContribution(
-  const Map<3> &i, Tensor<F> &DVabc
-) {
-  DVabc["abc"] -= (*Tabil)({i(0)})["abil"] * (*Valij)({i(2),i(1)})["clkj"];
-}
-
-template <typename F>
-Tensor<F> &CcsdPerturbativeTriples::Calculator<F>::getSinglesContribution(
-  const Map<3> &i
-) {
+Tensor<> &CcsdPerturbativeTriples::getSinglesContribution(const Map<3> &i) {
   (*SVabc)["abc"] = 0.5 * (*Tai)({i(0)})["ai"] * (*Vabij)({i(1),i(2)})["bcjk"];
   return *SVabc;
 }
 
-template <typename F>
-Tensor<F> &CcsdPerturbativeTriples::Calculator<F>::getEnergyDenominator(
-  const Map<3> &i
-) {
+Tensor<> &CcsdPerturbativeTriples::getDoublesContribution(const Map<3> &i) {
+  (*SVabc)["abc"] =
+    (*Tabij)({i(0),i(1)})["adij"] *
+    (*realGammaFab)["Fbd"] * (*realGammaFai)({i(2)})["Fck"];
+  (*SVabc)["abc"] +=
+    (*Tabij)({i(0),i(1)})["adij"] *
+    (*imagGammaFab)["Fbd"] * (*imagGammaFai)({i(2)})["Fck"];
+
+  (*SVabc)["abc"] -= (*Tabil)({i(0)})["abil"] * (*Vijla)({i(1),i(2)})["jklc"];
+  return *SVabc;
+}
+
+Tensor<> &CcsdPerturbativeTriples::getEnergyDenominator(const Map<3> &i) {
   // reuse SVabc to hold the energy denominator
-  (*SVabc)["abc"]  = (*epsi)({i(0)})["i"];
-  (*SVabc)["abc"] += (*epsi)({i(1)})["j"];
-  (*SVabc)["abc"] += (*epsi)({i(2)})["k"];
+  Tensor<> *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<> *epsa(getTensorArgument("ParticleEigenEnergies"));
+  // NOTE: due to a bug we first to feed the sliced vector into a scalar
+  Scalar<> eps(*epsi->wrld);
+  int epsiStart[] = { i(0) }, epsiEnd[] = { i(0)+1 };
+  eps[""] = epsi->slice(epsiStart,epsiEnd)["i"];
+  (*SVabc)["abc"]  = eps.get_val();
+  int epsjStart[] = { i(1) }, epsjEnd[] = { i(1)+1 };
+  eps[""] = epsi->slice(epsjStart,epsjEnd)["j"];
+  (*SVabc)["abc"] += eps.get_val();
+  int epskStart[] = { i(2) }, epskEnd[] = { i(2)+1 };
+  eps[""] = epsi->slice(epskStart,epskEnd)["k"];
+  (*SVabc)["abc"] += eps.get_val();
   (*SVabc)["abc"] -= (*epsa)["a"];
   (*SVabc)["abc"] -= (*epsa)["b"];
   (*SVabc)["abc"] -= (*epsa)["c"];
   return *SVabc;
 }
 
-template <typename F>
-F CcsdPerturbativeTriples::Calculator<F>::calculate() {
-  int No(epsi->slicedLens[0]);
-  int Nv(epsa->lens[0]);
+void CcsdPerturbativeTriples::run() {
+  Tensor<>  *epsi(getTensorArgument("HoleEigenEnergies"));
+  Tensor<>  *epsa(getTensorArgument("ParticleEigenEnergies"));
+  No = epsi->lens[0];
+  Nv = epsa->lens[0];
   int vvv[] = { Nv, Nv, Nv };
   int syms[] = { NS, NS, NS };
   // doubles amplitudes contracted with V for current i,j,k
-  DVabc = new Tensor<F>(3, vvv, syms, *epsa->wrld, "DVabc");
+  DVabc = new Tensor<>(3, vvv, syms, *epsi->wrld, "DVabc");
   // unconnected singles amplitudes and V for current i,j,k
-  SVabc = new Tensor<F>(3, vvv, syms, *epsa->wrld, "SVabc");
+  SVabc = new Tensor<>(3, vvv, syms, *epsi->wrld, "SVabc");
   // triples amplitudes considering all permutations of a,b,c for given i,j,k
-  Tensor<F> Tabc(3, vvv, syms, *epsa->wrld, "Tabc");
+  Tensor<> Tabc(3, vvv, syms, *epsi->wrld, "Tabc");
+
+  sliceTensors();
 
   // D.V for all permutations of a,b,c together with i,j,k
-  Tensor<F> *piDVabc[Permutation<3>::ORDER];
+  Tensor<> *piDVabc[Permutation<3>::ORDER];
   for (int p(0); p < Permutation<3>::ORDER; ++p) {
-    piDVabc[p] = new Tensor<F>(3, vvv, syms, *epsa->wrld, "piDVabc");
+    piDVabc[p] = new Tensor<>(3, vvv, syms, *epsi->wrld, "piDVabc");
   }
   // spin factors and Fermion sign depending on the number of
   // invariant indices when permuting a,b,c keeping i,j,k fixed.
   // having 2 invariant indices is impossible
   double spinAndFermiFactors[] = { +2.0, -4.0, 0.0, +8.0 };
 
-  // false if permutation Pi leaves current values of indices i,j,k invariant
+  // true if the permutation Pi leaves the current indices i,j,k invariant
   bool givesDistinctIndexPermutation[Permutation<3>::ORDER];
 
-  Scalar<F> energy(*Cc4s::world);
+  Scalar<> energy(*Cc4s::world);
   energy[""] = 0.0;
   // indices i,j,k as map with 3 elements i(0),...,i(2)
   Map<3> i;
@@ -200,34 +171,28 @@ F CcsdPerturbativeTriples::Calculator<F>::calculate() {
           // check if previsous permutation q permutes current i,j,k same as pi
           for (q = 0; q < p; ++q) if (i*Permutation<3>(q) == i*pi) break;
           if (q < p) {
-            // permutation p equivalent to previous q for given values of i,j,k
+            // permutation p equivalent to a previous q for the given i,j,k
             givesDistinctIndexPermutation[p] = false;
             // use previously calculated permutation
             (*piDVabc[p])["abc"] = (*piDVabc[q])["abc"];
           } else {
             givesDistinctIndexPermutation[p] = true;
-            // non-equivalent: calculate for given values of i,j,k
-            Gamma.getDoublesParticleContribution(*Tabij, i*pi, *piDVabc[p]);
-            addDoublesHoleContribution(i*pi, *piDVabc[p]);
+            // non-equivalent: calculate for given i,j,k
+            (*piDVabc[p])["abc"] = getDoublesContribution(i*pi)["abc"];
           }
           // aggregate all simultaneous permutations of i,j,k and a,b,c
           (*DVabc)["abc"] += (*piDVabc[p])[("abc"*pi).c_str()];
         }
 
         // energy denominator is invariant under all permutations
-        CTF::Transform<F, F>(
-          std::function<void(F, F &)>(
-            [](F deltaabij, F &dvabij) {
-              dvabij = conj(dvabij / deltaabij);
-            }
-          )
-        ) (
-          getEnergyDenominator(i)["abc"], (*DVabc)["abc"]
+        Bivar_Function<> fDivide(&divide<double>);
+        DVabc->contract(
+          1.0, *DVabc,"abc", getEnergyDenominator(i),"abc", 0.0,"abc", fDivide
         );
 
         for (int p(0); p < Permutation<3>::ORDER; ++p) {
           if (givesDistinctIndexPermutation[p]) {
-            // for all permutation pi giving distinct values of i,j,k
+            // all distinct permutation pi of i,j,k together with a,b,c
             Permutation<3> pi(p);
             Tabc["abc"] = 0.0;
             for (int s(0); s < Permutation<3>::ORDER; ++s) {
@@ -235,11 +200,11 @@ F CcsdPerturbativeTriples::Calculator<F>::calculate() {
               Permutation<3> sigma(s);
               // the spin factors and the Fermion sign only depend on sigma
               double sf(spinAndFermiFactors[sigma.invariantElementsCount()]);
-              // get precomputed D.V in
+              // get D.V in
               // permutation sigma*pi of a,b,k and in permutation pi of i,j,k
               Tabc["abc"] += sf * (*piDVabc[p])[("abc"*sigma*pi).c_str()];
 
-              // get S.V in
+              // get D.V in
               // permutation sigma*pi of a,b,k and in permutation pi of i,j,k
               Tabc["abc"] +=
                 sf * getSinglesContribution(i*pi)[("abc"*sigma*pi).c_str()];
@@ -259,93 +224,23 @@ F CcsdPerturbativeTriples::Calculator<F>::calculate() {
 
   delete DVabc; delete SVabc;
   for (int p(0); p < Permutation<3>::ORDER; ++p) delete piDVabc[p];
-
-  return energy.get_val();
-}
-
-
-template <int Dummy>
-CcsdPerturbativeTriples::CoulombVertex<double,Dummy>::CoulombVertex(
-  Tensor<complex> *GammaFab,
-  Tensor<complex> *GammaFai
-) {
-  // split GammaFab into real and imaginary parts
-  realGammaFab = new Tensor<double>(
-    3, GammaFab->lens, GammaFab->sym, *GammaFab->wrld, "RealGammaFab"
-  );
-  imagGammaFab = new Tensor<double>(false, *realGammaFab);
-  fromComplexTensor(*GammaFab, *realGammaFab, *imagGammaFab);
-  // complex GammaFab no longer needed
-  delete GammaFab;
-
-  // Split GammaFai into real and imaginary parts and slice along i
-  Tensor<double> unslicedRealGammaFai(
-    3, GammaFai->lens, GammaFai->sym, *GammaFai->wrld, "RealGammaFai"
-  );
-  Tensor<double> unslicedImagGammaFai(false, unslicedRealGammaFai);
-  fromComplexTensor(*GammaFai, unslicedRealGammaFai, unslicedImagGammaFai);
-  // complex GammaFai no longer needed
-  delete GammaFai;
-  // slice real and imag GammaFai in dimension 2, i.e. in i
-  realGammaFai = new SlicedCtfTensor<double>(unslicedRealGammaFai, {2});
-  imagGammaFai = new SlicedCtfTensor<double>(unslicedImagGammaFai, {2});
-}
-
-template <int Dummy>
-CcsdPerturbativeTriples::CoulombVertex<cc4s::complex,Dummy>::CoulombVertex(
-  Tensor<complex> *GammaFab_,
-  Tensor<complex> *GammaFai_
-):
-  conjGammaFab( GammaFab_ ),
-  // slice GammaFai in dimension 2, i.e. in i
-  GammaFai( new SlicedCtfTensor<complex>(*GammaFai_, {2}) )
-{
-  conjugate(*conjGammaFab),
-  // the unsliced GammaFai_ is no longer needed
-  delete GammaFai_;
-}
-
-template <int Dummy>
-CcsdPerturbativeTriples::CoulombVertex<double,Dummy>::~CoulombVertex() {
   delete realGammaFab; delete imagGammaFab;
-  delete realGammaFai; delete imagGammaFai;
+  delete Tai; delete Tabij; delete Tabil;
+  delete Vabij; delete Vijla; delete realGammaFai; delete imagGammaFai;
+
+  double eTriples(energy.get_val());
+  double eCcsd(getRealArgument("CcsdEnergy"));
+  double e(eCcsd + eTriples);
+  LOG(0, "CcsdPerturbativeTriples") << "e=" << e << std::endl;
+  LOG(1, "CcsdPerturbativeTriples") << "ccsd=" << eCcsd << std::endl;
+  LOG(1, "CcsdPerturbativeTriples") << "triples=" << eTriples << std::endl;
+
+  setRealArgument("CcsdPerturbativeTriplesEnergy", e);
 }
 
-template <int Dummy>
-CcsdPerturbativeTriples::CoulombVertex<cc4s::complex,Dummy>::~CoulombVertex() {
-  delete conjGammaFab;
-  delete GammaFai;
-}
-
-template <int Dummy>
-void
-CcsdPerturbativeTriples::CoulombVertex<double,Dummy>::
-getDoublesParticleContribution(
-  SlicedCtfTensor<double> &Tabij, const Map<3> &i, Tensor<double> &DVabc
-) {
-  DVabc["abc"] =
-    Tabij({i(0),i(1)})["adij"] *
-    (*realGammaFab)["Fbd"] * (*realGammaFai)({i(2)})["Fck"];
-  DVabc["abc"] +=
-    Tabij({i(0),i(1)})["adij"] *
-    (*imagGammaFab)["Fbd"] * (*imagGammaFai)({i(2)})["Fck"];
-}
-
-template <int Dummy>
-void
-CcsdPerturbativeTriples::CoulombVertex<cc4s::complex,Dummy>::
-getDoublesParticleContribution(
-  SlicedCtfTensor<complex> &Tabij, const Map<3> &i, Tensor<complex> &DVabc
-) {
-  DVabc["abc"] = Tabij({i(0),i(1)})["adij"] *
-    (*conjGammaFab)["Fdb"] * (*GammaFai)({i(2)})["Fck"];
-}
-
-
-// FIXME: dryrun for complex
 void CcsdPerturbativeTriples::dryRun() {
   getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
-  getTensorArgument<double, DryTensor<double>>("PHHHCoulombIntegrals");
+  getTensorArgument<double, DryTensor<double>>("HHHPCoulombIntegrals");
 
   DryTensor<> *Tai(
     getTensorArgument<double, DryTensor<double>>("CcsdSinglesAmplitudes")

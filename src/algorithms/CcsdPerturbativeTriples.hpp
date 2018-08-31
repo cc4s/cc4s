@@ -25,70 +25,16 @@ namespace cc4s {
      */
     virtual void dryRun();
 
-  private:
-    // NOTE: the Dummy template argument is needed to "fully" specialize
-    // the inner class CoulombVertex to CoulombVertex<double> or <complex>
-    template <typename F, int Dummy=0>
-    class CoulombVertex {
-    };
-
-    template <int Dummy>
-    class CoulombVertex<double, Dummy> {
-    public:
-      CoulombVertex(
-        CTF::Tensor<complex> *GammaFab,
-        CTF::Tensor<complex> *GammaFai
-      );
-      ~CoulombVertex();
-      void getDoublesParticleContribution(
-        SlicedCtfTensor<double> &Tabij, const Map<3> &i,
-        CTF::Tensor<double> &SVabc
-      );
-    protected:
-      CTF::Tensor<double> *realGammaFab, *imagGammaFab;
-      SlicedCtfTensor<double> *realGammaFai,*imagGammaFai;
-    };
-
-    template <int Dummy>
-    class CoulombVertex<complex, Dummy> {
-    public:
-      CoulombVertex(
-        CTF::Tensor<complex> *GammaFab,
-        CTF::Tensor<complex> *GammaFai
-      );
-      ~CoulombVertex();
-      void getDoublesParticleContribution(
-        SlicedCtfTensor<complex> &Tabij, const Map<3> &i,
-        CTF::Tensor<complex> &DVabc
-      );
-    protected:
-      CTF::Tensor<complex> *conjGammaFab;
-      SlicedCtfTensor<complex> *GammaFai;
-    };
-
-    template <typename F>
-    class Calculator {
-    public:
-      Calculator(
-        CTF::Tensor<F> *Tai, CTF::Tensor<F> *Tabij,
-        CTF::Tensor<F> *Vabij, CTF::Tensor<F> *Valij,
-        CTF::Tensor<complex> *GammaFab,
-        CTF::Tensor<complex> *GammaFai,
-        CTF::Tensor<double> *epsi, CTF::Tensor<double> *epsa
-      );
-      ~Calculator();
-      F calculate();
-      void addDoublesHoleContribution(const Map<3> &, CTF::Tensor<F> &);
-      CTF::Tensor<F> &getSinglesContribution(const Map<3> &);
-      CTF::Tensor<F> &getEnergyDenominator(const Map<3> &);
-    protected:
-      CTF::Tensor<F> *SVabc, *DVabc;
-      SlicedCtfTensor<F> *Tai, *Tabij, *Tabil;
-      SlicedCtfTensor<F> *Vabij, *Valij;
-      CoulombVertex<F> Gamma;
-      SlicedCtfTensor<F> *epsi;
-      CTF::Tensor<F> *epsa;
-    };
+  protected:
+    int No, Nv;
+    CTF::Tensor<> *SVabc, *DVabc;
+    CTF::Tensor<> *realGammaFab, *imagGammaFab;
+    SlicedCtfTensor<> *Tai, *Tabij, *Tabil;
+    SlicedCtfTensor<> *Vabij, *Vijla, *realGammaFai,*imagGammaFai;
+    void sliceTensors();
+    CTF::Tensor<> &getSinglesContribution(const Map<3> &);
+    CTF::Tensor<> &getDoublesContribution(const Map<3> &);
+    CTF::Tensor<> &getEnergyDenominator(const Map<3> &);
   };
 }
 
