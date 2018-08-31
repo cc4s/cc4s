@@ -18,7 +18,7 @@ StochasticContraction::StochasticContraction(
 StochasticContraction::~StochasticContraction() {
 }
 
-complex StochasticContraction::drawUniformWeight() {
+cc4s::complex StochasticContraction::drawUniformWeight() {
   return complex(
     rand->nextUniform() - 0.5, rand->nextUniform()-0.5
   ) * 2.0 * std::sqrt(3.0/2.0);

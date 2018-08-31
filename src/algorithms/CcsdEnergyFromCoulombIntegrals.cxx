@@ -412,8 +412,8 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
 }
 
 
-PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
-  const int i, const PTR(const FockVector<complex>) &amplitudes
+PTR(FockVector<cc4s::complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
+  const int i, const PTR(const FockVector<cc4s::complex>) &amplitudes
 ) {
   // Read Vabij integrals
   auto Vabij(getTensorArgument<complex>("PPHHCoulombIntegrals"));

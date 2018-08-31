@@ -123,7 +123,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::computeNumberMoments() {
 }
 
 
-real ThermalMp2EnergyFromCoulombIntegrals::getDLogZ(
+cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZ(
   const unsigned int n, const bool dbeta
 ) {
   real dLogZ;
@@ -154,7 +154,7 @@ real ThermalMp2EnergyFromCoulombIntegrals::getDLogZ(
  * f^a\, F^b\, f_i\, f_j\,{\rm e}^{-\beta\Delta^{ab}_{ij}}} \f$
  * w.r.t. (-beta)
  **/
-real ThermalMp2EnergyFromCoulombIntegrals::getDLogZMp2(
+cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZMp2(
   const unsigned int n, const bool dbeta
 ) {
   Tensor<> Tabij(false, *getTensorArgument("ThermalPPHHCoulombIntegrals"));
@@ -277,7 +277,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
  * \f$ (-1) \int_0^\beta{\rm d}\tau_1\,f_i\, f_j \f$
  * and returns the result in the tensor Tij.
  **/
-real ThermalMp2EnergyFromCoulombIntegrals::getDLogZHf(
+cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZHf(
   const unsigned int n, const bool dbeta
 ) {
   Tensor<> Tij(2, getTensorArgument("ThermalHHHHCoulombIntegrals")->lens);
@@ -386,7 +386,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZHfAmplitudes(
   Tij["ij"] += multiplicity * tij["ij"];
 }
 
-real ThermalMp2EnergyFromCoulombIntegrals::getDLogZH0(
+cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZH0(
   const unsigned int n, const bool dbeta
 ) {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));

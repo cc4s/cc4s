@@ -49,9 +49,9 @@ ScaLapackMatrix<F>::ScaLapackMatrix(
 
 // instantiate
 template
-ScaLapackMatrix<double>::ScaLapackMatrix(ScaLapackMatrix<double> &A);
+ScaLapackMatrix<cc4s::Float64>::ScaLapackMatrix(ScaLapackMatrix<cc4s::Float64> &A);
 template
-ScaLapackMatrix<complex>::ScaLapackMatrix(ScaLapackMatrix<complex> &A);
+ScaLapackMatrix<cc4s::Complex64>::ScaLapackMatrix(ScaLapackMatrix<cc4s::Complex64> &A);
 
 
 template <typename F>
@@ -78,12 +78,12 @@ ScaLapackMatrix<F>::ScaLapackMatrix(
 
 // instantiate
 template
-ScaLapackMatrix<double>::ScaLapackMatrix(
-  CTF::Matrix<double> &A, BlacsWorld *blacsWorld, int blockSize
+ScaLapackMatrix<cc4s::Float64>::ScaLapackMatrix(
+  CTF::Matrix<cc4s::Float64> &A, BlacsWorld *blacsWorld, int blockSize
 );
 template
-ScaLapackMatrix<complex>::ScaLapackMatrix(
-  CTF::Matrix<complex> &A, BlacsWorld *blacsWorld, int blockSize
+ScaLapackMatrix<cc4s::Complex64>::ScaLapackMatrix(
+  CTF::Matrix<Complex64> &A, BlacsWorld *blacsWorld, int blockSize
 );
 
 
@@ -111,12 +111,12 @@ ScaLapackMatrix<F>::ScaLapackMatrix(
 
 // instantiate
 template
-ScaLapackMatrix<double>::ScaLapackMatrix(
-  CTF::Tensor<double> &A, int lens_[2], BlacsWorld *blacsWorld, int blockSize
+ScaLapackMatrix<Float64>::ScaLapackMatrix(
+  CTF::Tensor<Float64> &A, int lens_[2], BlacsWorld *blacsWorld, int blockSize
 );
 template
-ScaLapackMatrix<complex>::ScaLapackMatrix(
-  CTF::Tensor<complex> &A, int lens_[2], BlacsWorld *blacsWorld, int blockSize
+ScaLapackMatrix<Complex64>::ScaLapackMatrix(
+  CTF::Tensor<Complex64> &A, int lens_[2], BlacsWorld *blacsWorld, int blockSize
 );
 
 
@@ -128,9 +128,9 @@ ScaLapackMatrix<F>::~ScaLapackMatrix() {
 
 // instantiate
 template
-ScaLapackMatrix<double>::~ScaLapackMatrix();
+ScaLapackMatrix<Float64>::~ScaLapackMatrix();
 template
-ScaLapackMatrix<complex>::~ScaLapackMatrix();
+ScaLapackMatrix<Complex64>::~ScaLapackMatrix();
 
 
 template <typename F>
@@ -149,14 +149,14 @@ void ScaLapackMatrix<F>::write(CTF::Tensor<F> &A) {
 
 // instantiate
 template
-void ScaLapackMatrix<double>::write(CTF::Matrix<double> &A);
+void ScaLapackMatrix<Float64>::write(CTF::Matrix<Float64> &A);
 template
-void ScaLapackMatrix<complex>::write(CTF::Matrix<complex> &A);
+void ScaLapackMatrix<Complex64>::write(CTF::Matrix<Complex64> &A);
 
 template
-void ScaLapackMatrix<double>::write(CTF::Tensor<double> &A);
+void ScaLapackMatrix<Float64>::write(CTF::Tensor<Float64> &A);
 template
-void ScaLapackMatrix<complex>::write(CTF::Tensor<complex> &A);
+void ScaLapackMatrix<Complex64>::write(CTF::Tensor<Complex64> &A);
 
 
 template <typename F>

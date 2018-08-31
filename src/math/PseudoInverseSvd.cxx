@@ -64,18 +64,18 @@ Matrix<F> &PseudoInverseSvd<F>::get() {
 
 // instantiate
 template
-PseudoInverseSvd<double>::PseudoInverseSvd(
-  Matrix<double> &matrix, double epsilon
+PseudoInverseSvd<cc4s::Float64>::PseudoInverseSvd(
+  Matrix<cc4s::Float64> &matrix, double epsilon
 );
 template
-Matrix<double> &PseudoInverseSvd<double>::get();
+Matrix<cc4s::Float64> &PseudoInverseSvd<cc4s::Float64>::get();
 
 template
-PseudoInverseSvd<complex>::PseudoInverseSvd(
-  Matrix<complex> &matrix, double epsilon
+PseudoInverseSvd<cc4s::Complex64>::PseudoInverseSvd(
+  Matrix<cc4s::Complex64> &matrix, double epsilon
 );
 template
-Matrix<complex> &PseudoInverseSvd<complex>::get();
+Matrix<cc4s::Complex64> &PseudoInverseSvd<cc4s::Complex64>::get();
 
 
 template <typename F>
@@ -93,16 +93,15 @@ DryMatrix<F> &DryPseudoInverseSvd<F>::get() {
 
 // instantiate
 template
-DryPseudoInverseSvd<double>::DryPseudoInverseSvd(
-  DryMatrix<double> const &matrix
+DryPseudoInverseSvd<cc4s::Float64>::DryPseudoInverseSvd(
+  DryMatrix<cc4s::Float64> const &matrix
 );
 template
-DryMatrix<double> &DryPseudoInverseSvd<double>::get();
+DryMatrix<cc4s::Float64> &DryPseudoInverseSvd<cc4s::Float64>::get();
 
 template
-DryPseudoInverseSvd<complex>::DryPseudoInverseSvd(
-  DryMatrix<complex> const &matrix
+DryPseudoInverseSvd<cc4s::Complex64>::DryPseudoInverseSvd(
+  DryMatrix<cc4s::Complex64> const &matrix
 );
 template
-DryMatrix<complex> &DryPseudoInverseSvd<complex>::get();
-
+DryMatrix<cc4s::Complex64> &DryPseudoInverseSvd<cc4s::Complex64>::get();

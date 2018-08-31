@@ -112,7 +112,7 @@ int64_t Algorithm::getIntegerArgument(
   return isArgumentGiven(name) ? getIntegerArgument(name) : defaultValue;
 }
 
-real Algorithm::getRealArgument(std::string const &name) {
+cc4s::real Algorithm::getRealArgument(std::string const &name) {
   Data *data(getArgumentData(name));
   RealData *realData(dynamic_cast<RealData *>(data));
   if (realData) return realData->value;
@@ -125,12 +125,12 @@ real Algorithm::getRealArgument(std::string const &name) {
     << "Excpected Real, found " << data->getTypeName() << ".";
   throw new EXCEPTION(sstream.str());
 }
-real Algorithm::getRealArgument(
+cc4s::real Algorithm::getRealArgument(
   const std::string &name, const real defaultValue
 ) {
   return isArgumentGiven(name) ? getRealArgument(name) : defaultValue;
 }
-real Algorithm::getRealArgumentFromInteger(IntegerData *integerData ) {
+cc4s::real Algorithm::getRealArgumentFromInteger(IntegerData *integerData ) {
   real value(integerData->value);
   if (int64_t(value) != integerData->value) {
     LOG(0, "root") << "Warning: loss of precision in conversion from integer to real."
@@ -138,7 +138,7 @@ real Algorithm::getRealArgumentFromInteger(IntegerData *integerData ) {
   }
   return value;
 }
-real Algorithm::getRealArgumentFromTensor(TensorData<real> *data) {
+cc4s::real Algorithm::getRealArgumentFromTensor(TensorData<real> *data) {
   Assert(
     data->value->order == 0,
     "Scalar expected in conversion from tensor to real."
@@ -321,16 +321,16 @@ void Algorithm::allocatedTensorArgument<
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
 void Algorithm::allocatedTensorArgument<
-  real, CTF::Matrix<real>
+  cc4s::real, CTF::Matrix<cc4s::real>
 >(std::string const &name, CTF::Matrix<real> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  real, CTF::Vector<real>
->(std::string const &name, CTF::Vector<real> *tensor);
+  cc4s::real, CTF::Vector<cc4s::real>
+>(std::string const &name, CTF::Vector<cc4s::real> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  real, CTF::Scalar<real>
->(std::string const &name, CTF::Scalar<real> *tensor);
+  cc4s::real, CTF::Scalar<cc4s::real>
+>(std::string const &name, CTF::Scalar<cc4s::real> *tensor);
 
 template
 void Algorithm::allocatedTensorArgument<
@@ -339,16 +339,16 @@ void Algorithm::allocatedTensorArgument<
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
 void Algorithm::allocatedTensorArgument<
-  complex, CTF::Matrix<complex>
->(std::string const &name, CTF::Matrix<complex> *tensor);
+  cc4s::complex, CTF::Matrix<cc4s::complex>
+>(std::string const &name, CTF::Matrix<cc4s::complex> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  complex, CTF::Vector<complex>
->(std::string const &name, CTF::Vector<complex> *tensor);
+  cc4s::complex, CTF::Vector<cc4s::complex>
+>(std::string const &name, CTF::Vector<cc4s::complex> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  complex, CTF::Scalar<complex>
->(std::string const &name, CTF::Scalar<complex> *tensor);
+  cc4s::complex, CTF::Scalar<cc4s::complex>
+>(std::string const &name, CTF::Scalar<cc4s::complex> *tensor);
 
 template
 void Algorithm::allocatedTensorArgument<

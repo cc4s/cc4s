@@ -111,7 +111,7 @@ void UccsdAmplitudesFromCoulombIntegrals::createMask(){
   //Mabij->print();
 }
 
-PTR(FockVector<complex>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
+PTR(FockVector<cc4s::complex>) UccsdAmplitudesFromCoulombIntegrals::getResiduum(
   const int iterationStep, const PTR(const FockVector<complex>) &amplitudes
 ) {
   throw EXCEPTION("Complex version not implemented");

@@ -51,6 +51,6 @@ PTR(const FockVector<F>) LinearMixer<F>::getResiduum() {
 }
 
 // instantiate
-template class LinearMixer<double>;
-template class LinearMixer<complex>;
+template class LinearMixer<cc4s::Float64>;
+template class LinearMixer<cc4s::Complex64>;
 

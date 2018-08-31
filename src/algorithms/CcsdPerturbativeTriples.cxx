@@ -292,7 +292,7 @@ CcsdPerturbativeTriples::CoulombVertex<double,Dummy>::CoulombVertex(
 }
 
 template <int Dummy>
-CcsdPerturbativeTriples::CoulombVertex<complex,Dummy>::CoulombVertex(
+CcsdPerturbativeTriples::CoulombVertex<cc4s::complex,Dummy>::CoulombVertex(
   Tensor<complex> *GammaFab_,
   Tensor<complex> *GammaFai_
 ):
@@ -312,7 +312,7 @@ CcsdPerturbativeTriples::CoulombVertex<double,Dummy>::~CoulombVertex() {
 }
 
 template <int Dummy>
-CcsdPerturbativeTriples::CoulombVertex<complex,Dummy>::~CoulombVertex() {
+CcsdPerturbativeTriples::CoulombVertex<cc4s::complex,Dummy>::~CoulombVertex() {
   delete conjGammaFab;
   delete GammaFai;
 }
@@ -333,7 +333,7 @@ getDoublesParticleContribution(
 
 template <int Dummy>
 void
-CcsdPerturbativeTriples::CoulombVertex<complex,Dummy>::
+CcsdPerturbativeTriples::CoulombVertex<cc4s::complex,Dummy>::
 getDoublesParticleContribution(
   SlicedCtfTensor<complex> &Tabij, const Map<3> &i, Tensor<complex> &DVabc
 ) {

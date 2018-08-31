@@ -414,7 +414,7 @@ double LaplaceMp2Energy::sumMonteCarlo() {
   return std::real(energy.getMean());
 }
 
-complex LaplaceMp2Energy::getPermutedSamples(int R, int S, int T, int U) {
+cc4s::complex LaplaceMp2Energy::getPermutedSamples(int R, int S, int T, int U) {
   return 0.25 * (
     V[R+NR*S] * V[T+NR*U] * getIntegratedSamples(R,S,T,U) +
     V[S+NR*R] * V[T+NR*U] * getIntegratedSamples(S,R,T,U) +
@@ -423,7 +423,7 @@ complex LaplaceMp2Energy::getPermutedSamples(int R, int S, int T, int U) {
   );
 }
 
-complex LaplaceMp2Energy::getIntegratedSamples(int R, int S, int T, int U) {
+cc4s::complex LaplaceMp2Energy::getIntegratedSamples(int R, int S, int T, int U) {
   complex sample(0);
   for (int n(0); n < Nn; ++n) {
     sample += w[n] * getSample(R,S,T,U,n);
@@ -431,7 +431,7 @@ complex LaplaceMp2Energy::getIntegratedSamples(int R, int S, int T, int U) {
   return sample;
 }
 
-complex LaplaceMp2Energy::getSample(int R, int S, int T, int U, int n) {
+cc4s::complex LaplaceMp2Energy::getSample(int R, int S, int T, int U, int n) {
   return -2.0 *
     Gp[R+NR*(T+NR*n)] * Gh[T+NR*(R+NR*n)] *
     Gp[S+NR*(U+NR*n)] * Gh[U+NR*(S+NR*n)];

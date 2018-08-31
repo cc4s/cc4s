@@ -107,10 +107,10 @@ Matrix<F> &IterativePseudoInverse<F>::get() {
 
 // instantiate
 template
-class IterativePseudoInverse<double>;
+class IterativePseudoInverse<cc4s::Float64>;
 
 template
-class IterativePseudoInverse<complex>;
+class IterativePseudoInverse<cc4s::Complex64>;
 
 
 template <typename F>
@@ -158,9 +158,9 @@ void IterativePseudoInverse<F>::test(World *world) {
 
 // instantiate
 template
-void IterativePseudoInverse<double>::test(World *world);
+void IterativePseudoInverse<cc4s::Float64>::test(World *world);
 template
-void IterativePseudoInverse<complex>::test(World *world);
+void IterativePseudoInverse<cc4s::Complex64>::test(World *world);
 
 
 template <typename F>
@@ -183,8 +183,8 @@ DryMatrix<F> &DryIterativePseudoInverse<F>::get() {
 
 // instantiate
 template
-class DryIterativePseudoInverse<double>;
+class DryIterativePseudoInverse<cc4s::Float64>;
 
 template
-class DryIterativePseudoInverse<complex>;
+class DryIterativePseudoInverse<cc4s::Complex64>;
 

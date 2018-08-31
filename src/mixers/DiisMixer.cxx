@@ -127,6 +127,6 @@ PTR(const FockVector<F>) DiisMixer<F>::getResiduum() {
 }
 
 // instantiate
-template class DiisMixer<double>;
-template class DiisMixer<complex>;
+template class DiisMixer<cc4s::Float64>;
+template class DiisMixer<cc4s::Complex64>;
 

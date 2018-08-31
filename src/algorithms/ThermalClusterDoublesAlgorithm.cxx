@@ -180,7 +180,7 @@ std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
   return indices;
 }
 
-real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
+cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   auto epsa( getTensorArgument<>("ThermalParticleEigenEnergies") );
   auto Vabij( getTensorArgument<>("ThermalPPHHCoulombIntegrals") );
   auto deltaai( getTensorArgument<>("ThermalParticleHoleOverlap") );

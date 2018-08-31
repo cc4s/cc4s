@@ -25,10 +25,10 @@ PTR(FockVector<double>) DrccdEnergyFromCoulombIntegrals::getResiduum(
   return getResiduum<double>(iteration, amplitudes);
 }
 
-PTR(FockVector<complex>) DrccdEnergyFromCoulombIntegrals::getResiduum(
-  const int iteration, const PTR(const FockVector<complex>) &amplitudes
+PTR(FockVector<cc4s::complex>) DrccdEnergyFromCoulombIntegrals::getResiduum(
+  const int iteration, const PTR(const FockVector<cc4s::complex>) &amplitudes
 ) {
-  return getResiduum<complex>(iteration, amplitudes);
+  return getResiduum<cc4s::complex>(iteration, amplitudes);
 }
 
 template <typename F>
