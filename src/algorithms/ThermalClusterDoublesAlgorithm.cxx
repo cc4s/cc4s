@@ -298,15 +298,15 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   int Nv(epsa->lens[0]); int No(epsi->lens[0]);
   int lens[] = { Nv,No, Nv,No };
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
-  // unperturbed propatation is diagonal
-  (*Hbjai)["bjbj"] += (*epsa)["b"];
-  (*Hbjai)["bjbj"] -= (*epsi)["j"];
   // bubble from H_1 has contraction weights
   (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
   (*Hbjai)["bjai"] *= (*ga)["a"];
   (*Hbjai)["bjai"] *= (*ga)["b"];
   (*Hbjai)["bjai"] *= (*gi)["i"];
   (*Hbjai)["bjai"] *= (*gi)["j"];
+  // unperturbed propatation is diagonal
+  (*Hbjai)["bjbj"] += (*epsa)["b"];
+  (*Hbjai)["bjbj"] -= (*epsi)["j"];
 
   LOG(1, getCapitalizedAbbreviation())
     << "diagonalizing singles part of Hamiltonian..." << std::endl;
