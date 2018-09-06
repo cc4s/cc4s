@@ -181,12 +181,7 @@ std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
 }
 
 cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
-  auto Ni( getTensorArgument<>("ThermalHoleOccupancies") );
-  auto Na( getTensorArgument<>("ThermalParticleOccupancies") );
-  auto epsa( getTensorArgument<>("ThermalParticleEigenEnergies") );
   auto Vabij( getTensorArgument<>("ThermalPPHHCoulombIntegrals") );
-  // FIXME: use Fock matrix for singles
-  auto deltaai( getTensorArgument<>("ThermalParticleHoleOverlap") );
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
   bool singlesEnergy(
     getIntegerArgument("singlesEnergy", DEFAULT_SINGLES_ENERGY)
@@ -204,8 +199,9 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
     * (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] * (*Vabij)["cdlk"];
   // singles: one particle/hole pair F
   H0F = NEW(Tensor<real>, 1, std::vector<int>({NF}).data());
-  (*H0F)["F"]  = (*UaiF)["ckF"] * (*ga)["c"] * (*gi)["k"]
-    * (*deltaai)["ck"] * (*epsa)["c"];
+  // TODO: use Fock matrix for singles
+//  (*H0F)["F"]  = (*UaiF)["ckF"] * (*ga)["c"] * (*gi)["k"]
+//    * (*deltaai)["ck"] * (*epsa)["c"];
 
   // propagate doubles
   lambdaFG = NEW(Tensor<real>, false, *VdFG);
@@ -295,8 +291,6 @@ void ThermalClusterDoublesAlgorithm::computeSqrtOccupancies() {
 void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
   auto epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
-  auto Ni(getTensorArgument<>("ThermalHoleOccupancies"));
-  auto Na(getTensorArgument<>("ThermalParticleOccupancies"));
   auto Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
