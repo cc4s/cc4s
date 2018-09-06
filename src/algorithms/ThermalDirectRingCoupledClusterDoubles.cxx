@@ -21,12 +21,9 @@ ThermalDirectRingCoupledClusterDoubles::
 }
 
 void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
-  Tensor<real> &T0F,
-  Tensor<real> &T0FG,
-  Tensor<real> &T1F,
-  Tensor<real> &T1FG,
+  Tensor<real> &T0abij,
+  Tensor<real> &T1abij,
   const real DTau,
-  Tensor<real> &S1F,
   Tensor<real> &S1FG
 ) {
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
@@ -43,9 +40,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   // Sabij = Vabij
   //////////////////////////////////////
   Tensor<real> SFG(*VdFG);
-  Transform<real, real>(
-    std::function<void(real, real &)>( convolutionC )
-  ) (
+  Transform<real, real>(std::function<void(real, real &)>(convolutionC))(
     (*lambdaFG)["FG"], SFG["FG"]
   );
   S1FG["FG"] -= SFG["FG"];
@@ -54,31 +49,23 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   //////////////////////////////////////
   // Sabij = Vklck * Tacik * Tdblj
   //////////////////////////////////////
+  auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
+  Tensor<real> Sabij(false, *Vabij);
   //// T^I1(tau_n-1)*T^I2(tau_n-1)
-  SFG["FG"] = (+1.0) * spins*spins * T0FG["FH"] * (*VdFG)["HI"] * T0FG["IG"];
-  Transform<real, real>(
-    std::function<void(real, real &)>( convolution00 )
-  ) (
-    (*lambdaFG)["FG"], SFG["FG"]
-  );
-  S1FG["FG"] -= SFG["FG"];
+  Sabij["abij"] = (+1.0) * spins*spins *
+    T0abij["acik"] * (*Vabij)["cdkl"] * T0abij["dblj"];
+  propagateAmplitudes(Sabij, convolution00, S1FG);
+
   //// T^I1(tau_n-1)*T^I2(tau_n) and T^I1(tau_n)*T^I2(tau_n-1)
-  SFG["FG"] = (+1.0) * spins*spins * T0FG["FH"] * (*VdFG)["HI"] * T1FG["IG"];
+  Sabij["abij"] = (+1.0) * spins*spins *
+    T0abij["acik"] * (*Vabij)["cdkl"] * T1abij["dblj"];
   // assemble both T0*T1 and T1*T0
-  SFG["FG"] += SFG["GF"];
-  Transform<real, real>(
-    std::function<void(real, real &)>( convolution01 )
-  ) (
-    (*lambdaFG)["FG"], SFG["FG"]
-  );
-  S1FG["FG"] -= SFG["FG"];
+  Sabij["abij"] += Sabij["baji"];
+  propagateAmplitudes(Sabij, convolution01, S1FG);
+
   //// T^I1(tau_n)*T^I2(tau_n)
-  SFG["FG"] = (+1.0) * spins*spins * T1FG["FH"] * (*VdFG)["HI"] * T1FG["IG"];
-  Transform<real, real>(
-    std::function<void(real, real &)>( convolution11 )
-  ) (
-    (*lambdaFG)["FG"], SFG["FG"]
-  );
-  S1FG["FG"] -= SFG["FG"];
+  Sabij["abij"] = (+1.0) * spins*spins *
+    T1abij["acik"] * (*Vabij)["cdkl"] * T1abij["dblj"];
+  propagateAmplitudes(Sabij, convolution11, S1FG);
 }
 

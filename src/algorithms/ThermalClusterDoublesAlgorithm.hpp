@@ -40,9 +40,9 @@ namespace cc4s {
 
   protected:
     /**
-     * \brief singles and doubles amplitudes on the imaginary time grid
+     * \brief doubles amplitudes on the imaginary time grid
      **/
-    std::vector<PTR(CTF::Tensor<real>)> TFn, TFGn;
+    std::vector<PTR(CTF::Tensor<real>)> Tabijn;
 
     CTF::Tensor<real> *lambdaF;
 
@@ -52,14 +52,9 @@ namespace cc4s {
     PTR(CTF::Tensor<real>) lambdaFG;
 
     /**
-     * \brief direct & exchange Vabij in left/right singles eigensystem F/G
+     * \brief direct & exchange Vabij in left/right singles-mode basis F/G
      **/
     PTR(CTF::Tensor<real>) VdFG, VxFG;
-
-    /**
-     * \brief H_0^a_i in singles eigensystem F
-     **/
-    PTR(CTF::Tensor<real>) H0F;
 
     /**
      * \brief sqrt(occupancies)
@@ -81,12 +76,9 @@ namespace cc4s {
     /**
      */
     virtual void applyHamiltonian(
-      CTF::Tensor<real> &T0F,
-      CTF::Tensor<real> &T0FG,
-      CTF::Tensor<real> &T1F,
-      CTF::Tensor<real> &T1FG,
+      CTF::Tensor<real> &T0abij,
+      CTF::Tensor<real> &T1abij,
       const real DTau,
-      CTF::Tensor<real> &S1F,
       CTF::Tensor<real> &S1FG
     ) = 0;
 
@@ -94,11 +86,16 @@ namespace cc4s {
     std::string getAmplitudeIndices(CTF::Tensor<real> &T);
     real getTammDancoffEnergy();
     void computeEnergyContribution(
-      CTF::Tensor<real> &T1F, CTF::Tensor<real> &T2FG, const real DTau,
-      real &direct, real &exchange, real &singles
+      CTF::Tensor<real> &SFG, const real DTau,
+      real &direct, real &exchange
     );
     void computeSqrtOccupancies();
     void diagonalizeSinglesHamiltonian();
+    void propagateAmplitudes(
+      CTF::Tensor<real> &Sabij,
+      const std::function<void(real, real &)> &propagator,
+      CTF::Tensor<real> &SFG
+    );
     void diagonalizeDoublesAmplitudes();
 
     class ImaginaryTimeTransform {
