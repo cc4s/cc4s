@@ -35,8 +35,8 @@ namespace cc4s {
     virtual std::string getAbbreviation() = 0;
 
     static constexpr int DEFAULT_MAX_ITERATIONS = 12;
-    static constexpr int DEFAULT_SINGLES_ENERGY = 1;
-    static constexpr int DEFAULT_SINGLES = 1;
+    static constexpr int DEFAULT_SINGLES_ENERGY = 0;
+    static constexpr int DEFAULT_SINGLES = 0;
 
   protected:
     /**

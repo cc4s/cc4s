@@ -181,8 +181,11 @@ std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
 }
 
 cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
+  auto Ni( getTensorArgument<>("ThermalHoleOccupancies") );
+  auto Na( getTensorArgument<>("ThermalParticleOccupancies") );
   auto epsa( getTensorArgument<>("ThermalParticleEigenEnergies") );
   auto Vabij( getTensorArgument<>("ThermalPPHHCoulombIntegrals") );
+  // FIXME: use Fock matrix for singles
   auto deltaai( getTensorArgument<>("ThermalParticleHoleOverlap") );
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
   bool singlesEnergy(
@@ -301,18 +304,15 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   int Nv(epsa->lens[0]); int No(epsi->lens[0]);
   int lens[] = { Nv,No, Nv,No };
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
-  // bubble from H_1
+  // unperturbed propatation is diagonal
+  (*Hbjai)["bjbj"] += (*epsa)["b"];
+  (*Hbjai)["bjbj"] -= (*epsi)["j"];
+  // bubble from H_1 has contraction weights
   (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
   (*Hbjai)["bjai"] *= (*ga)["a"];
   (*Hbjai)["bjai"] *= (*ga)["b"];
   (*Hbjai)["bjai"] *= (*gi)["i"];
   (*Hbjai)["bjai"] *= (*gi)["j"];
-  // particle from H_0
-  (*Hbjai)["bjbj"] += (*epsa)["b"] * (*Na)["b"];
-  // hole from H_0, note
-  (*Hbjai)["bjbj"] -= (*epsi)["j"] * (*Ni)["j"];
-  // shift
-//  (*Hbjai)["aiai"] += 0.1;
 
   LOG(1, getCapitalizedAbbreviation())
     << "diagonalizing singles part of Hamiltonian..." << std::endl;
