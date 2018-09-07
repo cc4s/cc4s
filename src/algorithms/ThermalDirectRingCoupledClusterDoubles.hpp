@@ -28,7 +28,7 @@ namespace cc4s {
       CTF::Tensor<real> &T0abij,
       CTF::Tensor<real> &T1abij,
       const real DTau,
-      CTF::Tensor<real> &S1FG
+      CTF::Tensor<real> &S1abij
     );
   };
 }
