@@ -141,15 +141,24 @@ void ThermalHolesAndParticles::defineThermalHolesAndParticles() {
     )
   );
   double overlap(std::sqrt(32*maxDelta*kT));
-  LOG(1, "ThermalHolesAndParticles") << "overlap of thermal particle and hole states=" << overlap << std::endl;
+  double minOccupancy( getRealArgument("minOccupancy", 1e-5) );
   int holeEnd(No), particleStart(-1);
+  LOG(1, "ThermalHolesAndParticles") <<
+    "max overlap of thermal particle and hole states=" << overlap << std::endl;
   for (int p(0); p < Np; ++p) {
-    if (eigenStates[p].first <= mu + overlap) holeEnd = p;
-    if (eigenStates[p].first < mu - overlap) particleStart = p;
+    if (
+      (eigenStates[p].first <= mu + overlap) &&
+      (1.0 / (1.0 + std::exp(+(eigenStates[p].first-mu)/kT)) >= minOccupancy)
+    ) holeEnd = p;
+    if (
+      (eigenStates[p].first < mu - overlap) ||
+      (1.0 / (1.0 + std::exp(-(eigenStates[p].first-mu)/kT)) < minOccupancy)
+    ) particleStart = p;
     LOG(4, "ThermalHolesAndParticles") << "eigenEnergies[" <<
       p << "<-" << eigenStates[p].second << "]=" <<
       eigenStates[p].first <<std::endl;
   }
+
   // holeEnd points to the last acceptable hole energy, we need to include it
   ++holeEnd;
   // particleStart points to the last unacceptable particle energy,

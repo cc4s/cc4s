@@ -176,11 +176,13 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   int NF(lambdaF->lens[0]);
   // doubles: two particle/hole pairs F&G
   VdFG = NEW(Tensor<real>, 2, std::vector<int>({NF,NF}).data());
-  (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"]
-    * (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] * (*Vabij)["cdkl"];
+  (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
+//    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
+    (*Vabij)["cdkl"];
   VxFG = NEW(Tensor<real>, false, *VdFG);
-  (*VxFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"]
-    * (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] * (*Vabij)["cdlk"];
+  (*VxFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
+//    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
+    (*Vabij)["cdlk"];
 
   // propagate doubles
   lambdaFG = NEW(Tensor<real>, false, *VdFG);
@@ -246,20 +248,28 @@ void ThermalClusterDoublesAlgorithm::computeSqrtOccupancies() {
 void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
   auto epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
+  auto Ni(getTensorArgument<>("ThermalHoleOccupancies"));
+  auto Na(getTensorArgument<>("ThermalParticleOccupancies"));
   auto Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   // build to Hbjai
+//  Transform<real, real> divBy(
+//    std::function<void(real, real &)>([](const real g, real &t){ t /= g; })
+//  );
   int Nv(epsa->lens[0]); int No(epsi->lens[0]);
   int lens[] = { Nv,No, Nv,No };
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
-  // bubble from H_1 has contraction weights
+  // bubble from H_1
   (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
-  (*Hbjai)["bjai"] *= (*ga)["a"];
+  // half-close all contractions
   (*Hbjai)["bjai"] *= (*ga)["b"];
-  (*Hbjai)["bjai"] *= (*gi)["i"];
   (*Hbjai)["bjai"] *= (*gi)["j"];
+  (*Hbjai)["bjai"] *= (*ga)["a"];
+  (*Hbjai)["bjai"] *= (*gi)["i"];
+
   // unperturbed propatation is diagonal
+  Tensor<real> H0bjai(false, *Hbjai);
   (*Hbjai)["bjbj"] += (*epsa)["b"];
   (*Hbjai)["bjbj"] -= (*epsi)["j"];
 
