@@ -328,6 +328,12 @@ void ThermalClusterDoublesAlgorithm::propagateAmplitudes(
   Tensor<real> &Sabij,
   const std::function<void(real, real &)> &propagator
 ) {
+  Transform<real> chop(
+    std::function<void(real &)>(
+      [](real &t){ if (std::abs(t) < 1e-8) t = 0.0; }
+    )
+  );
+  chop( Sabij["abij"] );
   Transform<real, real> divBy(
     std::function<void(real, real &)>([](const real g, real &t){ t /= g; })
   );
