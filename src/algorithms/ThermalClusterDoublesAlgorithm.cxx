@@ -257,6 +257,13 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
   // bubble from H_1
   (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
+/*
+  if (isArgumentGiven("ThermalPHPHCoulombIntegrals")) {
+    // particle/hole ladder of H1, if given
+    auto Vbiaj(getTensorArgument<>("ThermalPHPHCoulombIntegrals"));
+    (*Hbjai)["bjai"] -= (*Vbiaj)["biaj"];
+  }
+*/
   // half-close all contractions on inserted interactions
   (*Hbjai)["bjai"] *= (*ga)["b"];
   (*Hbjai)["bjai"] *= (*gi)["j"];
