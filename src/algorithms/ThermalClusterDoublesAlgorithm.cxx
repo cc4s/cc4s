@@ -177,11 +177,11 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   // doubles: two particle/hole pairs F&G
   VdFG = NEW(Tensor<real>, 2, std::vector<int>({NF,NF}).data());
   (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
-//    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
+    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
     (*Vabij)["cdkl"];
   VxFG = NEW(Tensor<real>, false, *VdFG);
   (*VxFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
-//    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
+    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
     (*Vabij)["cdlk"];
 
   // propagate doubles
@@ -248,21 +248,16 @@ void ThermalClusterDoublesAlgorithm::computeSqrtOccupancies() {
 void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto epsi(getTensorArgument<>("ThermalHoleEigenEnergies"));
   auto epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
-  auto Ni(getTensorArgument<>("ThermalHoleOccupancies"));
-  auto Na(getTensorArgument<>("ThermalParticleOccupancies"));
   auto Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   // build to Hbjai
-//  Transform<real, real> divBy(
-//    std::function<void(real, real &)>([](const real g, real &t){ t /= g; })
-//  );
   int Nv(epsa->lens[0]); int No(epsi->lens[0]);
   int lens[] = { Nv,No, Nv,No };
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
   // bubble from H_1
   (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
-  // half-close all contractions
+  // half-close all contractions on inserted interactions
   (*Hbjai)["bjai"] *= (*ga)["b"];
   (*Hbjai)["bjai"] *= (*gi)["j"];
   (*Hbjai)["bjai"] *= (*ga)["a"];
@@ -301,6 +296,27 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
   lambdaF = new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda");
   lambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
+
+  // chop near-zero values to zero
+  Transform<real> chop(
+    std::function<void(real &)>(
+      [](real &t){ if (std::abs(t) < 1e-7) t = 0.0; }
+    )
+  );
+  chop((*lambdaF)["F"]); chop((*UaiF)["aiF"]);
+
+  // determine non-positive part of spectrum
+  int nonNegativeStart[] = {0, 0, 0};
+  int nonNegativeEnd[] = {Nv, No, 0};
+  for (size_t i(0); i < lambdas.size(); ++i) {
+    if (lambdas[i] < 1e-6) nonNegativeEnd[2] = i+1;
+  }
+  if (isArgumentGiven("nonNegativeSinglesHamiltonianEigenvectors")) {
+    allocatedTensorArgument<real>(
+      "nonNegativeSinglesHamiltonianEigenvectors",
+      new Tensor<real>(UaiF->slice(nonNegativeStart, nonNegativeEnd))
+    );
+  }
 
   allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", lambdaF);
 }
