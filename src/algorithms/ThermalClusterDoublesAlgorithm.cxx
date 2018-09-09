@@ -309,9 +309,12 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   int nonNegativeStart[] = {0, 0, 0};
   int nonNegativeEnd[] = {Nv, No, 0};
   for (size_t i(0); i < lambdas.size(); ++i) {
-    if (lambdas[i] < 1e-6) nonNegativeEnd[2] = i+1;
+    if (lambdas[i] < 1e-7) nonNegativeEnd[2] = i+1;
   }
-  if (isArgumentGiven("nonNegativeSinglesHamiltonianEigenvectors")) {
+  if (
+    nonNegativeEnd[2] > 0 &&
+    isArgumentGiven("nonNegativeSinglesHamiltonianEigenvectors")
+  ) {
     allocatedTensorArgument<real>(
       "nonNegativeSinglesHamiltonianEigenvectors",
       new Tensor<real>(UaiF->slice(nonNegativeStart, nonNegativeEnd))
