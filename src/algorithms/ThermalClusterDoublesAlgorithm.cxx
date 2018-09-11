@@ -41,8 +41,12 @@ void ThermalClusterDoublesAlgorithm::run() {
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
   std::vector<real> taus(tn->lens[0]);
   tn->read_all(taus.data());
-  // scale to [0,beta]
-  for (auto &tau: taus) { tau *= beta; }
+  // truncate at beta
+  while (taus.back() > beta) taus.pop_back();
+  real q( getRealArgument("imaginaryTimeScale", 2.0) );
+  // fill up with a geometric sequence until beta
+  while (taus.back() < beta) taus.push_back(q*taus.back());
+  taus.back() = beta;
 
   auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
 
@@ -337,7 +341,9 @@ void ThermalClusterDoublesAlgorithm::propagateAmplitudes(
 ) {
   Transform<real> chop(
     std::function<void(real &)>(
-      [](real &t){ if (std::abs(t) < 1e-8) t = 0.0; }
+      [](real &t) {
+        if (std::abs(t) < sqrt(std::numeric_limits<real>::epsilon())) t = 0.0;
+      }
     )
   );
   chop( Sabij["abij"] );
