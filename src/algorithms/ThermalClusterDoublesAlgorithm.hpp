@@ -85,6 +85,7 @@ namespace cc4s {
     std::string getCapitalizedAbbreviation();
     std::string getAmplitudeIndices(CTF::Tensor<real> &T);
     real getTammDancoffEnergy();
+    void computeSteadyStateAmplitudes(const std::vector<real> &taus);
     void computeEnergyContribution(
       CTF::Tensor<real> &SFG, const real DTau,
       real &direct, real &exchange

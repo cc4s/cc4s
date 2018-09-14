@@ -36,6 +36,13 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
   auto Na( getTensorArgument<real>("ThermalParticleOccupancies") );
   auto Ni( getTensorArgument<real>("ThermalHoleOccupancies") );
+  Transform<real> chop(
+    std::function<void(real &)>(
+      [](real &t) {
+        if (std::abs(t) < 64*sqrt(std::numeric_limits<real>::epsilon())) t = 0.0;
+      }
+    )
+  );
 
   // TODO: only for real code:
   LOG(1, "FT-DRCCD") << "doubles, constant term..." << std::endl;
@@ -45,6 +52,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Tensor<real> Sabij(false, *Vabij);
   Sabij["abij"] = (*Vabij)["abij"] *
     (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"];
+  chop(Sabij["abij"]);
   propagateAmplitudes(Sabij, convolutionC);
   S1abij["abij"] -= Sabij["abij"];
 
@@ -52,11 +60,13 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
     // particle/hole ladder of H1, if given
     auto Vbiaj(getTensorArgument<>("ThermalPHPHCoulombIntegrals"));
     Sabij["abij"] = (-1.0) * T0abij["ackj"] * (*Vbiaj)["bkci"];
+    chop(Sabij["abij"]);
     Sabij["abij"] += Sabij["baji"];
     propagateAmplitudes(Sabij, convolution0);
     S1abij["abij"] -= Sabij["abij"];
 
     Sabij["abij"] = (-1.0) * T1abij["ackj"] * (*Vbiaj)["bkci"];
+    chop(Sabij["abij"]);
     Sabij["abij"] += Sabij["baji"];
     propagateAmplitudes(Sabij, convolution1);
     S1abij["abij"] -= Sabij["abij"];
@@ -66,23 +76,26 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   //////////////////////////////////////
   // Sabij = Vklck * Tacik * Tdblj
   //////////////////////////////////////
+  Tensor<real> Wabij(false, *Vabij);
+  Wabij["abij"]  = (+1.0) * spins*spins * (*Vabij)["abij"];
+//  Wabij["abij"] += (-1.0) * spins * (*Vabij)["abji"];
   //// T^I1(tau_n-1)*T^I2(tau_n-1)
-  Sabij["abij"] = (+1.0) * spins*spins *
-    T0abij["acik"] * (*Vabij)["cdkl"] * T0abij["dblj"];
+  Sabij["abij"] = T0abij["acik"] * Wabij["cdkl"] * T0abij["dblj"];
+  chop(Sabij["abij"]);
   propagateAmplitudes(Sabij, convolution00);
   S1abij["abij"] -= Sabij["abij"];
 
   //// T^I1(tau_n-1)*T^I2(tau_n) and T^I1(tau_n)*T^I2(tau_n-1)
-  Sabij["abij"] = (+1.0) * spins*spins *
-    T0abij["acik"] * (*Vabij)["cdkl"] * T1abij["dblj"];
+  Sabij["abij"] = T0abij["acik"] * Wabij["cdkl"] * T1abij["dblj"];
   // assemble both T0*T1 and T1*T0
+  chop(Sabij["abij"]);
   Sabij["abij"] += Sabij["baji"];
   propagateAmplitudes(Sabij, convolution01);
   S1abij["abij"] -= Sabij["abij"];
 
   //// T^I1(tau_n)*T^I2(tau_n)
-  Sabij["abij"] = (+1.0) * spins*spins *
-    T1abij["acik"] * (*Vabij)["cdkl"] * T1abij["dblj"];
+  Sabij["abij"] = T1abij["acik"] * Wabij["cdkl"] * T1abij["dblj"];
+  chop(Sabij["abij"]);
   propagateAmplitudes(Sabij, convolution11);
   S1abij["abij"] -= Sabij["abij"];
 }
