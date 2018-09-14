@@ -44,13 +44,17 @@ namespace cc4s {
 
     /**
      * \brief Constructs an LapackMatrix from a CTF tensor on all ranks
+     * if rows and columns is given, reinterpret the matrix
      **/
     LapackMatrix(
-      CTF::Tensor<F> &ctfA
+      CTF::Tensor<F> &ctfA,
+      const int rows_ = 0,
+      const int columns_ = 0
     ):
-      rows(ctfA.lens[0]), columns(ctfA.lens[1])
+      rows(rows_ > 0 ? rows_ : ctfA.lens[0]),
+      columns(columns_ > 0 ? columns_ : ctfA.lens[1])
     {
-      values.resize(ctfA.lens[0]*ctfA.lens[1]);
+      values.resize(rows*columns);
       ctfA.read_all(values.data(), true);
     }
 
