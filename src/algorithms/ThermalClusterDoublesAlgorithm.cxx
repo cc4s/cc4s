@@ -106,14 +106,17 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
   // allocate doubles amplitudes on imaginary time grid
   // the source amplitudes are stored in orbital space
   // with fully closed contraction weights, suitable for interpolation
+  // TODO: grid currently not needed
+/*
   Tabijn.resize(taus.size());
   for (size_t n(0); n < taus.size(); ++n) {
     Tabijn[n] = NEW(CTF::Tensor<real>, false, *Vabij);
   }
-
+*/
   real energy;
   real accuracy(getRealArgument("accuracy", 1e-7));
-/*
+
+  Tensor<real> T0abij(false, *Vabij);
   std::vector<PTR(Tensor<real>)> tensors({NEW(Tensor<real>, false, *Vabij)});
   std::vector<std::string> indices({"abij"});
   PTR(const FockVector<real>) amplitudes(
@@ -122,9 +125,6 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       indices.begin(), indices.end()
     )
   );
-*/
-  CTF::Tensor<real> T0abij(false, *Vabij);
-  CTF::Tensor<real> S1abij(false, *Vabij);
   real DTau, tau0(0.0);
   // solve amplitudes on imaginary time grid one-by-one
   real direct(0.0), exchange(0.0);
@@ -138,27 +138,41 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       << "solving amplitudes at tau_" << (n+1) << "=" << taus[n]
       << std::endl;
     real lastEnergy(0.0);
+    // create a mixer, by default use the linear one
+    std::string mixerName(getTextArgument("mixer", "LinearMixer"));
+    Mixer<real> *mixer( MixerFactory<real>::create(mixerName, this) );
+    if (!mixer) {
+      std::stringstream stringStream;
+      stringStream << "Mixer not implemented: " << mixerName;
+      throw new EXCEPTION(stringStream.str());
+    }
     for (int i(0); i < I; ++i) {
       LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
-      S1abij["abij"] = 0.0;
+      auto estimatedAmplitudes( NEW(FockVector<real>, *amplitudes) );
+      auto T1abij(amplitudes->get(0));
+      auto S1abij(estimatedAmplitudes->get(0));
+      (*S1abij)["abij"] = 0.0;
       // propagate amplitudes T0 from tau_n-1 to tau_n with effective H0
       ImaginaryTimePropagation imaginaryTimePropagation(DTau);
-      propagateAmplitudes(S1abij, imaginaryTimePropagation);
+      propagateAmplitudes(*S1abij, imaginaryTimePropagation);
       // apply hamiltonian between tau_n-1 and tau_n
-      applyHamiltonian(T0abij, *Tabijn[n], DTau, S1abij);
-      // mix with source
-      real mixingRatio( getRealArgument("mixingRatio", 1.0) );
-      (*Tabijn[n])["abij"] *= (1-mixingRatio);
-      // mix
-      (*Tabijn[n])["abij"] += mixingRatio * S1abij["abij"];
+      applyHamiltonian(T0abij, *T1abij, DTau, *S1abij);
+      // compute amplitudes change and tell mixer
+      auto amplitudesChange( NEW(FockVector<real>, *estimatedAmplitudes) );
+      *amplitudesChange -= *amplitudes;
+      mixer->append(estimatedAmplitudes, amplitudesChange);
+      // get mixer's best guess for amplitudes
+      amplitudes = mixer->get();
+      T1abij = amplitudes->get(0);
+
       d = 0.0; x = 0.0;
-      computeEnergyContribution(*Tabijn[n], 2.0, d, x);
+      computeEnergyContribution(*T1abij, 2.0, d, x);
       LOG(2, getCapitalizedAbbreviation()) << "F_d=" <<
         (direct+0.5*d*DTau)/tau1 << std::endl;
       LOG(2, getCapitalizedAbbreviation()) << "F_x=" <<
         (exchange+0.5*x*DTau)/tau1 << std::endl;
       // write norm
-      real a(Tabijn[n]->norm2());
+      real a(T1abij->norm2());
       LOG(2, getCapitalizedAbbreviation()) << "|T|=" << a << std::endl;
       energy = direct + exchange + 0.5*(d+x)*DTau;
       LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/tau1 << std::endl;
@@ -169,7 +183,7 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
     direct += 0.5*d*DTau; exchange += 0.5*x*DTau;
     // go to next interval
     tau0 = tau1;
-    T0abij["abij"] = (*Tabijn[n])["abij"];
+    T0abij["abij"] = (*amplitudes->get(0))["abij"];
   }
 
   std::stringstream energyName;
@@ -177,7 +191,7 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
   setRealArgument(energyName.str(), energy/beta);
 
   if (isArgumentGiven("Amplitudes")) {
-    auto newTabij(new CTF::Tensor<real>(*Tabijn.back()));
+    auto newTabij(new CTF::Tensor<real>(*amplitudes->get(0)));
     allocatedTensorArgument<real>("Amplitudes", newTabij);
   }
 }
