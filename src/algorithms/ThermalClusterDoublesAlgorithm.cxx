@@ -2,6 +2,7 @@
 #include <math/MathFunctions.hpp>
 #include <math/ComplexTensor.hpp>
 #include <math/IterativePseudoInverse.hpp>
+#include <mixers/Mixer.hpp>
 #include <util/LapackMatrix.hpp>
 #include <util/BlacsWorld.hpp>
 #include <util/ScaLapackMatrix.hpp>
@@ -358,7 +359,7 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd(
   const std::vector<real> &taus
 ) {
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
-  real levelShift( getRealArgument("levelShift", 0.1) );
+  real levelShift( getRealArgument("levelShift", 0.0) );
   // level shifted division for left hand side
   class LevelShiftedDivision {
   public:
@@ -373,9 +374,26 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd(
   protected:
     real shift;
   } levelShiftedDivision(levelShift);
+
+  // create a mixer, by default use the linear one
+  std::string mixerName(getTextArgument("mixer", "LinearMixer"));
+  Mixer<real> *mixer( MixerFactory<real>::create(mixerName, this) );
+  if (!mixer) {
+    std::stringstream stringStream;
+    stringStream << "Mixer not implemented: " << mixerName;
+    throw new EXCEPTION(stringStream.str());
+  }
+
+  std::vector<PTR(Tensor<real>)> tensors;
+  tensors.push_back(NEW(Tensor<real>, false, *VdFG));
+  std::vector<std::string> indices({"FG"});
+  PTR(const FockVector<real>) amplitudes(
+    NEW(FockVector<real>,
+      tensors.begin(), tensors.end(),
+      indices.begin(), indices.end()
+    )
+  );
   Scalar<> e;
-  Tensor<real> TFG(false, *VdFG);
-  Tensor<real> SFG(false, *VdFG);
   real energy(0), lastEnergy(0);
   real accuracy(getRealArgument("accuracy", 1e-7));
   // number of iterations for determining the amplitudes at each point in time
@@ -385,35 +403,42 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd(
     real direct(0.0), exchange(0.0);
     LOG(1, getCapitalizedAbbreviation())
       << "solving for drCCD steady state amplitudes" << std::endl;
+    auto estimatedAmplitudes( NEW(FockVector<real>, *amplitudes) );
+    auto TFG(amplitudes->get(0));
+    auto SFG(estimatedAmplitudes->get(0));
     // constant term
-    SFG["FG"]  = (*VdFG)["FG"];
+    (*SFG)["FG"]  = (*VdFG)["FG"];
     // quadratic term
-    SFG["FG"] += TFG["FH"] * (*VdFG)["HI"] * TFG["IG"];
+    (*SFG)["FG"] += (*TFG)["FH"] * (*VdFG)["HI"] * (*TFG)["IG"];
     // apply level shifting on right hand side
-    SFG["FG"] += (-levelShift) * TFG["FG"];
+    (*SFG)["FG"] += (-levelShift) * (*TFG)["FG"];
     // divide by -(Delta+shift) to get new estimate for T
     Transform<real, real>(
       std::function<void(real, real &)>(levelShiftedDivision)
     ) (
-      (*lambdaFG)["FG"], SFG["FG"]
+      (*lambdaFG)["FG"], (*SFG)["FG"]
     );
+    // compute amplitudes change and tell mixer
+    auto amplitudesChange( NEW(FockVector<real>, *estimatedAmplitudes) );
+    *amplitudesChange -= *amplitudes;
+    mixer->append(estimatedAmplitudes, amplitudesChange);
+    // get mixer's best guess for amplitudes
+    amplitudes = mixer->get();
+    TFG = amplitudes->get(0);
     // write norm
-    real l2(SFG.norm2()), linf(SFG.norm_infty());
+    real l2((*TFG).norm2()), linf((*TFG).norm_infty());
     LOG(2, getCapitalizedAbbreviation())
       << "|T|=" << l2 << ", max(T)=" << linf << std::endl;
-    e[""] = +0.5 * spins*spins * TFG["FG"] * (*VdFG)["FG"];
+    e[""] = +0.5 * spins*spins * (*TFG)["FG"] * (*VdFG)["FG"];
     direct = e.get_val();
     LOG(1, getCapitalizedAbbreviation()) << "T->0 F_d=" << direct << std::endl;
-    e[""] = -0.5 * spins * TFG["FG"] * (*VxFG)["FG"];
+    e[""] = -0.5 * spins * (*TFG)["FG"] * (*VxFG)["FG"];
     exchange = e.get_val();
     LOG(1, getCapitalizedAbbreviation()) << "T->0 F_x=" << exchange << std::endl;
     energy = direct + exchange;
     LOG(1, getCapitalizedAbbreviation()) << "T->0 F=" << energy << std::endl;
     if (std::abs(1-lastEnergy/energy) < accuracy) break;
     lastEnergy = energy;
-    real mixingRatio( getRealArgument("mixingRatio", 1.0) );
-    TFG["FG"] *= (1-mixingRatio);
-    TFG["FG"] += mixingRatio * SFG["FG"];
   }
   return energy;
 }
