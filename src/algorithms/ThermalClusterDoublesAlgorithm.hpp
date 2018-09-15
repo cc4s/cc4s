@@ -39,6 +39,8 @@ namespace cc4s {
     static constexpr int DEFAULT_SINGLES = 0;
 
   protected:
+    std::vector<real> taus;
+
     /**
      * \brief doubles amplitudes on the imaginary time grid
      **/
@@ -85,7 +87,9 @@ namespace cc4s {
     std::string getCapitalizedAbbreviation();
     std::string getAmplitudeIndices(CTF::Tensor<real> &T);
     real getTammDancoffEnergy();
-    real getZeroTDrccd(const std::vector<real> &taus);
+    real getZeroTDrccd();
+    void iterateAmplitudeSamples();
+    void iterateAmplitudeFunctions();
     void computeSteadyStateAmplitudes(const std::vector<real> &taus);
     void computeEnergyContribution(
       CTF::Tensor<real> &SFG, const real DTau,
