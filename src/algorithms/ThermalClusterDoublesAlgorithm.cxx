@@ -172,8 +172,9 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       LOG(2, getCapitalizedAbbreviation()) << "F_x=" <<
         (exchange+0.5*x*DTau)/tau1 << std::endl;
       // write norm
-      real a(T1abij->norm2());
-      LOG(2, getCapitalizedAbbreviation()) << "|T|=" << a << std::endl;
+      real l2(T1abij->norm2()), linf(T1abij->norm_infty());
+      LOG(2, getCapitalizedAbbreviation())
+        << "|T|=" << l2 << ", max(T)=" << linf << std::endl;
       energy = direct + exchange + 0.5*(d+x)*DTau;
       LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/tau1 << std::endl;
       if (std::abs(1-lastEnergy/energy) < accuracy) break;
@@ -493,7 +494,7 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
   public:
     LevelShiftedDivision(real shift_): shift(shift_) { }
     void operator()(real lambda, real &s) {
-      if (std::abs(lambda) < 1e-6) {
+      if (std::abs(lambda) < 1e-7) {
         s = 0;
       } else {
         s = -s / (lambda + shift);
@@ -536,9 +537,16 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
     // constant term
     (*SFG)["FG"]  = (*VdFG)["FG"];
     // quadratic term
-    (*SFG)["FG"] += (*TFG)["FH"] * (*VdFG)["HI"] * (*TFG)["IG"];
+    (*SFG)["FG"] += spins*spins * (*TFG)["FH"] * (*VdFG)["HI"] * (*TFG)["IG"];
     // apply level shifting on right hand side
     (*SFG)["FG"] += (-levelShift) * (*TFG)["FG"];
+    Transform<real, real> projectOut(
+      std::function<void(real, real &)>([](const real lambda, real &t) {
+        if (std::abs(lambda) < 1e-7) t = 0;
+      })
+    );
+    projectOut( (*lambdaF)["F"], (*SFG)["FG"] );
+    projectOut( (*lambdaF)["G"], (*SFG)["FG"] );
     // divide by -(Delta+shift) to get new estimate for T
     Transform<real, real>(
       std::function<void(real, real &)>(levelShiftedDivision)
@@ -641,7 +649,7 @@ void ThermalClusterDoublesAlgorithm::propagateAmplitudes(
   // project-out Hilbert space doubling DOF in effective hamiltonian
   Transform<real, real> projectOut(
     std::function<void(real, real &)>([](const real lambda, real &t) {
-      if (std::abs(lambda) < 1e-6) t = 0;
+      if (std::abs(lambda) < 1e-7) t = 0;
     })
   );
   projectOut( (*lambdaF)["F"], SFG["FG"] );
