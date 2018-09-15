@@ -384,8 +384,7 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd(
     throw new EXCEPTION(stringStream.str());
   }
 
-  std::vector<PTR(Tensor<real>)> tensors;
-  tensors.push_back(NEW(Tensor<real>, false, *VdFG));
+  std::vector<PTR(Tensor<real>)> tensors({NEW(Tensor<real>, false, *VdFG)});
   std::vector<std::string> indices({"FG"});
   PTR(const FockVector<real>) amplitudes(
     NEW(FockVector<real>,
