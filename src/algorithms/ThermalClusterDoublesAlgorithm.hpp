@@ -164,7 +164,7 @@ namespace cc4s {
     // = int_0^Tau dtau exp(-lambdaFG*(Tau-tau))
     class ConvolutionC: public ImaginaryTimeTransform {
     public:
-      static constexpr real SMALL = 1e-2;
+      static constexpr real SMALL = 0.25;
       ConvolutionC(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
@@ -174,9 +174,25 @@ namespace cc4s {
         const real x(DTau*lambdaFG);
         if (std::abs(x) < SMALL) {
           T *= DTau * (
-            1. - x*(
-              1./2 - x*(
-                1./6 - x*(1./24 - x*(1./120 - x*(1./720 - x/5040)))
+            1 - x/2*(
+              1 - x/3*(
+                1 - x/4*(
+                  1 - x/5*(
+                    1 - x/6*(
+                      1 - x/7*(
+                        1 - x/8*(
+                          1 - x/9*(
+                            1 - x/10*(
+                              1 - x/11*(
+                                1 - x/12
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
               )
             )
           );
@@ -247,7 +263,7 @@ namespace cc4s {
     // = int_0^Tau dtau (Tau-tau)/Tau * (Tau-tau)/Tau * exp(-lambdaFG*(Tau-tau))
     class Convolution00: public ImaginaryTimeTransform {
     public:
-      static constexpr real SMALL = 1e-6;
+      static constexpr real SMALL = 1e-2;
       Convolution00(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
@@ -256,7 +272,25 @@ namespace cc4s {
       void operator ()(const real lambdaFG, real &T) {
         const real x(DTau*lambdaFG);
         if (std::abs(x) < SMALL) {
-          T *= DTau * ( 1./3 - x*(1./4 - x*(1./10 - x/36)) );
+          T *= DTau * (
+            1./3 - x*(
+              1./4 - x*(
+                1./10 - x*(
+                  1./36 - x*(
+                    1./168 - x*(
+                      1./960 - x*(
+                        1./6480 - x*(
+                          1./50400 - x*(
+                            1./443520
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          );
         } else {
           T *= (2-((2+2*x+x*x)*std::exp(-x))) / (x*x*lambdaFG);
         }
@@ -267,7 +301,7 @@ namespace cc4s {
     // = int_0^Tau dtau (Tau-tau)/Tau * tau/Tau * exp(-lambdaFG*(Tau-tau))
     class Convolution01: public ImaginaryTimeTransform {
     public:
-      static constexpr real SMALL = 1e-6;
+      static constexpr real SMALL = 1e-2;
       Convolution01(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
@@ -275,7 +309,25 @@ namespace cc4s {
       void operator ()(const real lambdaFG, real &T) {
         const real x(DTau*lambdaFG);
         if (std::abs(x) < SMALL) {
-          T *= DTau * ( 1./6 - x*(1./12 - x*(1./40 - x/180)) );
+          T *= DTau * (
+            1./6 - x*(
+              1./12 - x*(
+                1./40 - x*(
+                  1./180 - x*(
+                    1./1008 - x*(
+                      1./6720 - x*(
+                        1./51840 - x*(
+                          1./453600 - x*(
+                            1./4435200
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          );
         } else {
           T *= ((x-2)+((x+2)*std::exp(-x))) / (x*x*lambdaFG);
         }
@@ -286,7 +338,7 @@ namespace cc4s {
     // = int_0^Tau dtau tau/Tau * tau/Tau * exp(-lambdaFG*(Tau-tau))
     class Convolution11: public ImaginaryTimeTransform {
     public:
-      static constexpr real SMALL = 1e-6;
+      static constexpr real SMALL = 1e-2;
       Convolution11(
         real DTau_
       ): ImaginaryTimeTransform(DTau_) {
@@ -294,7 +346,25 @@ namespace cc4s {
       void operator ()(const real lambdaFG, real &T) {
         const real x(DTau*lambdaFG);
         if (std::abs(x) < SMALL) {
-          T *= DTau * ( 1./3 - x*(1./12 - x*(1./60 - x/360)) );
+          T *= DTau * (
+            1./3 - x*(
+              1./12 - x*(
+                1./60 - x*(
+                  1./360 - x*(
+                    1./2520 - x*(
+                      1./20160 - x*(
+                        1./181440 - x*(
+                          1./1814400 - x*(
+                            1./19958400
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          );
         } else {
           T *= ((2-2*x+x*x)-(2*std::exp(-x)))/ (x*x*lambdaFG);
         }
