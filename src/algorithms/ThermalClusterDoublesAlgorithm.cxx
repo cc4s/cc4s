@@ -103,6 +103,9 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
 
   // number of iterations for determining the amplitudes at each point in time
   int I( getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS) );
+
+  std::vector<real> amplitudeMaxima(taus.size());
+  std::vector<real> amplitudeNorms(taus.size());
   // allocate doubles amplitudes on imaginary time grid
   // the source amplitudes are stored in orbital space
   // with fully closed contraction weights, suitable for interpolation
@@ -172,9 +175,11 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       LOG(2, getCapitalizedAbbreviation()) << "F_x=" <<
         (exchange+0.5*x*DTau)/tau1 << std::endl;
       // write norm
-      real l2(T1abij->norm2()), linf(T1abij->norm_infty());
+      amplitudeNorms[n] = T1abij->norm2();
+      amplitudeMaxima[n] = T1abij->norm_infty();
       LOG(2, getCapitalizedAbbreviation())
-        << "|T|=" << l2 << ", max(T)=" << linf << std::endl;
+        << "|T|=" << amplitudeNorms[n] << ", max(T)=" << amplitudeMaxima[n]
+        << std::endl;
       energy = direct + exchange + 0.5*(d+x)*DTau;
       LOG(1, getCapitalizedAbbreviation()) << "F=" << energy/tau1 << std::endl;
       if (std::abs(1-lastEnergy/energy) < accuracy) break;
@@ -194,6 +199,25 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
   if (isArgumentGiven("Amplitudes")) {
     auto newTabij(new CTF::Tensor<real>(*amplitudes->get(0)));
     allocatedTensorArgument<real>("Amplitudes", newTabij);
+  }
+  // write amplitude norms
+  std::vector<int64_t> normIndices(T0abij.wrld->rank == 0 ? taus.size() : 0);
+  for (size_t i(0); i < normIndices.size(); ++i) { normIndices[i] = i; }
+  if (isArgumentGiven("amplitudeMaxima")) {
+    int n(taus.size());
+    auto maxn(new Tensor<>(1, &n, T0abij.sym, *T0abij.wrld, "amplitudeMax"));
+    maxn->write(
+      normIndices.size(), normIndices.data(), amplitudeMaxima.data()
+    );
+    allocatedTensorArgument<real>("amplitudeMaxima", maxn);
+  }
+  if (isArgumentGiven("amplitudeNorms")) {
+    int n(taus.size());
+    auto normn(new Tensor<>(1, &n, T0abij.sym, *T0abij.wrld, "amplitudeNorms"));
+    normn->write(
+      normIndices.size(), normIndices.data(), amplitudeNorms.data()
+    );
+    allocatedTensorArgument<real>("amplitudeNorms", normn);
   }
 }
 
@@ -282,7 +306,6 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeFunctions() {
           (*Tabijn[n])["abij"] *= (1-mixingRatio);
           // mix
           (*Tabijn[n])["abij"] += mixingRatio * (*Sabijn[n])["abij"];
-          (*Tabijn[n])["abij"] *= 1.00;
         }
       }
     }
@@ -486,6 +509,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", lambdaF);
 }
 
+// TODO: propagate for finite time to get non-zero T approximation
 real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
   real levelShift( getRealArgument("levelShift", 0.0) );
