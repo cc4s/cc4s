@@ -96,7 +96,7 @@ void DiisMixer<F>::append(
   std::array<int,2> firstColEnd{{count+1,1}};
   std::vector<F> column(count+1);
   IterativePseudoInverse<F>(
-    B->slice(upperLeftBegin.data(), lowerRightEnd.data())
+    B->slice(upperLeftBegin.data(), lowerRightEnd.data()), 1e-14
   ).get().slice(
     upperLeftBegin.data(), firstColEnd.data()
   ).read_all(column.data());
