@@ -203,6 +203,14 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
   // write amplitude norms
   std::vector<int64_t> normIndices(T0abij.wrld->rank == 0 ? taus.size() : 0);
   for (size_t i(0); i < normIndices.size(); ++i) { normIndices[i] = i; }
+  if (isArgumentGiven("amplitudeTimes")) {
+    int n(taus.size());
+    auto taun(new Tensor<>(1, &n, T0abij.sym, *T0abij.wrld, "amplitudeTimes"));
+    taun->write(
+      normIndices.size(), normIndices.data(), taus.data()
+    );
+    allocatedTensorArgument<real>("amplitudeTimes", taun);
+  }
   if (isArgumentGiven("amplitudeMaxima")) {
     int n(taus.size());
     auto maxn(new Tensor<>(1, &n, T0abij.sym, *T0abij.wrld, "amplitudeMax"));
