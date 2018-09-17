@@ -188,26 +188,35 @@ void ThermalHolesAndParticles::defineThermalHolesAndParticles() {
 
 void ThermalHolesAndParticles::determineThermalOccupancies() {
   // use positive temperatures for particles, negative ones for holes
+  double minOccupancy( getRealArgument("minOccupancy", 1e-5) );
   class occupancy {
   public:
-    occupancy(double kT_): kT(kT_) { }
+    occupancy(double kT_, double minf_): kT(kT_), minf(minf_) { }
     void operator()(double &eps) {
-      eps = 1.0 / (1.0 + std::exp(-eps/kT));
+      double f(1.0 / (1.0 + std::exp(-eps/kT)));
+      double invf(1.0 / (1.0 + std::exp(+eps/kT)));
+      if (f < minf) {
+        eps = 0.0;
+      } else if (invf < minf) {
+        eps = 1.0;
+      } else {
+        eps = f;
+      }
     }
   protected:
-    double kT;
+    double kT, minf;
   };
 
   Tensor<> *ftEpsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> *ftNi(new Tensor<>(*ftEpsi));
-  CTF::Transform<>( std::function<void(double &)>(occupancy(-kT)) ) (
+  CTF::Transform<>(std::function<void(double &)>(occupancy(-kT,minOccupancy))) (
     (*ftNi)["i"]
   );
   allocatedTensorArgument("ThermalHoleOccupancies", ftNi);
 
   Tensor<> *ftEpsa(getTensorArgument("ThermalParticleEigenEnergies"));
   Tensor<> *ftNa(new Tensor<>(*ftEpsa));
-  CTF::Transform<>( std::function<void(double &)>(occupancy(+kT)) ) (
+  CTF::Transform<>(std::function<void(double &)>(occupancy(+kT,minOccupancy))) (
     (*ftNa)["a"]
   );
   allocatedTensorArgument("ThermalParticleOccupancies", ftNa);
