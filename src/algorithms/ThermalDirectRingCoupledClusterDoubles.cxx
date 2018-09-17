@@ -51,10 +51,13 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   //////////////////////////////////////
   Tensor<real> Sabij(false, *Vabij);
   Sabij["abij"] = (*Vabij)["abij"] *
+//    (*ga)["a"] * (*ga)["b"] * (*gi)["i"] * (*gi)["j"];
     (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"];
   chop(Sabij["abij"]);
   propagateAmplitudes(Sabij, convolutionC);
   S1abij["abij"] -= Sabij["abij"];
+
+//  return;
 
   if (isArgumentGiven("ThermalPHPHCoulombIntegrals")) {
     // particle/hole ladder of H1, if given

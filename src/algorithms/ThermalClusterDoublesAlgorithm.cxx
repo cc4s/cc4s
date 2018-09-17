@@ -154,7 +154,7 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       auto estimatedAmplitudes( NEW(FockVector<real>, *amplitudes) );
       auto T1abij(amplitudes->get(0));
       auto S1abij(estimatedAmplitudes->get(0));
-      (*S1abij)["abij"] = 0.0;
+      (*S1abij)["abij"] = T0abij["abij"];
       // propagate amplitudes T0 from tau_n-1 to tau_n with effective H0
       ImaginaryTimePropagation imaginaryTimePropagation(DTau);
       propagateAmplitudes(*S1abij, imaginaryTimePropagation);
@@ -379,9 +379,11 @@ void ThermalClusterDoublesAlgorithm::computeEnergyContribution(
 
   // direct term
   energy[""] = 0.5 * spins * spins * DTau/2 * Sabij["abij"] * (*Vabij)["abij"];
+//    * (*ga)["a"] * (*ga)["b"] * (*gi)["i"] * (*gi)["j"];
   direct += energy.get_val();
   // exchange term
   energy[""] = (-0.5) * spins * DTau/2 * Sabij["abij"] * (*Vabij)["abji"];
+//    * (*ga)["a"] * (*ga)["b"] * (*gi)["i"] * (*gi)["j"];
   exchange += energy.get_val();
 }
 
@@ -409,10 +411,10 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
   auto Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
-  const real epsilon(1e-9);
+  const real modeThreshold(getRealArgument("modeThreshold", 1e-6));
   Transform<real> chop(
     std::function<void(real &)>(
-      [epsilon](real &t) { if (std::abs(t) < epsilon) t = 0.0; }
+      [modeThreshold](real &t) { if (std::abs(t) < modeThreshold) t = 0.0; }
     )
   );
 
@@ -470,15 +472,15 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   lambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
 
   // chop near-zero values to zero
-  chop((*lambdaF)["F"]); chop((*UaiF)["aiF"]);
+  chop((*lambdaF)["F"]); // chop((*UaiF)["aiF"]);
 
   // determine nullspace of effective Hamiltonian from Fock-space doubling
   int UZerosStart[] = {0, 0, 0};
   int UZerosEnd[] = {Nv, No, 0};
   for (size_t i(0); i < lambdas.size(); ++i) {
-    if (lambdas[i] <= -epsilon) {
+    if (lambdas[i] <= -modeThreshold) {
       UZerosStart[2] = i+1; UZerosEnd[2] = i+1;
-    } else if (lambdas[i] < epsilon) {
+    } else if (lambdas[i] < modeThreshold) {
       UZerosEnd[2] = i+1;
     }
   }
@@ -499,7 +501,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
     (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
     (*Vabij)["cdkl"];
-  chop((*VdFG)["FG"]);
+//  chop((*VdFG)["FG"]);
 
   // determine Coulomb coupling to nullspapce
   int VZerosStart[] = {0, UZerosStart[2]};
@@ -522,19 +524,22 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
   real levelShift( getRealArgument("levelShift", 0.0) );
   // level shifted division for left hand side
+  real modeThreshold( getRealArgument("modeThreshold", 1e-6) );
   class LevelShiftedDivision {
   public:
-    LevelShiftedDivision(real shift_): shift(shift_) { }
+    LevelShiftedDivision(
+      real shift_, real threshold_
+    ): shift(shift_), threshold(threshold_) { }
     void operator()(real lambda, real &s) {
-      if (std::abs(lambda) < 1e-7) {
+      if (std::abs(lambda) < threshold) {
         s = 0;
       } else {
         s = -s / (lambda + shift);
       }
     }
   protected:
-    real shift;
-  } levelShiftedDivision(levelShift);
+    real shift, threshold;
+  } levelShiftedDivision(levelShift, modeThreshold);
 
   // create a mixer, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
@@ -573,9 +578,11 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
     // apply level shifting on right hand side
     (*SFG)["FG"] += (-levelShift) * (*TFG)["FG"];
     Transform<real, real> projectOut(
-      std::function<void(real, real &)>([](const real lambda, real &t) {
-        if (std::abs(lambda) < 1e-7) t = 0;
-      })
+      std::function<void(real, real &)>(
+        [modeThreshold](const real lambda, real &t) {
+          if (std::abs(lambda) < modeThreshold) t = 0;
+        }
+      )
     );
     projectOut( (*lambdaF)["F"], (*SFG)["FG"] );
     projectOut( (*lambdaF)["G"], (*SFG)["FG"] );
@@ -678,11 +685,14 @@ void ThermalClusterDoublesAlgorithm::propagateAmplitudes(
   Transform<real, real>(std::function<void(real, real &)>(propagator))(
     (*lambdaFG)["FG"], SFG["FG"]
   );
-  // project-out Hilbert space doubling DOF in effective hamiltonian
+  // project-out Fock space doubling DOF in effective hamiltonian
+  real modeThreshold(getRealArgument("modeThreshold", 1e-6));
   Transform<real, real> projectOut(
-    std::function<void(real, real &)>([](const real lambda, real &t) {
-      if (std::abs(lambda) < 1e-7) t = 0;
-    })
+    std::function<void(real, real &)>(
+      [modeThreshold](const real lambda, real &t) {
+        if (std::abs(lambda) < modeThreshold) t = 0;
+      }
+    )
   );
   projectOut( (*lambdaF)["F"], SFG["FG"] );
   projectOut( (*lambdaF)["G"], SFG["FG"] );
