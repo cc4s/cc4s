@@ -483,7 +483,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     }
     ++F;
   }
-  modeThreshold = 1.0;
+  real modeThreshold(1.0);
   size_t nullModesCount(0);
   size_t nullSpaceStart(0), nullSpaceEnd(0);
   while (nullModesCount < dimKerH0) {
@@ -595,19 +595,17 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
   // level shifted division for left hand side
   class LevelShiftedDivision {
   public:
-    LevelShiftedDivision(
-      real shift_, real threshold_
-    ): shift(shift_), threshold(threshold_) { }
+    LevelShiftedDivision(real shift_): shift(shift_) { }
     void operator()(real lambda, real &s) {
-      if (std::abs(lambda) < threshold) {
+      if (lambda == 0.0) {
         s = 0;
       } else {
         s = -s / (lambda + shift);
       }
     }
   protected:
-    real shift, threshold;
-  } levelShiftedDivision(levelShift, modeThreshold);
+    real shift;
+  } levelShiftedDivision(levelShift);
 
   // create a mixer, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
