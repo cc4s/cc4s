@@ -103,3 +103,12 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   S1abij["abij"] -= Sabij["abij"];
 }
 
+/*
+    Transform<real, real>(
+      std::function<void(real, real &)>(convolutionC)
+    ) (
+      (*lambdaFG)["FG"], SFG["FG"]
+    );
+*/
+
+

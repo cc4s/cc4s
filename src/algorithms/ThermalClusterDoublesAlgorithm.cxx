@@ -1,7 +1,5 @@
 #include <algorithms/ThermalClusterDoublesAlgorithm.hpp>
 #include <math/MathFunctions.hpp>
-#include <math/ComplexTensor.hpp>
-#include <math/IterativePseudoInverse.hpp>
 #include <mixers/Mixer.hpp>
 #include <util/LapackMatrix.hpp>
 #include <util/BlacsWorld.hpp>
@@ -27,18 +25,7 @@ ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
 void ThermalClusterDoublesAlgorithm::run() {
   beta = 1 / getRealArgument("Temperature");
   LOG(1, getCapitalizedAbbreviation()) << "beta=" << beta << std::endl;
-/*
-  Transform<real> chop(
-    std::function<void(real &)>(
-      [](real &t) {
-        if (std::abs(t) < sqrt(std::numeric_limits<real>::epsilon())) t = 0.0;
-      }
-    )
-  );
-  auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
-  auto Vbija( getTensorArgument<real>("ThermalPHHPCoulombIntegrals") );
-  chop((*Vabij)["abij"]); chop((*Vbija)["bija"]);
-*/
+
   computeSqrtOccupancies();
   diagonalizeSinglesHamiltonian();
 
@@ -107,16 +94,6 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
 
   std::vector<real> amplitudeMaxima(taus.size());
   std::vector<real> amplitudeNorms(taus.size());
-  // allocate doubles amplitudes on imaginary time grid
-  // the source amplitudes are stored in orbital space
-  // with fully closed contraction weights, suitable for interpolation
-  // TODO: grid currently not needed
-/*
-  Tabijn.resize(taus.size());
-  for (size_t n(0); n < taus.size(); ++n) {
-    Tabijn[n] = NEW(CTF::Tensor<real>, false, *Vabij);
-  }
-*/
   real energy;
   real accuracy(getRealArgument("accuracy", 1e-7));
 
@@ -158,6 +135,13 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       (*S1abij)["abij"] = T0abij["abij"];
       // propagate amplitudes T0 from tau_n-1 to tau_n with effective H0
       ImaginaryTimePropagation imaginaryTimePropagation(DTau);
+/*
+      Transform<real, real>(
+        std::function<void(real, real &)>(imaginaryTimePropagation)
+      ) (
+        (*lambdaFG)["FG"], (*S1FG)["FG"]
+      );
+*/
       propagateAmplitudes(*S1abij, imaginaryTimePropagation);
       // apply hamiltonian between tau_n-1 and tau_n
       applyHamiltonian(T0abij, *T1abij, DTau, *S1abij);
@@ -482,7 +466,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     dimKerH0 += n*(n-1)/2;
     if (n > 1) {
       LOG(2, getCapitalizedAbbreviation()) <<
-        n << " degenerate states at epsilon=" << degenerateEps << std::endl;
+        n << " overlapping degenerate states at epsilon=" << degenerateEps << std::endl;
     }
   }
   LOG(1, getCapitalizedAbbreviation())
@@ -579,7 +563,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   // determine Coulomb coupling to nullspapce
   if (nullSpaceStart < nullSpaceEnd) {
     int VZerosStart[] = {0, static_cast<int>(nullSpaceStart)};
-    int VZerosEnd[] = {NvNo, static_cast<int>(nullSpaceEnd+1)};
+    int VZerosEnd[] = {NvNo, static_cast<int>(nullSpaceEnd)};
     Tensor<real> coupling(VdFG->slice(VZerosStart, VZerosEnd));
     Vector<real> norms(VZerosEnd[1]-VZerosStart[1]);
     norms["F"] = coupling["GF"] * coupling["GF"];
@@ -601,7 +585,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     )
   );
   projectOut( (*lambdaF)["F"], (*VdFG)["FG"] );
-
+  projectOut( (*lambdaF)["G"], (*VdFG)["FG"] );
 }
 
 // TODO: propagate for finite time to get non-zero T approximation
