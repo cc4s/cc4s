@@ -27,17 +27,18 @@ ThermalClusterDoublesAlgorithm::~ThermalClusterDoublesAlgorithm() {
 void ThermalClusterDoublesAlgorithm::run() {
   beta = 1 / getRealArgument("Temperature");
   LOG(1, getCapitalizedAbbreviation()) << "beta=" << beta << std::endl;
+/*
   Transform<real> chop(
     std::function<void(real &)>(
       [](real &t) {
-        if (std::abs(t) < 64*sqrt(std::numeric_limits<real>::epsilon())) t = 0.0;
+        if (std::abs(t) < sqrt(std::numeric_limits<real>::epsilon())) t = 0.0;
       }
     )
   );
   auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
   auto Vbija( getTensorArgument<real>("ThermalPHHPCoulombIntegrals") );
   chop((*Vabij)["abij"]); chop((*Vbija)["bija"]);
-
+*/
   computeSqrtOccupancies();
   diagonalizeSinglesHamiltonian();
 
@@ -191,6 +192,9 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
     tau0 = tau1;
     T0abij["abij"] = (*amplitudes->get(0))["abij"];
   }
+
+  LOG(1, getCapitalizedAbbreviation()) << "F_d=" << direct/beta << std::endl;
+  LOG(1, getCapitalizedAbbreviation()) << "F_x=" << exchange/beta << std::endl;
 
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
@@ -411,12 +415,6 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
   auto Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
-  const real modeThreshold(getRealArgument("modeThreshold", 1e-6));
-  Transform<real> chop(
-    std::function<void(real &)>(
-      [modeThreshold](real &t) { if (std::abs(t) < modeThreshold) t = 0.0; }
-    )
-  );
 
   // build to Hbjai
   int Nv(epsa->lens[0]); int No(epsi->lens[0]);
@@ -440,7 +438,6 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   // unperturbed propatation is diagonal
   (*Hbjai)["bjbj"] += (*epsa)["b"];
   (*Hbjai)["bjbj"] -= (*epsi)["j"];
-//  chop((*Hbjai)["bjai"]);
 
   LOG(1, getCapitalizedAbbreviation())
     << "diagonalizing singles part of Hamiltonian..." << std::endl;
@@ -459,35 +456,112 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   eigenSystem.solve(lambdas.data());
   scaHbjai = nullptr;
 
+  // determine dim(ker(effective Hamiltonian)) from Fock-space doubling
+  std::vector<real> occ(No), eps(No);
+  epsi->read_all(eps.data());
+  getTensorArgument<real>("ThermalHoleOccupancies")->read_all(occ.data());
+  size_t dimKerH0(0), degenerateStart(0);
+  real degenerateEps(eps[0]);
+  real degeneracyThreshold(getRealArgument("degeneracyThreshold", 1e-6));
+  for (size_t i(0); i < eps.size(); ++i) {
+    if (eps[i] - degenerateEps > degeneracyThreshold) {
+      if (occ[degenerateStart] < 1.0) {
+        size_t n(i-degenerateStart);
+        dimKerH0 += n*(n-1)/2;
+        if (n > 1) {
+          LOG(2, getCapitalizedAbbreviation()) <<
+            n << " overlapping degenerate states at epsilon=" << degenerateEps << std::endl;
+        }
+      }
+      degenerateEps = eps[i];
+      degenerateStart = i;
+    }
+  }
+  if (occ[degenerateStart] < 1.0) {
+    size_t n(eps.size()-degenerateStart);
+    dimKerH0 += n*(n-1)/2;
+    if (n > 1) {
+      LOG(2, getCapitalizedAbbreviation()) <<
+        n << " degenerate states at epsilon=" << degenerateEps << std::endl;
+    }
+  }
+  LOG(1, getCapitalizedAbbreviation())
+    << "dim(ker(H_singles))=" << dimKerH0 << std::endl;
+
+  // get lowest |eigenvalues| from spectrum
+  std::list<std::pair<size_t,real>> lowestNegativeEigenvalues;
+  size_t F(0);
+  while (F < lambdas.size()) {
+    if (lambdas[F] < 0.0) {
+      lowestNegativeEigenvalues.push_front(std::make_pair(F,-lambdas[F]));
+    } else {
+      break;
+    }
+    ++F;
+  }
+  modeThreshold = 1.0;
+  size_t nullModesCount(0);
+  size_t nullSpaceStart(0), nullSpaceEnd(0);
+  while (nullModesCount < dimKerH0) {
+    if (
+      lowestNegativeEigenvalues.size() > 0 &&
+      lowestNegativeEigenvalues.front().second < lambdas[F]
+    ) {
+      nullSpaceStart = lowestNegativeEigenvalues.front().first;
+      modeThreshold = lowestNegativeEigenvalues.front().second;
+      lowestNegativeEigenvalues.pop_front();
+    } else {
+      nullSpaceEnd = F+1;
+      modeThreshold = lambdas[F];
+      ++F;
+    }
+    ++nullModesCount;
+  }
+  real minMode(0.0);
+  if (
+    lowestNegativeEigenvalues.size() > 0 &&
+    lowestNegativeEigenvalues.front().second < lambdas[F]
+  ) {
+    minMode = lowestNegativeEigenvalues.front().second;
+  } else {
+    minMode = lambdas[F];
+  }
+  LOG(1, getCapitalizedAbbreviation()) <<
+    "nullspace modes " << nullSpaceStart << "<=F<" << nullSpaceEnd << std::endl;
+  LOG(1, getCapitalizedAbbreviation()) <<
+    "largest null mode " << modeThreshold << std::endl;
+  LOG(1, getCapitalizedAbbreviation()) <<
+    "smallest non-null mode " << minMode << std::endl;
+  for (size_t F(nullSpaceStart); F < nullSpaceEnd; ++F) lambdas[F] = 0.0;
+
+  // write Lambda back to CTF
+  std::vector<int64_t> lambdaIndices(epsi->wrld->rank == 0 ? NvNo : 0);
+  for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
+  lambdaF = new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda");
+  lambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
+
+  allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", lambdaF);
+
   // write unitary matrix U(ai)(F) back to CTF as tensor UaiF
   int ULens[3] = { Nv, No, NvNo };
   UaiF = NEW(Tensor<>, 3, ULens, Vbija->sym, *Vbija->wrld, "UaiF");
   scaU->write(*UaiF);
   scaU = nullptr;
-
-  // write Lambda back to CTF
-  std::vector<int64_t> lambdaIndices(UaiF->wrld->rank == 0 ? NvNo : 0);
-  for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
-  lambdaF = new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda");
-  lambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
-
-  // chop near-zero values to zero
-  chop((*lambdaF)["F"]); // chop((*UaiF)["aiF"]);
-
-  // determine nullspace of effective Hamiltonian from Fock-space doubling
-  int UZerosStart[] = {0, 0, 0};
-  int UZerosEnd[] = {Nv, No, 0};
-  for (size_t i(0); i < lambdas.size(); ++i) {
-    if (lambdas[i] <= -modeThreshold) {
-      UZerosStart[2] = i+1; UZerosEnd[2] = i+1;
-    } else if (lambdas[i] < modeThreshold) {
-      UZerosEnd[2] = i+1;
-    }
-  }
+  // chop near-zero values to zero of unitary transform
+  Transform<real> chop(
+    std::function<void(real &)>(
+      [](real &t) {
+        if (std::abs(t) < sqrt(std::numeric_limits<real>::epsilon())) t=0.0;
+      }
+    )
+  );
+  chop((*UaiF)["aiF"]);
   if (
-    UZerosStart[2] < UZerosEnd[2] &&
+    nullSpaceStart < nullSpaceEnd &&
     isArgumentGiven("singlesHamiltonianNullspace")
   ) {
+    int UZerosStart[] = {0, 0, static_cast<int>(nullSpaceStart)};
+    int UZerosEnd[] = {Nv, No, static_cast<int>(nullSpaceEnd)};
     allocatedTensorArgument<real>(
       "singlesHamiltonianNullspace",
       new Tensor<real>(UaiF->slice(UZerosStart, UZerosEnd))
@@ -501,22 +575,33 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
     (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
     (*Vabij)["cdkl"];
-//  chop((*VdFG)["FG"]);
-
+  chop((*VdFG)["FG"]);
   // determine Coulomb coupling to nullspapce
-  int VZerosStart[] = {0, UZerosStart[2]};
-  int VZerosEnd[] = {NvNo, UZerosEnd[2]};
-  if (
-    VZerosStart[1] < VZerosEnd[1] &&
-    isArgumentGiven("couplingToSinglesNullspace")
-  ) {
-    allocatedTensorArgument<real>(
-      "couplingToSinglesNullspace",
-      new Tensor<real>(VdFG->slice(VZerosStart, VZerosEnd))
-    );
+  if (nullSpaceStart < nullSpaceEnd) {
+    int VZerosStart[] = {0, static_cast<int>(nullSpaceStart)};
+    int VZerosEnd[] = {NvNo, static_cast<int>(nullSpaceEnd+1)};
+    Tensor<real> coupling(VdFG->slice(VZerosStart, VZerosEnd));
+    Vector<real> norms(VZerosEnd[1]-VZerosStart[1]);
+    norms["F"] = coupling["GF"] * coupling["GF"];
+    real couplingNorm(std::sqrt(norms.norm_infty()));
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "max(|Coulomb coupling to nullspace|)=" << couplingNorm << std::endl;
+    if (isArgumentGiven("couplingToSinglesNullspace")) {
+      allocatedTensorArgument<real>(
+        "couplingToSinglesNullspace", new Tensor<real>(coupling)
+      );
+    }
   }
+  // truncate coupling to nullspace
+  Transform<real, real> projectOut(
+    std::function<void(real, real &)>(
+      [](const real lambda, real &t) {
+        if (lambda == 0.0) t = 0;
+      }
+    )
+  );
+  projectOut( (*lambdaF)["F"], (*VdFG)["FG"] );
 
-  allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", lambdaF);
 }
 
 // TODO: propagate for finite time to get non-zero T approximation
@@ -524,7 +609,6 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
   real levelShift( getRealArgument("levelShift", 0.0) );
   // level shifted division for left hand side
-  real modeThreshold( getRealArgument("modeThreshold", 1e-6) );
   class LevelShiftedDivision {
   public:
     LevelShiftedDivision(
@@ -579,8 +663,8 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
     (*SFG)["FG"] += (-levelShift) * (*TFG)["FG"];
     Transform<real, real> projectOut(
       std::function<void(real, real &)>(
-        [modeThreshold](const real lambda, real &t) {
-          if (std::abs(lambda) < modeThreshold) t = 0;
+        [](const real lambda, real &t) {
+          if (lambda == 0.0) t = 0;
         }
       )
     );
@@ -665,7 +749,7 @@ void ThermalClusterDoublesAlgorithm::propagateAmplitudes(
   Transform<real> chop(
     std::function<void(real &)>(
       [](real &t) {
-        if (std::abs(t) < 64*sqrt(std::numeric_limits<real>::epsilon())) t = 0.0;
+        if (std::abs(t) < sqrt(std::numeric_limits<real>::epsilon())) t = 0.0;
       }
     )
   );
@@ -686,11 +770,10 @@ void ThermalClusterDoublesAlgorithm::propagateAmplitudes(
     (*lambdaFG)["FG"], SFG["FG"]
   );
   // project-out Fock space doubling DOF in effective hamiltonian
-  real modeThreshold(getRealArgument("modeThreshold", 1e-6));
   Transform<real, real> projectOut(
     std::function<void(real, real &)>(
-      [modeThreshold](const real lambda, real &t) {
-        if (std::abs(lambda) < modeThreshold) t = 0;
+      [](const real lambda, real &t) {
+        if (lambda == 0.0) t = 0;
       }
     )
   );

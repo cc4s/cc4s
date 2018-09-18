@@ -47,6 +47,12 @@ namespace cc4s {
     std::vector<PTR(CTF::Tensor<real>)> Tabijn;
 
     CTF::Tensor<real> *lambdaF;
+    /**
+     * \brief eigenvalues of singles hamiltonian with less magnitude are
+     * are projected out and expected to be associated to Fock-space doubling
+     * modes.
+     **/
+    real modeThreshold;
 
     /**
      * \brief lambdaF + lambdaG for doubles propagation
