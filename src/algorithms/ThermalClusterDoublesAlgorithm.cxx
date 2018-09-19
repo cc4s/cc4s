@@ -34,6 +34,8 @@ void ThermalClusterDoublesAlgorithm::run() {
   if (isArgumentGiven("ThermalTdaEnergy")) {
     setRealArgument("ThermalTdaEnergy", tda);
   }
+  if (getIntegerArgument("linearized", 0)) return;
+
 
   // compute the other contributions perturbatively
   // get imaginary time and frequency grids on all nodes
@@ -49,7 +51,7 @@ void ThermalClusterDoublesAlgorithm::run() {
 
   // get steady state amplitudes at tau points
 //  computeSteadyStateAmplitudes(taus);
-  if (getIntegerArgument("zeroTemperatureLimit", 0) == 1) {
+  if (getIntegerArgument("zeroTemperatureLimit", 0)) {
     real energy(getZeroTDrccd());
     std::stringstream energyName;
     energyName << "Thermal" << getAbbreviation() << "Energy";
@@ -318,17 +320,11 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeFunctions() {
 }
 
 cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
-  auto Vabij( getTensorArgument<>("ThermalPPHHCoulombIntegrals") );
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
 
   // compute Tamm-Dancoff Approximation (TDA)
   Scalar<> e;
   int NF(lambdaF->lens[0]);
-  // exchange interaction
-  VxFG = NEW(Tensor<real>, false, *VdFG);
-  (*VxFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
-    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
-    (*Vabij)["cdlk"];
 
   // propagate doubles
   lambdaFG = NEW(Tensor<real>, false, *VdFG);
@@ -339,7 +335,16 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
     (*lambdaFG)["FG"], TFG["FG"]
   );
-
+  // project out null-space from Fock-space-doubling
+  Transform<real, real> projectOut(
+    std::function<void(real, real &)>(
+      [](const real lambda, real &t) {
+        if (lambda == 0.0) t = 0;
+      }
+    )
+  );
+  projectOut( (*lambdaF)["F"], TFG["FG"] );
+  projectOut( (*lambdaF)["G"], TFG["FG"] );
   e[""] = -0.5 * spins*spins * TFG["FG"] * (*VdFG)["FG"];
   real tdad(e.get_val());
   LOG(1, getCapitalizedAbbreviation()) << "TDA F_d=" << tdad << std::endl;
@@ -406,13 +411,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
   // bubble from H_1
   (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
-/*
-  if (isArgumentGiven("ThermalPHPHCoulombIntegrals")) {
-    // particle/hole ladder of H1, if given
-    auto Vbiaj(getTensorArgument<>("ThermalPHPHCoulombIntegrals"));
-    (*Hbjai)["bjai"] -= (*Vbiaj)["biaj"];
-  }
-*/
+
   // half-close all contractions on inserted interactions
   (*Hbjai)["bjai"] *= (*ga)["b"];
   (*Hbjai)["bjai"] *= (*gi)["j"];
@@ -469,6 +468,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
         n << " overlapping degenerate states at epsilon=" << degenerateEps << std::endl;
     }
   }
+//  dimKerH0 += 13;
   LOG(1, getCapitalizedAbbreviation())
     << "dim(ker(H_singles))=" << dimKerH0 << std::endl;
 
@@ -512,11 +512,13 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   }
   LOG(1, getCapitalizedAbbreviation()) <<
     "nullspace modes " << nullSpaceStart << "<=F<" << nullSpaceEnd << std::endl;
-  LOG(1, getCapitalizedAbbreviation()) <<
-    "largest null mode " << modeThreshold << std::endl;
-  LOG(1, getCapitalizedAbbreviation()) <<
-    "smallest non-null mode " << minMode << std::endl;
-  for (size_t F(nullSpaceStart); F < nullSpaceEnd; ++F) lambdas[F] = 0.0;
+  if (nullSpaceStart < nullSpaceEnd) {
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "largest null mode " << modeThreshold << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "smallest non-null mode " << minMode << std::endl;
+    for (size_t F(nullSpaceStart); F < nullSpaceEnd; ++F) lambdas[F] = 0.0;
+  }
 
   // write Lambda back to CTF
   std::vector<int64_t> lambdaIndices(epsi->wrld->rank == 0 ? NvNo : 0);
@@ -560,6 +562,12 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
     (*Vabij)["cdkl"];
   chop((*VdFG)["FG"]);
+  // exchange interaction
+  VxFG = NEW(Tensor<real>, false, *VdFG);
+  (*VxFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
+    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
+    (*Vabij)["cdlk"];
+  chop((*VxFG)["FG"]);
   // determine Coulomb coupling to nullspapce
   if (nullSpaceStart < nullSpaceEnd) {
     int VZerosStart[] = {0, static_cast<int>(nullSpaceStart)};
@@ -588,7 +596,6 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   projectOut( (*lambdaF)["G"], (*VdFG)["FG"] );
 }
 
-// TODO: propagate for finite time to get non-zero T approximation
 real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
   real levelShift( getRealArgument("levelShift", 0.0) );
@@ -637,10 +644,15 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
     auto estimatedAmplitudes( NEW(FockVector<real>, *amplitudes) );
     auto TFG(amplitudes->get(0));
     auto SFG(estimatedAmplitudes->get(0));
+    Tensor<real> WFG(false, *VdFG);
+    WFG["FG"]  = (+1.0) * spins * spins * (*VdFG)["FG"];
+    if (getIntegerArgument("adjacentPairsExchange", 0)) {
+      WFG["FG"] += (-1.0) * spins * (*VxFG)["FG"];
+    }
     // constant term
     (*SFG)["FG"]  = (*VdFG)["FG"];
     // quadratic term
-    (*SFG)["FG"] += spins*spins * (*TFG)["FH"] * (*VdFG)["HI"] * (*TFG)["IG"];
+    (*SFG)["FG"] += (*TFG)["FH"] * WFG["HI"] * (*TFG)["IG"];
     // apply level shifting on right hand side
     (*SFG)["FG"] += (-levelShift) * (*TFG)["FG"];
     Transform<real, real> projectOut(

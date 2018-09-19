@@ -58,7 +58,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   S1abij["abij"] -= Sabij["abij"];
 
 //  return;
-
+/*
   if (isArgumentGiven("ThermalPHPHCoulombIntegrals")) {
     // particle/hole ladder of H1, if given
     auto Vbiaj(getTensorArgument<>("ThermalPHPHCoulombIntegrals"));
@@ -74,6 +74,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
     propagateAmplitudes(Sabij, convolution1);
     S1abij["abij"] -= Sabij["abij"];
   }
+*/
 
   LOG(1, "FT-DRCCD") << "doubles, quadratic terms T2 T2..." << std::endl;
   //////////////////////////////////////
@@ -81,7 +82,9 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   //////////////////////////////////////
   Tensor<real> Wabij(false, *Vabij);
   Wabij["abij"]  = (+1.0) * spins*spins * (*Vabij)["abij"];
-//  Wabij["abij"] += (-1.0) * spins * (*Vabij)["abji"];
+  if (getIntegerArgument("adjacentPairsExchange", 0)) {
+    Wabij["abij"] += (-1.0) * spins * (*Vabij)["abji"];
+  }
   //// T^I1(tau_n-1)*T^I2(tau_n-1)
   Sabij["abij"] = T0abij["acik"] * Wabij["cdkl"] * T0abij["dblj"];
   chop(Sabij["abij"]);
