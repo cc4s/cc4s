@@ -69,28 +69,28 @@ namespace cc4s {
      * The instantiated mixer must be registered using the
      * MixerRegistrar class.
      */
-    static Mixer<F> *create(
+    static PTR(Mixer<F>) create(
       std::string const &name, Algorithm *algorithm
     ) {
       auto iterator(getMixerMap()->find(name));
       return iterator != getMixerMap()->end() ?
-        iterator->second(algorithm) : nullptr;
+        iterator->second(algorithm) : PTR(Mixer<F>)();
     }
   protected:
     static std::map<
       std::string,
-      std::function<Mixer<F> *(Algorithm *algorithm)>
+      std::function<PTR(Mixer<F>) (Algorithm *algorithm)>
     > *getMixerMap() {
       return mixerMap ? mixerMap : (
         mixerMap = new std::map<
           std::string,
-          std::function<Mixer<F> *(Algorithm *)>
+          std::function<PTR(Mixer<F>) (Algorithm *)>
         >
       );
     }
     static std::map<
       std::string,
-      std::function<Mixer<F> *(Algorithm *)>
+      std::function<PTR(Mixer<F>) (Algorithm *)>
     > *mixerMap;
 /*
     static MixerMap *getMixerMap() {
@@ -104,8 +104,8 @@ namespace cc4s {
    * \brief template function creating an instance of the given class.
    */
   template <typename F, typename MixerType>
-  Mixer<F> *createMixer(Algorithm *algorithm) {
-    return new MixerType(algorithm);
+  PTR(Mixer<F>) createMixer(Algorithm *algorithm) {
+    return NEW(MixerType, algorithm);
   }
 
   /**

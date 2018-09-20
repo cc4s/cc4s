@@ -309,7 +309,7 @@ void CoulombVertexDecomposition::realizePi(
 void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
   // create a mixer
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-  Mixer<complex> *mixer(MixerFactory<complex>::create(mixerName, this));
+  PTR(Mixer<complex>) mixer(MixerFactory<complex>::create(mixerName, this));
   if (!mixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
@@ -365,7 +365,6 @@ void CoulombVertexDecomposition::iterateQuadraticFactor(int i) {
     }
     ++j;
   }
-  delete mixer;
 }
 
 void CoulombVertexDecomposition::computeOutgoingPi() {
