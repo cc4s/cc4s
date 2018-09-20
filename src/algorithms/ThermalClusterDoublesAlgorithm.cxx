@@ -140,8 +140,8 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       // compute amplitudes change and tell mixer
       auto amplitudesChange( NEW(FockVector<real>, *estimatedAmplitudes) );
       *amplitudesChange -= *amplitudes;
-//      Tensor<real> 
-//      (*amplitudeChange->get(0))["FG"] *= spins * (*VdFG)["FG"];
+      // use energy weighting for amplitude change
+      (*amplitudesChange->get(0))["FG"] *= (*VdFG)["FG"];
       mixer->append(estimatedAmplitudes, amplitudesChange);
       // get mixer's best guess for amplitudes
       amplitudes = mixer->get();
