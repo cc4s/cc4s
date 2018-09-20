@@ -42,6 +42,9 @@ void ThermalClusterDoublesAlgorithm::run() {
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
   taus.resize(tn->lens[0]);
   tn->read_all(taus.data());
+  if (getIntegerArgument("relativeTimePoints", 0)) {
+    for (auto &tau: taus) tau *= beta;
+  }
   // truncate at beta
   while (taus.back() > beta) taus.pop_back();
   real q( getRealArgument("imaginaryTimeScale", 2.0) );
