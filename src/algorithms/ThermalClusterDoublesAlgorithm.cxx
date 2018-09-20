@@ -123,7 +123,7 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
     real lastEnergy(0.0);
     // create a mixer, by default use the linear one
     std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-    Mixer<real> *mixer( MixerFactory<real>::create(mixerName, this) );
+    PTR(Mixer<real>) mixer( MixerFactory<real>::create(mixerName, this) );
     if (!mixer) {
       std::stringstream stringStream;
       stringStream << "Mixer not implemented: " << mixerName;
@@ -616,7 +616,7 @@ real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
 
   // create a mixer, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-  Mixer<real> *mixer( MixerFactory<real>::create(mixerName, this) );
+  PTR(Mixer<real>) mixer( MixerFactory<real>::create(mixerName, this) );
   if (!mixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;
