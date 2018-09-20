@@ -96,8 +96,9 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
   real energy;
   real accuracy(getRealArgument("accuracy", 1e-8));
 
-  Tensor<real> gFG(false, *VdFG);
-  gFG["FH"] = (*UaiF)["aiH"] (*ga)["a"] * (*gi)["i"] * (*UaiF)["aiF"];
+  // weight-closing transformation
+  Tensor<real> gFH(false, *VdFG);
+  gFH["FH"] = (*UaiF)["aiH"] * (*ga)["a"] * (*gi)["i"] * (*UaiF)["aiF"];
   Tensor<real> T0FG(false, *VdFG);
   std::vector<PTR(Tensor<real>)> tensors({NEW(Tensor<real>, false, *VdFG)});
   std::vector<std::string> indices({"FG"});
@@ -142,8 +143,9 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       // compute amplitudes change and tell mixer
       auto amplitudesChange( NEW(FockVector<real>, *estimatedAmplitudes) );
       *amplitudesChange -= *amplitudes;
-      // use weight-closed amplitudes for mixing
-      (*amplitudesChange->get(0))["FG"] *= (*VdFG)["FG"];
+      // use weight-closed amplitude-differences for mixing
+      (*amplitudesChange->get(0))["HI"] =
+        gFH["FH"] * (*amplitudesChange->get(0))["FG"] * gFH["GI"];
       mixer->append(estimatedAmplitudes, amplitudesChange);
       // get mixer's best guess for amplitudes
       amplitudes = mixer->get();
@@ -155,8 +157,12 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
         (direct+0.5*d*DTau)/tau1 << std::endl;
       LOG(2, getCapitalizedAbbreviation()) << "F_x=" <<
         (exchange+0.5*x*DTau)/tau1 << std::endl;
-      // write energy densities
-      amplitudeEnergyDensities[n] = d+x;
+      {
+        // write weight-closed amplitudes
+        Tensor<real> THI(false, *T1FG);
+        THI["HI"] = gFH["FH"] * (*T1FG)["FG"] * gFH["GI"];
+        amplitudeEnergyDensities[n] = THI.norm2();
+      }
       LOG(2, getCapitalizedAbbreviation())
         << "T.V=" << amplitudeEnergyDensities[n] << std::endl;
       energy = direct + exchange + 0.5*(d+x)*DTau;
@@ -405,8 +411,8 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   (*Hbjai)["bjai"] *= (*gi)["i"];
 
   // unperturbed propatation is diagonal
-  (*Hbjai)["bjbj"] += (*epsa)["b"];
-  (*Hbjai)["bjbj"] -= (*epsi)["j"];
+  (*Hbjai)["bjbj"] += (+1.0) * (*epsa)["b"];
+  (*Hbjai)["bjbj"] += (-1.0) * (*epsi)["j"];
 
   LOG(1, getCapitalizedAbbreviation())
     << "diagonalizing singles part of Hamiltonian..." << std::endl;
@@ -416,7 +422,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   int scaHLens[2] = { NvNo, NvNo };
   auto scaHbjai(NEW(ScaLapackMatrix<>, *Hbjai, scaHLens, &world));
   // release unneeded resources early
-  Hbjai = nullptr;
+//  Hbjai = nullptr;
 
   // use ScaLapack routines to diagonalise the matrix U.Lambda.U^T
   auto scaU(NEW(ScaLapackMatrix<>, *scaHbjai));
@@ -514,13 +520,12 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
 
   allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", lambdaF);
 
-  // write unitary matrix U(ai)(F) back to CTF as tensor UaiF
+  // write orthogonal matrix U(ai)(F) back to CTF as tensor UaiF
   int ULens[3] = { Nv, No, NvNo };
   UaiF = NEW(Tensor<>, 3, ULens, Vbija->sym, *Vbija->wrld, "UaiF");
   scaU->write(*UaiF);
+  // release resources
   scaU = nullptr;
-  int UTLens[3] = { NvNo, Nv, No };
-  // FIXME: continue
   // chop near-zero values to zero of unitary transform
   Transform<real> chop(
     std::function<void(real &)>(
@@ -530,6 +535,16 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     )
   );
   chop((*UaiF)["aiF"]);
+
+  {
+    // test if H0 - U.lambda.UT
+    Tensor<real> Dbjai(*Hbjai);
+    Dbjai["bjai"] += (-1.0) * (*UaiF)["bjF"] * (*lambdaF)["F"] * (*UaiF)["aiF"];
+    real error(Dbjai.norm2());
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "error of diagonalization=" << error << std::endl;
+  }
+
   if (
     nullSpaceStart < nullSpaceEnd &&
     isArgumentGiven("singlesHamiltonianNullspace")

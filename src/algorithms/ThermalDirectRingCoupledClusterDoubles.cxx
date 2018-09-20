@@ -56,7 +56,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
 //    (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"];
 //  chop(Sabij["abij"]);
   propagateAmplitudes(SFG, convolutionC);
-  S1FG["FG"] -= SFG["FG"];
+  S1FG["FG"] += (-1.0) * SFG["FG"];
 
 //  return;
 /*
@@ -67,13 +67,13 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
     chop(Sabij["abij"]);
     Sabij["abij"] += Sabij["baji"];
     propagateAmplitudes(Sabij, convolution0);
-    S1abij["abij"] -= Sabij["abij"];
+    S1abij["abij"] += (-1.0) * Sabij["abij"];
 
     Sabij["abij"] = (-1.0) * T1abij["ackj"] * (*Vbiaj)["bkci"];
     chop(Sabij["abij"]);
     Sabij["abij"] += Sabij["baji"];
     propagateAmplitudes(Sabij, convolution1);
-    S1abij["abij"] -= Sabij["abij"];
+    S1abij["abij"] += (-1.0) * Sabij["abij"];
   }
 */
 
@@ -90,7 +90,7 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   SFG["FG"] = T0FG["FH"] * WFG["HI"] * T0FG["IG"];
   propagateAmplitudes(SFG, convolution00);
   chop(SFG["FG"]);
-  S1FG["FG"] -= SFG["FG"];
+  S1FG["FG"] += (-1.0) * SFG["FG"];
 
   //// T^I1(tau_n-1)*T^I2(tau_n) and T^I1(tau_n)*T^I2(tau_n-1)
   SFG["FG"] = T0FG["FH"] * WFG["HI"] * T1FG["IG"];
@@ -98,12 +98,12 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   chop(SFG["FG"]);
   SFG["FG"] += SFG["GF"];
   propagateAmplitudes(SFG, convolution01);
-  S1FG["FG"] -= SFG["FG"];
+  S1FG["FG"] += (-1.0) * SFG["FG"];
 
   //// T^I1(tau_n)*T^I2(tau_n)
   SFG["FG"] = T1FG["FH"] * WFG["HI"] * T1FG["IG"];
   chop(SFG["FG"]);
   propagateAmplitudes(SFG, convolution11);
-  S1FG["FG"] -= SFG["FG"];
+  S1FG["FG"] += (-1.0) * SFG["FG"];
 }
 
