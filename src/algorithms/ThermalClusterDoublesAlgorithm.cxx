@@ -96,6 +96,8 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
   real energy;
   real accuracy(getRealArgument("accuracy", 1e-8));
 
+  Tensor<real> gFG(false, *VdFG);
+  gFG["FH"] = (*UaiF)["aiH"] (*ga)["a"] * (*gi)["i"] * (*UaiF)["aiF"];
   Tensor<real> T0FG(false, *VdFG);
   std::vector<PTR(Tensor<real>)> tensors({NEW(Tensor<real>, false, *VdFG)});
   std::vector<std::string> indices({"FG"});
@@ -140,7 +142,7 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       // compute amplitudes change and tell mixer
       auto amplitudesChange( NEW(FockVector<real>, *estimatedAmplitudes) );
       *amplitudesChange -= *amplitudes;
-      // use energy weighting for amplitude change
+      // use weight-closed amplitudes for mixing
       (*amplitudesChange->get(0))["FG"] *= (*VdFG)["FG"];
       mixer->append(estimatedAmplitudes, amplitudesChange);
       // get mixer's best guess for amplitudes
@@ -517,6 +519,8 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   UaiF = NEW(Tensor<>, 3, ULens, Vbija->sym, *Vbija->wrld, "UaiF");
   scaU->write(*UaiF);
   scaU = nullptr;
+  int UTLens[3] = { NvNo, Nv, No };
+  // FIXME: continue
   // chop near-zero values to zero of unitary transform
   Transform<real> chop(
     std::function<void(real &)>(
