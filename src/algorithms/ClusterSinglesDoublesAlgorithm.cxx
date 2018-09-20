@@ -49,7 +49,7 @@ F ClusterSinglesDoublesAlgorithm::run() {
 
   // create a mixer, by default use the linear one
   std::string mixerName(getTextArgument("mixer", "LinearMixer"));
-  Mixer<F> *mixer( MixerFactory<F>::create(mixerName, this));
+  PTR(Mixer<F>) mixer( MixerFactory<F>::create(mixerName, this));
   if (!mixer) {
     std::stringstream stringStream;
     stringStream << "Mixer not implemented: " << mixerName;

@@ -20,7 +20,7 @@ template class Mixer<cc4s::Complex64>;
 template <typename F>
 std::map<
   std::string,
-  std::function<Mixer<F> *(Algorithm *algorithm)>
+  std::function<PTR(Mixer<F>) (Algorithm *algorithm)>
 > *MixerFactory<F>::mixerMap;
 
 // instantiate
