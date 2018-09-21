@@ -33,11 +33,6 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Convolution00 convolution00(DTau);
   Convolution01 convolution01(DTau);
   Convolution11 convolution11(DTau);
-/*
-  auto Vabij( getTensorArgument<real>("ThermalPPHHCoulombIntegrals") );
-  auto Na( getTensorArgument<real>("ThermalParticleOccupancies") );
-  auto Ni( getTensorArgument<real>("ThermalHoleOccupancies") );
-*/
   Transform<real> chop(
     std::function<void(real &)>(
       [](real &t) {
@@ -52,30 +47,10 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   // Sabij = Vabij
   //////////////////////////////////////
   Tensor<real> SFG(*VdFG);
-//    (*ga)["a"] * (*ga)["b"] * (*gi)["i"] * (*gi)["j"];
-//    (*Na)["a"] * (*Na)["b"] * (*Ni)["i"] * (*Ni)["j"];
-//  chop(Sabij["abij"]);
   propagateAmplitudes(SFG, convolutionC);
   S1FG["FG"] += (-1.0) * SFG["FG"];
 
-//  return;
-/*
-  if (isArgumentGiven("ThermalPHPHCoulombIntegrals")) {
-    // particle/hole ladder of H1, if given
-    auto Vbiaj(getTensorArgument<>("ThermalPHPHCoulombIntegrals"));
-    Sabij["abij"] = (-1.0) * T0abij["ackj"] * (*Vbiaj)["bkci"];
-    chop(Sabij["abij"]);
-    Sabij["abij"] += Sabij["baji"];
-    propagateAmplitudes(Sabij, convolution0);
-    S1abij["abij"] += (-1.0) * Sabij["abij"];
-
-    Sabij["abij"] = (-1.0) * T1abij["ackj"] * (*Vbiaj)["bkci"];
-    chop(Sabij["abij"]);
-    Sabij["abij"] += Sabij["baji"];
-    propagateAmplitudes(Sabij, convolution1);
-    S1abij["abij"] += (-1.0) * Sabij["abij"];
-  }
-*/
+  if (getIntegerArgument("linearized", 0)) return;
 
   LOG(1, "FT-DRCCD") << "doubles, quadratic terms T2 T2..." << std::endl;
   //////////////////////////////////////

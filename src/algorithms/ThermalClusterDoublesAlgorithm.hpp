@@ -41,11 +41,6 @@ namespace cc4s {
   protected:
     std::vector<real> taus;
 
-    /**
-     * \brief doubles amplitudes on the imaginary time grid
-     **/
-    std::vector<PTR(CTF::Tensor<real>)> Tabijn;
-
     CTF::Tensor<real> *lambdaF;
 
     /**
@@ -78,19 +73,18 @@ namespace cc4s {
     /**
      */
     virtual void applyHamiltonian(
-      CTF::Tensor<real> &T0abij,
-      CTF::Tensor<real> &T1abij,
+      CTF::Tensor<real> &T0FG,
+      CTF::Tensor<real> &T1FG,
       const real DTau,
-      CTF::Tensor<real> &S1abij
+      CTF::Tensor<real> &S1FG
     ) = 0;
 
     std::string getCapitalizedAbbreviation();
     std::string getAmplitudeIndices(CTF::Tensor<real> &T);
     real getTammDancoffEnergy();
     real getZeroTDrccd();
+    void setupImaginaryTimeGrid();
     void iterateAmplitudeSamples();
-    void iterateAmplitudeFunctions();
-    void computeSteadyStateAmplitudes(const std::vector<real> &taus);
     void computeEnergyContribution(
       CTF::Tensor<real> &SFG, const real DTau,
       real &direct, real &exchange
@@ -98,10 +92,12 @@ namespace cc4s {
     void computeSqrtOccupancies();
     void diagonalizeSinglesHamiltonian();
     void propagateAmplitudes(
-      CTF::Tensor<real> &Sabij,
+      CTF::Tensor<real> &SFG,
       const std::function<void(real, real &)> &propagator
     );
-    void diagonalizeDoublesAmplitudes();
+    void diagonalizeDoublesAmplitudes(
+      CTF::Tensor<real> &TFG
+    );
 
     class ImaginaryTimeTransform {
     protected:
