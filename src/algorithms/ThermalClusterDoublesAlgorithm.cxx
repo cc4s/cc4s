@@ -483,19 +483,21 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
     (*Vabij)["cdlk"];
   // determine Coulomb coupling to nullspapce
-  if (nullSpaceStart < nullSpaceEnd) {
-    int VZerosStart[] = {0, static_cast<int>(nullSpaceStart)};
-    int VZerosEnd[] = {NvNo, static_cast<int>(nullSpaceEnd)};
-    Tensor<real> coupling(VdFG->slice(VZerosStart, VZerosEnd));
-    Vector<real> norms(VZerosEnd[1]-VZerosStart[1]);
-    norms["F"] = coupling["GF"] * coupling["GF"];
-    real couplingNorm(std::sqrt(norms.norm_infty()));
-    LOG(1, getCapitalizedAbbreviation()) <<
-      "max(|Coulomb coupling to nullspace|)=" << couplingNorm << std::endl;
-    if (isArgumentGiven("couplingToSinglesNullspace")) {
+  if (isArgumentGiven("couplingToSinglesNullspace")) {
+    if (nullSpaceStart < nullSpaceEnd) {
+      int VZerosStart[] = {0, static_cast<int>(nullSpaceStart)};
+      int VZerosEnd[] = {NvNo, static_cast<int>(nullSpaceEnd)};
+      Tensor<real> coupling(VdFG->slice(VZerosStart, VZerosEnd));
+      Vector<real> norms(VZerosEnd[1]-VZerosStart[1]);
+      norms["F"] = coupling["GF"] * coupling["GF"];
+      real couplingNorm(std::sqrt(norms.norm_infty()));
+      LOG(1, getCapitalizedAbbreviation()) <<
+        "max(|Coulomb coupling to nullspace|)=" << couplingNorm << std::endl;
       allocatedTensorArgument<real>(
         "couplingToSinglesNullspace", new Tensor<real>(coupling)
       );
+    } else {
+      setRealArgument("couplingToSinglesNullspace", 0.0);
     }
   }
   // truncate coupling to nullspace
