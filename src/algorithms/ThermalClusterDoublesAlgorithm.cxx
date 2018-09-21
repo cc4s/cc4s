@@ -46,7 +46,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   while (headTaus.back() > beta/2) headTaus.pop_back();
   real q( getRealArgument("imaginaryTimeScale", 2.0) );
   // fill up with a geometric sequence until beta/2
-  while (q*headTaus.back() < beta/2) headTaus.push_back(q*towTaus.back());
+  while (q*headTaus.back() < beta/2) headTaus.push_back(q*headTaus.back());
 
   tn = getTensorArgument<real>("ImaginaryTimePointsTail");
   std::vector<real> tailTaus(tn->lens[0]);
@@ -55,7 +55,7 @@ void ThermalClusterDoublesAlgorithm::run() {
   while (tailTaus.back() > beta/2) tailTaus.pop_back();
   q = getRealArgument("imaginaryTimeScaleTail", 2.0);
   // fill up with a geometric sequence until beta/2
-  while (q*tailTaus.back() < beta/2) tailTaus.push_back(q*towTaus.back());
+  while (q*tailTaus.back() < beta/2) tailTaus.push_back(q*tailTaus.back());
 
   // combine head and tail
   taus.resize(headTaus.size()+tailTaus.size());
@@ -63,7 +63,7 @@ void ThermalClusterDoublesAlgorithm::run() {
     taus[n] = headTaus[n];
   }
   for (size_t n(0); n < tailTaus.size(); ++n) {
-    taus[taus.size()-1-n] = tailsTaus[n];
+    taus[taus.size()-1-n] = beta-tailTaus[n];
   }
 
   // get steady state amplitudes at tau points
