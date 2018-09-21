@@ -36,18 +36,35 @@ void ThermalClusterDoublesAlgorithm::run() {
   }
   if (getIntegerArgument("linearized", 0)) return;
 
-
   // compute the other contributions perturbatively
-  // get imaginary time and frequency grids on all nodes
+
+  // get imaginary time grids on all nodes
   auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
-  taus.resize(tn->lens[0]);
-  tn->read_all(taus.data());
-  // truncate at beta
-  while (taus.back() > beta) taus.pop_back();
+  std::vector<real> headTaus(tn->lens[0]);
+  tn->read_all(headTaus.data());
+  // truncate at beta/2
+  while (headTaus.back() > beta/2) headTaus.pop_back();
   real q( getRealArgument("imaginaryTimeScale", 2.0) );
-  // fill up with a geometric sequence until beta
-  while (taus.back() < beta) taus.push_back(q*taus.back());
-  taus.back() = beta;
+  // fill up with a geometric sequence until beta/2
+  while (q*headTaus.back() < beta/2) headTaus.push_back(q*towTaus.back());
+
+  tn = getTensorArgument<real>("ImaginaryTimePointsTail");
+  std::vector<real> tailTaus(tn->lens[0]);
+  tn->read_all(tailTaus.data());
+  // truncate at beta/2
+  while (tailTaus.back() > beta/2) tailTaus.pop_back();
+  q = getRealArgument("imaginaryTimeScaleTail", 2.0);
+  // fill up with a geometric sequence until beta/2
+  while (q*tailTaus.back() < beta/2) tailTaus.push_back(q*towTaus.back());
+
+  // combine head and tail
+  taus.resize(headTaus.size()+tailTaus.size());
+  for (size_t n(0); n < headTaus.size(); ++n) {
+    taus[n] = headTaus[n];
+  }
+  for (size_t n(0); n < tailTaus.size(); ++n) {
+    taus[taus.size()-1-n] = tailsTaus[n];
+  }
 
   // get steady state amplitudes at tau points
 //  computeSteadyStateAmplitudes(taus);
