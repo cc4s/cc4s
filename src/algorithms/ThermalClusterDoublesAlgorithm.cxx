@@ -345,6 +345,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   int NvNo(Nv*No);
   int scaHLens[2] = { NvNo, NvNo };
   auto scaHbjai(NEW(ScaLapackMatrix<>, *Hbjai, scaHLens, &world));
+  Hbjai = nullptr;
 
   // use ScaLapack routines to diagonalise the matrix U.Lambda.U^T
   auto scaU(NEW(ScaLapackMatrix<>, *scaHbjai));
@@ -447,6 +448,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   scaU->write(*UaiF);
   // release resources
   scaU = nullptr;
+/*
   {
     // test if H0 - U.lambda.UT
     Tensor<real> Dbjai(*Hbjai);
@@ -455,8 +457,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     LOG(1, getCapitalizedAbbreviation()) <<
       "error of diagonalization=" << error << std::endl;
   }
-  Hbjai = nullptr;
-
+*/
   if (
     nullSpaceStart < nullSpaceEnd &&
     isArgumentGiven("singlesHamiltonianNullspace")
