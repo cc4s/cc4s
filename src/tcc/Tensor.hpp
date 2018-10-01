@@ -4,6 +4,9 @@
 
 #include <tcc/IndexedTensor.hpp>
 #include <tcc/MachineTensor.hpp>
+
+#include <util/SharedPointer.hpp>
+
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -36,7 +39,7 @@ namespace tcc {
     Tensor(
       const std::vector<int> &lens_,
       const std::string &name_,
-      const std::shared_ptr<Tcc<F>> &tcc_,
+      const PTR(Tcc<F>) &tcc_,
       const ProtectedToken &
     ): lens(lens_), name(name_), tcc(tcc_) {
       // the machine tensor is not allocated initially
@@ -47,8 +50,8 @@ namespace tcc {
      * Not intended for direct invocation. Use Tcc::createTensor instead.
      **/
     Tensor(
-      const std::shared_ptr<MachineTensor<F>> &machineTensor_,
-      const std::shared_ptr<Tcc<F>> &tcc_,
+      const PTR(MachineTensor<F>) &machineTensor_,
+      const PTR(Tcc<F>) &tcc_,
       const ProtectedToken &
     ):
       lens(machineTensor_->getLens()), name(machineTensor_->getName()),
@@ -64,12 +67,12 @@ namespace tcc {
       return name;
     }
 
-    std::shared_ptr<Tcc<F>> &getTcc() {
+    PTR(Tcc<F>) &getTcc() {
       return tcc;
     }
 
     template <typename ActualMachineTensor=MachineTensor<F>>
-    std::shared_ptr<ActualMachineTensor> getMachineTensor() {
+    PTR(ActualMachineTensor) getMachineTensor() {
       if (!machineTensor) {
         // allocate the implementation specific machine tensor upon request
         machineTensor = tcc->createMachineTensor(this->shared_from_this());
@@ -93,7 +96,7 @@ namespace tcc {
      * tensor expression. Indexed tensors are atomic types of tensor
      * expressions.
      **/
-    std::shared_ptr<IndexedTensor<F>> operator[](const std::string &indices) {
+    PTR(IndexedTensor<F>) operator[](const std::string &indices) {
       return IndexedTensor<F>::create(
         this->shared_from_this(), indices
       );
@@ -107,12 +110,12 @@ namespace tcc {
      **/
     std::string name;
 
-    std::shared_ptr<MachineTensor<F>> machineTensor;
+    PTR(MachineTensor<F>) machineTensor;
 
     /**
      * \brief The pointer to the tcc object that created this tensor.
      **/
-    std::shared_ptr<Tcc<F>> tcc;
+    PTR(Tcc<F>) tcc;
 
     friend class Tcc<F>;
   };

@@ -4,11 +4,11 @@
 
 #include <tcc/Expression.hpp>
 #include <tcc/Move.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 
 #include <string>
 #include <ostream>
-#include <memory>
 
 namespace tcc {
   template <typename F=double>
@@ -24,7 +24,7 @@ namespace tcc {
      * or the operator [] on tcc::Tensor<F> objects instead.
      **/
     IndexedTensor(
-      const std::shared_ptr<Tensor<F>> &tensor_, const std::string &indices_,
+      const PTR(Tensor<F>) &tensor_, const std::string &indices_,
       const typename Expression<F>::ProtectedToken &protectedToken
     ): tensor(tensor_), indices(indices_) {
     }
@@ -39,15 +39,15 @@ namespace tcc {
      * specifies the index name of the respective dimension index in this
      * expression.
      **/
-    static std::shared_ptr<IndexedTensor<F>> create(
-      const std::shared_ptr<Tensor<F>> &tensor, const std::string &indices
+    static PTR(IndexedTensor<F>) create(
+      const PTR(Tensor<F>) &tensor, const std::string &indices
     ) {
-      return std::make_shared<IndexedTensor<F>>(
+      return NEW(IndexedTensor<F>,
         tensor, indices, typename Expression<F>::ProtectedToken()
       );
     }
 
-    std::shared_ptr<Tensor<F>> tensor;
+    PTR(Tensor<F>) tensor;
     std::string indices;
   };
 
@@ -59,16 +59,16 @@ namespace tcc {
    * represented by shared pointers.
    **/
   template <typename Rhs>
-  inline std::shared_ptr<Move<typename Rhs::FieldType>> operator <<=(
-    const std::shared_ptr<IndexedTensor<typename Rhs::FieldType>> &lhs,
-    const std::shared_ptr<Rhs> &rhs
+  inline PTR(Move<typename Rhs::FieldType>) operator <<=(
+    const PTR(IndexedTensor<typename Rhs::FieldType>) &lhs,
+    const PTR(Rhs) &rhs
   ) {
     return Move<typename Rhs::FieldType>::create(lhs, rhs, 0);
   }
 
   template <typename Lhs, typename Rhs>
-  inline std::shared_ptr<Move<typename Lhs::FieldType>> operator <<=(
-    const std::shared_ptr<Lhs> &, const std::shared_ptr<Rhs> &rhs
+  inline PTR(Move<typename Lhs::FieldType>) operator <<=(
+    const PTR(Lhs) &, const PTR(Rhs) &rhs
   ) {
     static_assert(
       cc4s::TypeRelations<
@@ -80,7 +80,7 @@ namespace tcc {
       cc4s::StaticAssert<Lhs>::FALSE,
       "Only indexed tensors may be used as the left hand side of a move operation."
     );
-    return std::shared_ptr<Move<typename Lhs::FieldType>>();
+    return PTR(Move<typename Lhs::FieldType>)();
   }
 
   template <typename F>

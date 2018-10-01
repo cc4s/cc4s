@@ -4,10 +4,11 @@
 
 #include <tcc/Operation.hpp>
 #include <tcc/Costs.hpp>
+
+#include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 
 #include <string>
-#include <memory>
 
 namespace tcc {
   template <typename F>
@@ -24,7 +25,7 @@ namespace tcc {
      * generate operations.
      **/
     TensorResultOperation(
-      const std::shared_ptr<Tensor<F>> &result_,
+      const PTR(Tensor<F>) &result_,
       const char *resultIndices_,
       const Costs &costs_,
       const typename Operation<F>::ProtectedToken &
@@ -39,7 +40,7 @@ namespace tcc {
     virtual ~TensorResultOperation() {
     }
 
-    virtual std::shared_ptr<Tensor<F>> getResult() {
+    virtual PTR(Tensor<F>) getResult() {
       return result;
     }
 
@@ -49,7 +50,7 @@ namespace tcc {
 
   protected:
     F alpha, beta;
-    std::shared_ptr<Tensor<F>> result;
+    PTR(Tensor<F>) result;
     std::string resultIndices;
 
     friend class Tcc<F>;

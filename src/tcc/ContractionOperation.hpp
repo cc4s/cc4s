@@ -6,8 +6,9 @@
 #include <tcc/Costs.hpp>
 #include <tcc/Tensor.hpp>
 
+#include <util/SharedPointer.hpp>
+
 #include <string>
-#include <memory>
 
 namespace tcc {
   template <typename F>
@@ -21,9 +22,9 @@ namespace tcc {
      * generate operations.
      **/
     ContractionOperation(
-      const std::shared_ptr<Operation<F>> &left_,
-      const std::shared_ptr<Operation<F>> &right_,
-      const std::shared_ptr<Tensor<F>> &result_,
+      const PTR(Operation<F>) &left_,
+      const PTR(Operation<F>) &right_,
+      const PTR(Tensor<F>) &result_,
       const char *resultIndices_,
       Costs contractionCosts,
       const typename Operation<F>::ProtectedToken &
@@ -64,14 +65,14 @@ namespace tcc {
      * the left and the right sub-operations where the result is to be
      * stored in the specified result tensor.
      **/
-    static std::shared_ptr<ContractionOperation<F>> create(
-      const std::shared_ptr<Operation<F>> &left_,
-      const std::shared_ptr<Operation<F>> &right_,
-      const std::shared_ptr<Tensor<F>> &result_,
+    static PTR(ContractionOperation<F>) create(
+      const PTR(Operation<F>) &left_,
+      const PTR(Operation<F>) &right_,
+      const PTR(Tensor<F>) &result_,
       const char *resultIndices_,
       const Costs &contractionCosts
     ) {
-      return std::make_shared<ContractionOperation<F>>(
+      return NEW(ContractionOperation<F>,
         left_, right_,
         result_, resultIndices_,
         contractionCosts,
@@ -79,8 +80,8 @@ namespace tcc {
       );
     }
 
-    std::shared_ptr<Operation<F>> left;
-    std::shared_ptr<Operation<F>> right;
+    PTR(Operation<F>) left;
+    PTR(Operation<F>) right;
 
     friend class Tcc<F>;
   };

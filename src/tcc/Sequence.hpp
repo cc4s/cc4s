@@ -3,10 +3,11 @@
 #define TCC_SEQUENCE_DEFINED
 
 #include <tcc/Expression.hpp>
+
+#include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 
 #include <vector>
-#include <memory>
 
 namespace tcc {
   template <typename F>
@@ -20,8 +21,8 @@ namespace tcc {
      * expressions A and B.
      **/
     template <typename Lhs, typename Rhs>
-    static std::shared_ptr<Sequence<typename Lhs::FieldType>> create(
-      const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
+    static PTR(Sequence<typename Lhs::FieldType>) create(
+      const PTR(Lhs) &A, const PTR(Rhs) &B
     ) {
       static_assert(
         cc4s::TypeRelations<
@@ -30,7 +31,7 @@ namespace tcc {
         "Currently, only tensors of the same type can be in a sequence."
       );
       auto sequence(
-        std::make_shared<Sequence<typename Lhs::FieldType>>(
+        NEW(Sequence<typename Lhs::FieldType>,
           A, B,
           typename Expression<typename Lhs::FieldType>::ProtectedToken()
         )
@@ -46,8 +47,8 @@ namespace tcc {
      * using the static create method.
      **/
     Sequence(
-      const std::shared_ptr<Sequence<F>> &lhs,
-      const std::shared_ptr<Sequence<F>> &rhs,
+      const PTR(Sequence<F>) &lhs,
+      const PTR(Sequence<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): moves(lhs->moves) {
       moves.insert(moves.end(), rhs->moves.begin(), rhs->moves.end());
@@ -59,8 +60,8 @@ namespace tcc {
      * using the static create method.
      **/
     Sequence(
-      const std::shared_ptr<Sequence<F>> &lhs,
-      const std::shared_ptr<Move<F>> &rhs,
+      const PTR(Sequence<F>) &lhs,
+      const PTR(Move<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): moves(lhs->moves) {
       moves.push_back(rhs);
@@ -72,8 +73,8 @@ namespace tcc {
      * using the static create method.
      **/
     Sequence(
-      const std::shared_ptr<Move<F>> &lhs,
-      const std::shared_ptr<Sequence<F>> &rhs,
+      const PTR(Move<F>) &lhs,
+      const PTR(Sequence<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): moves(rhs->moves) {
       moves.push_back(lhs);
@@ -84,8 +85,8 @@ namespace tcc {
      * using the static create method.
      **/
     Sequence(
-      const std::shared_ptr<Move<F>> &lhs,
-      const std::shared_ptr<Move<F>> &rhs,
+      const PTR(Move<F>) &lhs,
+      const PTR(Move<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ) {
       moves.push_back(lhs);
@@ -98,8 +99,8 @@ namespace tcc {
      * using the static create method.
      **/
     Sequence(
-      const std::shared_ptr<Expression<F>> &lhs,
-      const std::shared_ptr<Expression<F>> &rhs,
+      const PTR(Expression<F>) &lhs,
+      const PTR(Expression<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ) {
       static_assert(
@@ -111,7 +112,7 @@ namespace tcc {
     virtual ~Sequence() {
     }
 
-    std::vector<std::shared_ptr<Move<F>>> moves;
+    std::vector<PTR(Move<F>)> moves;
   };
 
   /**
@@ -119,8 +120,8 @@ namespace tcc {
    * expressions A and B using the multiplication operator *.
    **/
   template <typename Lhs, typename Rhs>
-  inline std::shared_ptr<Sequence<typename Lhs::FieldType>> operator ,(
-    const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
+  inline PTR(Sequence<typename Lhs::FieldType>) operator ,(
+    const PTR(Lhs) &A, const PTR(Rhs) &B
   ) {
     return Sequence<typename Lhs::FieldType>::create(A, B);
   }

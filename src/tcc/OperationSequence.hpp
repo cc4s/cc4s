@@ -4,15 +4,16 @@
 
 #include <tcc/Operation.hpp>
 
+#include <util/SharedPointer.hpp>
+
 #include <vector>
-#include <memory>
 
 namespace tcc {
   template <typename F>
   class OperationSequence: public Operation<F> {
   public:
     OperationSequence(
-      const std::vector<std::shared_ptr<Operation<F>>> &operations_,
+      const std::vector<PTR(Operation<F>)> &operations_,
       const typename Operation<F>::ProtectedToken &
     ): Operation<F>(operations_[0]->costs), operations(operations_) {
       for (unsigned int i(1); i < operations_.size(); ++i) {
@@ -32,8 +33,8 @@ namespace tcc {
     };
 
     // this operation returns void
-    virtual std::shared_ptr<Tensor<F>> getResult() {
-      return std::shared_ptr<Tensor<F>>();
+    virtual PTR(Tensor<F>) getResult() {
+      return PTR(Tensor<F>)();
     }
     virtual const std::string &getResultIndices() {
       // TODO: think of better way
@@ -41,15 +42,15 @@ namespace tcc {
     }
 
   protected:
-    static std::shared_ptr<OperationSequence<F>> create(
-      const std::vector<std::shared_ptr<Operation<F>>> &operations_
+    static PTR(OperationSequence<F>) create(
+      const std::vector<PTR(Operation<F>)> &operations_
     ) {
-      return std::make_shared<OperationSequence<F>>(
+      return NEW(OperationSequence<F>,
         operations_, typename Operation<F>::ProtectedToken()
       );
     }
 
-    std::vector<std::shared_ptr<Operation<F>>> operations;
+    std::vector<PTR(Operation<F>)> operations;
     std::string emptyIndices;
 
     friend class Tcc<F>;

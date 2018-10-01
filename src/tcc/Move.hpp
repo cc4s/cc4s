@@ -4,9 +4,9 @@
 
 #include <tcc/Expression.hpp>
 #include <tcc/Contraction.hpp>
-#include <util/StaticAssert.hpp>
 
-#include <memory>
+#include <util/SharedPointer.hpp>
+#include <util/StaticAssert.hpp>
 
 namespace tcc {
   template <typename F>
@@ -21,9 +21,9 @@ namespace tcc {
      * for possible further operations.
      **/
     template <typename Lhs, typename Rhs, typename S>
-    static inline std::shared_ptr<Move<typename Lhs::FieldType>> create(
-      const std::shared_ptr<Lhs> &lhs,
-      const std::shared_ptr<Rhs> &rhs,
+    static inline PTR(Move<typename Lhs::FieldType>) create(
+      const PTR(Lhs) &lhs,
+      const PTR(Rhs) &rhs,
       const S beta
     ) {
       static_assert(
@@ -31,7 +31,7 @@ namespace tcc {
         "The type of the scalar must be convertible to the tensor type."
       );
       auto move(
-        std::make_shared<Move<typename Lhs::FieldType>>(
+        NEW(Move<typename Lhs::FieldType>,
           lhs, rhs, beta,
           typename Expression<typename Lhs::FieldType>::ProtectedToken()
         )
@@ -47,8 +47,8 @@ namespace tcc {
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const std::shared_ptr<IndexedTensor<F>> &lhs_,
-      const std::shared_ptr<Expression<F>> &rhs_,
+      const PTR(IndexedTensor<F>) &lhs_,
+      const PTR(Expression<F>) &rhs_,
       const F beta_,
       const typename Expression<F>::ProtectedToken &
     ) {
@@ -64,8 +64,8 @@ namespace tcc {
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const std::shared_ptr<IndexedTensor<F>> &lhs_,
-      const std::shared_ptr<IndexedTensor<F>> &rhs_,
+      const PTR(IndexedTensor<F>) &lhs_,
+      const PTR(IndexedTensor<F>) &rhs_,
       const F beta_,
       const typename Expression<F>::ProtectedToken &
     ): lhs(lhs_), rhs(Contraction<F>::create(1, rhs_)), beta(beta_) {
@@ -76,8 +76,8 @@ namespace tcc {
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const std::shared_ptr<IndexedTensor<F>> &lhs_,
-      const std::shared_ptr<Contraction<F>> &rhs_,
+      const PTR(IndexedTensor<F>) &lhs_,
+      const PTR(Contraction<F>) &rhs_,
       const F beta_,
       const typename Expression<F>::ProtectedToken &
     ): lhs(lhs_), rhs(rhs_), beta(beta_) {
@@ -85,8 +85,8 @@ namespace tcc {
     virtual ~Move() {
     }
 
-    std::shared_ptr<IndexedTensor<F>> lhs;
-    std::shared_ptr<Contraction<F>> rhs;
+    PTR(IndexedTensor<F>) lhs;
+    PTR(Contraction<F>) rhs;
     F beta;
   };
 
@@ -94,8 +94,8 @@ namespace tcc {
    * \brief Creates an updating move expression.
    **/
   template <typename Lhs, typename Rhs>
-  inline std::shared_ptr<Move<typename Lhs::FieldType>> operator +=(
-    const std::shared_ptr<Lhs> &lhs, const std::shared_ptr<Rhs> &rhs
+  inline PTR(Move<typename Lhs::FieldType>) operator +=(
+    const PTR(Lhs) &lhs, const PTR(Rhs) &rhs
   ) {
     return Move<typename Lhs::FieldType>::create(lhs, rhs, 1);
   }
@@ -103,8 +103,8 @@ namespace tcc {
    * \brief Creates an updating move expression.
    **/
   template <typename Lhs, typename Rhs>
-  inline std::shared_ptr<Move<typename Lhs::FieldType>> operator -=(
-    const std::shared_ptr<Lhs> &lhs, const std::shared_ptr<Rhs> &rhs
+  inline PTR(Move<typename Lhs::FieldType>) operator -=(
+    const PTR(Lhs) &lhs, const PTR(Rhs) &rhs
   ) {
     return Move<typename Lhs::FieldType>::create(
       lhs, Contraction<typename Rhs::FieldType>::create(-1, rhs),
