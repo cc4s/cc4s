@@ -19,7 +19,7 @@ namespace tcc {
      * generate operations.
      **/
     FetchOperation(
-      const std::shared_ptr<IndexedTensor<F>> &t,
+      const PTR(IndexedTensor<F>) &t,
       const typename Operation<F>::ProtectedToken &
     ):
       Operation<F>(Costs(t->tensor->getElementsCount())),
@@ -33,7 +33,7 @@ namespace tcc {
     virtual void execute() {
     }
 
-    virtual std::shared_ptr<Tensor<F>> getResult() {
+    virtual PTR(Tensor<F>) getResult() {
       return tensor;
     }
 
@@ -42,15 +42,15 @@ namespace tcc {
     }
 
   protected:
-    static std::shared_ptr<FetchOperation<F>> create(
-      const std::shared_ptr<IndexedTensor<F>> &indexedTensor
+    static PTR(FetchOperation<F>) create(
+      const PTR(IndexedTensor<F>) &indexedTensor
     ) {
-      return std::make_shared<FetchOperation<F>>(
+      return NEW(FetchOperation<F>,
         indexedTensor, typename Operation<F>::ProtectedToken()
       );
     }
 
-    std::shared_ptr<Tensor<F>> tensor;
+    PTR(Tensor<F>) tensor;
     std::string indices;
 
     friend class Tcc<F>;

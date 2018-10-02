@@ -4,7 +4,7 @@
 
 #include <tcc/TensorResultOperation.hpp>
 
-#include <memory>
+#include <util/SharedPointer.hpp>
 
 namespace tcc {
   template <typename F>
@@ -18,8 +18,8 @@ namespace tcc {
      * generate operations.
      **/
     MoveOperation(
-      const std::shared_ptr<Operation<F>> &rhs_,
-      const std::shared_ptr<Tensor<F>> &result_,
+      const PTR(Operation<F>) &rhs_,
+      const PTR(Tensor<F>) &result_,
       const char *resultIndices_,
       Costs moveCosts,
       const typename Operation<F>::ProtectedToken &
@@ -48,20 +48,20 @@ namespace tcc {
     }
 
   protected:
-    static std::shared_ptr<MoveOperation<F>>  create(
-      const std::shared_ptr<Operation<F>> &rhs_,
-      const std::shared_ptr<Tensor<F>> &result_,
+    static PTR(MoveOperation<F>)  create(
+      const PTR(Operation<F>) &rhs_,
+      const PTR(Tensor<F>) &result_,
       const char *resultIndices_,
       const Costs &moveCosts
     ) {
-      return std::make_shared<MoveOperation<F>>(
+      return NEW(MoveOperation<F>,
         rhs_,
         result_, resultIndices_, moveCosts,
         typename Operation<F>::ProtectedToken()
       );
     }
 
-    std::shared_ptr<Operation<F>> rhs;
+    PTR(Operation<F>) rhs;
 
     friend class Tcc<F>;
   };

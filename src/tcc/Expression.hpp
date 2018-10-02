@@ -2,7 +2,7 @@
 #ifndef TCC_EXPRESSION_DEFINED
 #define TCC_EXPRESSION_DEFINED
 
-#include <memory>
+#include <util/SharedPointer.hpp>
 
 namespace tcc {
   template <typename F>
@@ -23,7 +23,7 @@ namespace tcc {
      * nullptr if it is the outermost expression node.
      * Note that the object is not owned by the parent.
      **/
-    std::weak_ptr<Expression<F>> parent;
+    WEAK_PTR(Expression<F>) parent;
 
   protected:
     /**

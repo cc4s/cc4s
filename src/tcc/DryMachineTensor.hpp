@@ -4,11 +4,11 @@
 
 #include <tcc/MachineTensor.hpp>
 #include <tcc/DryTensor.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 
 #include <string>
-#include <memory>
 
 namespace cc4s {
   template <typename F=double>
@@ -43,8 +43,8 @@ namespace cc4s {
     DryMachineTensor(const Tensor &T, const ProtectedToken &): tensor(T) {
     }
 
-    static std::shared_ptr<DryMachineTensor<F>> create(const Tensor &T) {
-      return std::make_shared<DryMachineTensor<F>>(T, ProtectedToken());
+    static PTR(DryMachineTensor<F>) create(const Tensor &T) {
+      return NEW(DryMachineTensor<F>, T, ProtectedToken());
     }
 
     virtual ~DryMachineTensor() {
@@ -53,12 +53,12 @@ namespace cc4s {
     // this[bIndices] = alpha * A[aIndices] + beta*this[bIndices]
     virtual void move(
       F alpha,
-      const std::shared_ptr<tcc::MachineTensor<F>> &A,
+      const PTR(tcc::MachineTensor<F>) &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices
     ) {
-      std::shared_ptr<DryMachineTensor<F>> dryA(
+      PTR(DryMachineTensor<F>) dryA(
         std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
       );
       if (!dryA) {
@@ -73,13 +73,13 @@ namespace cc4s {
     // this[bIndices] = f(alpha * A[aIndices]) + beta * this[bIndices]
     virtual void move(
       F alpha,
-      const std::shared_ptr<tcc::MachineTensor<F>> &A,
+      const PTR(tcc::MachineTensor<F>) &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices,
       const std::function<F(const F)> &f
     ) {
-      std::shared_ptr<DryMachineTensor<F>> dryA(
+      PTR(DryMachineTensor<F>) dryA(
         std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
       );
       if (!dryA) {
@@ -94,17 +94,17 @@ namespace cc4s {
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]
     virtual void contract(
       F alpha,
-      const std::shared_ptr<tcc::MachineTensor<F>> &A,
+      const PTR(tcc::MachineTensor<F>) &A,
       const std::string &aIndices,
-      const std::shared_ptr<tcc::MachineTensor<F>> &B,
+      const PTR(tcc::MachineTensor<F>) &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices
     ) {
-      std::shared_ptr<DryMachineTensor<F>> dryA(
+      PTR(DryMachineTensor<F>) dryA(
         std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
       );
-      std::shared_ptr<DryMachineTensor<F>> dryB(
+      PTR(DryMachineTensor<F>) dryB(
         std::dynamic_pointer_cast<DryMachineTensor<F>>(B)
       );
       if (!dryA || !dryB) {
@@ -120,18 +120,18 @@ namespace cc4s {
     // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
     virtual void contract(
       F alpha,
-      const std::shared_ptr<tcc::MachineTensor<F>> &A,
+      const PTR(tcc::MachineTensor<F>) &A,
       const std::string &aIndices,
-      const std::shared_ptr<tcc::MachineTensor<F>> &B,
+      const PTR(tcc::MachineTensor<F>) &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices,
       const std::function<F(const F, const F)> &g
     ) {
-      std::shared_ptr<DryMachineTensor<F>> dryA(
+      PTR(DryMachineTensor<F>) dryA(
         std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
       );
-      std::shared_ptr<DryMachineTensor<F>> dryB(
+      PTR(DryMachineTensor<F>) dryB(
         std::dynamic_pointer_cast<DryMachineTensor<F>>(B)
       );
       if (!dryA || !dryB) {
@@ -173,20 +173,20 @@ namespace cc4s {
     virtual ~DryMachineTensorFactory() {
     }
 
-    virtual std::shared_ptr<tcc::MachineTensor<F>> createTensor(
+    virtual PTR(tcc::MachineTensor<F>) createTensor(
       const std::vector<int> &lens,
       const std::string &name
     ) {
-      return std::shared_ptr<tcc::MachineTensor<F>>(
-        std::make_shared<DryMachineTensor<F>>(
+      return PTR(tcc::MachineTensor<F>)(
+        NEW(DryMachineTensor<F>,
           lens, name, typename DryMachineTensor<F>::ProtectedToken()
         )
       );
     }
 
-    static std::shared_ptr<DryMachineTensorFactory<F>> create(
+    static PTR(DryMachineTensorFactory<F>) create(
     ) {
-      return std::make_shared<DryMachineTensorFactory<F>>(
+      return NEW(DryMachineTensorFactory<F>,
         ProtectedToken()
       );
     }

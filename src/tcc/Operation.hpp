@@ -4,7 +4,7 @@
 
 #include <tcc/Costs.hpp>
 
-#include <memory>
+#include <util/SharedPointer.hpp>
 
 namespace tcc {
   template <typename F>
@@ -18,7 +18,7 @@ namespace tcc {
 
     virtual void execute() = 0;
 
-    virtual std::shared_ptr<Tensor<F>> getResult() = 0;
+    virtual PTR(Tensor<F>) getResult() = 0;
     virtual const std::string &getResultIndices() = 0;
 
     /**

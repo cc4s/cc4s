@@ -2,11 +2,11 @@
 #ifndef TCC_MACHINE_TENSOR_DEFINED
 #define TCC_MACHINE_TENSOR_DEFINED
 
+#include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 
 #include <vector>
 #include <string>
-#include <memory>
 #include <functional>
 
 namespace tcc {
@@ -28,7 +28,7 @@ namespace tcc {
      **/
     virtual void move(
       F alpha,
-      const std::shared_ptr<MachineTensor<F>> &A, const std::string &aIndices,
+      const PTR(MachineTensor<F>) &A, const std::string &aIndices,
       F beta,
       const std::string &bIndices
     ) = 0;
@@ -39,7 +39,7 @@ namespace tcc {
      **/
     virtual void move(
       F alpha,
-      const std::shared_ptr<MachineTensor<F>> &A, const std::string &aIndices,
+      const PTR(MachineTensor<F>) &A, const std::string &aIndices,
       F beta,
       const std::string &bIndices,
       const std::function<F(const F)> &f
@@ -54,8 +54,8 @@ namespace tcc {
      **/
     virtual void contract(
       F alpha,
-      const std::shared_ptr<MachineTensor<F>> &A, const std::string &aIndices,
-      const std::shared_ptr<MachineTensor<F>> &B, const std::string &bIndices,
+      const PTR(MachineTensor<F>) &A, const std::string &aIndices,
+      const PTR(MachineTensor<F>) &B, const std::string &bIndices,
       F beta,
       const std::string &cIndices
     ) = 0;
@@ -67,8 +67,8 @@ namespace tcc {
      **/
     virtual void contract(
       F alpha,
-      const std::shared_ptr<MachineTensor<F>> &A, const std::string &aIndices,
-      const std::shared_ptr<MachineTensor<F>> &B, const std::string &bIndices,
+      const PTR(MachineTensor<F>) &A, const std::string &aIndices,
+      const PTR(MachineTensor<F>) &B, const std::string &bIndices,
       F beta,
       const std::string &cIndices,
       const std::function<F(const F, const F)> &g
@@ -106,7 +106,7 @@ namespace tcc {
      * implementation having dimensions lens_[0] x lens_[1] x ... with
      * a specified name.
      */
-    virtual std::shared_ptr<MachineTensor<F>> createTensor(
+    virtual PTR(MachineTensor<F>) createTensor(
       const std::vector<int> &lens,
       const std::string &name
     ) = 0;

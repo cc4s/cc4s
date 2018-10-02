@@ -3,6 +3,7 @@
 #define TCC_CONTRACTION_DEFINED
 
 #include <tcc/Expression.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 
 #include <vector>
@@ -20,8 +21,8 @@ namespace tcc {
      * expressions A and B.
      **/
     template <typename Lhs, typename Rhs>
-    static std::shared_ptr<Contraction<typename Lhs::FieldType>> create(
-      const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
+    static PTR(Contraction<typename Lhs::FieldType>) create(
+      const PTR(Lhs) &A, const PTR(Rhs) &B
     ) {
       static_assert(
         cc4s::TypeRelations<
@@ -30,7 +31,7 @@ namespace tcc {
         "Only tensors of the same type can be contracted."
       );
       auto contraction(
-        std::make_shared<Contraction<typename Lhs::FieldType>>(
+        NEW(Contraction<typename Lhs::FieldType>,
           A, B,
           typename Expression<typename Lhs::FieldType>::ProtectedToken()
         )
@@ -45,15 +46,15 @@ namespace tcc {
      * and a scalar alpha
      **/
     template <typename S, typename Lhs>
-    static std::shared_ptr<Contraction<typename Lhs::FieldType>> create(
-      const S alpha, const std::shared_ptr<Lhs> &A
+    static PTR(Contraction<typename Lhs::FieldType>) create(
+      const S alpha, const PTR(Lhs) &A
     ) {
       static_assert(
         cc4s::TypeRelations<S, typename Lhs::FieldType>::CASTABLE_TO,
         "The type of the scalar must be convertible to the tensor type."
       );
       auto contraction(
-        std::make_shared<Contraction<typename Lhs::FieldType>>(
+        NEW(Contraction<typename Lhs::FieldType>,
           alpha, A,
           typename Expression<typename Lhs::FieldType>::ProtectedToken()
         )
@@ -69,8 +70,8 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const std::shared_ptr<Contraction<F>> &lhs,
-      const std::shared_ptr<Contraction<F>> &rhs,
+      const PTR(Contraction<F>) &lhs,
+      const PTR(Contraction<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(lhs->alpha * rhs->alpha), factors(lhs->factors) {
       factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
@@ -82,8 +83,8 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const std::shared_ptr<Contraction<F>> &lhs,
-      const std::shared_ptr<IndexedTensor<F>> &rhs,
+      const PTR(Contraction<F>) &lhs,
+      const PTR(IndexedTensor<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(lhs->alpha), factors(lhs->factors) {
       factors.push_back(rhs);
@@ -95,8 +96,8 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const std::shared_ptr<IndexedTensor<F>> &lhs,
-      const std::shared_ptr<Contraction<F>> &rhs,
+      const PTR(IndexedTensor<F>) &lhs,
+      const PTR(Contraction<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(rhs->alpha), factors(rhs->factors) {
       factors.push_back(lhs);
@@ -107,8 +108,8 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const std::shared_ptr<IndexedTensor<F>> &lhs,
-      const std::shared_ptr<IndexedTensor<F>> &rhs,
+      const PTR(IndexedTensor<F>) &lhs,
+      const PTR(IndexedTensor<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(F(1)) {
       factors.push_back(lhs);
@@ -121,8 +122,8 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const std::shared_ptr<Expression<F>> &lhs,
-      const std::shared_ptr<Expression<F>> &rhs,
+      const PTR(Expression<F>) &lhs,
+      const PTR(Expression<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ) {
       static_assert(
@@ -137,7 +138,7 @@ namespace tcc {
      **/
     Contraction(
       const F alpha_,
-      const std::shared_ptr<IndexedTensor<F>> &lhs,
+      const PTR(IndexedTensor<F>) &lhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(alpha_) {
       factors.push_back(lhs);
@@ -149,7 +150,7 @@ namespace tcc {
      **/
     Contraction(
       const F alpha_,
-      const std::shared_ptr<Contraction<F>> &lhs,
+      const PTR(Contraction<F>) &lhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(lhs->alpha * alpha_), factors(lhs->factors) {
     }
@@ -158,7 +159,7 @@ namespace tcc {
     }
 
     F alpha;
-    std::vector<std::shared_ptr<IndexedTensor<F>>> factors;
+    std::vector<PTR(IndexedTensor<F>)> factors;
   };
 
   /**
@@ -166,8 +167,8 @@ namespace tcc {
    * expressions A and B using the multiplication operator *.
    **/
   template <typename Lhs, typename Rhs>
-  inline std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
-    const std::shared_ptr<Lhs> &A, const std::shared_ptr<Rhs> &B
+  inline PTR(Contraction<typename Lhs::FieldType>) operator *(
+    const PTR(Lhs) &A, const PTR(Rhs) &B
   ) {
     return Contraction<typename Lhs::FieldType>::create(A, B);
   }
@@ -177,8 +178,8 @@ namespace tcc {
    * expressions A and a scalar alpha using the multiplication operator *.
    **/
   template <typename Lhs, typename S>
-  inline std::shared_ptr<Contraction<typename Lhs::FieldType>> operator *(
-    const std::shared_ptr<Lhs> &A, const S alpha
+  inline PTR(Contraction<typename Lhs::FieldType>) operator *(
+    const PTR(Lhs) &A, const S alpha
   ) {
     return Contraction<typename Lhs::FieldType>::create(alpha, A);
   }
@@ -188,8 +189,8 @@ namespace tcc {
    * expressions A and a scalar alpha using the multiplication operator *.
    **/
   template <typename S, typename Rhs>
-  inline std::shared_ptr<Contraction<typename Rhs::FieldType>> operator *(
-    const S alpha, const std::shared_ptr<Rhs> &A
+  inline PTR(Contraction<typename Rhs::FieldType>) operator *(
+    const S alpha, const PTR(Rhs) &A
   ) {
     return Contraction<typename Rhs::FieldType>::create(alpha, A);
   }

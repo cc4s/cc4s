@@ -13,6 +13,7 @@
 #include <tcc/OperationSequence.hpp>
 #include <tcc/IndexCounts.hpp>
 
+#include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 
 #include <vector>
@@ -40,15 +41,15 @@ namespace tcc {
 
   public:
     Tcc(
-      const std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory_,
+      const PTR(MachineTensorFactory<F>) machineTensorFactory_,
       const ProtectedToken &
     ): machineTensorFactory(machineTensorFactory_) {
     }
 
-    static std::shared_ptr<Tcc<F>> create(
-      const std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory_
+    static PTR(Tcc<F>) create(
+      const PTR(MachineTensorFactory<F>) machineTensorFactory_
     ) {
-      return std::make_shared<Tcc<F>>(machineTensorFactory_, ProtectedToken());
+      return NEW(Tcc<F>, machineTensorFactory_, ProtectedToken());
     }
 
     /**
@@ -59,11 +60,11 @@ namespace tcc {
      * Note that tensor objects should only be created by the Tcc object
      * which specifies the environment the tensor lives in.
      **/
-    std::shared_ptr<Tensor<F>> createTensor(
+    PTR(Tensor<F>) createTensor(
       const std::vector<int> &lens,
       const std::string &name
     ) {
-      return std::make_shared<Tensor<F>>(
+      return NEW(Tensor<F>,
         lens, name, this->shared_from_this(),
         typename Tensor<F>::ProtectedToken()
       );
@@ -73,8 +74,8 @@ namespace tcc {
      * \brief Create an empty tensor of identical shape as the given tensor.
      * The name, however, should differ.
      **/
-    std::shared_ptr<Tensor<F>> createTensor(
-      const std::shared_ptr<Tensor<F>> &tensor,
+    PTR(Tensor<F>) createTensor(
+      const PTR(Tensor<F>) &tensor,
       const std::string &name
     ) {
       return createTensor(tensor->lens, name);
@@ -84,35 +85,35 @@ namespace tcc {
      * \brief Create a tcc tensor that uses a given machine tensor as its
      * machine tensor for representing the tensor data.
      **/
-    std::shared_ptr<Tensor<F>> createTensor(
-      const std::shared_ptr<MachineTensor<F>> &machineTensor
+    PTR(Tensor<F>) createTensor(
+      const PTR(MachineTensor<F>) &machineTensor
     ) {
-      return std::make_shared<Tensor<F>>(
+      return NEW(Tensor<F>,
         machineTensor, this->shared_from_this(),
         typename Tensor<F>::ProtectedToken()
       );
     }
 
-    std::shared_ptr<MachineTensor<F>> createMachineTensor(
-      const std::shared_ptr<Tensor<F>> &tensor
+    PTR(MachineTensor<F>) createMachineTensor(
+      const PTR(Tensor<F>) &tensor
     ) {
       return machineTensorFactory->createTensor(tensor->lens, tensor->name);
     }
 
-    std::shared_ptr<Operation<F>> compile(
-      const std::shared_ptr<Expression<F>> &expression
+    PTR(Operation<F>) compile(
+      const PTR(Expression<F>) &expression
     ) {
-      auto sequence(dynamic_cast<std::shared_ptr<Sequence<F>>>(expression));
+      auto sequence(dynamic_cast<PTR(Sequence<F>)>(expression));
       if (sequence) return compile(sequence);
-      auto move(dynamic_cast<std::shared_ptr<Move<F>>>(expression));
+      auto move(dynamic_cast<PTR(Move<F>)>(expression));
       if (move) return compile(move);
       throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
     }
 
-    std::shared_ptr<Operation<F>> compile(
-      const std::shared_ptr<Sequence<F>> &sequence
+    PTR(Operation<F>) compile(
+      const PTR(Sequence<F>) &sequence
     ) {
-      std::vector<std::shared_ptr<Operation<F>>> operations(
+      std::vector<PTR(Operation<F>)> operations(
         sequence->moves.size()
       );
       for (unsigned int i(0); i < sequence->moves.size(); ++i) {
@@ -121,15 +122,15 @@ namespace tcc {
       return OperationSequence<F>::create(operations);
     }
 
-    std::shared_ptr<Operation<F>> compile(
-      const std::shared_ptr<Move<F>> &move
+    PTR(Operation<F>) compile(
+      const PTR(Move<F>) &move
     ) {
       LOG(2, "TCC") << "compiling contraction..." << std::endl;
 
       indexCounts = IndexCounts();
       indexCounts.add(move->lhs->indices);
       auto contraction(move->rhs);
-      std::vector<std::shared_ptr<Operation<F>>> operations(
+      std::vector<PTR(Operation<F>)> operations(
         contraction->factors.size()
       );
       for (unsigned int i(0); i < contraction->factors.size(); ++i) {
@@ -138,7 +139,7 @@ namespace tcc {
       }
       triedPossibilitiesCount = 0;
 
-      std::shared_ptr<TensorResultOperation<F>> operation;
+      PTR(TensorResultOperation<F>) operation;
       if (operations.size() < 2) {
         operation = MoveOperation<F>::create(
           operations[0],
@@ -173,23 +174,23 @@ namespace tcc {
      * find the best order of contractions. The indexCounts are modified
      * during evaluation.
      **/
-    std::shared_ptr<ContractionOperation<F>> compileContractions(
-      const std::vector<std::shared_ptr<Operation<F>>> &operations,
+    PTR(ContractionOperation<F>) compileContractions(
+      const std::vector<PTR(Operation<F>)> &operations,
       const int level = 0
     ) {
       // no best contraction known at first
-      std::shared_ptr<ContractionOperation<F>> bestContractions;
+      PTR(ContractionOperation<F>) bestContractions;
       for (unsigned int i(0); i < operations.size()-1; ++i) {
-        std::shared_ptr<Operation<F>> a(operations[i]);
+        PTR(Operation<F>) a(operations[i]);
         // take out the indices of factor a
         indexCounts.add(a->getResultIndices(), -1);
         for (unsigned int j(i+1); j < operations.size(); ++j) {
-          std::shared_ptr<Operation<F>> b(operations[j]);
+          PTR(Operation<F>) b(operations[j]);
           // take out the indices of factor b
           indexCounts.add(b->getResultIndices(), -1);
 
           // just compile the contraction of a&b
-          std::shared_ptr<ContractionOperation<F>> contractionOperation(
+          PTR(ContractionOperation<F>) contractionOperation(
             createContractionOperation(a, b)
           );
 
@@ -201,7 +202,7 @@ namespace tcc {
               // otherwise, add indices of the result for further consideration
               indexCounts.add(contractionOperation->getResultIndices());
               // build new list of factors
-              std::vector<std::shared_ptr<Operation<F>>> subOperations(
+              std::vector<PTR(Operation<F>)> subOperations(
                 operations.size() - 1
               );
               subOperations[0] = contractionOperation;
@@ -211,7 +212,7 @@ namespace tcc {
               }
 
               // now do a recursive compilation of all the remaining factors
-              std::shared_ptr<ContractionOperation<F>> allContractions(
+              PTR(ContractionOperation<F>) allContractions(
                 compileContractions(subOperations, level+1)
               );
 
@@ -257,9 +258,9 @@ namespace tcc {
      * \brief Creates a ContractionOperation contracting two previously
      * compiled operations and assessing its costs.
      **/
-    std::shared_ptr<ContractionOperation<F>> createContractionOperation(
-      const std::shared_ptr<Operation<F>> &a,
-      const std::shared_ptr<Operation<F>> &b
+    PTR(ContractionOperation<F>) createContractionOperation(
+      const PTR(Operation<F>) &a,
+      const PTR(Operation<F>) &b
     ) {
       int contractedIndexDimensions[
         std::min(a->getResultIndices().length(), b->getResultIndices().length())
@@ -314,7 +315,7 @@ namespace tcc {
         a->getResultIndices().length() > 0 &&
         b->getResultIndices().length() > 0
       ) {
-        return std::shared_ptr<ContractionOperation<F>>();
+        return PTR(ContractionOperation<F>)();
       }
 
       int64_t outerElementsCount(1), contractedElementsCount(1);
@@ -336,7 +337,7 @@ namespace tcc {
       outerIndices[o] = 0;
 
       // allocate intermedate result
-      std::shared_ptr<Tensor<F>> contractionResult(
+      PTR(Tensor<F>) contractionResult(
         a->getResult()->getTcc()->createTensor(
           std::vector<int>(outerIndexDimensions, outerIndexDimensions+o),
           a->getResult()->getName() + b->getResult()->getName()
@@ -357,7 +358,7 @@ namespace tcc {
     }
 
 
-    std::shared_ptr<MachineTensorFactory<F>> machineTensorFactory;
+    PTR(MachineTensorFactory<F>) machineTensorFactory;
 
     /**
      * \brief Tracks the number of occurrences of each index in the remaining
