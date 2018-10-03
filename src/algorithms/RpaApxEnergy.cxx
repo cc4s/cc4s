@@ -106,7 +106,8 @@ void RpaApxEnergy::run() {
   auto mp2Exchange(tcc->createTensor(std::vector<int>(), "mp2Exchange"));
   chi0VFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chi0V");
   chi1VFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chi1V");
-  double spins(2.0);
+  double spins(getIntegerArgument("unrestricted", 0) ? 2.0 : 1.0);
+  int computeExchange(getIntegerArgument("exchange", 1));
   tcc->compile(
     (
       // bubble with half V on both ends:
@@ -118,19 +119,23 @@ void RpaApxEnergy::run() {
       (*chi0VFGn)["FGn"] += -spins *
         (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
 
-      // adjacent pairs exchanged
-      // sign: 2xholes, 2xinteraction, 1xloop: (-1)^5
-      (*chi1VFGn)["FGn"] <<= -spins *
-        (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
-        (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
-
       // compute Mp2 energy for benchmark of frequency grid
       // 2 fold rotational and 2 fold mirror symmetry, 1/Pi from +nu and -nu
       // sign: 1xdiagram: (-1)
       (*mp2Direct)[""] <<= -0.25 / Pi() *
         (*Wn)["n"] * (*chi0VFGn)["FGn"] * (*chi0VFGn)["GFn"],
+
+      // adjacent pairs exchanged
       // 2 fold mirror symmetry only, 1/Pi from +nu and -nu
-      (*mp2Exchange)[""] <<= -0.5 / Pi() * (*Wn)["n"] * (*chi1VFGn)["FFn"]
+      // sign: 2xholes, 2xinteraction, 1xloop: (-1)^5
+      computeExchange ? (
+        (*chi1VFGn)["FGn"] <<= -spins *
+          (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
+          (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
+        (*mp2Exchange)[""] <<= -0.5 / Pi() * (*Wn)["n"] * (*chi1VFGn)["FFn"]
+      ) : (
+        tcc->emptySequence()
+      )
     )
   )->execute();
 

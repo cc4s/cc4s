@@ -110,6 +110,10 @@ namespace tcc {
       throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
     }
 
+    PTR(Sequence<F>) emptySequence() {
+      return NEW(Sequence<F>);
+    }
+
     PTR(Operation<F>) compile(
       const PTR(Sequence<F>) &sequence
     ) {

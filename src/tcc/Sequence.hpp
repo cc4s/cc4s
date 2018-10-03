@@ -42,6 +42,12 @@ namespace tcc {
     }
 
     /**
+     * \brief Constructor for the empty sequence.
+     * Not intended for direct invocation, create sequences
+     * using the static create method.
+     **/
+    Sequence() { }
+    /**
      * \brief Flattening constructor given two sequences.
      * Not intended for direct invocation, create sequences
      * using the static create method.

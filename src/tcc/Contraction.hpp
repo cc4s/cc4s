@@ -3,11 +3,11 @@
 #define TCC_CONTRACTION_DEFINED
 
 #include <tcc/Expression.hpp>
+
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 
 #include <vector>
-#include <memory>
 
 namespace tcc {
   template <typename F>
