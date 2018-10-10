@@ -66,10 +66,15 @@ PTR(FockVector<F>) DrccdEnergyFromCoulombIntegrals::getResiduum(
     (*Rabij)["abij"] += spins * (*Vaijb)["akic"] * (*Tabij)["cbkj"];
     (*Rabij)["abij"] += spins * (*Vaijb)["bkjc"] * (*Tabij)["acik"];
     if (!linearized) {
+      Tensor<F> Wijab(false, *Vijab);
+      Wijab["ijab"] = spins * (*Vijab)["ijab"];
+      if (getIntegerArgument("adjacentPairsExchange", 0)) {
+        Wijab["ijab"] -= (*Vijab)["jiab"];
+      }
       // Construct intermediates
       Tensor<F> Calid(false, *Vaijb);
-      Calid["alid"]  = spins * (*Vijab)["klcd"] * (*Tabij)["acik"];
-      (*Rabij)["abij"] += spins * Calid["alid"] * (*Tabij)["dblj"];
+      Calid["alid"]  = spins * Wijab["klcd"] * (*Tabij)["acik"];
+      (*Rabij)["abij"] += Calid["alid"] * (*Tabij)["dblj"];
     }
   } else {
     // no amplitudes given: start with MP2 amplitudes
