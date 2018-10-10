@@ -106,7 +106,8 @@ void RpaApxEnergy::run() {
   auto mp2Exchange(tcc->createTensor(std::vector<int>(), "mp2Exchange"));
   chi0VFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chi0V");
   chi1VFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chi1V");
-  double spins(getIntegerArgument("unrestricted", 0) ? 2.0 : 1.0);
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  LOG(1, "RPA") << "spins=" << spins << std::endl;
   int computeExchange(getIntegerArgument("exchange", 1));
   tcc->compile(
     (
@@ -120,19 +121,19 @@ void RpaApxEnergy::run() {
         (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
 
       // compute Mp2 energy for benchmark of frequency grid
-      // 2 fold rotational and 2 fold mirror symmetry, 1/Pi from +nu and -nu
+      // 2 fold rotational and 2 fold mirror symmetry, 2 from +nu and -nu
       // sign: 1xdiagram: (-1)
-      (*mp2Direct)[""] <<= -0.25 / Pi() *
+      (*mp2Direct)[""] <<= -0.25 * 2 *
         (*Wn)["n"] * (*chi0VFGn)["FGn"] * (*chi0VFGn)["GFn"],
 
       // adjacent pairs exchanged
-      // 2 fold mirror symmetry only, 1/Pi from +nu and -nu
+      // 2 fold mirror symmetry only, 2 from +nu and -nu
       // sign: 2xholes, 2xinteraction, 1xloop: (-1)^5
       computeExchange ? (
         (*chi1VFGn)["FGn"] <<= -spins *
           (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
           (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
-        (*mp2Exchange)[""] <<= -0.5 / Pi() * (*Wn)["n"] * (*chi1VFGn)["FFn"]
+        (*mp2Exchange)[""] <<= -0.5 * 2 * (*Wn)["n"] * (*chi1VFGn)["FFn"]
       ) : (
         tcc->emptySequence()
       )
@@ -253,10 +254,10 @@ void RpaApxEnergy::diagonalizeChiV() {
   communicator.allReduce(localRpa, rpa);
   communicator.allReduce(localApx, apx);
 
-  // 2 fold mirror symmetry, 1/Pi from +nu and -nu
+  // 2 fold mirror symmetry, 2 from +nu and -nu
   // sign: 1xdiagram: (-1)
-  rpa *= -0.5 / Pi();
-  apx *= -0.5 / Pi();
+  rpa *= -0.5 * 2;
+  apx *= -0.5 * 2;
   LOG(1, "RPA") << "rpa=" << rpa << std::endl;
   LOG(1, "RPA") << "apx=" << apx << std::endl;
   setRealArgument("RpaApxEnergy", std::real(rpa+apx));
