@@ -60,6 +60,7 @@ void RandomOrbitals::run() {
       }
     )
   );
+  // (gives the unapproximated overlap densities)
   overlapDensityFromCoulombVertex((*momenta)["G"], SGai["Gai"]);
   overlapDensityFromCoulombVertex((*momenta)["G"], conjSGai["Gai"]);
 
@@ -67,27 +68,38 @@ void RandomOrbitals::run() {
   int syms[] = { NS, NS, NS };
   Tensor<complex> QGH(2, QLens, syms, *GammaGai->wrld, "QGH");
   // compute high energy approximation with full virtual orbitals
+  // compute right part of direct diagram, summing over b&j
   QGH["GH"] = SGai["Gbj"] * SGai["Hbj"];
+  // copy right for computing left part
   Tensor<complex> conjQGH(QGH);
+  // explicitly calculate left part from conjugate overlap densities
+  // this could also be computed by: conjugate(conjQGH)
   conjQGH["GH"] = conjSGai["Gai"] * conjSGai["Hai"];
+  // multiply left part together with right part to get total diagram
   QGH["GH"] *= conjQGH["GH"];
+  real largeMomentumThreshold(getRealArgument("largeMomentumThreshold", 0));
   Scalar<complex> E;
   Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [volume](real momentum, complex &q) {
-        if (momentum > 0.0) {
+      [largeMomentumThreshold](real momentum, complex &q) {
+        if (largeMomentumThreshold < momentum) {
           q *= 4*Pi<>() / pow(momentum,2);
+        } else {
+          q = 0.0;
         }
       }
     )
   ) (
+    // H is G'
     (*momenta)["H"], QGH["GH"]
   );
   Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [volume,gamma](real momentum, complex &q) {
-        if (momentum > 0.0) {
+      [gamma, largeMomentumThreshold](real momentum, complex &q) {
+        if (largeMomentumThreshold < momentum) {
           q *= 4*Pi<>() / pow(momentum,2) / (pow(gamma,2) + pow(momentum,2));
+        } else {
+          q = 0.0;
         }
       }
     )
@@ -96,7 +108,8 @@ void RandomOrbitals::run() {
   );
   E[""] = 2.0 * eVPerHartree * QGH["GH"];
   complex randomEnergy(E.get_val());
-  LOG(0,"RandOrb") << "using virtual orbitals MP2d ~ " << randomEnergy << std::endl;
+  LOG(0,"RandOrb") << "using virtual orbitals: large momentum MP2d ~ "
+    << randomEnergy << std::endl;
 
 
   // again with random orbitals
@@ -107,20 +120,25 @@ void RandomOrbitals::run() {
   LOG(1, "RandomOrbitals")
     << "Using Nr=" << cbbeta->lens[1] << " random orbitals to build " << SGalphai.get_name()
     << " from " << GammaGai->get_name() << " with Nv=" << GammaGai->lens[1] << " virtual orbitals" << std::endl;
-   // NOTE: cbbeta are not conjugated for transforming psi*_a(x) in GammaGai
+  // approximate overlap density \tilde S using random orbitals
+  // NOTE: cbbeta are not conjugated for transforming psi*_a(x) in GammaGai
   SGalphai["GAi"] = SGai["Gai"] * (*cbbeta)["aA"];
   Tensor<complex> conjSGalphai(SGalphai);
+  // also compute the conjugated overlap densities \tidle S
   conjugate(conjSGalphai);
 
   // compute high energy approximation with random orbitals
+  // same equations as in the unapproximated case
   QGH["GH"] = SGalphai["Gbj"] * SGalphai["Hbj"];
   conjQGH["GH"] = conjSGalphai["Gai"] * conjSGalphai["Hai"];
   QGH["GH"] *= conjQGH["GH"];
   Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [volume](real momentum, complex &q) {
-        if (momentum > 0.0) {
+      [largeMomentumThreshold](real momentum, complex &q) {
+        if (largeMomentumThreshold < momentum) {
           q *= 4*Pi<>() / pow(momentum,2);
+        } else {
+          q = 0.0;
         }
       }
     )
@@ -129,9 +147,11 @@ void RandomOrbitals::run() {
   );
   Transform<double, complex>(
     std::function<void(double, complex &)>(
-      [volume,gamma](real momentum, complex &q) {
-        if (momentum > 0.0) {
+      [gamma, largeMomentumThreshold](real momentum, complex &q) {
+        if (largeMomentumThreshold < momentum) {
           q *= 4*Pi<>() / pow(momentum,2) / (pow(gamma,2) + pow(momentum,2));
+        } else {
+          q = 0.0;
         }
       }
     )
@@ -140,7 +160,8 @@ void RandomOrbitals::run() {
   );
   E[""] = 2.0 * eVPerHartree * QGH["GH"];
   randomEnergy = E.get_val();
-  LOG(0,"RandOrb") << "using random orbitals MP2d ~ " << randomEnergy << std::endl;
+  LOG(0,"RandOrb") << "using random orbitals: large momentum MP2d ~ "
+    << randomEnergy << std::endl;
 }
 
 void RandomOrbitals::dryRun() {
