@@ -112,6 +112,9 @@ void RandomOrbitals::run() {
     << randomEnergy << std::endl;
 
 
+  ///////////////////////////////////////////////////////////////////////////
+  // Random orbital stuff starts here...
+  ///////////////////////////////////////////////////////////////////////////
   // again with random orbitals
   int lens[] = { GammaGai->lens[0], cbbeta->lens[1], GammaGai->lens[2] };
   Tensor<complex> SGalphai(
