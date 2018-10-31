@@ -24,7 +24,11 @@ ThermalHolesAndParticles::~ThermalHolesAndParticles() {
 
 void ThermalHolesAndParticles::run() {
   orderStates();
-  determineChemicalPotential();
+  if (getArgumentData("ChemicalPotential")->getStage() != Data::Stage::MENTIONED) {
+    determineNumberOfElectrons();
+  } else {
+    determineChemicalPotential();
+  }
   defineThermalHolesAndParticles();
   determineThermalOccupancies();
   if (isArgumentGiven("ThermalParticleHoleOverlap")) {
@@ -127,6 +131,22 @@ void ThermalHolesAndParticles::determineChemicalPotential() {
   if (iterations == maxIterations)
     throw new EXCEPTION("Failed to determine chemical potential.");
   setRealArgument("ChemicalPotential", mu);
+}
+
+void ThermalHolesAndParticles::determineNumberOfElectrons() {
+  int Np(epsp->lens[0]);
+  mu = getRealArgument("ChemicalPotential");
+  // actual number of electrons (states for spin restricted) in the system
+  double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  kT = getRealArgument("Temperature");
+  // expectation value of the number operator for current mu
+  double N(0.0);
+  for (int p(0); p < Np; ++p) {
+    N += 1.0 / (1.0 + std::exp(+(eigenStates[p].first-mu)/kT));
+  }
+  N *= spins;
+  LOG(1, "ThermalHolesAndParticles") << "Number of electrons according to reference=" << N << std::endl;
+  setRealArgument("Electrons", N);
 }
 
 void ThermalHolesAndParticles::defineThermalHolesAndParticles() {

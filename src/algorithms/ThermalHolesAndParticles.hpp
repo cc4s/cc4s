@@ -32,6 +32,7 @@ namespace cc4s {
   protected:
     void orderStates();
     void determineChemicalPotential();
+    void determineNumberOfElectrons();
     void defineThermalHolesAndParticles();
     void determineThermalOccupancies();
     void computeParticleHoleOverlap();
