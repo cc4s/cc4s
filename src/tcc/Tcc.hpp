@@ -313,15 +313,6 @@ namespace tcc {
       }
       uniqueIndices[u] = 0;
 
-      // skip contractions with no common indices unless one of them is scalar
-      if (
-        commonIndicesCount == 0 &&
-        a->getResultIndices().length() > 0 &&
-        b->getResultIndices().length() > 0
-      ) {
-        return PTR(ContractionOperation<F>)();
-      }
-
       int64_t outerElementsCount(1), contractedElementsCount(1);
       for (int i(0); i < u; ++i) {
         const char index(uniqueIndices[i]);
