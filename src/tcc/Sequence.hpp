@@ -82,8 +82,9 @@ namespace tcc {
       const PTR(Move<F>) &lhs,
       const PTR(Sequence<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
-    ): moves(rhs->moves) {
+    ) {
       moves.push_back(lhs);
+      moves.insert(moves.end(), rhs->moves.begin(), rhs->moves.end());
     }
     /**
      * \brief Constructor given two moves.
