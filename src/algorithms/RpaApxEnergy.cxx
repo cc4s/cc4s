@@ -130,9 +130,13 @@ void RpaApxEnergy::run() {
       // 2 fold mirror symmetry only, 2 from +nu and -nu
       // sign: 2xholes, 2xinteraction, 1xloop: (-1)^5
       computeExchange ? (
-        (*chi1VFGn)["FGn"] <<= -spins *
+        // time reversal version: 1/2 up + 1/2 down Chi_1
+        (*chi1VFGn)["FGn"] <<= -0.5*spins *
           (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
           (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
+        (*chi1VFGn)["FGn"] += -0.5*spins *
+          (*GammaFia)["Fia"] * (*conjGammaFia)["Hja"] * (*Pain)["ain"] *
+          (*GammaFai)["Hbi"] * (*conjGammaFai)["Gbj"] * (*conjPain)["bjn"],
         (*mp2Exchange)[""] <<= -0.5 * 2 * (*Wn)["n"] * (*chi1VFGn)["FFn"]
       ) : (
         tcc->emptySequence()
