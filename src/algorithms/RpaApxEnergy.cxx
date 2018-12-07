@@ -91,7 +91,7 @@ void RpaApxEnergy::run() {
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
       // particle/hole propagator for positive and negative nu
-      [](double nu, complex &d) { d = 1.0 / (d- complex(0,1)*nu); }
+      [](double nu, complex &d) { d = 1.0 / (d - complex(0,nu)); }
     )
   ) (
     (*realNun)["n"], ctfPain["ain"]
@@ -135,8 +135,8 @@ void RpaApxEnergy::run() {
           (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
           (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
         (*chi1VFGn)["FGn"] += -0.5*spins *
-          (*GammaFia)["Fia"] * (*conjGammaFia)["Hja"] * (*Pain)["ain"] *
-          (*GammaFai)["Hbi"] * (*conjGammaFai)["Gbj"] * (*conjPain)["bjn"],
+          (*GammaFia)["Fia"] * (*conjGammaFia)["Hja"] * (*conjPain)["ain"] *
+          (*GammaFai)["Hbi"] * (*conjGammaFai)["Gbj"] * (*Pain)["bjn"],
         (*mp2Exchange)[""] <<= -0.5 * 2 * (*Wn)["n"] * (*chi1VFGn)["FFn"]
       ) : (
         tcc->emptySequence()
