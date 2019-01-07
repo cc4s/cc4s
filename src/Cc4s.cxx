@@ -98,43 +98,45 @@ void Cc4s::printBanner() {
 void Cc4s::printStatistics(
   int64_t rootFlops, int64_t totalFlops, Time const &totalTime
 ) {
-  std::string pid, comm, state, ppid, pgrp, session, ttyNr,
-    tpgid, flags, minflt, cminflt, majflt, cmajflt,
-    utime, stime, cutime, cstime, priority, nice,
-    O, itrealvalue, starttime;
-  int64_t vsize, rss;
+  std::string fieldName;
+  int64_t peakVirtualSize, peakPhysicalSize;
   // assuming LINUX
-  std::ifstream statStream("/proc/self/stat", std::ios_base::in);
-  statStream >> pid >> comm >> state >> ppid >> pgrp >> session >> ttyNr
-    >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
-    >> utime >> stime >> cutime >> cstime >> priority >> nice
-    >> O >> itrealvalue >> starttime >> vsize >> rss;
-  statStream.close();
-  // in case x86-64 is configured to use 2MB pages
-  int64_t pageSize = sysconf(_SC_PAGE_SIZE);
+  std::ifstream statusStream("/proc/self/status", std::ios_base::in);
+  std::string line;
+  while (std::getline(statusStream, line)) {
+    std::istringstream lineStream(line);
+    lineStream >> fieldName;
+    if (fieldName == "VmPeak:") {
+      lineStream >> peakVirtualSize;
+    } else if (fieldName == "VmHWM:") {
+      lineStream >> peakPhysicalSize;
+    }
+    // TODO: check memory unit, currently assumed to be kB
+  }
+  statusStream.close();
+  real unitsPerGB(1024.0*1024.0);
   LOG(0, "root") << "total realtime=" << totalTime << " s" << std::endl;
   LOG(0, "root") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
     << " speed=" << rootFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
-  LOG(0, "root") << "physical memory=" << rss * pageSize / 1e9 << " GB/core"
-    << ", virtual memory: " << vsize / 1e9 << " GB/core" << std::endl;
+  LOG(0, "root") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
+    << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
 
-  int64_t globalVSize, globalRss;
+  int64_t globalPeakVirtualSize, globalPeakPhysicalSize;
   MpiCommunicator communicator(world->rank, world->np, world->comm);
-  communicator.reduce(vsize, globalVSize);
-  communicator.reduce(rss, globalRss);
+  communicator.reduce(peakPhysicalSize, globalPeakPhysicalSize);
+  communicator.reduce(peakVirtualSize, globalPeakVirtualSize);
   LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
     << std::endl;
-  LOG(0, "root") << "overall physical memory="
-    << globalRss * pageSize / 1e9 << " GB"
-    << ", overall virtual memory=" << globalVSize / 1e9 << " GB" << std::endl;
+  LOG(0, "root") << "overall peak physical memory="
+    << globalPeakPhysicalSize / unitsPerGB << " GB"
+    << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
 }
 
 bool Cc4s::isDebugged() {
   // assuming LINUX
   std::ifstream statusStream("/proc/self/status", std::ios_base::in);
-  while (!statusStream.eof()) {
-    std::string line;
-    std::getline(statusStream, line);
+  std::string line;
+  while (std::getline(statusStream, line)) {
     std::string pidField("TracerPid:");
     size_t position(line.find(pidField));
     if (position != std::string::npos) {
