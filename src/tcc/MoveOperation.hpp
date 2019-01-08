@@ -13,7 +13,8 @@ namespace tcc {
     /**
      * \brief Creates a move operation moving the results of
      * the right hand side operation into given tensor of the
-     * left hand side.
+     * left hand side after applying the function f.
+     * The function f defaults to the identity operation.
      * Not intended for direct invocation. Use Tcc::compile(expression) to
      * generate operations.
      **/
@@ -29,7 +30,27 @@ namespace tcc {
         rhs_->costs,
         typename Operation<F>::ProtectedToken()
       ),
-      rhs(rhs_)
+      rhs(rhs_),
+      f(nullptr)
+    {
+      this->costs += moveCosts;
+    }
+
+    MoveOperation(
+      const PTR(Operation<F>) &rhs_,
+      const std::function<F(const F)> &f_,
+      const PTR(Tensor<F>) &result_,
+      const char *resultIndices_,
+      Costs moveCosts,
+      const typename Operation<F>::ProtectedToken &
+    ):
+      TensorResultOperation<F>(
+        result_, resultIndices_,
+        rhs_->costs,
+        typename Operation<F>::ProtectedToken()
+      ),
+      rhs(rhs_),
+      f(f_)
     {
       this->costs += moveCosts;
     }
@@ -62,6 +83,7 @@ namespace tcc {
     }
 
     PTR(Operation<F>) rhs;
+    std::function<F(const F)> f;
 
     friend class Tcc<F>;
   };
