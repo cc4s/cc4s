@@ -72,11 +72,10 @@ void Cc4s::dryRun() {
   for (unsigned int i(0); i < algorithms.size(); ++i) {
     LOG(0, "root") << "step=" << (i+1) << ", " << algorithms[i]->getName() << std::endl;
     algorithms[i]->dryRun();
+    LOG(0, "root")
+      << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
+      << " GB" << std::endl;
   }
-
-  LOG(0, "root")
-    << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
-    << " GB" << std::endl;
 }
 
 
