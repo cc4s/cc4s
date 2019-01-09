@@ -53,10 +53,16 @@ void Cc4s::run() {
       LOG(1, "root") << "step=" << (i+1) << ", realtime=" << time << " s"
         << ", operations=" << flops / 1e9 << " GFLOPS/core"
         << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
+      printStatistics();
     }
   }
 
-  printStatistics(rootFlops, totalFlops, totalTime);
+  OUT() << std::endl;
+  LOG(0, "root") << "total realtime=" << totalTime << " s" << std::endl;
+  LOG(0, "root") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
+    << " speed=" << rootFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
+  LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
+    << std::endl;
 }
 
 void Cc4s::dryRun() {
@@ -94,9 +100,7 @@ void Cc4s::printBanner() {
   OUT() << std::endl;
 }
 
-void Cc4s::printStatistics(
-  int64_t rootFlops, int64_t totalFlops, Time const &totalTime
-) {
+void Cc4s::printStatistics() {
   std::string fieldName;
   int64_t peakVirtualSize, peakPhysicalSize;
   // assuming LINUX
@@ -114,9 +118,6 @@ void Cc4s::printStatistics(
   }
   statusStream.close();
   real unitsPerGB(1024.0*1024.0);
-  LOG(0, "root") << "total realtime=" << totalTime << " s" << std::endl;
-  LOG(0, "root") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
-    << " speed=" << rootFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
   LOG(0, "root") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
     << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
 
@@ -124,8 +125,6 @@ void Cc4s::printStatistics(
   MpiCommunicator communicator(world->rank, world->np, world->comm);
   communicator.reduce(peakPhysicalSize, globalPeakPhysicalSize);
   communicator.reduce(peakVirtualSize, globalPeakVirtualSize);
-  LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
-    << std::endl;
   LOG(0, "root") << "overall peak physical memory="
     << globalPeakPhysicalSize / unitsPerGB << " GB"
     << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
