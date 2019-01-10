@@ -76,7 +76,24 @@ namespace tcc {
       throw new EXCEPTION("Contraction with custom function not implemented by machine tensor.");
     }
 
-    // TODO: interfaces to be defined: slice, permute, transform
+    /**
+     * \brief Slices a part of the given tensor into this tensor.
+     * this[begins,ends) = alpha*A[aBegins,aEnds] + beta*this[begins,ends)
+     * ends-begins must match aEnds-aBegins.
+     **/
+    virtual void slice(
+      F alpha,
+      const PTR(MachineTensor<F>) &A,
+      const std::vector<int> aBegins,
+      const std::vector<int> aEnds,
+      F beta,
+      const std::vector<int> begins,
+      const std::vector<int> ends
+    ) {
+      throw new EXCEPTION("Slice not implemented by machine tensor.");
+    }
+
+    // TODO: interfaces to be defined: permute, transform
 
     /**
      * \brief Returns the shape of the underlying implementation tensor,

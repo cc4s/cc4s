@@ -144,7 +144,36 @@ namespace cc4s {
         beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
     }
 
-    // TODO: interfaces to be defined: slice, permute, transform
+    virtual void slice(
+      F alpha,
+      const PTR(tcc::MachineTensor<F>) &A,
+      const std::vector<int> aBegins,
+      const std::vector<int> aEnds,
+      F beta,
+      const std::vector<int> begins,
+      const std::vector<int> ends
+    ) {
+      PTR(DryMachineTensor<F>) dryA(
+        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
+      );
+      if (!dryA) {
+        throw new EXCEPTION("Passed machine tensor of wrong implementation.");
+      }
+      // allocate tensor for A assuming index reordering
+      DryTensor<F> intermediateA(dryA->tensor, SOURCE_LOCATION);
+      // allocate tensor for result assuming index reordering
+      DryTensor<F> intermediateResult(this->tensor, SOURCE_LOCATION);
+/*
+      LOG(2, "TCC") << "slice " <<
+        getName() << "[" << begins << "," ends << ") <<= " <<
+        alpha << " * " <<
+        ctfA->getName() << "[" << aBegins << "," << aEnds << "] + " <<
+        beta << " * " <<
+        getName() << "[" << begins << "," << ends << "]" << std::endl;
+*/
+    }
+
+    // TODO: interfaces to be defined: permute, transform
 
     virtual std::vector<int> getLens() const {
       return tensor.lens;
