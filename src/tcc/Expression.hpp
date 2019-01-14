@@ -4,6 +4,8 @@
 
 #include <util/SharedPointer.hpp>
 
+#include <tcc/IndexCounts.hpp>
+
 namespace tcc {
   template <typename F>
   class Expression {
@@ -16,6 +18,12 @@ namespace tcc {
 
     virtual ~Expression() {
     }
+
+    /**
+     * \brief Count all indices occurring in this expression and its
+     * subexpressions.
+     **/
+    virtual void countIndices(IndexCounts &indexCounts) const = 0;
 
     // FIXME: protect or discard
     /**

@@ -158,6 +158,12 @@ namespace tcc {
     virtual ~Contraction() {
     }
 
+    virtual void countIndices(IndexCounts &indexCounts) const {
+      for (auto &factor: factors) {
+        factor->countIndices(indexCounts);
+      }
+    }
+
     F alpha;
     std::vector<PTR(IndexedTensor<F>)> factors;
   };

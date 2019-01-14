@@ -85,6 +85,11 @@ namespace tcc {
     virtual ~Move() {
     }
 
+    virtual void countIndices(IndexCounts &indexCounts) const {
+      lhs->countIndices(indexCounts);
+      rhs->countIndices(indexCounts);
+    }
+
     PTR(IndexedTensor<F>) lhs;
     PTR(Contraction<F>) rhs;
     F beta;

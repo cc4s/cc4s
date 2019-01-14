@@ -47,6 +47,10 @@ namespace tcc {
       );
     }
 
+    virtual void countIndices(IndexCounts &indexCounts) const {
+      indexCounts.add(indices);
+    }
+
     PTR(Tensor<F>) tensor;
     std::string indices;
   };

@@ -119,6 +119,12 @@ namespace tcc {
     virtual ~Sequence() {
     }
 
+    virtual void countIndices(IndexCounts &indexCounts) const {
+      // the indidex of each subexpression are independet of each other
+      // so nothing will be counted.
+      // counting will be done on the level of moves and contractions
+    }
+
     std::vector<PTR(Move<F>)> moves;
   };
 

@@ -100,6 +100,10 @@ namespace tcc {
       return machineTensorFactory->createTensor(tensor->lens, tensor->name);
     }
 
+    PTR(Sequence<F>) emptySequence() {
+      return NEW(Sequence<F>);
+    }
+
     PTR(Operation<F>) compile(
       const PTR(Expression<F>) &expression
     ) {
@@ -108,10 +112,6 @@ namespace tcc {
       auto move(dynamic_cast<PTR(Move<F>)>(expression));
       if (move) return compile(move);
       throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
-    }
-
-    PTR(Sequence<F>) emptySequence() {
-      return NEW(Sequence<F>);
     }
 
     PTR(Operation<F>) compile(
@@ -132,14 +132,15 @@ namespace tcc {
       LOG(2, "TCC") << "compiling contraction..." << std::endl;
 
       indexCounts = IndexCounts();
-      indexCounts.add(move->lhs->indices);
+      move->countIndices(indexCounts);
+
+      // TODO: currently only move(lhs,contraction(factors...)) are done
       auto contraction(move->rhs);
       std::vector<PTR(Operation<F>)> operations(
         contraction->factors.size()
       );
       for (unsigned int i(0); i < contraction->factors.size(); ++i) {
         operations[i] = FetchOperation<F>::create(contraction->factors[i]);
-        indexCounts.add(contraction->factors[i]->indices);
       }
       triedPossibilitiesCount = 0;
 
