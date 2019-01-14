@@ -60,12 +60,24 @@ namespace tcc {
 
     virtual void execute() {
       rhs->execute();
-      this->result->getMachineTensor()->move(
-        this->alpha,
-        rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
-        this->beta,
-        this->resultIndices
-      );
+      if (f) {
+        // execute move with custom map
+        this->result->getMachineTensor()->move(
+          this->alpha,
+          rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
+          this->beta,
+          this->resultIndices,
+          f
+        );
+      } else {
+        // execute standard move
+        this->result->getMachineTensor()->move(
+          this->alpha,
+          rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
+          this->beta,
+          this->resultIndices
+        );
+      }
     }
 
   protected:
