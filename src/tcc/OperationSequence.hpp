@@ -32,7 +32,7 @@ namespace tcc {
       for (unsigned int i(0); i < operations.size(); ++i) {
         operations[i]->execute();
       }
-    };
+    }
 
     // this operation returns void
     virtual PTR(Tensor<F>) getResult() {

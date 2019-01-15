@@ -5,6 +5,7 @@
 #include <tcc/IndexedTensor.hpp>
 #include <tcc/Move.hpp>
 #include <tcc/Contraction.hpp>
+#include <tcc/Map.hpp>
 #include <tcc/Sequence.hpp>
 #include <tcc/Tensor.hpp>
 

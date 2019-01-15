@@ -1,6 +1,7 @@
 #include <algorithms/TensorNetwork.hpp>
 #include <tcc/Tcc.hpp>
 #include <tcc/DryMachineTensor.hpp>
+#include <math/MathFunctions.hpp>
 #include <Cc4s.hpp>
 
 #include <vector>
@@ -25,7 +26,6 @@ TensorNetwork::~TensorNetwork() {
  */
 void TensorNetwork::run() {
 }
-
 
 void TensorNetwork::dryRun() {
   int No(10);
@@ -78,7 +78,7 @@ void TensorNetwork::dryRun() {
 */
       (*D)["abij"] +=
         (*T)["cdij"] *
-        (*Pi)["Rd"] * (*PiT)["Rb"] *
+        (*Pi)["Rd"] * map<real>(conj<real>, (*Pi)["Rb"]) *
         (*Pi)["Sc"] * (*PiT)["Sa"] *
         (*LambdaT)["SF"] * (*Lambda)["RF"]
     )

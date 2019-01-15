@@ -89,7 +89,7 @@ namespace tcc {
      **/
     Contraction(
       const PTR(Contraction<F>) &lhs,
-      const PTR(IndexedTensor<F>) &rhs,
+      const PTR(Expression<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(lhs->alpha), factors(lhs->factors) {
       factors.push_back(rhs);
@@ -101,7 +101,7 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const PTR(IndexedTensor<F>) &lhs,
+      const PTR(Expression<F>) &lhs,
       const PTR(Contraction<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(rhs->alpha), factors(rhs->factors) {
@@ -113,28 +113,12 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const PTR(IndexedTensor<F>) &lhs,
-      const PTR(IndexedTensor<F>) &rhs,
+      const PTR(Expression<F>) &lhs,
+      const PTR(Expression<F>) &rhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(F(1)) {
       factors.push_back(lhs);
       factors.push_back(rhs);
-    }
-    /**
-     * \brief Constructor given two general expressions.
-     * This is currently not supported.
-     * Not intended for direct invocation, create contractions
-     * using the static create method.
-     **/
-    Contraction(
-      const PTR(Expression<F>) &lhs,
-      const PTR(Expression<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
-    ) {
-      static_assert(
-        cc4s::StaticAssert<F>::FALSE,
-        "Only contractions of contractions or tensors supported."
-      );
     }
     /**
      * \brief Constructor given an indexed tensor and a scalar.
@@ -143,7 +127,7 @@ namespace tcc {
      **/
     Contraction(
       const F alpha_,
-      const PTR(IndexedTensor<F>) &lhs,
+      const PTR(Expression<F>) &lhs,
       const typename Expression<F>::ProtectedToken &
     ): alpha(alpha_) {
       factors.push_back(lhs);
@@ -404,7 +388,7 @@ namespace tcc {
     }
 
     F alpha;
-    std::vector<PTR(IndexedTensor<F>)> factors;
+    std::vector<PTR(Expression<F>)> factors;
 
     friend class Tcc<F>;
   };

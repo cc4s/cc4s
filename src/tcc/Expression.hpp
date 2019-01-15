@@ -22,6 +22,7 @@ namespace tcc {
     virtual ~Expression() {
     }
 
+    // TODO: should be protected
     /**
      * \brief Compiles this expression and its subexpressions and returns
      * the resulting operation.
@@ -30,6 +31,7 @@ namespace tcc {
       throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
     }
 
+    // TODO: should be protected
     /**
      * \brief Count all indices occurring in this expression and its
      * subexpressions.
