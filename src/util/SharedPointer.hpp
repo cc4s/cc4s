@@ -10,5 +10,10 @@
 #define WEAK_PTR(TYPE) std::weak_ptr<TYPE>
 #define NEW(TYPE, ...) std::make_shared<TYPE>(__VA_ARGS__)
 
+#define DYNAMIC_PTR_CAST(TYPE, VALUE) std::dynamic_pointer_cast<TYPE>(VALUE)
+
+#define THISABLE(TYPE) std::enable_shared_from_this<TYPE>
+#define THIS this->shared_from_this()
+
 #endif
 
