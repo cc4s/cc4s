@@ -9,6 +9,8 @@
 #include <vector>
 
 namespace tcc {
+  template <typename F> class Sequence;
+
   template <typename F>
   class OperationSequence: public Operation<F> {
   public:
@@ -53,7 +55,7 @@ namespace tcc {
     std::vector<PTR(Operation<F>)> operations;
     std::string emptyIndices;
 
-    friend class Tcc<F>;
+    friend class Sequence<F>;
   };
 }
 

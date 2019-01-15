@@ -37,7 +37,7 @@ void TensorNetwork::dryRun() {
 //    CtfMachineTensorFactory<>::create(Cc4s::world)
     DryMachineTensorFactory<>::create()
   );
-  auto tcc(Tcc<>::create(machineTensorFactory));
+  auto tcc(Tcc<real>::create(machineTensorFactory));
 
 /*
   shared_ptr<Tensor<complex>> Tc(

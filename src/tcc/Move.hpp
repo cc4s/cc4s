@@ -4,6 +4,7 @@
 
 #include <tcc/Expression.hpp>
 #include <tcc/Contraction.hpp>
+#include <tcc/MoveOperation.hpp>
 
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
@@ -36,8 +37,10 @@ namespace tcc {
           typename Expression<typename Lhs::FieldType>::ProtectedToken()
         )
       );
+/*
       lhs->parent = move;
       rhs->parent = move;
+*/
       return move;
     }
 
@@ -85,14 +88,50 @@ namespace tcc {
     virtual ~Move() {
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) const {
+    // each move has its private index namespace so disregard the outer
+    // indexCounts
+    virtual PTR(Operation<F>) compile(IndexCounts &) {
+      LOG(2, "TCC") << "compiling move..." << std::endl;
+      // create a new namespace of indices
+      IndexCounts indexCounts;
+      // and determine how often each index is used
+      countIndices(indexCounts);
+
+      // TODO: currently only move(lhs,contraction(factors...)) are done
+      indexCounts.triedPossibilitiesCount = 0;
+      auto operation(
+        // compile right-hand-side in the namespace of this move
+        DYNAMIC_PTR_CAST(TensorResultOperation<F>, rhs->compile(indexCounts))
+      );
+      // write operation results directly to lhs tensor instead of intermediate
+      operation->result = lhs->tensor;
+      operation->resultIndices = lhs->indices;
+      // enter the beta factor of this move
+      operation->beta = beta;
+
+      LOG(2, "TCC") <<
+        "possibilites tried=" << indexCounts.triedPossibilitiesCount <<
+        ", FLOPS=" <<
+          operation->costs.multiplicationsCount +
+          operation->costs.additionsCount <<
+        ", maximum elements stored=" <<
+          operation->costs.maxElementsCount <<
+        std::endl;
+
+      return operation;
+    }
+
+    virtual void countIndices(IndexCounts &indexCounts) {
       lhs->countIndices(indexCounts);
       rhs->countIndices(indexCounts);
     }
 
+  protected:
     PTR(IndexedTensor<F>) lhs;
     PTR(Contraction<F>) rhs;
     F beta;
+
+    friend class Tcc<F>;
   };
 
   /**

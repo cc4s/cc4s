@@ -11,8 +11,9 @@
 #include <string>
 
 namespace tcc {
-  template <typename F>
-  class Tensor;
+  template <typename F> class Tensor;
+  template <typename F> class Move;
+  template <typename F> class Contraction;
 
   template <typename F>
   class TensorResultOperation: public Operation<F> {
@@ -53,7 +54,8 @@ namespace tcc {
     PTR(Tensor<F>) result;
     std::string resultIndices;
 
-    friend class Tcc<F>;
+    friend class Move<F>;
+    friend class Contraction<F>;
   };
 }
 

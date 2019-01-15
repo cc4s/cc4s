@@ -3,12 +3,14 @@
 #define TCC_FETCH_OPERATION_DEFINED
 
 #include <tcc/Operation.hpp>
-#include <tcc/Tensor.hpp>
 #include <tcc/Costs.hpp>
 
 #include <memory>
 
 namespace tcc {
+  template <typename F> class Tensor;
+  template <typename F> class IndexedTensor;
+
   template <typename F>
   class FetchOperation: public Operation<F> {
   public:
@@ -22,9 +24,9 @@ namespace tcc {
       const PTR(IndexedTensor<F>) &t,
       const typename Operation<F>::ProtectedToken &
     ):
-      Operation<F>(Costs(t->tensor->getElementsCount())),
-      tensor(t->tensor),
-      indices(t->indices)
+      Operation<F>(Costs(t->getTensor()->getElementsCount())),
+      tensor(t->getTensor()),
+      indices(t->getIndices())
     {
     }
     virtual ~FetchOperation() {
@@ -53,7 +55,7 @@ namespace tcc {
     PTR(Tensor<F>) tensor;
     std::string indices;
 
-    friend class Tcc<F>;
+    friend class IndexedTensor<F>;
   };
 }
 

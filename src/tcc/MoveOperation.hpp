@@ -7,6 +7,8 @@
 #include <util/SharedPointer.hpp>
 
 namespace tcc {
+  template <typename F> class Contraction;
+
   template <typename F>
   class MoveOperation: public TensorResultOperation<F> {
   public:
@@ -81,7 +83,7 @@ namespace tcc {
     }
 
   protected:
-    static PTR(MoveOperation<F>)  create(
+    static PTR(MoveOperation<F>) create(
       const PTR(Operation<F>) &rhs_,
       const PTR(Tensor<F>) &result_,
       const char *resultIndices_,
@@ -97,7 +99,7 @@ namespace tcc {
     PTR(Operation<F>) rhs;
     std::function<F(const F)> f;
 
-    friend class Tcc<F>;
+    friend class Contraction<F>;
   };
 }
 

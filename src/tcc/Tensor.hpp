@@ -12,14 +12,13 @@
 #include <string>
 
 namespace tcc {
-  template <typename F=double>
-  class Tcc;
+  template <typename F> class Tcc;
 
   /**
    * \brief 
    **/
   template <typename F>
-  class Tensor: public std::enable_shared_from_this<Tensor<F>> {
+  class Tensor: public THISABLE(Tensor<F>) {
   protected:
     /**
      * \brief Dummy objects of that type are used to guarantee that
@@ -75,7 +74,7 @@ namespace tcc {
     PTR(ActualMachineTensor) getMachineTensor() {
       if (!machineTensor) {
         // allocate the implementation specific machine tensor upon request
-        machineTensor = tcc->createMachineTensor(this->shared_from_this());
+        machineTensor = tcc->createMachineTensor(THIS);
       }
       return std::dynamic_pointer_cast<ActualMachineTensor>(machineTensor);
     }
@@ -97,9 +96,7 @@ namespace tcc {
      * expressions.
      **/
     PTR(IndexedTensor<F>) operator[](const std::string &indices) {
-      return IndexedTensor<F>::create(
-        this->shared_from_this(), indices
-      );
+      return IndexedTensor<F>::create(THIS, indices);
     }
 
     std::vector<int> lens;

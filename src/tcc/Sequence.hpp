@@ -3,6 +3,7 @@
 #define TCC_SEQUENCE_DEFINED
 
 #include <tcc/Expression.hpp>
+#include <tcc/OperationSequence.hpp>
 
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
@@ -36,8 +37,10 @@ namespace tcc {
           typename Expression<typename Lhs::FieldType>::ProtectedToken()
         )
       );
+/*
       A->parent = sequence;
       B->parent = sequence;
+*/
       return sequence;
     }
 
@@ -119,12 +122,21 @@ namespace tcc {
     virtual ~Sequence() {
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) const {
+    virtual PTR(Operation<F>) compile(IndexCounts &indexCounts) {
+      std::vector<PTR(Operation<F>)> operations(moves.size());
+      for (unsigned int i(0); i < moves.size(); ++i) {
+        operations[i] = moves[i]->compile(indexCounts);
+      }
+      return OperationSequence<F>::create(operations);
+    }
+
+    virtual void countIndices(IndexCounts &indexCounts) {
       // the indidex of each subexpression are independet of each other
       // so nothing will be counted.
       // counting will be done on the level of moves and contractions
     }
 
+  protected:
     std::vector<PTR(Move<F>)> moves;
   };
 

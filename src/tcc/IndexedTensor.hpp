@@ -3,7 +3,7 @@
 #define TCC_INDEXED_TENSOR_DEFINED
 
 #include <tcc/Expression.hpp>
-#include <tcc/Move.hpp>
+#include <tcc/FetchOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 
@@ -11,8 +11,8 @@
 #include <ostream>
 
 namespace tcc {
-  template <typename F=double>
-  class Tensor;
+  template <typename F> class Tensor;
+  template <typename F> class Move;
 
   template <typename F>
   class IndexedTensor: public Expression<F> {
@@ -47,52 +47,28 @@ namespace tcc {
       );
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) const {
+    virtual PTR(Operation<F>) compile(IndexCounts &indexCounts) {
+      return FetchOperation<F>::create(DYNAMIC_PTR_CAST(IndexedTensor<F>,THIS));
+    }
+
+    virtual void countIndices(IndexCounts &indexCounts) {
       indexCounts.add(indices);
     }
 
+    PTR(Tensor<F>) getTensor() {
+      return tensor;
+    }
+
+    std::string getIndices() {
+      return indices;
+    }
+
+  protected:
     PTR(Tensor<F>) tensor;
     std::string indices;
+
+    friend class Move<F>;
   };
-
-  /**
-   * \brief Moves the given right hand side expression into the given
-   * indexed tensor, returning the indexed tensor as result expression
-   * for possible further operations.
-   * Note that the operator = cannot be used since all expressions are
-   * represented by shared pointers.
-   **/
-  template <typename Rhs>
-  inline PTR(Move<typename Rhs::FieldType>) operator <<=(
-    const PTR(IndexedTensor<typename Rhs::FieldType>) &lhs,
-    const PTR(Rhs) &rhs
-  ) {
-    return Move<typename Rhs::FieldType>::create(lhs, rhs, 0);
-  }
-
-  template <typename Lhs, typename Rhs>
-  inline PTR(Move<typename Lhs::FieldType>) operator <<=(
-    const PTR(Lhs) &, const PTR(Rhs) &rhs
-  ) {
-    static_assert(
-      cc4s::TypeRelations<
-        typename Lhs::FieldType, typename Rhs::FieldType
-      >::EQUALS,
-      "Move operations requires tensors of same type."
-    );
-    static_assert(
-      cc4s::StaticAssert<Lhs>::FALSE,
-      "Only indexed tensors may be used as the left hand side of a move operation."
-    );
-    return PTR(Move<typename Lhs::FieldType>)();
-  }
-
-  template <typename F>
-  inline std::ostream &operator <<(
-    std::ostream &stream, const IndexedTensor<F> &t
-  ) {
-    return stream << t.tensor->getName() << "[" << t.indices << "]";
-  }
 }
 
 

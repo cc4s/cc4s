@@ -31,8 +31,6 @@ namespace tcc {
     }
     class ProtectedToken {
     };
-
-    friend class Tcc<F>;
   };
 }
 

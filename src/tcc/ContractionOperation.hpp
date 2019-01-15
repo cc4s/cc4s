@@ -11,6 +11,8 @@
 #include <string>
 
 namespace tcc {
+  template <typename F> class Contraction;
+
   template <typename F>
   class ContractionOperation: public TensorResultOperation<F> {
   public:
@@ -83,7 +85,7 @@ namespace tcc {
     PTR(Operation<F>) left;
     PTR(Operation<F>) right;
 
-    friend class Tcc<F>;
+    friend class Contraction<F>;
   };
 }
 

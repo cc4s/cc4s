@@ -12,7 +12,7 @@ namespace tcc {
    **/
   class IndexCounts {
   public:
-    IndexCounts() {
+    IndexCounts(): triedPossibilitiesCount(0) {
       for (int i(0); i < INDICES_COUNT; ++i) counts[i] = 0;
     }
 
@@ -34,6 +34,7 @@ namespace tcc {
 
     static constexpr int INDICES_COUNT = UINT8_MAX;
     int counts[INDICES_COUNT];
+    size_t triedPossibilitiesCount;
   };
 }
 
