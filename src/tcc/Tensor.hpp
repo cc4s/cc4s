@@ -36,7 +36,7 @@ namespace tcc {
      * Not intended for direct invocation. Use Tcc::createTensor instead.
      **/
     Tensor(
-      const std::vector<int> &lens_,
+      const std::vector<size_t> &lens_,
       const std::string &name_,
       const PTR(Tcc<F>) &tcc_,
       const ProtectedToken &
@@ -82,10 +82,10 @@ namespace tcc {
     /**
      * \brief Returns the number of elements contained in this tensor.
      **/
-    int64_t getElementsCount() const {
-      int64_t elementsCount(1);
-      for (unsigned int i(0); i < lens.size(); ++i) {
-        elementsCount *= lens[i];
+    size_t getElementsCount() const {
+      size_t elementsCount(1);
+      for (auto len: lens) {
+        elementsCount *= len;
       }
       return elementsCount;
     }
@@ -99,7 +99,7 @@ namespace tcc {
       return IndexedTensor<F>::create(THIS, indices);
     }
 
-    std::vector<int> lens;
+    std::vector<size_t> lens;
 
   protected:
     /**

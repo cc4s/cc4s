@@ -75,12 +75,12 @@ void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
   );
   
   // Compute the No,Nv
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
+  size_t No(epsi->lens[0]);
+  size_t Nv(epsa->lens[0]);
 
   // Allocate the doubles amplitudes
   int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { Nv, Nv, No, No };
+  size_t vvoo[] = { Nv, Nv, No, No };
   DryTensor<> Tabij(4, vvoo, syms);
 
   DryScalar<> energy();

@@ -50,9 +50,9 @@ void CoulombVertexFromFactors::run(const bool dryRun) {
   auto LambdaFR( tcc->createTensor(MT::create(*ctfLambdaFR)) );
  
   // allocate tcc::Tensor for final result
-  int NF(LambdaFR->lens[0]);
-  int Np(PirR->lens[0]);
-  auto GammaFqr( tcc->createTensor(std::vector<int>({NF,Np,Np}), "Gamma") );
+  size_t NF(LambdaFR->lens[0]);
+  size_t Np(PirR->lens[0]);
+  auto GammaFqr( tcc->createTensor(std::vector<size_t>({NF,Np,Np}), "Gamma") );
 
   // compile
   auto operation(

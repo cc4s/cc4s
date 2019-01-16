@@ -56,12 +56,12 @@ void SliceCoulombVertex::dryRun() {
   );
 
   // Compute the No,Nv,NG
-  int NG(GammaGqr->lens[0]);
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
+  size_t NG(GammaGqr->lens[0]);
+  size_t No(epsi->lens[0]);
+  size_t Nv(epsa->lens[0]);
 
   // Allocate and compute GammaGab,GammaGai,GammaGij from GammaGqr
-  int GaiLens[] = { NG,Nv,No };
+  size_t GaiLens[] = { NG,Nv,No };
   int GaiSyms[] = { NS,NS,NS };
   DryTensor<complex> *GammaGai(new DryTensor<complex>(3, GaiLens, GaiSyms));
 

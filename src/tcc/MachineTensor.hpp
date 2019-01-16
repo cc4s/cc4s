@@ -99,7 +99,7 @@ namespace tcc {
      * \brief Returns the shape of the underlying implementation tensor,
      * which is assumed to be immutable.
      **/
-    virtual std::vector<int> getLens() const = 0;
+    virtual std::vector<size_t> getLens() const = 0;
 
     /**
      * \brief Returns the given name of the underlying implementation tensor,
@@ -124,7 +124,7 @@ namespace tcc {
      * a specified name.
      */
     virtual PTR(MachineTensor<F>) createTensor(
-      const std::vector<int> &lens,
+      const std::vector<size_t> &lens,
       const std::string &name
     ) = 0;
   };

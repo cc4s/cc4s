@@ -126,10 +126,10 @@ void ParticleHoleCoulombVertexReader::dryRun() {
     throw new EXCEPTION("Invalid file format");
   file.close();
 
-  int NG(header.NG);
-  int No(header.No);
-  int Nv(header.Nv);
-  int Np(No + Nv);
+  size_t NG(header.NG);
+  size_t No(header.No);
+  size_t Nv(header.Nv);
+  size_t Np(No + Nv);
   
   // Print NG, No, Nv, Np
   LOG(1, "Reader") << "NG=" << NG << std::endl;
@@ -138,7 +138,7 @@ void ParticleHoleCoulombVertexReader::dryRun() {
   LOG(1, "Reader") << "Np=" << Np << std::endl;
 
   // Allocate output tensors
-  int vertexLens[] = { NG, Nv, No };
+  size_t vertexLens[] = { NG, Nv, No };
   int vertexSyms[] = { NS, NS, NS };
   DryTensor<> *epsi(new DryVector<>(No, SOURCE_LOCATION));
   DryTensor<> *epsa(new DryVector<>(Nv, SOURCE_LOCATION));

@@ -74,24 +74,24 @@ void cc4s::dryComposeCanonicalPolyadicDecompositionTensors(
    "Incompatible tensor shapes for CPD"
   );
   // choose contraction order with minimal memory footprint
-  int largestIndex(
+  size_t largestIndex(
     std::max(
       std::max(T.lens[0], T.lens[1]), T.lens[2]
     )
   );
   if (A.lens[0] == largestIndex) {
     LOG(4, "CPD") << "calculating T with largest A..." << std::endl;
-    int lens[] = { A.lens[1], B.lens[0], C.lens[0] };
+    size_t lens[] = { A.lens[1], B.lens[0], C.lens[0] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> BC(3, lens, syms);
   } else if (B.lens[0] == largestIndex) {
     LOG(4, "CPD") << "calculating T with largest B..." << std::endl;
-    int lens[] = { A.lens[1], C.lens[0], A.lens[0] };
+    size_t lens[] = { A.lens[1], C.lens[0], A.lens[0] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> CA(3, lens, syms);
   } else {
     LOG(4, "CPD") << "calculating T with largest C..." << std::endl;
-    int lens[] = { A.lens[1], A.lens[0], B.lens[0] };
+    size_t lens[] = { A.lens[1], A.lens[0], B.lens[0] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> AB(3, lens, syms);
   }
@@ -191,7 +191,7 @@ void cc4s::dryContractWithCanonicalPolyadicDecompositionTensors(
    "Incompatible tensor shapes for CPD"
   );
   // choose contraction order with minimal memory footprint
-  int largestIndex(
+  size_t largestIndex(
     std::max(
       std::max(T.lens[0], T.lens[1]), T.lens[2]
     )
@@ -199,19 +199,19 @@ void cc4s::dryContractWithCanonicalPolyadicDecompositionTensors(
   if (A.lens[0] == largestIndex) {
     // A has largest index: contract B and C first
     LOG(4, "CPD") << "applying to T with largest A..." << std::endl;
-    int lens[] = { B.lens[0], C.lens[0], A.lens[1] };
+    size_t lens[] = { B.lens[0], C.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> BC(3, lens, syms);
   } else if (B.lens[0] == largestIndex) {
     // B has largest index: contract T and B first
     LOG(4, "CPD") << "applying to T with largest B..." << std::endl;
-    int lens[] = { A.lens[0], C.lens[0], A.lens[1] };
+    size_t lens[] = { A.lens[0], C.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> TB(3, lens, syms);
   } else {
     // C has largest index: contract T and C first
     LOG(4, "CPD") << "applying to T with largest C..." << std::endl;
-    int lens[] = { A.lens[0], B.lens[0], A.lens[1] };
+    size_t lens[] = { A.lens[0], B.lens[0], A.lens[1] };
     int syms[] = { NS, NS, NS };
     DryTensor<F> TC(3, lens, syms);
   }

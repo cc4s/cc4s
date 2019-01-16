@@ -53,7 +53,7 @@ void ApproximateCoulombVertex::dryRun() {
     )
   );
   DryTensor<complex> UTGF(*UGF);
-  int lens[] = { UGF->lens[1], GammaGqr->lens[1], GammaGqr->lens[2] };
+  size_t lens[] = { UGF->lens[1], GammaGqr->lens[1], GammaGqr->lens[2] };
   int syms[] = { NS, NS, NS };
   DryTensor<complex> *GammaFqr = new DryTensor<complex>(
     3, lens, syms, SOURCE_LOCATION

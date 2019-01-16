@@ -141,10 +141,10 @@ void CoulombIntegralsFromVertex::dryRun() {
   int GabLens[]   = {NG,Nv,Nv};
   int GijLens[]   = {NG,No,No};
 
-  DryTensor<complex> GammaGia(3, GiaLens, syms.data());
-  DryTensor<complex> GammaGai(3, GaiLens, syms.data());
-  DryTensor<complex> GammaGab(3, GabLens, syms.data());
-  DryTensor<complex> GammaGij(3, GijLens, syms.data());
+  DryTensor<complex> GammaGia(3, std::vector<size_t>(GiaLens, GiaLens+3).data(), syms.data());
+  DryTensor<complex> GammaGai(3, std::vector<size_t>(GaiLens, GaiLens+3).data(), syms.data());
+  DryTensor<complex> GammaGab(3, std::vector<size_t>(GabLens, GabLens+3).data(), syms.data());
+  DryTensor<complex> GammaGij(3, std::vector<size_t>(GijLens, GijLens+3).data(), syms.data());
 
   if (realIntegrals) {
     dryCalculateRealIntegrals();
@@ -443,39 +443,39 @@ void CoulombIntegralsFromVertex::calculateRealIntegrals() {
 void CoulombIntegralsFromVertex::dryCalculateRealIntegrals() {
   DryTensor<> *Vaibj(
     isArgumentGiven("PHPHCoulombIntegrals") ?
-    new DryTensor<>(4, vovo.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(vovo.begin(), vovo.end()).data(), syms.data()) : nullptr
   );
   DryTensor<> *Vabij(
     isArgumentGiven("PPHHCoulombIntegrals") ?
-    new DryTensor<>(4, vvoo.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(vvoo.begin(), vvoo.end()).data(), syms.data()) : nullptr
   );
   DryTensor<> *Vijab(
     isArgumentGiven("HHPPCoulombIntegrals") ?
-    new DryTensor<>(4, oovv.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(oovv.begin(), oovv.end()).data(), syms.data()) : nullptr
   );
   DryTensor<> *Vaijb(
     isArgumentGiven("PHHPCoulombIntegrals") ?
-    new DryTensor<>(4, voov.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(voov.begin(), voov.end()).data(), syms.data()) : nullptr
   );
   DryTensor<> *Vijkl(
     isArgumentGiven("HHHHCoulombIntegrals") ?
-    new DryTensor<>(4, oooo.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(oooo.begin(), oooo.end()).data(), syms.data()) : nullptr
   );
   DryTensor<> *Vijka(
     isArgumentGiven("HHHPCoulombIntegrals") ?
-    new DryTensor<>(4, ooov.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(ooov.begin(), ooov.end()).data(), syms.data()) : nullptr
   );
   DryTensor<> *Vaijk(
     isArgumentGiven("PHHHCoulombIntegrals") ?
-    new DryTensor<>(4, vooo.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(vooo.begin(), vooo.end()).data(), syms.data()) : nullptr
   );
   DryTensor<> *Vabcd(
     isArgumentGiven("PPPPCoulombIntegrals") ?
-    new DryTensor<>(4, vvvv.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(vvvv.begin(), vvvv.end()).data(), syms.data()) : nullptr
   );
   DryTensor<> *Vabci(
     isArgumentGiven("PPPHCoulombIntegrals") ?
-    new DryTensor<>(4, vvvo.data(), syms.data()) : nullptr
+    new DryTensor<>(4, std::vector<size_t>(vvvo.begin(), vvvo.end()).data(), syms.data()) : nullptr
   );
 
   if (Vaibj) {
@@ -618,37 +618,37 @@ void CoulombIntegralsFromVertex::calculateComplexIntegrals() {
 void CoulombIntegralsFromVertex::dryCalculateComplexIntegrals() {
   DryTensor<complex> *Vaibj(
     isArgumentGiven("PHPHCoulombIntegrals") ?
-    new DryTensor<complex>(4, vovo.data(), syms.data())
+    new DryTensor<complex>(4, std::vector<size_t>(vovo.begin(), vovo.end()).data(), syms.data())
     : nullptr
   );
   DryTensor<complex> *Vabij(
     isArgumentGiven("PPHHCoulombIntegrals") ?
-    new DryTensor<complex>(4, vvoo.data(), syms.data())
+    new DryTensor<complex>(4, std::vector<size_t>(vvoo.begin(), vvoo.end()).data(), syms.data())
     : nullptr
   );
   DryTensor<complex> *Vijab(
     isArgumentGiven("HHPPCoulombIntegrals") ?
-    new DryTensor<complex>(4, oovv.data(), syms.data())
+    new DryTensor<complex>(4, std::vector<size_t>(oovv.begin(), oovv.end()).data(), syms.data())
     : nullptr
   );
   DryTensor<complex> *Vaijb(
     isArgumentGiven("PHHPCoulombIntegrals") ?
-    new DryTensor<complex>(4, voov.data(), syms.data())
+    new DryTensor<complex>(4, std::vector<size_t>(voov.begin(), voov.end()).data(), syms.data())
     : nullptr
   );
   DryTensor<complex> *Vijkl(
     isArgumentGiven("HHHHCoulombIntegrals") ?
-    new DryTensor<complex>(4, oooo.data(), syms.data())
+    new DryTensor<complex>(4, std::vector<size_t>(oooo.begin(), oooo.end()).data(), syms.data())
     : nullptr
   );
   DryTensor<complex> *Vijka(
     isArgumentGiven("HHHPCoulombIntegrals") ?
-    new DryTensor<complex>(4, ooov.data(), syms.data())
+    new DryTensor<complex>(4, std::vector<size_t>(ooov.begin(), ooov.end()).data(), syms.data())
     : nullptr
   );
   DryTensor<complex> *Vaijk(
     isArgumentGiven("PHHHCoulombIntegrals") ?
-    new DryTensor<complex>(4, vooo.data(), syms.data())
+    new DryTensor<complex>(4, std::vector<size_t>(vooo.begin(), vooo.end()).data(), syms.data())
     : nullptr
   );
 

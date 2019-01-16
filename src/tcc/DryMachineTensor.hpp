@@ -27,12 +27,12 @@ namespace cc4s {
 
     // constructors called by factory
     DryMachineTensor(
-      const std::vector<int> &lens,
+      const std::vector<size_t> &lens,
       const std::string &name,
       const ProtectedToken &
     ):
       tensor(
-        static_cast<int>(lens.size()), lens.data(),
+        lens.size(), lens.data(),
         std::vector<int>(lens.size(), 0).data()
       )
     {
@@ -147,11 +147,11 @@ namespace cc4s {
     virtual void slice(
       F alpha,
       const PTR(tcc::MachineTensor<F>) &A,
-      const std::vector<int> aBegins,
-      const std::vector<int> aEnds,
+      const std::vector<size_t> aBegins,
+      const std::vector<size_t> aEnds,
       F beta,
-      const std::vector<int> begins,
-      const std::vector<int> ends
+      const std::vector<size_t> begins,
+      const std::vector<size_t> ends
     ) {
       PTR(DryMachineTensor<F>) dryA(
         std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
@@ -175,7 +175,7 @@ namespace cc4s {
 
     // TODO: interfaces to be defined: permute, transform
 
-    virtual std::vector<int> getLens() const {
+    virtual std::vector<size_t> getLens() const {
       return tensor.lens;
     }
 
@@ -203,7 +203,7 @@ namespace cc4s {
     }
 
     virtual PTR(tcc::MachineTensor<F>) createTensor(
-      const std::vector<int> &lens,
+      const std::vector<size_t> &lens,
       const std::string &name
     ) {
       return PTR(tcc::MachineTensor<F>)(

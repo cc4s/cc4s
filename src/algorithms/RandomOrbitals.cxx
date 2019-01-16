@@ -176,7 +176,7 @@ void RandomOrbitals::dryRun() {
       "RandomOrbitalsCoefficients"
     )
   );
-  int lens[] = { GammaGai->lens[0], cbbeta->lens[1], GammaGai->lens[2] }; 
+  size_t lens[] = { GammaGai->lens[0], cbbeta->lens[1], GammaGai->lens[2] }; 
   int syms[] = { NS, NS, NS };
   DryTensor<complex> *GammaGalphai = new DryTensor<complex>(
     3, lens, syms, SOURCE_LOCATION

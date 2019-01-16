@@ -45,7 +45,7 @@ void ApproximateParticleHoleCoulombVertex::dryRun() {
       "ParticleHoleCoulombVertexSingularVectors"
     )
   );
-  int lens[] = { UGF->lens[1], GammaGai->lens[1], GammaGai->lens[2] };
+  size_t lens[] = { UGF->lens[1], GammaGai->lens[1], GammaGai->lens[2] };
   int syms[] = { NS, NS, NS };
   DryTensor<complex> *GammaFai = new DryTensor<complex>(
     3, lens, syms, SOURCE_LOCATION

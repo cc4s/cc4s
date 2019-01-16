@@ -166,30 +166,30 @@ void LaplaceMp2Energy::dryRun() {
     getTensorArgument<complex, DryTensor<complex>>("CoulombFactors")
   );
 
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-  int Nn(Tn->lens[0]);
-  int on[] = { No, Nn };
-  int vn[] = { Nv, Nn };
+  size_t No(epsi->lens[0]);
+  size_t Nv(epsa->lens[0]);
+  size_t Nn(Tn->lens[0]);
+  size_t on[] = { No, Nn };
+  size_t vn[] = { Nv, Nn };
   int syms[] = { NS, NS, NS, NS };
   DryTensor<> Pan(2, vn, syms, SOURCE_LOCATION);
   DryTensor<> Hin(2, on, syms, SOURCE_LOCATION);
 
 //  int Np(PirR->lens[0]);
-  int NR(PirR->lens[1]);
-  int RR[] =   { NR, NR };
-  int RRn[] =  { NR, NR, Nn };
+  size_t NR(PirR->lens[1]);
+  size_t RR[] =   { NR, NR };
+  size_t RRn[] =  { NR, NR, Nn };
 
   DryTensor<complex> VRS  (2, RR,  syms, SOURCE_LOCATION);
   DryTensor<complex> GpRSn(3, RRn, syms, SOURCE_LOCATION);
   DryTensor<complex> GhRSn(3, RRn, syms, SOURCE_LOCATION);
 
   // Allocate and compute PiaR
-  int vR[] =   { Nv, NR };
+  size_t vR[] =   { Nv, NR };
   DryTensor<complex> PiaR(2, vR,  syms, SOURCE_LOCATION);
 
   // Allocate and compute PiiR
-  int oR[] =   { No, NR };
+  size_t oR[] =   { No, NR };
   DryTensor<complex> PiiR(2, oR,  syms, SOURCE_LOCATION);
 
   DryTensor<complex> conjLambdaGR(*LambdaGR);
@@ -259,7 +259,7 @@ double LaplaceMp2Energy::calculateNumerically() {
   auto Gh(tcc->createTensor(MT::create(*GhRSn)));
   auto V(tcc->createTensor(MT::create(*VRS)));
   auto w(tcc->createTensor(MT::create(*wn)));
-  auto energy(tcc->createTensor(std::vector<int>(), "energy"));
+  auto energy(tcc->createTensor(std::vector<size_t>(), "energy"));
   tcc->compile(
     (
       (*energy)[""] <<=
@@ -390,10 +390,10 @@ double LaplaceMp2Energy::sumMonteCarlo() {
   int64_t samplesCount(getIntegerArgument("samples"));
   for (int64_t n(0); n < samplesCount; ++n) {
     // draw uniform RSTU
-    int R(static_cast<int>(rand.nextUniform() * NR));
-    int S(static_cast<int>(rand.nextUniform() * NR));
-    int T(static_cast<int>(rand.nextUniform() * NR));
-    int U(static_cast<int>(rand.nextUniform() * NR));
+    int R(static_cast<size_t>(rand.nextUniform() * NR));
+    int S(static_cast<size_t>(rand.nextUniform() * NR));
+    int T(static_cast<size_t>(rand.nextUniform() * NR));
+    int U(static_cast<size_t>(rand.nextUniform() * NR));
     // draw weighted RSTU
     double wRS(NR*NR), wTU(NR*NR);
 /*

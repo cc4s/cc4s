@@ -304,9 +304,9 @@ void ParticleHoleCoulombVertexDecomposition::dryEvaluateMp2(
   DryTensor<> imagGammaGai(3, Gamma.lens.data(), Gamma.syms.data());
 
   // allocate coulomb integrals
-  int Nv(Gamma.lens[1]);
-  int No(Gamma.lens[2]);
-  int lens[] = { Nv, Nv, No, No };
+  size_t Nv(Gamma.lens[1]);
+  size_t No(Gamma.lens[2]);
+  size_t lens[] = { Nv, Nv, No, No };
   int syms[] = { NS, NS, NS, NS };
   DryTensor<> Vabij(4, lens, syms);
 

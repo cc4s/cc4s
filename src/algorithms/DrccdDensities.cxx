@@ -115,11 +115,11 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
 
   // build reduced one body density matrix
   // additionally, build number operator expectation values
-  int Nv(Labij->lens[0]), No(Labij->lens[2]);
-  auto Dij( tcc->createTensor(std::vector<int>({No,No}), "Dij") );
-  auto Dab( tcc->createTensor(std::vector<int>({Nv,Nv}), "Dab") );
-  auto Ni( tcc->createTensor(std::vector<int>({No}), "Ni") );
-  auto Na( tcc->createTensor(std::vector<int>({Nv}), "Na") );
+  auto Nv(Labij->lens[0]), No(Labij->lens[2]);
+  auto Dij( tcc->createTensor(std::vector<size_t>({No,No}), "Dij") );
+  auto Dab( tcc->createTensor(std::vector<size_t>({Nv,Nv}), "Dab") );
+  auto Ni( tcc->createTensor(std::vector<size_t>({No}), "Ni") );
+  auto Na( tcc->createTensor(std::vector<size_t>({Nv}), "Na") );
   tcc->compile(
     (
       // note the sign from breaking up a hole line
@@ -180,7 +180,7 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   // build reduced two body density matrix
   // additionally, evaluate V_ee
   auto Gabij( tcc->createTensor(Vabij, "Gabij") );
-  auto Vee( tcc->createTensor(std::vector<int>(), "Vee") );
+  auto Vee( tcc->createTensor(std::vector<size_t>(), "Vee") );
   tcc-> compile(
     (
       // from Gamma^ab_ij

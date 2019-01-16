@@ -50,12 +50,12 @@ void DoublesAmplitudesFromVertex::dryRun() {
   );
 
   // get Nv,No
-  int Nv(YLai->lens[1]);
-  int No(YLai->lens[2]);
+  size_t Nv(YLai->lens[1]);
+  size_t No(YLai->lens[2]);
 
   // allocate amplitudes
   int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { Nv, Nv, No, No };
+  size_t vvoo[] = { Nv, Nv, No, No };
   DryTensor<> *Tabij(new DryTensor<>(4, vvoo, syms, SOURCE_LOCATION));
   Tabij->use();
 

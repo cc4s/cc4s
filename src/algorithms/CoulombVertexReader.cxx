@@ -120,10 +120,10 @@ void CoulombVertexReader::dryRun() {
     throw new EXCEPTION("Invalid file format");
   file.close();
 
-  int NG(header.NG);
-  int No(header.No);
-  int Nv(header.Nv);
-  int Np(No + Nv);
+  size_t NG(header.NG);
+  size_t No(header.No);
+  size_t Nv(header.Nv);
+  size_t Np(No + Nv);
   
   // Print NG, No, Nv, Np
   LOG(1, "Reader") << "NG=" << NG << std::endl;
@@ -132,7 +132,7 @@ void CoulombVertexReader::dryRun() {
   LOG(1, "Reader") << "Np=" << Np << std::endl;
 
   // Allocate output tensors
-  int vertexLens[] = { NG, Np, Np };
+  size_t vertexLens[] = { NG, Np, Np };
   int vertexSyms[] = { NS, NS, NS };
   DryTensor<> *epsi(new DryVector<>(No, SOURCE_LOCATION));
   DryTensor<> *epsa(new DryVector<>(Nv, SOURCE_LOCATION));

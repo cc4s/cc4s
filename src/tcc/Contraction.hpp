@@ -181,7 +181,7 @@ namespace tcc {
     PTR(ContractionOperation<F>) compileContractions(
       const std::vector<PTR(Operation<F>)> &operations,
       IndexCounts &indexCounts,
-      const int level = 0
+      const unsigned int level = 0
     ) {
       // no best contraction known at first
       PTR(ContractionOperation<F>) bestContractions;
@@ -274,9 +274,9 @@ namespace tcc {
           a->getResult(), a->getResult()->getName() + "'"
         )
       );
-      int64_t elementsCount(1);
-      for (int i: a->getResult()->lens) {
-        elementsCount *= i;
+      size_t elementsCount(1);
+      for (auto len: a->getResult()->lens) {
+        elementsCount *= len;
       }
       // assess costs
       Costs moveCosts(
@@ -301,23 +301,23 @@ namespace tcc {
       const PTR(Operation<F>) &b,
       IndexCounts &indexCounts
     ) {
-      int contractedIndexDimensions[
+      size_t contractedIndexDimensions[
         std::min(a->getResultIndices().length(), b->getResultIndices().length())
           + 1
       ];
       char outerIndices[
         a->getResultIndices().length() + b->getResultIndices().length() + 1
       ];
-      int outerIndexDimensions[
+      size_t outerIndexDimensions[
         a->getResultIndices().length() + b->getResultIndices().length() + 1
       ];
       char uniqueIndices[
         a->getResultIndices().length() + b->getResultIndices().length() + 1
       ];
-      int uniqueIndexDimensions[
+      size_t uniqueIndexDimensions[
         a->getResultIndices().length() + b->getResultIndices().length() + 1
       ];
-      int c(0), o(0), u(0);
+      unsigned int c(0), o(0), u(0);
 
       // determine common unique indices
       for (unsigned int i(0); i < a->getResultIndices().length(); ++i) {
@@ -330,8 +330,8 @@ namespace tcc {
           ++u;
         }
       }
-      const int uniqueAIndices(u);
-      int commonIndicesCount(0);
+      const unsigned int uniqueAIndices(u);
+      unsigned int commonIndicesCount(0);
       for (unsigned int i(0); i < b->getResultIndices().length(); ++i) {
         const char index(b->getResultIndices()[i]);
         char *previousIndex;
@@ -348,8 +348,8 @@ namespace tcc {
       }
       uniqueIndices[u] = 0;
 
-      int64_t outerElementsCount(1), contractedElementsCount(1);
-      for (int i(0); i < u; ++i) {
+      size_t outerElementsCount(1), contractedElementsCount(1);
+      for (unsigned int i(0); i < u; ++i) {
         const char index(uniqueIndices[i]);
         // go through unique indices
         if (indexCounts[index] > 0) {
@@ -369,7 +369,7 @@ namespace tcc {
       // allocate intermedate result
       PTR(Tensor<F>) contractionResult(
         a->getResult()->getTcc()->createTensor(
-          std::vector<int>(outerIndexDimensions, outerIndexDimensions+o),
+          std::vector<size_t>(outerIndexDimensions, outerIndexDimensions+o),
           a->getResult()->getName() + b->getResult()->getName()
         )
       );

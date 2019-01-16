@@ -52,10 +52,10 @@ void ParticleHoleCoulombVertexFromFactors::run(const bool dryRun) {
   auto LambdaFR( tcc->createTensor(MT::create(*ctfLambdaFR)) );
  
   // allocate tcc::Tensor for final result
-  int NF(LambdaFR->lens[0]);
-  int Nv(PiaR->lens[0]);
-  int No(PiiR->lens[0]);
-  auto GammaFai( tcc->createTensor(std::vector<int>({NF,Nv,No}), "GammaFai") );
+  size_t NF(LambdaFR->lens[0]);
+  size_t Nv(PiaR->lens[0]);
+  size_t No(PiiR->lens[0]);
+  auto GammaFai( tcc->createTensor(std::vector<size_t>({NF,Nv,No}), "GammaFai") );
 
   // compile
   auto operation(

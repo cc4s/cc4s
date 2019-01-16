@@ -91,7 +91,7 @@ void DrccdEquationOfMotion::run() {
 
     (*H20)["abij"] -= (*ctfVabij)["abji"];
 
-    auto Nv(epsa->lens[0]), No(epsi->lens[0]);
+    int Nv(epsa->lens[0]), No(epsi->lens[0]);
     // cdkl are row indices and abij are column indices
     int lens[] = {Nv,Nv,No,No, Nv,Nv,No,No};
     int syms[] = {NS,NS,NS,NS, NS,NS,NS,NS};
@@ -111,9 +111,9 @@ void DrccdEquationOfMotion::run() {
 
   determineEnergyShift();
 
-  auto beta(tcc->createTensor(std::vector<int>(), "beta"));
-  auto delta(tcc->createTensor(std::vector<int>(), "delta"));
-  auto energy(tcc->createTensor(std::vector<int>(), "energy"));
+  auto beta(tcc->createTensor(std::vector<size_t>(), "beta"));
+  auto delta(tcc->createTensor(std::vector<size_t>(), "delta"));
+  auto energy(tcc->createTensor(std::vector<size_t>(), "energy"));
   CTF::Scalar<> ctfBeta(*Cc4s::world);
   CTF::Scalar<> ctfDelta(*Cc4s::world);
   CTF::Scalar<> ctfEnergy(*Cc4s::world);

@@ -6,16 +6,16 @@
 
 using namespace cc4s;
 
-int64_t DryMemory::currentTotalSize = 0, DryMemory::maxTotalSize = 0;
+size_t DryMemory::currentTotalSize = 0, DryMemory::maxTotalSize = 0;
 std::vector<DryMemory::ExtendingResource> DryMemory::extendingResources;
 
 
 template <typename F>
 DryMatrix<F>::DryMatrix(
-  int rows, int cols, int sym, SourceLocation const &location
+  size_t rows, size_t cols, int sym, SourceLocation const &location
 ):
   DryTensor<F>(
-    2, std::array<int,2>{{rows, cols}}.data(),
+    2, std::array<size_t,2>{{rows, cols}}.data(),
     std::array<int,2>{{sym, 0}}.data(),
     location
   )
@@ -24,19 +24,19 @@ DryMatrix<F>::DryMatrix(
 // instantiate
 template
 DryMatrix<Float64>::DryMatrix(
-  int rows, int cols, int sym, SourceLocation const &location
+  size_t rows, size_t cols, int sym, SourceLocation const &location
 );
 template
 DryMatrix<Complex64>::DryMatrix(
-  int rows, int cols, int sym, SourceLocation const &location
+  size_t rows, size_t cols, int sym, SourceLocation const &location
 );
 
 template <typename F>
 DryVector<F>::DryVector(
-  int elements, SourceLocation const &location
+  size_t elements, SourceLocation const &location
 ):
   DryTensor<F>(
-    1, std::array<int,1>{{elements}}.data(),
+    1, std::array<size_t,1>{{elements}}.data(),
     std::array<int,1>{{0}}.data(),
     location
   )
@@ -44,9 +44,9 @@ DryVector<F>::DryVector(
 }
 // instantiate
 template
-DryVector<Float64>::DryVector(int elements, SourceLocation const &location);
+DryVector<Float64>::DryVector(size_t elements, SourceLocation const &location);
 template
-DryVector<Complex64>::DryVector(int elements, SourceLocation const &location);
+DryVector<Complex64>::DryVector(size_t elements, SourceLocation const &location);
 
 
 template <typename F>
@@ -54,7 +54,7 @@ DryScalar<F>::DryScalar(
   SourceLocation const &location
 ):
   DryTensor<F>(
-    0, std::array<int,0>{{}}.data(),
+    0, std::array<size_t,0>{{}}.data(),
     std::array<int,0>{{}}.data(),
     location
   )
@@ -72,7 +72,7 @@ DryScalar<F>::DryScalar(
   SourceLocation const &location
 ):
   DryTensor<F>(
-    0, std::array<int,0>{{}}.data(),
+    0, std::array<size_t,0>{{}}.data(),
     std::array<int,0>{{}}.data(),
     location
   )

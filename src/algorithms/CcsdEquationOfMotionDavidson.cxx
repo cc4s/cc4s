@@ -1091,11 +1091,11 @@ CcsdPreConditioner<F>::getInitialBasis(
     localElements.begin(), localElements.end(),
     EomDiagonalValueComparator<double>()
   );
-  int localElementsSize( localElements.size() );
+  size_t localElementsSize( localElements.size() );
 
   // gather all K elements of all processors at root
   //   convert into homogeneous arrays for MPI gather
-  const int trialEigenVectorsCount(10*eigenVectorsCount);
+  const size_t trialEigenVectorsCount(10*eigenVectorsCount);
   std::vector<size_t> localLowestElementIndices(trialEigenVectorsCount);
   std::vector<F> localLowestElementValues(trialEigenVectorsCount);
   for (
@@ -1113,7 +1113,7 @@ CcsdPreConditioner<F>::getInitialBasis(
   communicator.gather(localLowestElementValues, lowestElementValues);
   //   convert back into (index,value) pairs for sorting
   std::vector<std::pair<size_t, F>> lowestElements(lowestElementValues.size());
-  for (int i(0); i < lowestElementValues.size(); ++i) {
+  for (size_t i(0); i < lowestElementValues.size(); ++i) {
     lowestElements[i].first = lowestElementIndices[i];
     lowestElements[i].second = lowestElementValues[i];
   }

@@ -21,7 +21,7 @@
 // TODO: heuristics: limit number of simultaneously considered intermediates
 // TODO: fix max memory assessment
 // TODO: mixed type tensor operations
-// TODO: unary and binary function application
+// TODO: binary function application
 // TODO: expression definitions with local index renaming
 // TODO: permutation and anti-permutation operator
 // TODO: common subexpression optimization
@@ -57,7 +57,7 @@ namespace tcc {
      * which specifies the environment the tensor lives in.
      **/
     PTR(Tensor<F>) createTensor(
-      const std::vector<int> &lens,
+      const std::vector<size_t> &lens,
       const std::string &name
     ) {
       return NEW(Tensor<F>,

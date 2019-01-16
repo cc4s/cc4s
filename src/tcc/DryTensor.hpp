@@ -11,10 +11,10 @@
 namespace cc4s {
   class DryMemory {
   public:
-    typedef std::pair<int64_t, SourceLocation> ExtendingResource;
+    typedef std::pair<size_t, SourceLocation> ExtendingResource;
 
     static void allocate(
-      int64_t size, SourceLocation const &location
+      size_t size, SourceLocation const &location
     ) {
       currentTotalSize += size;
       if (currentTotalSize > maxTotalSize) {
@@ -32,10 +32,10 @@ namespace cc4s {
 */
       }
     }
-    static void free(int64_t size) {
+    static void free(size_t size) {
       currentTotalSize -= size;
     }
-    static int64_t currentTotalSize, maxTotalSize;
+    static size_t currentTotalSize, maxTotalSize;
     static std::vector<ExtendingResource> extendingResources;
   };
 
@@ -51,10 +51,10 @@ namespace cc4s {
      * Symmetryies are also ignored at the moment.
      */
     DryTensor(
-      int order_, int const *lens_, int const *syms_,
+      const size_t order_, const size_t *lens_, const int *syms_,
       SourceLocation const &location_ = SourceLocation()
     ): order(order_), lens(order_), syms(order_), location(location_) {
-      for (int i(0); i < order_; ++i) {
+      for (size_t i(0); i < order_; ++i) {
         lens[i] = lens_[i];
         syms[i] = syms_[i];
       }
@@ -73,10 +73,10 @@ namespace cc4s {
     }
     virtual void use() {}
 
-    int64_t getElementsCount() const {
-      int64_t elementsCount(1);
-      for (int i(0); i < order; ++i) {
-        elementsCount *= lens[i];
+    size_t getElementsCount() const {
+      size_t elementsCount(1);
+      for (auto len: lens) {
+        elementsCount *= len;
       }
       return elementsCount;
     }
@@ -88,8 +88,9 @@ namespace cc4s {
       return name;
     }
 
-    int order;
-    std::vector<int> lens, syms;
+    size_t order;
+    std::vector<size_t> lens;
+    std::vector<int> syms;
     SourceLocation location;
     std::string name;
 
@@ -101,14 +102,14 @@ namespace cc4s {
     void free() {
       DryMemory::free(size);
     }
-    int64_t size;
+    size_t size;
   };
 
   template <typename F=double>
   class DryMatrix: public DryTensor<F> {
   public:
     DryMatrix(
-      int rowCount, int columnCount, int sym,
+      size_t rowCount, size_t columnCount, int sym,
       SourceLocation const &location = SourceLocation()
     );
   };
@@ -117,7 +118,7 @@ namespace cc4s {
   class DryVector: public DryTensor<F> {
   public:
     DryVector(
-      int elementsCount, SourceLocation const &location = SourceLocation()
+      size_t elementsCount, SourceLocation const &location = SourceLocation()
     );
   };
 

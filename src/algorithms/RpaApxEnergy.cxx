@@ -43,17 +43,17 @@ void RpaApxEnergy::run() {
   auto epsa(getTensorArgument<>("ParticleEigenEnergies"));
 
   // get index ranges for particles and holes
-  int NF(GammaFqr->lens[0]);
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-  int Np(GammaFqr->lens[1]);
+  size_t NF(GammaFqr->lens[0]);
+  size_t No(epsi->lens[0]);
+  size_t Nv(epsa->lens[0]);
+  size_t Np(GammaFqr->lens[1]);
 
   int aStart(Np-Nv), aEnd(Np);
   int iStart(0), iEnd(No);
-  int FiaStart[] = {0, iStart,aStart};
-  int FiaEnd[]   = {NF,iEnd,  aEnd};
-  int FaiStart[] = {0, aStart,iStart};
-  int FaiEnd[]   = {NF,aEnd,  iEnd};
+  int FiaStart[] = {0, int(iStart),int(aStart)};
+  int FiaEnd[]   = {int(NF),int(iEnd), int(aEnd)};
+  int FaiStart[] = {0, int(aStart),int(iStart)};
+  int FaiEnd[]   = {int(NF), int(aEnd), int(iEnd)};
   auto ctfGammaFia(GammaFqr->slice(FiaStart, FiaEnd));
   auto ctfGammaFai(GammaFqr->slice(FaiStart, FaiEnd));
   auto ctfConjGammaFia(ctfGammaFia);
@@ -73,7 +73,7 @@ void RpaApxEnergy::run() {
   toComplexTensor(*realWn, complexWn);
   auto Wn(tcc->createTensor(MT::create(complexWn)));
 
-  CTF::Tensor<complex> ctfPain(3, std::vector<int>({Nv,No,Nn}).data());
+  CTF::Tensor<complex> ctfPain(3, std::vector<int>({int(Nv),int(No),Nn}).data());
   CTF::Transform<double, complex>(
     std::function<void(double, complex &)>(
       [](double eps, complex &d) { d = eps; }
@@ -102,10 +102,10 @@ void RpaApxEnergy::run() {
   auto Pain(tcc->createTensor(MT::create(ctfPain)));
   auto conjPain(tcc->createTensor(MT::create(ctfConjPain)));
 
-  auto mp2Direct(tcc->createTensor(std::vector<int>(), "mp2Direct"));
-  auto mp2Exchange(tcc->createTensor(std::vector<int>(), "mp2Exchange"));
-  chi0VFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chi0V");
-  chi1VFGn = tcc->createTensor(std::vector<int>({NF,NF,Nn}), "chi1V");
+  auto mp2Direct(tcc->createTensor(std::vector<size_t>(), "mp2Direct"));
+  auto mp2Exchange(tcc->createTensor(std::vector<size_t>(), "mp2Exchange"));
+  chi0VFGn = tcc->createTensor(std::vector<size_t>({NF,NF,size_t(Nn)}), "chi0V");
+  chi1VFGn = tcc->createTensor(std::vector<size_t>({NF,NF,size_t(Nn)}), "chi1V");
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   LOG(1, "RPA") << "spins=" << spins << std::endl;
   int computeExchange(getIntegerArgument("exchange", 1));

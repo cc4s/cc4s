@@ -25,13 +25,14 @@ namespace cc4s {
 
     // constructors called by factory
     CtfMachineTensor(
-      const std::vector<int> &lens,
+      const std::vector<size_t> &lens,
       const std::string &name,
       CTF::World *world,
       const ProtectedToken &
     ):
       tensor(
-        static_cast<int>(lens.size()), lens.data(),
+        static_cast<int>(lens.size()),
+        std::vector<int>(lens.begin(), lens.end()).data(),
         std::vector<int>(0, lens.size()).data(),
         *world, name.c_str()
       )
@@ -174,11 +175,11 @@ namespace cc4s {
     virtual void slice(
       F alpha,
       const PTR(tcc::MachineTensor<F>) &A,
-      const std::vector<int> aBegins,
-      const std::vector<int> aEnds,
+      const std::vector<size_t> aBegins,
+      const std::vector<size_t> aEnds,
       F beta,
-      const std::vector<int> begins,
-      const std::vector<int> ends
+      const std::vector<size_t> begins,
+      const std::vector<size_t> ends
     ) {
       std::shared_ptr<CtfMachineTensor<F>> ctfA(
         std::dynamic_pointer_cast<CtfMachineTensor<F>>(A)
@@ -195,17 +196,20 @@ namespace cc4s {
         getName() << "[" << begins << "," << ends << "]" << std::endl;
 */
       tensor.slice(
-        begins.data(), ends.data(),
+        std::vector<int>(begins.begin(), begins.end()).data(),
+        std::vector<int>(ends.begin(), ends.end()).data(),
         beta,
-        ctfA->tensor, aBegins.data(), aEnds.data(),
+        ctfA->tensor,
+        std::vector<int>(aBegins.begin(), aBegins.end()).data(),
+        std::vector<int>(aEnds.begin(), aEnds.end()).data(),
         alpha
       );
     }
 
     // TODO: interfaces to be defined: permute, transform
 
-    virtual std::vector<int> getLens() const {
-      return std::vector<int>(tensor.lens, tensor.lens+tensor.order);
+    virtual std::vector<size_t> getLens() const {
+      return std::vector<size_t>(tensor.lens, tensor.lens+tensor.order);
     }
 
     virtual std::string getName() const {
@@ -236,7 +240,7 @@ namespace cc4s {
     }
 
     virtual std::shared_ptr<tcc::MachineTensor<F>> createTensor(
-      const std::vector<int> &lens,
+      const std::vector<size_t> &lens,
       const std::string &name
     ) {
       return std::shared_ptr<typename tcc::MachineTensor<F>>(

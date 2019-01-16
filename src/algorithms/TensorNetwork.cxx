@@ -28,11 +28,11 @@ void TensorNetwork::run() {
 }
 
 void TensorNetwork::dryRun() {
-  int No(10);
-  int Nv(90);
-  int Np(No+Nv);
-  int NF(200);
-  int NR(400);
+  size_t No(10);
+  size_t Nv(90);
+  size_t Np(No+Nv);
+  size_t NF(200);
+  size_t NR(400);
   auto machineTensorFactory(
 //    CtfMachineTensorFactory<>::create(Cc4s::world)
     DryMachineTensorFactory<>::create()
@@ -41,29 +41,29 @@ void TensorNetwork::dryRun() {
 
 /*
   shared_ptr<Tensor<complex>> Tc(
-    tcc.createTensor<complex>(std::vector<int>({Nv,Nv,No,No}), "Tc")
+    tcc.createTensor<complex>(std::vector<size_t>({Nv,Nv,No,No}), "Tc")
   );
 */
   auto T(
-    tcc->createTensor(std::vector<int>({Nv,Nv,No,No}), "T")
+    tcc->createTensor(std::vector<size_t>({Nv,Nv,No,No}), "T")
   );
   auto D(
-    tcc->createTensor(std::vector<int>({Nv,Nv,No,No}), "D")
+    tcc->createTensor(std::vector<size_t>({Nv,Nv,No,No}), "D")
   );
   auto Pi(
-    tcc->createTensor(std::vector<int>({NR,Np}), "Pi")
+    tcc->createTensor(std::vector<size_t>({NR,Np}), "Pi")
   );
   auto PiT(
-    tcc->createTensor(std::vector<int>({NR,Np}), "PiT")
+    tcc->createTensor(std::vector<size_t>({NR,Np}), "PiT")
   );
   auto Lambda(
-    tcc->createTensor(std::vector<int>({NR,NF}), "Lambda")
+    tcc->createTensor(std::vector<size_t>({NR,NF}), "Lambda")
   );
   auto LambdaT(
-    tcc->createTensor(std::vector<int>({NR,NF}), "LambdaT")
+    tcc->createTensor(std::vector<size_t>({NR,NF}), "LambdaT")
   );
   auto Gamma(
-    tcc->createTensor(std::vector<int>({NF,Np,Np}), "Gamma")
+    tcc->createTensor(std::vector<size_t>({NF,Np,Np}), "Gamma")
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
@@ -88,23 +88,23 @@ void TensorNetwork::dryRun() {
 // this contraction already requires heuristics
 /*
   shared_ptr<Tensor<>> Pia(
-    tcc->createTensor(std::vector<int>({NR,Nv}), "Pia")
+    tcc->createTensor(std::vector<size_t>({NR,Nv}), "Pia")
   );
   shared_ptr<Tensor<>> Pii(
-    tcc->createTensor(std::vector<int>({NR,No}), "Pii")
+    tcc->createTensor(std::vector<size_t>({NR,No}), "Pii")
   );
-  int Nn(7);
+  size_t Nn(7);
   shared_ptr<Tensor<>> w(
-    tcc->createTensor(std::vector<int>({Nn}), "w")
+    tcc->createTensor(std::vector<size_t>({Nn}), "w")
   );
   shared_ptr<Tensor<>> H(
-    tcc->createTensor(std::vector<int>({No,Nn}), "H")
+    tcc->createTensor(std::vector<size_t>({No,Nn}), "H")
   );
   shared_ptr<Tensor<>> P(
-    tcc->createTensor(std::vector<int>({Nv,Nn}), "P")
+    tcc->createTensor(std::vector<size_t>({Nv,Nn}), "P")
   );
   shared_ptr<Tensor<>> e(
-    tcc->createTensor(std::vector<int>(), "e")
+    tcc->createTensor(std::vector<size_t>(), "e")
   );
 
   auto imaginaryTimeMp2Operation = tcc->compile(

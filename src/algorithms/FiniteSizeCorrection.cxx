@@ -548,8 +548,8 @@ void FiniteSizeCorrection::dryCalculateStructureFactor() {
 
   int symo[] = { NS, NS };
 
-  int NG=GammaGai->lens[0];
-  int len[]={NG,1};
+  size_t NG(GammaGai->lens[0]);
+  size_t len[]={NG,1};
 
   DryTensor<> realInfVG(2,len,symo);
   DryTensor<> realVG(realInfVG);
@@ -573,12 +573,12 @@ void FiniteSizeCorrection::dryCalculateStructureFactor() {
   );
 
   // Compute the No,Nv
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
+  size_t No(epsi->lens[0]);
+  size_t Nv(epsa->lens[0]);
 
   // Allocate the doubles amplitudes
   int syms4[] = { NS, NS, NS, NS };
-  int vvoo[] = { Nv, Nv, No, No };
+  size_t vvoo[] = { Nv, Nv, No, No };
   DryTensor<> Tabij(4, vvoo, syms4);
 
   DryTensor<> rTabij(Tabij);

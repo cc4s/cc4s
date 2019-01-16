@@ -51,20 +51,20 @@ void ParticleHoleCoulombIntegrals::dryRun() {
                                ("ParticleHoleCoulombVertex"));
 
   // Compute the No,Nv,NG,Np
-  int NG(GammaGai->lens[0]);
-  int No(GammaGai->lens[2]);
-  int Nv(GammaGai->lens[1]);
+  size_t NG(GammaGai->lens[0]);
+  size_t No(GammaGai->lens[2]);
+  size_t Nv(GammaGai->lens[1]);
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { Nv, Nv, No, No };
+  size_t vvoo[] = { Nv, Nv, No, No };
 
   DryTensor<> *Vabij(new DryTensor<>(4, vvoo, syms));
 
   allocatedTensorArgument("PPHHCoulombIntegrals", Vabij);
 
   // Allocate and realGammaGai and imagGammaGai
-  int GaiLens[]   = {NG,Nv,No};
+  size_t GaiLens[]   = {NG,Nv,No};
 
   DryTensor<> realGammaGai(3, GaiLens, syms);
   DryTensor<> imagGammaGai(3, GaiLens, syms);

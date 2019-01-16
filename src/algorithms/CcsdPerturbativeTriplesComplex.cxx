@@ -360,10 +360,10 @@ void CcsdPerturbativeTriplesComplex::dryRun() {
   );
   
   // Compute the No,Nv
-  int Nv(epsa->lens[0]);
+  size_t Nv(epsa->lens[0]);
 
   // Allocate the doubles amplitudes
-  int vvv[] = { Nv, Nv, Nv };
+  size_t vvv[] = { Nv, Nv, Nv };
   int   syms[] = { NS, NS, NS };
   DryTensor<> SVabcijk(3, vvv, syms, SOURCE_LOCATION);
   DryTensor<> DVabcijk(3, vvv, syms, SOURCE_LOCATION);

@@ -248,11 +248,11 @@ void PerturbativeTriples::dryRun() {
   );
   
   // Compute the No,Nv
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
+  size_t No(epsi->lens[0]);
+  size_t Nv(epsa->lens[0]);
 
   // Allocate the doubles amplitudes
-  int vvvooo[] = { Nv, Nv , Nv , No , No , No };
+  size_t vvvooo[] = { Nv, Nv , Nv , No , No , No };
   int   syms[] = { NS, NS,  NS , NS , NS , NS };
   DryTensor<> Tabcijk(6, vvvooo, syms, SOURCE_LOCATION);
 
@@ -284,11 +284,11 @@ void PerturbativeTriples::dryRunPiecuch() {
   );
   
   // Compute the No,Nv
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
+  size_t No(epsi->lens[0]);
+  size_t Nv(epsa->lens[0]);
 
   // Allocate the doubles amplitudes
-  int vvvooo[] = { Nv, Nv , Nv , No , No , No };
+  size_t vvvooo[] = { Nv, Nv , Nv , No , No , No };
   int   syms[] = { NS, NS,  NS , NS , NS , NS };
   DryTensor<> Tabcijk(6, vvvooo, syms, SOURCE_LOCATION);
   DryTensor<> Yabcijk(6, vvvooo, syms, SOURCE_LOCATION);

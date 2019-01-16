@@ -672,16 +672,16 @@ void BasisSetExtrapolation::dryQGG(int iStart, int iEnd){
 
   DryTensor<> *epsi(getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies"));
 
-  int No(epsi->lens[0]);
-  if (iStart >= 0 && iEnd <= No && iStart < iEnd){
+  size_t No(epsi->lens[0]);
+  if (iStart >= 0 && iEnd <= int(No) && iStart < iEnd){
     No = iEnd - iStart;
   }
   DryTensor<complex> *GammaGai(getTensorArgument<complex, DryTensor<complex>>("ParticleHoleCoulombVertex"));
 
-  int NF(GammaGai->lens[0]);
-  int NFF[] = {NF, NF};
-  int NGG[] = {NF, NF, No};
-  int NFG[] = {NF, NF, No, No};
+  size_t NF(GammaGai->lens[0]);
+  size_t NFF[] = {NF, NF};
+  size_t NGG[] = {NF, NF, No};
+  size_t NFG[] = {NF, NF, No, No};
   int syms0[] = {NS, NS};
   int syms1[] = {NS, NS, NS};
   int syms2[] = {NS, NS, NS, NS}; 
