@@ -105,7 +105,13 @@ namespace cc4s {
         getName() << "[" << bIndices << "] <<= f(" <<
         alpha << " * " << A->getName() << "[" << aIndices << "]) + " <<
         beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
-      // TODO: ...
+      CTF::Transform<G,F>(
+        std::function<void(const G, F &)>(
+          [f,alpha,beta](const G x, F &y) { y = f(alpha*x) + beta*y; }
+        )
+      ) (
+        A->tensor[aIndices.c_str()], tensor[bIndices.c_str()]
+      );
     }
 
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]

@@ -251,20 +251,25 @@ void LaplaceMp2Energy::normalizeV(
   );
 }
 
+real realpart(const complex z) {
+  return std::real(z);
+}
+
 double LaplaceMp2Energy::calculateNumerically() {
   typedef tcc::Tcc<CtfEngine> TCC;
   auto Gp(tcc::Tensor<complex,CtfEngine>::create(*GpRSn));
   auto Gh(tcc::Tensor<complex,CtfEngine>::create(*GhRSn));
   auto V(tcc::Tensor<complex,CtfEngine>::create(*VRS));
   auto w(tcc::Tensor<complex,CtfEngine>::create(*wn));
-  auto energy(TCC::tensor<complex>(std::vector<size_t>(), "energy"));
+  auto energy(TCC::tensor<real>(std::vector<size_t>(), "energy"));
   tcc::IndexCounts indexCounts;
 
   (
-    (*energy)[""] <<=
+    (*energy)[""] <<= tcc::map(std::function<real(const complex)>(realpart),
       -2.0 * (*w)["n"] *
       (*V)["RS"] * (*V)["TU"] *
       (*Gp)["RTn"] * (*Gh)["TRn"] * (*Gp)["SUn"] * (*Gh)["USn"]
+    )
 // the exchange term requires N_R^3 memory
 /*
     (*energy)[""] +=
