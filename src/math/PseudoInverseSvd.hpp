@@ -11,7 +11,7 @@ namespace cc4s {
   template <typename F>
   class PseudoInverseSvd {
   public:
-    PseudoInverseSvd(CTF::Matrix<F> &A, double epsilon = 1e-12);
+    PseudoInverseSvd(CTF::Tensor<F> &A, double epsilon = 1e-12);
     CTF::Matrix<F> &get();
 
   protected:
@@ -21,7 +21,7 @@ namespace cc4s {
   template <typename F>
   class DryPseudoInverseSvd {
   public:
-    DryPseudoInverseSvd(DryMatrix<F> const &matrix);
+    DryPseudoInverseSvd(DryTensor<F> const &matrix);
     DryMatrix<F> &get();
 
   protected:
