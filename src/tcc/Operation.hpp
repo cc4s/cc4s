@@ -4,22 +4,14 @@
 
 #include <tcc/Costs.hpp>
 
-#include <util/SharedPointer.hpp>
-
 namespace tcc {
-  template <typename F>
-  class Tensor;
-
-  template <typename F>
+  template <typename TE>
   class Operation {
   public:
     virtual ~Operation() {
     }
 
     virtual void execute() = 0;
-
-    virtual PTR(Tensor<F>) getResult() = 0;
-    virtual const std::string &getResultIndices() = 0;
 
     /**
      * \brief Costs to evaluate this operation in time and memory

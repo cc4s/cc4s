@@ -40,7 +40,7 @@ void DrccdDensities::run() {
   );
 
   // call generic (dry and non-dry) run method
-  run<CTF::Tensor<>, CtfMachineTensor<>>(epsi, epsa, ctfDabij, false);
+  run<CTF::Tensor<real>, CtfMachineTensor<real>>(epsi, epsa, ctfDabij, false);
 
   // convert hole occupancies from particle/hole operator N'_i = i^\dagger i
   // to electron N_i - c_i^\dagger c_i, where i^\dagger = c_i
@@ -55,50 +55,51 @@ void DrccdDensities::dryRun() {
       *getTensorArgument<double, DryTensor<>>("DrccdDoublesAmplitudes")
     )
   );
-  run<DryTensor<>, DryMachineTensor<>>(dryDabij, nullptr, nullptr, true);
+  run<DryTensor<real>, DryMachineTensor<real>>(dryDabij, nullptr, nullptr, true);
 }
 
 template <typename T, typename MT>
 void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
-  auto machineTensorFactory(MT::Factory::create());
-  auto tcc(Tcc<double>::create(machineTensorFactory));
+  typedef typename MT::TensorEngine Engine;
+  typedef tcc::Tcc<Engine> TCC;
 
   // Read the Drccd doubles amplitudes Tabij
   T *ctfTabij( getTensorArgument<double, T>("DrccdDoublesAmplitudes") );
-  auto Tabij( tcc->createTensor(MT::create(*ctfTabij)) );
+  auto Tabij( tcc::Tensor<real,Engine>::create(*ctfTabij) );
 
   // Read the required Coulomb integrals Vabij
   T *ctfVabij( getTensorArgument<double, T>("PPHHCoulombIntegrals") );
-  auto Vabij( tcc->createTensor(MT::create(*ctfVabij)) );
+  auto Vabij( tcc::Tensor<real,Engine>::create(*ctfVabij) );
   T *ctfVaibj( getTensorArgument<double, T>("PHPHCoulombIntegrals") );
-  auto Vaibj( tcc->createTensor(MT::create(*ctfVaibj)) );
+  auto Vaibj( tcc::Tensor<real,Engine>::create(*ctfVaibj) );
   T *ctfVijkl( getTensorArgument<double, T>("HHHHCoulombIntegrals") );
-  auto Vijkl( tcc->createTensor(MT::create(*ctfVijkl)) );
+  auto Vijkl( tcc::Tensor<real,Engine>::create(*ctfVijkl) );
 
   // convert energy denominators tensor into tcc tensor
-  auto Dabij( tcc->createTensor(MT::create(*ctfDabij)) );
+  auto Dabij( tcc::Tensor<real,Engine>::create(*ctfDabij) );
   delete ctfDabij;
   // same for the HF eigenvalues
-  auto epsi( tcc->createTensor(MT::create(*ctfEpsi)) );
-  auto epsa( tcc->createTensor(MT::create(*ctfEpsa)) );
+  auto epsi( tcc::Tensor<real,Engine>::create(*ctfEpsi) );
+  auto epsa( tcc::Tensor<real,Engine>::create(*ctfEpsa) );
 
 
   // create Lambda amplitudes and residuum of same shape as doubles amplitudes
-  auto Labij( tcc->createTensor(Tabij, "Labij") );
-  auto Rabij( tcc->createTensor(Tabij, "Rabij") );
+  auto Labij( TCC::template tensor(Tabij, "Labij") );
+  auto Rabij( TCC::template tensor(Tabij, "Rabij") );
 
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   // compile Lambda equation iteration
+  tcc::IndexCounts indexCounts;
   auto iterationOperation(
-    tcc->compile( (
+    (
       (*Rabij)["abij"] <<= (*Vabij)["abij"],
       (*Rabij)["abij"] += spins * (*Labij)["acik"] * (*Vabij)["cbkj"],
       (*Rabij)["abij"] += spins * (*Vabij)["acik"] * (*Labij)["cbkj"],
       (*Rabij)["abij"] += spins*spins*(*Labij)["acik"]*(*Tabij)["cdkl"]*(*Vabij)["dblj"],
       (*Rabij)["abij"] += spins*spins*(*Vabij)["acik"]*(*Tabij)["cdkl"]*(*Labij)["dblj"],
       (*Labij)["abij"] <<= (*Rabij)["abij"] * (*Dabij)["abij"]
-    ) )
+    )->compile(indexCounts)
   );
 
   // execute iterations
@@ -110,101 +111,95 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
 
   allocatedTensorArgument<double, T>(
     "DrccdLambdaDoublesAmplitudes",
-    new T(Labij->template getMachineTensor<MT>()->tensor)
+    new T(Labij->getMachineTensor()->tensor)
   );
 
   // build reduced one body density matrix
   // additionally, build number operator expectation values
   auto Nv(Labij->lens[0]), No(Labij->lens[2]);
-  auto Dij( tcc->createTensor(std::vector<size_t>({No,No}), "Dij") );
-  auto Dab( tcc->createTensor(std::vector<size_t>({Nv,Nv}), "Dab") );
-  auto Ni( tcc->createTensor(std::vector<size_t>({No}), "Ni") );
-  auto Na( tcc->createTensor(std::vector<size_t>({Nv}), "Na") );
-  tcc->compile(
-    (
-      // note the sign from breaking up a hole line
-      (*Dij)["ij"] <<= -spins * (*Tabij)["cdkj"] * (*Labij)["cdki"],
-      (*Dab)["ab"] <<= +spins * (*Tabij)["cbkl"] * (*Labij)["cakl"],
-      (*Ni)["i"] <<= spins * (*Dij)["ii"],
-      (*Na)["a"] <<= spins * (*Dab)["aa"]
-    )
-  )->execute();
+  auto Dij( TCC::template tensor(std::vector<size_t>({No,No}), "Dij") );
+  auto Dab( TCC::template tensor(std::vector<size_t>({Nv,Nv}), "Dab") );
+  auto Ni( TCC::template tensor(std::vector<size_t>({No}), "Ni") );
+  auto Na( TCC::template tensor(std::vector<size_t>({Nv}), "Na") );
+  (
+    // note the sign from breaking up a hole line
+    (*Dij)["ij"] <<= -spins * (*Tabij)["cdkj"] * (*Labij)["cdki"],
+    (*Dab)["ab"] <<= +spins * (*Tabij)["cbkl"] * (*Labij)["cakl"],
+    (*Ni)["i"] <<= spins * (*Dij)["ii"],
+    (*Na)["a"] <<= spins * (*Dab)["aa"]
+  )->compile(indexCounts)->execute();
   allocatedTensorArgument<double, T>(
-    "DrccdOneBodyHHDensity", new T(Dij->template getMachineTensor<MT>()->tensor)
+    "DrccdOneBodyHHDensity", new T(Dij->getMachineTensor()->tensor)
   );
   allocatedTensorArgument<double, T>(
-    "DrccdOneBodyPPDensity", new T(Dab->template getMachineTensor<MT>()->tensor)
+    "DrccdOneBodyPPDensity", new T(Dab->getMachineTensor()->tensor)
   );
   allocatedTensorArgument<double, T>(
-    "DrccdHoleOccupancies", new T(Ni->template getMachineTensor<MT>()->tensor)
+    "DrccdHoleOccupancies", new T(Ni->getMachineTensor()->tensor)
   );
   allocatedTensorArgument<double, T>(
-    "DrccdParticleOccupancies",new T(Na->template getMachineTensor<MT>()->tensor)
+    "DrccdParticleOccupancies",new T(Na->getMachineTensor()->tensor)
   );
 
   // build single particle energies (eigenvalues of HF - effective interaction)
   // this lets T + V_ne = Np*ep
-  auto ei( tcc->createTensor(epsi, "ei") );
-  auto ea( tcc->createTensor(epsa, "ea") );
-  auto Veei( tcc->createTensor(epsi, "Veei") );
-  auto Veea( tcc->createTensor(epsa, "Veea") );
-  tcc->compile(
-    (
-      (*Veei)["i"] <<= 0.5*spins*spins * (*Vijkl)["ijij"],
-      (*Veei)["i"] -= 0.5*spins * (*Vijkl)["ijji"],
-      (*Veea)["a"] <<= 0.5*spins*spins * (*Vaibj)["ajaj"],
-      (*Veea)["a"] -= 0.5*spins * (*Vabij)["aajj"],
-      (*ei)["i"] <<= (*epsi)["i"],
-      (*ei)["i"] -= (*Veei)["i"],
-      (*ea)["a"] <<= (*epsa)["a"],
-      (*ea)["a"] -= (*Veea)["a"]
-    )
-  )->execute();
+  auto ei( TCC::template tensor(epsi, "ei") );
+  auto ea( TCC::template tensor(epsa, "ea") );
+  auto Veei( TCC::template tensor(epsi, "Veei") );
+  auto Veea( TCC::template tensor(epsa, "Veea") );
+  (
+    (*Veei)["i"] <<= 0.5*spins*spins * (*Vijkl)["ijij"],
+    (*Veei)["i"] -= 0.5*spins * (*Vijkl)["ijji"],
+    (*Veea)["a"] <<= 0.5*spins*spins * (*Vaibj)["ajaj"],
+    (*Veea)["a"] -= 0.5*spins * (*Vabij)["aajj"],
+    (*ei)["i"] <<= (*epsi)["i"],
+    (*ei)["i"] -= (*Veei)["i"],
+    (*ea)["a"] <<= (*epsa)["a"],
+    (*ea)["a"] -= (*Veea)["a"]
+  )->compile(indexCounts)->execute();
   allocatedTensorArgument<double, T>(
     "DrccdOneBodyCoulombHoleEnergies",
-    new T(Veei->template getMachineTensor<MT>()->tensor)
+    new T(Veei->getMachineTensor()->tensor)
   );
   allocatedTensorArgument<double, T>(
     "DrccdOneBodyCoulombParticleEnergies",
-    new T(Veea->template getMachineTensor<MT>()->tensor)
+    new T(Veea->getMachineTensor()->tensor)
   );
   allocatedTensorArgument<double, T>(
     "DrccdOneBodyHoleEnergies",
-    new T(ei->template getMachineTensor<MT>()->tensor)
+    new T(ei->getMachineTensor()->tensor)
   );
   allocatedTensorArgument<double, T>(
     "DrccdOneBodyParticleEnergies",
-    new T(ea->template getMachineTensor<MT>()->tensor)
+    new T(ea->getMachineTensor()->tensor)
   );
 
   // build reduced two body density matrix
   // additionally, evaluate V_ee
-  auto Gabij( tcc->createTensor(Vabij, "Gabij") );
-  auto Vee( tcc->createTensor(std::vector<size_t>(), "Vee") );
-  tcc-> compile(
-    (
-      // from Gamma^ab_ij
-      (*Gabij)["abij"] <<= (*Tabij)["abij"],
-      (*Gabij)["abij"] += spins*spins * (*Tabij)["acik"]*(*Labij)["cdkl"]*(*Tabij)["dblj"],
-      // from Gamma^aj_ib
-      (*Gabij)["abij"] += spins * (*Tabij)["acik"] * (*Labij)["bcjk"],
-      // from Gamma^ib_aj
-      (*Gabij)["abij"] += spins * (*Tabij)["cbkj"] * (*Labij)["caki"],
-      // from Gamma ^ij_ab
-      (*Gabij)["abij"] += (*Labij)["abij"],
-      // calcualte Coulomb energy beyond first order
-      (*Vee)[""] <<= 0.5*spins*spins * (*Gabij)["abij"] * (*Vabij)["abij"],
-      // the last ineraction is also exchanged in drCCD: i.e. <0|1 V T|0>
-      (*Vee)[""] -= 0.5*spins * (*Tabij)["abij"] * (*Vabij)["abji"]
-    )
-  )->execute();
+  auto Gabij( TCC::template tensor(Vabij, "Gabij") );
+  auto Vee( TCC::template tensor(std::vector<size_t>(), "Vee") );
+  (
+    // from Gamma^ab_ij
+    (*Gabij)["abij"] <<= (*Tabij)["abij"],
+    (*Gabij)["abij"] += spins*spins * (*Tabij)["acik"]*(*Labij)["cdkl"]*(*Tabij)["dblj"],
+    // from Gamma^aj_ib
+    (*Gabij)["abij"] += spins * (*Tabij)["acik"] * (*Labij)["bcjk"],
+    // from Gamma^ib_aj
+    (*Gabij)["abij"] += spins * (*Tabij)["cbkj"] * (*Labij)["caki"],
+    // from Gamma ^ij_ab
+    (*Gabij)["abij"] += (*Labij)["abij"],
+    // calcualte Coulomb energy beyond first order
+    (*Vee)[""] <<= 0.5*spins*spins * (*Gabij)["abij"] * (*Vabij)["abij"],
+    // the last ineraction is also exchanged in drCCD: i.e. <0|1 V T|0>
+    (*Vee)[""] -= 0.5*spins * (*Tabij)["abij"] * (*Vabij)["abji"]
+  )->compile(indexCounts)->execute();
   allocatedTensorArgument<double, T>(
     "DrccdTwoBodyPPHHDensiy",
-    new T(Gabij->template getMachineTensor<MT>()->tensor)
+    new T(Gabij->getMachineTensor()->tensor)
   );
   allocatedTensorArgument<double, T>(
     "DrccdCoulombExpectationValue",
-    new T(Vee->template getMachineTensor<MT>()->tensor)
+    new T(Vee->getMachineTensor()->tensor)
   );
 }
 

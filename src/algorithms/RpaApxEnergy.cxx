@@ -31,9 +31,7 @@ RpaApxEnergy::~RpaApxEnergy() {
 
 void RpaApxEnergy::run() {
   // create tcc infrastructure
-  typedef CtfMachineTensor<complex> MT;
-  auto machineTensorFactory(MT::Factory::create());
-  auto tcc(tcc::Tcc<complex>::create(machineTensorFactory));
+  typedef tcc::Tcc<CtfEngine> TCC;
 
   // read the Coulomb vertex GammaGqr
   auto GammaFqr(getTensorArgument<complex>("CoulombVertex"));
@@ -60,10 +58,10 @@ void RpaApxEnergy::run() {
   conjugate(ctfConjGammaFia); 
   auto ctfConjGammaFai(ctfGammaFai);
   conjugate(ctfConjGammaFai);
-  auto GammaFia(tcc->createTensor(MT::create(ctfGammaFia)));
-  auto GammaFai(tcc->createTensor(MT::create(ctfGammaFai)));
-  auto conjGammaFia(tcc->createTensor(MT::create(ctfConjGammaFia)));
-  auto conjGammaFai(tcc->createTensor(MT::create(ctfConjGammaFai)));
+  auto GammaFia(Tensor<complex,CtfEngine>::create(ctfGammaFia));
+  auto GammaFai(Tensor<complex,CtfEngine>::create(ctfGammaFai));
+  auto conjGammaFia(Tensor<complex,CtfEngine>::create(ctfConjGammaFia));
+  auto conjGammaFai(Tensor<complex,CtfEngine>::create(ctfConjGammaFai));
 
   auto realNun(getTensorArgument("ImaginaryFrequencyPoints"));
   int Nn(realNun->lens[0]);
@@ -71,7 +69,7 @@ void RpaApxEnergy::run() {
   auto realWn(getTensorArgument("ImaginaryFrequencyWeights"));
   CTF::Tensor<complex> complexWn(1, &Nn, *realWn->wrld);
   toComplexTensor(*realWn, complexWn);
-  auto Wn(tcc->createTensor(MT::create(complexWn)));
+  auto Wn(Tensor<complex,CtfEngine>::create(complexWn));
 
   CTF::Tensor<complex> ctfPain(3, std::vector<int>({int(Nv),int(No),Nn}).data());
   CTF::Transform<double, complex>(
@@ -99,55 +97,54 @@ void RpaApxEnergy::run() {
   CTF::Tensor<complex> ctfConjPain(ctfPain);
   conjugate(ctfConjPain);
 
-  auto Pain(tcc->createTensor(MT::create(ctfPain)));
-  auto conjPain(tcc->createTensor(MT::create(ctfConjPain)));
+  auto Pain(Tensor<complex,CtfEngine>::create(ctfPain));
+  auto conjPain(Tensor<complex,CtfEngine>::create(ctfConjPain));
 
-  auto mp2Direct(tcc->createTensor(std::vector<size_t>(), "mp2Direct"));
-  auto mp2Exchange(tcc->createTensor(std::vector<size_t>(), "mp2Exchange"));
-  chi0VFGn = tcc->createTensor(std::vector<size_t>({NF,NF,size_t(Nn)}), "chi0V");
-  chi1VFGn = tcc->createTensor(std::vector<size_t>({NF,NF,size_t(Nn)}), "chi1V");
+  auto mp2Direct(TCC::tensor<complex>(std::vector<size_t>(), "mp2Direct"));
+  auto mp2Exchange(TCC::tensor<complex>(std::vector<size_t>(), "mp2Exchange"));
+  chi0VFGn = TCC::tensor<complex>(std::vector<size_t>({NF,NF,size_t(Nn)}), "chi0V");
+  chi1VFGn = TCC::tensor<complex>(std::vector<size_t>({NF,NF,size_t(Nn)}), "chi1V");
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   LOG(1, "RPA") << "spins=" << spins << std::endl;
   int computeExchange(getIntegerArgument("exchange", 1));
-  tcc->compile(
-    (
-      // bubble with half V on both ends:
-      // sign: 1xhole, 1xinteraction, 1xloop: (-1)^3
-      // particle/hole bubble propagating forwards
-      (*chi0VFGn)["FGn"] <<= -spins *
-        (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
-      // particle/hole bubble propagating backwards, positive nu
-      (*chi0VFGn)["FGn"] += -spins *
-        (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
+  IndexCounts indexCounts;
+  (
+    // bubble with half V on both ends:
+    // sign: 1xhole, 1xinteraction, 1xloop: (-1)^3
+    // particle/hole bubble propagating forwards
+    (*chi0VFGn)["FGn"] <<= -spins *
+      (*GammaFai)["Fai"] * (*conjGammaFai)["Gai"] * (*Pain)["ain"],
+    // particle/hole bubble propagating backwards, positive nu
+    (*chi0VFGn)["FGn"] += -spins *
+      (*GammaFia)["Fia"] * (*conjGammaFia)["Gia"] * (*conjPain)["ain"],
 
-      // compute Mp2 energy for benchmark of frequency grid
-      // 2 fold rotational and 2 fold mirror symmetry, 2 from +nu and -nu
-      // sign: 1xdiagram: (-1)
-      (*mp2Direct)[""] <<= -0.25 * 2 *
-        (*Wn)["n"] * (*chi0VFGn)["FGn"] * (*chi0VFGn)["GFn"],
+    // compute Mp2 energy for benchmark of frequency grid
+    // 2 fold rotational and 2 fold mirror symmetry, 2 from +nu and -nu
+    // sign: 1xdiagram: (-1)
+    (*mp2Direct)[""] <<= -0.25 * 2 *
+      (*Wn)["n"] * (*chi0VFGn)["FGn"] * (*chi0VFGn)["GFn"],
 
-      // adjacent pairs exchanged
-      // 2 fold mirror symmetry only, 2 from +nu and -nu
-      // sign: 2xholes, 2xinteraction, 1xloop: (-1)^5
-      computeExchange ? (
-        // time reversal version: 1/2 up + 1/2 down Chi_1
-        (*chi1VFGn)["FGn"] <<= -0.5*spins *
-          (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
-          (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
-        (*chi1VFGn)["FGn"] += -0.5*spins *
-          (*GammaFia)["Fia"] * (*conjGammaFia)["Hja"] * (*conjPain)["ain"] *
-          (*GammaFai)["Hbi"] * (*conjGammaFai)["Gbj"] * (*Pain)["bjn"],
-        (*mp2Exchange)[""] <<= -0.5 * 2 * (*Wn)["n"] * (*chi1VFGn)["FFn"]
-      ) : (
-        tcc->emptySequence()
-      )
+    // adjacent pairs exchanged
+    // 2 fold mirror symmetry only, 2 from +nu and -nu
+    // sign: 2xholes, 2xinteraction, 1xloop: (-1)^5
+    computeExchange ? (
+      // time reversal version: 1/2 up + 1/2 down Chi_1
+      (*chi1VFGn)["FGn"] <<= -0.5*spins *
+        (*GammaFai)["Fai"] * (*conjGammaFai)["Haj"] * (*Pain)["ain"] *
+        (*GammaFia)["Hib"] * (*conjGammaFia)["Gjb"] * (*conjPain)["bjn"],
+      (*chi1VFGn)["FGn"] += -0.5*spins *
+        (*GammaFia)["Fia"] * (*conjGammaFia)["Hja"] * (*conjPain)["ain"] *
+        (*GammaFai)["Hbi"] * (*conjGammaFai)["Gbj"] * (*Pain)["bjn"],
+      (*mp2Exchange)[""] <<= -0.5 * 2 * (*Wn)["n"] * (*chi1VFGn)["FFn"]
+    ) : (
+      TCC::nothing()
     )
-  )->execute();
+  )->compile(indexCounts)->execute();
 
   CTF::Scalar<complex> ctfMp2Energy;
-  ctfMp2Energy[""] = mp2Direct->getMachineTensor<MT>()->tensor[""];
+  ctfMp2Energy[""] = mp2Direct->getMachineTensor()->tensor[""];
   complex mp2D(ctfMp2Energy.get_val());
-  ctfMp2Energy[""] = mp2Exchange->getMachineTensor<MT>()->tensor[""];
+  ctfMp2Energy[""] = mp2Exchange->getMachineTensor()->tensor[""];
   complex mp2X(ctfMp2Energy.get_val());
   LOG(0, "RPA") << "Mp2 direct energy=" << mp2D << std::endl;
   LOG(0, "RPA") << "Mp2 exchange energy=" << mp2X << std::endl;
@@ -157,7 +154,6 @@ void RpaApxEnergy::run() {
 }
 
 void RpaApxEnergy::diagonalizeChiV() {
-  typedef CtfMachineTensor<complex> MT;
   // get weights for integration
   auto wn( getTensorArgument("ImaginaryFrequencyWeights") );
   std::vector<double> weights(wn->lens[0]);
@@ -166,8 +162,8 @@ void RpaApxEnergy::diagonalizeChiV() {
   LOG(1, "RPA") << "slicing along imaginary frequencies..." << std::endl;
   MpiCommunicator communicator(*wn->wrld);
   // slice CTF tensor of chi0V and chi1V along n (=3rd) dimension
-  auto ctfChi0VFGn( &chi0VFGn->getMachineTensor<MT>()->tensor );
-  auto ctfChi1VFGn( &chi1VFGn->getMachineTensor<MT>()->tensor );
+  auto ctfChi0VFGn( &chi0VFGn->getMachineTensor()->tensor );
+  auto ctfChi1VFGn( &chi1VFGn->getMachineTensor()->tensor );
   size_t sliceElementCount(ctfChi0VFGn->lens[0] * ctfChi0VFGn->lens[1]);
   std::map<int, std::vector<complex>> localChi0VFGn;
   std::map<int, std::vector<complex>> localChi1VFGn;

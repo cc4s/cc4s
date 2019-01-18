@@ -9,24 +9,21 @@
 #include <util/StaticAssert.hpp>
 
 namespace tcc {
-  template <typename F>
-  class Map: public Expression<F> {
+  template <typename Target, typename Domain, typename TE>
+  class Map: public TensorResultExpression<Target,TE> {
   public:
     /**
      * \brief Creates a map expression of a unary map f and one tensor
      * expressions source.
      **/
-    static PTR(Map<F>) create(
-      const std::function<F(const F)> &f,
-      const PTR(Expression<F>) &source
+    static PTR(ESC(Map<Target,Domain,TE>)) create(
+      const std::function<Target(const Domain)> &f,
+      const PTR(ESC(TensorResultExpression<Domain,TE>)) &source
     ) {
-      auto map(
-        NEW(Map<F>,
-          f, source,
-          typename Expression<F>::ProtectedToken()
-        )
+      return NEW(ESC(Map<Target,Domain,TE>),
+        f, source,
+        typename Expression<TE>::ProtectedToken()
       );
-      return map;
     }
 
     /**
@@ -35,18 +32,23 @@ namespace tcc {
      * Not indended for direct invocation. Use Map::create instead.
      **/
     Map(
-      const std::function<F(const F)> &f_,
-      const PTR(Expression<F>) &source_,
-      const typename Expression<F>::ProtectedToken &
+      const std::function<Target(const Domain)> &f_,
+      const PTR(ESC(TensorResultExpression<Domain,TE>)) &source_,
+      const typename Expression<TE>::ProtectedToken &
     ): f(f_), source(source_) {
     }
 
     virtual ~Map() {
     }
 
-    virtual PTR(Operation<F>) compile(IndexCounts &indexCounts) {
-      auto sourceOperation(source->compile(indexCounts));
-      return MapOperation<F>::create(f, sourceOperation);
+    virtual PTR(Operation<TE>) compile(IndexCounts &indexCounts) {
+      auto sourceOperation(
+        DYNAMIC_PTR_CAST(
+          ESC(TensorResultOperation<Domain,TE>),
+          source->compile(indexCounts)
+        )
+      );
+      return MapOperation<Target,Domain,TE>::create(f, sourceOperation);
     }
 
     virtual void countIndices(IndexCounts &indexCounts) {
@@ -54,20 +56,26 @@ namespace tcc {
     }
 
   protected:
-    std::function<F(const F)> f;
-    PTR(Expression<F>) source;
+    std::function<Target(const Domain)> f;
+    PTR(ESC(TensorResultExpression<Domain,TE>)) source;
   };
 
   /**
    * \brief Creates a map expression of a unary map f and one tensor
    * expressions A.
    **/
-  template <typename F>
-  inline PTR(Map<F>) map(
-    const std::function<F(const F)> &f,
-    const PTR(Expression<F>) &A
+  template <
+    typename Target, typename RHS
+  >
+  inline
+  PTR(ESC(Map<Target,typename RHS::FieldType,typename RHS::TensorEngine>)) map(
+    const std::function<Target(const typename RHS::FieldType)> &f,
+    const PTR(RHS) &A
   ) {
-    return Map<F>::create(f, A);
+    return
+    Map<Target,typename RHS::FieldType,typename RHS::TensorEngine>::create(
+      f, A
+    );
   }
 }
 

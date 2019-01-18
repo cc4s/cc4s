@@ -25,66 +25,64 @@ DrccdEquationOfMotion::~DrccdEquationOfMotion() {
 }
 
 void DrccdEquationOfMotion::run() {
-  typedef CtfMachineTensor<> MT;
-  typedef CTF::Tensor<> T;
-
-  auto machineTensorFactory(MT::Factory::create());
-  auto tcc(Tcc<double>::create(machineTensorFactory));
+  typedef CTF::Tensor<real> T;
+  typedef tcc::Tcc<CtfEngine> TCC;
 
   // Read the Drccd doubles amplitudes Tabij
   T *ctfTabij( getTensorArgument<double, T>("DrccdDoublesAmplitudes") );
-  auto Tabij( tcc->createTensor(MT::create(*ctfTabij)) );
+  auto Tabij( tcc::Tensor<complex,CtfEngine>::create(*ctfTabij) );
 
   // Read the required Coulomb integrals Vabij
   T *ctfVabij( getTensorArgument<double, T>("PPHHCoulombIntegrals") );
-  auto Vabij( tcc->createTensor(MT::create(*ctfVabij)) );
+  auto Vabij( tcc::Tensor<complex,CtfEngine>::create(*ctfVabij) );
 
   // Read and bulld energy denominators
   T *ctfEpsi( getTensorArgument<>("HoleEigenEnergies") );
   T *ctfEpsa( getTensorArgument<>("ParticleEigenEnergies") );
   // same for the HF eigenvalues
-  auto epsi( tcc->createTensor(MT::create(*ctfEpsi)) );
-  auto epsa( tcc->createTensor(MT::create(*ctfEpsa)) );
+  auto epsi( tcc::Tensor<complex,CtfEngine>::create(*ctfEpsi) );
+  auto epsa( tcc::Tensor<complex,CtfEngine>::create(*ctfEpsa) );
 
   // convert energy denominators tensor into tcc tensor
-  auto Dabij( tcc->createTensor(Tabij, "Dabij") );
-  auto ctfDabij(&Dabij->getMachineTensor<MT>()->tensor);
+  auto Dabij( TCC::tensor(Tabij, "Dabij") );
+  auto ctfDabij(&Dabij->getMachineTensor()->tensor);
 
-  tcc->compile( (
+  IndexCounts indexCounts;
+  (
     (*Dabij)["abij"] <<= (*epsa)["a"],
     (*Dabij)["abij"]  += (*epsa)["b"],
     (*Dabij)["abij"]  -= (*epsi)["i"],
     (*Dabij)["abij"]  -= (*epsi)["j"]
-  ) )->execute();
+  )->compile(indexCounts)->execute();
 
   // create Right and Left eigenvector amplitudes Rabij, Labij and itermediate
   // prevRabij of same shape as doubles amplitudes
-  auto Rabij( tcc->createTensor(Tabij, "Rabij") );
-  auto Labij( tcc->createTensor(Tabij, "Labij") );
-  auto prevRabij( tcc->createTensor(Tabij, "prevRabij") );
-  auto prevLabij( tcc->createTensor(Tabij, "prevLabij") );
-  auto Xabij( tcc->createTensor(Tabij, "Xabij") );
-  auto Yabij( tcc->createTensor(Tabij, "Yabij") );
+  auto Rabij( TCC::tensor(Tabij, "Rabij") );
+  auto Labij( TCC::tensor(Tabij, "Labij") );
+  auto prevRabij( TCC::tensor(Tabij, "prevRabij") );
+  auto prevLabij( TCC::tensor(Tabij, "prevLabij") );
+  auto Xabij( TCC::tensor(Tabij, "Xabij") );
+  auto Yabij( TCC::tensor(Tabij, "Yabij") );
 
-  auto ctfPrevLabij(&prevLabij->getMachineTensor<MT>()->tensor);
-  auto ctfPrevRabij(&prevRabij->getMachineTensor<MT>()->tensor);
-  auto ctfYabij(&Yabij->getMachineTensor<MT>()->tensor);
-  auto ctfXabij(&Xabij->getMachineTensor<MT>()->tensor);
-  auto ctfRabij(&Rabij->getMachineTensor<MT>()->tensor);
-  auto ctfLabij(&Labij->getMachineTensor<MT>()->tensor);
+  auto ctfPrevLabij(&prevLabij->getMachineTensor()->tensor);
+  auto ctfPrevRabij(&prevRabij->getMachineTensor()->tensor);
+  auto ctfYabij(&Yabij->getMachineTensor()->tensor);
+  auto ctfXabij(&Xabij->getMachineTensor()->tensor);
+  auto ctfRabij(&Rabij->getMachineTensor()->tensor);
+  auto ctfLabij(&Labij->getMachineTensor()->tensor);
 
   // Similarity transformed hamiltonian, e^{-T} H e^{T}
-  auto Habij( tcc->createTensor(Tabij, "Habij") );
-  auto ctfHabij(&Habij->getMachineTensor<MT>()->tensor);
+  auto Habij( TCC::tensor(Tabij, "Habij") );
+  auto ctfHabij(&Habij->getMachineTensor()->tensor);
 
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   // Build the non-trivial part of the similarity transformed hamiltonian
   // \bar H_aj^ib (for real orbitals)
-  tcc->compile( (
+  (
     (*Habij)["abij"] <<= (*Vabij)["abij"],
     (*Habij)["abij"]  += spins * (*Vabij)["acik"] * (*Tabij)["cbkj"]
-  ) )->execute();
+  )->compile(indexCounts)->execute();
 
   if (getIntegerArgument("fullDiagonalization", 0)) {
     auto H20(new CTF::Tensor<>(*ctfVabij));
@@ -111,9 +109,9 @@ void DrccdEquationOfMotion::run() {
 
   determineEnergyShift();
 
-  auto beta(tcc->createTensor(std::vector<size_t>(), "beta"));
-  auto delta(tcc->createTensor(std::vector<size_t>(), "delta"));
-  auto energy(tcc->createTensor(std::vector<size_t>(), "energy"));
+  auto beta(TCC::tensor(std::vector<size_t>(), "beta"));
+  auto delta(TCC::tensor(std::vector<size_t>(), "delta"));
+  auto energy(TCC::tensor(std::vector<size_t>(), "energy"));
   CTF::Scalar<> ctfBeta(*Cc4s::world);
   CTF::Scalar<> ctfDelta(*Cc4s::world);
   CTF::Scalar<> ctfEnergy(*Cc4s::world);
@@ -168,7 +166,7 @@ void DrccdEquationOfMotion::run() {
     // Build coefficients
     ctfBeta[""] = 0.5*spins*spins*(*ctfLabij)["abij"] * (*ctfRabij)["abij"];
     ctfBeta[""] += -1.0*0.5*spins*(*ctfLabij)["abij"] * (*ctfRabij)["abji"];
-    //ctfBeta[""] = beta->getMachineTensor<MT>()->tensor[""];
+    //ctfBeta[""] = beta->getMachineTensor()->tensor[""];
     ctfDelta[""] = std::sqrt(std::abs( ctfBeta.get_val() ));
     ctfBeta[""] = ctfBeta.get_val() / ctfDelta.get_val();
 

@@ -36,9 +36,8 @@ void ParticleHoleCoulombVertexFromFactors::dryRun() {
 // TMT is either CtfMachineTensor or DryMachineTensor
 template <typename T, typename MT>
 void ParticleHoleCoulombVertexFromFactors::run(const bool dryRun) {
-  auto machineTensorFactory(MT::Factory::create());
-  auto tcc(Tcc<complex>::create(machineTensorFactory));
-
+  typedef typename MT::TensorEngine Engine;
+  typedef tcc::Tcc<Engine> TCC;
 
   // Read the Coulomb vertex GammaGqr
   T *ctfPiiR( getTensorArgument<complex, T>("HoleFactorOrbitals") );
@@ -47,30 +46,27 @@ void ParticleHoleCoulombVertexFromFactors::run(const bool dryRun) {
 
   // for now: create tcc::Tensors from them
   // later there will only be tcc::Tensors objects stored in cc4s
-  auto PiiR( tcc->createTensor(MT::create(*ctfPiiR)) );
-  auto PiaR( tcc->createTensor(MT::create(*ctfPiaR)) );
-  auto LambdaFR( tcc->createTensor(MT::create(*ctfLambdaFR)) );
+  auto PiiR( tcc::Tensor<complex,Engine>::create(*ctfPiiR) );
+  auto PiaR( tcc::Tensor<complex,Engine>::create(*ctfPiaR) );
+  auto LambdaFR( tcc::Tensor<complex,Engine>::create(*ctfLambdaFR) );
  
   // allocate tcc::Tensor for final result
   size_t NF(LambdaFR->lens[0]);
   size_t Nv(PiaR->lens[0]);
   size_t No(PiiR->lens[0]);
-  auto GammaFai( tcc->createTensor(std::vector<size_t>({NF,Nv,No}), "GammaFai") );
-
-  // compile
-  auto operation(
-    tcc->compile(
-      (*GammaFai)["Fai"] <<= (*LambdaFR)["FR"] * (*PiaR)["aR"] * (*PiiR)["iR"]
-    )
+  auto GammaFai(
+    TCC::template tensor<complex>(std::vector<size_t>({NF,Nv,No}), "GammaFai")
   );
-  // and execute
-  operation->execute();
+  tcc::IndexCounts indexCounts;
+  (
+    (*GammaFai)["Fai"] <<= (*LambdaFR)["FR"] * (*PiaR)["aR"] * (*PiiR)["iR"]
+  )->compile(indexCounts)->execute();
 
   // for now: duplicate result
   // later Gamma will already be the object stored in cc4s
   allocatedTensorArgument<complex, T>(
     "ParticleHoleCoulombVertex",
-    new T(GammaFai->template getMachineTensor<MT>()->tensor)
+    new T(GammaFai->getMachineTensor()->tensor)
   );
 }
 

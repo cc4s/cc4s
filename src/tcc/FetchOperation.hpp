@@ -2,31 +2,33 @@
 #ifndef TCC_FETCH_OPERATION_DEFINED
 #define TCC_FETCH_OPERATION_DEFINED
 
-#include <tcc/Operation.hpp>
+#include <tcc/TensorResultOperation.hpp>
 #include <tcc/Costs.hpp>
 
-#include <memory>
+#include <util/SharedPointer.hpp>
 
 namespace tcc {
-  template <typename F> class Tensor;
-  template <typename F> class IndexedTensor;
+  template <typename F, typename TE> class IndexedTensor;
 
-  template <typename F>
-  class FetchOperation: public Operation<F> {
+  template <typename F, typename TE>
+  class FetchOperation: public TensorResultOperation<F,TE> {
   public:
     /**
      * \brief Creates a fetch operation of a tensor making it accessible
      * for subsequent move or contraction operations.
-     * Not intended for direct invocation. Use Tcc::compile(expression) to
+     * Not intended for direct invocation. expression->compile() to
      * generate operations.
      **/
     FetchOperation(
-      const PTR(IndexedTensor<F>) &t,
-      const typename Operation<F>::ProtectedToken &
+      const PTR(ESC(Tensor<F,TE>)) &t,
+      const std::string &indices,
+      const typename Operation<TE>::ProtectedToken &
     ):
-      Operation<F>(Costs(t->getTensor()->getElementsCount())),
-      tensor(t->getTensor()),
-      indices(t->getIndices())
+      TensorResultOperation<F,TE>(
+        t, indices.c_str(),
+        Costs(t->getElementsCount()),
+        typename Operation<TE>::ProtectedToken()
+      )
     {
     }
     virtual ~FetchOperation() {
@@ -35,27 +37,17 @@ namespace tcc {
     virtual void execute() {
     }
 
-    virtual PTR(Tensor<F>) getResult() {
-      return tensor;
-    }
-
-    virtual const std::string &getResultIndices() {
-      return indices;
-    }
-
   protected:
-    static PTR(FetchOperation<F>) create(
-      const PTR(IndexedTensor<F>) &indexedTensor
+    static PTR(ESC(FetchOperation<F,TE>)) create(
+      const PTR(ESC(Tensor<F,TE>)) &t,
+      const std::string &indices
     ) {
-      return NEW(FetchOperation<F>,
-        indexedTensor, typename Operation<F>::ProtectedToken()
+      return NEW(ESC(FetchOperation<F,TE>),
+        t, indices, typename Operation<TE>::ProtectedToken()
       );
     }
 
-    PTR(Tensor<F>) tensor;
-    std::string indices;
-
-    friend class IndexedTensor<F>;
+    friend class IndexedTensor<F,TE>;
   };
 }
 

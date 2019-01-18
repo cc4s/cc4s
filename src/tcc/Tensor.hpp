@@ -3,7 +3,7 @@
 #define TCC_TENSOR_DEFINED
 
 #include <tcc/IndexedTensor.hpp>
-#include <tcc/MachineTensor.hpp>
+//#include <tcc/MachineTensor.hpp>
 
 #include <util/SharedPointer.hpp>
 
@@ -12,13 +12,11 @@
 #include <string>
 
 namespace tcc {
-  template <typename F> class Tcc;
-
   /**
    * \brief 
    **/
-  template <typename F>
-  class Tensor: public THISABLE(Tensor<F>) {
+  template <typename F, typename TE>
+  class Tensor: public THISABLE(ESC(Tensor<F,TE>)) {
   protected:
     /**
      * \brief Dummy objects of that type are used to guarantee that
@@ -29,6 +27,9 @@ namespace tcc {
     };
 
   public:
+    typedef typename TE::template MachineTensor<F> MT;
+    // TODO: support assumed shape tensors
+
     /**
      * \brief Create a tcc tensor of dimensions lens_[0] x lens_[1] x ... with
      * a specified name. The underlying machine tensor will only be allocated
@@ -38,9 +39,8 @@ namespace tcc {
     Tensor(
       const std::vector<size_t> &lens_,
       const std::string &name_,
-      const PTR(Tcc<F>) &tcc_,
       const ProtectedToken &
-    ): lens(lens_), name(name_), tcc(tcc_) {
+    ): lens(lens_), name(name_) {
       // the machine tensor is not allocated initially
     }
 
@@ -49,14 +49,37 @@ namespace tcc {
      * Not intended for direct invocation. Use Tcc::createTensor instead.
      **/
     Tensor(
-      const PTR(MachineTensor<F>) &machineTensor_,
-      const PTR(Tcc<F>) &tcc_,
+      const typename MT::T &unadaptedTensor_,
       const ProtectedToken &
-    ):
-      lens(machineTensor_->getLens()), name(machineTensor_->getName()),
-      machineTensor(machineTensor_),
-      tcc(tcc_)
-    {
+    ) {
+      auto mt(MT::create(unadaptedTensor_));
+      lens = mt->getLens();
+      name = mt->getName();
+      machineTensor = mt;
+    }
+
+    static PTR(ESC(Tensor<F,TE>)) create(
+      const std::vector<size_t> &lens,
+      const std::string &name
+    ) {
+      return NEW(ESC(Tensor<F,TE>), lens, name, ProtectedToken());
+    }
+
+    /**
+     * \brief Create an empty tensor of identical shape as the given tensor.
+     * The name, however, should differ.
+     **/
+    static PTR(ESC(Tensor<F,TE>)) create(
+      const PTR(ESC(Tensor<F,TE>)) &tensor,
+      const std::string &name
+    ) {
+      return create(tensor->lens, name);
+    }
+
+    static PTR(ESC(Tensor<F,TE>)) create(
+      const typename MT::T &unadaptedTensor
+    ) {
+      return NEW(ESC(Tensor<F,TE>), unadaptedTensor, ProtectedToken());
     }
 
     void setName(const std::string &name_) {
@@ -66,17 +89,16 @@ namespace tcc {
       return name;
     }
 
-    PTR(Tcc<F>) &getTcc() {
-      return tcc;
-    }
-
-    template <typename ActualMachineTensor=MachineTensor<F>>
-    PTR(ActualMachineTensor) getMachineTensor() {
+    PTR(MT) getMachineTensor() {
       if (!machineTensor) {
         // allocate the implementation specific machine tensor upon request
-        machineTensor = tcc->createMachineTensor(THIS);
+        machineTensor = MT::create(lens, name);
       }
-      return std::dynamic_pointer_cast<ActualMachineTensor>(machineTensor);
+      return machineTensor;
+    }
+
+    const std::vector<size_t> &getLens() const {
+      return lens;
     }
 
     /**
@@ -95,8 +117,8 @@ namespace tcc {
      * tensor expression. Indexed tensors are atomic types of tensor
      * expressions.
      **/
-    PTR(IndexedTensor<F>) operator[](const std::string &indices) {
-      return IndexedTensor<F>::create(THIS, indices);
+    PTR(ESC(IndexedTensor<F,TE>)) operator[](const std::string &indices) {
+      return IndexedTensor<F,TE>::create(THIS, indices);
     }
 
     std::vector<size_t> lens;
@@ -107,14 +129,7 @@ namespace tcc {
      **/
     std::string name;
 
-    PTR(MachineTensor<F>) machineTensor;
-
-    /**
-     * \brief The pointer to the tcc object that created this tensor.
-     **/
-    PTR(Tcc<F>) tcc;
-
-    friend class Tcc<F>;
+    PTR(MT) machineTensor;
   };
 }
 

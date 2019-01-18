@@ -15,5 +15,9 @@
 #define THISABLE(TYPE) std::enable_shared_from_this<TYPE>
 #define THIS this->shared_from_this()
 
+// use this to enclose types containing a comma "," in the template argument
+// list
+#define ESC(...) __VA_ARGS__
+
 #endif
 

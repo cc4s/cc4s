@@ -2,7 +2,7 @@
 #ifndef DRY_MACHINE_TENSOR_DEFINED
 #define DRY_MACHINE_TENSOR_DEFINED
 
-#include <tcc/MachineTensor.hpp>
+//#include <tcc/MachineTensor.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
@@ -11,19 +11,21 @@
 #include <string>
 
 namespace cc4s {
-  template <typename F=double>
-  class DryMachineTensorFactory;
+  template <typename F, typename TE> class Tensor;
+  class DryEngine;
 
-  template <typename F=double>
-  class DryMachineTensor: public tcc::MachineTensor<F> {
+  /**
+   * \brief MachineTensor adapter for a DryTensor
+   **/
+  template <typename F>
+  class DryMachineTensor {
   protected:
     class ProtectedToken {
     };
 
   public:
-    // required by templates to infer corresponding Factory type
-    typedef DryMachineTensorFactory<F> Factory;
-    typedef DryTensor<F> Tensor;
+    typedef DryTensor<F> T;
+    typedef DryEngine TensorEngine;
 
     // constructors called by factory
     DryMachineTensor(
@@ -39,128 +41,89 @@ namespace cc4s {
       tensor.set_name(name);
     }
 
-    // copy constructor from DryTensor, for compatibility
-    DryMachineTensor(const Tensor &T, const ProtectedToken &): tensor(T) {
+    // copy constructor from DryTensor
+    DryMachineTensor(const T &t, const ProtectedToken &): tensor(t) {
     }
 
-    static PTR(DryMachineTensor<F>) create(const Tensor &T) {
-      return NEW(DryMachineTensor<F>, T, ProtectedToken());
-    }
-
-    virtual ~DryMachineTensor() {
+    ~DryMachineTensor() {
     }
 
     // this[bIndices] = alpha * A[aIndices] + beta*this[bIndices]
-    virtual void move(
+    void move(
       F alpha,
-      const PTR(tcc::MachineTensor<F>) &A,
+      const PTR(DryMachineTensor<F>) &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices
     ) {
-      PTR(DryMachineTensor<F>) dryA(
-        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
-      );
-      if (!dryA) {
-        throw new EXCEPTION("Passed machine tensor of wrong implementation.");
-      }
       LOG(1, "TCC") << "move " <<
         getName() << "[" << bIndices << "] <<= " <<
-        alpha << " * " << dryA->getName() << "[" << aIndices << "] + " <<
+        alpha << " * " << A->getName() << "[" << aIndices << "] + " <<
         beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
     }
 
     // this[bIndices] = f(alpha * A[aIndices]) + beta * this[bIndices]
-    virtual void move(
-      F alpha,
-      const PTR(tcc::MachineTensor<F>) &A,
+    template <typename Domain>
+    void move(
+      Domain alpha,
+      const PTR(DryMachineTensor<Domain>) &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices,
-      const std::function<F(const F)> &f
+      const std::function<F(const Domain)> &f
     ) {
-      PTR(DryMachineTensor<F>) dryA(
-        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
-      );
-      if (!dryA) {
-        throw new EXCEPTION("Passed machine tensor of wrong implementation.");
-      }
       LOG(1, "TCC") << "move " <<
         getName() << "[" << bIndices << "] <<= f(" <<
-        alpha << " * " << dryA->getName() << "[" << aIndices << "]) + " <<
+        alpha << " * " << A->getName() << "[" << aIndices << "]) + " <<
         beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
     }
 
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]
-    virtual void contract(
+    void contract(
       F alpha,
-      const PTR(tcc::MachineTensor<F>) &A,
+      const PTR(DryMachineTensor<F>) &A,
       const std::string &aIndices,
-      const PTR(tcc::MachineTensor<F>) &B,
+      const PTR(DryMachineTensor<F>) &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices
     ) {
-      PTR(DryMachineTensor<F>) dryA(
-        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
-      );
-      PTR(DryMachineTensor<F>) dryB(
-        std::dynamic_pointer_cast<DryMachineTensor<F>>(B)
-      );
-      if (!dryA || !dryB) {
-        throw new EXCEPTION("Passed machine tensor of wrong implementation.");
-      }
       LOG(1, "TCC") << "contract " <<
         getName() << "[" << cIndices << "] <<= " <<
-        alpha << " * " << dryA->getName() << "[" << aIndices << "] * " <<
-        dryB->getName() << "[" << bIndices << "] + " <<
+        alpha << " * " << A->getName() << "[" << aIndices << "] * " <<
+        B->getName() << "[" << bIndices << "] + " <<
         beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
     }
 
     // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
-    virtual void contract(
+    void contract(
       F alpha,
-      const PTR(tcc::MachineTensor<F>) &A,
+      const PTR(DryMachineTensor<F>) &A,
       const std::string &aIndices,
-      const PTR(tcc::MachineTensor<F>) &B,
+      const PTR(DryMachineTensor<F>) &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices,
       const std::function<F(const F, const F)> &g
     ) {
-      PTR(DryMachineTensor<F>) dryA(
-        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
-      );
-      PTR(DryMachineTensor<F>) dryB(
-        std::dynamic_pointer_cast<DryMachineTensor<F>>(B)
-      );
-      if (!dryA || !dryB) {
-        throw new EXCEPTION("Passed machine tensor of wrong implementation.");
-      }
       LOG(1, "TCC") << "contract " <<
         getName() << "[" << cIndices << "] <<= g(" <<
-        alpha << " * " << dryA->getName() << "[" << aIndices << "], " <<
-        dryB->getName() << "[" << bIndices << "]) + " <<
+        alpha << " * " << A->getName() << "[" << aIndices << "], " <<
+        B->getName() << "[" << bIndices << "]) + " <<
         beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
     }
 
-    virtual void slice(
+    void slice(
       F alpha,
-      const PTR(tcc::MachineTensor<F>) &A,
+      const PTR(DryMachineTensor<F>) &A,
       const std::vector<size_t> aBegins,
       const std::vector<size_t> aEnds,
       F beta,
       const std::vector<size_t> begins,
       const std::vector<size_t> ends
     ) {
-      PTR(DryMachineTensor<F>) dryA(
-        std::dynamic_pointer_cast<DryMachineTensor<F>>(A)
-      );
-      if (!dryA) {
-        throw new EXCEPTION("Passed machine tensor of wrong implementation.");
-      }
       // allocate tensor for A assuming index reordering
-      DryTensor<F> intermediateA(dryA->tensor, SOURCE_LOCATION);
+      DryTensor<F> intermediateA(A->tensor, SOURCE_LOCATION);
       // allocate tensor for result assuming index reordering
       DryTensor<F> intermediateResult(this->tensor, SOURCE_LOCATION);
 /*
@@ -175,50 +138,43 @@ namespace cc4s {
 
     // TODO: interfaces to be defined: permute, transform
 
-    virtual std::vector<size_t> getLens() const {
+    std::vector<size_t> getLens() const {
       return tensor.lens;
     }
 
-    virtual std::string getName() const {
+    std::string getName() const {
       return tensor.name;
     }
 
     // adapted DryTensor
-    Tensor tensor;
+    T tensor;
 
-    friend class DryMachineTensorFactory<F>;
-  };
-
-  template <typename F>
-  class DryMachineTensorFactory: public tcc::MachineTensorFactory<F> {
-  protected:
-    class ProtectedToken {
-    };
-
-  public:
-    DryMachineTensorFactory(const ProtectedToken &) {
+    // TODO: protect
+    // create adapater from given DryTensor
+    static PTR(DryMachineTensor<F>) create(const T &t) {
+      return NEW(DryMachineTensor<F>, t, ProtectedToken());
     }
 
-    virtual ~DryMachineTensorFactory() {
-    }
-
-    virtual PTR(tcc::MachineTensor<F>) createTensor(
+    // create adapter from shape and name
+    static PTR(DryMachineTensor<F>) create(
       const std::vector<size_t> &lens,
       const std::string &name
     ) {
-      return PTR(tcc::MachineTensor<F>)(
-        NEW(DryMachineTensor<F>,
-          lens, name, typename DryMachineTensor<F>::ProtectedToken()
-        )
-      );
+      return NEW(DryMachineTensor<F>, lens, name, ProtectedToken());
     }
+  protected:
+    friend class Tensor<F,DryEngine>;
+  };
 
-    static PTR(DryMachineTensorFactory<F>) create(
-    ) {
-      return NEW(DryMachineTensorFactory<F>,
-        ProtectedToken()
-      );
-    }
+  /**
+   * \brief Traits for inferring the respective DryMachineTensor types
+   * from the respective tensor field types.
+   * Tcc is given these traits upon compiling and execution.
+   **/
+  class DryEngine {
+  public:
+    template <typename FieldType>
+    using MachineTensor = DryMachineTensor<FieldType>;
   };
 }
 

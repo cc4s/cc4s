@@ -11,37 +11,30 @@
 #include <vector>
 
 namespace tcc {
-  template <typename F>
+  template <typename F, typename TE>
   class Move;
 
-  template <typename F>
-  class Sequence: public Expression<F> {
+  template <typename TE>
+  class Sequence: public Expression<TE> {
   public:
     /**
      * \brief Creates a sequence expression of the two given tensor
      * expressions A and B.
      **/
-    template <typename Lhs, typename Rhs>
-    static PTR(Sequence<typename Lhs::FieldType>) create(
-      const PTR(Lhs) &A, const PTR(Rhs) &B
+    template <typename LHS, typename RHS>
+    static PTR(Sequence<typename LHS::TensorEngine>) create(
+      const PTR(LHS) &A, const PTR(RHS) &B
     ) {
       static_assert(
         cc4s::TypeRelations<
-          typename Lhs::FieldType, typename Rhs::FieldType
+          typename LHS::TensorEngine, typename RHS::TensorEngine
         >::EQUALS,
-        "Currently, only tensors of the same type can be in a sequence."
+        "All expressions within a sequence must have the same tensor engine."
       );
-      auto sequence(
-        NEW(Sequence<typename Lhs::FieldType>,
-          A, B,
-          typename Expression<typename Lhs::FieldType>::ProtectedToken()
-        )
+      return NEW(Sequence<typename LHS::TensorEngine>,
+        A, B,
+        typename Expression<typename LHS::TensorEngine>::ProtectedToken()
       );
-/*
-      A->parent = sequence;
-      B->parent = sequence;
-*/
-      return sequence;
     }
 
     /**
@@ -49,16 +42,18 @@ namespace tcc {
      * Not intended for direct invocation, create sequences
      * using the static create method.
      **/
+    // TODO: use protected token
     Sequence() { }
+
     /**
      * \brief Flattening constructor given two sequences.
      * Not intended for direct invocation, create sequences
      * using the static create method.
      **/
     Sequence(
-      const PTR(Sequence<F>) &lhs,
-      const PTR(Sequence<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(Sequence<TE>) &lhs,
+      const PTR(Sequence<TE>) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ): moves(lhs->moves) {
       moves.insert(moves.end(), rhs->moves.begin(), rhs->moves.end());
     }
@@ -68,10 +63,11 @@ namespace tcc {
      * Not intended for direct invocation, create sequences
      * using the static create method.
      **/
+    template <typename F>
     Sequence(
-      const PTR(Sequence<F>) &lhs,
-      const PTR(Move<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(Sequence<TE>) &lhs,
+      const PTR(ESC(Move<F,TE>)) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ): moves(lhs->moves) {
       moves.push_back(rhs);
     }
@@ -81,10 +77,11 @@ namespace tcc {
      * Not intended for direct invocation, create sequences
      * using the static create method.
      **/
+    template <typename F>
     Sequence(
-      const PTR(Move<F>) &lhs,
-      const PTR(Sequence<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(ESC(Move<F,TE>)) &lhs,
+      const PTR(Sequence<TE>) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ) {
       moves.push_back(lhs);
       moves.insert(moves.end(), rhs->moves.begin(), rhs->moves.end());
@@ -94,10 +91,11 @@ namespace tcc {
      * Not intended for direct invocation, create sequences
      * using the static create method.
      **/
+    template <typename F, typename G>
     Sequence(
-      const PTR(Move<F>) &lhs,
-      const PTR(Move<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(ESC(Move<F,TE>)) &lhs,
+      const PTR(ESC(Move<G,TE>)) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ) {
       moves.push_back(lhs);
       moves.push_back(rhs);
@@ -108,47 +106,49 @@ namespace tcc {
      * Not intended for direct invocation, create sequences
      * using the static create method.
      **/
+    template <typename LHS, typename RHS>
     Sequence(
-      const PTR(Expression<F>) &lhs,
-      const PTR(Expression<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(LHS) &lhs,
+      const PTR(RHS) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ) {
       static_assert(
-        cc4s::StaticAssert<F>::FALSE,
-        "Only sequences of moves are supported."
+        cc4s::StaticAssert<TE>::FALSE,
+        "Only sequences of moves are possible."
       );
     }
 
     virtual ~Sequence() {
     }
 
-    virtual PTR(Operation<F>) compile(IndexCounts &indexCounts) {
-      std::vector<PTR(Operation<F>)> operations(moves.size());
-      for (unsigned int i(0); i < moves.size(); ++i) {
+    virtual PTR(Operation<TE>) compile(IndexCounts &) {
+      std::vector<PTR(Operation<TE>)> operations(moves.size());
+      for (size_t i(0); i < moves.size(); ++i) {
+        IndexCounts indexCounts;
         operations[i] = moves[i]->compile(indexCounts);
       }
-      return OperationSequence<F>::create(operations);
+      return OperationSequence<TE>::create(operations);
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) {
+    virtual void countIndices(IndexCounts &) {
       // the indidex of each subexpression are independet of each other
       // so nothing will be counted.
       // counting will be done on the level of moves and contractions
     }
 
   protected:
-    std::vector<PTR(Move<F>)> moves;
+    std::vector<PTR(Expression<TE>)> moves;
   };
 
   /**
    * \brief Creates a sequence expression of the two given tensor
-   * expressions A and B using the multiplication operator *.
+   * expressions A and B using the comma operator.
    **/
-  template <typename Lhs, typename Rhs>
-  inline PTR(Sequence<typename Lhs::FieldType>) operator ,(
-    const PTR(Lhs) &A, const PTR(Rhs) &B
+  template <typename LHS, typename RHS>
+  inline PTR(Sequence<typename RHS::TensorEngine>) operator ,(
+    const PTR(LHS) &A, const PTR(RHS) &B
   ) {
-    return Sequence<typename Lhs::FieldType>::create(A, B);
+    return Sequence<typename RHS::TensorEngine>::create(A, B);
   }
 }
 

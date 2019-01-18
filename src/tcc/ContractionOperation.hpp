@@ -11,10 +11,10 @@
 #include <string>
 
 namespace tcc {
-  template <typename F> class Contraction;
+  template <typename F, typename TE> class Contraction;
 
-  template <typename F>
-  class ContractionOperation: public TensorResultOperation<F> {
+  template <typename F, typename TE>
+  class ContractionOperation: public TensorResultOperation<F,TE> {
   public:
     /**
      * \brief Creates a contraction operation contracting the results of
@@ -24,16 +24,16 @@ namespace tcc {
      * generate operations.
      **/
     ContractionOperation(
-      const PTR(Operation<F>) &left_,
-      const PTR(Operation<F>) &right_,
-      const PTR(Tensor<F>) &result_,
+      const PTR(ESC(TensorResultOperation<F,TE>)) &left_,
+      const PTR(ESC(TensorResultOperation<F,TE>)) &right_,
+      const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       Costs contractionCosts,
-      const typename Operation<F>::ProtectedToken &
+      const typename Operation<TE>::ProtectedToken &
     ):
-      TensorResultOperation<F>(
+      TensorResultOperation<F,TE>(
         result_, resultIndices_, left_->costs + right_->costs,
-        typename Operation<F>::ProtectedToken()
+        typename Operation<TE>::ProtectedToken()
       ),
       left(left_), right(right_)
     {
@@ -67,25 +67,25 @@ namespace tcc {
      * the left and the right sub-operations where the result is to be
      * stored in the specified result tensor.
      **/
-    static PTR(ContractionOperation<F>) create(
-      const PTR(Operation<F>) &left_,
-      const PTR(Operation<F>) &right_,
-      const PTR(Tensor<F>) &result_,
+    static PTR(ESC(ContractionOperation<F,TE>)) create(
+      const PTR(ESC(TensorResultOperation<F,TE>)) &left_,
+      const PTR(ESC(TensorResultOperation<F,TE>)) &right_,
+      const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       const Costs &contractionCosts
     ) {
-      return NEW(ContractionOperation<F>,
+      return NEW(ESC(ContractionOperation<F,TE>),
         left_, right_,
         result_, resultIndices_,
         contractionCosts,
-        typename Operation<F>::ProtectedToken()
+        typename Operation<TE>::ProtectedToken()
       );
     }
 
-    PTR(Operation<F>) left;
-    PTR(Operation<F>) right;
+    PTR(ESC(TensorResultOperation<F,TE>)) left;
+    PTR(ESC(TensorResultOperation<F,TE>)) right;
 
-    friend class Contraction<F>;
+    friend class Contraction<F,TE>;
   };
 }
 

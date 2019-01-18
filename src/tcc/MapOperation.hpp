@@ -7,22 +7,26 @@
 #include <util/SharedPointer.hpp>
 
 namespace tcc {
-  template <typename F> class Map;
+  template <typename Target, typename Domain, typename TE> class Map;
 
-  template <typename F>
-  class MapOperation: public Operation<F> {
+  template <typename Target, typename Domain, typename TE>
+  class MapOperation: public TensorResultOperation<Target,TE> {
   public:
     MapOperation(
-      const std::function<F(const F)> &f_,
-      const PTR(Operation<F>) &source_,
-      const typename Operation<F>::ProtectedToken &
+      const std::function<Target(const Domain)> &f_,
+      const PTR(ESC(TensorResultOperation<Domain,TE>)) &source_,
+      const typename Operation<TE>::ProtectedToken &
     ):
-      Operation<F>(source_->costs), f(f_), source(source_),
-      result(
-        source_->getResult()->getTcc()->createTensor(
-          source_->getResult(), "f(" + source->getResult()->getName() + ")"
-        )
-      )
+      TensorResultOperation<Target,TE>(
+        Tensor<Target,TE>::create(
+          source_->getResult()->getLens(),  // target tensor has identical lens
+          "f(" + source_->getResult()->getName() + ")"
+        ),
+        source_->getResultIndices().c_str(), // target has identical indices
+        source_->costs,
+        typename Operation<TE>::ProtectedToken()
+      ),
+      f(f_), source(source_)
     {
       // TODO: assess map operation costs
     }
@@ -32,37 +36,29 @@ namespace tcc {
     virtual void execute() {
       source->execute();
       // execute machine tensor's move with custom map
-      result->getMachineTensor()->move(
-        F(1),
+      this->getResult()->getMachineTensor()->move(
+        Domain(1),
         source->getResult()->getMachineTensor(), source->getResultIndices(),
-        F(0),
-        getResultIndices(),
+        Target(0),
+        this->getResultIndices(),
         f
       );
     }
 
-    virtual PTR(Tensor<F>) getResult() {
-      return result;
-    }
-    virtual const std::string &getResultIndices() {
-      return source->getResultIndices();
-    }
-
   protected:
-    static PTR(MapOperation<F>) create(
-      const std::function<F(const F)> &f_,
-      const PTR(Operation<F>) &source_
+    static PTR(ESC(MapOperation<Target,Domain,TE>)) create(
+      const std::function<Target(const Domain)> &f_,
+      const PTR(ESC(TensorResultOperation<Domain,TE>)) &source_
     ) {
-      return NEW(MapOperation<F>,
-        f_, source_, typename Operation<F>::ProtectedToken()
+      return NEW(ESC(MapOperation<Target,Domain,TE>),
+        f_, source_, typename Operation<TE>::ProtectedToken()
       );
     }
 
-    std::function<F(const F)> f;
-    PTR(Operation<F>) source;
-    PTR(Tensor<F>) result;
+    std::function<Target(const Domain)> f;
+    PTR(ESC(TensorResultOperation<Domain,TE>)) source;
 
-    friend class Map<F>;
+    friend class Map<Target,Domain,TE>;
   };
 }
 

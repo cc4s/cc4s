@@ -7,10 +7,10 @@
 #include <util/SharedPointer.hpp>
 
 namespace tcc {
-  template <typename F> class Contraction;
+  template <typename F, typename TE> class Contraction;
 
-  template <typename F>
-  class MoveOperation: public TensorResultOperation<F> {
+  template <typename F, typename TE>
+  class MoveOperation: public TensorResultOperation<F,TE> {
   public:
     /**
      * \brief Creates a move operation moving the results of
@@ -21,38 +21,18 @@ namespace tcc {
      * generate operations.
      **/
     MoveOperation(
-      const PTR(Operation<F>) &rhs_,
-      const PTR(Tensor<F>) &result_,
+      const PTR(ESC(TensorResultOperation<F,TE>)) &rhs_,
+      const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       Costs moveCosts,
-      const typename Operation<F>::ProtectedToken &
+      const typename Operation<TE>::ProtectedToken &
     ):
-      TensorResultOperation<F>(
+      TensorResultOperation<F,TE>(
         result_, resultIndices_,
         rhs_->costs,
-        typename Operation<F>::ProtectedToken()
+        typename Operation<TE>::ProtectedToken()
       ),
-      rhs(rhs_),
-      f(nullptr)
-    {
-      this->costs += moveCosts;
-    }
-
-    MoveOperation(
-      const PTR(Operation<F>) &rhs_,
-      const std::function<F(const F)> &f_,
-      const PTR(Tensor<F>) &result_,
-      const char *resultIndices_,
-      Costs moveCosts,
-      const typename Operation<F>::ProtectedToken &
-    ):
-      TensorResultOperation<F>(
-        result_, resultIndices_,
-        rhs_->costs,
-        typename Operation<F>::ProtectedToken()
-      ),
-      rhs(rhs_),
-      f(f_)
+      rhs(rhs_)
     {
       this->costs += moveCosts;
     }
@@ -62,44 +42,32 @@ namespace tcc {
 
     virtual void execute() {
       rhs->execute();
-      if (f) {
-        // execute move with custom map
-        this->result->getMachineTensor()->move(
-          this->alpha,
-          rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
-          this->beta,
-          this->resultIndices,
-          f
-        );
-      } else {
-        // execute standard move
-        this->result->getMachineTensor()->move(
-          this->alpha,
-          rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
-          this->beta,
-          this->resultIndices
-        );
-      }
-    }
-
-  protected:
-    static PTR(MoveOperation<F>) create(
-      const PTR(Operation<F>) &rhs_,
-      const PTR(Tensor<F>) &result_,
-      const char *resultIndices_,
-      const Costs &moveCosts
-    ) {
-      return NEW(MoveOperation<F>,
-        rhs_,
-        result_, resultIndices_, moveCosts,
-        typename Operation<F>::ProtectedToken()
+      this->getResult()->getMachineTensor()->move(
+        this->alpha,
+        rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
+        this->beta,
+        this->resultIndices
       );
     }
 
-    PTR(Operation<F>) rhs;
-    std::function<F(const F)> f;
+  protected:
+    static PTR(ESC(MoveOperation<F,TE>)) create(
+      const PTR(ESC(TensorResultOperation<F,TE>)) &rhs_,
+      const PTR(ESC(Tensor<F,TE>)) &result_,
+      const char *resultIndices_,
+      const Costs &moveCosts
+    ) {
+      return NEW(ESC(MoveOperation<F,TE>),
+        rhs_,
+        result_, resultIndices_, moveCosts,
+        typename Operation<TE>::ProtectedToken()
+      );
+    }
 
-    friend class Contraction<F>;
+    PTR(ESC(TensorResultOperation<F,TE>)) rhs;
+    F alpha, beta;
+
+    friend class Contraction<F,TE>;
   };
 }
 

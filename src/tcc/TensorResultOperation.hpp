@@ -6,18 +6,19 @@
 #include <tcc/Costs.hpp>
 
 #include <util/SharedPointer.hpp>
-#include <util/Log.hpp>
 
 #include <string>
 
 namespace tcc {
-  template <typename F> class Tensor;
-  template <typename F> class Move;
-  template <typename F> class Contraction;
+  template <typename F, typename TE> class Tensor;
+  template <typename F, typename TE> class Move;
+  template <typename F, typename TE> class Contraction;
 
-  template <typename F>
-  class TensorResultOperation: public Operation<F> {
+  template <typename F, typename TE>
+  class TensorResultOperation: public Operation<TE> {
   public:
+    typedef F FieldType;
+
     /**
      * \brief Creates a contraction operation contracting the results of
      * the left and the right sub-operations where the result is to be
@@ -26,22 +27,22 @@ namespace tcc {
      * generate operations.
      **/
     TensorResultOperation(
-      const PTR(Tensor<F>) &result_,
+      const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       const Costs &costs_,
-      const typename Operation<F>::ProtectedToken &
+      const typename Operation<TE>::ProtectedToken &
     ):
-      Operation<F>(costs_),
-      alpha(F(1)), beta(F(0)),
+      Operation<TE>(costs_),
       result(result_),
-      resultIndices(resultIndices_)
+      resultIndices(resultIndices_),
+      alpha(F(1)), beta(F(0))
     {
     }
 
     virtual ~TensorResultOperation() {
     }
 
-    virtual PTR(Tensor<F>) getResult() {
+    virtual PTR(ESC(Tensor<F,TE>)) getResult() {
       return result;
     }
 
@@ -50,12 +51,12 @@ namespace tcc {
     }
 
   protected:
-    F alpha, beta;
-    PTR(Tensor<F>) result;
+    PTR(ESC(Tensor<F,TE>)) result;
     std::string resultIndices;
+    F alpha, beta;
 
-    friend class Move<F>;
-    friend class Contraction<F>;
+    friend class Move<F,TE>;
+    friend class Contraction<F,TE>;
   };
 }
 

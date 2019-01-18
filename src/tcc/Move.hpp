@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_MOVE_DEFINED
 #define TCC_MOVE_DEFINED
 
@@ -10,38 +10,32 @@
 #include <util/StaticAssert.hpp>
 
 namespace tcc {
-  template <typename F>
+  template <typename F, typename TE>
   class IndexedTensor;
 
-  template <typename F>
-  class Move: public Expression<F> {
+  template <typename F, typename TE>
+  class Move: public Expression<TE> {
   public:
     /**
      * \brief Moves the given right hand side expression into the given
      * indexed tensor, returning the indexed tensor as result expression
      * for possible further operations.
      **/
-    template <typename Lhs, typename Rhs, typename S>
-    static inline PTR(Move<typename Lhs::FieldType>) create(
-      const PTR(Lhs) &lhs,
-      const PTR(Rhs) &rhs,
+    template <typename LHS, typename RHS, typename S>
+    static inline
+    PTR(ESC(Move<typename LHS::FieldType, typename LHS::TensorEngine>)) create(
+      const PTR(LHS) &lhs,
+      const PTR(RHS) &rhs,
       const S beta
     ) {
       static_assert(
-        cc4s::TypeRelations<S, typename Lhs::FieldType>::CASTABLE_TO,
+        cc4s::TypeRelations<S, typename LHS::FieldType>::CASTABLE_TO,
         "The type of the scalar must be convertible to the tensor type."
       );
-      auto move(
-        NEW(Move<typename Lhs::FieldType>,
-          lhs, rhs, beta,
-          typename Expression<typename Lhs::FieldType>::ProtectedToken()
-        )
+      return NEW(ESC(Move<typename LHS::FieldType,TE>),
+        lhs, rhs, beta,
+        typename Expression<TE>::ProtectedToken()
       );
-/*
-      lhs->parent = move;
-      rhs->parent = move;
-*/
-      return move;
     }
 
     /**
@@ -49,17 +43,21 @@ namespace tcc {
      * expression rhs in the left hand tensor expression lhs.
      * Not indended for direct invocation. Use Move::create instead
      **/
+/*
+    FIXME: find exclusion
     Move(
-      const PTR(IndexedTensor<F>) &lhs_,
-      const PTR(Expression<F>) &rhs_,
+      const PTR(ESC(IndexedTensor<F,TE>)) &lhs_,
+      const PTR(Expression<TE>) &rhs_,
       const F beta_,
-      const typename Expression<F>::ProtectedToken &
+      const typename Expression<TE>::ProtectedToken &
     ) {
       static_assert(
         cc4s::StaticAssert<F>::FALSE,
-        "Only tensors or contractions may be used as the right hand side of an assignment."
+        "The result type of the right-hand-side must match that of the left-hand-side."
       );
     }
+*/
+
     /**
      * \brief Creates a move expression where the right hand side is
      * single IndexedTensor expression. It will be wrapped in a Contraction
@@ -67,22 +65,23 @@ namespace tcc {
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const PTR(IndexedTensor<F>) &lhs_,
-      const PTR(IndexedTensor<F>) &rhs_,
+      const PTR(ESC(IndexedTensor<F,TE>)) &lhs_,
+      const PTR(ESC(TensorResultExpression<F,TE>)) &rhs_,
       const F beta_,
-      const typename Expression<F>::ProtectedToken &
-    ): lhs(lhs_), rhs(Contraction<F>::create(1, rhs_)), beta(beta_) {
+      const typename Expression<TE>::ProtectedToken &
+    ): lhs(lhs_), rhs(Contraction<F,TE>::create(1, rhs_)), beta(beta_) {
     }
+
     /**
      * \brief Creates a move expression where the right hand side is
      * a Contraction expression.
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const PTR(IndexedTensor<F>) &lhs_,
-      const PTR(Contraction<F>) &rhs_,
+      const PTR(ESC(IndexedTensor<F,TE>)) &lhs_,
+      const PTR(ESC(Contraction<F,TE>)) &rhs_,
       const F beta_,
-      const typename Expression<F>::ProtectedToken &
+      const typename Expression<TE>::ProtectedToken &
     ): lhs(lhs_), rhs(rhs_), beta(beta_) {
     }
     virtual ~Move() {
@@ -90,7 +89,7 @@ namespace tcc {
 
     // each move has its private index namespace so disregard the outer
     // indexCounts
-    virtual PTR(Operation<F>) compile(IndexCounts &) {
+    virtual PTR(Operation<TE>) compile(IndexCounts &) {
       LOG(2, "TCC") << "compiling move..." << std::endl;
       // create a new namespace of indices
       IndexCounts indexCounts;
@@ -101,12 +100,16 @@ namespace tcc {
       indexCounts.triedPossibilitiesCount = 0;
       auto operation(
         // compile right-hand-side in the namespace of this move
-        DYNAMIC_PTR_CAST(TensorResultOperation<F>, rhs->compile(indexCounts))
+        DYNAMIC_PTR_CAST(
+          ESC(TensorResultOperation<F,TE>), rhs->compile(indexCounts)
+        )
       );
       // write operation results directly to lhs tensor instead of intermediate
+      // TODO: support assumed shape tensors
       operation->result = lhs->tensor;
       operation->resultIndices = lhs->indices;
       // enter the beta factor of this move
+      // FIXME: enter in contraction or move
       operation->beta = beta;
 
       LOG(2, "TCC") <<
@@ -127,31 +130,46 @@ namespace tcc {
     }
 
   protected:
-    PTR(IndexedTensor<F>) lhs;
-    PTR(Contraction<F>) rhs;
+    PTR(ESC(IndexedTensor<F,TE>)) lhs;
+    PTR(ESC(Contraction<F,TE>)) rhs;
     F beta;
-
-    friend class Tcc<F>;
   };
 
   /**
    * \brief Creates an updating move expression.
    **/
-  template <typename Lhs, typename Rhs>
-  inline PTR(Move<typename Lhs::FieldType>) operator +=(
-    const PTR(Lhs) &lhs, const PTR(Rhs) &rhs
+  template <typename RHS>
+  inline
+  PTR(ESC(Move<typename RHS::FieldType,typename RHS::TensorEngine>))
+  operator +=(
+    const
+    PTR(
+      ESC(IndexedTensor<typename RHS::FieldType,typename RHS::TensorEngine>)
+    ) &lhs,
+    const PTR(RHS) &rhs
   ) {
-    return Move<typename Lhs::FieldType>::create(lhs, rhs, 1);
+    return Move<typename RHS::FieldType,typename RHS::TensorEngine>::create(
+      lhs, rhs, 1
+    );
   }
   /**
    * \brief Creates an updating move expression.
    **/
-  template <typename Lhs, typename Rhs>
-  inline PTR(Move<typename Lhs::FieldType>) operator -=(
-    const PTR(Lhs) &lhs, const PTR(Rhs) &rhs
+  template <typename RHS>
+  inline
+  PTR(ESC(Move<typename RHS::FieldType,typename RHS::TensorEngine>))
+  operator -=(
+    const
+    PTR(
+      ESC(IndexedTensor<typename RHS::FieldType,typename RHS::TensorEngine>)
+    ) &lhs,
+    const PTR(RHS) &rhs
   ) {
-    return Move<typename Lhs::FieldType>::create(
-      lhs, Contraction<typename Rhs::FieldType>::create(-1, rhs),
+    return Move<typename RHS::FieldType,typename RHS::TensorEngine>::create(
+      lhs,
+      Contraction<typename RHS::FieldType,typename RHS::TensorEngine>::create(
+        -1, rhs
+      ),
       1
     );
   }
@@ -163,36 +181,46 @@ namespace tcc {
    * Note that the operator = cannot be used since all expressions are
    * represented by shared pointers.
    **/
-  template <typename Rhs>
-  inline PTR(Move<typename Rhs::FieldType>) operator <<=(
-    const PTR(IndexedTensor<typename Rhs::FieldType>) &lhs,
-    const PTR(Rhs) &rhs
+  template <typename RHS>
+  inline
+  PTR(ESC(Move<typename RHS::FieldType, typename RHS::TensorEngine>))
+  operator <<=(
+    const
+    PTR(
+      ESC(IndexedTensor<typename RHS::FieldType,typename RHS::TensorEngine>)
+    ) &lhs,
+    const PTR(RHS) &rhs
   ) {
-    return Move<typename Rhs::FieldType>::create(lhs, rhs, 0);
+    return Move<typename RHS::FieldType, typename RHS::TensorEngine>::create(
+      lhs, rhs, 0
+    );
   }
 
-  template <typename Lhs, typename Rhs>
-  inline PTR(Move<typename Lhs::FieldType>) operator <<=(
-    const PTR(Lhs) &, const PTR(Rhs) &rhs
+  template <typename LHS, typename RHS>
+  inline
+  PTR(ESC(Move<typename RHS::FieldType, typename RHS::TensorEngine>))
+  operator <<=(
+    const PTR(LHS) &, const PTR(RHS) &rhs
   ) {
     static_assert(
       cc4s::TypeRelations<
-        typename Lhs::FieldType, typename Rhs::FieldType
+        typename LHS::FieldType, typename RHS::FieldType
       >::EQUALS,
       "Move operations requires tensors of same type."
     );
     static_assert(
-      cc4s::StaticAssert<Lhs>::FALSE,
+      cc4s::StaticAssert<RHS>::FALSE,
       "Only indexed tensors may be used as the left hand side of a move operation."
     );
-    return PTR(Move<typename Lhs::FieldType>)();
+    return PTR(ESC(Move<typename RHS::FieldType,typename RHS::TensorEngine>))();
   }
 
-  template <typename F>
+  template <typename F, typename TE>
   inline std::ostream &operator <<(
-    std::ostream &stream, const IndexedTensor<F> &t
+    std::ostream &stream, const IndexedTensor<F,TE> &t
   ) {
-    return stream << t.tensor->getName() << "[" << t.indices << "]";
+    return stream << t.getTensor()->getName() <<
+      "[" << t->getResultIndices() << "]";
   }
 }
 

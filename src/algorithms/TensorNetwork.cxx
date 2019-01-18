@@ -33,78 +33,67 @@ void TensorNetwork::dryRun() {
   size_t Np(No+Nv);
   size_t NF(200);
   size_t NR(400);
-  auto machineTensorFactory(
-//    CtfMachineTensorFactory<>::create(Cc4s::world)
-    DryMachineTensorFactory<>::create()
-  );
-  auto tcc(Tcc<real>::create(machineTensorFactory));
-
-/*
-  shared_ptr<Tensor<complex>> Tc(
-    tcc.createTensor<complex>(std::vector<size_t>({Nv,Nv,No,No}), "Tc")
-  );
-*/
+  typedef Tcc<DryEngine> TCC;
   auto T(
-    tcc->createTensor(std::vector<size_t>({Nv,Nv,No,No}), "T")
+    TCC::tensor(std::vector<size_t>({Nv,Nv,No,No}), "T")
   );
   auto D(
-    tcc->createTensor(std::vector<size_t>({Nv,Nv,No,No}), "D")
+    TCC::tensor(std::vector<size_t>({Nv,Nv,No,No}), "D")
   );
   auto Pi(
-    tcc->createTensor(std::vector<size_t>({NR,Np}), "Pi")
+    TCC::tensor(std::vector<size_t>({NR,Np}), "Pi")
   );
   auto PiT(
-    tcc->createTensor(std::vector<size_t>({NR,Np}), "PiT")
+    TCC::tensor(std::vector<size_t>({NR,Np}), "PiT")
   );
   auto Lambda(
-    tcc->createTensor(std::vector<size_t>({NR,NF}), "Lambda")
+    TCC::tensor(std::vector<size_t>({NR,NF}), "Lambda")
   );
   auto LambdaT(
-    tcc->createTensor(std::vector<size_t>({NR,NF}), "LambdaT")
+    TCC::tensor(std::vector<size_t>({NR,NF}), "LambdaT")
   );
   auto Gamma(
-    tcc->createTensor(std::vector<size_t>({NF,Np,Np}), "Gamma")
+    TCC::tensor(std::vector<size_t>({NF,Np,Np}), "Gamma")
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
 
   // compile a sequence (,) of operations. Note the required parenthesis
-  auto ladderOperation = tcc->compile(
-    (
+  IndexCounts indexCounts;
+  auto ladderOperation = (
 /*
-      (*Gamma)["Fqr"] <<= (*Pi)["Rq"] * (*Pi)["Rr"] * (*Lambda)["RF"],
-      (*Pi)["Rr"] <<= (*LambdaT)["RF"] * (*PiT)["Rq"] * (*Gamma)["Fqr"],
-      (*T)["abij"] -= -1/4. *(*T)["abji"],
+    (*Gamma)["Fqr"] <<= (*Pi)["Rq"] * (*Pi)["Rr"] * (*Lambda)["RF"],
+    (*Pi)["Rr"] <<= (*LambdaT)["RF"] * (*PiT)["Rq"] * (*Gamma)["Fqr"],
+    (*T)["abij"] -= -1/4. *(*T)["abji"],
 */
-      (*D)["abij"] +=
-        (*T)["cdij"] *
-        (*Pi)["Rd"] * map<real>(conj<real>, (*Pi)["Rb"]) *
-        (*Pi)["Sc"] * (*PiT)["Sa"] *
-        (*LambdaT)["SF"] * (*Lambda)["RF"]
-    )
-  );
+    (*D)["abij"] +=
+      (*T)["cdij"] *
+      (*Pi)["Rd"] * map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]) *
+      (*Pi)["Sc"] * (*PiT)["Sa"] *
+      (*LambdaT)["SF"] * (*Lambda)["RF"]
+  )->compile(indexCounts);
   ladderOperation->execute();
 
 // this contraction already requires heuristics
 /*
   shared_ptr<Tensor<>> Pia(
-    tcc->createTensor(std::vector<size_t>({NR,Nv}), "Pia")
+    TCC::tensor(std::vector<size_t>({NR,Nv}), "Pia")
   );
   shared_ptr<Tensor<>> Pii(
-    tcc->createTensor(std::vector<size_t>({NR,No}), "Pii")
+    TCC::tensor(std::vector<size_t>({NR,No}), "Pii")
   );
   size_t Nn(7);
   shared_ptr<Tensor<>> w(
-    tcc->createTensor(std::vector<size_t>({Nn}), "w")
+    TCC::tensor(std::vector<size_t>({Nn}), "w")
   );
   shared_ptr<Tensor<>> H(
-    tcc->createTensor(std::vector<size_t>({No,Nn}), "H")
+    TCC::tensor(std::vector<size_t>({No,Nn}), "H")
   );
   shared_ptr<Tensor<>> P(
-    tcc->createTensor(std::vector<size_t>({Nv,Nn}), "P")
+    TCC::tensor(std::vector<size_t>({Nv,Nn}), "P")
   );
   shared_ptr<Tensor<>> e(
-    tcc->createTensor(std::vector<size_t>(), "e")
+    TCC::tensor(std::vector<size_t>(), "e")
   );
 
   auto imaginaryTimeMp2Operation = tcc->compile(

@@ -7,27 +7,24 @@
 #include <tcc/IndexCounts.hpp>
 
 namespace tcc {
-  template <typename F>
-  class Tcc;
-
-  template <typename F>
-  class Expression: public THISABLE(Expression<F>) {
+  template <typename TE>
+  class Expression: public THISABLE(Expression<TE>) {
   public:
     /**
-     * \brief Allow inferring the field type F given any of its expression
-     * types.
+     * \brief Allow inferring the tensor engine TE given any expression types.
      **/
-    typedef F FieldType;
+    typedef TE TensorEngine;
 
     virtual ~Expression() {
     }
 
-    // TODO: should be protected
     /**
      * \brief Compiles this expression and its subexpressions and returns
      * the resulting operation.
      **/
-    virtual PTR(Operation<F>) compile(IndexCounts &indexCounts) {
+    virtual PTR(Operation<TE>) compile(
+      IndexCounts &indexCounts = IndexCounts()
+    ) {
       throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
     }
 
@@ -39,17 +36,6 @@ namespace tcc {
     virtual void countIndices(IndexCounts &indexCounts) = 0;
 
   protected:
-    // FIXME: protect or discard
-    /**
-     * \brief The enclosing expression using the result of this expression or
-     * nullptr if it is the outermost expression node.
-     * Note that the object is not owned by the parent.
-     **/
-/*
-    WEAK_PTR(Expression<F>) parent;
-*/
-    friend class Tcc<F>;
-
     /**
      * \brief Dummy objects of that type are used to guarantee that
      * constructors are only called from within the class although they

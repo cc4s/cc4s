@@ -12,60 +12,53 @@
 #include <vector>
 
 namespace tcc {
-  template <typename F> class IndexedTensor;
+  template <typename F, typename TE> class IndexedTensor;
 
-  template <typename F>
-  class Contraction: public Expression<F> {
+  template <typename F, typename TE>
+  class Contraction: public TensorResultExpression<F,TE> {
   public:
     /**
      * \brief Creates a contraction expression of the two given tensor
      * expressions A and B.
      **/
-    template <typename Lhs, typename Rhs>
-    static PTR(Contraction<typename Lhs::FieldType>) create(
-      const PTR(Lhs) &A, const PTR(Rhs) &B
+    template <typename LHS, typename RHS>
+    static
+    PTR(ESC(Contraction<typename RHS::FieldType, typename RHS::TensorEngine>))
+    create(
+      const PTR(LHS) &A, const PTR(RHS) &B
     ) {
       static_assert(
         cc4s::TypeRelations<
-          typename Lhs::FieldType, typename Rhs::FieldType
+          typename LHS::FieldType, typename RHS::FieldType
         >::EQUALS,
         "Only tensors of the same type can be contracted."
       );
-      auto contraction(
-        NEW(Contraction<typename Lhs::FieldType>,
-          A, B,
-          typename Expression<typename Lhs::FieldType>::ProtectedToken()
-        )
+      return NEW(
+        ESC(Contraction<typename RHS::FieldType, typename RHS::TensorEngine>),
+        A, B,
+        typename Expression<typename RHS::TensorEngine>::ProtectedToken()
       );
-/*
-      A->parent = contraction;
-      B->parent = contraction;
-*/
-      return contraction;
     }
 
     /**
      * \brief Creates a contraction expression of a tensor expression A
      * and a scalar alpha
      **/
-    template <typename S, typename Lhs>
-    static PTR(Contraction<typename Lhs::FieldType>) create(
-      const S alpha, const PTR(Lhs) &A
+    template <typename S, typename LHS>
+    static
+    PTR(ESC(Contraction<typename LHS::FieldType, typename LHS::TensorEngine>))
+    create(
+      const S alpha, const PTR(LHS) &A
     ) {
       static_assert(
-        cc4s::TypeRelations<S, typename Lhs::FieldType>::CASTABLE_TO,
+        cc4s::TypeRelations<S, typename LHS::FieldType>::CASTABLE_TO,
         "The type of the scalar must be convertible to the tensor type."
       );
-      auto contraction(
-        NEW(Contraction<typename Lhs::FieldType>,
-          alpha, A,
-          typename Expression<typename Lhs::FieldType>::ProtectedToken()
-        )
+      return NEW(
+        ESC(Contraction<typename LHS::FieldType, typename LHS::TensorEngine>),
+        alpha, A,
+        typename Expression<typename LHS::TensorEngine>::ProtectedToken()
       );
-/*
-      A->parent = contraction;
-*/
-      return contraction;
     }
 
 
@@ -75,60 +68,60 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const PTR(Contraction<F>) &lhs,
-      const PTR(Contraction<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(ESC(Contraction<F,TE>)) &lhs,
+      const PTR(ESC(Contraction<F,TE>)) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ): alpha(lhs->alpha * rhs->alpha), factors(lhs->factors) {
       factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
     }
     /**
      * \brief Flattening constructor given a contraction on the left hand
-     * side and another expression on the right hand side.
+     * side and another tensor result expression on the right hand side.
      * Not intended for direct invocation, create contractions
      * using the static create method.
      **/
     Contraction(
-      const PTR(Contraction<F>) &lhs,
-      const PTR(Expression<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(ESC(Contraction<F,TE>)) &lhs,
+      const PTR(ESC(TensorResultExpression<F,TE>)) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ): alpha(lhs->alpha), factors(lhs->factors) {
       factors.push_back(rhs);
     }
     /**
      * \brief Flattening constructor given a contraction on the right hand
-     * side and another expression on the left hand side.
+     * side and another tensor result expression on the left hand side.
      * Not intended for direct invocation, create contractions
      * using the static create method.
      **/
     Contraction(
-      const PTR(Expression<F>) &lhs,
-      const PTR(Contraction<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(ESC(TensorResultExpression<F,TE>)) &lhs,
+      const PTR(ESC(Contraction<F,TE>)) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ): alpha(rhs->alpha), factors(rhs->factors) {
       factors.push_back(lhs);
     }
     /**
-     * \brief Constructor given two indexed tensors.
+     * \brief Constructor given two tensor result expressions.
      * Not intended for direct invocation, create contractions
      * using the static create method.
      **/
     Contraction(
-      const PTR(Expression<F>) &lhs,
-      const PTR(Expression<F>) &rhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(ESC(TensorResultExpression<F,TE>)) &lhs,
+      const PTR(ESC(TensorResultExpression<F,TE>)) &rhs,
+      const typename Expression<TE>::ProtectedToken &
     ): alpha(F(1)) {
       factors.push_back(lhs);
       factors.push_back(rhs);
     }
     /**
-     * \brief Constructor given an indexed tensor and a scalar.
+     * \brief Constructor given a tensor result expression and a scalar.
      * Not intended for direct invocation, create contractions
      * using the static create method.
      **/
     Contraction(
       const F alpha_,
-      const PTR(Expression<F>) &lhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(ESC(TensorResultExpression<F,TE>)) &lhs,
+      const typename Expression<TE>::ProtectedToken &
     ): alpha(alpha_) {
       factors.push_back(lhs);
     }
@@ -139,29 +132,34 @@ namespace tcc {
      **/
     Contraction(
       const F alpha_,
-      const PTR(Contraction<F>) &lhs,
-      const typename Expression<F>::ProtectedToken &
+      const PTR(ESC(Contraction<F,TE>)) &lhs,
+      const typename Expression<TE>::ProtectedToken &
     ): alpha(lhs->alpha * alpha_), factors(lhs->factors) {
     }
 
     virtual ~Contraction() {
     }
 
-    virtual PTR(Operation<F>) compile(IndexCounts &indexCounts) {
-      std::vector<PTR(Operation<F>)> factorOperations(factors.size());
-      for (unsigned int i(0); i < factors.size(); ++i) {
-        factorOperations[i] = factors[i]->compile(indexCounts);
+    virtual PTR(Operation<TE>) compile(IndexCounts &indexCounts) {
+      std::vector<PTR(ESC(TensorResultOperation<F,TE>))> factorOperations(
+        factors.size()
+      );
+      for (size_t i(0); i < factors.size(); ++i) {
+        factorOperations[i] = DYNAMIC_PTR_CAST(
+          ESC(TensorResultOperation<F,TE>), factors[i]->compile(indexCounts)
+        );
       }
 
-      PTR(TensorResultOperation<F>) operation;
+      PTR(ESC(TensorResultOperation<F,TE>)) operation;
       if (factorOperations.size() < 2) {
         // only one operand in contraction: do move directly
         operation = createMoveOperation(factorOperations[0]);
       } else {
-        // compile at least 2 contractions in correct order
+        // compile at least 2 contractions in best order
         operation = compileContractions(factorOperations, indexCounts);
       }
       // enter the scaling factor alpha
+      // FIXME: find proper spot for alpha
       operation->alpha = alpha;
       return operation;
     }
@@ -178,24 +176,24 @@ namespace tcc {
      * find the best order of contractions. The indexCounts are modified
      * during evaluation.
      **/
-    PTR(ContractionOperation<F>) compileContractions(
-      const std::vector<PTR(Operation<F>)> &operations,
+    PTR(ESC(ContractionOperation<F,TE>)) compileContractions(
+      const std::vector<PTR(ESC(TensorResultOperation<F,TE>))> &operations,
       IndexCounts &indexCounts,
       const unsigned int level = 0
     ) {
       // no best contraction known at first
-      PTR(ContractionOperation<F>) bestContractions;
+      PTR(ESC(ContractionOperation<F,TE>)) bestContractions;
       for (unsigned int i(0); i < operations.size()-1; ++i) {
-        PTR(Operation<F>) a(operations[i]);
+        auto a(operations[i]);
         // take out the indices of factor a
         indexCounts.add(a->getResultIndices(), -1);
         for (unsigned int j(i+1); j < operations.size(); ++j) {
-          PTR(Operation<F>) b(operations[j]);
+          auto b(operations[j]);
           // take out the indices of factor b
           indexCounts.add(b->getResultIndices(), -1);
 
           // just compile the contraction of a&b
-          PTR(ContractionOperation<F>) contractionOperation(
+          auto contractionOperation(
             createContractionOperation(a, b, indexCounts)
           );
 
@@ -207,7 +205,7 @@ namespace tcc {
               // otherwise, add indices of the result for further consideration
               indexCounts.add(contractionOperation->getResultIndices());
               // build new list of factors
-              std::vector<PTR(Operation<F>)> subOperations(
+              std::vector<PTR(ESC(TensorResultOperation<F,TE>))> subOperations(
                 operations.size() - 1
               );
               subOperations[0] = contractionOperation;
@@ -217,7 +215,7 @@ namespace tcc {
               }
 
               // now do a recursive compilation of all the remaining factors
-              PTR(ContractionOperation<F>) allContractions(
+              PTR(ESC(ContractionOperation<F,TE>)) allContractions(
                 compileContractions(subOperations, indexCounts, level+1)
               );
 
@@ -265,12 +263,12 @@ namespace tcc {
      * \brief Creates a ContractionOperation contracting two previously
      * compiled operations and assessing its costs.
      **/
-    PTR(MoveOperation<F>) createMoveOperation(
-      const PTR(Operation<F>) &a
+    PTR(ESC(MoveOperation<F,TE>)) createMoveOperation(
+      const PTR(ESC(TensorResultOperation<F,TE>)) &a
     ) {
       // allocate intermedate result assuming identical indices as argument
-      PTR(Tensor<F>) moveResult(
-        a->getResult()->getTcc()->createTensor(
+      auto moveResult(
+        Tensor<F,TE>::create(
           a->getResult(), a->getResult()->getName() + "'"
         )
       );
@@ -285,7 +283,7 @@ namespace tcc {
         0,  // no multiplications
         moveResult->getElementsCount() // number of additions
       );
-      return MoveOperation<F>::create(
+      return MoveOperation<F,TE>::create(
         a,
         moveResult, a->getResultIndices().c_str(),
         moveCosts
@@ -296,9 +294,9 @@ namespace tcc {
      * \brief Creates a ContractionOperation contracting two previously
      * compiled operations and assessing its costs.
      **/
-    PTR(ContractionOperation<F>) createContractionOperation(
-      const PTR(Operation<F>) &a,
-      const PTR(Operation<F>) &b,
+    PTR(ESC(ContractionOperation<F,TE>)) createContractionOperation(
+      const PTR(ESC(TensorResultOperation<F,TE>)) &a,
+      const PTR(ESC(TensorResultOperation<F,TE>)) &b,
       IndexCounts &indexCounts
     ) {
       size_t contractedIndexDimensions[
@@ -367,8 +365,8 @@ namespace tcc {
       outerIndices[o] = 0;
 
       // allocate intermedate result
-      PTR(Tensor<F>) contractionResult(
-        a->getResult()->getTcc()->createTensor(
+      auto contractionResult(
+        Tensor<F,TE>::create(
           std::vector<size_t>(outerIndexDimensions, outerIndexDimensions+o),
           a->getResult()->getName() + b->getResult()->getName()
         )
@@ -380,7 +378,7 @@ namespace tcc {
         outerElementsCount * contractedElementsCount,
         outerElementsCount * contractedElementsCount - outerElementsCount
       );
-      return ContractionOperation<F>::create(
+      return ContractionOperation<F,TE>::create(
         a, b,
         contractionResult, static_cast<const char *>(outerIndices),
         contractionCosts
@@ -388,42 +386,55 @@ namespace tcc {
     }
 
     F alpha;
-    std::vector<PTR(Expression<F>)> factors;
-
-    friend class Tcc<F>;
+    std::vector<PTR(ESC(TensorResultExpression<F,TE>))> factors;
   };
 
   /**
    * \brief Creates a contraction expression of the two given tensor
    * expressions A and B using the multiplication operator *.
    **/
-  template <typename Lhs, typename Rhs>
-  inline PTR(Contraction<typename Lhs::FieldType>) operator *(
-    const PTR(Lhs) &A, const PTR(Rhs) &B
+  template <typename LHS, typename RHS>
+  inline
+  PTR(ESC(Contraction<typename RHS::FieldType, typename RHS::TensorEngine>))
+  operator *(
+    const PTR(LHS) &A, const PTR(RHS) &B
   ) {
-    return Contraction<typename Lhs::FieldType>::create(A, B);
+    return
+    Contraction<typename RHS::FieldType, typename RHS::TensorEngine>::create(
+      A, B
+    );
   }
 
   /**
    * \brief Creates a contraction expression of a given tensor
    * expressions A and a scalar alpha using the multiplication operator *.
    **/
-  template <typename Lhs, typename S>
-  inline PTR(Contraction<typename Lhs::FieldType>) operator *(
-    const PTR(Lhs) &A, const S alpha
+  template <typename LHS, typename S>
+  inline
+  PTR(ESC(Contraction<typename LHS::FieldType, typename LHS::TensorEngine>))
+  operator *(
+    const PTR(LHS) &A, const S alpha
   ) {
-    return Contraction<typename Lhs::FieldType>::create(alpha, A);
+    return
+    Contraction<typename LHS::FieldType, typename LHS::TensorEngine>::create(
+      alpha, A
+    );
   }
 
   /**
    * \brief Creates a contraction expression of a given tensor
    * expressions A and a scalar alpha using the multiplication operator *.
    **/
-  template <typename S, typename Rhs>
-  inline PTR(Contraction<typename Rhs::FieldType>) operator *(
-    const S alpha, const PTR(Rhs) &A
+  template <typename S, typename RHS>
+  inline
+  PTR(ESC(Contraction<typename RHS::FieldType, typename RHS::TensorEngine>))
+  operator *(
+    const S alpha, const PTR(RHS) &A
   ) {
-    return Contraction<typename Rhs::FieldType>::create(alpha, A);
+    return
+    Contraction<typename RHS::FieldType, typename RHS::TensorEngine>::create(
+      alpha, A
+    );
   }
 }
 

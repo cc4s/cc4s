@@ -9,16 +9,16 @@
 #include <vector>
 
 namespace tcc {
-  template <typename F> class Sequence;
+  template <typename TE> class Sequence;
 
-  template <typename F>
-  class OperationSequence: public Operation<F> {
+  template <typename TE>
+  class OperationSequence: public Operation<TE> {
   public:
     OperationSequence(
-      const std::vector<PTR(Operation<F>)> &operations_,
-      const typename Operation<F>::ProtectedToken &
-    ): Operation<F>(operations_[0]->costs), operations(operations_) {
-      for (unsigned int i(1); i < operations_.size(); ++i) {
+      const std::vector<PTR(Operation<TE>)> &operations_,
+      const typename Operation<TE>::ProtectedToken &
+    ): Operation<TE>(operations_[0]->costs), operations(operations_) {
+      for (size_t i(1); i < operations_.size(); ++i) {
         this->costs += operations_[i]->costs;
       }
       // no elements are required by the result of a sequence
@@ -29,33 +29,23 @@ namespace tcc {
 
     virtual void execute() {
       // execute each operation in turn
-      for (unsigned int i(0); i < operations.size(); ++i) {
-        operations[i]->execute();
+      for (auto &operation: operations) {
+        operation->execute();
       }
     }
 
-    // this operation returns void
-    virtual PTR(Tensor<F>) getResult() {
-      return PTR(Tensor<F>)();
-    }
-    virtual const std::string &getResultIndices() {
-      // TODO: think of better way
-      return emptyIndices;
-    }
-
   protected:
-    static PTR(OperationSequence<F>) create(
-      const std::vector<PTR(Operation<F>)> &operations_
+    static PTR(OperationSequence<TE>) create(
+      const std::vector<PTR(Operation<TE>)> &operations_
     ) {
-      return NEW(OperationSequence<F>,
-        operations_, typename Operation<F>::ProtectedToken()
+      return NEW(OperationSequence<TE>,
+        operations_, typename Operation<TE>::ProtectedToken()
       );
     }
 
-    std::vector<PTR(Operation<F>)> operations;
-    std::string emptyIndices;
+    std::vector<PTR(Operation<TE>)> operations;
 
-    friend class Sequence<F>;
+    friend class Sequence<TE>;
   };
 }
 

@@ -252,31 +252,29 @@ void LaplaceMp2Energy::normalizeV(
 }
 
 double LaplaceMp2Energy::calculateNumerically() {
-  typedef CtfMachineTensor<complex> MT;
-  auto machineTensorFactory(MT::Factory::create());
-  auto tcc(tcc::Tcc<complex>::create(machineTensorFactory));
-  auto Gp(tcc->createTensor(MT::create(*GpRSn)));
-  auto Gh(tcc->createTensor(MT::create(*GhRSn)));
-  auto V(tcc->createTensor(MT::create(*VRS)));
-  auto w(tcc->createTensor(MT::create(*wn)));
-  auto energy(tcc->createTensor(std::vector<size_t>(), "energy"));
-  tcc->compile(
-    (
-      (*energy)[""] <<=
-        -2.0 * (*w)["n"] *
-        (*V)["RS"] * (*V)["TU"] *
-        (*Gp)["RTn"] * (*Gh)["TRn"] * (*Gp)["SUn"] * (*Gh)["USn"]
+  typedef tcc::Tcc<CtfEngine> TCC;
+  auto Gp(tcc::Tensor<complex,CtfEngine>::create(*GpRSn));
+  auto Gh(tcc::Tensor<complex,CtfEngine>::create(*GhRSn));
+  auto V(tcc::Tensor<complex,CtfEngine>::create(*VRS));
+  auto w(tcc::Tensor<complex,CtfEngine>::create(*wn));
+  auto energy(TCC::tensor<complex>(std::vector<size_t>(), "energy"));
+  tcc::IndexCounts indexCounts;
+
+  (
+    (*energy)[""] <<=
+      -2.0 * (*w)["n"] *
+      (*V)["RS"] * (*V)["TU"] *
+      (*Gp)["RTn"] * (*Gh)["TRn"] * (*Gp)["SUn"] * (*Gh)["USn"]
 // the exchange term requires N_R^3 memory
 /*
-      (*energy)[""] +=
-        (*w)["n"] *
-        (*V)["RS"] * (*V)["TU"] *
-        (*Gp)["RTn"] * (*Gh)["TSn"] * (*Gp)["SUn"] * (*Gh)["URn"]
+    (*energy)[""] +=
+      (*w)["n"] *
+      (*V)["RS"] * (*V)["TU"] *
+      (*Gp)["RTn"] * (*Gh)["TSn"] * (*Gp)["SUn"] * (*Gh)["URn"]
 */
-    )
-  )->execute();
+  )->compile(indexCounts)->execute();
   CTF::Scalar<complex> ctfEnergy;
-  ctfEnergy[""] = energy->getMachineTensor<MT>()->tensor[""];
+  ctfEnergy[""] = energy->getMachineTensor()->tensor[""];
   return std::real(ctfEnergy.get_val());
 }
 
