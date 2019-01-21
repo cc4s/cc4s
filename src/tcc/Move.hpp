@@ -104,12 +104,14 @@ namespace tcc {
           ESC(TensorResultOperation<F,TE>), rhs->compile(indexCounts)
         )
       );
+
+      assumeOrCheckShape(operation);
+
       // write operation results directly to lhs tensor instead of intermediate
-      // TODO: support assumed shape tensors
       operation->result = lhs->tensor;
       operation->resultIndices = lhs->indices;
       // enter the beta factor of this move
-      // FIXME: enter in contraction or move
+      // TODO: enter in contraction or move
       operation->beta = beta;
 
       LOG(2, "TCC") <<
@@ -130,6 +132,44 @@ namespace tcc {
     }
 
   protected:
+    void assumeOrCheckShape(
+      const PTR(ESC(TensorResultOperation<F,TE>)) &operation
+    ) {
+      if (lhs->indices.length() != operation->getResultIndices().length()) {
+        throw new EXCEPTION(
+          "Number of indices of left-hand-side tensor " + lhs->tensor->getName() +
+          " must match the number of indices of the result tensor " +
+          operation->getResult()->getName()
+        );
+      }
+      // determine shape of lhs
+      std::vector<size_t> lens(operation->getResult()->getLens().size());
+      size_t lenOfIndex[std::numeric_limits<char>::max()+1];
+      // enter which indices correspond to which length on the rhs
+      for (unsigned int i(0); i < lhs->indices.length(); ++i) {
+        lenOfIndex[static_cast<unsigned int>(operation->getResultIndices()[i])]=
+          operation->result->getLens()[i];
+      }
+      // use for lhs
+      for (unsigned int i(0); i < lhs->indices.length(); ++i) {
+        lens[i] = lenOfIndex[static_cast<unsigned int>(lhs->indices[i])];
+      }
+      if (!lhs->tensor->assumedShape) {
+        // assume
+        lhs->tensor->lens = lens;
+        lhs->tensor->assumedShape = true;
+        // or check shape
+      } else if (lhs->tensor->getLens() != lens) {
+        if (lhs->tensor->lens != operation->getResult()->getLens()) {
+          throw new EXCEPTION(
+            "Shape of left-hand-side tensor " + lhs->tensor->getName() +
+            " must match the shape of the result tensor " +
+            operation->getResult()->getName()
+          );
+        }
+      }
+    }
+
     PTR(ESC(IndexedTensor<F,TE>)) lhs;
     PTR(ESC(Contraction<F,TE>)) rhs;
     F beta;

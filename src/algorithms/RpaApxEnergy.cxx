@@ -100,10 +100,10 @@ void RpaApxEnergy::run() {
   auto Pain(Tensor<complex,CtfEngine>::create(ctfPain));
   auto conjPain(Tensor<complex,CtfEngine>::create(ctfConjPain));
 
-  auto mp2Direct(TCC::tensor<complex>(std::vector<size_t>(), "mp2Direct"));
-  auto mp2Exchange(TCC::tensor<complex>(std::vector<size_t>(), "mp2Exchange"));
-  chi0VFGn = TCC::tensor<complex>(std::vector<size_t>({NF,NF,size_t(Nn)}), "chi0V");
-  chi1VFGn = TCC::tensor<complex>(std::vector<size_t>({NF,NF,size_t(Nn)}), "chi1V");
+  auto mp2Direct(TCC::tensor<complex>("mp2Direct"));
+  auto mp2Exchange(TCC::tensor<complex>("mp2Exchange"));
+  chi0VFGn = TCC::tensor<complex>("chi0V");
+  chi1VFGn = TCC::tensor<complex>("chi1V");
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   LOG(1, "RPA") << "spins=" << spins << std::endl;
   int computeExchange(getIntegerArgument("exchange", 1));

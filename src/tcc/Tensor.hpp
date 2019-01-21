@@ -28,7 +28,16 @@ namespace tcc {
 
   public:
     typedef typename TE::template MachineTensor<F> MT;
-    // TODO: support assumed shape tensors
+    /**
+     * \brief Create a tcc tensor of yet unknown shape.
+     * It must be first on the left-hand-side of an assignment.
+     * Not intended for direct invocation. Use Tcc::createTensor instead.
+     **/
+    Tensor(
+      const std::string &name_,
+      const ProtectedToken &
+    ): assumedShape(false), name(name_) {
+    }
 
     /**
      * \brief Create a tcc tensor of dimensions lens_[0] x lens_[1] x ... with
@@ -40,7 +49,7 @@ namespace tcc {
       const std::vector<size_t> &lens_,
       const std::string &name_,
       const ProtectedToken &
-    ): lens(lens_), name(name_) {
+    ): lens(lens_), assumedShape(true), name(name_) {
       // the machine tensor is not allocated initially
     }
 
@@ -51,11 +60,15 @@ namespace tcc {
     Tensor(
       const typename MT::T &unadaptedTensor_,
       const ProtectedToken &
-    ) {
+    ): assumedShape(true) {
       auto mt(MT::create(unadaptedTensor_));
       lens = mt->getLens();
       name = mt->getName();
       machineTensor = mt;
+    }
+
+    static PTR(ESC(Tensor<F,TE>)) create(const std::string &name) {
+      return NEW(ESC(Tensor<F,TE>), name, ProtectedToken());
     }
 
     static PTR(ESC(Tensor<F,TE>)) create(
@@ -91,6 +104,12 @@ namespace tcc {
 
     PTR(MT) getMachineTensor() {
       if (!machineTensor) {
+        if (!assumedShape) {
+          throw new EXCEPTION(
+            "Tried to execute operation on tensor " + name +
+            " before its shape has been assumed."
+          );
+        }
         // allocate the implementation specific machine tensor upon request
         machineTensor = MT::create(lens, name);
       }
@@ -121,7 +140,8 @@ namespace tcc {
       return IndexedTensor<F,TE>::create(THIS, indices);
     }
 
-    std::vector<size_t> lens;
+    std::vector<size_t> lens;    
+    bool assumedShape;
 
   protected:
     /**

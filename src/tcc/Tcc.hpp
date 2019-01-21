@@ -33,25 +33,19 @@ namespace tcc {
     static PTR(ESC(Tensor<F,TensorEngine>)) tensor(
       const std::vector<size_t> &lens, const std::string &name
     ) {
-      return Tensor<F,TensorEngine>::create(
-       lens, name
-      );
+      return Tensor<F,TensorEngine>::create(lens, name);
     }
 
     template <typename F=cc4s::real>
     static PTR(ESC(Tensor<F,TensorEngine>)) tensor(
       const PTR(ESC(Tensor<F,TensorEngine>)) &source, const std::string &name
     ) {
-      return Tensor<F,TensorEngine>::create(
-       source->getLens(), name
-      );
+      return Tensor<F,TensorEngine>::create(source->getLens(), name);
     }
 
     template <typename F=cc4s::real>
     static PTR(ESC(Tensor<F,TensorEngine>)) tensor(const std::string &name) {
-      return Tensor<F,TensorEngine>::create(
-        name
-      );
+      return Tensor<F,TensorEngine>::create(name);
     }
 
     static PTR(Sequence<TensorEngine>) nothing() {
