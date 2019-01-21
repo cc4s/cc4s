@@ -151,8 +151,6 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
 
     Tensor<complex> GammaFai(GammaFqr->slice(FaiStart, FaiEnd));
 
-
-
     if (isArgumentGiven("CoulombVertexSingularVectors")) {
       Tensor<complex> *UGF(
         getTensorArgument<complex>("CoulombVertexSingularVectors")
@@ -226,31 +224,37 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   Univar_Function<complex> fConj(conj<complex>);
   conjCGai.sum(1.0, CGai, "Gai", 0.0, "Gai", fConj);
 
+  //Split CGai and conjCGai into real and imag parts
+  Tensor<> realCGai(3, GammaGai->lens, GammaGai->sym,
+                        *GammaGai->wrld, "RealCGai");
+  Tensor<> imagCGai(3, GammaGai->lens, GammaGai->sym,
+                        *GammaGai->wrld, "ImagCGai");
+  fromComplexTensor(CGai, realCGai, imagCGai);
+
+  Tensor<> realConjCGai(3, GammaGai->lens, GammaGai->sym,
+                        *GammaGai->wrld, "RealConjCGai");
+  Tensor<> imagConjCGai(3, GammaGai->lens, GammaGai->sym,
+                        *GammaGai->wrld, "ImagConjCGai");
+  fromComplexTensor(conjCGai, realConjCGai, imagConjCGai);
+
   //Get Tabij
   Tensor<> *realTabij(getTensorArgument("DoublesAmplitudes"));
-  Tensor<complex> Tabij(
-    4, realTabij->lens, realTabij->sym, *realTabij->wrld, "Tabij"
-  );
-  toComplexTensor(*realTabij, Tabij);
 
   if (isArgumentGiven("SinglesAmplitudes") ) {
     //Get Tai
     Tensor<> *realTai(getTensorArgument("SinglesAmplitudes"));
-    Tensor<complex> Tai(
-      2, realTai->lens, realTai->sym, *realTai->wrld, "Tai"
-    );
-    toComplexTensor(*realTai, Tai);
-    Tabij["abij"] += Tai["ai"] * Tai["bj"];
+    (*realTabij)["abij"] += (*realTai)["ai"] * (*realTai)["bj"];
   }
 
   //Construct SG
-  NG = CGai.lens[0];
-  CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
-  (*SG)["G"]  = ( 2.0) * conjCGai["Gai"] * CGai["Gbj"] * Tabij["abij"];
-  (*SG)["G"] += (-1.0) * conjCGai["Gaj"] * CGai["Gbi"] * Tabij["abij"];
+  NG = GammaGai->lens[0];
+  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
+  (*realSG)["G"]  = ( 2.0) * realConjCGai["Gai"] * realCGai["Gbj"] * (*realTabij)["abij"];
+  (*realSG)["G"] += (-2.0) * imagConjCGai["Gai"] * imagCGai["Gbj"] * (*realTabij)["abij"];
 
-  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
-  fromComplexTensor(*SG, *realSG);
+  (*realSG)["G"] += (-1.0) * realConjCGai["Gaj"] * realCGai["Gbi"] * (*realTabij)["abij"];
+  (*realSG)["G"] += (+1.0) * imagConjCGai["Gaj"] * imagCGai["Gbi"] * (*realTabij)["abij"];
+
   allocatedTensorArgument<>("StructureFactor", realSG);
 
   VofG.resize(NG);
