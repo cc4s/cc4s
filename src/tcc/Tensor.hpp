@@ -1,9 +1,9 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_TENSOR_DEFINED
 #define TCC_TENSOR_DEFINED
 
-#include <tcc/IndexedTensor.hpp>
-//#include <tcc/MachineTensor.hpp>
+#include <tcc/TensorExpression.hpp>
+#include <tcc/IndexedTensorExpression.hpp>
 
 #include <util/SharedPointer.hpp>
 
@@ -129,15 +129,6 @@ namespace tcc {
         elementsCount *= len;
       }
       return elementsCount;
-    }
-
-    /**
-     * \brief Specify named indices of this tensor to be used in a
-     * tensor expression. Indexed tensors are atomic types of tensor
-     * expressions.
-     **/
-    PTR(ESC(IndexedTensor<F,TE>)) operator[](const std::string &indices) {
-      return IndexedTensor<F,TE>::create(THIS, indices);
     }
 
     std::vector<size_t> lens;    

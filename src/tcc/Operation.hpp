@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_OPERATION_DEFINED
 #define TCC_OPERATION_DEFINED
 

@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_OPERATION_SEQUENCE_DEFINED
 #define TCC_OPERATION_SEQUENCE_DEFINED
 
@@ -12,9 +12,9 @@ namespace tcc {
   template <typename TE> class Sequence;
 
   template <typename TE>
-  class OperationSequence: public Operation<TE> {
+  class SequenceOperation: public Operation<TE> {
   public:
-    OperationSequence(
+    SequenceOperation(
       const std::vector<PTR(Operation<TE>)> &operations_,
       const typename Operation<TE>::ProtectedToken &
     ): Operation<TE>(operations_[0]->costs), operations(operations_) {
@@ -24,7 +24,7 @@ namespace tcc {
       // no elements are required by the result of a sequence
       this->costs.elementsCount = 0;
     }
-    virtual ~OperationSequence() {
+    virtual ~SequenceOperation() {
     }
 
     virtual void execute() {
@@ -35,10 +35,10 @@ namespace tcc {
     }
 
   protected:
-    static PTR(OperationSequence<TE>) create(
+    static PTR(SequenceOperation<TE>) create(
       const std::vector<PTR(Operation<TE>)> &operations_
     ) {
-      return NEW(OperationSequence<TE>,
+      return NEW(SequenceOperation<TE>,
         operations_, typename Operation<TE>::ProtectedToken()
       );
     }

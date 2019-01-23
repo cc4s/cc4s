@@ -1,8 +1,8 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_CONTRACTION_OPERATION_DEFINED
 #define TCC_CONTRACTION_OPERATION_DEFINED
 
-#include <tcc/TensorResultOperation.hpp>
+#include <tcc/IndexedTensorOperation.hpp>
 #include <tcc/Costs.hpp>
 #include <tcc/Tensor.hpp>
 
@@ -14,7 +14,7 @@ namespace tcc {
   template <typename F, typename TE> class Contraction;
 
   template <typename F, typename TE>
-  class ContractionOperation: public TensorResultOperation<F,TE> {
+  class ContractionOperation: public IndexedTensorOperation<F,TE> {
   public:
     /**
      * \brief Creates a contraction operation contracting the results of
@@ -24,14 +24,14 @@ namespace tcc {
      * generate operations.
      **/
     ContractionOperation(
-      const PTR(ESC(TensorResultOperation<F,TE>)) &left_,
-      const PTR(ESC(TensorResultOperation<F,TE>)) &right_,
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &left_,
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &right_,
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       Costs contractionCosts,
       const typename Operation<TE>::ProtectedToken &
     ):
-      TensorResultOperation<F,TE>(
+      IndexedTensorOperation<F,TE>(
         result_, resultIndices_, left_->costs + right_->costs,
         typename Operation<TE>::ProtectedToken()
       ),
@@ -68,8 +68,8 @@ namespace tcc {
      * stored in the specified result tensor.
      **/
     static PTR(ESC(ContractionOperation<F,TE>)) create(
-      const PTR(ESC(TensorResultOperation<F,TE>)) &left_,
-      const PTR(ESC(TensorResultOperation<F,TE>)) &right_,
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &left_,
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &right_,
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       const Costs &contractionCosts
@@ -82,8 +82,8 @@ namespace tcc {
       );
     }
 
-    PTR(ESC(TensorResultOperation<F,TE>)) left;
-    PTR(ESC(TensorResultOperation<F,TE>)) right;
+    PTR(ESC(IndexedTensorOperation<F,TE>)) left;
+    PTR(ESC(IndexedTensorOperation<F,TE>)) right;
 
     friend class Contraction<F,TE>;
   };

@@ -1,8 +1,8 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_CONTRACTION_DEFINED
 #define TCC_CONTRACTION_DEFINED
 
-#include <tcc/Expression.hpp>
+#include <tcc/IndexedTensorExpression.hpp>
 
 #include <tcc/ContractionOperation.hpp>
 #include <tcc/MoveOperation.hpp>
@@ -12,10 +12,10 @@
 #include <vector>
 
 namespace tcc {
-  template <typename F, typename TE> class IndexedTensor;
+  template <typename F, typename TE> class Indexing;
 
   template <typename F, typename TE>
-  class Contraction: public TensorResultExpression<F,TE> {
+  class Contraction: public IndexedTensorExpression<F,TE> {
   public:
     /**
      * \brief Creates a contraction expression of the two given tensor
@@ -82,7 +82,7 @@ namespace tcc {
      **/
     Contraction(
       const PTR(ESC(Contraction<F,TE>)) &lhs,
-      const PTR(ESC(TensorResultExpression<F,TE>)) &rhs,
+      const PTR(ESC(IndexedTensorExpression<F,TE>)) &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(lhs->alpha), factors(lhs->factors) {
       factors.push_back(rhs);
@@ -94,7 +94,7 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const PTR(ESC(TensorResultExpression<F,TE>)) &lhs,
+      const PTR(ESC(IndexedTensorExpression<F,TE>)) &lhs,
       const PTR(ESC(Contraction<F,TE>)) &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(rhs->alpha), factors(rhs->factors) {
@@ -106,8 +106,8 @@ namespace tcc {
      * using the static create method.
      **/
     Contraction(
-      const PTR(ESC(TensorResultExpression<F,TE>)) &lhs,
-      const PTR(ESC(TensorResultExpression<F,TE>)) &rhs,
+      const PTR(ESC(IndexedTensorExpression<F,TE>)) &lhs,
+      const PTR(ESC(IndexedTensorExpression<F,TE>)) &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(F(1)) {
       factors.push_back(lhs);
@@ -120,7 +120,7 @@ namespace tcc {
      **/
     Contraction(
       const F alpha_,
-      const PTR(ESC(TensorResultExpression<F,TE>)) &lhs,
+      const PTR(ESC(IndexedTensorExpression<F,TE>)) &lhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(alpha_) {
       factors.push_back(lhs);
@@ -141,16 +141,16 @@ namespace tcc {
     }
 
     virtual PTR(Operation<TE>) compile(IndexCounts &indexCounts) {
-      std::vector<PTR(ESC(TensorResultOperation<F,TE>))> factorOperations(
+      std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> factorOperations(
         factors.size()
       );
       for (size_t i(0); i < factors.size(); ++i) {
         factorOperations[i] = DYNAMIC_PTR_CAST(
-          ESC(TensorResultOperation<F,TE>), factors[i]->compile(indexCounts)
+          ESC(IndexedTensorOperation<F,TE>), factors[i]->compile(indexCounts)
         );
       }
 
-      PTR(ESC(TensorResultOperation<F,TE>)) operation;
+      PTR(ESC(IndexedTensorOperation<F,TE>)) operation;
       if (factorOperations.size() < 2) {
         // only one operand in contraction: do move directly
         operation = createMoveOperation(factorOperations[0]);
@@ -177,7 +177,7 @@ namespace tcc {
      * during evaluation.
      **/
     PTR(ESC(ContractionOperation<F,TE>)) compileContractions(
-      const std::vector<PTR(ESC(TensorResultOperation<F,TE>))> &operations,
+      const std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> &operations,
       IndexCounts &indexCounts,
       const unsigned int level = 0
     ) {
@@ -205,7 +205,7 @@ namespace tcc {
               // otherwise, add indices of the result for further consideration
               indexCounts.add(contractionOperation->getResultIndices());
               // build new list of factors
-              std::vector<PTR(ESC(TensorResultOperation<F,TE>))> subOperations(
+              std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> subOperations(
                 operations.size() - 1
               );
               subOperations[0] = contractionOperation;
@@ -264,7 +264,7 @@ namespace tcc {
      * compiled operations and assessing its costs.
      **/
     PTR(ESC(MoveOperation<F,TE>)) createMoveOperation(
-      const PTR(ESC(TensorResultOperation<F,TE>)) &a
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &a
     ) {
       // allocate intermedate result assuming identical indices as argument
       auto moveResult(
@@ -295,8 +295,8 @@ namespace tcc {
      * compiled operations and assessing its costs.
      **/
     PTR(ESC(ContractionOperation<F,TE>)) createContractionOperation(
-      const PTR(ESC(TensorResultOperation<F,TE>)) &a,
-      const PTR(ESC(TensorResultOperation<F,TE>)) &b,
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &a,
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &b,
       IndexCounts &indexCounts
     ) {
       size_t contractedIndexDimensions[
@@ -386,7 +386,7 @@ namespace tcc {
     }
 
     F alpha;
-    std::vector<PTR(ESC(TensorResultExpression<F,TE>))> factors;
+    std::vector<PTR(ESC(IndexedTensorExpression<F,TE>))> factors;
   };
 
   /**

@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_DEFINED
 #define TCC_DEFINED
 
@@ -12,13 +12,14 @@
 #include <math/Float.hpp>
 #include <util/SharedPointer.hpp>
 
+// TODO: support slicing
+// TODO: expression definitions with local index renaming
 // TODO: binary function application
-// TODO: support slicing and looping over indices for memory reduction
 // TODO: support hard memory limit for costs
+// TODO: looping over indices for memory reduction
 // TODO: common subexpression optimization
 // TODO: heuristics: limit number of simultaneously considered intermediates
 // TODO: fix max memory assessment
-// TODO: expression definitions with local index renaming
 // TODO: permutation and anti-permutation operator
 
 namespace tcc {

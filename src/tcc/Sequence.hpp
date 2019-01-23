@@ -1,9 +1,9 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_SEQUENCE_DEFINED
 #define TCC_SEQUENCE_DEFINED
 
 #include <tcc/Expression.hpp>
-#include <tcc/OperationSequence.hpp>
+#include <tcc/SequenceOperation.hpp>
 
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
@@ -127,7 +127,7 @@ namespace tcc {
         IndexCounts indexCounts;
         operations[i] = moves[i]->compile(indexCounts);
       }
-      return OperationSequence<TE>::create(operations);
+      return SequenceOperation<TE>::create(operations);
     }
 
     virtual void countIndices(IndexCounts &) {

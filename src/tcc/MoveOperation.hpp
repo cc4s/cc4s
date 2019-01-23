@@ -1,8 +1,8 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_MOVE_OPERATION_DEFINED
 #define TCC_MOVE_OPERATION_DEFINED
 
-#include <tcc/TensorResultOperation.hpp>
+#include <tcc/IndexedTensorOperation.hpp>
 
 #include <util/SharedPointer.hpp>
 
@@ -10,7 +10,7 @@ namespace tcc {
   template <typename F, typename TE> class Contraction;
 
   template <typename F, typename TE>
-  class MoveOperation: public TensorResultOperation<F,TE> {
+  class MoveOperation: public IndexedTensorOperation<F,TE> {
   public:
     /**
      * \brief Creates a move operation moving the results of
@@ -21,13 +21,13 @@ namespace tcc {
      * generate operations.
      **/
     MoveOperation(
-      const PTR(ESC(TensorResultOperation<F,TE>)) &rhs_,
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &rhs_,
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       Costs moveCosts,
       const typename Operation<TE>::ProtectedToken &
     ):
-      TensorResultOperation<F,TE>(
+      IndexedTensorOperation<F,TE>(
         result_, resultIndices_,
         rhs_->costs,
         typename Operation<TE>::ProtectedToken()
@@ -52,7 +52,7 @@ namespace tcc {
 
   protected:
     static PTR(ESC(MoveOperation<F,TE>)) create(
-      const PTR(ESC(TensorResultOperation<F,TE>)) &rhs_,
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &rhs_,
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       const Costs &moveCosts
@@ -64,7 +64,7 @@ namespace tcc {
       );
     }
 
-    PTR(ESC(TensorResultOperation<F,TE>)) rhs;
+    PTR(ESC(IndexedTensorOperation<F,TE>)) rhs;
     F alpha, beta;
 
     friend class Contraction<F,TE>;

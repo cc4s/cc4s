@@ -10,14 +10,14 @@ namespace tcc {
   template <typename Target, typename Domain, typename TE> class Map;
 
   template <typename Target, typename Domain, typename TE>
-  class MapOperation: public TensorResultOperation<Target,TE> {
+  class MapOperation: public IndexedTensorOperation<Target,TE> {
   public:
     MapOperation(
       const std::function<Target(const Domain)> &f_,
-      const PTR(ESC(TensorResultOperation<Domain,TE>)) &source_,
+      const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_,
       const typename Operation<TE>::ProtectedToken &
     ):
-      TensorResultOperation<Target,TE>(
+      IndexedTensorOperation<Target,TE>(
         Tensor<Target,TE>::create(
           source_->getResult()->getLens(),  // target tensor has identical lens
           "f(" + source_->getResult()->getName() + ")"
@@ -48,7 +48,7 @@ namespace tcc {
   protected:
     static PTR(ESC(MapOperation<Target,Domain,TE>)) create(
       const std::function<Target(const Domain)> &f_,
-      const PTR(ESC(TensorResultOperation<Domain,TE>)) &source_
+      const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_
     ) {
       return NEW(ESC(MapOperation<Target,Domain,TE>),
         f_, source_, typename Operation<TE>::ProtectedToken()
@@ -56,7 +56,7 @@ namespace tcc {
     }
 
     std::function<Target(const Domain)> f;
-    PTR(ESC(TensorResultOperation<Domain,TE>)) source;
+    PTR(ESC(IndexedTensorOperation<Domain,TE>)) source;
 
     friend class Map<Target,Domain,TE>;
   };

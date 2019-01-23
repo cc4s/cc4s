@@ -2,7 +2,8 @@
 #ifndef TCC_MOVE_DEFINED
 #define TCC_MOVE_DEFINED
 
-#include <tcc/Expression.hpp>
+#include <tcc/IndexedTensorExpression.hpp>
+
 #include <tcc/Contraction.hpp>
 #include <tcc/MoveOperation.hpp>
 
@@ -11,10 +12,10 @@
 
 namespace tcc {
   template <typename F, typename TE>
-  class IndexedTensor;
+  class Indexing;
 
   template <typename F, typename TE>
-  class Move: public Expression<TE> {
+  class Move: public IndexedTensorExpression<TE> {
   public:
     /**
      * \brief Moves the given right hand side expression into the given
@@ -60,13 +61,14 @@ namespace tcc {
 
     /**
      * \brief Creates a move expression where the right hand side is
-     * single IndexedTensor expression. It will be wrapped in a Contraction
+     * a indexed tensor expression but not a contraction.
+     * It will be wrapped in a Contraction
      * Expression so that all moves have contractions as their right hand side.
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const PTR(ESC(IndexedTensor<F,TE>)) &lhs_,
-      const PTR(ESC(TensorResultExpression<F,TE>)) &rhs_,
+      const PTR(ESC(Indexing<F,TE>)) &lhs_,
+      const PTR(ESC(IndexedTensorExpression<F,TE>)) &rhs_,
       const F beta_,
       const typename Expression<TE>::ProtectedToken &
     ): lhs(lhs_), rhs(Contraction<F,TE>::create(1, rhs_)), beta(beta_) {
@@ -78,7 +80,7 @@ namespace tcc {
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const PTR(ESC(IndexedTensor<F,TE>)) &lhs_,
+      const PTR(ESC(Indexing<F,TE>)) &lhs_,
       const PTR(ESC(Contraction<F,TE>)) &rhs_,
       const F beta_,
       const typename Expression<TE>::ProtectedToken &
@@ -101,7 +103,7 @@ namespace tcc {
       auto operation(
         // compile right-hand-side in the namespace of this move
         DYNAMIC_PTR_CAST(
-          ESC(TensorResultOperation<F,TE>), rhs->compile(indexCounts)
+          ESC(IndexedTensorOperation<F,TE>), rhs->compile(indexCounts)
         )
       );
 
@@ -133,7 +135,7 @@ namespace tcc {
 
   protected:
     void assumeOrCheckShape(
-      const PTR(ESC(TensorResultOperation<F,TE>)) &operation
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &operation
     ) {
       if (lhs->indices.length() != operation->getResultIndices().length()) {
         throw new EXCEPTION(
@@ -170,7 +172,8 @@ namespace tcc {
       }
     }
 
-    PTR(ESC(IndexedTensor<F,TE>)) lhs;
+    // TODO: do lvalueCompile for general left-hand-side compilation
+    PTR(ESC(Indexing<F,TE>)) lhs;
     PTR(ESC(Contraction<F,TE>)) rhs;
     F beta;
   };
@@ -184,12 +187,12 @@ namespace tcc {
   operator +=(
     const
     PTR(
-      ESC(IndexedTensor<typename RHS::FieldType,typename RHS::TensorEngine>)
+      ESC(Indexing<typename RHS::FieldType,typename RHS::TensorEngine>)
     ) &lhs,
     const PTR(RHS) &rhs
   ) {
     return Move<typename RHS::FieldType,typename RHS::TensorEngine>::create(
-      lhs, rhs, 1
+      lhs, rhs, F(1)
     );
   }
   /**
@@ -201,16 +204,16 @@ namespace tcc {
   operator -=(
     const
     PTR(
-      ESC(IndexedTensor<typename RHS::FieldType,typename RHS::TensorEngine>)
+      ESC(Indexing<typename RHS::FieldType,typename RHS::TensorEngine>)
     ) &lhs,
     const PTR(RHS) &rhs
   ) {
     return Move<typename RHS::FieldType,typename RHS::TensorEngine>::create(
       lhs,
       Contraction<typename RHS::FieldType,typename RHS::TensorEngine>::create(
-        -1, rhs
+        F(-1), rhs
       ),
-      1
+      F(1)
     );
   }
 
@@ -227,12 +230,12 @@ namespace tcc {
   operator <<=(
     const
     PTR(
-      ESC(IndexedTensor<typename RHS::FieldType,typename RHS::TensorEngine>)
+      ESC(Indexing<typename RHS::FieldType,typename RHS::TensorEngine>)
     ) &lhs,
     const PTR(RHS) &rhs
   ) {
     return Move<typename RHS::FieldType, typename RHS::TensorEngine>::create(
-      lhs, rhs, 0
+      lhs, rhs, F(0)
     );
   }
 
@@ -257,7 +260,7 @@ namespace tcc {
 
   template <typename F, typename TE>
   inline std::ostream &operator <<(
-    std::ostream &stream, const IndexedTensor<F,TE> &t
+    std::ostream &stream, const Indexing<F,TE> &t
   ) {
     return stream << t.getTensor()->getName() <<
       "[" << t->getResultIndices() << "]";
