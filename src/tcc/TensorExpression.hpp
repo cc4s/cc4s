@@ -9,6 +9,8 @@ namespace tcc {
   class TensorExpression: public Expression<TE> {
   public:
     typedef F FieldType;
+
+    virtual std::vector<size_t> getLens() = 0;
   };
 }
 

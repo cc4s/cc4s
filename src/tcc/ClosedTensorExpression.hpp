@@ -17,6 +17,10 @@ namespace tcc {
   template <typename F, typename TE>
   class ClosedTensorExpression: public TensorExpression<F,TE> {
   public:
+    virtual void countIndices(IndexCounts &indexCounts) {
+      // a closed tensor expression has no indices
+    }
+
     /**
      * \brief Specify named indices of this tensor to be used in a
      * tensor expression. Indexed tensors are atomic types of tensor

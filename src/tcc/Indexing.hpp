@@ -4,6 +4,7 @@
 
 #include <tcc/IndexedTensorExpression.hpp>
 
+#include <tcc/IndexedTensorOperation.hpp>
 #include <util/SharedPointer.hpp>
 
 #include <string>
@@ -48,12 +49,17 @@ namespace tcc {
     }
 
     virtual PTR(Operation<TE>) compile(IndexCounts &indexCounts) {
-//      return IndexingOperation<F,TE>::create(result, resultIndices);
+      // TODO: use result of lvalue compile
+      // currently assume
+      return IndexedTensorOperation<F,TE>::create(
+        source, resultIndices, Cost
+      );
     }
 
     virtual void countIndices(IndexCounts &indexCounts) {
       indexCounts.add(indices);
     }
+
     PTR(ESC(ClosedTensorExpression<F,TE>)) source;
     std::string indices;
   protected:

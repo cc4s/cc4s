@@ -110,7 +110,8 @@ namespace tcc {
       assumeOrCheckShape(operation);
 
       // write operation results directly to lhs tensor instead of intermediate
-      operation->result = lhs->source;
+      // TODO: use lvalue compile result of left-hand-side
+      operation->result = DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), lhs->source);
       operation->resultIndices = lhs->indices;
       // enter the beta factor of this move
       // TODO: enter in contraction or move
@@ -137,9 +138,15 @@ namespace tcc {
     void assumeOrCheckShape(
       const PTR(ESC(IndexedTensorOperation<F,TE>)) &operation
     ) {
+      // TODO: use lvalue compile result of left-hand-side
+      // currently assuming direct Indexing of Tensor
+      auto lhsTensor(
+        DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), lhs->source)
+      );
       if (lhs->indices.length() != operation->getResultIndices().length()) {
         throw new EXCEPTION(
-          "Number of indices of left-hand-side tensor " + lhs->source->getName() +
+          "Number of indices of left-hand-side expression " +
+          lhsTensor->getName() +
           " must match the number of indices of the result tensor " +
           operation->getResult()->getName()
         );
@@ -156,15 +163,15 @@ namespace tcc {
       for (unsigned int i(0); i < lhs->indices.length(); ++i) {
         lens[i] = lenOfIndex[static_cast<unsigned int>(lhs->indices[i])];
       }
-      if (!lhs->source->assumedShape) {
+      if (!lhsTensor->assumedShape) {
         // assume
-        lhs->source->lens = lens;
-        lhs->source->assumedShape = true;
+        lhsTensor->lens = lens;
+        lhsTensor->assumedShape = true;
         // or check shape
-      } else if (lhs->source->getLens() != lens) {
-        if (lhs->source->lens != operation->getResult()->getLens()) {
+      } else if (lhsTensor->getLens() != lens) {
+        if (lhsTensor->lens != operation->getResult()->getLens()) {
           throw new EXCEPTION(
-            "Shape of left-hand-side tensor " + lhs->source->getName() +
+            "Shape of left-hand-side tensor " + lhsTensor->getName() +
             " must match the shape of the result tensor " +
             operation->getResult()->getName()
           );

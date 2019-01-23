@@ -134,6 +134,15 @@ namespace tcc {
     std::vector<size_t> lens;    
     bool assumedShape;
 
+    virtual PTR(Operation<TE>) compile(
+      IndexCounts &indexCounts = IndexCounts()
+    ) {
+      return TensorOperation<F,TE>(
+        DYNAMIC_PTR_CAST(Tensor<F,TE>, THIS),
+        Costs(getElementsCount())
+      )
+    }
+
   protected:
     /**
      * \brief The tensor name.

@@ -24,7 +24,9 @@ namespace tcc {
       const Costs &costs_,
       const typename Operation<TE>::ProtectedToken &
     ):
-      TensorOperation<F,TE>(result_, costs_),
+      TensorOperation<F,TE>(
+        result_, costs_, typename Operation<TE>::ProtectedToken()
+      ),
       resultIndices(resultIndices_)
     {
     }
