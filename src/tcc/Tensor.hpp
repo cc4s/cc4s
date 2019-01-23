@@ -2,9 +2,9 @@
 #ifndef TCC_TENSOR_DEFINED
 #define TCC_TENSOR_DEFINED
 
-#include <tcc/TensorExpression.hpp>
-#include <tcc/IndexedTensorExpression.hpp>
+#include <tcc/ClosedTensorExpression.hpp>
 
+#include <tcc/IndexedTensorExpression.hpp>
 #include <util/SharedPointer.hpp>
 
 #include <cstdint>
@@ -16,7 +16,7 @@ namespace tcc {
    * \brief 
    **/
   template <typename F, typename TE>
-  class Tensor: public THISABLE(ESC(Tensor<F,TE>)) {
+  class Tensor: public ClosedTensorExpression<F,TE> {
   protected:
     /**
      * \brief Dummy objects of that type are used to guarantee that

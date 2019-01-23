@@ -15,7 +15,7 @@ namespace tcc {
   class Indexing;
 
   template <typename F, typename TE>
-  class Move: public IndexedTensorExpression<TE> {
+  class Move: public IndexedTensorExpression<F,TE> {
   public:
     /**
      * \brief Moves the given right hand side expression into the given
@@ -110,7 +110,7 @@ namespace tcc {
       assumeOrCheckShape(operation);
 
       // write operation results directly to lhs tensor instead of intermediate
-      operation->result = lhs->tensor;
+      operation->result = lhs->source;
       operation->resultIndices = lhs->indices;
       // enter the beta factor of this move
       // TODO: enter in contraction or move
@@ -139,7 +139,7 @@ namespace tcc {
     ) {
       if (lhs->indices.length() != operation->getResultIndices().length()) {
         throw new EXCEPTION(
-          "Number of indices of left-hand-side tensor " + lhs->tensor->getName() +
+          "Number of indices of left-hand-side tensor " + lhs->source->getName() +
           " must match the number of indices of the result tensor " +
           operation->getResult()->getName()
         );
@@ -156,15 +156,15 @@ namespace tcc {
       for (unsigned int i(0); i < lhs->indices.length(); ++i) {
         lens[i] = lenOfIndex[static_cast<unsigned int>(lhs->indices[i])];
       }
-      if (!lhs->tensor->assumedShape) {
+      if (!lhs->source->assumedShape) {
         // assume
-        lhs->tensor->lens = lens;
-        lhs->tensor->assumedShape = true;
+        lhs->source->lens = lens;
+        lhs->source->assumedShape = true;
         // or check shape
-      } else if (lhs->tensor->getLens() != lens) {
-        if (lhs->tensor->lens != operation->getResult()->getLens()) {
+      } else if (lhs->source->getLens() != lens) {
+        if (lhs->source->lens != operation->getResult()->getLens()) {
           throw new EXCEPTION(
-            "Shape of left-hand-side tensor " + lhs->tensor->getName() +
+            "Shape of left-hand-side tensor " + lhs->source->getName() +
             " must match the shape of the result tensor " +
             operation->getResult()->getName()
           );
@@ -192,7 +192,7 @@ namespace tcc {
     const PTR(RHS) &rhs
   ) {
     return Move<typename RHS::FieldType,typename RHS::TensorEngine>::create(
-      lhs, rhs, F(1)
+      lhs, rhs, typename RHS::FieldType(1)
     );
   }
   /**
@@ -211,9 +211,9 @@ namespace tcc {
     return Move<typename RHS::FieldType,typename RHS::TensorEngine>::create(
       lhs,
       Contraction<typename RHS::FieldType,typename RHS::TensorEngine>::create(
-        F(-1), rhs
+        typename RHS::FieldType(-1), rhs
       ),
-      F(1)
+      typename RHS::FieldType(1)
     );
   }
 
@@ -235,7 +235,7 @@ namespace tcc {
     const PTR(RHS) &rhs
   ) {
     return Move<typename RHS::FieldType, typename RHS::TensorEngine>::create(
-      lhs, rhs, F(0)
+      lhs, rhs, typename RHS::FieldType(0)
     );
   }
 

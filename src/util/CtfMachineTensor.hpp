@@ -2,7 +2,6 @@
 #ifndef CTF_MACHINE_TENSOR_DEFINED
 #define CTF_MACHINE_TENSOR_DEFINED
 
-#include <tcc/MachineTensor.hpp>
 #include <util/SharedPointer.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>

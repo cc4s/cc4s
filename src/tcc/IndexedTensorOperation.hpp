@@ -14,7 +14,7 @@ namespace tcc {
   template <typename F, typename TE> class Contraction;
 
   template <typename F, typename TE>
-  class IndexedTensorOperation: public TensorOperation<TE> {
+  class IndexedTensorOperation: public TensorOperation<F,TE> {
   public:
     typedef F FieldType;
 

@@ -10,6 +10,8 @@
 #include <string>
 
 namespace tcc {
+  template <typename F, typename TE> class Tensor;
+
   template <typename F, typename TE>
   class TensorOperation: public Operation<TE> {
   public:
@@ -20,7 +22,7 @@ namespace tcc {
       const Costs &costs_,
       const typename Operation<TE>::ProtectedToken &
     ):
-      Operation<F,TE>(costs_),
+      Operation<TE>(costs_),
       result(result_),
       alpha(F(1)), beta(F(0))
     {

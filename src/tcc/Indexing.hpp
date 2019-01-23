@@ -9,7 +9,7 @@
 #include <string>
 
 namespace tcc {
-  template <typename F, typename TE> ClosedTensorExpression;
+  template <typename F, typename TE> class ClosedTensorExpression;
 
   template <typename F, typename TE>
   class Indexing: public IndexedTensorExpression<F,TE> {
@@ -54,9 +54,9 @@ namespace tcc {
     virtual void countIndices(IndexCounts &indexCounts) {
       indexCounts.add(indices);
     }
-  protected:
     PTR(ESC(ClosedTensorExpression<F,TE>)) source;
     std::string indices;
+  protected:
   };
 }
 

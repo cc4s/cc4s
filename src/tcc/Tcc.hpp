@@ -2,7 +2,7 @@
 #ifndef TCC_DEFINED
 #define TCC_DEFINED
 
-#include <tcc/IndexedTensor.hpp>
+#include <tcc/Indexing.hpp>
 #include <tcc/Move.hpp>
 #include <tcc/Contraction.hpp>
 #include <tcc/Map.hpp>

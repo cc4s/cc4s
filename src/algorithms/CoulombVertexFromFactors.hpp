@@ -3,8 +3,6 @@
 #define COULOMB_VERTEX_FROM_FACTORS_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <tcc/MachineTensor.hpp>
-#include <memory>
 
 namespace cc4s {
   /**
