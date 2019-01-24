@@ -89,20 +89,20 @@ namespace tcc {
     }
 
     // each move has its private index namespace so disregard the outer
-    // indexCounts
-    virtual PTR(Operation<TE>) compile(IndexCounts &) {
+    // scope
+    virtual PTR(Operation<TE>) compile(Scope &) {
       LOG(2, "TCC") << "compiling move..." << std::endl;
       // create a new namespace of indices
-      IndexCounts indexCounts;
+      Scope scope;
       // and determine how often each index is used
-      countIndices(indexCounts);
+      countIndices(scope);
 
       // TODO: currently only move(lhs,contraction(factors...)) are done
-      indexCounts.triedPossibilitiesCount = 0;
+      scope.triedPossibilitiesCount = 0;
       auto operation(
         // compile right-hand-side in the namespace of this move
         DYNAMIC_PTR_CAST(
-          ESC(IndexedTensorOperation<F,TE>), rhs->compile(indexCounts)
+          ESC(IndexedTensorOperation<F,TE>), rhs->compile(scope)
         )
       );
 
@@ -117,7 +117,7 @@ namespace tcc {
       operation->beta = beta;
 
       LOG(2, "TCC") <<
-        "possibilites tried=" << indexCounts.triedPossibilitiesCount <<
+        "possibilites tried=" << scope.triedPossibilitiesCount <<
         ", FLOPS=" <<
           operation->costs.multiplicationsCount +
           operation->costs.additionsCount <<
@@ -128,9 +128,14 @@ namespace tcc {
       return operation;
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) {
-      lhs->countIndices(indexCounts);
-      rhs->countIndices(indexCounts);
+    virtual PTR(Operation<TE>) compile() {
+      Scope scope;
+      return this->compile(scope);
+    }
+
+    virtual void countIndices(Scope &scope) {
+      lhs->countIndices(scope);
+      rhs->countIndices(scope);
     }
 
   protected:

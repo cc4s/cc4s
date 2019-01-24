@@ -3,12 +3,22 @@
 #define TCC_TENSOR_EXPRESSION_DEFINED
 
 #include <tcc/Expression.hpp>
+#include <tcc/TensorOperation.hpp>
 
 namespace tcc {
   template <typename F, typename TE>
   class TensorExpression: public Expression<TE> {
   public:
     typedef F FieldType;
+
+    virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
+      const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
+    ) {
+      throw new EXCEPTION(
+        "Only tensors, slices and indications are allowed "
+        "on the left-hand-side of " + rhsOperation->getResult()->getName()
+      );
+    }
   };
 }
 

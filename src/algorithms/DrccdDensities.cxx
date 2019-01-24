@@ -90,7 +90,6 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   // compile Lambda equation iteration
-  tcc::IndexCounts indexCounts;
   auto iterationOperation(
     (
       (*Rabij)["abij"] <<= (*Vabij)["abij"],
@@ -99,7 +98,7 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
       (*Rabij)["abij"] += spins*spins*(*Labij)["acik"]*(*Tabij)["cdkl"]*(*Vabij)["dblj"],
       (*Rabij)["abij"] += spins*spins*(*Vabij)["acik"]*(*Tabij)["cdkl"]*(*Labij)["dblj"],
       (*Labij)["abij"] <<= (*Rabij)["abij"] * (*Dabij)["abij"]
-    )->compile(indexCounts)
+    )->compile()
   );
 
   // execute iterations
@@ -127,7 +126,7 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
     (*Dab)["ab"] <<= +spins * (*Tabij)["cbkl"] * (*Labij)["cakl"],
     (*Ni)["i"] <<= spins * (*Dij)["ii"],
     (*Na)["a"] <<= spins * (*Dab)["aa"]
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
   allocatedTensorArgument<double, T>(
     "DrccdOneBodyHHDensity", new T(Dij->getMachineTensor()->tensor)
   );
@@ -156,7 +155,7 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
     (*ei)["i"] -= (*Veei)["i"],
     (*ea)["a"] <<= (*epsa)["a"],
     (*ea)["a"] -= (*Veea)["a"]
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
   allocatedTensorArgument<double, T>(
     "DrccdOneBodyCoulombHoleEnergies",
     new T(Veei->getMachineTensor()->tensor)
@@ -192,7 +191,7 @@ void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
     (*Vee)[""] <<= 0.5*spins*spins * (*Gabij)["abij"] * (*Vabij)["abij"],
     // the last ineraction is also exchanged in drCCD: i.e. <0|1 V T|0>
     (*Vee)[""] -= 0.5*spins * (*Tabij)["abij"] * (*Vabij)["abji"]
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
   allocatedTensorArgument<double, T>(
     "DrccdTwoBodyPPHHDensiy",
     new T(Gabij->getMachineTensor()->tensor)

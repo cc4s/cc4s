@@ -55,10 +55,9 @@ void CoulombVertexFromFactors::run(const bool dryRun) {
     TCC::template tensor<complex>(std::vector<size_t>({NF,Np,Np}), "Gamma")
   );
 
-  tcc::IndexCounts indexCounts;
   (
     (*GammaFqr)["Fqr"] <<= (*LambdaFR)["FR"] * (*PirR)["qR"] * (*PirR)["rR"]
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
 
   // for now: duplicate result
   // later Gamma will already be the object stored in cc4s

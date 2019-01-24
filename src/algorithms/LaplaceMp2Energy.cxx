@@ -262,7 +262,6 @@ double LaplaceMp2Energy::calculateNumerically() {
   auto V(tcc::Tensor<complex,CtfEngine>::create(*VRS));
   auto w(tcc::Tensor<complex,CtfEngine>::create(*wn));
   auto energy(TCC::tensor<real>(std::vector<size_t>(), "energy"));
-  tcc::IndexCounts indexCounts;
 
   (
     (*energy)[""] <<= tcc::map(std::function<real(const complex)>(realpart),
@@ -277,7 +276,7 @@ double LaplaceMp2Energy::calculateNumerically() {
       (*V)["RS"] * (*V)["TU"] *
       (*Gp)["RTn"] * (*Gh)["TSn"] * (*Gp)["SUn"] * (*Gh)["URn"]
 */
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
   CTF::Scalar<complex> ctfEnergy;
   ctfEnergy[""] = energy->getMachineTensor()->tensor[""];
   return std::real(ctfEnergy.get_val());

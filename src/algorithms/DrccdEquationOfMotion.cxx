@@ -47,13 +47,12 @@ void DrccdEquationOfMotion::run() {
   auto Dabij( TCC::tensor(Tabij, "Dabij") );
   auto ctfDabij(&Dabij->getMachineTensor()->tensor);
 
-  IndexCounts indexCounts;
   (
     (*Dabij)["abij"] <<= (*epsa)["a"],
     (*Dabij)["abij"]  += (*epsa)["b"],
     (*Dabij)["abij"]  -= (*epsi)["i"],
     (*Dabij)["abij"]  -= (*epsi)["j"]
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
 
   // create Right and Left eigenvector amplitudes Rabij, Labij and itermediate
   // prevRabij of same shape as doubles amplitudes
@@ -82,7 +81,7 @@ void DrccdEquationOfMotion::run() {
   (
     (*Habij)["abij"] <<= (*Vabij)["abij"],
     (*Habij)["abij"]  += spins * (*Vabij)["acik"] * (*Tabij)["cbkj"]
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
 
   if (getIntegerArgument("fullDiagonalization", 0)) {
     auto H20(new CTF::Tensor<>(*ctfVabij));

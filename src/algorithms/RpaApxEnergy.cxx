@@ -107,7 +107,6 @@ void RpaApxEnergy::run() {
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   LOG(1, "RPA") << "spins=" << spins << std::endl;
   int computeExchange(getIntegerArgument("exchange", 1));
-  IndexCounts indexCounts;
   (
     // bubble with half V on both ends:
     // sign: 1xhole, 1xinteraction, 1xloop: (-1)^3
@@ -139,7 +138,7 @@ void RpaApxEnergy::run() {
     ) : (
       TCC::nothing()
     )
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
 
   CTF::Scalar<complex> ctfMp2Energy;
   ctfMp2Energy[""] = mp2Direct->getMachineTensor()->tensor[""];

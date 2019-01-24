@@ -1,19 +1,19 @@
 /*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TCC_INDEX_COUNTS_DEFINED
-#define TCC_INDEX_COUNTS_DEFINED
+#ifndef TCC_SCOPE_DEFINED
+#define TCC_SCOPE_DEFINED
 
 namespace tcc {
   /**
-   * \brief Contains frequency counts for all indices in a
+   * \brief Contains frequency counts for all indices within tht
    * contraction including the indices on the left hand side.
    * These counts are used to efficiently determine which indices
    * are outer indices and which are contracted indices for each
    * individual contraction.
    **/
-  class IndexCounts {
+  class Scope {
   public:
-    IndexCounts(): triedPossibilitiesCount(0) {
-      for (int i(0); i < INDICES_COUNT; ++i) counts[i] = 0;
+    Scope(): triedPossibilitiesCount(0) {
+      for (unsigned int i(0); i < INDICES_COUNT; ++i) counts[i] = 0;
     }
 
     void add(const std::string &indices, const int step = +1) {
@@ -23,7 +23,7 @@ namespace tcc {
     }
 
     void add(const char *indices, const int step = +1) {
-      for (int d(0); indices[d] != 0; ++d) {
+      for (unsigned int d(0); indices[d] != 0; ++d) {
         counts[static_cast<uint8_t>(indices[d])] += step;
       }
     }
@@ -32,8 +32,10 @@ namespace tcc {
       return counts[static_cast<uint8_t>(index)];
     }
 
-    static constexpr int INDICES_COUNT = UINT8_MAX;
-    int counts[INDICES_COUNT];
+    static constexpr unsigned int INDICES_COUNT = UINT8_MAX;
+    unsigned int counts[INDICES_COUNT];
+
+    // used during contraction compilation
     size_t triedPossibilitiesCount;
   };
 }

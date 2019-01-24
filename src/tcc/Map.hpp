@@ -41,18 +41,18 @@ namespace tcc {
     virtual ~Map() {
     }
 
-    virtual PTR(Operation<TE>) compile(IndexCounts &indexCounts) {
+    virtual PTR(Operation<TE>) compile(Scope &scope) {
       auto sourceOperation(
         DYNAMIC_PTR_CAST(
           ESC(IndexedTensorOperation<Domain,TE>),
-          source->compile(indexCounts)
+          source->compile(scope)
         )
       );
       return MapOperation<Target,Domain,TE>::create(f, sourceOperation);
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) {
-      source->countIndices(indexCounts);
+    virtual void countIndices(Scope &scope) {
+      source->countIndices(scope);
     }
 
   protected:

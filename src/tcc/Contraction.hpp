@@ -139,13 +139,13 @@ namespace tcc {
     virtual ~Contraction() {
     }
 
-    virtual PTR(Operation<TE>) compile(IndexCounts &indexCounts) {
+    virtual PTR(Operation<TE>) compile(Scope &scope) {
       std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> factorOperations(
         factors.size()
       );
       for (size_t i(0); i < factors.size(); ++i) {
         factorOperations[i] = DYNAMIC_PTR_CAST(
-          ESC(IndexedTensorOperation<F,TE>), factors[i]->compile(indexCounts)
+          ESC(IndexedTensorOperation<F,TE>), factors[i]->compile(scope)
         );
       }
 
@@ -155,7 +155,7 @@ namespace tcc {
         operation = createMoveOperation(factorOperations[0]);
       } else {
         // compile at least 2 contractions in best order
-        operation = compileContractions(factorOperations, indexCounts);
+        operation = compileContractions(factorOperations, scope);
       }
       // enter the scaling factor alpha
       // FIXME: find proper spot for alpha
@@ -163,21 +163,21 @@ namespace tcc {
       return operation;
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) {
+    virtual void countIndices(Scope &scope) {
       for (auto &factor: factors) {
-        factor->countIndices(indexCounts);
+        factor->countIndices(scope);
       }
     }
 
   protected:
     /**
      * \brief Compiles the given list of at least 2 Operations trying to
-     * find the best order of contractions. The indexCounts are modified
+     * find the best order of contractions. The scope is modified
      * during evaluation.
      **/
     PTR(ESC(ContractionOperation<F,TE>)) compileContractions(
       const std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> &operations,
-      IndexCounts &indexCounts,
+      Scope &scope,
       const unsigned int level = 0
     ) {
       // no best contraction known at first
@@ -185,15 +185,15 @@ namespace tcc {
       for (unsigned int i(0); i < operations.size()-1; ++i) {
         auto a(operations[i]);
         // take out the indices of factor a
-        indexCounts.add(a->getResultIndices(), -1);
+        scope.add(a->getResultIndices(), -1);
         for (unsigned int j(i+1); j < operations.size(); ++j) {
           auto b(operations[j]);
           // take out the indices of factor b
-          indexCounts.add(b->getResultIndices(), -1);
+          scope.add(b->getResultIndices(), -1);
 
           // just compile the contraction of a&b
           auto contractionOperation(
-            createContractionOperation(a, b, indexCounts)
+            createContractionOperation(a, b, scope)
           );
 
           if (contractionOperation) {
@@ -202,7 +202,7 @@ namespace tcc {
               bestContractions = contractionOperation;
             } else {
               // otherwise, add indices of the result for further consideration
-              indexCounts.add(contractionOperation->getResultIndices());
+              scope.add(contractionOperation->getResultIndices());
               // build new list of factors
               std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> subOperations(
                 operations.size() - 1
@@ -215,12 +215,12 @@ namespace tcc {
 
               // now do a recursive compilation of all the remaining factors
               PTR(ESC(ContractionOperation<F,TE>)) allContractions(
-                compileContractions(subOperations, indexCounts, level+1)
+                compileContractions(subOperations, scope, level+1)
               );
 
               // take out indices of contraction of a&b again
               // for considering the next possibility
-              indexCounts.add(contractionOperation->getResultIndices(), -1);
+              scope.add(contractionOperation->getResultIndices(), -1);
 
               // see if the entire contraction is currently best
               if (
@@ -231,7 +231,7 @@ namespace tcc {
                 if (level == 0) { // do output only in topmost level
                   LOG(2, "TCC") <<
                     "possibilites tried=" <<
-                    indexCounts.triedPossibilitiesCount <<
+                    scope.triedPossibilitiesCount <<
                     ", improved solution found: " <<
                     "FLOPS=" << allContractions->costs.multiplicationsCount <<
                     ", maximum elements stored=" <<
@@ -241,19 +241,19 @@ namespace tcc {
                 if (level == 0) {
                   LOG(3, "TCC") <<
                     "possibilites tried=" <<
-                    indexCounts.triedPossibilitiesCount <<
+                    scope.triedPossibilitiesCount <<
                     ", discarding inferior solution" << std::endl;
                 }
               }
-              ++indexCounts.triedPossibilitiesCount;
+              ++scope.triedPossibilitiesCount;
             }
           }
 
           // add the indices of factor b again
-          indexCounts.add(b->getResultIndices());
+          scope.add(b->getResultIndices());
         }
         // add the indices of factor a again
-        indexCounts.add(a->getResultIndices());
+        scope.add(a->getResultIndices());
       }
       return bestContractions;
     }
@@ -296,7 +296,7 @@ namespace tcc {
     PTR(ESC(ContractionOperation<F,TE>)) createContractionOperation(
       const PTR(ESC(IndexedTensorOperation<F,TE>)) &a,
       const PTR(ESC(IndexedTensorOperation<F,TE>)) &b,
-      IndexCounts &indexCounts
+      Scope &scope
     ) {
       size_t contractedIndexDimensions[
         std::min(a->getResultIndices().length(), b->getResultIndices().length())
@@ -349,7 +349,7 @@ namespace tcc {
       for (unsigned int i(0); i < u; ++i) {
         const char index(uniqueIndices[i]);
         // go through unique indices
-        if (indexCounts[index] > 0) {
+        if (scope[index] > 0) {
           // index occurs outside
           outerIndices[o] = index;
           outerElementsCount *=

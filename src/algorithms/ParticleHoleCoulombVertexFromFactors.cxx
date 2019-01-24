@@ -57,10 +57,9 @@ void ParticleHoleCoulombVertexFromFactors::run(const bool dryRun) {
   auto GammaFai(
     TCC::template tensor<complex>(std::vector<size_t>({NF,Nv,No}), "GammaFai")
   );
-  tcc::IndexCounts indexCounts;
   (
     (*GammaFai)["Fai"] <<= (*LambdaFR)["FR"] * (*PiaR)["aR"] * (*PiiR)["iR"]
-  )->compile(indexCounts)->execute();
+  )->compile()->execute();
 
   // for now: duplicate result
   // later Gamma will already be the object stored in cc4s

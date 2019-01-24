@@ -17,7 +17,7 @@ namespace tcc {
   template <typename F, typename TE>
   class ClosedTensorExpression: public TensorExpression<F,TE> {
   public:
-    virtual void countIndices(IndexCounts &indexCounts) {
+    virtual void countIndices(Scope &scope) {
       // a closed tensor expression has no indices
     }
 

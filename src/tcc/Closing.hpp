@@ -58,13 +58,13 @@ namespace tcc {
       );
     }
 
-    virtual PTR(Operation<TE>) compile(IndexCounts &indexCounts) {
+    virtual PTR(Operation<TE>) compile(Scope &scope) {
 //      return ClosingOperation<F,TE>::create(result, resultIndices);
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) {
+    virtual void countIndices(Scope &scope) {
       // the closing indices are free indices and therefore must be counted
-      indexCounts.add(indices);
+      scope.add(indices);
     }
 
   protected:

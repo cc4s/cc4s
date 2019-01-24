@@ -4,7 +4,7 @@
 
 #include <util/SharedPointer.hpp>
 #include <tcc/Operation.hpp>
-#include <tcc/IndexCounts.hpp>
+#include <tcc/Scope.hpp>
 
 namespace tcc {
   template <typename TE>
@@ -22,10 +22,13 @@ namespace tcc {
      * \brief Compiles this expression and its subexpressions and returns
      * the resulting operation.
      **/
-    virtual PTR(Operation<TE>) compile(
-      IndexCounts &indexCounts = IndexCounts()
-    ) {
+    virtual PTR(Operation<TE>) compile(Scope &scope) {
       throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
+    }
+
+    virtual PTR(Operation<TE>) compile() {
+      Scope scope;
+      return this->compile(scope);
     }
 
     // TODO: should be protected
@@ -33,7 +36,7 @@ namespace tcc {
      * \brief Count all indices occurring in this expression and its
      * subexpressions.
      **/
-    virtual void countIndices(IndexCounts &indexCounts) = 0;
+    virtual void countIndices(Scope &) = 0;
 
   protected:
     /**

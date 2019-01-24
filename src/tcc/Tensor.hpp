@@ -144,9 +144,7 @@ namespace tcc {
     std::vector<size_t> lens;    
     bool assumedShape;
 
-    virtual PTR(Operation<TE>) compile(
-      IndexCounts &indexCounts = IndexCounts()
-    ) {
+    virtual PTR(Operation<TE>) compile(Scope &) {
       return TensorOperation<F,TE>::create(
         DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), THIS),
         Costs(getElementsCount())

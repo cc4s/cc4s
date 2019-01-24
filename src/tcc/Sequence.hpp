@@ -120,16 +120,20 @@ namespace tcc {
     virtual ~Sequence() {
     }
 
-    virtual PTR(Operation<TE>) compile(IndexCounts &) {
+    virtual PTR(Operation<TE>) compile(Scope &) {
       std::vector<PTR(Operation<TE>)> operations(moves.size());
       for (size_t i(0); i < moves.size(); ++i) {
-        IndexCounts indexCounts;
-        operations[i] = moves[i]->compile(indexCounts);
+        operations[i] = moves[i]->compile();
       }
       return SequenceOperation<TE>::create(operations);
     }
 
-    virtual void countIndices(IndexCounts &) {
+    virtual PTR(Operation<TE>) compile() {
+      Scope scope;
+      return this->compile(scope);
+    }
+
+    virtual void countIndices(Scope &) {
       // the indidex of each subexpression are independet of each other
       // so nothing will be counted.
       // counting will be done on the level of moves and contractions

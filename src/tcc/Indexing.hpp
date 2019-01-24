@@ -47,12 +47,10 @@ namespace tcc {
       );
     }
 
-    virtual PTR(Operation<TE>) compile(IndexCounts &) {
-      // TODO: use result of lvalue compile
-      IndexCounts indexCounts;
+    virtual PTR(Operation<TE>) compile(Scope &scope) {
       auto sourceOperation(
         DYNAMIC_PTR_CAST(
-          ESC(TensorOperation<F,TE>), source->compile(indexCounts)
+          ESC(TensorOperation<F,TE>), source->compile()
         )
       );
       return IndexedTensorOperation<F,TE>::create(
@@ -60,8 +58,15 @@ namespace tcc {
       );
     }
 
-    virtual void countIndices(IndexCounts &indexCounts) {
-      indexCounts.add(indices);
+    virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
+      const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
+    )  {
+      // TODO: create tensor write operation
+      return nullptr;
+    }
+
+    virtual void countIndices(Scope &scope) {
+      scope.add(indices);
     }
 
     PTR(ESC(ClosedTensorExpression<F,TE>)) source;
