@@ -53,6 +53,15 @@ namespace tcc {
       // the machine tensor is not allocated initially
     }
 
+    Tensor(
+      const std::vector<size_t> &lens_,
+      const std::string &name_,
+      const bool assumedShape_,
+      const ProtectedToken &
+    ): lens(lens_), assumedShape(assumedShape_), name(name_) {
+      // the machine tensor is not allocated initially
+    }
+
     /**
      * \brief Create a tensor from a given machine tensor.
      * Not intended for direct invocation. Use Tcc::createTensor instead.
@@ -86,7 +95,9 @@ namespace tcc {
       const PTR(ESC(Tensor<F,TE>)) &tensor,
       const std::string &name
     ) {
-      return create(tensor->lens, name);
+      return NEW(ESC(Tensor<F,TE>),
+        tensor->lens, name, tensor->assumedShape, ProtectedToken()
+      );
     }
 
     static PTR(ESC(Tensor<F,TE>)) create(
@@ -137,7 +148,7 @@ namespace tcc {
     virtual PTR(Operation<TE>) compile(
       IndexCounts &indexCounts = IndexCounts()
     ) {
-      return TensorOperation<F,TE>(
+      return TensorOperation<F,TE>::create(
         DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), THIS),
         Costs(getElementsCount())
       );

@@ -170,10 +170,16 @@ namespace tcc {
         // or check shape
       } else if (lhsTensor->getLens() != lens) {
         if (lhsTensor->lens != operation->getResult()->getLens()) {
+          std::stringstream lhsShape;
+          for (auto i: lhsTensor->getLens()) { lhsShape << " " << i; }
+          std::stringstream rhsShape;
+          for (auto i: lens) { rhsShape << " " << i; }
           throw new EXCEPTION(
             "Shape of left-hand-side tensor " + lhsTensor->getName() +
+            " (" + lhsShape.str() + ") "
             " must match the shape of the result tensor " +
-            operation->getResult()->getName()
+            operation->getResult()->getName() +
+            " (" + rhsShape.str() + ")"
           );
         }
       }

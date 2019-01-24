@@ -31,6 +31,10 @@ namespace tcc {
     virtual ~TensorOperation() {
     }
 
+    virtual void execute() {
+      // tensor operation may occurr as atomic operations doing nothing
+    }
+
     virtual PTR(ESC(Tensor<F,TE>)) getResult() {
       return result;
     }
@@ -38,6 +42,17 @@ namespace tcc {
   protected:
     PTR(ESC(Tensor<F,TE>)) result;
     F alpha, beta;
+
+    static PTR(ESC(TensorOperation<F,TE>)) create(
+      const PTR(ESC(Tensor<F,TE>)) &result,
+      const Costs &costs
+    ) {
+      return NEW(ESC(TensorOperation<F,TE>),
+        result, costs, typename Operation<TE>::ProtectedToken()
+      );
+    }
+
+    friend class Tensor<F,TE>;
   };
 }
 

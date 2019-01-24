@@ -30,7 +30,6 @@ void TensorNetwork::run() {
 void TensorNetwork::dryRun() {
   size_t No(10);
   size_t Nv(90);
-  size_t Np(No+Nv);
   size_t NF(200);
   size_t NR(400);
   typedef Tcc<DryEngine> TCC;
@@ -41,10 +40,10 @@ void TensorNetwork::dryRun() {
     TCC::tensor(std::vector<size_t>({Nv,Nv,No,No}), "D")
   );
   auto Pi(
-    TCC::tensor(std::vector<size_t>({NR,Np}), "Pi")
+    TCC::tensor(std::vector<size_t>({NR,Nv}), "Pi")
   );
   auto PiT(
-    TCC::tensor(std::vector<size_t>({NR,Np}), "PiT")
+    TCC::tensor(std::vector<size_t>({NR,Nv}), "PiT")
   );
   auto Lambda(
     TCC::tensor(std::vector<size_t>({NR,NF}), "Lambda")
@@ -53,7 +52,7 @@ void TensorNetwork::dryRun() {
     TCC::tensor(std::vector<size_t>({NR,NF}), "LambdaT")
   );
   auto Gamma(
-    TCC::tensor(std::vector<size_t>({NF,Np,Np}), "Gamma")
+    TCC::tensor(std::vector<size_t>({NF,Nv,Nv}), "Gamma")
   );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
