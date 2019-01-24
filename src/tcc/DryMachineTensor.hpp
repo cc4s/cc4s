@@ -2,12 +2,11 @@
 #ifndef DRY_MACHINE_TENSOR_DEFINED
 #define DRY_MACHINE_TENSOR_DEFINED
 
-//#include <tcc/MachineTensor.hpp>
 #include <tcc/DryTensor.hpp>
+
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
-
 #include <string>
 
 namespace cc4s {

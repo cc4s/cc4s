@@ -5,7 +5,6 @@
 #include <tcc/IndexedTensorExpression.hpp>
 
 #include <tcc/MapOperation.hpp>
-
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 

@@ -6,7 +6,6 @@
 
 #include <tcc/IndexedTensorExpression.hpp>
 #include <util/SharedPointer.hpp>
-
 #include <cstdint>
 #include <vector>
 #include <string>

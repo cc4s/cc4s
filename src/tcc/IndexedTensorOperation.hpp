@@ -3,10 +3,9 @@
 #define TCC_INDEXED_TENSOR_OPERATION_DEFINED
 
 #include <tcc/TensorOperation.hpp>
+
 #include <tcc/Costs.hpp>
-
 #include <util/SharedPointer.hpp>
-
 #include <string>
 
 namespace tcc {

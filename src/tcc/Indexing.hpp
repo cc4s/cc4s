@@ -6,7 +6,6 @@
 
 #include <tcc/IndexedTensorOperation.hpp>
 #include <util/SharedPointer.hpp>
-
 #include <string>
 
 namespace tcc {

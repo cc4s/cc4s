@@ -6,7 +6,6 @@
 
 #include <tcc/Contraction.hpp>
 #include <tcc/MoveOperation.hpp>
-
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 

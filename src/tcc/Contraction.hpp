@@ -8,7 +8,6 @@
 #include <tcc/MoveOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
-
 #include <vector>
 
 namespace tcc {

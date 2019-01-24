@@ -5,7 +5,6 @@
 #include <tcc/Operation.hpp>
 
 #include <util/SharedPointer.hpp>
-
 #include <vector>
 
 namespace tcc {

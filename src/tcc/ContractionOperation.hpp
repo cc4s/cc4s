@@ -3,11 +3,10 @@
 #define TCC_CONTRACTION_OPERATION_DEFINED
 
 #include <tcc/IndexedTensorOperation.hpp>
+
 #include <tcc/Costs.hpp>
 #include <tcc/Tensor.hpp>
-
 #include <util/SharedPointer.hpp>
-
 #include <string>
 
 namespace tcc {

@@ -3,11 +3,10 @@
 #define TCC_SEQUENCE_DEFINED
 
 #include <tcc/Expression.hpp>
-#include <tcc/SequenceOperation.hpp>
 
+#include <tcc/SequenceOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
-
 #include <vector>
 
 namespace tcc {
