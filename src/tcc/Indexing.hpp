@@ -50,9 +50,13 @@ namespace tcc {
 
     virtual PTR(Operation<TE>) compile(IndexCounts &indexCounts) {
       // TODO: use result of lvalue compile
-      // currently assume
+      auto sourceOperation(
+        DYNAMIC_PTR_CAST(
+          ESC(TensorOperation<F,TE>), source->compile()
+        )
+      );
       return IndexedTensorOperation<F,TE>::create(
-        source, resultIndices, Cost
+        sourceOperation->getResult(), indices, sourceOperation->costs
       );
     }
 

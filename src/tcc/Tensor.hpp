@@ -138,9 +138,9 @@ namespace tcc {
       IndexCounts &indexCounts = IndexCounts()
     ) {
       return TensorOperation<F,TE>(
-        DYNAMIC_PTR_CAST(Tensor<F,TE>, THIS),
+        DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), THIS),
         Costs(getElementsCount())
-      )
+      );
     }
 
   protected:
