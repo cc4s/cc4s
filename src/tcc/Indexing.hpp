@@ -78,6 +78,9 @@ namespace tcc {
       );
     }
 
+    // keep other overloads visible
+    using Expression<TE>::compile;
+
     virtual void countIndices(Scope &scope) {
       scope.add(indices);
     }

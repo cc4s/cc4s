@@ -51,6 +51,9 @@ namespace tcc {
       return MapOperation<Target,Domain,TE>::create(f, sourceOperation);
     }
 
+    // keep other overloads visible
+    using Expression<TE>::compile;
+
     virtual void countIndices(Scope &scope) {
       source->countIndices(scope);
     }

@@ -106,8 +106,6 @@ namespace tcc {
         )
       );
 
-      operation->beta = beta;
-
       LOG(2, "TCC") <<
         "possibilites tried=" << scope.triedPossibilitiesCount <<
         ", FLOPS=" <<
@@ -117,13 +115,13 @@ namespace tcc {
           operation->costs.maxElementsCount <<
         std::endl;
 
+      operation->beta = beta;
+      // compile writing the result to the left-hand-side
       return lhs->lhsCompile(operation);
     }
 
-    virtual PTR(Operation<TE>) compile() {
-      Scope scope;
-      return this->compile(scope);
-    }
+    // keep other overloads visible
+    using Expression<TE>::compile;
 
     virtual void countIndices(Scope &scope) {
       lhs->countIndices(scope);

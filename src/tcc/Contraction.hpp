@@ -163,6 +163,9 @@ namespace tcc {
       return operation;
     }
 
+    // keep other overloads visible
+    using Expression<TE>::compile;
+
     virtual void countIndices(Scope &scope) {
       for (auto &factor: factors) {
         factor->countIndices(scope);

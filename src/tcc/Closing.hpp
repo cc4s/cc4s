@@ -62,6 +62,9 @@ namespace tcc {
 //      return ClosingOperation<F,TE>::create(result, resultIndices);
     }
 
+    // keep other overloads visible
+    using Expression<TE>::compile;
+
     virtual void countIndices(Scope &scope) {
       // the closing indices are free indices and therefore must be counted
       scope.add(indices);

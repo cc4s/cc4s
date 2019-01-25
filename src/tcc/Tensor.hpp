@@ -151,6 +151,9 @@ namespace tcc {
       );
     }
 
+    // keep other overloads visible
+    using Expression<TE>::compile;
+
     virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     ) {

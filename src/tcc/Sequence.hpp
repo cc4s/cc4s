@@ -128,10 +128,8 @@ namespace tcc {
       return SequenceOperation<TE>::create(operations);
     }
 
-    virtual PTR(Operation<TE>) compile() {
-      Scope scope;
-      return this->compile(scope);
-    }
+    // keep other overloads visible
+    using Expression<TE>::compile;
 
     virtual void countIndices(Scope &) {
       // the indidex of each subexpression are independet of each other
