@@ -61,8 +61,21 @@ namespace tcc {
     virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     )  {
-      // TODO: create tensor write operation
-      return nullptr;
+      // TODO: create tensor write operation into pure tensor source
+      auto indexedRhs(
+        DYNAMIC_PTR_CAST(ESC(IndexedTensorOperation<F,TE>), rhsOperation)
+      );
+      if (indexedRhs) {
+        // change index order of indexed operation result according to
+        // index order provided by this indexing expression
+        transposeResult(indexedRhs);
+        // continue lhs compiling of contained closed tensor expression
+        return source->lhsCompile(indexedRhs);
+      }
+      throw new EXCEPTION(
+        "Expecting indexed expression ([\"...\"]) on the left-hand-side of "
+        "an assignment if the right-hand-side carries indices."
+      );
     }
 
     virtual void countIndices(Scope &scope) {
@@ -71,7 +84,34 @@ namespace tcc {
 
     PTR(ESC(ClosedTensorExpression<F,TE>)) source;
     std::string indices;
+
   protected:
+    // transposes the result of the indexed rhs tensor to match the index
+    // order of this lhs indexed expression
+    void transposeResult(
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &rhs
+    ) {
+      if (indices.length() != rhs->getResultIndices().length()) {
+        throw new EXCEPTION(
+          "Number of indices of left-hand-side expression "
+          "must match the number of indices of the right-hand-side result."
+        );
+      }
+      // determine shape of lhs
+      size_t lenOfIndex[std::numeric_limits<char>::max()+1];
+      // enter which indices correspond to which length on the rhs
+      for (unsigned int i(0); i < indices.length(); ++i) {
+        lenOfIndex[static_cast<unsigned int>(rhs->getResultIndices()[i])]=
+          rhs->getResult()->lens[i];
+      }
+      // transpose rhs result
+      for (unsigned int i(0); i < indices.length(); ++i) {
+        rhs->getResult()->lens[i] = lenOfIndex[
+          static_cast<unsigned int>(indices[i])
+        ];
+      }
+      rhs->resultIndices = indices;
+    }
   };
 }
 

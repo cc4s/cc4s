@@ -106,14 +106,6 @@ namespace tcc {
         )
       );
 
-      assumeOrCheckShape(operation);
-
-      // write operation results directly to lhs tensor instead of intermediate
-      // TODO: use lvalue compile result of left-hand-side
-      operation->result = DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), lhs->source);
-      operation->resultIndices = lhs->indices;
-      // enter the beta factor of this move
-      // TODO: enter in contraction or move
       operation->beta = beta;
 
       LOG(2, "TCC") <<
@@ -125,7 +117,7 @@ namespace tcc {
           operation->costs.maxElementsCount <<
         std::endl;
 
-      return operation;
+      return lhs->lhsCompile(operation);
     }
 
     virtual PTR(Operation<TE>) compile() {
@@ -139,58 +131,7 @@ namespace tcc {
     }
 
   protected:
-    void assumeOrCheckShape(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &operation
-    ) {
-      // TODO: use lvalue compile result of left-hand-side
-      // currently assuming direct Indexing of Tensor
-      auto lhsTensor(
-        DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), lhs->source)
-      );
-      if (lhs->indices.length() != operation->getResultIndices().length()) {
-        throw new EXCEPTION(
-          "Number of indices of left-hand-side expression " +
-          lhsTensor->getName() +
-          " must match the number of indices of the result tensor " +
-          operation->getResult()->getName()
-        );
-      }
-      // determine shape of lhs
-      std::vector<size_t> lens(operation->getResult()->getLens().size());
-      size_t lenOfIndex[std::numeric_limits<char>::max()+1];
-      // enter which indices correspond to which length on the rhs
-      for (unsigned int i(0); i < lhs->indices.length(); ++i) {
-        lenOfIndex[static_cast<unsigned int>(operation->getResultIndices()[i])]=
-          operation->result->getLens()[i];
-      }
-      // use for lhs
-      for (unsigned int i(0); i < lhs->indices.length(); ++i) {
-        lens[i] = lenOfIndex[static_cast<unsigned int>(lhs->indices[i])];
-      }
-      if (!lhsTensor->assumedShape) {
-        // assume
-        lhsTensor->lens = lens;
-        lhsTensor->assumedShape = true;
-        // or check shape
-      } else if (lhsTensor->getLens() != lens) {
-        if (lhsTensor->lens != operation->getResult()->getLens()) {
-          std::stringstream lhsShape;
-          for (auto i: lhsTensor->getLens()) { lhsShape << " " << i; }
-          std::stringstream rhsShape;
-          for (auto i: lens) { rhsShape << " " << i; }
-          throw new EXCEPTION(
-            "Shape of left-hand-side tensor " + lhsTensor->getName() +
-            " (" + lhsShape.str() + ") "
-            " must match the shape of the result tensor " +
-            operation->getResult()->getName() +
-            " (" + rhsShape.str() + ")"
-          );
-        }
-      }
-    }
-
-    // TODO: do lvalueCompile for general left-hand-side compilation
-    PTR(ESC(Indexing<F,TE>)) lhs;
+    PTR(ESC(IndexedTensorExpression<F,TE>)) lhs;
     PTR(ESC(Contraction<F,TE>)) rhs;
     F beta;
   };

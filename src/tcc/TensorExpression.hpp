@@ -15,8 +15,8 @@ namespace tcc {
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     ) {
       throw new EXCEPTION(
-        "Only tensors, slices and indications are allowed "
-        "on the left-hand-side of " + rhsOperation->getResult()->getName()
+        "Writable expression expected on the "
+        "left-hand-side of " + rhsOperation->getResult()->getName()
       );
     }
   };

@@ -151,6 +151,32 @@ namespace tcc {
       );
     }
 
+    virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
+      const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
+    ) {
+      if (!assumedShape) {
+        // let this tensor assume the shape of the rhs result
+        lens = rhsOperation->getResult()->getLens();
+        assumedShape = true;
+        // otherwise check shape
+      } else if (rhsOperation->getResult()->getLens() != lens) {
+        std::stringstream lhsShape;
+        for (auto i: getLens()) { lhsShape << " " << i; }
+        std::stringstream rhsShape;
+        for (auto i: lens) { rhsShape << " " << i; }
+        throw new EXCEPTION(
+          "Shape of left-hand-side tensor " + getName() +
+          " (" + lhsShape.str() + ") "
+          " must match the shape of the result tensor " +
+          rhsOperation->getResult()->getName() +
+          " (" + rhsShape.str() + ")"
+        );
+      }
+      // make the rhs operation directly operate on this tensor
+      rhsOperation->result = DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), THIS);
+      return rhsOperation;
+    }
+
   protected:
     /**
      * \brief The tensor name.
