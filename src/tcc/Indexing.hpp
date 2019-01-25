@@ -55,7 +55,9 @@ namespace tcc {
       );
       return IndexingOperation<F,TE>::create(
         sourceOperation,
-        sourceOperation->getResult(), indices.c_str(), sourceOperation->costs
+        sourceOperation->getResult(), // indexing operates on the closed tensor
+        indices.c_str(),
+        sourceOperation->costs
       );
     }
 

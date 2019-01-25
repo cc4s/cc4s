@@ -69,9 +69,12 @@ void TensorNetwork::dryRun() {
     (*Pi)["Rr"] <<= (*LambdaT)["RF"] * (*PiT)["Rq"] * (*Gamma)["Fqr"],
     (*T)["abij"] -= -1/4. *(*T)["abji"],
 */
+    (*PiT)["Rb"] <<=
+      map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]),
     (*D)["abij"] +=
       (*T)["cdij"] *
-      (*Pi)["Rd"] * map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]) *
+      (*Pi)["Rd"] *
+      map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]) *
       (*Pi)["Sc"] * (*PiT)["Sa"] *
       (*LambdaT)["SF"] * (*Lambda)["RF"],
     (*Pi)["Ra"] <<= (*(*Pir)({0,No},{NR,Np}))["Ra"]

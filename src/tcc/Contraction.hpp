@@ -152,7 +152,8 @@ namespace tcc {
       PTR(ESC(IndexedTensorOperation<F,TE>)) operation;
       if (factorOperations.size() < 2) {
         // only one operand in contraction: do move directly
-        operation = createMoveOperation(factorOperations[0]);
+//        operation = createMoveOperation(factorOperations[0]);
+        operation = factorOperations[0];
       } else {
         // compile at least 2 contractions in best order
         operation = compileContractions(factorOperations, scope);
