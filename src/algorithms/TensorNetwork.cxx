@@ -31,6 +31,7 @@ void TensorNetwork::run() {
 void TensorNetwork::dryRun() {
   size_t No(10);
   size_t Nv(90);
+  size_t Np(No+Nv);
   size_t NF(200);
   size_t NR(400);
   typedef Tcc<DryEngine> TCC;
@@ -55,6 +56,9 @@ void TensorNetwork::dryRun() {
   auto Gamma(
     TCC::tensor(std::vector<size_t>({NF,Nv,Nv}), "Gamma")
   );
+  auto Pir(
+    TCC::tensor(std::vector<size_t>({NR,Np}), "Pir")
+  );
 
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
 
@@ -69,7 +73,8 @@ void TensorNetwork::dryRun() {
       (*T)["cdij"] *
       (*Pi)["Rd"] * map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]) *
       (*Pi)["Sc"] * (*PiT)["Sa"] *
-      (*LambdaT)["SF"] * (*Lambda)["RF"]
+      (*LambdaT)["SF"] * (*Lambda)["RF"],
+    (*(*Pir)({0,No},{NR,Np}))["Ra"] <<= (*Pi)["Ra"]
   )->compile();
   ladderOperation->execute();
 

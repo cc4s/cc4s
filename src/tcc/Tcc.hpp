@@ -7,6 +7,7 @@
 #include <tcc/Contraction.hpp>
 #include <tcc/Map.hpp>
 #include <tcc/Sequence.hpp>
+#include <tcc/Slice.hpp>
 #include <tcc/Tensor.hpp>
 
 #include <math/Float.hpp>

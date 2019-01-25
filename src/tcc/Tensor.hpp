@@ -4,7 +4,6 @@
 
 #include <tcc/ClosedTensorExpression.hpp>
 
-#include <tcc/IndexedTensorExpression.hpp>
 #include <util/SharedPointer.hpp>
 #include <cstdint>
 #include <vector>
@@ -176,7 +175,7 @@ namespace tcc {
         );
       }
       // make the rhs operation directly operate on this tensor
-      rhsOperation->result THIS(ESC(Tensor<F,TE>));
+      rhsOperation->result = THIS(ESC(Tensor<F,TE>));
       return rhsOperation;
     }
 

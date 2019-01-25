@@ -5,7 +5,9 @@
 #include <tcc/TensorExpression.hpp>
 
 #include <tcc/Indexing.hpp>
+#include <tcc/Slice.hpp>
 #include <util/SharedPointer.hpp>
+#include <initializer_list>
 
 namespace tcc {
   /**
@@ -31,6 +33,16 @@ namespace tcc {
     ) {
       return Indexing<F,TE>::create(
         THIS(ESC(ClosedTensorExpression<F,TE>)), indices
+      );
+    }
+
+    PTR(ESC(Slice<F,TE>)) operator()(
+      std::initializer_list<size_t> min,
+      std::initializer_list<size_t> max
+    ) {
+      return Slice<F,TE>::create(
+        THIS(ESC(ClosedTensorExpression<F,TE>)),
+        min, max
       );
     }
   };
