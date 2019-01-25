@@ -146,7 +146,7 @@ namespace tcc {
 
     virtual PTR(Operation<TE>) compile(Scope &) {
       return TensorOperation<F,TE>::create(
-        DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), THIS),
+        THIS(ESC(Tensor<F,TE>)),
         Costs(getElementsCount())
       );
     }
@@ -176,7 +176,7 @@ namespace tcc {
         );
       }
       // make the rhs operation directly operate on this tensor
-      rhsOperation->result = DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), THIS);
+      rhsOperation->result THIS(ESC(Tensor<F,TE>));
       return rhsOperation;
     }
 

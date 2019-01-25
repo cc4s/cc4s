@@ -58,10 +58,12 @@ namespace tcc {
       );
     }
 
+    // keep other overloads visible
+    using Expression<TE>::compile;
+
     virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     )  {
-      // TODO: create tensor write operation into pure tensor source
       auto indexedRhs(
         DYNAMIC_PTR_CAST(ESC(IndexedTensorOperation<F,TE>), rhsOperation)
       );
@@ -77,9 +79,6 @@ namespace tcc {
         "an assignment if the right-hand-side carries indices."
       );
     }
-
-    // keep other overloads visible
-    using Expression<TE>::compile;
 
     virtual void countIndices(Scope &scope) {
       scope.add(indices);

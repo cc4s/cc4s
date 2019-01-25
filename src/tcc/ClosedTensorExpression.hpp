@@ -30,7 +30,7 @@ namespace tcc {
       const std::string &indices
     ) {
       return Indexing<F,TE>::create(
-        DYNAMIC_PTR_CAST(ESC(ClosedTensorExpression<F,TE>), THIS), indices
+        THIS(ESC(ClosedTensorExpression<F,TE>)), indices
       );
     }
   };

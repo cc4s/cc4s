@@ -13,7 +13,7 @@
 #define DYNAMIC_PTR_CAST(TYPE, VALUE) std::dynamic_pointer_cast<TYPE>(VALUE)
 
 #define THISABLE(TYPE) std::enable_shared_from_this<TYPE>
-#define THIS this->shared_from_this()
+#define THIS(CLASS) std::dynamic_pointer_cast<CLASS>(this->shared_from_this())
 
 // use this to enclose types containing a comma "," in the template argument
 // list
