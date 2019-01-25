@@ -4,7 +4,7 @@
 
 #include <tcc/IndexedTensorExpression.hpp>
 
-#include <tcc/IndexedTensorOperation.hpp>
+#include <tcc/IndexingOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <string>
 
@@ -53,7 +53,8 @@ namespace tcc {
           ESC(TensorOperation<F,TE>), source->compile()
         )
       );
-      return IndexedTensorOperation<F,TE>::create(
+      return IndexingOperation<F,TE>::create(
+        sourceOperation,
         sourceOperation->getResult(), indices.c_str(), sourceOperation->costs
       );
     }

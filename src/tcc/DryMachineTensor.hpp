@@ -125,14 +125,20 @@ namespace cc4s {
       DryTensor<F> intermediateA(A->tensor, SOURCE_LOCATION);
       // allocate tensor for result assuming index reordering
       DryTensor<F> intermediateResult(this->tensor, SOURCE_LOCATION);
-/*
-      LOG(2, "TCC") << "slice " <<
-        getName() << "[" << begins << "," ends << ") <<= " <<
-        alpha << " * " <<
-        ctfA->getName() << "[" << aBegins << "," << aEnds << "] + " <<
-        beta << " * " <<
-        getName() << "[" << begins << "," << ends << "]" << std::endl;
-*/
+
+      std::stringstream beginsStream, endsStream, aBeginsStream, aEndsStream;
+      for (auto d: begins) { beginsStream << " " << d; }
+      for (auto d: ends) { endsStream << " " << d; }
+      for (auto d: aBegins) { aBeginsStream << " " << d; }
+      for (auto d: aEnds) { aEndsStream << " " << d; }
+
+      LOG(1, "TCC") << "slice " <<
+        getName() << "(" << beginsStream.str() << "," << endsStream.str() <<
+        ") <<= " << alpha << " * " << A->getName() <<
+        "(" << aBeginsStream.str() << "," << aEndsStream.str() << ") + " <<
+        beta << " * " << getName() <<
+        "(" << beginsStream.str() << "," << endsStream.str() << ")" <<
+        std::endl;
     }
 
     // TODO: interfaces to be defined: permute, transform

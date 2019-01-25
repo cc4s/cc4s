@@ -37,13 +37,11 @@ namespace tcc {
       auto sourceOperation(
         DYNAMIC_PTR_CAST(ESC(TensorOperation<F,TE>), source->compile())
       );
-      std::vector<size_t> lens(ends);
-      for (size_t i(0); i < lens.size(); ++i) {
-        lens[i] -= begins[i];
-      }
       return SliceOperation<F,TE>::create(
         sourceOperation,
-        Tensor<F,TE>::create(lens, sourceOperation->getResult()->getName()+"'"),
+        Tensor<F,TE>::create(
+          getLens(), sourceOperation->getResult()->getName()+"$"
+        ),
         begins, ends
       );
     }
@@ -58,6 +56,14 @@ namespace tcc {
     }
 
   protected:
+    std::vector<size_t> getLens() {
+      std::vector<size_t> lens(ends);
+      for (size_t i(0); i < lens.size(); ++i) {
+        lens[i] -= begins[i];
+      }
+      return lens;
+    }
+
     PTR(ESC(ClosedTensorExpression<F,TE>)) source;
     std::vector<size_t> begins, ends;
   };

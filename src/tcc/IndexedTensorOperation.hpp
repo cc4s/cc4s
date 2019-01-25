@@ -41,16 +41,6 @@ namespace tcc {
   protected:
     std::string resultIndices;
 
-    static PTR(ESC(IndexedTensorOperation<F,TE>)) create(
-      const PTR(ESC(Tensor<F,TE>)) &result,
-      const char *resultIndices,
-      const Costs &costs
-    ) {
-      return NEW(ESC(IndexedTensorOperation<F,TE>),
-        result, resultIndices, costs, typename Operation<TE>::ProtectedToken()
-      );
-    }
-
     friend class Indexing<F,TE>;
     friend class Move<F,TE>;
     friend class Contraction<F,TE>;

@@ -21,7 +21,9 @@ namespace tcc {
       const std::vector<size_t> ends_,
       const typename Operation<TE>::ProtectedToken &
     ):
-      TensorOperation<F,TE>(result_, source_->costs),
+      TensorOperation<F,TE>(
+        result_, source_->costs, typename Operation<TE>::ProtectedToken()
+      ),
       source(source_), begins(begins_), ends(ends_)
     {
     }
@@ -29,15 +31,15 @@ namespace tcc {
     virtual ~SliceOperation() {
     }
 
-    virtual void execute() {
+    virtual void execute() {\
       source->execute();
-      this->getResult()->getMachineTensor()->(
+      this->getResult()->getMachineTensor()->slice(
         F(1),
         source->getResult()->getMachineTensor(),
         begins, ends,
         F(0),
         // write into entire result tensor
-        std::vector<size_t>(this->getResult()->getLens()->size()),
+        std::vector<size_t>(this->getResult()->getLens().size()),
         this->getResult()->getLens()
       );
     }
