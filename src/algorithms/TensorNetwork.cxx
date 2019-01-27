@@ -77,6 +77,7 @@ void TensorNetwork::dryRun() {
       map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]) *
       (*Pi)["Sc"] * (*PiT)["Sa"] *
       (*LambdaT)["SF"] * (*Lambda)["RF"],
+    (*Pi)["Ra"] <<= (*Pi)["Ra"],
     (*Pi)["Ra"] <<= (*(*Pir)({0,No},{NR,Np}))["Ra"]
 //    (*(*Pir)({0,No},{NR,Np}))["Ra"] <<= (*Pi)["Ra"]
   )->compile();
