@@ -157,10 +157,6 @@ namespace tcc {
     virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     ) {
-      LOG(1,"TCC") << "storing " <<
-        rhsOperation->getResult()->getName() <<
-        " into " <<
-        getName() << std::endl;
       if (!assumedShape) {
         // let this tensor assume the shape of the rhs result
         lens = rhsOperation->getResult()->getLens();
@@ -170,7 +166,7 @@ namespace tcc {
         std::stringstream lhsShape;
         for (auto i: getLens()) { lhsShape << " " << i; }
         std::stringstream rhsShape;
-        for (auto i: lens) { rhsShape << " " << i; }
+        for (auto i: rhsOperation->getResult()->getLens()) { rhsShape << " " << i; }
         throw new EXCEPTION(
           "Shape of left-hand-side tensor " + getName() +
           " (" + lhsShape.str() + ") "

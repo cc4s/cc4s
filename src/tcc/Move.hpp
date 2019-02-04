@@ -129,11 +129,9 @@ namespace tcc {
     }
 
     virtual operator std::string () const {
-      auto lhsString(static_cast<std::string>(*lhs));
-      auto rhsString(static_cast<std::string>(*rhs));
       std::stringstream stream;
       stream << "Move( " <<
-        lhsString << ", " << rhsString << ", " << beta << " )";
+        std::string(*lhs) << ", " << std::string(*rhs) << ", " << beta << " )";
       return stream.str();
     }
 

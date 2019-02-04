@@ -4,6 +4,7 @@
 
 #include <tcc/IndexedTensorExpression.hpp>
 
+#include <tcc/MoveOperation.hpp>
 #include <tcc/ContractionOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
@@ -151,7 +152,7 @@ namespace tcc {
       PTR(ESC(IndexedTensorOperation<F,TE>)) operation;
       if (factorOperations.size() < 2) {
         // only one operand in contraction
-        operation = factorOperations[0];
+        operation = createSumOperation(factorOperations[0], scope);
       } else {
         // compile at least 2 contractions in best order
         operation = compileContractions(factorOperations, scope);
@@ -175,7 +176,7 @@ namespace tcc {
       std::stringstream stream;
       stream << "Contraction( " << alpha;
       for (auto const &factor: factors) {
-        stream << ", " << static_cast<std::string>(*factor);
+        stream << ", " << std::string(*factor);
       }
       stream << " )";
       return stream.str();
@@ -362,6 +363,73 @@ namespace tcc {
         a, b,
         contractionResult, static_cast<const char *>(outerIndices),
         contractionCosts
+      );
+    }
+
+    /**
+     * \brief Creates a SumOperation summing
+     * a compiled operation and assessing its costs.
+     **/
+    PTR(ESC(MoveOperation<F,TE>)) createSumOperation(
+      const PTR(ESC(IndexedTensorOperation<F,TE>)) &a,
+      Scope &scope
+    ) {
+      size_t summedIndexDimensions[a->getResultIndices().length() + 1];
+      char outerIndices[a->getResultIndices().length() + 1];
+      size_t outerIndexDimensions[a->getResultIndices().length() + 1];
+      char uniqueIndices[a->getResultIndices().length() + 1];
+      size_t uniqueIndexDimensions[a->getResultIndices().length() + 1];
+      unsigned int c(0), o(0), u(0);
+
+      // determine unique indices
+      for (unsigned int i(0); i < a->getResultIndices().length(); ++i) {
+        const char index(a->getResultIndices()[i]);
+        if (
+          std::find(uniqueIndices, uniqueIndices+u, index) == uniqueIndices+u
+        ) {
+          uniqueIndices[u] = index;
+          uniqueIndexDimensions[u] = a->getResult()->lens[i];
+          ++u;
+        }
+      }
+      uniqueIndices[u] = 0;
+
+      size_t outerElementsCount(1), summedElementsCount(1);
+      for (unsigned int i(0); i < u; ++i) {
+        const char index(uniqueIndices[i]);
+        // go through unique indices
+        if (scope[index] > 0) {
+          // index occurs outside
+          outerIndices[o] = index;
+          outerElementsCount *=
+            outerIndexDimensions[o] = uniqueIndexDimensions[i];
+          ++o;
+        } else {
+          summedElementsCount *=
+            summedIndexDimensions[c] = uniqueIndexDimensions[i];
+          ++c;
+        }
+      }
+      outerIndices[o] = 0;
+
+      // allocate intermedate result
+      auto sumResult(
+        Tensor<F,TE>::create(
+          std::vector<size_t>(outerIndexDimensions, outerIndexDimensions+o),
+          a->getResult()->getName()
+        )
+      );
+      // assess costs
+      Costs sumCosts(
+        sumResult->getElementsCount(),
+        0,
+        0, // no multiplications
+        outerElementsCount * summedElementsCount - outerElementsCount
+      );
+      return MoveOperation<F,TE>::create(
+        a,
+        sumResult, static_cast<const char *>(outerIndices),
+        sumCosts
       );
     }
 

@@ -33,14 +33,21 @@ namespace tcc {
     }
 
     virtual void execute() {
-      LOG(1,"TCC") << "loading " << this->getResult()->getName() << " <<= " <<
-        source->getName() << std::endl;
       if (this->getResult() != source) {
         // move the data only if source and result tensors are different
         *this->getResult() = *source;
         LOG(1,"TCC") << "move " << this->getResult()->getName() << " <<= " <<
           source->getName() << std::endl;
       }
+    }
+
+    virtual operator std::string () const {
+      std::stringstream stream;
+      stream << "Load( " <<
+        std::string(*source) <<
+        " from " << source.get() <<
+        " into " << this->result.get() << " )";
+      return stream.str();
     }
 
   protected:

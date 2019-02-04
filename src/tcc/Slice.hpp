@@ -5,6 +5,7 @@
 #include <tcc/ClosedTensorExpression.hpp>
 
 #include <tcc/SliceOperation.hpp>
+#include <tcc/SliceIntoOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <vector>
 
@@ -52,12 +53,16 @@ namespace tcc {
     virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     ) {
-      return nullptr;
+      auto targetTensor(DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), source));
+      return SliceIntoOperation<F,TE>::create(
+        rhsOperation,
+        targetTensor,
+        begins, ends
+      );
     }
 
     virtual operator std::string () const {
-      auto sourceString(static_cast<std::string>(*source));
-      return sourceString + "( " +
+      return std::string(*source) + "( " +
         SliceOperation<F,TE>::coordinateString(begins) + "-" +
         SliceOperation<F,TE>::coordinateString(ends) + " )";
     }

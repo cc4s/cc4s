@@ -44,17 +44,23 @@ namespace tcc {
       );
     }
 
-  static std::string coordinateString(std::vector<size_t> const &coordinates) {
-    std::stringstream stream;
-    stream << "(";
-    std::string delimiter("");
-    for (auto i: coordinates) {
-      stream << delimiter << i;
-      delimiter = ",";
+    virtual operator std::string () const {
+      return "Slice( " + std::string(*source) + ", " +
+        SliceOperation<F,TE>::coordinateString(begins) + "-" +
+        SliceOperation<F,TE>::coordinateString(ends) + " )";
     }
-    stream << ")";
-    return stream.str();
-  }
+
+    static std::string coordinateString(std::vector<size_t> const &coordinates) {
+      std::stringstream stream;
+      stream << "(";
+      std::string delimiter("");
+      for (auto i: coordinates) {
+        stream << delimiter << i;
+        delimiter = ",";
+      }
+      stream << ")";
+      return stream.str();
+    }
 
   protected:
     PTR(ESC(TensorOperation<F,TE>)) source;

@@ -142,7 +142,7 @@ namespace tcc {
       stream << "Sequence( ";
       std::string delimiter("");
       for (auto const &move: moves) {
-        stream << delimiter << static_cast<std::string>(*move);
+        stream << delimiter << std::string(*move);
         delimiter = ", ";
       }
       stream << " )";

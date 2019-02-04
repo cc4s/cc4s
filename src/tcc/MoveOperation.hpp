@@ -42,12 +42,20 @@ namespace tcc {
 
     virtual void execute() {
       rhs->execute();
-      this->getResult()->getMachineTensor()->move(
+      this->getResult()->getMachineTensor()->sum(
         this->alpha,
         rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
         this->beta,
         this->resultIndices
       );
+    }
+
+    virtual operator std::string () const {
+      std::stringstream stream;
+      stream << "Move( " << this->alpha << ", " <<
+        std::string(*this->result) << ", " << std::string(*rhs) << ", " <<
+        this->beta << " )";
+      return stream.str();
     }
 
   protected:
@@ -65,7 +73,7 @@ namespace tcc {
     }
 
     PTR(ESC(IndexedTensorOperation<F,TE>)) rhs;
-    F alpha, beta;
+//    F alpha, beta;
 
     friend class Contraction<F,TE>;
   };

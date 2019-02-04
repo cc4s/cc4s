@@ -33,6 +33,18 @@ namespace tcc {
       }
     }
 
+    virtual operator std::string () const {
+      std::stringstream stream;
+      stream << "Sequence( ";
+      std::string delimiter("");
+      for (auto const &operation: operations) {
+        stream << delimiter << std::string(*operation);
+        delimiter = ", ";
+      }
+      stream << " )";
+      return stream.str();
+    }
+
   protected:
     static PTR(SequenceOperation<TE>) create(
       const std::vector<PTR(Operation<TE>)> &operations_

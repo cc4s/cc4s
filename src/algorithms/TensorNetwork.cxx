@@ -79,11 +79,14 @@ void TensorNetwork::dryRun() {
       (*Pi)["Sc"] * (*PiT)["Sa"] *
       (*LambdaT)["SF"] * (*Lambda)["RF"],
     (*Pi)["Ra"] <<= (*Pi)["Ra"],
-    (*Pi)["Ra"] <<= (*(*Pir)({0,No},{NR,Np}))["Ra"]
-//    (*(*Pir)({0,No},{NR,Np}))["Ra"] <<= (*Pi)["Ra"]
+    (*Pi)["Ra"] <<= (*(*Pir)({0,No},{NR,Np}))["Ra"],
+    (*(*Pir)({0,No},{NR,Np}))["Ra"] <<= (*Pi)["Ra"]
   );
-  LOG(1,"TensorNetwork") << static_cast<std::string>(*ladderExpression) << std::endl;
+  LOG(1,"TensorNetwork") << "Expression = " <<
+    std::string(*ladderExpression) << std::endl;
   auto ladderOperation(ladderExpression->compile());
+  LOG(1,"TensorNetwork") << "Operation = " <<
+    std::string(*ladderOperation) << std::endl;
   ladderOperation->execute();
 
 // this contraction already requires heuristics

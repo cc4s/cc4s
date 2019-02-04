@@ -38,6 +38,10 @@ namespace tcc {
       source->execute();
     }
 
+    virtual operator std::string () const {
+      return std::string(*source) + "[" + this->resultIndices + "]";
+    }
+
   protected:
     PTR(ESC(TensorOperation<F,TE>)) source;
 

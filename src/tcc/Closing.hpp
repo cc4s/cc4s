@@ -71,8 +71,7 @@ namespace tcc {
     }
 
     virtual operator std::string () const {
-      auto sourceString(static_cast<std::string>(source));
-      return sourceString + "^" + indices;
+      return std::string(*source) + "^" + indices;
     }
 
   protected:

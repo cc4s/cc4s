@@ -13,6 +13,8 @@ namespace tcc {
 
     virtual void execute() = 0;
 
+    virtual operator std::string () const = 0;
+
     /**
      * \brief Costs to evaluate this operation in time and memory
      **/

@@ -60,6 +60,14 @@ namespace tcc {
       );
     }
 
+    virtual operator std::string () const {
+      std::stringstream stream;
+      stream << "Contraction( " << this->alpha << ", " <<
+        std::string(*left) << ", " << std::string(*right) << ", " <<
+        this->beta << " )";
+      return stream.str();
+    }
+
   protected:
     /**
      * \brief Creates a contraction operation contracting the results of

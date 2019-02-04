@@ -59,9 +59,8 @@ namespace tcc {
     }
 
     virtual operator std::string () const {
-      auto sourceString(static_cast<std::string>(*source));
       std::stringstream stream;
-      stream << "Map( " << "f" << ", " << sourceString << " )";
+      stream << "Map( " << "f" << ", " << std::string(*source) << " )";
       return stream.str();
     }
 

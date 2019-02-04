@@ -4,55 +4,65 @@
 
 #include <tcc/TensorOperation.hpp>
 
+#include <tcc/SliceOperation.hpp>
 #include <tcc/Costs.hpp>
 #include <util/SharedPointer.hpp>
 #include <string>
 
 namespace tcc {
-  template <typename F, typename TE> Slice;
+  template <typename F, typename TE> class Slice;
 
   template <typename F, typename TE>
   class SliceIntoOperation: public TensorOperation<F,TE> {
   public:
     SliceIntoOperation(
-      const PTR(ESC(TensorOperation<F,TE>)) &target_,
+      const PTR(ESC(TensorOperation<F,TE>)) &source_,
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const std::vector<size_t> begins_,
       const std::vector<size_t> ends_,
       const typename Operation<TE>::ProtectedToken &
     ):
-      TensorOperation<TE>(target->costs),
+      TensorOperation<F,TE>(
+        result_, source_->costs, typename Operation<TE>::ProtectedToken()
+      ),
       source(source_), begins(begins_), ends(ends_)
     {
     }
 
-    virtual ~SliceOperation() {
+    virtual ~SliceIntoOperation() {
     }
 
     virtual void execute() {
-      this->getResult()->getMachineTensor()->(
+      source->execute();
+      this->getResult()->getMachineTensor()->slice(
         F(1),
-        getResult()->getMachineTensor(),
-        // read from the entire result tensor
-        std::vector<size_t>(this->getResult()->getLens()->size()),
-        this->getResult()->getLens()
+        source->getResult()->getMachineTensor(),
+        // read from the entire result tensor of the source
+        std::vector<size_t>(source->getResult()->getLens().size()),
+        source->getResult()->getLens(),
         F(0),
-        begins, ends,
+        begins, ends
       );
-      target->execute();
+    }
+
+    virtual operator std::string () const {
+      return "SliceInto( " + std::string(*source) + ", " +
+        SliceOperation<F,TE>::coordinateString(begins) + "-" +
+        SliceOperation<F,TE>::coordinateString(ends) + " )";
     }
 
   protected:
     PTR(ESC(TensorOperation<F,TE>)) source;
     std::vector<size_t> begins, ends;
 
-    static PTR(ESC(SliceOperation<F,TE>)) create(
+    static PTR(ESC(SliceIntoOperation<F,TE>)) create(
       const PTR(ESC(TensorOperation<F,TE>)) &source,
+      const PTR(ESC(Tensor<F,TE>)) &result,
       const std::vector<size_t> begins,
       const std::vector<size_t> ends
     ) {
-      return NEW(ESC(SliceOperation<F,TE>),
-        source, begins, ends, typename Operation<TE>::ProtectedToken()
+      return NEW(ESC(SliceIntoOperation<F,TE>),
+        source, result, begins, ends, typename Operation<TE>::ProtectedToken()
       );
     }
 

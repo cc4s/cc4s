@@ -45,7 +45,11 @@ namespace tcc {
       );
     }
 
-  protected:
+    virtual operator std::string () const {
+      return "Map( f, " + std::string(*source) + " )";
+    }
+
+ protected:
     static PTR(ESC(MapOperation<Target,Domain,TE>)) create(
       const std::function<Target(const Domain)> &f_,
       const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_
