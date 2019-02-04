@@ -40,7 +40,7 @@ namespace tcc {
         // read from the entire result tensor of the source
         std::vector<size_t>(source->getResult()->getLens().size()),
         source->getResult()->getLens(),
-        F(0),
+        F(this->beta),
         begins, ends
       );
     }

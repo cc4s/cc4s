@@ -57,11 +57,18 @@ namespace tcc {
       if (!targetTensor) {
         throw new EXCEPTION("Expecting tensor for slice operation on left-hand-side.");
       }
-      return SliceIntoOperation<F,TE>::create(
-        rhsOperation,
-        targetTensor,
-        begins, ends
+      auto sliceIntoOperation(
+          SliceIntoOperation<F,TE>::create(
+          rhsOperation,
+          targetTensor,
+          begins, ends
+        )
       );
+      // transfer beta from inner to outer operation
+      sliceIntoOperation->beta = rhsOperation->beta;
+      rhsOperation->beta = 0.0;
+      // TODO: transfer alpha in case of moves or contractions
+      return sliceIntoOperation;
     }
 
     virtual operator std::string () const {

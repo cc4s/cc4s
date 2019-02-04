@@ -80,7 +80,7 @@ void TensorNetwork::dryRun() {
       (*LambdaT)["SF"] * (*Lambda)["RF"],
     (*Pi)["Ra"] <<= (*Pi)["Ra"],
     (*Pi)["Ra"] <<= (*(*Pir)({0,No},{NR,Np}))["Ra"],
-    (*(*Pir)({0,No},{NR,Np}))["Ra"] <<= (*Pi)["Ra"]
+    (*(*Pir)({0,No},{NR,Np}))["Ra"] -= (*Pi)["Ra"]
   );
   LOG(1,"TensorNetwork") << "Expression = " <<
     std::string(*ladderExpression) << std::endl;

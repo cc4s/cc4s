@@ -10,6 +10,7 @@
 
 namespace tcc {
   template <typename F, typename TE> class Tensor;
+  template <typename F, typename TE> class Slice;
 
   template <typename F, typename TE>
   class TensorOperation: public Operation<TE> {
@@ -45,6 +46,7 @@ namespace tcc {
     F alpha, beta;
 
     friend class Tensor<F,TE>;
+    friend class Slice<F,TE>;
   };
 }
 
