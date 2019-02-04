@@ -35,8 +35,8 @@ namespace tcc {
 
     virtual void execute() {
       source->execute();
-      // execute machine tensor's move with custom map
-      this->getResult()->getMachineTensor()->move(
+      // execute machine tensor's sum with custom map
+      this->getResult()->getMachineTensor()->sum(
         Domain(1),
         source->getResult()->getMachineTensor(), source->getResultIndices(),
         Target(0),

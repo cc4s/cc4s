@@ -50,14 +50,14 @@ namespace cc4s {
     }
 
     // this[bIndices] = alpha * A[aIndices] + beta*this[bIndices]
-    void move(
+    void sum(
       F alpha,
       const PTR(CtfMachineTensor<F>) &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices
     ) {
-      LOG(2, "TCC") << "move " <<
+      LOG(2, "TCC") << "sum " <<
         getName() << "[" << bIndices << "] <<= " <<
         alpha << " * " << A->getName() << "[" << aIndices << "] + " <<
         beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
@@ -70,7 +70,7 @@ namespace cc4s {
     }
 
     // this[bIndices] = alpha * f(A[aIndices]) + beta*this[bIndices]
-    void move(
+    void sum(
       F alpha,
       const PTR(CtfMachineTensor<F>) &A,
       const std::string &aIndices,
@@ -78,7 +78,7 @@ namespace cc4s {
       const std::string &bIndices,
       const std::function<F(const F)> &f
     ) {
-      LOG(2, "TCC") << "move " <<
+      LOG(2, "TCC") << "sum " <<
         getName() << "[" << bIndices << "] <<= f(" <<
         alpha << " * " << A->getName() << "[" << aIndices << "]) + " <<
         beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
@@ -92,7 +92,7 @@ namespace cc4s {
     }
 
     template <typename G>
-    void move(
+    void sum(
       G alpha,
       const PTR(CtfMachineTensor<G>) &A,
       const std::string &aIndices,
@@ -100,7 +100,7 @@ namespace cc4s {
       const std::string &bIndices,
       const std::function<F(const G)> &f
     ) {
-      LOG(2, "TCC") << "move " <<
+      LOG(2, "TCC") << "sum " <<
         getName() << "[" << bIndices << "] <<= f(" <<
         alpha << " * " << A->getName() << "[" << aIndices << "]) + " <<
         beta << " * " << getName() << "[" << bIndices << "]" << std::endl;

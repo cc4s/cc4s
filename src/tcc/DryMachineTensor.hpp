@@ -48,14 +48,14 @@ namespace cc4s {
     }
 
     // this[bIndices] = alpha * A[aIndices] + beta*this[bIndices]
-    void move(
+    void sum(
       F alpha,
       const PTR(DryMachineTensor<F>) &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices
     ) {
-      LOG(1, "TCC") << "move " <<
+      LOG(1, "TCC") << "sum " <<
         getName() << "[" << bIndices << "] <<= " <<
         alpha << " * " << A->getName() << "[" << aIndices << "] + " <<
         beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
@@ -63,7 +63,7 @@ namespace cc4s {
 
     // this[bIndices] = f(alpha * A[aIndices]) + beta * this[bIndices]
     template <typename Domain>
-    void move(
+    void sum(
       Domain alpha,
       const PTR(DryMachineTensor<Domain>) &A,
       const std::string &aIndices,
@@ -71,7 +71,7 @@ namespace cc4s {
       const std::string &bIndices,
       const std::function<F(const Domain)> &f
     ) {
-      LOG(1, "TCC") << "move " <<
+      LOG(1, "TCC") << "sum " <<
         getName() << "[" << bIndices << "] <<= f(" <<
         alpha << " * " << A->getName() << "[" << aIndices << "]) + " <<
         beta << " * " << getName() << "[" << bIndices << "]" << std::endl;

@@ -4,6 +4,7 @@
 
 #include <tcc/ClosedTensorExpression.hpp>
 
+#include <tcc/TensorLoadOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <cstdint>
 #include <vector>
@@ -144,7 +145,7 @@ namespace tcc {
     bool assumedShape;
 
     virtual PTR(Operation<TE>) compile(Scope &) {
-      return TensorOperation<F,TE>::create(
+      return TensorLoadOperation<F,TE>::create(
         THIS(ESC(Tensor<F,TE>)),
         Costs(getElementsCount())
       );
@@ -156,6 +157,10 @@ namespace tcc {
     virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     ) {
+      LOG(1,"TCC") << "storing " <<
+        rhsOperation->getResult()->getName() <<
+        " into " <<
+        getName() << std::endl;
       if (!assumedShape) {
         // let this tensor assume the shape of the rhs result
         lens = rhsOperation->getResult()->getLens();
@@ -177,6 +182,10 @@ namespace tcc {
       // make the rhs operation directly operate on this tensor
       rhsOperation->result = THIS(ESC(Tensor<F,TE>));
       return rhsOperation;
+    }
+
+    virtual operator std::string () const {
+      return getName();
     }
 
   protected:

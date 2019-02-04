@@ -128,6 +128,15 @@ namespace tcc {
       rhs->countIndices(scope);
     }
 
+    virtual operator std::string () const {
+      auto lhsString(static_cast<std::string>(*lhs));
+      auto rhsString(static_cast<std::string>(*rhs));
+      std::stringstream stream;
+      stream << "Move( " <<
+        lhsString << ", " << rhsString << ", " << beta << " )";
+      return stream.str();
+    }
+
   protected:
     PTR(ESC(IndexedTensorExpression<F,TE>)) lhs;
     PTR(ESC(Contraction<F,TE>)) rhs;

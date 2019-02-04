@@ -70,6 +70,11 @@ namespace tcc {
       scope.add(indices);
     }
 
+    virtual operator std::string () const {
+      auto sourceString(static_cast<std::string>(source));
+      return sourceString + "^" + indices;
+    }
+
   protected:
 // TODO: to be done in operation
 /*

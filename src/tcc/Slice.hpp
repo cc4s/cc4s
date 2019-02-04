@@ -55,6 +55,13 @@ namespace tcc {
       return nullptr;
     }
 
+    virtual operator std::string () const {
+      auto sourceString(static_cast<std::string>(*source));
+      return sourceString + "( " +
+        SliceOperation<F,TE>::coordinateString(begins) + "-" +
+        SliceOperation<F,TE>::coordinateString(ends) + " )";
+    }
+
   protected:
     std::vector<size_t> getLens() {
       std::vector<size_t> lens(ends);

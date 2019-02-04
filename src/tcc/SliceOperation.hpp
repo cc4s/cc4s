@@ -44,6 +44,18 @@ namespace tcc {
       );
     }
 
+  static std::string coordinateString(std::vector<size_t> const &coordinates) {
+    std::stringstream stream;
+    stream << "(";
+    std::string delimiter("");
+    for (auto i: coordinates) {
+      stream << delimiter << i;
+      delimiter = ",";
+    }
+    stream << ")";
+    return stream.str();
+  }
+
   protected:
     PTR(ESC(TensorOperation<F,TE>)) source;
     std::vector<size_t> begins, ends;

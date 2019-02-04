@@ -16,7 +16,7 @@ namespace tcc {
   public:
     /**
      * \brief Creates an expression with named indices from the closed tensor
-     * source expression for further operations such as moves or contractions.
+     * source expression for further operations such as sums or contractions.
      * Not for direct invocation. Use the operator [] on
      * tcc::ClosedTensorExpression<F,TE> objects instead.
      **/
@@ -32,7 +32,7 @@ namespace tcc {
 
     /**
      * \brief Creates an expression with named indices from a closed tensor
-     * source expression for further operations such as moves or contractions.
+     * source expression for further operations such as sums or contractions.
      * \param[in] source The closed tensor expression to operate on.
      * \param[in] indices The index character string where each character
      * specifies the index name of the respective dimension index in the
@@ -85,6 +85,11 @@ namespace tcc {
 
     virtual void countIndices(Scope &scope) {
       scope.add(indices);
+    }
+
+    virtual operator std::string () const {
+      auto sourceString(static_cast<std::string>(*source));
+      return sourceString + "[" + indices + "]";
     }
 
     PTR(ESC(ClosedTensorExpression<F,TE>)) source;

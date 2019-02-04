@@ -137,6 +137,18 @@ namespace tcc {
       // counting will be done on the level of moves and contractions
     }
 
+    virtual operator std::string () const {
+      std::stringstream stream;
+      stream << "Sequence( ";
+      std::string delimiter("");
+      for (auto const &move: moves) {
+        stream << delimiter << static_cast<std::string>(*move);
+        delimiter = ", ";
+      }
+      stream << " )";
+      return stream.str();
+    }
+
   protected:
     std::vector<PTR(Expression<TE>)> moves;
   };

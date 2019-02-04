@@ -5,7 +5,6 @@
 #include <tcc/IndexedTensorExpression.hpp>
 
 #include <tcc/ContractionOperation.hpp>
-#include <tcc/MoveOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 #include <vector>
@@ -151,8 +150,7 @@ namespace tcc {
 
       PTR(ESC(IndexedTensorOperation<F,TE>)) operation;
       if (factorOperations.size() < 2) {
-        // only one operand in contraction: do move directly
-//        operation = createMoveOperation(factorOperations[0]);
+        // only one operand in contraction
         operation = factorOperations[0];
       } else {
         // compile at least 2 contractions in best order
@@ -171,6 +169,16 @@ namespace tcc {
       for (auto &factor: factors) {
         factor->countIndices(scope);
       }
+    }
+
+    virtual operator std::string () const {
+      std::stringstream stream;
+      stream << "Contraction( " << alpha;
+      for (auto const &factor: factors) {
+        stream << ", " << static_cast<std::string>(*factor);
+      }
+      stream << " )";
+      return stream.str();
     }
 
   protected:
@@ -260,37 +268,6 @@ namespace tcc {
         scope.add(a->getResultIndices());
       }
       return bestContractions;
-    }
-
-    /**
-     * \brief Creates a ContractionOperation contracting two previously
-     * compiled operations and assessing its costs.
-     **/
-    PTR(ESC(MoveOperation<F,TE>)) createMoveOperation(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &a
-    ) {
-      // allocate intermedate result assuming identical indices as argument
-      auto moveResult(
-        Tensor<F,TE>::create(
-          a->getResult(), a->getResult()->getName() + "'"
-        )
-      );
-      size_t elementsCount(1);
-      for (auto len: a->getResult()->lens) {
-        elementsCount *= len;
-      }
-      // assess costs
-      Costs moveCosts(
-        moveResult->getElementsCount(),
-        moveResult->getElementsCount(),
-        0,  // no multiplications
-        moveResult->getElementsCount() // number of additions
-      );
-      return MoveOperation<F,TE>::create(
-        a,
-        moveResult, a->getResultIndices().c_str(),
-        moveCosts
-      );
     }
 
     /**

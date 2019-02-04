@@ -58,6 +58,13 @@ namespace tcc {
       source->countIndices(scope);
     }
 
+    virtual operator std::string () const {
+      auto sourceString(static_cast<std::string>(*source));
+      std::stringstream stream;
+      stream << "Map( " << "f" << ", " << sourceString << " )";
+      return stream.str();
+    }
+
   protected:
     std::function<Target(const Domain)> f;
     PTR(ESC(IndexedTensorExpression<Domain,TE>)) source;

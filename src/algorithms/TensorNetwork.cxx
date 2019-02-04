@@ -63,12 +63,13 @@ void TensorNetwork::dryRun() {
 //  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
 
   // compile a sequence (,) of operations. Note the required parenthesis
-  auto ladderOperation = (
+  auto ladderExpression = (
 /*
     (*Gamma)["Fqr"] <<= (*Pi)["Rq"] * (*Pi)["Rr"] * (*Lambda)["RF"],
     (*Pi)["Rr"] <<= (*LambdaT)["RF"] * (*PiT)["Rq"] * (*Gamma)["Fqr"],
     (*T)["abij"] -= -1/4. *(*T)["abji"],
 */
+    (*LambdaT)["RF"] <<= (*Lambda)["RF"],
     (*PiT)["Rb"] <<=
       map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]),
     (*D)["abij"] +=
@@ -80,7 +81,9 @@ void TensorNetwork::dryRun() {
     (*Pi)["Ra"] <<= (*Pi)["Ra"],
     (*Pi)["Ra"] <<= (*(*Pir)({0,No},{NR,Np}))["Ra"]
 //    (*(*Pir)({0,No},{NR,Np}))["Ra"] <<= (*Pi)["Ra"]
-  )->compile();
+  );
+  LOG(1,"TensorNetwork") << static_cast<std::string>(*ladderExpression) << std::endl;
+  auto ladderOperation(ladderExpression->compile());
   ladderOperation->execute();
 
 // this contraction already requires heuristics

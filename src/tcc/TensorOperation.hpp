@@ -31,7 +31,9 @@ namespace tcc {
     }
 
     virtual void execute() {
-      // tensor operation may occurr as atomic operations doing nothing
+      // a tensor operation occurring as an atomic operation is a fetch
+      // operation of the operand tensor, which result points to.
+      // there is nothing more to do.
     }
 
     virtual PTR(ESC(Tensor<F,TE>)) getResult() {
@@ -41,15 +43,6 @@ namespace tcc {
   protected:
     PTR(ESC(Tensor<F,TE>)) result;
     F alpha, beta;
-
-    static PTR(ESC(TensorOperation<F,TE>)) create(
-      const PTR(ESC(Tensor<F,TE>)) &result,
-      const Costs &costs
-    ) {
-      return NEW(ESC(TensorOperation<F,TE>),
-        result, costs, typename Operation<TE>::ProtectedToken()
-      );
-    }
 
     friend class Tensor<F,TE>;
   };

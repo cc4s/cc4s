@@ -38,6 +38,8 @@ namespace tcc {
      **/
     virtual void countIndices(Scope &) = 0;
 
+    virtual operator std::string () const = 0;
+
   protected:
     /**
      * \brief Dummy objects of that type are used to guarantee that
