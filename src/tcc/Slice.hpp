@@ -54,6 +54,9 @@ namespace tcc {
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     ) {
       auto targetTensor(DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), source));
+      if (!targetTensor) {
+        throw new EXCEPTION("Expecting tensor for slice operation on left-hand-side.");
+      }
       return SliceIntoOperation<F,TE>::create(
         rhsOperation,
         targetTensor,
