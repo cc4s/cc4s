@@ -416,7 +416,7 @@ namespace tcc {
       auto sumResult(
         Tensor<F,TE>::create(
           std::vector<size_t>(outerIndexDimensions, outerIndexDimensions+o),
-          a->getResult()->getName()
+          a->getResult()->getName() + "'"
         )
       );
       // assess costs
