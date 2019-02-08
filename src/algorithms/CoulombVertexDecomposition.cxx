@@ -129,10 +129,9 @@ void CoulombVertexDecomposition::run() {
   double regularizationFriction(
     getRealArgument("regularizationFriction", DEFAULT_REGULARIZATION_FRICTION)
   );
-  regularizationEstimator =
-    new AlternatingLeastSquaresRegularizationEstimator(
-      swampingThreshold, regularizationFriction, 1
-    );
+  regularizationEstimator = new AlternatingLeastSquaresRegularizationEstimator(
+    swampingThreshold, regularizationFriction, 1
+  );
   int64_t iterationsCount(0);
   int64_t maxIterationsCount(
     getIntegerArgument("maxIterations", DEFAULT_MAX_ITERATIONS)
@@ -236,19 +235,23 @@ void CoulombVertexDecomposition::fit(
   int64_t const iterationsCount
 ) {
 
-  int fitFactorOrbitals(getIntegerArgument
-                        ("fitFactorOrbitals", 1));
+  int fitFactorOrbitals(
+    getIntegerArgument("fitFactorOrbitals", 1)
+  );
 
   if (fitFactorOrbitals) {
     iterateQuadraticFactor(iterationsCount);
   }
 
-  int fitCoulombFactors(getIntegerArgument
-                        ("fitCoulombFactors", 1));
+  int fitCoulombFactors(
+    getIntegerArgument("fitCoulombFactors", 1)
+  );
 
   if (fitCoulombFactors) {
-    fitRegularizedAlternatingLeastSquaresFactor(*GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
-                                                *LambdaGR,'G', regularizationEstimator);
+    fitRegularizedAlternatingLeastSquaresFactor(
+      *GammaGqr,"Gqr", *PirR,'r', *PiqR,'q',
+      *LambdaGR,'G', regularizationEstimator
+    );
   }
 
   Delta = getDelta();
