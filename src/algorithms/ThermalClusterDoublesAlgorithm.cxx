@@ -514,7 +514,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   projectOut( (*lambdaF)["G"], (*VxFG)["FG"] );
 }
 
-real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
+cc4s::real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
   real levelShift( getRealArgument("levelShift", 0.0) );
   // level shifted division for left hand side

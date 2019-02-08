@@ -81,8 +81,8 @@ namespace cc4s {
 
     std::string getCapitalizedAbbreviation();
     std::string getAmplitudeIndices(CTF::Tensor<real> &T);
-    real getTammDancoffEnergy();
-    real getZeroTDrccd();
+    cc4s::real getTammDancoffEnergy();
+    cc4s::real getZeroTDrccd();
     void setupImaginaryTimeGrid();
     void iterateAmplitudeSamples();
     void computeEnergyContribution(
