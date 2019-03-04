@@ -356,18 +356,42 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
           }
         }
 
+        Tensor<> realDressedGammaGab(realGammaGab);
+        Tensor<> imagDressedGammaGab(imagGammaGab);
+        realDressedGammaGab.set_name("realDressedGammaGab");
+        imagDressedGammaGab.set_name("imagDressedGammaGab");
+        // Construct dressed Coulomb vertex GammaGab
+        realDressedGammaGab["Gab"] += (-1.0) * realGammaGai["Gbk"] * (*Tai)["ak"];
+        imagDressedGammaGab["Gab"] += (-1.0) * imagGammaGai["Gbk"] * (*Tai)["ak"];
+
         // Slice loop starts here
         for (int b(0); b < Nv; b += integralsSliceSize) {
+          // Slice the right GammaGab
+ 	  int rightGammaStart[] = { 0, b, 0};
+          int rightGammaEnd[] = { NG, std::min(b+integralsSliceSize, Nv), Nv};
+          auto realRightGamma(realDressedGammaGab.slice(rightGammaStart, rightGammaEnd));
+          auto imagRightGamma(imagDressedGammaGab.slice(rightGammaStart, rightGammaEnd));
+
           for (int a(b); a < Nv; a += integralsSliceSize) {
+
             LOG(1, getCapitalizedAbbreviation()) <<
               "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-            auto Vxycd(
-              sliceCoupledCoulombIntegrals(amplitudes, a, b, integralsSliceSize)
-            );
-            Vxycd->set_name("Vxycd");
-            int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+            // Slice the left GammaGab
+            int leftGammaStart[] = { 0, a, 0};
+            int leftGammaEnd[] = {NG, std::min(a+integralsSliceSize, Nv), Nv};
+            auto realLeftGamma(realDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
+            auto imagLeftGamma(imagDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
+
+            int lenscd[] = {
+              realLeftGamma.lens[1], realRightGamma.lens[1], realLeftGamma.lens[2], realRightGamma.lens[2]
+            };
             int syms[] = {NS, NS, NS, NS};
-            Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
+            auto Vxycd(new Tensor<>(4, lenscd, syms, *realDressedGammaGab.wrld, "Vxycd"));
+            (*Vxycd)["xycd"]  = realLeftGamma["Gxc"] * realRightGamma["Gyd"];
+            (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
+
+            int lensij[] = { Vxycd->lens[0], Vxycd->lens[1], No, No};
+            Tensor<> Rxyij(4, lensij, syms, *Vxycd->wrld, "Rxyij");
 
             // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
             Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
