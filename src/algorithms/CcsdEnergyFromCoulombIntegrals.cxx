@@ -432,7 +432,7 @@ PTR(FockVector<cc4s::complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto Rabij( residuum->get(1) );
   Rabij->set_name("Rabij");
 
-  if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
+  if (i == 0 && !isArgumentGiven("initialDoublesAmplitudes") ) {
     // For first iteration compute only the MP2 amplitudes
     // Since Tabij = 0, Vabij is the only non-zero term
     LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
