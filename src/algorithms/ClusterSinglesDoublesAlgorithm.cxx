@@ -9,6 +9,7 @@
 #include <ctf.hpp>
 #include <Options.hpp>
 #include <Cc4s.hpp>
+#include <array>
 
 #include <initializer_list>
 
