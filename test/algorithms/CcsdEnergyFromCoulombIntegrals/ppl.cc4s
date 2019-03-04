@@ -1,0 +1,51 @@
+CoulombVertexReader [
+  (file "FTODDUMP.enc.250.nbno.128")
+] [
+   CoulombVertex  HoleEigenEnergies ParticleEigenEnergies
+].
+
+
+CoulombIntegralsFromVertex [
+  CoulombVertex HoleEigenEnergies ParticleEigenEnergies
+] [
+    PPHHCoulombIntegrals
+    PHPHCoulombIntegrals
+    HHHHCoulombIntegrals
+    HHHPCoulombIntegrals
+].
+
+CcsdEnergyFromCoulombIntegrals [
+  CoulombVertex
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  (maxIterations 10)
+  (integralsSliceSize 124)
+  (mixer "LinearMixer")
+  (mixingRatio 1.0)
+] [
+  (CcsdEnergy CcsdEnergy)
+  (CcsdSinglesAmplitudes CcsdSinglesAmplitudes)
+  (CcsdDoublesAmplitudes CcsdDoublesAmplitudes)
+].
+TensorWriter [(Data CcsdEnergy)][].
+
+CcsdEnergyFromCoulombIntegrals [
+  (initialDoublesAmplitudes CcsdDoublesAmplitudes)
+  (initialSinglesAmplitudes CcsdSinglesAmplitudes)
+  CoulombVertex
+  PHPHCoulombIntegrals
+  PPHHCoulombIntegrals
+  HHHHCoulombIntegrals
+  HHHPCoulombIntegrals
+  ParticleEigenEnergies HoleEigenEnergies
+  PPL
+  (maxIterations 1)
+  (mixer "LinearMixer")
+  (mixingRatio 1.0)
+] [
+  (CcsdEnergy PPLEnergy)
+].
+TensorWriter [(Data PPLEnergy)] [].
