@@ -381,7 +381,7 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
      (*coulombKernel)["G"],(*newSF)["G"],(*resNewSF)["G"]
     );
 
-    LOG(0,"norm") << gamma << " " << resNewSF->norm2() << std::endl;
+    LOG(0,"gamma") << gamma << " norm: " << resNewSF->norm2() << std::endl;
 
   }
   allocatedTensorArgument<>("ResNewSF",resNewSF);

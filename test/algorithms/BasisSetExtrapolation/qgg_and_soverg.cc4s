@@ -1,0 +1,63 @@
+TensorReader [(file "CoulombKernel.dat")] [(Data CoulombKernel)].
+TensorReader [(file "Momenta.dat")] [(Data Momenta)].
+ParticleHoleCoulombVertexReader [
+  (file "../FTODDUMPIA.enc.500.nbno.256")
+] [
+   ParticleHoleCoulombVertex  HoleEigenEnergies ParticleEigenEnergies
+].
+
+
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+    PPHHCoulombIntegrals
+].
+
+Mp2EnergyFromCoulombIntegrals [
+    PPHHCoulombIntegrals
+    ParticleEigenEnergies HoleEigenEnergies
+] [
+    Mp2Energy
+    Mp2DoublesAmplitudes
+].
+
+
+TensorReader [] [(Data CoulombKernel)].
+TensorReader [] [(Data Momenta)].
+
+FiniteSizeCorrection [
+  ParticleHoleCoulombVertex
+  ParticleEigenEnergies
+  HoleEigenEnergies
+  CoulombKernel
+  (DoublesAmplitudes Mp2DoublesAmplitudes)
+  Momenta
+  (kpoints 1)
+  (volume 44.80)
+  (constantFactor 0.10231237963)
+  (FiniteSize 1)
+] [
+  CorrectedEnergy
+  StructureFactor
+  StructureFactors
+  StructureFactort
+].
+
+
+BasisSetExtrapolation [
+    Momenta
+    HoleEigenEnergies
+    ParticleEigenEnergies
+    ParticleHoleCoulombVertex
+    CoulombKernel
+    (calculateQGG 1)
+][
+     QGGs
+     QGGt
+].
+
+ComplexTensorWriter [(Data QGGs)] [].
+ComplexTensorWriter [(Data QGGt)] [].
+TensorWriter [(Data StructureFactor)] [].
+TensorWriter [(Data StructureFactors)] [].
+TensorWriter [(Data StructureFactort)] [].

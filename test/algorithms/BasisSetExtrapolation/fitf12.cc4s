@@ -1,0 +1,19 @@
+TensorReader [(file "CoulombKernel.dat")] [(Data CoulombKernel)].
+TensorReader [(file "StructureFactors.dat")] [(Data StructureFactor)].
+ComplexTensorReader [(file "QGGs.dat")] [(Data QGG)].
+
+
+BasisSetExtrapolation [
+    StructureFactor
+    CoulombKernel
+    (fitF12 1)
+    (minG 1.5)
+    (maxG 2.0)
+    (volume 44.80)
+    (gamma 0.268477)
+    QGG
+][
+    NewSF
+    ResNewSF
+].
+TensorWriter [(Data NewSF)] [].
