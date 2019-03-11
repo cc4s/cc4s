@@ -47,7 +47,7 @@ void BasisSetExtrapolation::run() {
 
 
 void BasisSetExtrapolation::evaluateQGG(int slice){
-  
+
   PTR(Tensor<complex>) GammaGai;
 
   if (isArgumentGiven("ParticleHoleCoulombVertex")){
@@ -216,7 +216,7 @@ void BasisSetExtrapolation::calculateNewSF(
   CTF::Tensor<complex> *QGG(getTensorArgument<complex>("QGG"));
   int NG(QGG->lens[0]);
   int NFF[] = {NG};
-  
+
   auto cK(new Tensor<>(1,NFF));
   (*cK) = (*coulombKernel);
 
@@ -253,7 +253,7 @@ void BasisSetExtrapolation::calculateNewSF(
     std::function<void(real, complex, complex &)>(
       [&type, &volume, &gamma](real cK, complex YC, complex &dYC){
         if ( cK == 0){
-          dYC = 0.; 
+          dYC = 0.;
         }
         else{
           if(type==1){
@@ -264,7 +264,7 @@ void BasisSetExtrapolation::calculateNewSF(
           }
         }
        }
-     ) 
+     )
   )(
    (*cK)["G"],(*reciprocalYC)["G"],(*dReciprocalYC)["G"]
   );
@@ -297,7 +297,7 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
   //Take out infinity
   CTF::Transform<real>(
     std::function<void(real &)>(
-      [&volume](real &cK){
+      [](real &cK){
         if( std::isinf(cK)){
           cK = 0.;
         }
@@ -307,7 +307,6 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
     (*coulombKernel)["G"]
   );
   // Construct array: aboluteG
-
   CTF::Transform<real,real>(
     std::function<void(real , real &)>(
       [&volume](real cK, real &absG){
@@ -323,7 +322,6 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
   )(
    (*coulombKernel)["G"],(*absoluteG)["G"]
   );
-
   real gamma(getRealArgument("gamma",1));
 
   for (int i(0); i<=iterations; ++i){
@@ -350,7 +348,7 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
 
     CTF::Scalar<double> denom;
     denom[""] = (*dummy)["G"];
-    
+
     CTF::Transform<real, real, real>(
       std::function<void(real, real, real &)>(
         [](real newsf, real sf, real &dummy){
@@ -381,6 +379,7 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
     gamma -= numer.get_val()/denom.get_val();
 
     (*resNewSF) = (*structureFactor);
+
     CTF::Transform<real, real, real>(
       std::function<void(real, real, real &)>(
         [&maxG, &minG](real absG, real newsf, real &resnewsf){
@@ -395,8 +394,8 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
     )(
      (*absoluteG)["G"],(*newSF)["G"],(*resNewSF)["G"]
     );
-
-    LOG(0,"gamma") << gamma << " norm: " << resNewSF->norm2() << std::endl;
+    LOG(0,"gamma") << gamma << std::endl;
+    //LOG(0,"gamma") << gamma << " norm: " << resNewSF->norm2() << std::endl;
 
   }
 //  allocatedTensorArgument<>("ResNewSF",resNewSF);
