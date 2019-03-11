@@ -44,8 +44,6 @@ void BasisSetExtrapolation::run() {
 
 }
 
-
-
 void BasisSetExtrapolation::evaluateQGG(int slice){
 
   PTR(Tensor<complex>) GammaGai;
@@ -394,8 +392,8 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
     )(
      (*absoluteG)["G"],(*newSF)["G"],(*resNewSF)["G"]
     );
-    LOG(0,"gamma") << gamma << std::endl;
-    //LOG(0,"gamma") << gamma << " norm: " << resNewSF->norm2() << std::endl;
+    double residuum(resNewSF->norm2());
+    LOG(0,"gamma") << gamma << " norm: " << residuum << std::endl;
 
   }
 //  allocatedTensorArgument<>("ResNewSF",resNewSF);
