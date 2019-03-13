@@ -288,8 +288,8 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
   int NG(coulombKernel->lens[0]);
   int NFF[] = {NG};
 
-  auto resNewSF(new Tensor<>(1,NFF));
-  auto newSF(new Tensor<>(1,NFF));
+  auto residuumFittedSF(new Tensor<>(1,NFF));
+  auto fittedSF(new Tensor<>(1,NFF));
   auto absoluteG(new Tensor<>(1,NFF));
 
   //Take out infinity
@@ -324,24 +324,22 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
 
   for (int i(0); i<=iterations; ++i){
 
-    calculateNewSF(type,gamma,absoluteG,newSF,resNewSF);
+    calculateNewSF(type,gamma,absoluteG,fittedSF,residuumFittedSF);
 
     auto dummy(new Tensor<>(1,NFF));
-    int counter(0);
     CTF::Transform<real, real, real>(
       std::function<void(real, real, real &)>(
-        [&counter, &maxG, &minG](real absG, real res, real &dummy){
+        [&maxG, &minG](real absG, real res, real &dummy){
           if ( absG > maxG || absG < minG ){
             dummy = 0.;
           }
           else{
             dummy = res*res;
-            counter++;
           }
         }
      )
     )(
-     (*absoluteG)["G"],(*resNewSF)["G"],(*dummy)["G"]
+     (*absoluteG)["G"],(*residuumFittedSF)["G"],(*dummy)["G"]
     );
 
     CTF::Scalar<double> denom;
@@ -349,59 +347,59 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
 
     CTF::Transform<real, real, real>(
       std::function<void(real, real, real &)>(
-        [](real newsf, real sf, real &dummy){
-          dummy = newsf - sf;
+        [](real fitsf, real sf, real &dummy){
+          dummy = fitsf - sf;
         }
       )
     )(
-     (*newSF)["G"],(*structureFactor)["G"],(*dummy)["G"]
+     (*fittedSF)["G"],(*structureFactor)["G"],(*dummy)["G"]
     );
 
     CTF::Transform<real, real, real>(
       std::function<void(real, real, real &)>(
-        [&maxG, &minG](real absG, real resnewsf, real &dummy){
+        [&maxG, &minG](real absG, real resfitsf, real &dummy){
           if ( absG > maxG || absG < minG ){
             dummy = 0.;
           }
           else{
-            dummy *= resnewsf;
+            dummy *= resfitsf;
           }
         }
       )
     )(
-     (*absoluteG)["G"],(*resNewSF)["G"],(*dummy)["G"]
+     (*absoluteG)["G"],(*residuumFittedSF)["G"],(*dummy)["G"]
     );
 
     CTF::Scalar<double> numer;
     numer[""] = (*dummy)["G"];
     gamma -= numer.get_val()/denom.get_val();
 
-    (*resNewSF) = (*structureFactor);
+    (*residuumFittedSF) = (*structureFactor);
 
     CTF::Transform<real, real, real>(
       std::function<void(real, real, real &)>(
-        [&maxG, &minG](real absG, real newsf, real &resnewsf){
+        [&maxG, &minG](real absG, real fitsf, real &resfitsf){
           if ( absG > maxG || absG < minG){
-            resnewsf = 0.;
+            resfitsf = 0.;
           }
           else{
-            resnewsf -= newsf;
+            resfitsf -= fitsf;
           }
          }
       )
     )(
-     (*absoluteG)["G"],(*newSF)["G"],(*resNewSF)["G"]
+     (*absoluteG)["G"],(*fittedSF)["G"],(*residuumFittedSF)["G"]
     );
-    double residuum(resNewSF->norm2());
+    double residuum(residuumFittedSF->norm2());
     LOG(0,"gamma") << gamma << " norm: " << residuum << std::endl;
 
   }
 //  allocatedTensorArgument<>("ResNewSF",resNewSF);
   setRealArgument("gammaout",gamma);
-  allocatedTensorArgument<>("NewSF",newSF);
+  allocatedTensorArgument<>("FittedSF",fittedSF);
 // evaluate energy correction term E = v(G)*Q(G,G')*f12(G')
   Scalar<> f12EnergyCorrection(*Cc4s::world);
-  f12EnergyCorrection[""] = (*coulombKernel)["G"] * (*newSF)["G"];
+  f12EnergyCorrection[""] = (*coulombKernel)["G"] * (*fittedSF)["G"];
   setRealArgument("f12EnergyCorrection",f12EnergyCorrection);
 
 
