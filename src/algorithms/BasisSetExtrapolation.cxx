@@ -9,6 +9,7 @@
 #include <util/SharedPointer.hpp>
 #include <ctf.hpp>
 #include <util/MpiCommunicator.hpp>
+#include <math/PseudoInverseSvd.hpp>
 
 using namespace cc4s;
 using namespace CTF;
@@ -42,6 +43,11 @@ void BasisSetExtrapolation::run() {
     fitF12(fFitF12,minG,maxG);
   }
 
+  int fInvertQGG(getIntegerArgument("invertQGG",-1));
+  if (fInvertQGG > 0){
+    LOG(0,"BasisSetExtrapolation") << "inverting Q(G,G') --> correlation Factor" << std::endl;
+    invertQGG();
+  }
 }
 
 void BasisSetExtrapolation::evaluateQGG(int slice){
@@ -405,3 +411,64 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
 
 }
 
+void BasisSetExtrapolation::invertQGG(){
+
+  Tensor<complex> *fullQGG(getTensorArgument<complex>("QGG"));
+
+  int NG(fullQGG->lens[0]);
+  int twodStart[] = { 1 , 1 };
+  int twodEnd[] = { NG, NG};
+  Tensor<complex> QGG( fullQGG->slice(twodStart,twodEnd));
+
+  auto invQGG(new Tensor<complex>(false, QGG));
+//  (*invQGG)["PQ"] = IterativePseudoInverse<complex>(QGG).get()["PQ"];
+  (*invQGG)["PQ"] = PseudoInverseSvd<complex>(QGG).get()["PQ"];
+  int NF[] = { NG };
+  Tensor<> getStructureFactor(getTensorArgument<>("StructureFactor"));
+  int NS(getStructureFactor.lens[0]);
+  auto structureFactor(new Tensor<>(1,NF));
+  if ( NS == NG ){
+    LOG(0,"length") << NS << " " << NG << std::endl;
+    (*structureFactor)["G"] = getStructureFactor["G"];
+  }
+  else if ( NS == (NG+1)/2 ){
+    // structureFactor is halfmesh. however Q(G,G') is full mesh
+    LOG(0,"length") << NS << " " << NG << std::endl;
+    int dstStart[] = {0} ; int dstEnd[] = {NS};
+    int srcStart[] = {0} ; int srcEnd[] = {NS};
+    structureFactor->slice(dstStart,dstEnd,1.0,getStructureFactor,srcStart,srcEnd,0.5);
+    dstStart[0] = NS; dstEnd[0] = NG;
+    srcStart[0] = 1;  srcEnd[0] = NS;
+    structureFactor->slice(dstStart,dstEnd,1.0,getStructureFactor,srcStart,srcEnd,0.5);
+  }
+  else{
+    LOG(0,"length") << NS << " " << NG << std::endl;
+    throw new EXCEPTION("dimension problems of Q(G,G') and S(G)");
+  }
+
+  auto complexStructureFactor(new Tensor<complex>(1, NF ));
+  int onedStart[] = { 1 };
+  int onedEnd[] = { NG};
+
+  toComplexTensor(*structureFactor,*complexStructureFactor);
+
+
+  auto slicedStructureFactor(new Tensor<complex>(complexStructureFactor->slice(onedStart,onedEnd)));
+
+  auto complexF12(new Tensor<complex>(false,*slicedStructureFactor));
+
+  (*complexF12)["P"] = (*invQGG)["PQ"]* (*slicedStructureFactor)["Q"];
+
+  int NGG(NG-1);
+  int NFF[] = { NGG };
+  auto realF12(new Tensor<>(1,NFF));
+
+  fromComplexTensor(*complexF12,*realF12);
+
+  auto f12(new Tensor<>(1, NF));
+  int dstStart[] = { 0 };
+  f12->slice(onedStart,onedEnd,1.0,*realF12,dstStart,NFF,1.0);
+
+  allocatedTensorArgument<>("f12",f12);
+
+}

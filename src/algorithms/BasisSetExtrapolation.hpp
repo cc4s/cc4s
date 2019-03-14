@@ -24,6 +24,7 @@ namespace cc4s {
     void calculateNewSF(
       int type, real gamma, CTF::Tensor<> *coulombKernel, CTF::Tensor<> *newSF, CTF::Tensor<> *resNewSF
     );
+    void invertQGG();
   };
 }
 
