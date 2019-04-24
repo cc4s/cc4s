@@ -13,53 +13,70 @@ using namespace CTF;
 
 template <typename F>
 IterativePseudoInverse<F>::IterativePseudoInverse(
-  Tensor<F> const &matrix_, double accuracy
+  Tensor<F> const &matrix_, F accuracy
 ):
   matrix(matrix_),
-  square(matrix_.lens[0], matrix_.lens[0], NS, *matrix_.wrld),
-  inverse(matrix_.lens[1], matrix_.lens[0], NS, *matrix_.wrld),
+  square(
+    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[0]}).data(),
+    std::array<int,2>({NS,NS}).data(), *matrix_.wrld
+  ),
+  inverse(
+    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
+    std::array<int,2>({NS,NS}).data(), *matrix_.wrld
+  ),
   alpha()
 {
-  Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], NS, *matrix.wrld);
+  Tensor<F> conjugate(
+    2, std::array<int,2>({matrix.lens[1], matrix.lens[0]}).data(),
+    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+  );
   Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
-  Matrix<F> square(matrix.lens[0], matrix.lens[0], NS, *matrix.wrld);
   square["ij"] = matrix["ik"] * conjugate["kj"];
   Univar_Function<F> fAbs(&abs<F>);
   Vector<F> rowAbsNorms(square.lens[0], *matrix.wrld);
   rowAbsNorms.sum(1.0,square,"ij", 0.0,"i",fAbs);
   std::vector<F> normValues(rowAbsNorms.lens[0]);
   rowAbsNorms.read_all(normValues.data());
-  double max(-std::numeric_limits<double>::infinity());
+  F max(-std::numeric_limits<F>::infinity());
   for (int i(0); i < square.lens[0]; ++i) {
-    if (std::real(normValues[i]) > max) max = std::real(normValues[i]);
+    if (abs(normValues[i]) > abs(max)) max = abs(normValues[i]);
   }
   alpha = 1.0/max;
   LOG(4, "PseudoInverse") << "alpha=" << alpha << std::endl;
-  inverse["ji"] = alpha * conjugate["ji"];
+  inverse["ji"] = abs(alpha) * conjugate["ji"];
   iterateQuadratically(accuracy);
 //  iterate(accuracy);
 }
 
 template <typename F>
-void IterativePseudoInverse<F>::iterate(double accuracy) {
+void IterativePseudoInverse<F>::iterate(F accuracy) {
   Scalar<F> s;
-  Matrix<F> conjugate(matrix.lens[1], matrix.lens[0], NS, *matrix.wrld);
+  Tensor<F> conjugate(
+    2, std::array<int,2>({matrix.lens[1], matrix.lens[0]}).data(),
+    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+  );
   Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
-  Matrix<F> sqr(matrix.lens[1], matrix.lens[1], *matrix.wrld);  double remainder(1.0), minRemainder(std::numeric_limits<double>::infinity());
+  Tensor<F> sqr(
+    2, std::array<int,2>({matrix.lens[0], matrix.lens[0]}).data(),
+    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+  );
+  F remainder(1.0), minRemainder(std::numeric_limits<F>::infinity());
   int n(0), nMin(0);
   // TODO: use constants for limits
   // TODO: test rectangular matrices with lens[0]>lens[1] & lens[0]>lens[1]
-  while (remainder > accuracy*accuracy && n-nMin < 100 && n < 10000) {
-
+  while (
+    abs(remainder) > abs(accuracy*accuracy) &&
+    n-nMin < 100 && n < 10000
+  ) {
     sqr["ij"] = -1.0 * inverse["ik"] * matrix["kj"];
     sqr["ii"] += 1.0;
     s[""] = sqr["ij"] * sqr["ij"];
-    inverse["ij"] += alpha * sqr["ik"] * conjugate["kj"];
-    remainder = std::real(s.get_val());
-    if (remainder < minRemainder) {
-      minRemainder = remainder;
+    inverse["ij"] += abs(alpha) * sqr["ik"] * conjugate["kj"];
+    remainder = abs(s.get_val());
+    if (abs(remainder) < abs(minRemainder)) {
+      minRemainder = abs(remainder);
       nMin = n;
     }
     ++n;
@@ -73,21 +90,24 @@ void IterativePseudoInverse<F>::iterate(double accuracy) {
 }
 
 template <typename F>
-void IterativePseudoInverse<F>::iterateQuadratically(double accuracy) {
+void IterativePseudoInverse<F>::iterateQuadratically(F accuracy) {
   Scalar<F> s(*matrix.wrld);
-  double remainder(1.0), minRemainder(std::numeric_limits<double>::infinity());
+  F remainder(1.0), minRemainder(std::numeric_limits<F>::infinity());
   int n(0), nMin(0);
   // TODO: use constants for limits
-  while (remainder > accuracy*accuracy && n-nMin < 2 && n < 10000) {
+  while (
+    abs(remainder) > abs(accuracy*accuracy) &&
+    n-nMin < 2 && n < 10000
+  ) {
     square["ij"] = -1.0 * matrix["ik"] * inverse["kj"];
     square["ii"] += 2.0;
     inverse["ij"] = inverse["ik"] * square["kj"];
     square["ii"] += -1.0;
     s[""] = square["ij"] * square["ij"];
-    remainder = std::real(s.get_val());
+    remainder = abs(s.get_val());
     LOG(4, "PseudoInverse") << "remainder=" << remainder << std::endl;
-    if (remainder < minRemainder) {
-      minRemainder = remainder;
+    if (abs(remainder) < abs(minRemainder)) {
+      minRemainder = abs(remainder);
       nMin = n;
     }
     ++n;
@@ -101,7 +121,7 @@ void IterativePseudoInverse<F>::iterateQuadratically(double accuracy) {
 }
 
 template <typename F>
-Matrix<F> &IterativePseudoInverse<F>::get() {
+Tensor<F> &IterativePseudoInverse<F>::get() {
   return inverse;
 }
 
@@ -109,9 +129,15 @@ Matrix<F> &IterativePseudoInverse<F>::get() {
 template
 class IterativePseudoInverse<cc4s::Float64>;
 
+// not yet there...
+//template
+//class IterativePseudoInverse<cc4s::Float128>;
+
 template
 class IterativePseudoInverse<cc4s::Complex64>;
 
+//template
+//class IterativePseudoInverse<cc4s::Complex128>;
 
 template <typename F>
 void IterativePseudoInverse<F>::generateHilbertMatrix(Tensor<F> &m) {
@@ -129,29 +155,36 @@ void IterativePseudoInverse<F>::generateHilbertMatrix(Tensor<F> &m) {
 
 template <typename F>
 void IterativePseudoInverse<F>::test(World *world) {
-  Matrix<F> m(5, 8, NS, *world);
+  Tensor<F> m(
+    2, std::array<int,2>({5,8}).data(), std::array<int,2>({NS,NS}).data(),
+    *world
+  );
   {
     generateHilbertMatrix(m);
     IterativePseudoInverse pseudoInverse(m);
-    Matrix<F> im(pseudoInverse.get());
+    Tensor<F> im(pseudoInverse.get());
     im["ij"] = m["ik"] * im["kj"];
     im["ii"] += -1.0;
     Scalar<F> s(*world);
     s[""] = im["ij"] * im["ij"];
-    double n(std::real(s.get_val()));
+    F n(abs(s.get_val()));
     LOG(3) << n << std::endl;
   }
   {
     DefaultRandomEngine random;
-    std::normal_distribution<double> normalDistribution(0.0, 1.0);
+    std::normal_distribution<
+      typename ComplexTraits<F>::ExtendedType
+    > normalDistribution(
+      0.0, 1.0
+    );
     setRandomTensor(m, normalDistribution, random);
     IterativePseudoInverse pseudoInverse(m);
-    Matrix<F> im(pseudoInverse.get());
+    Tensor<F> im(pseudoInverse.get());
     im["ij"] = m["ik"] * im["kj"];
     im["ii"] += -1.0;
     Scalar<F> s(*world);
     s[""] = im["ij"] * im["ij"];
-    double n(std::real(s.get_val()));
+    F n(abs(s.get_val()));
     LOG(3) << n << std::endl;
   }
 }
@@ -168,16 +201,24 @@ DryIterativePseudoInverse<F>::DryIterativePseudoInverse(
   DryTensor<F> const &matrix_
 ):
   matrix(matrix_),
-  square(matrix_.lens[0], matrix_.lens[0], NS),
-  inverse(matrix_.lens[1], matrix_.lens[0], NS)
+  square(
+    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[0]}).data(),
+    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+  ),
+  inverse(
+    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
+    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+  )
 {
-  DryMatrix<F> conjugate(matrix.lens[1], matrix.lens[0], NS);
-  DryMatrix<F> square(matrix.lens[0], matrix.lens[0], NS);
+  DryTensor<F> conjugate(
+    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
+    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+  );
   DryVector<F> rowAbsNorms(square.lens[0]);
 }
 
 template <typename F>
-DryMatrix<F> &DryIterativePseudoInverse<F>::get() {
+DryTensor<F> &DryIterativePseudoInverse<F>::get() {
   return inverse;
 }
 
