@@ -327,7 +327,7 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
    (*coulombKernel)["G"],(*absoluteG)["G"]
   );
   real gamma(getRealArgument("gamma",1));
-
+  int iterations(getIntegerArgument("iterations",10));
   for (int i(0); i<=iterations; ++i){
 
     calculateNewSF(type,gamma,absoluteG,fittedSF,residuumFittedSF);

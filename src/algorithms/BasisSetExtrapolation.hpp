@@ -17,7 +17,6 @@ namespace cc4s {
     virtual void run();
   protected:
 
-    static constexpr int iterations = 10;
 
     void evaluateQGG(int slice);
     void fitF12(int type, real minG, real maxG);
