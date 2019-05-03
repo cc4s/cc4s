@@ -17,12 +17,7 @@ namespace cc4s {
     );
     virtual ~UccsdAmplitudesFromCoulombIntegrals();
 
-    // Mask, one and two body parts
-    PTR(CTF::Tensor<>) Mai, Mabij;
-
-    bool maskIsGiven();
     virtual void run();
-    void createMask();
     virtual std::string getAbbreviation() { return "Uccsd"; }
 
   protected:
@@ -34,10 +29,16 @@ namespace cc4s {
       const int iteration, const PTR(const FockVector<double>) &amplitudes
     );
 
+    bool usingIntermediates;
+
     virtual PTR(FockVector<complex>) getResiduum(
       const int iteration, const PTR(const FockVector<complex>) &amplitudes
     );
 
+    template <typename F>
+    PTR(FockVector<F>) getResiduumTemplate(
+      const int iteration, const PTR(const FockVector<F>) &amplitudes
+    );
   };
 
 }
