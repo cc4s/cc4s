@@ -39,7 +39,6 @@ namespace cc4s {
     Momentum *cartesianGrid;
     void readFromFile();
     void calculateRealStructureFactor();
-    void calculateRealStructureFactorSliced(int iStart, int iEnd);
     //    template <typename F>
     //    F calculateStructureFactor(CTF::Tensor<F> &Vabij);
 

@@ -40,25 +40,17 @@ void FiniteSizeCorrection::run() {
     LOG(0,"FiniteSize") << "Reading structure factor from file" << std::endl;
     readFromFile();
   } else {
-    int fSliced(getIntegerArgument("SlicedSG",0));
-    if (fSliced ==0){
-      Data *Tabij(getArgumentData("DoublesAmplitudes"));
-      TensorData<double> *realTabij(dynamic_cast<TensorData<double>*>(Tabij));
-      if (realTabij) {
-        LOG(0,"FiniteSize") << "Calculating real structure factor" << std::endl;
-        calculateRealStructureFactor();
-      } else {
-        LOG(0,"FiniteSize") << "Calculating complex structure factor" << std::endl;
-        calculateComplexStructureFactor();
-      }
-    }
-    else{
-      LOG(0,"FiniteSize") << "Calculating Sliced real structure factor" << std::endl;
-      int iStart(getIntegerArgument("iStart",-1));
-      int iEnd(getIntegerArgument("iEnd",-1));
-      calculateRealStructureFactorSliced(iStart,iEnd);
+    Data *Tabij(getArgumentData("DoublesAmplitudes"));
+    TensorData<double> *realTabij(dynamic_cast<TensorData<double>*>(Tabij));
+    if (realTabij) {
+      LOG(0,"FiniteSize") << "Calculating real structure factor" << std::endl;
+      calculateRealStructureFactor();
+    } else {
+      LOG(0,"FiniteSize") << "Calculating complex structure factor" << std::endl;
+      calculateComplexStructureFactor();
     }
   }
+
   int fFiniteSizeCorrection(getIntegerArgument("FiniteSize",0));
   if (fFiniteSizeCorrection == 0){
     LOG(0,"FiniteSize") << "Interpolating and integrating" << std::endl;
@@ -249,154 +241,27 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   //Construct SG
   NG = GammaGai->lens[0];
   CTF::Vector<> *realSG(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
-  (*realSG)["G"]  = ( 2.0) * realConjCGai["Gai"] * realCGai["Gbj"] * (*realTabij)["abij"];
-  (*realSG)["G"] += (-2.0) * imagConjCGai["Gai"] * imagCGai["Gbj"] * (*realTabij)["abij"];
+  CTF::Vector<> *realSGd(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
+  CTF::Vector<> *realSGx(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
+  (*realSGd)["G"]  = ( 1.0) * realConjCGai["Gai"] * realCGai["Gbj"] * (*realTabij)["abij"];
+  (*realSGd)["G"] += (-1.0) * imagConjCGai["Gai"] * imagCGai["Gbj"] * (*realTabij)["abij"];
 
-  (*realSG)["G"] += (-1.0) * realConjCGai["Gaj"] * realCGai["Gbi"] * (*realTabij)["abij"];
-  (*realSG)["G"] += (+1.0) * imagConjCGai["Gaj"] * imagCGai["Gbi"] * (*realTabij)["abij"];
+  (*realSGx)["G"] += ( 1.0) * realConjCGai["Gaj"] * realCGai["Gbi"] * (*realTabij)["abij"];
+  (*realSGx)["G"] += (-1.0) * imagConjCGai["Gaj"] * imagCGai["Gbi"] * (*realTabij)["abij"];
 
+  (*realSG)["G"] = (2.0) * (*realSGd)["G"] + (-1.0) * (*realSGx)["G"];
   allocatedTensorArgument<>("StructureFactor", realSG);
 
-  VofG.resize(NG);
-  realVG->read_all(VofG.data());
-  structureFactors.resize(NG);
-  realSG->read_all(structureFactors.data());
-}
-
-void FiniteSizeCorrection::calculateRealStructureFactorSliced(int iStart, int iEnd) {
-  // Read the Particle/Hole Eigenenergies
-  Tensor<> *epsi(getTensorArgument<>("HoleEigenEnergies"));
-  Tensor<> *epsa(getTensorArgument<>("ParticleEigenEnergies"));
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-  int Np(No+Nv);
-  PTR(Tensor<complex>) GammaGai;
-  if (iStart < 0 || iStart >= iEnd){
-    iStart = 0;
+  if(isArgumentGiven("StructureFactors")){
+    CTF::Vector<> *realSGs(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
+    (*realSGs)["G"] = (0.5) * (*realSGd)["G"] + (0.5) * (*realSGx)["G"];
+    allocatedTensorArgument<>("StructureFactors",realSGs);
   }
-  if (iEnd > No || iEnd <= iStart){
-    iEnd = No;
+  if(isArgumentGiven("StructureFactort")){
+    CTF::Vector<> *realSGt(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
+    (*realSGt)["G"] = (1.5) * (*realSGd)["G"] + (-1.5) * (*realSGx)["G"];
+    allocatedTensorArgument<>("StructureFactort",realSGt);
   }
-
-  int iSlice(iEnd-iStart);
-  LOG(0,"Sliced StructureFactor") << "iStart: " << iStart << " iEnd: " << iEnd << std::endl;
-
-  // Read the Coulomb vertex GammaGqr
-  if ( isArgumentGiven("CoulombVertex")){
-    Tensor<complex> *GammaFqr(getTensorArgument<complex>("CoulombVertex"));
-    // Get the Particle Hole Coulomb Vertex
-    int NF(GammaFqr->lens[0]);
-
-    int aStart(Np-Nv), aEnd(Np);
-    int FaiStart[] = {0, aStart,iStart};
-    int FaiEnd[]   = {NF,aEnd,  iEnd};
-
-    Tensor<complex> GammaFai(GammaFqr->slice(FaiStart, FaiEnd));
-
-    int lens[]= {NF, Nv, iSlice};
-    GammaGai = NEW(Tensor<complex>,
-      3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
-    );
-    (*GammaGai) = GammaFai;
-  }
-  else if (isArgumentGiven("ParticleHoleCoulombVertex")){
-    Tensor<complex> *GammaFqr(getTensorArgument<complex>("ParticleHoleCoulombVertex"));
-    int NF(GammaFqr->lens[0]);
-
-    int aStart(0), aEnd(Nv);
-    int FaiStart[] = {0, aStart,iStart};
-    int FaiEnd[]   = {NF,aEnd,  iEnd};
-
-    Tensor<complex> GammaFai(GammaFqr->slice(FaiStart, FaiEnd));
-
-    int lens[]= {NF, Nv, iSlice};
-    GammaGai = NEW(Tensor<complex>,
-      3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
-    );
-    (*GammaGai) = GammaFai;
-  }
-  else {
-    throw new EXCEPTION("Need Appropriate Coulomb Vertex");
-  }
-
-  Tensor<> *realInfVG(getTensorArgument<>("CoulombKernel"));
-  Tensor<> *realVG(new Tensor<>(false, *realInfVG));
-  //Define take out inf funciton
-  class TakeOutInf {
-  public:
-    double operator ()(double x){
-      return std::isinf(x) ? 0.0 : x;
-    }
-  };
-  //Take out the inf from realVG.
-  TakeOutInf takeOutInf;
-  Univar_Function<> fTakeOutInf(takeOutInf);
-  realVG->sum(1.0, *realInfVG, "G", 0.0, "G", fTakeOutInf);
-  realVG->set_name("realVG");
-  Tensor<complex> VG(
-    1, realVG->lens, realVG->sym, *realVG->wrld, "VG"
-  );
-  toComplexTensor(*realVG, VG);
-  Tensor<> realInvSqrtVG(false, *realVG);
-  Tensor<complex> invSqrtVG(
-    1, realInvSqrtVG.lens, realInvSqrtVG.sym,
-     *realInvSqrtVG.wrld, "invSqrtVG"
-  );
-
-  //Starting a new space whose memory will be erased after operation
-  //Define operation inverse square root
-  class InvSqrt {
-  public:
-    double operator ()(double x){
-      return std::sqrt(1.0 / x);
-    }
-  };
-
-  //Get the inverted square root of VG
-  InvSqrt invSqrt;
-  Univar_Function<> fInvSqrt(invSqrt);
-  realInvSqrtVG.sum(1.0, *realInfVG, "G", 0.0, "G", fInvSqrt);
-  toComplexTensor(realInvSqrtVG, invSqrtVG);
-
-  //Define CGai
-  Tensor<complex> CGai(*GammaGai);
-  CGai["Gai"] *= invSqrtVG["G"];
-
-  //Conjugate of CGai
-  Tensor<complex> conjCGai(false, CGai);
-  Univar_Function<complex> fConj(conj<complex>);
-  conjCGai.sum(1.0, CGai, "Gai", 0.0, "Gai", fConj);
-
- //Get Tabij
-  Tensor<> *realTabij(getTensorArgument("DoublesAmplitudes"));
-  Tensor<complex> Tabij(
-    4, realTabij->lens, realTabij->sym, *realTabij->wrld, "Tabij"
-  );
-  toComplexTensor(*realTabij, Tabij);
-
-  if (isArgumentGiven("SinglesAmplitudes") ) {
-    //Get Tai
-    Tensor<> *realTai(getTensorArgument("SinglesAmplitudes"));
-    Tensor<complex> Tai(
-      2, realTai->lens, realTai->sym, *realTai->wrld, "Tai"
-    );
-    toComplexTensor(*realTai, Tai);
-    Tabij["abij"] += Tai["ai"] * Tai["bj"];
-  }
-  int aiSliceStart[] = { 0,  0, iStart, iStart};
-  int aiSliceEnd[]   = {Nv, Nv, iEnd,   iEnd  };
-  Tensor<complex> TabijSlice(Tabij.slice(aiSliceStart,aiSliceEnd));
-  //Construct SG
-  NG = CGai.lens[0];
-  CTF::Vector<complex> *SG(new CTF::Vector<complex>(NG, *CGai.wrld, "SG"));
-
-  (*SG)["G"]  = ( 2.0) * conjCGai["Gai"] * CGai["Gbj"] * TabijSlice["abij"];
-  (*SG)["G"] += (-1.0) * conjCGai["Gaj"] * CGai["Gbi"] * TabijSlice["abij"];
-
-  CTF::Vector<> *realSG(new CTF::Vector<>(NG, *CGai.wrld, "realSG"));
-  fromComplexTensor(*SG, *realSG);
-  allocatedTensorArgument<>("StructureFactor", realSG);
-
 
   VofG.resize(NG);
   realVG->read_all(VofG.data());

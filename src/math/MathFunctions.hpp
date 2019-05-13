@@ -30,6 +30,10 @@ namespace cc4s {
     return std::abs(x);
   }
 
+  inline Float128 abs(Float128 const x) {
+    return fabsq(x);
+  }
+
   template <typename F>
   inline F conj(F const x) {
     return std::conj(x);

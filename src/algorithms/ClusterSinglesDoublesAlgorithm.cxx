@@ -9,6 +9,7 @@
 #include <ctf.hpp>
 #include <Options.hpp>
 #include <Cc4s.hpp>
+#include <array>
 
 #include <initializer_list>
 
@@ -91,11 +92,26 @@ template <typename F>
 F ClusterSinglesDoublesAlgorithm::getEnergy(
   const PTR(const FockVector<F>) &amplitudes
 ) {
-  // get the Coulomb integrals to compute the energy
-  Tensor<F> *Vijab(getTensorArgument<F>("HHPPCoulombIntegrals"));
-
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   int antisymmetrized(getIntegerArgument("antisymmetrize", 0));
+
+ // get the Coulomb integrals to compute the energy
+  PTR(Tensor<F>) Vijab;
+  if (isArgumentGiven("HHPPCoulombIntegrals")){
+    Vijab = NEW(Tensor<F>, getTensorArgument<F>("HHPPCoulombIntegrals"));
+  }
+  else{
+    auto Vabij(getTensorArgument<F>("PPHHCoulombIntegrals"));
+    int No(Vabij->lens[2]);
+    int Nv(Vabij->lens[0]);
+    auto oovv(std::array<int,4>{{ No, No, Nv, Nv }});
+    Vijab = NEW(Tensor<F>,4,oovv.data());
+    (*Vijab)["ijab"] = (*Vabij)["abij"];
+    if (antisymmetrized) {
+      // oovv = h * vvoo
+      (*Vijab)["ijab"] += (-1.0) * (*Vabij)["baij"];
+    }
+  }
 
   // allocate energy
   Scalar<F> energy(*Vijab->wrld);

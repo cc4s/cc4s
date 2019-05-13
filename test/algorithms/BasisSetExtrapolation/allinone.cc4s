@@ -1,0 +1,104 @@
+TensorReader [(file "CoulombKernel.dat")] [(Data CoulombKernel)].
+TensorReader [(file "Momenta.dat")] [(Data Momenta)].
+ParticleHoleCoulombVertexReader [
+  (file "../FTODDUMPIA.enc.450.nbno.528")
+] [
+   ParticleHoleCoulombVertex  HoleEigenEnergies ParticleEigenEnergies
+].
+
+
+ParticleHoleCoulombIntegrals [
+  ParticleHoleCoulombVertex
+] [
+    PPHHCoulombIntegrals
+].
+
+Mp2EnergyFromCoulombIntegrals [
+    PPHHCoulombIntegrals
+    ParticleEigenEnergies HoleEigenEnergies
+] [
+    Mp2Energy
+    Mp2DoublesAmplitudes
+].
+
+
+TensorReader [] [(Data CoulombKernel)].
+TensorReader [] [(Data Momenta)].
+
+FiniteSizeCorrection [
+  ParticleHoleCoulombVertex
+  ParticleEigenEnergies
+  HoleEigenEnergies
+  CoulombKernel
+  (DoublesAmplitudes Mp2DoublesAmplitudes)
+  Momenta
+  (kpoints 1)
+  (volume 45.38)
+  (constantFactor 0.10099430195)
+  (FiniteSize 1)
+] [
+  CorrectedEnergy
+  StructureFactor
+  StructureFactors
+  StructureFactort
+].
+
+
+BasisSetExtrapolation [
+    Momenta
+    HoleEigenEnergies
+    ParticleEigenEnergies
+    ParticleHoleCoulombVertex
+    CoulombKernel
+    (calculateQGG 1)
+][
+     QGGs
+     QGGt
+].
+
+TensorWriter [(Data StructureFactor)] [].
+TensorWriter [(Data StructureFactors)] [].
+TensorWriter [(Data StructureFactort)] [].
+
+BasisSetExtrapolation [
+    (StructureFactor StructureFactors)
+    CoulombKernel
+    (fitF12 2)
+    (minG 1.0)
+    (maxG 1.5)
+    (volume 45.38)
+    (gamma 0.268477)
+    (QGG QGGs)
+][
+    (FittedSF FittedSFs)
+    (gammaout gammaouts)
+    (f12EnergyCorrection f12CorrectionSinglet)
+    absoluteG
+].
+
+BasisSetExtrapolation [
+    (StructureFactor StructureFactort)
+    CoulombKernel
+    (fitF12 2)
+    (minG 1.0)
+    (maxG 1.5)
+    (volume 45.38)
+    (gamma 0.268477)
+    (QGG QGGt)
+][
+    (FittedSF FittedSFt)
+    (gammaout gammaoutt)
+    (f12EnergyCorrection f12CorrectionTriplet)
+    absoluteG
+].
+
+
+
+
+TensorWriter [(Data FittedSFs)] [].
+TensorWriter [(Data gammaouts)] [].
+TensorWriter [(Data FittedSFt)] [].
+TensorWriter [(Data gammaoutt)] [].
+TensorWriter [(Data f12CorrectionSinglet)] [].
+TensorWriter [(Data f12CorrectionTriplet)] [].
+

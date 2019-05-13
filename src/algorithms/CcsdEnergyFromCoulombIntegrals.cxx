@@ -47,7 +47,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
   // get part of Coulomb integrals used whether the amplitudes are zero or not
   auto Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
-  if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes"))  {
+  if (i == 0 && !isArgumentGiven("initialDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes
     // Since Tabij = 0, Vabij is the only non-zero term
     LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
@@ -301,79 +301,108 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
 
       // Add last term contracted only with the doubles
       // The singles term is computed in the slicing
-      (*Rabij)["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
-    }
-
-    if (isArgumentGiven("CoulombFactors")) {
-
-      // Read the factorsSliceSize.
-      auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
-      LambdaGR->set_name("LambdaGR");
-
-      int NR(LambdaGR->lens[1]);
-
-      int factorsSliceSize(
-        getIntegerArgument("factorsSliceSize", DEFAULT_SLICE_SIZE)
-      );
-      if (factorsSliceSize == -1) {
-        if (isArgumentGiven("factorsSliceFactor")) {
-          double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
-          factorsSliceSize = NR * factorsSliceFactor;
-        } else {
-          factorsSliceSize = Nv;
-        }
+      if(isArgumentGiven("PPL")){
+        (*Rabij)["abij"] += Xklij["klij"] * Xabij["abkl"];
       }
-
-      // Slice loop starts here
-      for (int b(0); b < NR; b += factorsSliceSize) {
-        for (int a(0); a < NR; a += factorsSliceSize) {
-          LOG(1, getCapitalizedAbbreviation()) <<
-            "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
-          auto Fabij(
-            sliceAmplitudesFromCoupledCoulombFactors(
-              amplitudes, a, b, factorsSliceSize
-            )
-          );
-          Fabij->set_name("Fabij");
-          (*Rabij)["abij"] += (*Fabij)["abij"];
-          delete Fabij;
-        }
-      }
-    } else {
-      // Read the integralsSliceSize. If not provided use No
-      int integralsSliceSize(getIntegerArgument("integralsSliceSize",DEFAULT_SLICE_SIZE));
-      if (integralsSliceSize == -1) {
-        if (isArgumentGiven("integralsSliceFactor")) {
-          double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
-          integralsSliceSize = Nv * integralsSliceFactor;
-        } else {
-          integralsSliceSize = No;
-        }
-      }
-
-      // Slice loop starts here
-      for (int b(0); b < Nv; b += integralsSliceSize) {
-        for (int a(b); a < Nv; a += integralsSliceSize) {
-          LOG(1, getCapitalizedAbbreviation()) <<
-            "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-          auto Vxycd(
-            sliceCoupledCoulombIntegrals(amplitudes, a, b, integralsSliceSize)
-          );
-          Vxycd->set_name("Vxycd");
-          int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-          int syms[] = {NS, NS, NS, NS};
-          Tensor<> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
-
-          // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
-          Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
-
-          sliceIntoResiduum(Rxyij, a, b, *Rabij);
-          // The integrals of this slice are not needed anymore
-          delete Vxycd;
-        }
+      else{
+        (*Rabij)["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
       }
     }
+    if(!isArgumentGiven("PPL")){
+      if (isArgumentGiven("CoulombFactors")) {
 
+        // Read the factorsSliceSize.
+        auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+        LambdaGR->set_name("LambdaGR");
+
+        int NR(LambdaGR->lens[1]);
+
+        int factorsSliceSize(
+          getIntegerArgument("factorsSliceSize", DEFAULT_SLICE_SIZE)
+        );
+        if (factorsSliceSize == -1) {
+          if (isArgumentGiven("factorsSliceFactor")) {
+            double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
+            factorsSliceSize = NR * factorsSliceFactor;
+          } else {
+            factorsSliceSize = Nv;
+          }
+        }
+
+        // Slice loop starts here
+        for (int b(0); b < NR; b += factorsSliceSize) {
+          for (int a(0); a < NR; a += factorsSliceSize) {
+            LOG(1, getCapitalizedAbbreviation()) <<
+              "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+            auto Fabij(
+              sliceAmplitudesFromCoupledCoulombFactors(
+                amplitudes, a, b, factorsSliceSize
+              )
+            );
+            Fabij->set_name("Fabij");
+            (*Rabij)["abij"] += (*Fabij)["abij"];
+            delete Fabij;
+          }
+        }
+      } else {
+        // Read the integralsSliceSize. If not provided use No
+        int integralsSliceSize(getIntegerArgument("integralsSliceSize",DEFAULT_SLICE_SIZE));
+        if (integralsSliceSize == -1) {
+          if (isArgumentGiven("integralsSliceFactor")) {
+            double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
+            integralsSliceSize = Nv * integralsSliceFactor;
+          } else {
+            integralsSliceSize = No;
+          }
+        }
+
+        Tensor<> realDressedGammaGab(realGammaGab);
+        Tensor<> imagDressedGammaGab(imagGammaGab);
+        realDressedGammaGab.set_name("realDressedGammaGab");
+        imagDressedGammaGab.set_name("imagDressedGammaGab");
+        // Construct dressed Coulomb vertex GammaGab
+        realDressedGammaGab["Gab"] += (-1.0) * realGammaGai["Gbk"] * (*Tai)["ak"];
+        imagDressedGammaGab["Gab"] += (-1.0) * imagGammaGai["Gbk"] * (*Tai)["ak"];
+
+        // Slice loop starts here
+        for (int b(0); b < Nv; b += integralsSliceSize) {
+          // Slice the right GammaGab
+ 	  int rightGammaStart[] = { 0, b, 0};
+          int rightGammaEnd[] = { NG, std::min(b+integralsSliceSize, Nv), Nv};
+          auto realRightGamma(realDressedGammaGab.slice(rightGammaStart, rightGammaEnd));
+          auto imagRightGamma(imagDressedGammaGab.slice(rightGammaStart, rightGammaEnd));
+
+          for (int a(b); a < Nv; a += integralsSliceSize) {
+
+            LOG(1, getCapitalizedAbbreviation()) <<
+              "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+            // Slice the left GammaGab
+            int leftGammaStart[] = { 0, a, 0};
+            int leftGammaEnd[] = {NG, std::min(a+integralsSliceSize, Nv), Nv};
+            auto realLeftGamma(realDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
+            auto imagLeftGamma(imagDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
+
+            int lenscd[] = {
+              realLeftGamma.lens[1], realRightGamma.lens[1], realLeftGamma.lens[2], realRightGamma.lens[2]
+            };
+            int syms[] = {NS, NS, NS, NS};
+            auto Vxycd(new Tensor<>(4, lenscd, syms, *realDressedGammaGab.wrld, "Vxycd"));
+            (*Vxycd)["xycd"]  = realLeftGamma["Gxc"] * realRightGamma["Gyd"];
+            (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
+
+            int lensij[] = { Vxycd->lens[0], Vxycd->lens[1], No, No};
+            Tensor<> Rxyij(4, lensij, syms, *Vxycd->wrld, "Rxyij");
+
+            // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
+            Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+
+            sliceIntoResiduum(Rxyij, a, b, *Rabij);
+            // The integrals of this slice are not needed anymore
+            delete Vxycd;
+          }
+        }
+      }
+    }
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
@@ -432,7 +461,7 @@ PTR(FockVector<cc4s::complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto Rabij( residuum->get(1) );
   Rabij->set_name("Rabij");
 
-  if (i == 0 && !isArgumentGiven("startingDoublesAmplitudes") ) {
+  if (i == 0 && !isArgumentGiven("initialDoublesAmplitudes") ) {
     // For first iteration compute only the MP2 amplitudes
     // Since Tabij = 0, Vabij is the only non-zero term
     LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
