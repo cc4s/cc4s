@@ -36,9 +36,10 @@ void cc4s::fitAlternatingLeastSquaresFactor(
     T, indicesT, conjB, idxB, conjC, idxC, A, idxA
   );
   LOG(4, "ALS") << "applying inverse of Gramian..." << std::endl;
-  Tensor<F> conjInvGramian(gramianInverse.get());
-  conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
-  A["iR"] = A["iS"] * conjInvGramian["SR"];
+//  Tensor<F> conjInvGramian(gramianInverse.get());
+//  conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
+//  A["iR"] = A["iS"] * conjInvGramian["SR"];
+  A["iR"] = A["iS"] * gramianInverse.get()["RS"];
 }
 
 // instantiate
@@ -86,9 +87,10 @@ void cc4s::fitRegularizedAlternatingLeastSquaresFactor(
   );
   A["iR"] += lambda * previousA["iR"];
   LOG(4, "RALS") << "applying inverse of Gramian..." << std::endl;
-  Tensor<F> conjInvGramian(gramianInverse.get());
-  conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
-  A["iR"] = A["iS"] * conjInvGramian["SR"];
+//  Tensor<F> conjInvGramian(gramianInverse.get());
+//  conjInvGramian.sum(1.0, conjInvGramian,"SR", 0.0,"SR", fConj);
+//  A["iR"] = A["iS"] * conjInvGramian["SR"];
+  A["iR"] = A["iS"] * gramianInverse.get()["RS"];
   previousA["iR"] -= A["iR"];
   double normDifference(frobeniusNorm(previousA));
   double norm(frobeniusNorm(A));
