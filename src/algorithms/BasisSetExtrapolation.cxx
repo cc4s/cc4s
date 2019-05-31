@@ -30,8 +30,10 @@ void BasisSetExtrapolation::run() {
   if(fQGG == 1){
     // slice QGG evalution in case of memory bottleneck for the exchange term
     int slice(getIntegerArgument("slice",-1));
+    int orbitalPairStart(getIntegerArgument("orbitalPairStart",-1));
+    int orbitalPairEnd(getIntegerArgument("orbitalPairEnd",-1));
     LOG(0,"BasisSetExtrapolation:") << "evaluating QGG" << std::endl;
-    evaluateQGG(slice);
+    evaluateQGG(orbitalPairStart,orbitalPairEnd,slice);
   }
 
   int fFitF12(getIntegerArgument("fitF12",-1));
@@ -50,7 +52,7 @@ void BasisSetExtrapolation::run() {
   }
 }
 
-void BasisSetExtrapolation::evaluateQGG(int slice){
+void BasisSetExtrapolation::evaluateQGG(int orbitalPairStart, int orbitalPairEnd, int slice){
 
   PTR(Tensor<complex>) GammaGai;
 
@@ -145,12 +147,28 @@ void BasisSetExtrapolation::evaluateQGG(int slice){
     NF = NF*2-1;
   }
   else{
-    LOG(1,"Build up Q(G,F)") << "working with full mesh" << std::endl;
+   LOG(1,"Build up Q(G,F)") << "working with full mesh" << std::endl;
     CGai = NEW(Tensor<complex>,*GammaGai);
   }
 
 
-  auto conjCGai(NEW(Tensor<complex>,*CGai));
+  if (orbitalPairStart < 0 || orbitalPairStart > No){
+   orbitalPairStart = 0;
+  }
+  if (orbitalPairEnd <= orbitalPairStart || orbitalPairEnd > No){
+   orbitalPairEnd = No;
+  }
+   
+  LOG(1,"Orbital Pair analysis") << "Considering electron pairs " << orbitalPairStart 
+                                 << " to " << orbitalPairEnd << std::endl;
+  No = orbitalPairEnd - orbitalPairStart;
+
+  int sCGaiStart[] = {0, 0, orbitalPairStart};
+  int sCGaiEnd[] =   {NF, Nv, orbitalPairEnd};
+
+  auto sCGai(NEW(Tensor<complex>, CGai->slice(sCGaiStart,sCGaiEnd)));
+
+  auto conjCGai(NEW(Tensor<complex>,*sCGai));
   conjugate(*conjCGai);
 
   int NGG[] = {NF, NF};
@@ -164,8 +182,8 @@ void BasisSetExtrapolation::evaluateQGG(int slice){
   FGone = NEW(Tensor<complex>,2,NGG);
   FGtwo = NEW(Tensor<complex>,2,NGG);
 
-  (*FGone)["GF"] =  (*conjCGai)["Gai"] * (*CGai)["Fai"];
-  (*FGtwo)["GF"] =  (*conjCGai)["Fbj"] * (*CGai)["Gbj"];
+  (*FGone)["GF"] =  (*conjCGai)["Gai"] * (*sCGai)["Fai"];
+  (*FGtwo)["GF"] =  (*conjCGai)["Fbj"] * (*sCGai)["Gbj"];
   (*QGGs)["GF"]  = (0.5) * (*FGone)["GF"] * (*FGtwo)["GF"];
   (*QGGt)["GF"]  = (1.5) * (*QGGs)["GF"];
 
@@ -197,7 +215,7 @@ void BasisSetExtrapolation::evaluateQGG(int slice){
     int CGajStart[] = {0, 0, startBandSlice};
     int CGajEnd[]   = {NF, Nv, endBandSlice};
 
-    auto CGajSliced(NEW(Tensor<complex>, CGai->slice(CGajStart,CGajEnd)));
+    auto CGajSliced(NEW(Tensor<complex>, sCGai->slice(CGajStart,CGajEnd)));
     auto conjCGajSliced(NEW(Tensor<complex>, conjCGai->slice(CGajStart,CGajEnd)));
 
     (*FGij)["GFij"] = (*conjCGai)["Gai"] * (*CGajSliced)["Faj"];
@@ -208,9 +226,13 @@ void BasisSetExtrapolation::evaluateQGG(int slice){
 
 
   }
+  auto realQGGs(new Tensor<>(2,NGG));
+  auto realQGGt(new Tensor<>(2,NGG));
 
-  allocatedTensorArgument<complex>("QGGs",QGGs);
-  allocatedTensorArgument<complex>("QGGt",QGGt);
+  fromComplexTensor(*QGGs,*realQGGs);
+  fromComplexTensor(*QGGt,*realQGGt);
+  allocatedTensorArgument<>("QGGs",realQGGs);
+  allocatedTensorArgument<>("QGGt",realQGGt);
 
 }
 

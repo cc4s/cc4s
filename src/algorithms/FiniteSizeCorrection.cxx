@@ -128,7 +128,32 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
   int Np(No+Nv);
+  
+  int orbitalPairStart(getIntegerArgument("orbitalPairStart",-1));
+  int orbitalPairEnd(getIntegerArgument("orbitalPairEnd",-1));
+
+
+  if (orbitalPairStart < 0 || orbitalPairStart >= orbitalPairEnd){
+    orbitalPairStart = 0;
+  }
+  if (orbitalPairEnd > No || orbitalPairEnd <= orbitalPairStart){
+    orbitalPairEnd = No;
+  }
+  
+  int numberOrbitalPairs(orbitalPairEnd - orbitalPairStart);
+  bool orbitalPairs(numberOrbitalPairs != No);
+  if ( orbitalPairs ){
+    LOG(0,"Orbital Pair Analysis") << "Treating only pairs " << orbitalPairStart
+                                  << " to " << orbitalPairEnd << std::endl;
+  }
+  
   PTR(Tensor<complex>) GammaGai;
+  int aStart(Np-Nv), aEnd(Np);
+  int iStart(0), iEnd(No);
+  if (orbitalPairs){
+    iStart = orbitalPairStart;
+    iEnd = orbitalPairEnd;
+  }
 
   // Read the Coulomb vertex GammaGqr
   if ( isArgumentGiven("CoulombVertex")){
@@ -136,8 +161,6 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
     // Get the Particle Hole Coulomb Vertex
     int NF(GammaFqr->lens[0]);
     
-    int aStart(Np-Nv), aEnd(Np);
-    int iStart(0), iEnd(No);
     int FaiStart[] = {0, aStart,iStart};
     int FaiEnd[]   = {NF,aEnd,  iEnd};
 
@@ -155,6 +178,9 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
     }
     else {
       int lens[]= {NF, Nv, No};
+      if (orbitalPairs){
+        lens[0] = NF; lens[1] = Nv; lens[2] = numberOrbitalPairs;
+      }
       GammaGai = NEW(Tensor<complex>,
         3, lens, GammaFqr->sym, *GammaFqr->wrld, "GammaGqr"
       );
@@ -162,7 +188,20 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
     }
   }
   else if (isArgumentGiven("ParticleHoleCoulombVertex")){
-    GammaGai = NEW(Tensor<complex>,getTensorArgument<complex>("ParticleHoleCoulombVertex"));
+    if (orbitalPairs){
+      Tensor<complex> *GGai(getTensorArgument<complex>("ParticleHoleCoulombVertex"));
+      int NF(GGai->lens[0]);
+      int GGaiStart[] = {0, aStart,iStart};
+      int GGaiEnd[]   = {NF,aEnd, iEnd };
+      int sGGaiStart[] = {0, aStart, 0};
+      int sGGaiEnd[] = {NF,aEnd,numberOrbitalPairs};
+      int lens[] = {NF,Nv,numberOrbitalPairs};
+      GammaGai = NEW(Tensor<complex>,3,lens, GGai->sym, *GGai->wrld, "GammaGai");
+      GammaGai->slice(sGGaiStart,sGGaiEnd,0.0,*GGai,GGaiStart,GGaiEnd,1.0);
+    }
+    else{
+      GammaGai = NEW(Tensor<complex>,getTensorArgument<complex>("ParticleHoleCoulombVertex"));
+    }
   }
   else {
     throw new EXCEPTION("Need Appropriate Coulomb Vertex");    
@@ -229,20 +268,36 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
                         *GammaGai->wrld, "ImagConjCGai");
   fromComplexTensor(conjCGai, realConjCGai, imagConjCGai);
 
-  //Get Tabij
-  Tensor<> *realTabij(getTensorArgument("DoublesAmplitudes"));
-
-  if (isArgumentGiven("SinglesAmplitudes") ) {
-    //Get Tai
-    Tensor<> *realTai(getTensorArgument("SinglesAmplitudes"));
-    (*realTabij)["abij"] += (*realTai)["ai"] * (*realTai)["bj"];
+  Tensor<> *realTabij;
+  if (orbitalPairs){
+    Tensor<> *Tabij(getTensorArgument("DoublesAmplitudes"));
+    if (isArgumentGiven("SinglesAmplitudes") ) {
+      //Get Tai
+      Tensor<> *realTai(getTensorArgument("SinglesAmplitudes"));
+      (*Tabij)["abij"] += (*realTai)["ai"] * (*realTai)["bj"];
+    }
+    int aiSliceStart[] = { 0,  0, orbitalPairStart, orbitalPairStart};
+    int aiSliceEnd[]   = {Nv, Nv, orbitalPairEnd,   orbitalPairEnd  };
+    int lens[] = {Nv, Nv, numberOrbitalPairs, numberOrbitalPairs};
+    realTabij = new Tensor<>(3, lens, Tabij->sym, *Tabij->wrld, "realTabij");
+    (*realTabij) = Tabij->slice(aiSliceStart,aiSliceEnd); 
   }
+  else{
+    //Get Tabij
+    realTabij = getTensorArgument("DoublesAmplitudes");
 
-  //Construct SG
+    if (isArgumentGiven("SinglesAmplitudes") ) {
+      //Get Tai
+      Tensor<> *realTai(getTensorArgument("SinglesAmplitudes"));
+      (*realTabij)["abij"] += (*realTai)["ai"] * (*realTai)["bj"];
+    }
+  }
+  
+ //Construct SG
   NG = GammaGai->lens[0];
   CTF::Vector<> *realSG(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
-  CTF::Vector<> *realSGd(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
-  CTF::Vector<> *realSGx(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
+  CTF::Vector<> *realSGd(new CTF::Vector<>(NG, *GammaGai->wrld, "realSGd"));
+  CTF::Vector<> *realSGx(new CTF::Vector<>(NG, *GammaGai->wrld, "realSGx"));
   (*realSGd)["G"]  = ( 1.0) * realConjCGai["Gai"] * realCGai["Gbj"] * (*realTabij)["abij"];
   (*realSGd)["G"] += (-1.0) * imagConjCGai["Gai"] * imagCGai["Gbj"] * (*realTabij)["abij"];
 
@@ -253,12 +308,12 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
   allocatedTensorArgument<>("StructureFactor", realSG);
 
   if(isArgumentGiven("StructureFactors")){
-    CTF::Vector<> *realSGs(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
+    CTF::Vector<> *realSGs(new CTF::Vector<>(NG, *GammaGai->wrld, "realSGs"));
     (*realSGs)["G"] = (0.5) * (*realSGd)["G"] + (0.5) * (*realSGx)["G"];
     allocatedTensorArgument<>("StructureFactors",realSGs);
   }
   if(isArgumentGiven("StructureFactort")){
-    CTF::Vector<> *realSGt(new CTF::Vector<>(NG, *GammaGai->wrld, "realSG"));
+    CTF::Vector<> *realSGt(new CTF::Vector<>(NG, *GammaGai->wrld, "realSGt"));
     (*realSGt)["G"] = (1.5) * (*realSGd)["G"] + (-1.5) * (*realSGx)["G"];
     allocatedTensorArgument<>("StructureFactort",realSGt);
   }
