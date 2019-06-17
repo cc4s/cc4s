@@ -28,6 +28,23 @@ namespace cc4s {
     return absSqr(z.real()) + absSqr(z.imag());
   }
 
+  // type info allowing inference of
+  // extended type from given optinoally complex type. e.g.:
+  // ComplexTraits<complex>::ExtendedType = real
+  // ComplexTraits<real>::ExtendedType = real
+  // ComplexTraits<Complex<int>>::ExtendedType = int
+  template <typename T>
+  class ComplexTraits {
+  public:
+    typedef T ExtendedType;
+  };
+
+  template <typename T>
+  class ComplexTraits<Complex<T>> {
+  public:
+    typedef T ExtendedType;
+  };
+
   // numeric conversions
   template <typename Target, typename Source>
   class Conversion;
