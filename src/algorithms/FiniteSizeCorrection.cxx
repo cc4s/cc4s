@@ -306,16 +306,25 @@ void FiniteSizeCorrection::calculateRealStructureFactor() {
 
   (*realSG)["G"] = (2.0) * (*realSGd)["G"] + (-1.0) * (*realSGx)["G"];
   allocatedTensorArgument<>("StructureFactor", realSG);
-
   if(isArgumentGiven("StructureFactors")){
     CTF::Vector<> *realSGs(new CTF::Vector<>(NG, *GammaGai->wrld, "realSGs"));
     (*realSGs)["G"] = (0.5) * (*realSGd)["G"] + (0.5) * (*realSGx)["G"];
     allocatedTensorArgument<>("StructureFactors",realSGs);
+    Scalar <> senergy(*Cc4s::world);
+    senergy[""] = (*realVG)["G"] * (*realSGs)["G"];
+    double _senergy(senergy.get_val());
+    LOG(0,"Singlet energy:") << _senergy << std::endl;
+
   }
+
   if(isArgumentGiven("StructureFactort")){
     CTF::Vector<> *realSGt(new CTF::Vector<>(NG, *GammaGai->wrld, "realSGt"));
     (*realSGt)["G"] = (1.5) * (*realSGd)["G"] + (-1.5) * (*realSGx)["G"];
     allocatedTensorArgument<>("StructureFactort",realSGt);
+    Scalar <> tenergy(*Cc4s::world);
+    tenergy[""] = (*realVG)["G"] * (*realSGt)["G"];
+    double _tenergy(tenergy.get_val());
+    LOG(0,"Triplet energy:") << _tenergy << std::endl;
   }
 
   VofG.resize(NG);
