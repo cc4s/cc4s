@@ -30,8 +30,16 @@ namespace cc4s {
     return std::abs(x);
   }
 
+#ifdef INTEL_COMPILER
+  Float128 __absq(Float128);
+#endif
+
   inline Float128 abs(Float128 const x) {
+#ifndef INTEL_COMPILER
     return fabsq(x);
+#else
+    return __absq(x);
+#endif
   }
 
   template <typename F>
