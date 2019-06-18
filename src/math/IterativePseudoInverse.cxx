@@ -5,6 +5,7 @@
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <complex>
+#include <array>
 #include <limits>
 
 using namespace cc4s;
@@ -17,18 +18,18 @@ IterativePseudoInverse<F>::IterativePseudoInverse(
 ):
   matrix(matrix_),
   square(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix_.wrld
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix_.wrld
   ),
   inverse(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix_.wrld
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[1]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix_.wrld
   ),
   alpha()
 {
   Tensor<F> conjugate(
-    2, std::array<int,2>({matrix.lens[1], matrix.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+    2, std::array<int,2>{{matrix.lens[1], matrix.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix.wrld
   );
   Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
@@ -53,14 +54,14 @@ template <typename F>
 void IterativePseudoInverse<F>::iterate(F accuracy) {
   Scalar<F> s;
   Tensor<F> conjugate(
-    2, std::array<int,2>({matrix.lens[1], matrix.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+    2, std::array<int,2>{{matrix.lens[1], matrix.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix.wrld
   );
   Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
   Tensor<F> sqr(
-    2, std::array<int,2>({matrix.lens[0], matrix.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+    2, std::array<int,2>{{matrix.lens[0], matrix.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix.wrld
   );
   F remainder(1.0), minRemainder(std::numeric_limits<F>::infinity());
   int n(0), nMin(0);
@@ -156,7 +157,7 @@ void IterativePseudoInverse<F>::generateHilbertMatrix(Tensor<F> &m) {
 template <typename F>
 void IterativePseudoInverse<F>::test(World *world) {
   Tensor<F> m(
-    2, std::array<int,2>({5,8}).data(), std::array<int,2>({NS,NS}).data(),
+    2, std::array<int,2>{{5,8}}.data(), std::array<int,2>{{NS,NS}}.data(),
     *world
   );
   {
@@ -202,17 +203,17 @@ DryIterativePseudoInverse<F>::DryIterativePseudoInverse(
 ):
   matrix(matrix_),
   square(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
   ),
   inverse(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
-    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[1]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
   )
 {
   DryTensor<F> conjugate(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
-    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[1]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
   );
   DryVector<F> rowAbsNorms(square.lens[0]);
 }
