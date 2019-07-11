@@ -39,7 +39,15 @@ IterativePseudoInverse<F>::IterativePseudoInverse(
   rowAbsNorms.sum(1.0,square,"ij", 0.0,"i",fAbs);
   std::vector<F> normValues(rowAbsNorms.lens[0]);
   rowAbsNorms.read_all(normValues.data());
-  F max(-std::numeric_limits<F>::infinity());
+  // [K.L. 11.07.2019] complex infinity has undefined behaviour depending
+  // on the compiler. Tested using icc-debug and icc config in complex case
+  // and it gives (-0,-0). That's why in complex case it works while in real
+  // case it doesn't (max=infinity).
+  // Anyway, it doesn't make sense to compare if a number is larger than
+  // abs(-infinity). 
+  // F max(-std::numeric_limits<F>::infinity());
+  // A temporary fix: set max default to double type 0. 
+  double max(0.);
   for (int i(0); i < square.lens[0]; ++i) {
     if (abs(normValues[i]) > abs(max)) max = abs(normValues[i]);
   }
