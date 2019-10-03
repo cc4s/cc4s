@@ -153,12 +153,15 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     energy[""] =  ( -0.5 ) * spins * (*Tabij)["abij"] * (*Vijab)["ijba"];
     energy[""] += ( -0.5 ) * spins * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"];
     F exce(energy.get_val());
-    LOG(1, getCapitalizedAbbreviation()) << "dir=" << dire << std::endl;
-    LOG(1, getCapitalizedAbbreviation()) << "exc=" << exce << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(5) <<
+      "dir=" << dire << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(5) <<
+      "exc=" << exce << std::endl;
     e = dire + exce;
   }
 
-  LOG(0, getCapitalizedAbbreviation()) << "e=" << e << std::endl;
+  LOG(0, getCapitalizedAbbreviation()) << std::setprecision(5) <<
+    "e=" << e << std::endl;
 
   return e;
 }
