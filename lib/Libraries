@@ -3,8 +3,8 @@ LIBRARIES=build/${CONFIG}/ctf/lib/libctf.a
 
 ###### ctf ######
 src/ctf/configure:
-	cd ..; git submodule init
-	cd ..; git submodule update
+	cd ..; git submodule init lib/src/ctf
+	cd ..; git submodule update lib/src/ctf
 
 build/${CONFIG}/ctf/Makefile: src/ctf/configure
 	mkdir -p build/${CONFIG}/ctf
