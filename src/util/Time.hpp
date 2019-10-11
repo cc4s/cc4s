@@ -41,8 +41,8 @@ namespace cc4s {
     }
 
     Time &operator += (Time const &t) {
-      tv_nsec += tv_nsec;
-      if (tv_nsec <= FRACTIONS) {
+      tv_nsec += t.tv_nsec;
+      if (tv_nsec < FRACTIONS) {
         tv_sec += t.tv_sec;
       } else {
         tv_sec += t.tv_sec + 1;
