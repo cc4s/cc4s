@@ -20,6 +20,8 @@ namespace cc4s {
     static constexpr int FRACTION_DIGITS = 9;
 
     Time() {
+      tv_sec = 0;
+      tv_nsec = 0;
     }
     Time(int64_t seconds, int64_t nanoSeconds) {
       tv_sec = seconds;
