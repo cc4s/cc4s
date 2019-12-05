@@ -308,6 +308,9 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         (*Rabij)["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
       }
     }
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "Starting PPL"  << std::endl;
+
     if(!isArgumentGiven("PPL")){
       if (isArgumentGiven("CoulombFactors")) {
 
@@ -356,6 +359,10 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
           }
         }
 
+        int numberSlices(int(ceil(double(Nv)/integralsSliceSize)));
+        LOG(1, getCapitalizedAbbreviation()) <<
+          "#slices for Vabcd evaluation: " << numberSlices << std::endl;
+
         Tensor<> realDressedGammaGab(realGammaGab);
         Tensor<> imagDressedGammaGab(imagGammaGab);
         realDressedGammaGab.set_name("realDressedGammaGab");
@@ -364,41 +371,46 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         realDressedGammaGab["Gab"] += (-1.0) * realGammaGai["Gbk"] * (*Tai)["ak"];
         imagDressedGammaGab["Gab"] += (-1.0) * imagGammaGai["Gbk"] * (*Tai)["ak"];
 
-        // Slice loop starts here
-        for (int b(0); b < Nv; b += integralsSliceSize) {
-          // Slice the right GammaGab
- 	  int rightGammaStart[] = { 0, b, 0};
-          int rightGammaEnd[] = { NG, std::min(b+integralsSliceSize, Nv), Nv};
-          auto realRightGamma(realDressedGammaGab.slice(rightGammaStart, rightGammaEnd));
-          auto imagRightGamma(imagDressedGammaGab.slice(rightGammaStart, rightGammaEnd));
+        std::vector<PTR(CTF::Tensor<double>)> realSlicedGammaGab;
+        std::vector<PTR(CTF::Tensor<double>)> imagSlicedGammaGab;
+        for (int v(0); v < numberSlices; v++){
+          int xStart = v*integralsSliceSize;
+          int xEnd = std::min((v+1)*integralsSliceSize,Nv);
 
-          for (int a(b); a < Nv; a += integralsSliceSize) {
-
-            LOG(1, getCapitalizedAbbreviation()) <<
-              "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-            // Slice the left GammaGab
-            int leftGammaStart[] = { 0, a, 0};
-            int leftGammaEnd[] = {NG, std::min(a+integralsSliceSize, Nv), Nv};
-            auto realLeftGamma(realDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
-            auto imagLeftGamma(imagDressedGammaGab.slice(leftGammaStart, leftGammaEnd));
-
+          int sliceStart[] = { 0, xStart, 0};
+          int sliceEnd[]   = { NG, xEnd, Nv};
+          realSlicedGammaGab.push_back(
+            NEW(CTF::Tensor<double>,realDressedGammaGab.slice(sliceStart,sliceEnd))
+          );
+          imagSlicedGammaGab.push_back(
+            NEW(CTF::Tensor<double>,imagDressedGammaGab.slice(sliceStart,sliceEnd))
+          );
+        }
+        //slice loop starts here
+        for (int m(0); m < numberSlices; m++){
+          for (int n(m); n < numberSlices; n++){
             int lenscd[] = {
-              realLeftGamma.lens[1], realRightGamma.lens[1], realLeftGamma.lens[2], realRightGamma.lens[2]
+              realSlicedGammaGab[n]->lens[1], realSlicedGammaGab[m]->lens[1],
+              realSlicedGammaGab[n]->lens[2], realSlicedGammaGab[m]->lens[2]
             };
             int syms[] = {NS, NS, NS, NS};
             auto Vxycd(new Tensor<>(4, lenscd, syms, *realDressedGammaGab.wrld, "Vxycd"));
-            (*Vxycd)["xycd"]  = realLeftGamma["Gxc"] * realRightGamma["Gyd"];
-            (*Vxycd)["xycd"] += imagLeftGamma["Gxc"] * imagRightGamma["Gyd"];
+
+            (*Vxycd)["xycd"]  = (*realSlicedGammaGab[n])["Gxc"] * (*realSlicedGammaGab[m])["Gyd"];
+            (*Vxycd)["xycd"] += (*imagSlicedGammaGab[n])["Gxc"] * (*imagSlicedGammaGab[m])["Gyd"];
 
             int lensij[] = { Vxycd->lens[0], Vxycd->lens[1], No, No};
             Tensor<> Rxyij(4, lensij, syms, *Vxycd->wrld, "Rxyij");
 
             // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
             Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+            int a(n*integralsSliceSize);
+            int b(m*integralsSliceSize);
 
             sliceIntoResiduum(Rxyij, a, b, *Rabij);
             // The integrals of this slice are not needed anymore
             delete Vxycd;
+
           }
         }
       }
