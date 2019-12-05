@@ -85,49 +85,45 @@ namespace cc4s {
   template <>
   class MpiTypeTraits<int> {
   public:
-    static const MPI_Datatype elementType() {
-      return MPI_INT;
-    }
-    static const int elementCount()  {
-      return 1;
-    }
+    static MPI_Datatype elementType() { return MPI_INT; }
+    static int elementCount()  { return 1; }
   };
 
   template <>
   class MpiTypeTraits<int64_t> {
   public:
-    static const MPI_Datatype elementType() { return MPI_INTEGER8; }
-    static const int elementCount() { return 1; }
+    static MPI_Datatype elementType() { return MPI_INTEGER8; }
+    static int elementCount() { return 1; }
   };
 
   template <>
   class MpiTypeTraits<uint64_t> {
   public:
-    static const MPI_Datatype elementType() { return MPI_INTEGER8; }
-    static const int elementCount() { return 1; }
+    static MPI_Datatype elementType() { return MPI_INTEGER8; }
+    static int elementCount() { return 1; }
   };
 
   template <>
   class MpiTypeTraits<double> {
   public:
-    static const MPI_Datatype elementType() { return MPI_REAL8; }
-    static const int elementCount() { return 1; }
+    static MPI_Datatype elementType() { return MPI_REAL8; }
+    static int elementCount() { return 1; }
   };
 
   template <>
   class MpiTypeTraits<complex> {
   public:
-    static const MPI_Datatype elementType() { return MPI_DOUBLE_COMPLEX; }
-    static const int elementCount() { return 1; }
+    static MPI_Datatype elementType() { return MPI_DOUBLE_COMPLEX; }
+    static int elementCount() { return 1; }
   };
 
   template <typename F, int D>
   class MpiTypeTraits<Vector<F, D>> {
   public:
-    static const MPI_Datatype elementType() {
+    static MPI_Datatype elementType() {
       return MpiTypeTraits<F>::elementType();
     }
-    static const int elementCount() { return D; }
+    static int elementCount() { return D; }
   };
 }
 
