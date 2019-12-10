@@ -43,6 +43,7 @@ namespace cc4s {
     real getDLogZMp2(const unsigned int n = 0, const bool dbeta = D_BETA);
     real getDLogZHf(const unsigned int n = 0, const bool dbeta = D_BETA);
     real getDLogZH0(const unsigned int n = 0, const bool dbeta = D_BETA);
+    real getDLogZHfDEps();
 
     void testDLogZMp2(const unsigned int n = 0, const bool dbeta = D_BETA);
     void testDLogZHf(const unsigned int n = 0, const bool dbeta = D_BETA);

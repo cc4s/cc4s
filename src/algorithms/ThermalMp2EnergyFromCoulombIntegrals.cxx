@@ -128,8 +128,13 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZ(
 ) {
   real dLogZ;
   dLogZ = getDLogZMp2(n, dbeta);
-  dLogZ += getDLogZHf(n, dbeta);
+//  dLogZ += getDLogZHf(n, dbeta);
   dLogZ += getDLogZH0(n, dbeta);
+
+  if (n == 1 && !dbeta) {
+    dLogZ += getDLogZHfDEps();
+  }
+
 /*
   real mu(getRealArgument("ChemicalPotential"));
   int N(getIntegerArgument("Electrons"));
@@ -336,6 +341,36 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZHf(
 
 /**
  * \brief Computes the nth derivative of the thermal HF amplitudes
+ * \f$ (-1) \int_0^\beta{\rm d}\tau_1\,f_i\, f_j \f$
+ * and returns the result in the tensor Tij.
+ **/
+cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZHfDEps(
+) {
+  Tensor<> Tij(2, getTensorArgument("ThermalHHHHCoulombIntegrals")->lens);
+  Tensor<> *ni(getTensorArgument("ThermalHoleOccupancies"));
+  Tensor<> *na(getTensorArgument("ThermalParticleOccupancies"));
+  Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
+  real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  Tensor<> depsdmu(*ni);
+  depsdmu["k"] = beta * spins * (*Vijkl)["kjkj"] * (*ni)["j"] * (*na)["j"];
+  depsdmu["k"] = beta * (*Vijkl)["kjjk"] * (*ni)["j"] * (*na)["j"];
+  Scalar<> energy;
+  // we compute -Veff + HF = -2*HF + HF = -HF, so the sign is negative
+  energy[""] = (+beta) * spins * spins * depsdmu["j"] * (*Vijkl)["ijij"]
+    * (*na)["j"] * (*ni)["i"] * (*ni)["j"];
+  real direct( energy.get_val() );
+  energy[""] = (-beta) * spins * depsdmu["j"] * (*Vijkl)["ijji"]
+    * (*na)["j"] * (*ni)["i"] * (*ni)["j"];
+  real exchange( energy.get_val() );
+
+  writeContribution("Hartree deps/dmu", 1, D_MU, direct);
+  writeContribution("Exchange deps/dmu", 1, D_MU, exchange);
+  return direct+exchange;
+}
+
+
+/**
+ * \brief Computes the nth derivative of the thermal HF amplitudes
  * \f$ \int_0^\beta{\rm d}\tau\, f_i\, f_j \f$
  * to the tensor Tij where the derivative degrees w.r.t. \f$(-\beta)$\f of
  * each of the 3 \f$\beta$\f dependent terms is specified by the
@@ -436,7 +471,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::writeContribution(
   real m(dLogZ);
   switch (n) {
   case 0:
-    term << "free energy F from " << contribution;
+    term << "grand potential from " << contribution;
     // convert log(Z) to free energy for writing into log
     m *= -getRealArgument("Temperature");
     break;
