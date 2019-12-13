@@ -128,11 +128,13 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZ(
 ) {
   real dLogZ;
   dLogZ = getDLogZMp2(n, dbeta);
-//  dLogZ += getDLogZHf(n, dbeta);
+  // just report contribution but don't count
+  dLogZ += getDLogZHf(n, dbeta);
   dLogZ += getDLogZH0(n, dbeta);
 
   if (n == 1 && !dbeta) {
-    dLogZ += getDLogZHfDEps();
+    // just report contribution but don't count
+    getDLogZHfDEps();
   }
 
 /*
@@ -426,6 +428,7 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZH0(
 ) {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> Ti(false, *epsi);
+  Ti["i"] = 1;
   switch (n) {
   case 0:
     Transform<real, real>(
@@ -441,11 +444,6 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZH0(
   default:
     // the first derivative is eps_i*f_i (dbeta) or f_i (dmu),
     // use the ThermalContraction clas providing arbitrary derivatives of f_i
-    if (dbeta) {
-      Ti["i"] = (*epsi)["i"];
-    } {
-      Ti["i"] = 1;
-    }
     Transform<real, real>(
       std::function<void(real, real &)>(
         ThermalContraction<>(beta, false, n-1, dbeta)
@@ -453,6 +451,9 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZH0(
     ) (
       (*epsi)["i"], Ti["i"]
     );
+    if (dbeta) {
+      Ti["i"] *= (*epsi)["i"];
+    }
     break;
   }
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
