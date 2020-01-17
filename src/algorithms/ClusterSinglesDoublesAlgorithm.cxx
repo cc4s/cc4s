@@ -139,7 +139,7 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   auto Tai( amplitudes->get(0) );
   auto Tabij( amplitudes->get(1) );
   F e;
-
+  std::streamsize ss = std::cout.precision();
   if (antisymmetrized) {
     energy[""] += ( + 0.25  ) * (*Tabij)["abkl"] * (*Vijab)["klab"];
     energy[""] += ( + 0.5  ) * (*Tai)["aj"] * (*Tai)["cl"] * (*Vijab)["jlac"];
@@ -153,15 +153,20 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     energy[""] =  ( -0.5 ) * spins * (*Tabij)["abij"] * (*Vijab)["ijba"];
     energy[""] += ( -0.5 ) * spins * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"];
     F exce(energy.get_val());
-    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(5) <<
-      "dir=" << dire << std::endl;
-    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(5) <<
-      "exc=" << exce << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
+      "dir= " << dire << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
+      "exc= " << exce << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
+      "sing= " << 0.25*dire - 0.5*exce << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
+      "trip= " << 0.75*dire + 1.5*exce << std::endl;
     e = dire + exce;
   }
 
-  LOG(0, getCapitalizedAbbreviation()) << std::setprecision(5) <<
-    "e=" << e << std::endl;
+  LOG(0, getCapitalizedAbbreviation()) << std::setprecision(10) <<
+    "energie=" << e << std::setprecision(ss) << std::endl;
+
 
   return e;
 }
@@ -693,7 +698,7 @@ Tensor<cc4s::complex> *
   PiaR.set_name("PiaR");
   auto PicR(PiqR->slice(aRStart,aREnd));
   PicR.set_name("PicR");
-  
+
   Tensor<complex> conjPiaR(false, PiaR);
   conjPiaR.set_name("ConjPiaR");
   conjPiaR.sum(1.0, PiaR,"aR", 0.0,"aR", fConj);
@@ -711,7 +716,7 @@ Tensor<cc4s::complex> *
   leftPiaR.set_name("leftPiaR");
   auto rightPiaR(PiaR.slice(rightPiStart , rightPiEnd));
   rightPiaR.set_name("rightPiaR");
-  
+
   // Slice the respective parts from LambdaGR
   int leftLambdaStart[]  = { 0  ,                                a };
   int leftLambdaEnd[]    = { NG , std::min(a+factorsSliceSize, NR) };
