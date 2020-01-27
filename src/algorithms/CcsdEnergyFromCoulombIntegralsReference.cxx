@@ -216,8 +216,8 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   return residuum;
 }
 
-PTR(FockVector<complex>) CcsdEnergyFromCoulombIntegralsReference::getResiduum(
-  const int i, const PTR(const FockVector<complex>) &amplitudes
+PTR(FockVector<cc4s::complex>) CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+  const int i, const PTR(const FockVector<cc4s::complex>) &amplitudes
 ) {
   throw new EXCEPTION("This is not implemented");
 }
