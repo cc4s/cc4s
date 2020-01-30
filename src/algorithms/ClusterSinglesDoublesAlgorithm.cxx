@@ -165,7 +165,7 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   }
 
   LOG(0, getCapitalizedAbbreviation()) << std::setprecision(10) <<
-    "energie= " << e << std::setprecision(ss) << std::endl;
+    "energy= " << e << std::setprecision(ss) << std::endl;
 
 
   return e;

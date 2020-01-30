@@ -455,7 +455,7 @@ void CcsdDiagrammaticDecomposition::evaluateEnergy(
   LOG(1, diagramType) << std::setprecision(10) <<
     "trip= " << 0.75*dire + 1.5*exce << std::endl;
   LOG(0, diagramType) << std::setprecision(10) <<
-    "energie= " << dire + exce << std::endl;
+    "energy= " << dire + exce << std::endl;
 
 }
 

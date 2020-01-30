@@ -361,7 +361,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
 
         int numberSlices(int(ceil(double(Nv)/integralsSliceSize)));
         LOG(1, getCapitalizedAbbreviation()) <<
-          "#slices for Vabcd evaluation: " << numberSlices << std::endl;
+          "No. of slices for Vabcd evaluation: " << numberSlices << std::endl;
 
         Tensor<> realDressedGammaGab(realGammaGab);
         Tensor<> imagDressedGammaGab(imagGammaGab);
