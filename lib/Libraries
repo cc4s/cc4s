@@ -16,4 +16,4 @@ build/${CONFIG}/ctf/Makefile: src/ctf/configure
 
 build/${CONFIG}/ctf/lib/libctf.a: build/${CONFIG}/ctf/Makefile
 	$(CTF_CALLBACK)
-	$(MAKE) -C build/${CONFIG}/ctf
+	$(MAKE) -C build/${CONFIG}/ctf ctflib

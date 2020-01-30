@@ -1,2 +1,1 @@
-#CTF_CONFIG='CXX=mpicxx AR=gcc-ar 'LIB_PATH=-L/opt/OpenBLAS/lib/' 'LIBS=-lopenblas -lscalapack -lgfortran''
-CTF_CONFIG='CXX=mpicxx AR=gcc-ar --blas="-L${BLAS_PATH} -lopenblas -lgfortran" --scalapack="-L${SCALAPACK_PATH} -lscalapack" CXXFLAGS="-Ofast -march=native -flto -fopenmp"'
+CTF_CONFIG='CXX=mpicxx AR=gcc-ar CXXFLAGS="-Ofast -march=native -flto"'
