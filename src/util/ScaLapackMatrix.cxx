@@ -58,7 +58,7 @@ template <typename F>
 ScaLapackMatrix<F>::ScaLapackMatrix(
   CTF::Matrix<F> &A, BlacsWorld *blacsWorld_, int blockSize
 ):
-  ScaLapackDescriptor(blacsWorld_, A.lens, blockSize),
+  ScaLapackDescriptor(blacsWorld_, std::array<int,2>{{A.lens[0],A.lens[1]}}.data(), blockSize),
   blacsWorld(blacsWorld_)
 {
   // allocate local data
