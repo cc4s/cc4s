@@ -4,3 +4,6 @@
 [submodule "resources"]
 	path = resources
 	url = hulldamage.org:/git/cc4s/resources.git
+[submodule "lib/src/yaml-cpp"]
+	path = lib/src/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
