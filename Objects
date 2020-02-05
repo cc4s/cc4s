@@ -3,6 +3,7 @@ build/${CONFIG}/obj/Options.o \
 build/${CONFIG}/obj/Data.o \
 build/${CONFIG}/obj/Parser.o \
 build/${CONFIG}/obj/util/Log.o \
+build/${CONFIG}/obj/util/Emitter.o \
 build/${CONFIG}/obj/util/Timer.o \
 build/${CONFIG}/obj/util/FlopsCounter.o \
 build/${CONFIG}/obj/util/TensorIo.o \

@@ -5,6 +5,7 @@
 #include <tcc/DryTensor.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
+#include <util/Emitter.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
 #include <Options.hpp>
@@ -56,6 +57,7 @@ F ClusterSinglesDoublesAlgorithm::run() {
     stringStream << "Mixer not implemented: " << mixerName;
     throw new EXCEPTION(stringStream.str());
   }
+  EMIT() << YAML::Key << "mixer" << YAML::Value << mixerName;
 
   // number of iterations for determining the amplitudes
   int maxIterationsCount(
@@ -68,11 +70,21 @@ F ClusterSinglesDoublesAlgorithm::run() {
   F energyConvergence(
     getRealArgument("energyConvergence", DEFAULT_ENERGY_CONVERGENCE)
   );
+  EMIT()
+    << YAML::Key << "max-iterations" << YAML::Value << maxIterationsCount
+    << YAML::Key << "amplitudes-convergence"
+    << YAML::Value << std::abs(amplitudesConvergence)
+    << YAML::Key << "energy-convergence"
+    << YAML::Value << std::abs(energyConvergence);
 
+  EMIT() << YAML::Key << "iterations" << YAML::Value;
+  EMIT() << YAML::BeginSeq;
   F e(0), previousE(0);
   int i(0);
   for (; i < maxIterationsCount; ++i) {
+    EMIT() << YAML::BeginMap;
     LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
+    EMIT() << YAML::Key << "iteration" << YAML::Value << i+1;
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
     auto estimatedAmplitudes( getResiduum(i, amplitudes) );
@@ -90,7 +102,9 @@ F ClusterSinglesDoublesAlgorithm::run() {
       ) < std::abs(amplitudesConvergence * amplitudesConvergence)
     ) break;
     previousE = e;
+    EMIT() << YAML::EndMap;
   }
+  EMIT() << YAML::EndSeq;
 
   if (maxIterationsCount == 0) {
     LOG(0, getCapitalizedAbbreviation()) <<
@@ -144,6 +158,11 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     energy[""] += ( + 0.25  ) * (*Tabij)["abkl"] * (*Vijab)["klab"];
     energy[""] += ( + 0.5  ) * (*Tai)["aj"] * (*Tai)["cl"] * (*Vijab)["jlac"];
     e = energy.get_val();
+    // FIXME: imaginary part ignored
+    EMIT() << YAML::Key << "energy" << YAML::Value
+      << YAML::BeginMap
+      << YAML::Key << "value" << YAML::Value << std::real(e)
+      << YAML::EndMap;
   } else {
     // direct term
     energy[""] = 0.5 * spins * spins * (*Tabij)["abij"] * (*Vijab)["ijab"];
@@ -162,11 +181,18 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
       "trip= " << 0.75*dire + 1.5*exce << std::endl;
     e = dire + exce;
+    EMIT() << YAML::Key << "energy" << YAML::Value
+      << YAML::BeginMap
+      << YAML::Key << "value" << YAML::Value << std::real(e)
+      << YAML::Key << "direct" << YAML::Value << std::real(dire)
+      << YAML::Key << "exchange" << YAML::Value << std::real(exce)
+      << YAML::Key << "singlet" << YAML::Value << std::real(0.25*dire - 0.5*exce)
+      << YAML::Key << "triplet" << YAML::Value << std::real(0.75*dire + 1.5*exce)
+      << YAML::EndMap;
   }
 
   LOG(0, getCapitalizedAbbreviation()) << std::setprecision(10) <<
     "energy= " << e << std::setprecision(ss) << std::endl;
-
 
   return e;
 }
