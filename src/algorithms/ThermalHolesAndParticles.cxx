@@ -196,11 +196,13 @@ void ThermalHolesAndParticles::defineThermalHolesAndParticles() {
   // define thermal hole energies
   Vector<> *ftEpsi(new Vector<>(holeEnd, *epsp->wrld, "ftEpsi"));
   ftEpsi->slice(&ftN0, &holeEnd, 0.0, *epsp, &ftN0, &holeEnd, 1.0);
+  (*ftEpsi)["i"] -= chemicalPotential[""];
   allocatedTensorArgument<>("ThermalHoleEigenEnergies", ftEpsi);
 
   // define thermal particle energies
   Vector<> *ftEpsa(new Vector<>(ftNv, *epsp->wrld, "ftEpsa"));
   ftEpsa->slice(&ftN0, &ftNv, 0.0, *epsp, &particleStart, &Np, 1.0);
+  (*ftEpsa)["a"] -= chemicalPotential[""];
   allocatedTensorArgument<>("ThermalParticleEigenEnergies", ftEpsa);
 }
 

@@ -23,8 +23,8 @@ ThermalMp2EnergyFromCoulombIntegrals::~ThermalMp2EnergyFromCoulombIntegrals() {
 void ThermalMp2EnergyFromCoulombIntegrals::run() {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
-  Tensor<> *Ni(getTensorArgument("ThermalHoleOccupancies"));
-  Tensor<> *Na(getTensorArgument("ThermalParticleOccupancies"));
+//  Tensor<> *Ni(getTensorArgument("ThermalHoleOccupancies"));
+//  Tensor<> *Na(getTensorArgument("ThermalParticleOccupancies"));
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
   beta = 1/getRealArgument("Temperature");
 
@@ -105,6 +105,10 @@ void ThermalMp2EnergyFromCoulombIntegrals::computeEnergyMoments() {
   auto ctfEnergyMoments(new CTF::Tensor<>(1, std::vector<int>({int(n)}).data()));
   ctfEnergyMoments->write(indices.size(), indices.data(), energyMoments.data());
   allocatedTensorArgument("ThermalEnergyMoments", ctfEnergyMoments);
+
+  // TODO: compute Helmholtz free energy from
+  // F0 + Omega_1 + Omega_2 - 1/2 (dOmega_1/dmu)^2 / (d^2Omega_0/dmu^2)
+  // [Fetta, Walecka, Eq.(30.69)]
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::computeNumberMoments() {
@@ -129,12 +133,12 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZ(
   real dLogZ;
   dLogZ = getDLogZMp2(n, dbeta);
   // just report contribution but don't count
-  dLogZ += getDLogZHf(n, dbeta);
+  getDLogZHf(n, dbeta);
   dLogZ += getDLogZH0(n, dbeta);
 
   if (n == 1 && !dbeta) {
     // just report contribution but don't count
-    getDLogZHfDEps();
+    // getDLogZHfDEps();
   }
 
 /*
@@ -353,15 +357,19 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZHfDEps(
   Tensor<> *na(getTensorArgument("ThermalParticleOccupancies"));
   Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
-  Tensor<> depsdmu(*ni);
-  depsdmu["k"] = beta * spins * (*Vijkl)["kjkj"] * (*ni)["j"] * (*na)["j"];
-  depsdmu["k"] = beta * (*Vijkl)["kjjk"] * (*ni)["j"] * (*na)["j"];
+  Tensor<> *depsdmu(new Tensor<>(*ni));
+  // FIXME: assumes No=Nv=Np
+  (*depsdmu)["k"] =  beta * spins * (*Vijkl)["kjkj"] * (*ni)["j"] * (*na)["j"];
+  (*depsdmu)["k"] -= beta * (*Vijkl)["kjjk"] * (*ni)["j"] * (*na)["j"];
+  // write deps/dmu
+  allocatedTensorArgument("ThermalDEpsDMu", depsdmu);
+
   Scalar<> energy;
   // we compute -Veff + HF = -2*HF + HF = -HF, so the sign is negative
-  energy[""] = (+beta) * spins * spins * depsdmu["j"] * (*Vijkl)["ijij"]
+  energy[""] = (+beta) * spins * spins * (*depsdmu)["j"] * (*Vijkl)["ijij"]
     * (*na)["j"] * (*ni)["i"] * (*ni)["j"];
   real direct( energy.get_val() );
-  energy[""] = (-beta) * spins * depsdmu["j"] * (*Vijkl)["ijji"]
+  energy[""] = (-beta) * spins * (*depsdmu)["j"] * (*Vijkl)["ijji"]
     * (*na)["j"] * (*ni)["i"] * (*ni)["j"];
   real exchange( energy.get_val() );
 
