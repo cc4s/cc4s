@@ -1,4 +1,5 @@
 #include <mixers/DiisMixer.hpp>
+#include <util/Emitter.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
 
@@ -19,6 +20,11 @@ DiisMixer<F>::DiisMixer(
 {
   int N( algorithm->getRealArgument("maxResidua", 4) );
   LOG(1,"DiisMixer") << "maxResidua=" << N << std::endl;
+  EMIT() << YAML::Key << "mixer" << YAML::Value;
+  EMIT() << YAML::BeginMap;
+  EMIT() << YAML::Key << "type" << YAML::Value << "diis";
+  EMIT() << YAML::Key << "max-residua" << YAML::Value << N;
+  EMIT() << YAML::EndMap;
 
   amplitudes.resize(N);
   residua.resize(N);
@@ -78,7 +84,7 @@ void DiisMixer<F>::append(
       B->slice(
         colBegin.data(), colEnd.data(), 0.0,
         one,
-        oneBegin.data(), oneEnd.data(), overlap
+         oneBegin.data(), oneEnd.data(), overlap
       );
       if (i == nextIndex) continue;
       B->slice(
@@ -101,17 +107,28 @@ void DiisMixer<F>::append(
     upperLeftBegin.data(), firstColEnd.data()
   ).read_all(column.data());
   LOG(1, "DiisMixer") << "lambda" << "=" << column[0] << std::endl;
+  EMIT() << YAML::Key << "mixing";
+  EMIT() << YAML::Value << YAML::BeginMap;
+  // FIXME: imaginary part dismissed
+  EMIT() << YAML::Key << "lambda" << YAML::Value << std::real(column[0]);
 
   next = NEW(FockVector<F>, *A);
   *next *= F(0);
   nextResiduum = NEW(FockVector<F>, *R);
   *nextResiduum *= F(0);
+  EMIT() << YAML::Key << "weights";
+  EMIT() << YAML::Value << YAML::Flow << YAML::BeginSeq;
   for (int j(0); j < count; ++j) {
     int i( (nextIndex+N-j) % N );
     LOG(1, "DiisMixer") << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
+    // FIXME: imaginary part dismissed
+    EMIT() << std::real(column[i+1]);
     *next += column[i+1] * *amplitudes[i];
     *nextResiduum += column[i+1] * *residua[i];
   }
+  EMIT() << YAML::EndSeq;
+  EMIT() << YAML::Comment("w(-1), ... , w(-max-residua)");
+  EMIT() << YAML::EndMap;
 
   nextIndex = (nextIndex+1) % N;
 }

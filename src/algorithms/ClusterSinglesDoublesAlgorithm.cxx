@@ -57,7 +57,6 @@ F ClusterSinglesDoublesAlgorithm::run() {
     stringStream << "Mixer not implemented: " << mixerName;
     throw new EXCEPTION(stringStream.str());
   }
-  EMIT() << YAML::Key << "mixer" << YAML::Value << mixerName;
 
   // number of iterations for determining the amplitudes
   int maxIterationsCount(
