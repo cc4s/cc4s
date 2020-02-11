@@ -242,6 +242,8 @@ int main(int argumentCount, char **arguments) {
       LOG(0) << std::endl << cause->getMessage() << std::endl;
     }
   }
+
+  Emitter::finalize();
   MPI_Finalize();
   return 0;
 }

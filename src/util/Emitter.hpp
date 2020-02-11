@@ -17,6 +17,7 @@ namespace cc4s {
     static void setRank(const int rank);
     static int getRank();
     static YAML::Emitter &getEmitter();
+    static void finalize();
 
   protected:
     static int rank;

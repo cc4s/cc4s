@@ -30,3 +30,8 @@ YAML::Emitter &Emitter::getEmitter() {
   return *yamlEmitter;
 }
 
+void Emitter::finalize() {
+  yamlEmitter = nullptr;
+  std::flush(*yamlFile);
+  yamlFile = nullptr;
+}
