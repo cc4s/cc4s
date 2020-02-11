@@ -77,16 +77,18 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   real mu1(-N1_0/N0_1);
   real mu2(-(N2_0+N1_1*mu1+0.5*N0_2*mu1*mu1)/N0_1);
 
-  real Fc(Omega1 + Omega2 + N1_0*mu1 + 0.5*N0_1*mu1*mu1);
+  real Fc(Omega1 + Omega2 - N1_0*mu1 - 0.5*N0_1*mu1*mu1);
   EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "Omega1" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "Omega2" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "N0_0" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "N1_0" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "N2_0" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "N0_1" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "N1_1" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "N0_2" << YAML::Value << Omega0;
+  EMIT() << YAML::Key << "Omega1" << YAML::Value << Omega1;
+  EMIT() << YAML::Key << "Omega2" << YAML::Value << Omega2;
+  EMIT() << YAML::Key << "N0_0" << YAML::Value << N0_0;
+  EMIT() << YAML::Key << "N1_0" << YAML::Value << N1_0;
+  EMIT() << YAML::Key << "N2_0" << YAML::Value << N2_0;
+  EMIT() << YAML::Key << "N0_1" << YAML::Value << N0_1;
+  EMIT() << YAML::Key << "N1_1" << YAML::Value << N1_1;
+  EMIT() << YAML::Key << "N0_2" << YAML::Value << N0_2;
+  EMIT() << YAML::Key << "mu1" << YAML::Value << mu1;
+  EMIT() << YAML::Key << "mu2" << YAML::Value << mu2;
 
   setRealArgument("ThermalFreeEnergy", Fc);
 }
