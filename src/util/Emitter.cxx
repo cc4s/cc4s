@@ -31,6 +31,7 @@ YAML::Emitter &Emitter::getEmitter() {
 }
 
 void Emitter::finalize() {
+  if (rank != 0) return;
   yamlEmitter = nullptr;
   std::flush(*yamlFile);
   yamlFile = nullptr;
