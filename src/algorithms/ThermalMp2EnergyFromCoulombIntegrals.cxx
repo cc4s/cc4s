@@ -65,19 +65,25 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   real Omega1(-getDLogZHf(0, D_MU)/beta);
   real Omega2(-getDLogZMp2(0, D_MU)/beta);
 
-  real N0_0(-getDLogZH0(1, D_MU)/beta);
-  real N1_0(-getDLogZHf(1, D_MU)/beta);
-  real N2_0(-getDLogZMp2(1, D_MU)/beta);
+  real N0_0(getDLogZH0(1, D_MU));
+  real N1_0(getDLogZHf(1, D_MU));
+  real N2_0(getDLogZMp2(1, D_MU));
 
-  real N0_1(-getDLogZH0(2, D_MU)/beta);
-  real N1_1(-getDLogZHf(2, D_MU)/beta);
+  real N0_1(getDLogZH0(2, D_MU)*beta);
+  real N1_1(getDLogZHf(2, D_MU)*beta);
 
-  real N0_2(-getDLogZH0(3, D_MU)/beta);
+  real N0_2(getDLogZH0(3, D_MU)*beta*beta);
 
-  real mu1(-N1_0/N0_1);
-  real mu2(-(N2_0+N1_1*mu1+0.5*N0_2*mu1*mu1)/N0_1);
+  real mu0(getRealArgument("ChemicalPotential"));
+  real mu1(0), mu2(0);
+  if (std::abs(N0_1) > 1e-7) {
+    mu1 = -N1_0/N0_1;
+    mu2 = -(N2_0+N1_1*mu1+0.5*N0_2*mu1*mu1) / N0_1;
+  }
 
-  real Fc(Omega1 + Omega2 - N1_0*mu1 - 0.5*N0_1*mu1*mu1);
+  real FHf(Omega0 + mu0*N0_0 + Omega1);
+  real Fc(Omega2 - N1_0*mu1 - 0.5*N0_1*mu1*mu1);
+
   EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;
   EMIT() << YAML::Key << "Omega1" << YAML::Value << Omega1;
   EMIT() << YAML::Key << "Omega2" << YAML::Value << Omega2;
@@ -87,10 +93,13 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   EMIT() << YAML::Key << "N0_1" << YAML::Value << N0_1;
   EMIT() << YAML::Key << "N1_1" << YAML::Value << N1_1;
   EMIT() << YAML::Key << "N0_2" << YAML::Value << N0_2;
+  EMIT() << YAML::Key << "mu0" << YAML::Value << mu0;
   EMIT() << YAML::Key << "mu1" << YAML::Value << mu1;
   EMIT() << YAML::Key << "mu2" << YAML::Value << mu2;
+  EMIT() << YAML::Key << "Hartree-Fock-free-energy" << YAML::Value << FHf;
+  EMIT() << YAML::Key << "correlation-free-energy" << YAML::Value << Fc;
 
-  setRealArgument("ThermalFreeEnergy", Fc);
+  setRealArgument("ThermalFreeEnergy", FHf+Fc);
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
@@ -293,9 +302,13 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZHf(
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   Scalar<> energy;
   Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
+  Tensor<> *VHijkl(Vijkl);
+  if (isArgumentGiven("ThermalHartreeCoulombIntegrals")) {
+    VHijkl = getTensorArgument("ThermalHartreeCoulombIntegrals");
+  }
   // we compute -Veff + HF = -2*HF + HF = -HF, so the sign is negative
 // TODO: what about Hartree term?
-  energy[""] = (-1.0) * (+0.5) * spins * spins * Tij["ij"] * (*Vijkl)["ijij"];
+  energy[""] = (-1.0) * (+0.5) * spins * spins * Tij["ij"] * (*VHijkl)["ijij"];
   real direct( energy.get_val() );
   energy[""] = (-1.0) * (-0.5) * spins * Tij["ij"] * (*Vijkl)["ijji"];
   real exchange( energy.get_val() );
