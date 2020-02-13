@@ -1,3 +1,12 @@
+/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+
+// compute Helmholtz free energy up to second order in the Coulomb perturbation
+// according to
+// F0 + Omega_1 + Omega_2 - 1/2 (dOmega_1/dmu)^2 / (d^2Omega_0/dmu^2)
+// at mu=mu0 where mu0 is the Hartree--Fock chemical potential,
+// following
+// [Kohn, Luttinger, PR (1960), Eq.(18)] and [Fetta, Walecka, Eq.(30.69)]
+
 #include <algorithms/ThermalMp2EnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
 #include <math/MultiCombinations.hpp>
@@ -57,32 +66,53 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   testDLogZMp2(1, D_MU);
 */
 
-  // TODO: compute Helmholtz free energy from
-  // F0 + Omega_1 + Omega_2 - 1/2 (dOmega_1/dmu)^2 / (d^2Omega_0/dmu^2)
-  // [Fetta, Walecka, Eq.(30.69)]
-
+  // expand Omega = Omega0 + Omega1 + Omega2 + ... in orders of perturbation
   real Omega0(-getDLogZH0(0, D_MU)/beta);
+// FIXME: Omega1(mu) = -eff + HF + XG = -1*(HF+XG)(mu0) + 0.5*(HF+XG)(mu)
+// i.e. Omega1(mu0) = -0.5*(HF+XG)(mu0) but dOmega1/dmu(mu0) has opposite sign
   real Omega1(-getDLogZHf(0, D_MU)/beta);
   real Omega2(-getDLogZMp2(0, D_MU)/beta);
 
+  // expand N = N0 + N1 + N2 + ... in orders of perturbation
   real N0_0(getDLogZH0(1, D_MU));
-  real N1_0(getDLogZHf(1, D_MU));
+// FIXME: Omega1(mu) = -eff + HF + XG = -1*(HF+XG)(mu0) + 0.5*(HF+XG)(mu)
+// i.e. Omega1(mu0) = -0.5*(HF+XG)(mu0) but dOmega1/dmu(mu0) has opposite sign
+  real N1_0(-getDLogZHf(1, D_MU));
   real N2_0(getDLogZMp2(1, D_MU));
 
+  // get derivatives of N0, N1
   real N0_1(getDLogZH0(2, D_MU)*beta);
-  real N1_1(getDLogZHf(2, D_MU)*beta);
+// FIXME: Omega1(mu) = -eff + HF + XG = -1*(HF+XG)(mu0) + 0.5*(HF+XG)(mu)
+// i.e. Omega1(mu0) = -0.5*(HF+XG)(mu0) but dOmega1/dmu(mu0) has opposite sign
+  real N1_1(-getDLogZHf(2, D_MU)*beta);
 
   real N0_2(getDLogZH0(3, D_MU)*beta*beta);
 
+  // expand mu = mu0 + mu1 + mu2 + ... in orders of perturbation
   real mu0(getRealArgument("ChemicalPotential"));
   real mu1(0), mu2(0);
   if (std::abs(N0_1) > 1e-7) {
+    // determine mu1 from 1.order serires expansion of N around mu0 including
+    // only terms of 0th or 1st order in perturbation:
+    // N_fixed = N0 + N1 + dN0/dmu * (mu-mu0) with mu=mu0+m1=mu1, thus
     mu1 = -N1_0/N0_1;
+    // similarly, determine mu2 from 2.order series expansion of N around mu0
+    // including only terms through 2nd order in perturbation:
+    // N_fixed = N0+N1+N2 + d(N0+N1)/dmu *(mu-mu0) + 1/2 d^2N0/dmu^2 (mu-mu0)^2
+    // leading to
     mu2 = -(N2_0+N1_1*mu1+0.5*N0_2*mu1*mu1) / N0_1;
   }
 
+  // use series expansion of Omega around Omega0 with above terms
+  // and dOmegai/dmu = -Ni then
+  // write Helmholtz free energy F = Omega(mu) + (mu0+mu1+mu2+...)*N_fixed
+  // and split into Hartree--Fock and correlation contribution
   real FHf(Omega0 + mu0*N0_0 + Omega1);
   real Fc(Omega2 - N1_0*mu1 - 0.5*N0_1*mu1*mu1);
+
+  // TODO: implement mixed derivatives e.g. d^2logZ/(dmu dbeta)
+  // to evaluate E around mu0:
+  // E(mu) = E0+E1+E2 + d(E0+E1)/dmu (mu-mu0) + 1/2 d^2E0/dmu^2 *(mu-mu0)^2
 
   EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;
   EMIT() << YAML::Key << "Omega1" << YAML::Value << Omega1;
@@ -307,7 +337,6 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZHf(
     VHijkl = getTensorArgument("ThermalHartreeCoulombIntegrals");
   }
   // we compute -Veff + HF = -2*HF + HF = -HF, so the sign is negative
-// TODO: what about Hartree term?
   energy[""] = (-1.0) * (+0.5) * spins * spins * Tij["ij"] * (*VHijkl)["ijij"];
   real direct( energy.get_val() );
   energy[""] = (-1.0) * (-0.5) * spins * Tij["ij"] * (*Vijkl)["ijji"];
