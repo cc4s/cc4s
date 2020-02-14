@@ -24,6 +24,7 @@ namespace cc4s {
   protected:
     void printBanner();
     void printStatistics();
+    void listHosts();
   };
 }
 
