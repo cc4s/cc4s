@@ -221,9 +221,9 @@ void Cc4s::listHosts() {
   ownName[nameLength] = 0;
 
   if (world->rank == 0) {
-    std::map<std::string,size_t> processesOfHosts;
-    // enter own hostname
-    processesOfHosts[ownName]++;
+    std::map<std::string,std::vector<int>> ranksOfHosts;
+    // enter hostname/rank
+    ranksOfHosts[ownName].push_back(0);
     // receive all names but own name from remote ranks
     for (int remoteRank(1); remoteRank < world->np; ++remoteRank) {
       char remoteName[MPI_MAX_PROCESSOR_NAME];
@@ -231,16 +231,21 @@ void Cc4s::listHosts() {
         remoteName, MPI_MAX_PROCESSOR_NAME, MPI_BYTE,
         remoteRank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE
       );
-      // and enter into map of processes
-      processesOfHosts[remoteName]++;
+      // and enter remote name/rank into map
+      ranksOfHosts[remoteName].push_back(remoteRank);
     }
     EMIT() << YAML::Key << "hosts" << YAML::Value;
     EMIT() << YAML::BeginSeq;
-    for (auto &processesOfHost: processesOfHosts) {
+    for (auto &ranksOfHost: ranksOfHosts) {
       EMIT() << YAML::BeginMap
-        << YAML::Key << "host" << YAML::Value << processesOfHost.first
-        << YAML::Key << "processes" << YAML::Value << processesOfHost.second
-        << YAML::EndMap;
+        << YAML::Key << "host" << YAML::Value << ranksOfHost.first
+        << YAML::Key << "ranks" << YAML::Value;
+      EMIT() << YAML::Flow << YAML::BeginSeq;
+      for (auto &rank: ranksOfHost.second) {
+        EMIT() << rank;
+      }
+      EMIT() << YAML::EndSeq;
+      EMIT() << YAML::EndMap;
     }
     EMIT() << YAML::EndSeq;
   } else {
