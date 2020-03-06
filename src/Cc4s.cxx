@@ -287,7 +287,7 @@ int main(int argumentCount, char **arguments) {
     }
   }
 
-  Emitter::finalize();
+  EMIT_FLUSH();
   MPI_Finalize();
   return 0;
 }

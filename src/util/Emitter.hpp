@@ -17,7 +17,7 @@ namespace cc4s {
     static void setRank(const int rank);
     static int getRank();
     static YAML::Emitter &getEmitter();
-    static void finalize();
+    static void flush();
 
   protected:
     static int rank;
@@ -29,6 +29,10 @@ namespace cc4s {
 #define EMIT(...) \
   if (cc4s::Emitter::getRank() != 0) { \
   } else cc4s::Emitter::getEmitter()
+#define EMIT_FLUSH(...) \
+  if (cc4s::Emitter::getRank() != 0) { \
+  } else cc4s::Emitter::flush()
+
 
 #endif
 
