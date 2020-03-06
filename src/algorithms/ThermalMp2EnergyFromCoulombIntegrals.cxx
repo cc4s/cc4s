@@ -106,17 +106,16 @@ void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
 void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   Scalar<> energy;
-
-  // Fock operator:
   Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
-  Tensor<> Fij(2, Vijkl->lens);
-  // Hartree and Exchange term = contraction with shifted chemical potential
-  // minus effective potential = contraction with Hartree--Fock chemical pot.
   Tensor<> Nk(1, Vijkl->lens);
   Tensor<> nk(1, Vijkl->lens);
+  // FIXME: setup Fai, not Fij
+  Tensor<> Fij(2, &Dabij->lens[2]);
+  // Hartree and Exchange term = contraction with shifted chemical potential
+  // minus effective potential = contraction with Hartree--Fock chemical pot.
   Nk["k"] = 1.0;
   nk["k"] = 1.0;
   // Nk *= f_k = 1/(1+exp(+(eps_j-deltaMu)*beta))
@@ -135,11 +134,6 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   ) (
     (*epsi)["k"], nk["k"]
   );
-  Nk["k"] -= nk["k"];
-  // setup Fock operator with difference
-  Fij["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Nk["k"];
-  Fij["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
-  Nk["k"] += nk["k"];
 
   // first order
   // Hartree and exchange term, use shifted occupancies
@@ -151,6 +145,14 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   energy[""] = (-1.0) * spins * spins * nk["i"] * nk["j"] * (*Vijkl)["ijij"];
   real EHeff( energy.get_val() );
   energy[""] = (+1.0) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
+
+  // second order:
+  // Fock operator for singles
+  Nk["k"] -= nk["k"];
+  // setup Fock operator with difference
+  Fij["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Nk["k"];
+  Fij["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
+  Nk["k"] += nk["k"];
 
 }
 
