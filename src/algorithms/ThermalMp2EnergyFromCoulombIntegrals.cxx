@@ -211,6 +211,8 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   EMIT() << YAML::Key << "X2" << YAML::Value << EX2;
   EMIT() << YAML::Key << "Hartree-Fock-free-energy" << YAML::Value << FHf;
   EMIT() << YAML::Key << "correlation-free-energy" << YAML::Value << Fc;
+
+  setRealArgument("ThermalFreeEnergy", FHf+Fc);
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::expandedChemicalPotential() {
