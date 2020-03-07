@@ -150,12 +150,12 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   // Hartree and exchange term, use shifted occupancies Nk
   Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
   energy[""] = (+0.5) * spins * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijij"];
-  real ED1( -energy.get_val()/beta );
+  real ED1( energy.get_val() );
   energy[""] = (-0.5) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
-  real EX1( -energy.get_val()/beta );
+  real EX1( energy.get_val() );
   // minus effective potential, use Hartree--Fock occupancies nk
   energy[""] = (-1.0) * spins * spins * nk["i"] * nk["j"] * (*Vijkl)["ijij"];
-  real EE1( -energy.get_val()/beta );
+  real EE1( energy.get_val() );
   energy[""] = (+1.0) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
 
   // second order:
@@ -186,7 +186,8 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   // doubles:  
   // start with Vabij
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
-  Tensor<> Tabij(*Vabij);
+  Tensor<> Tabij(false, *Vabij);
+  Tabij["abij"] = (*Vabij)["abij"] * Nc["a"] * Nc["b"] * Nk["i"] * Nk["j"];
   // Tabij *=
   // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
   Transform<real, real>(
@@ -194,14 +195,13 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   ) (
     (*Dabij)["abij"], Tabij["abij"]
   );
-  Tabij["abij"] *= Nc["a"] * Nc["b"] * Nk["i"] * Nk["j"];
   energy[""] = (+0.5) * spins * spins * Tabij["abij"] * (*Vabij)["abij"];
   real ED2( -energy.get_val()/beta );
   energy[""] = (-0.5) * spins * Tabij["abij"] * (*Vabij)["abji"];
   real EX2( -energy.get_val()/beta );
 
   real FHf(Omega0+ED1+EX1+EE1);
-  real Fc(ES2+ED1+EX2);
+  real Fc(ES2+ED2+EX2);
   EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;
   EMIT() << YAML::Key << "D1" << YAML::Value << ED1;
   EMIT() << YAML::Key << "X1" << YAML::Value << EX1;
