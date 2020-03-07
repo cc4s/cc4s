@@ -106,19 +106,25 @@ void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
 void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   Scalar<> energy;
-  Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
-  Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
-  Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
+
   Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
-  Tensor<> Nk(1, Vijkl->lens);
-  Tensor<> nk(1, Vijkl->lens);
-  // FIXME: setup Fai, not Fij
-  Tensor<> Fij(2, &Dabij->lens[2]);
-  // Hartree and Exchange term = contraction with shifted chemical potential
-  // minus effective potential = contraction with Hartree--Fock chemical pot.
+  Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
+  Tensor<> Nc(1, epsa->lens);
+  Tensor<> Nk(1, epsi->lens);
+  Tensor<> nk(1, epsi->lens);
+  // particles in perturbation: contraction with shifted chemical potential
+  Nc["c"] = 1.0;
+  // Nc *= f^c = 1/(1+exp(-(eps_c-deltaMu)*beta))
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalContraction<>(beta, deltaMu, true)
+    )
+  ) (
+    (*epsa)["c"], Nc["c"]
+  );
+  // holes in perturbation: contraction with shifted chemical potential
   Nk["k"] = 1.0;
-  nk["k"] = 1.0;
-  // Nk *= f_k = 1/(1+exp(+(eps_j-deltaMu)*beta))
+  // Nk *= f_k = 1/(1+exp(+(eps_k-deltaMu)*beta))
   Transform<real, real>(
     std::function<void(real, real &)>(
       ThermalContraction<>(beta, deltaMu, false)
@@ -126,7 +132,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   ) (
     (*epsi)["k"], Nk["k"]
   );
-  // nk *= f_k = 1/(1+exp(+(eps_j-0)*beta))
+  // terms in effective potential: contraction with Hartree--Fock chemical pot.
+  nk["k"] = 1.0;
+  // nk *= f_k = 1/(1+exp(+(eps_k-0)*beta))
   Transform<real, real>(
     std::function<void(real, real &)>(
       ThermalContraction<>(beta, 0.0, false)
@@ -135,25 +143,74 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
     (*epsi)["k"], nk["k"]
   );
 
+  // zeroth order
+  real Omega0(-getDLogZH0(0, D_BETA)/beta);
+
   // first order
-  // Hartree and exchange term, use shifted occupancies
+  // Hartree and exchange term, use shifted occupancies Nk
+  Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
   energy[""] = (+0.5) * spins * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijij"];
-  real EH( energy.get_val() );
+  real ED1( -energy.get_val()/beta );
   energy[""] = (-0.5) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
-  real EX( energy.get_val() );
-  // minus effective potential, use Hartree--Fock occupancies
+  real EX1( -energy.get_val()/beta );
+  // minus effective potential, use Hartree--Fock occupancies nk
   energy[""] = (-1.0) * spins * spins * nk["i"] * nk["j"] * (*Vijkl)["ijij"];
-  real EHeff( energy.get_val() );
+  real EE1( -energy.get_val()/beta );
   energy[""] = (+1.0) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
 
   // second order:
-  // Fock operator for singles
+  Tensor<> *Vaijk(getTensorArgument("ThermalPHHHCoulombIntegrals"));
+  // operator for singles
+  Tensor<> Fai(2, Vaijk->lens);
+  // contraction weight = weight of perturation - weight of effective pot.
   Nk["k"] -= nk["k"];
-  // setup Fock operator with difference
-  Fij["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Nk["k"];
-  Fij["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
+  // setup singles operator with difference of perturbation - effective pot.
+  Fai["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * Nk["k"];
+  Fai["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
+  // restore normal weight of pertrubation holes for further calculations
   Nk["k"] += nk["k"];
+  // singles:
+  // start with Fai
+  Tensor<> Tai(Fai);
+  // Tai *=
+  // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalMp2Propagation<>(beta, 0))
+  ) (
+    (*Dai)["ai"], Tai["ai"]
+  );
+  // no symmetry, one loop, one hole contracted: +1.0 * spins
+  energy[""] = (+1.0) * spins * Tai["ai"] * Fai["ai"] * Nk["i"] * Nc["c"];
+  real ES2( -energy.get_val()/beta );
 
+  // doubles:  
+  // start with Vabij
+  Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
+  Tensor<> Tabij(*Vabij);
+  // Tabij *=
+  // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalMp2Propagation<>(beta, 0))
+  ) (
+    (*Dabij)["abij"], Tabij["abij"]
+  );
+  Tabij["abij"] *= Nc["a"] * Nc["b"] * Nk["i"] * Nk["j"];
+  energy[""] = (+0.5) * spins * spins * Tabij["abij"] * (*Vabij)["abij"];
+  real ED2( -energy.get_val()/beta );
+  energy[""] = (-0.5) * spins * Tabij["abij"] * (*Vabij)["abji"];
+  real EX2( -energy.get_val()/beta );
+
+  real FHf(Omega0+ED1+EX1+EE1);
+  real Fc(ES2+ED1+EX2);
+  EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;
+  EMIT() << YAML::Key << "D1" << YAML::Value << ED1;
+  EMIT() << YAML::Key << "X1" << YAML::Value << EX1;
+  EMIT() << YAML::Key << "eff1" << YAML::Value << EE1;
+  EMIT() << YAML::Key << "S2" << YAML::Value << ES2;
+  EMIT() << YAML::Key << "D2" << YAML::Value << ED2;
+  EMIT() << YAML::Key << "X2" << YAML::Value << EX2;
+  EMIT() << YAML::Key << "Hartree-Fock-free-energy" << YAML::Value << FHf;
+  EMIT() << YAML::Key << "correlation-free-energy" << YAML::Value << Fc;
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::expandedChemicalPotential() {
