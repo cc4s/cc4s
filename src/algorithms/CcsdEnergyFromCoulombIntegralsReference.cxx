@@ -35,6 +35,7 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   Tai->set_name("Tai");
   auto Tabij( amplitudes->get(1) );
   Tabij->set_name("Tabij");
+  const bool onlyPPL(getIntegerArgument("onlyPPL", 0) == 1);
 
   // create residuum and get their singles and doubles part
   auto residuum( NEW(FockVector<double>, *amplitudes) );
@@ -47,11 +48,28 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   // get part of Coulomb integrals used whether the amplitudes are zero or not
   auto Vabij(getTensorArgument("PPHHCoulombIntegrals"));
 
-  if (i == 0 && !isArgumentGiven("initialDoublesAmplitudes"))  {
+  if (i == 0 && !isArgumentGiven("initialDoublesAmplitudes") && !onlyPPL)  {
     // For first iteration compute only the MP2 amplitudes
     // Since Tabij = 0, Vabij is the only non-zero term
     LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
     (*Rabij)["abij"] = (*Vabij)["abij"];
+  } else if (onlyPPL) {
+
+    LOG(1, getCapitalizedAbbreviation())
+        << "Considering only PPL diagrams" << std::endl;
+
+    auto Vabcd(getTensorArgument("PPPPCoulombIntegrals"));
+    auto Vabci(getTensorArgument("PPPHCoulombIntegrals"));
+    Tensor<> Xabcd(false, *Vabcd);
+
+    // Build Xabcd intermediate
+    Xabcd["abcd"]  = ( 1.0) * (*Vabcd)["abcd"];
+    Xabcd["abcd"] += (-1.0) * (*Vabci)["cdak"] * (*Tai)["bk"];
+    Xabcd["abcd"] += (-1.0) * (*Vabci)["dcbk"] * (*Tai)["ak"];
+
+    (*Rabij)["abij"]  = Xabcd["abcd"] * (*Tabij)["cdij"];
+    (*Rabij)["abij"] += Xabcd["abcd"] * (*Tai)["ci"] * (*Tai)["dj"];
+
   } else {
     // For the rest iterations compute the CCSD amplitudes
 
