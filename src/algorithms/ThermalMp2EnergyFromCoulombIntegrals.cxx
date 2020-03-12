@@ -144,7 +144,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   );
 
   // zeroth order
-  real Omega0(-getDLogZH0(0, D_BETA)/beta);
+  real Omega0(-getDLogZH0(0, D_MU)/beta);
 
   // first order
   // Hartree and exchange term, use shifted occupancies Nk
@@ -154,9 +154,10 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   energy[""] = (-0.5) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
   real EX1( energy.get_val() );
   // minus effective potential, use Hartree--Fock occupancies nk
-  energy[""] = (-1.0) * spins * spins * nk["i"] * nk["j"] * (*Vijkl)["ijij"];
-  real EE1( energy.get_val() );
-  energy[""] = (+1.0) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
+  energy[""] = (-1.0) * spins * spins * Nk["i"] * nk["j"] * (*Vijkl)["ijij"];
+  real EED1( energy.get_val() );
+  energy[""] = (+1.0) * spins * Nk["i"] * nk["j"] * (*Vijkl)["ijji"];
+  real EEX1( energy.get_val() );
 
   // second order:
   Tensor<> *Vaijk(getTensorArgument("ThermalPHHHCoulombIntegrals"));
@@ -200,12 +201,13 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   energy[""] = (-0.5) * spins * Tabij["abij"] * (*Vabij)["abji"];
   real EX2( -energy.get_val()/beta );
 
-  real FHf(Omega0+ED1+EX1+EE1);
+  real FHf(Omega0+ED1+EX1+EED1+EEX1);
   real Fc(ES2+ED2+EX2);
   EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;
   EMIT() << YAML::Key << "D1" << YAML::Value << ED1;
   EMIT() << YAML::Key << "X1" << YAML::Value << EX1;
-  EMIT() << YAML::Key << "eff1" << YAML::Value << EE1;
+  EMIT() << YAML::Key << "effD1" << YAML::Value << EED1;
+  EMIT() << YAML::Key << "effX1" << YAML::Value << EEX1;
   EMIT() << YAML::Key << "S2" << YAML::Value << ES2;
   EMIT() << YAML::Key << "D2" << YAML::Value << ED2;
   EMIT() << YAML::Key << "X2" << YAML::Value << EX2;
