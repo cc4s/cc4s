@@ -24,28 +24,25 @@ ThermalPerturbation::~ThermalPerturbation() {
 }
 
 void ThermalPerturbation::run() {
+  real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
-  Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
+  Tensor<> *Vaibj(getTensorArgument("ThermalPHPHCoulombIntegrals"));
+  Tensor<> *Vaijk(getTensorArgument("ThermalPHHHCoulombIntegrals"));
+  Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
+  int No(epsi->lens[0]), Nv(epsa->lens[0]);
   beta = 1 / getRealArgument("Temperature");
+  deltaMu = getRealArgument("chemicalPotentialShift", 0.0);
 
-  // compute \Delta^{ab}_{ij} = eps_a + eps_b - eps_i - eps_j
-  Dabij = NEW(Tensor<>, false, *Vabij);
-  (*Dabij)["abij"] =  (*epsa)["a"];
-  (*Dabij)["abij"] += (*epsa)["b"];
-  (*Dabij)["abij"] -= (*epsi)["i"];
-  (*Dabij)["abij"] -= (*epsi)["j"];
-  Dai = NEW(Tensor<>, 2, &Vabij->lens[1]);
-  (*Dai)["ai"] =  (*epsa)["a"];
-  (*Dai)["ai"] -= (*epsi)["i"];
-
-  real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
-  Tensor<> Nc(1, epsa->lens);
-  Tensor<> Nk(1, epsi->lens);
-  Tensor<> nk(1, epsi->lens);
+  // compute contraction weights
+  Tensor<> Nc(1, &Nv);
+  Tensor<> Nk(1, &No);
+  Tensor<> nk(1, &No);
   // particles in perturbation: contraction with shifted chemical potential
   Nc["c"] = 1.0;
   // Nc *= f^c = 1/(1+exp(-(eps_c-deltaMu)*beta))
+  // NOTE: eps_q already contains epsilon_q - mu_0,
+  // where mu_0 is the Hartree--Fock chemical potential
   Transform<real, real>(
     std::function<void(real, real &)>(
       ThermalContraction<>(beta, deltaMu, true)
@@ -75,76 +72,65 @@ void ThermalPerturbation::run() {
   );
 
   // zeroth order
-  real Omega0(-getDLogZH0(0, D_BETA)/beta);
+  real Omega0(-getDLogZH0(0,0)/beta);
 
-  // first order
+  // first order:
   // Hartree and exchange term, use shifted occupancies Nk
-  Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
+  // both terms have left/right symmetry
+  Scalar<> energy;
   energy[""] = (+0.5) * spins * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijij"];
-  real ED1( energy.get_val() );
+  real Omega1D( energy.get_val() );
   energy[""] = (-0.5) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
-  real EX1( energy.get_val() );
-  // minus effective potential, use Hartree--Fock occupancies nk
-  energy[""] = (-1.0) * spins * spins * nk["i"] * nk["j"] * (*Vijkl)["ijij"];
-  real EE1( energy.get_val() );
-  energy[""] = (+1.0) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
+  real Omega1X( energy.get_val() );
+  // minus effective potential,
+  // use Hartree--Fock occupancies nk for the contraction k, composing Veff
+  // use occupancies Nk with shifted mu for contraction i, using Veff
+  energy[""] = (-1.0) * spins * spins * Nk["i"] * nk["k"] * (*Vijkl)["ikik"];
+  real Omega1Deff( energy.get_val() );
+  energy[""] = (+1.0) * spins * Nk["i"] * nk["k"] * (*Vijkl)["ikki"];
+  real Omega1Xeff( energy.get_val() );
 
-  // second order:
-  Tensor<> *Vaijk(getTensorArgument("ThermalPHHHCoulombIntegrals"));
-  // operator for singles
-  Tensor<> Fai(2, Vaijk->lens);
+  // one-body part of perturbation for higher orders:
   // contraction weight = weight of perturation - weight of effective pot.
-  Nk["k"] -= nk["k"];
-  // setup singles operator with difference of perturbation - effective pot.
-  Fai["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * Nk["k"];
-  Fai["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
-  // restore normal weight of pertrubation holes for further calculations
-  Nk["k"] += nk["k"];
-  // singles:
-  // start with Fai
-  Tensor<> Tai(Fai);
-  // Tai *=
-  // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
-  Transform<real, real>(
-    std::function<void(real, real &)>(ThermalMp2Propagation<>(beta, 0))
-  ) (
-    (*Dai)["ai"], Tai["ai"]
-  );
-  // no symmetry, one loop, one hole contracted: +1.0 * spins
-  energy[""] = (+1.0) * spins * Tai["ai"] * Fai["ai"] * Nk["i"] * Nc["c"];
-  real ES2( -energy.get_val()/beta );
+  Nk["k"] += (-1.0) * nk["k"];
+  // hole-hole:
+  Tensor<> *Vij(new Tensor<>(2, std::vector<int>({No,No}).data()));
+  allocatedTensorArgument<>("ThermalHHPerturbation", Vij);
+  (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Nk["k"];
+  (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
+  // particle-hole:
+  Tensor<> *Vai(new Tensor<>(2, std::vector<int>({Nv,No}).data()));
+  allocatedTensorArgument<>("ThermalPHPerturbation", Vai);
+  (*Vai)["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * Nk["k"];
+  (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
+  // particle-particle:
+  Tensor<> *Vab(new Tensor<>(2, std::vector<int>({Nv,Nv}).data()));
+  allocatedTensorArgument<>("ThermalPPPerturbation", Vab);
+  (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * Nk["k"];
+  (*Vab)["ab"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
 
-
-  real FHf(Omega0+ED1+EX1+EE1);
+  real OmegaHf(Omega0+Omega1D+Omega1X+Omega1Deff+Omega1Xeff);
   EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;
-  EMIT() << YAML::Key << "D1" << YAML::Value << ED1;
-  EMIT() << YAML::Key << "X1" << YAML::Value << EX1;
-  EMIT() << YAML::Key << "eff1" << YAML::Value << EE1;
-  EMIT() << YAML::Key << "Hartree-Fock-grand-potential" << YAML::Value << FHf;
+  EMIT() << YAML::Key << "Omega1D" << YAML::Value << Omega1D;
+  EMIT() << YAML::Key << "Omega1X" << YAML::Value << Omega1X;
+  EMIT() << YAML::Key << "Omega1Deff" << YAML::Value << Omega1Deff;
+  EMIT() << YAML::Key << "Omega1Xeff" << YAML::Value << Omega1Xeff;
+  EMIT() << YAML::Key << "Hartree-Fock-grand-potential"
+    << YAML::Value << OmegaHf;
 }
 
 void ThermalPerturbation::dryRun() {
-  //DryTensor<> *Vabij(
-  getTensorArgument<double, DryTensor<double>>("ThermalPPHHCoulombIntegrals");
-  //);
-
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<double>>("ThermalHoleEigenEnergies")
-  );
-  DryTensor<> *epsa(
-    getTensorArgument<double, DryTensor<double>>("ThermalParticleEigenEnergies")
-  );
+  // FIXME
 }
 
 
 cc4s::real ThermalPerturbation::getDLogZH0(
-  const unsigned int n, const bool dbeta
+  const unsigned int dbeta_n, const unsigned int dmu_m
 ) {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> Ti(false, *epsi);
   Ti["i"] = 1;
-  switch (n) {
+  switch (dbeta_n+dmu_m) {
   case 0:
     Transform<real, real>(
       std::function<void(real, real &)>(
@@ -159,14 +145,15 @@ cc4s::real ThermalPerturbation::getDLogZH0(
   default:
     // the first derivative is eps_i*f_i (dbeta) or f_i (dmu),
     // use the ThermalContraction clas providing arbitrary derivatives of f_i
+    // FIXME: only works for dbeta_n+dmu_m=1
     Transform<real, real>(
       std::function<void(real, real &)>(
-        ThermalContraction<>(beta, deltaMu, false, n-1, dbeta)
+        ThermalContraction<>(beta, deltaMu, false, 0, 0)
       )
     ) (
       (*epsi)["i"], Ti["i"]
     );
-    if (dbeta) {
+    if (dbeta_n>0) {
       Ti["i"] *= (*epsi)["i"];
     }
     break;

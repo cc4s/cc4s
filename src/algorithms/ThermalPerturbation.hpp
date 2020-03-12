@@ -18,17 +18,19 @@ namespace cc4s {
     virtual void dryRun();
 
   protected:
-    void testDLogZH0(const unsigned int n = 0, const bool dbeta = D_BETA);
+    real getDLogZH0(
+      const unsigned int dbeta_n = 0, const unsigned int dmu_m = 0
+    );
 
     real beta, deltaMu;
     PTR(CTF::Tensor<>) Dabij, Dai;
   };
 
   /**
-   * \brief Provides a transformation function for the nth derivative of the
+   * \brief Provides a transformation function for the n/mth derivative of the
    * thermal contraction t = t * 1/(1+exp(-/+eps*beta))
-   * either d/(-dbeta) or d/(beta*dmu), -/+ is used for particles/holes,
-   * respectively.
+   * with respect to d^n/(-dbeta)^n and d^m/(beta*dmu)^m, respectivel,
+   * -/+ is used for particles/holes, respectively.
    **/
   template <typename F=real>
   class ThermalContraction {
@@ -37,15 +39,15 @@ namespace cc4s {
       const real beta_,
       const real deltaMu_,
       const bool particle,
-      const unsigned int n = 0, const bool dbeta_ = true
+      const unsigned int dbeta_n_ = 0, const bool dmu_m_ = true
     ):
       beta(beta_), deltaMu(deltaMu_), sign(particle ? -1 : +1),
-      dbeta(dbeta_), a(n)
+      dbeta_n(dbeta_n_), dmu_m(dmu_m_), a(dbeta_n_+dmu_m_)
     {
-      if (n > 0) {
-        std::vector<int64_t> nextA(n);
+      if (a.size() > 0) {
+        std::vector<int64_t> nextA(a.size());
         a[0] = 1;
-        for (unsigned int m(3); m <= n+1; ++m) {
+        for (unsigned int m(3); m <= a.size()+1; ++m) {
           nextA[0] = 1;
           for (unsigned int k(1); k < m-1; ++k) {
             // build coefficients for nth derivative
@@ -69,19 +71,12 @@ namespace cc4s {
           // compose from precomputed coefficients
           y += a[k] * std::pow(x,k+1) * std::pow(1-x,a.size()-k);
         }
-        if (dbeta) {
-          // d/dbeta
-          t *= std::pow(sign*eps,a.size()) * y;
-        } else {
-          // d/dmu
-          t *= std::pow(sign,a.size()) * y;
-        }
+        t *= y * std::pow(sign*eps,dbeta_n) * std::pow(sign,dmu_m);
       }
     }
   protected:
     real beta, deltaMu;
-    int sign;
-    bool dbeta;
+    int sign, dbeta_n, dmu_m;
     std::vector<int64_t> a;
   };
 }

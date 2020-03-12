@@ -57,6 +57,7 @@ build/${CONFIG}/obj/algorithms/SingleParticleOccupancies.o \
 build/${CONFIG}/obj/algorithms/PolarizabilityFromCoulombVertex.o \
 build/${CONFIG}/obj/algorithms/FiniteSizeCorrection.o \
 build/${CONFIG}/obj/algorithms/ThermalHolesAndParticles.o \
+build/${CONFIG}/obj/algorithms/ThermalPerturbation.o \
 build/${CONFIG}/obj/algorithms/ThermalMp2EnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/ThermalClusterDoublesAlgorithm.o \
 build/${CONFIG}/obj/algorithms/ThermalDirectRingCoupledClusterDoubles.o \
