@@ -270,6 +270,7 @@ int main(int argumentCount, char **arguments) {
   Log::setRank(Cc4s::world->rank);
   Log::setFileName(Cc4s::options->logFile);
   Log::setLogLevel(Cc4s::options->logLevel);
+  Emitter::setFileName(Cc4s::options->yamlFile);
   Emitter::setRank(Cc4s::world->rank);
 
   Cc4s cc4s;

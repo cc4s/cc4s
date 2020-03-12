@@ -18,9 +18,11 @@ namespace cc4s {
     static int getRank();
     static YAML::Emitter &getEmitter();
     static void flush();
+    static void setFileName(const std::string&);
 
   protected:
     static int rank;
+    static std::string fileName;
     static PTR(std::ofstream) yamlFile;
     static PTR(YAML::Emitter) yamlEmitter;
   };

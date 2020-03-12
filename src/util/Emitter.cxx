@@ -7,6 +7,7 @@
 using namespace cc4s;
 
 int Emitter::rank(-1);
+std::string Emitter::fileName("cc4s.yaml");
 PTR(std::ofstream) Emitter::yamlFile;
 PTR(YAML::Emitter) Emitter::yamlEmitter;
 
@@ -18,10 +19,14 @@ int Emitter::getRank() {
   return rank;
 }
 
+void Emitter::setFileName(const std::string& name) {
+  fileName = name;
+}
+
 YAML::Emitter &Emitter::getEmitter() {
   if (!yamlFile) {
     yamlFile = NEW(
-      std::ofstream, "cc4s.yaml", std::ofstream::out | std::ofstream::trunc
+      std::ofstream, fileName, std::ofstream::out | std::ofstream::trunc
     );
   }
   if (!yamlEmitter) {
