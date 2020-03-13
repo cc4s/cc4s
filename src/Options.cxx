@@ -14,16 +14,17 @@ Options::Options(int argumentCount, char **arguments) {
   dryRun = false;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
-    if (argument == "-i") {
+    // old options for backwards compatibility
+    if (argument == "-i" || argument == "-file") {
       file = arguments[++i];
-    } else if (argument == "--log-level") {
+    } else if (argument == "--log-level" || argument == "-logLevel") {
       std::stringstream stream(arguments[++i]);
       stream >> logLevel;
     } else if (argument == "--yaml") {
       yamlFile = arguments[++i];
-    } else if (argument == "-o") {
+    } else if (argument == "-o" || argument == "-logFile") {
       logFile = arguments[++i];
-    } else if (argument == "--dry-run") {
+    } else if (argument == "--dry-run" || argument == "-dryRun") {
       dryRun = true;
     }
   }
