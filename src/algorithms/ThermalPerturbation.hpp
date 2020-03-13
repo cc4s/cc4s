@@ -39,7 +39,7 @@ namespace cc4s {
       const real beta_,
       const real deltaMu_,
       const bool particle,
-      const unsigned int dbeta_n_ = 0, const bool dmu_m_ = true
+      const unsigned int dbeta_n_ = 0, const bool dmu_m_ = 0
     ):
       beta(beta_), deltaMu(deltaMu_), sign(particle ? -1 : +1),
       dbeta_n(dbeta_n_), dmu_m(dmu_m_), a(dbeta_n_+dmu_m_)
