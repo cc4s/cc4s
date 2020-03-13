@@ -14,7 +14,7 @@ Options::Options(int argumentCount, char **arguments) {
   dryRun = false;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
-    // old options for backwards compatibility
+    // deprecated: old options
     if (argument == "-i" || argument == "-file") {
       file = arguments[++i];
     } else if (argument == "--log-level" || argument == "-logLevel") {
