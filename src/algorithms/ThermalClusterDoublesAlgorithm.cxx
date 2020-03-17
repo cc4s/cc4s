@@ -375,7 +375,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   std::vector<real> lambdas(NvNo);
   eigenSystem.solve(lambdas.data());
   scaHbjai = nullptr;
-
+/*
   // determine dim(ker(effective Hamiltonian)) from Fock-space doubling
   std::vector<real> occ(No), eps(No);
   epsi->read_all(eps.data());
@@ -455,7 +455,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
       "smallest non-null mode " << minMode << std::endl;
     for (size_t F(nullSpaceStart); F < nullSpaceEnd; ++F) lambdas[F] = 0.0;
   }
-
+*/
   // write Lambda back to CTF
   std::vector<int64_t> lambdaIndices(epsi->wrld->rank == 0 ? NvNo : 0);
   for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
@@ -480,6 +480,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
       "error of diagonalization=" << error << std::endl;
   }
 */
+/*
   if (
     nullSpaceStart < nullSpaceEnd &&
     isArgumentGiven("singlesHamiltonianNullspace")
@@ -491,6 +492,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
       new Tensor<real>(UaiF->slice(UZerosStart, UZerosEnd))
     );
   }
+*/
 
   int NF(lambdaF->lens[0]);
   // one-body perturbation in singles-mode space, half-closed
@@ -509,6 +511,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
     (*Vabij)["cdlk"];
   // determine Coulomb coupling to nullspapce
+/*
   if (isArgumentGiven("couplingToSinglesNullspace")) {
     if (nullSpaceStart < nullSpaceEnd) {
       int VZerosStart[] = {0, static_cast<int>(nullSpaceStart)};
@@ -538,6 +541,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   projectOut( (*lambdaF)["G"], (*VdFG)["FG"] );
   projectOut( (*lambdaF)["F"], (*VxFG)["FG"] );
   projectOut( (*lambdaF)["G"], (*VxFG)["FG"] );
+*/
 }
 
 cc4s::real ThermalClusterDoublesAlgorithm::getZeroTDrccd() {
