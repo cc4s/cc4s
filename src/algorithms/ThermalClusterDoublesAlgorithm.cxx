@@ -351,9 +351,9 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   (*Hbjai)["bjai"] *= (*gi)["i"];
 
   // one-body perturbation: half-close contracted indices
-  // coupling to hole/hole
+  // coupling to hole/hole, particle b passes through
   (*Hbjai)["bjbi"] += (-1.0) * (*Vij)["ji"] * (*gi)["j"] * (*gi)["i"];
-  // coupling to particle/particle
+  // coupling to particle/particle, hole j passes through
   (*Hbjai)["bjaj"] += (+1.0) * (*Vab)["ba"] * (*ga)["b"] * (*ga)["a"];
 
   // unperturbed propatation is diagonal, no contractions

@@ -149,6 +149,56 @@ namespace cc4s {
       }
     };
 
+    class ThirdOrderIntegral: public ImaginaryTimeTransform {
+    public:
+      ThirdOrderIntegral(
+        real DTau_
+      ): ImaginaryTimeTransform(DTau_) {
+      }
+      void operator ()(const real lambda1, const real lambda2, real &hh) const {
+        const real x1(lambda1 * DTau);
+        const real x2(lambda2 * DTau);
+        if (std::abs(x1+x2) > 1e-3) {
+          if (std::abs(x1) < 1e-3) {
+            // checked
+            hh *= (
+              (2*(1-exp(-x2)) - 2*x2 + x2*x2)*DTau*DTau
+            ) / (
+              2*x2*x2*x2
+            );
+          } else if (std::abs(x2) < 1e-3) {
+            // checked
+            hh *= (
+              (2*(exp(-x1)-1) + (1+exp(-x1))*x1)*DTau*DTau
+            ) / (
+              x1*x1*x1
+            );
+          } else {
+            // checked
+            hh *= (
+              (
+                -x1*x1*exp(-x1-x2) + exp(-x1)*x1*x1 + 2*exp(-x1)*x1*x2
+                - 2*x1*x2 + x1*x1*x2
+                + exp(-x1)*x2*x2 - x2*x2  + x1*x2*x2
+              )*DTau*DTau
+            ) / (
+              x1*x1*x2*std::pow(x1+x2,2)
+            );
+          }
+        } else if (std::abs(x1) > 1e-3) {
+          // checked
+          hh *= (
+            (x1*x1 - 2*x1 + 2 - 2*exp(-x1))*DTau*DTau
+          ) / (
+            2*x1*x1*x1
+          );
+        } else {
+          // TODO: highter order terms?
+          hh *= DTau*DTau/6;
+        }
+      }
+    };
+
     class ImaginaryTimePropagation: public ImaginaryTimeTransform {
     public:
       ImaginaryTimePropagation(
