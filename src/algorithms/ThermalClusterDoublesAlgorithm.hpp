@@ -168,21 +168,21 @@ namespace cc4s {
         if (std::abs(x1+x2) > SMALL) {
           if (std::abs(x1) < SMALL) {
             // checked
-            hh *= (
+            hh *= -(
               (2*(1-exp(-x2)) - 2*x2 + x2*x2)*DTau*DTau
             ) / (
               2*x2*x2*x2
             );
           } else if (std::abs(x2) < SMALL) {
             // checked
-            hh *= (
+            hh *= -(
               (2*(exp(-x1)-1) + (1+exp(-x1))*x1)*DTau*DTau
             ) / (
               x1*x1*x1
             );
           } else {
             // checked
-            hh *= (
+            hh *= -(
               (
                 -x1*x1*exp(-x1-x2) + exp(-x1)*x1*x1 + 2*exp(-x1)*x1*x2
                 - 2*x1*x2 + x1*x1*x2
@@ -194,14 +194,15 @@ namespace cc4s {
           }
         } else if (std::abs(x1) > SMALL) {
           // checked
-          hh *= (
+          hh *= -(
             (x1*x1 - 2*x1 + 2 - 2*exp(-x1))*DTau*DTau
           ) / (
             2*x1*x1*x1
           );
         } else {
           // TODO: higher order terms
-          hh *= DTau*DTau/6;
+          // TODO: check sign
+          hh *= -DTau*DTau/6;
         }
       }
     };

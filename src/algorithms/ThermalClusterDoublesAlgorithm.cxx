@@ -245,24 +245,44 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   // compute Tamm-Dancoff Approximation (TDA)
   Scalar<> e;
   int NF(lambdaF->lens[0]);
-
   SecondOrderIntegral secondOrderIntegral(beta);
-  // propagate singles
-  Tensor<real> TF(*VF);
-  Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
-    (*lambdaF)["F"], TF["F"]
-  );
-  e[""] = 1.0 * spins * TF["F"] * (*VF)["F"];
-  real tdas(e.get_val());
+  ThirdOrderIntegral thirdOrderIntegral(beta);
+
+  real tdas(0.0);
+  if (getIntegerArgument("singles", 0)) {
+    // propagate singles
+    Tensor<real> TF(*VF);
+    // propagation between two times tau_1<tau_2
+    Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
+      (*lambdaF)["F"], TF["F"]
+    );
+    e[""] = 1.0 * spins * TF["F"] * (*VF)["F"];
+    tdas = e.get_val();
+  }
 
   // propagate doubles
   lambdaFG = NEW(Tensor<real>, false, *VdFG);
   (*lambdaFG)["FG"] =  (*lambdaF)["F"];
   (*lambdaFG)["FG"] += (*lambdaF)["G"];
-  Tensor<real> TFG(*VdFG);
+  Tensor<real> T2FG(*VdFG);
+  // propagation between two times tau_1<tau_2
   Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
-    (*lambdaFG)["FG"], TFG["FG"]
+    (*lambdaFG)["FG"], T2FG["FG"]
   );
+  if (getIntegerArgument("singles", 0)) {
+    // propagate two singles
+    Tensor<real> T1T1FG(false,*VdFG);
+    T1T1FG["FG"] = (*VF)["F"] * (*VF)["G"];
+    // propagation between three times tau_1<tau_2<tau_3
+    Transform<real,real,real>(
+      std::function<void(real,real,real&)>(thirdOrderIntegral)
+    )(
+      (*lambdaF)["F"], (*lambdaF)["G"], T1T1FG["FG"]
+    );
+    // add all contributions contracted with a two-body coulomb perturbation
+    T2FG["FG"] += T1T1FG["FG"];
+  }
+/*
   // project out null-space from Fock-space-doubling
   Transform<real, real> projectOut(
     std::function<void(real, real &)>(
@@ -271,12 +291,13 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
       }
     )
   );
-//  projectOut( (*lambdaF)["F"], TFG["FG"] );
-//  projectOut( (*lambdaF)["G"], TFG["FG"] );
-  e[""] = -0.5 * spins*spins * TFG["FG"] * (*VdFG)["FG"];
+  projectOut( (*lambdaF)["F"], TFG["FG"] );
+  projectOut( (*lambdaF)["G"], TFG["FG"] );
+*/
+  // contract with direct and exchange part
+  e[""] = -0.5 * spins*spins * T2FG["FG"] * (*VdFG)["FG"];
   real tdad(e.get_val());
-
-  e[""] = +0.5 * spins * TFG["FG"] * (*VxFG)["FG"];
+  e[""] = +0.5 * spins * T2FG["FG"] * (*VxFG)["FG"];
   real tdax(e.get_val());
 
   LOG(1, getCapitalizedAbbreviation()) << "TDA F_s=" << tdas << std::endl;
@@ -288,7 +309,7 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
 
   if (isArgumentGiven("SinglesHamiltonianWeights")) {
     auto singlesWeights(new Tensor<real>(1, std::vector<int>({NF}).data()) );
-    (*singlesWeights)["F"] = 0.5 * spins*spins * TFG["FF"] * (*VdFG)["FF"];
+    (*singlesWeights)["F"] = 0.5 * spins*spins * T2FG["FF"] * (*VdFG)["FF"];
     allocatedTensorArgument<real>("SinglesHamiltonianWeights", singlesWeights);
   }
 
@@ -333,9 +354,6 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
   auto Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
   auto Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
-  auto Vij(getTensorArgument<>("ThermalHHPerturbation"));
-  auto Vai(getTensorArgument<>("ThermalPHPerturbation"));
-  auto Vab(getTensorArgument<>("ThermalPPPerturbation"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   // build to Hbjai
@@ -350,15 +368,23 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   (*Hbjai)["bjai"] *= (*ga)["a"];
   (*Hbjai)["bjai"] *= (*gi)["i"];
 
-  // one-body perturbation: half-close contracted indices
-  // coupling to hole/hole, particle b passes through
-  (*Hbjai)["bjbi"] += (-1.0) * (*Vij)["ji"] * (*gi)["j"] * (*gi)["i"];
-  // coupling to particle/particle, hole j passes through
-  (*Hbjai)["bjaj"] += (+1.0) * (*Vab)["ba"] * (*ga)["b"] * (*ga)["a"];
+  if (getIntegerArgument("resummedSingles", 0)) {
+    auto Vij(getTensorArgument<>("ThermalHHPerturbation"));
+    auto Vab(getTensorArgument<>("ThermalPPPerturbation"));
+    // one-body perturbation: half-close contracted indices
+    // coupling to hole/hole, particle b passes through
+    (*Hbjai)["bjbi"] += (-1.0) * (*Vij)["ji"] * (*gi)["j"] * (*gi)["i"];
+    // coupling to particle/particle, hole j passes through
+    (*Hbjai)["bjaj"] += (+1.0) * (*Vab)["ba"] * (*ga)["b"] * (*ga)["a"];
+  }
 
   // unperturbed propatation is diagonal, no contractions
   (*Hbjai)["bjbj"] += (+1.0) * (*epsa)["b"];
   (*Hbjai)["bjbj"] += (-1.0) * (*epsi)["j"];
+
+  // negate hamiltonian: decaying modes (originally with positive eigenvalue)
+  // will then come first in specturm
+  (*Hbjai)["bjai"] *= (-1.0);
 
   LOG(1, getCapitalizedAbbreviation())
     << "diagonalizing singles part of Hamiltonian..." << std::endl;
@@ -461,6 +487,8 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   for (size_t i(0); i < lambdaIndices.size(); ++i) { lambdaIndices[i] = i; }
   lambdaF = new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda");
   lambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
+  // negate lambdas again to get eigenvalues of original effective Hamiltonian
+  (*lambdaF)["F"] *= (-1.0);
 
   allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", lambdaF);
 
@@ -495,9 +523,12 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
 */
 
   int NF(lambdaF->lens[0]);
-  // one-body perturbation in singles-mode space, half-closed
-  VF = NEW(Tensor<real>, 1, std::vector<int>({NF}).data());
-  (*VF)["F"] = (*UaiF)["ckF"] * (*ga)["c"] * (*gi)["k"] * (*Vai)["ck"];
+  if (getIntegerArgument("singles", 0)) {
+    auto Vai(getTensorArgument<>("ThermalPHPerturbation"));
+    // one-body perturbation in singles-mode space, half-closed
+    VF = NEW(Tensor<real>, 1, std::vector<int>({NF}).data());
+    (*VF)["F"] = (*UaiF)["ckF"] * (*ga)["c"] * (*gi)["k"] * (*Vai)["ck"];
+  }
 
   // Coulomb interaction in singles-mode space, half-closed
   // two particle/hole pairs F&G
@@ -510,6 +541,13 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   (*VxFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
     (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
     (*Vabij)["cdlk"];
+
+  if (isArgumentGiven("singlesHamiltonianEigenmodes")) {
+    allocatedTensorArgument<>(
+      "singlesHamiltonianEigenmodes", new Tensor<>(*UaiF)
+    );
+  }
+
   // determine Coulomb coupling to nullspapce
 /*
   if (isArgumentGiven("couplingToSinglesNullspace")) {
