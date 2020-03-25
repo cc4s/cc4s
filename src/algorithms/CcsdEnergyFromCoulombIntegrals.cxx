@@ -299,21 +299,26 @@ PTR(FockVector<double>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         Xklij["klij"]  = (*Tai)["ci"] * (*Vabij)["cdkl"] * (*Tai)["dj"];
       }
 
-      // Add last term contracted only with the doubles
+      // Add last term contracted only with the doubles if ppl is true
       // The singles term is computed in the slicing
-      if(isArgumentGiven("PPL")){
-        (*Rabij)["abij"] += Xklij["klij"] * Xabij["abkl"];
-      }
-      else{
+      bool ppl = getIntegerArgument("ppl", 1);
+
+      LOG(1, getCapitalizedAbbreviation()) << "Using "
+        << (ppl ? "PPL" : "no PPL") << std::endl;
+
+      if (ppl) {
         (*Rabij)["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
+      } else {
+        (*Rabij)["abij"] +=  Xklij["klij"] * Xabij["abkl"];
       }
     }
-    LOG(1, getCapitalizedAbbreviation()) <<
-      "Starting PPL"  << std::endl;
 
-    if(!isArgumentGiven("PPL")){
+    bool ppl = getIntegerArgument("ppl", 1);
+
+    if (ppl) {
+      LOG(1, getCapitalizedAbbreviation()) <<
+        "Starting PPL"  << std::endl;
       if (isArgumentGiven("CoulombFactors")) {
-
         // Read the factorsSliceSize.
         auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
         LambdaGR->set_name("LambdaGR");

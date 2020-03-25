@@ -21,6 +21,7 @@ CcsdEnergyFromCoulombIntegrals [
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
+  (ppl 1)
   (maxIterations 10)
   (integralsSliceSize 124)
   (mixer "LinearMixer")
@@ -41,7 +42,7 @@ CcsdEnergyFromCoulombIntegrals [
   HHHHCoulombIntegrals
   HHHPCoulombIntegrals
   ParticleEigenEnergies HoleEigenEnergies
-  PPL
+  (ppl 0)
   (maxIterations 1)
   (mixer "LinearMixer")
   (mixingRatio 1.0)
