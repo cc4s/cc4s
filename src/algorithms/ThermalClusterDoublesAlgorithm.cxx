@@ -7,6 +7,7 @@
 #include <util/ScaLapackHermitianEigenSystemDc.hpp>
 #include <tcc/DryTensor.hpp>
 #include <util/Log.hpp>
+#include <util/Emitter.hpp>
 #include <util/Exception.hpp>
 #include <ctf.hpp>
 #include <Options.hpp>
@@ -245,12 +246,20 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   Scalar<> e;
   int NF(lambdaF->lens[0]);
 
+  SecondOrderIntegral secondOrderIntegral(beta);
+  // propagate singles
+  Tensor<real> TF(*VF);
+  Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
+    (*lambdaF)["F"], TF["F"]
+  );
+  e[""] = 1.0 * spins * TF["F"] * (*VF)["F"];
+  real tdas(e.get_val());
+
   // propagate doubles
   lambdaFG = NEW(Tensor<real>, false, *VdFG);
   (*lambdaFG)["FG"] =  (*lambdaF)["F"];
   (*lambdaFG)["FG"] += (*lambdaF)["G"];
   Tensor<real> TFG(*VdFG);
-  SecondOrderIntegral secondOrderIntegral(beta);
   Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
     (*lambdaFG)["FG"], TFG["FG"]
   );
@@ -266,11 +275,16 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
 //  projectOut( (*lambdaF)["G"], TFG["FG"] );
   e[""] = -0.5 * spins*spins * TFG["FG"] * (*VdFG)["FG"];
   real tdad(e.get_val());
-  LOG(1, getCapitalizedAbbreviation()) << "TDA F_d=" << tdad << std::endl;
 
   e[""] = +0.5 * spins * TFG["FG"] * (*VxFG)["FG"];
   real tdax(e.get_val());
+
+  LOG(1, getCapitalizedAbbreviation()) << "TDA F_s=" << tdas << std::endl;
+  LOG(1, getCapitalizedAbbreviation()) << "TDA F_d=" << tdad << std::endl;
   LOG(1, getCapitalizedAbbreviation()) << "TDA F_x=" << tdax << std::endl;
+  EMIT() << YAML::Key << "OmegaTdaS" << YAML::Value << tdas;
+  EMIT() << YAML::Key << "OmegaTdaD" << YAML::Value << tdad;
+  EMIT() << YAML::Key << "OmegaTdaX" << YAML::Value << tdax;
 
   if (isArgumentGiven("SinglesHamiltonianWeights")) {
     auto singlesWeights(new Tensor<real>(1, std::vector<int>({NF}).data()) );
@@ -319,22 +333,30 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   auto epsa(getTensorArgument<>("ThermalParticleEigenEnergies"));
   auto Vabij(getTensorArgument<>("ThermalPPHHCoulombIntegrals"));
   auto Vbija(getTensorArgument<>("ThermalPHHPCoulombIntegrals"));
+  auto Vij(getTensorArgument<>("ThermalHHPerturbation"));
+  auto Vai(getTensorArgument<>("ThermalPHPerturbation"));
+  auto Vab(getTensorArgument<>("ThermalPPPerturbation"));
   real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
 
   // build to Hbjai
   int Nv(epsa->lens[0]); int No(epsi->lens[0]);
   int lens[] = { Nv,No, Nv,No };
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
-  // bubble from H_1
+  // bubble in/bubble out from two-body perturbation
   (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
-
-  // half-close all contractions on inserted interactions
+  // half-close all contractions to two-body term on inserted perturbation
   (*Hbjai)["bjai"] *= (*ga)["b"];
   (*Hbjai)["bjai"] *= (*gi)["j"];
   (*Hbjai)["bjai"] *= (*ga)["a"];
   (*Hbjai)["bjai"] *= (*gi)["i"];
 
-  // unperturbed propatation is diagonal
+  // one-body perturbation: half-close contracted indices
+  // coupling to hole/hole
+  (*Hbjai)["bjbi"] += (-1.0) * (*Vij)["ji"] * (*gi)["j"] * (*gi)["i"];
+  // coupling to particle/particle
+  (*Hbjai)["bjaj"] += (+1.0) * (*Vab)["ba"] * (*ga)["b"] * (*ga)["a"];
+
+  // unperturbed propatation is diagonal, no contractions
   (*Hbjai)["bjbj"] += (+1.0) * (*epsa)["b"];
   (*Hbjai)["bjbj"] += (-1.0) * (*epsi)["j"];
 
@@ -470,8 +492,12 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     );
   }
 
-  // Coulomb interaction in singles-mode space, half-closed
   int NF(lambdaF->lens[0]);
+  // one-body perturbation in singles-mode space, half-closed
+  VF = NEW(Tensor<real>, 1, std::vector<int>({NF}).data());
+  (*VF)["F"] = (*UaiF)["ckF"] * (*ga)["c"] * (*gi)["k"] * (*Vai)["ck"];
+
+  // Coulomb interaction in singles-mode space, half-closed
   // two particle/hole pairs F&G
   VdFG = NEW(Tensor<real>, 2, std::vector<int>({NF,NF}).data());
   (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *

@@ -49,6 +49,11 @@ namespace cc4s {
     PTR(CTF::Tensor<real>) lambdaFG;
 
     /**
+     * \brief singles part of perturbation Vai singles-mode basis F
+     **/
+    PTR(CTF::Tensor<real>) VF;
+
+    /**
      * \brief direct & exchange Vabij in left/right singles-mode basis F/G
      **/
     PTR(CTF::Tensor<real>) VdFG, VxFG;

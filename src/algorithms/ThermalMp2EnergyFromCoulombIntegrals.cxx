@@ -44,6 +44,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   (*Dabij)["abij"] += (*epsa)["b"];
   (*Dabij)["abij"] -= (*epsi)["i"];
   (*Dabij)["abij"] -= (*epsi)["j"];
+  Dai = NEW(Tensor<>, 2, &Vabij->lens[1]);
+  (*Dai)["ai"] =  (*epsa)["a"];
+  (*Dai)["ai"] -= (*epsi)["i"];
 
 /* tests:
   LOG(1, "FT-MP2") <<
@@ -66,6 +69,123 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   testDLogZMp2(1, D_MU);
 */
 
+  if (isArgumentGiven("chemicalPotentialShift")) {
+    deltaMu = getRealArgument("chemicalPotentialShift");
+    shiftedChemicalPotential();
+  } else {
+    deltaMu = 0.0;
+    expandedChemicalPotential();
+  }
+}
+
+void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
+  //DryTensor<> *Vabij(
+  getTensorArgument<double, DryTensor<double>>("ThermalPPHHCoulombIntegrals");
+  //);
+
+  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
+  DryTensor<> *epsi(
+    getTensorArgument<double, DryTensor<double>>("ThermalHoleEigenEnergies")
+  );
+  DryTensor<> *epsa(
+    getTensorArgument<double, DryTensor<double>>("ThermalParticleEigenEnergies")
+  );
+
+  // Compute the No,Nv
+  int No(epsi->lens[0]);
+  int Nv(epsa->lens[0]);
+
+  // Allocate the doubles amplitudes
+  int syms[] = { NS, NS, NS, NS };
+  int vvoo[] = { Nv, Nv, No, No };
+  DryTensor<> Tabij(4, vvoo, syms);
+
+  DryScalar<> energy();
+}
+
+void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
+  real spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
+  Scalar<> energy;
+
+  Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
+  Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
+  Tensor<> Nc(1, epsa->lens);
+  Tensor<> Nk(1, epsi->lens);
+  Tensor<> nk(1, epsi->lens);
+  // particles in perturbation: contraction with shifted chemical potential
+  Nc["c"] = 1.0;
+  // Nc *= f^c = 1/(1+exp(-(eps_c-deltaMu)*beta))
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalContraction<>(beta, deltaMu, true)
+    )
+  ) (
+    (*epsa)["c"], Nc["c"]
+  );
+  // holes in perturbation: contraction with shifted chemical potential
+  Nk["k"] = 1.0;
+  // Nk *= f_k = 1/(1+exp(+(eps_k-deltaMu)*beta))
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalContraction<>(beta, deltaMu, false)
+    )
+  ) (
+    (*epsi)["k"], Nk["k"]
+  );
+  // terms in effective potential: contraction with Hartree--Fock chemical pot.
+  nk["k"] = 1.0;
+  // nk *= f_k = 1/(1+exp(+(eps_k-0)*beta))
+  Transform<real, real>(
+    std::function<void(real, real &)>(
+      ThermalContraction<>(beta, 0.0, false)
+    )
+  ) (
+    (*epsi)["k"], nk["k"]
+  );
+
+  // second order:
+  // singles:
+  // start with Pai
+  auto Pai(getTensorArgument("ThermalPHPerturbation"));
+  Tensor<> Tai(*Pai);
+  // Tai *=
+  // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalMp2Propagation<>(beta, 0))
+  ) (
+    (*Dai)["ai"], Tai["ai"]
+  );
+  // no symmetry, one loop, one hole contracted: +1.0 * spins
+  energy[""] = (+1.0) * spins * Tai["ai"] * (*Pai)["ai"] * Nk["i"] * Nc["c"];
+  real ES2( -energy.get_val()/beta );
+
+  // doubles:  
+  // start with Vabij
+  Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
+  Tensor<> Tabij(false, *Vabij);
+  Tabij["abij"] = (*Vabij)["abij"] * Nc["a"] * Nc["b"] * Nk["i"] * Nk["j"];
+  // Tabij *=
+  // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
+  Transform<real, real>(
+    std::function<void(real, real &)>(ThermalMp2Propagation<>(beta, 0))
+  ) (
+    (*Dabij)["abij"], Tabij["abij"]
+  );
+  energy[""] = (+0.5) * spins * spins * Tabij["abij"] * (*Vabij)["abij"];
+  real ED2( -energy.get_val()/beta );
+  energy[""] = (-0.5) * spins * Tabij["abij"] * (*Vabij)["abji"];
+  real EX2( -energy.get_val()/beta );
+
+  real Fc(ES2+ED2+EX2);
+  EMIT() << YAML::Key << "S2" << YAML::Value << ES2;
+  EMIT() << YAML::Key << "D2" << YAML::Value << ED2;
+  EMIT() << YAML::Key << "X2" << YAML::Value << EX2;
+  EMIT() << YAML::Key << "correlation-free-energy" << YAML::Value << Fc;
+
+  setRealArgument("ThermalFreeEnergy", Fc);
+}
+
+void ThermalMp2EnergyFromCoulombIntegrals::expandedChemicalPotential() {
   // expand Omega = Omega0 + Omega1 + Omega2 + ... in orders of perturbation
   real Omega0(-getDLogZH0(0, D_MU)/beta);
 // FIXME: Omega1(mu) = -eff + HF + XG = -1*(HF+XG)(mu0) + 0.5*(HF+XG)(mu)
@@ -130,31 +250,6 @@ void ThermalMp2EnergyFromCoulombIntegrals::run() {
   EMIT() << YAML::Key << "correlation-free-energy" << YAML::Value << Fc;
 
   setRealArgument("ThermalFreeEnergy", FHf+Fc);
-}
-
-void ThermalMp2EnergyFromCoulombIntegrals::dryRun() {
-  //DryTensor<> *Vabij(
-  getTensorArgument<double, DryTensor<double>>("ThermalPPHHCoulombIntegrals");
-  //);
-
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<double>>("ThermalHoleEigenEnergies")
-  );
-  DryTensor<> *epsa(
-    getTensorArgument<double, DryTensor<double>>("ThermalParticleEigenEnergies")
-  );
-  
-  // Compute the No,Nv
-  int No(epsi->lens[0]);
-  int Nv(epsa->lens[0]);
-
-  // Allocate the doubles amplitudes
-  int syms[] = { NS, NS, NS, NS };
-  int vvoo[] = { Nv, Nv, No, No };
-  DryTensor<> Tabij(4, vvoo, syms);
-
-  DryScalar<> energy();
 }
 
 
@@ -228,7 +323,8 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZMp2(
  **/
 void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
   Tensor<> &Tabij,
-  const std::vector<unsigned int> &degrees, const bool dbeta,
+  const std::vector<unsigned int> &degrees,
+  const bool dbeta,
   const real multiplicity
 ) {
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
@@ -240,7 +336,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
   // Tabij *= f^a = 1/(1+exp(-eps_a*beta))
   Transform<real, real>(
     std::function<void(real, real &)>(
-      ThermalContraction<>(beta, true, degrees[1], dbeta)
+      ThermalContraction<>(beta, deltaMu, true, degrees[1], dbeta)
     )
   ) (
     (*epsa)["a"], tabij["abij"]
@@ -248,7 +344,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
   // Tabij *= f^b
   Transform<real, real>(
     std::function<void(real, real &)>(
-      ThermalContraction<>(beta, true, degrees[2], dbeta)
+      ThermalContraction<>(beta, deltaMu, true, degrees[2], dbeta)
     )
   ) (
     (*epsa)["b"], tabij["abij"]
@@ -256,7 +352,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
   // Tabij *= f_i = 1/(1+exp(+eps_i*beta))
   Transform<real, real>(
     std::function<void(real, real &)>(
-      ThermalContraction<>(beta, false, degrees[3], dbeta)
+      ThermalContraction<>(beta, deltaMu, false, degrees[3], dbeta)
     )
   ) (
     (*epsi)["i"], tabij["abij"]
@@ -264,7 +360,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
   // Tabij *= f_j
   Transform<real, real>(
     std::function<void(real, real &)>(
-      ThermalContraction<>(beta, false, degrees[4], dbeta)
+      ThermalContraction<>(beta, deltaMu, false, degrees[4], dbeta)
     )
   ) (
     (*epsi)["j"], tabij["abij"]
@@ -281,6 +377,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZMp2Amplitudes(
   // add this contribution
   Tabij["abij"] += multiplicity * tabij["abij"];
 }
+
 
 /**
  * \brief Computes the nth derivative of the thermal HF amplitudes
@@ -416,7 +513,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZHfAmplitudes(
   // Tij *= f_i = 1/(1+exp(+eps_i*beta))
   Transform<real, real>(
     std::function<void(real, real &)>(
-      ThermalContraction<>(beta, false, degrees[1], dbeta)
+      ThermalContraction<>(beta, deltaMu, false, degrees[1], dbeta)
     )
   ) (
     (*epsi)["i"], tij["ij"]
@@ -424,7 +521,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::addLogZHfAmplitudes(
   // Tij *= f_j
   Transform<real, real>(
     std::function<void(real, real &)>(
-      ThermalContraction<>(beta, false, degrees[2], dbeta)
+      ThermalContraction<>(beta, deltaMu, false, degrees[2], dbeta)
     )
   ) (
     (*epsi)["j"], tij["ij"]
@@ -444,7 +541,7 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZH0(
     Transform<real, real>(
       std::function<void(real, real &)>(
         [this](real eps, real &T) {
-          T = std::log(1 + std::exp(-beta*eps));
+          T = std::log(1 + std::exp(-beta*(eps-deltaMu)));
         }
       )
     ) (
@@ -456,7 +553,7 @@ cc4s::real ThermalMp2EnergyFromCoulombIntegrals::getDLogZH0(
     // use the ThermalContraction clas providing arbitrary derivatives of f_i
     Transform<real, real>(
       std::function<void(real, real &)>(
-        ThermalContraction<>(beta, false, n-1, dbeta)
+        ThermalContraction<>(beta, deltaMu, false, n-1, dbeta)
       )
     ) (
       (*epsi)["i"], Ti["i"]

@@ -99,7 +99,11 @@ F ClusterSinglesDoublesAlgorithm::run() {
       std::abs(
         amplitudesChange->dot(*amplitudesChange) / amplitudes->dot(*amplitudes)
       ) < std::abs(amplitudesConvergence * amplitudesConvergence)
-    ) break;
+    ) {
+      // FIXME: use safer programming style than Begin/End
+      EMIT() << YAML::EndMap;
+      break;
+    }
     previousE = e;
     EMIT() << YAML::EndMap;
   }
