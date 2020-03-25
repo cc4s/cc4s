@@ -70,11 +70,29 @@ F ClusterSinglesDoublesAlgorithm::run() {
     getRealArgument("energyConvergence", DEFAULT_ENERGY_CONVERGENCE)
   );
   EMIT()
-    << YAML::Key << "max-iterations" << YAML::Value << maxIterationsCount
-    << YAML::Key << "amplitudes-convergence"
+    << YAML::Key << "maxIterations" << YAML::Value << maxIterationsCount
+    << YAML::Key << "amplitudesConvergence"
     << YAML::Value << std::abs(amplitudesConvergence)
-    << YAML::Key << "energy-convergence"
+    << YAML::Key << "energyConvergence"
     << YAML::Value << std::abs(energyConvergence);
+
+  if (isArgumentGiven("distinguishable")) {
+    EMIT() << YAML::Key << "distinguishable"
+           << YAML::Value <<  getIntegerArgument("distinguishable");
+  }
+  if (isArgumentGiven("PPL")) {
+    EMIT() << YAML::Key << "PPL"
+           << YAML::Value <<  getIntegerArgument("PPL");
+  }
+  if (isArgumentGiven("OnlyPPL")) {
+    EMIT() << YAML::Key << "OnlyPPL"
+           << YAML::Value <<  getIntegerArgument("OnlyPPL");
+  }
+  if (isArgumentGiven("integralsSliceSize")) {
+    EMIT() << YAML::Key << "integralsSliceSize"
+           << YAML::Value <<  getIntegerArgument("integralsSliceSize");
+  }
+
 
   EMIT() << YAML::Key << "iterations" << YAML::Value;
   EMIT() << YAML::BeginSeq;
@@ -216,6 +234,8 @@ PTR(FockVector<F>) ClusterSinglesDoublesAlgorithm::createAmplitudes(
       amplitudeTensors.push_back(
         NEW(CTF::Tensor<F>, *getTensorArgument<F>( initialDataName.str() ))
       );
+      EMIT() << YAML::Key << "initialAmplitudes"
+             << YAML::Value << initialDataName.str();
     } else {
       // otherwise, use zeros as initial amplitudes
       std::vector<int> lens(*lensIterator);

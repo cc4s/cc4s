@@ -6,6 +6,7 @@
 #include <Cc4s.hpp>
 #include <fstream>
 #include <ctf.hpp>
+#include <util/Emitter.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -32,13 +33,24 @@ void ComplexTensorReader::run() {
   if (mode == "binary") {
     std::string fileName(getTextArgument("file", dataName + ".bin"));
     A = TensorIo::readBinary<complex>(fileName);
+    EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   } else {
     std::string fileName(getTextArgument("file", dataName + ".dat"));
     std::string delimiter(getTextArgument("delimiter", " "));
     int64_t bufferSize(getIntegerArgument("bufferSize", 128l*1024*1024));
     A = TensorIo::readText<complex>(fileName, delimiter, bufferSize);
+    EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   }
   A->set_name(dataName.c_str());
   allocatedTensorArgument<complex>("Data", A);
+  EMIT() << YAML::Key << "Data" << YAML::Value << dataName;
+
+  int64_t indexCount(1);
+  for (int dim(0); dim < A->order; ++dim) {
+    indexCount *= A->lens[dim];
+  }
+  EMIT() << YAML::Key << "elements" << YAML::Value << indexCount;
+
+
 }
 
