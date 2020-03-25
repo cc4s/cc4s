@@ -709,9 +709,9 @@ PTR(FockVector<cc4s::complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
         << (ppl ? "PPL" : "no PPL") << std::endl;
 
       if (ppl) {
-	(*Rabij)["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
+        (*Rabij)["abij"] +=  Xklij["klij"] * (*Tabij)["abkl"];
       } else {
-	(*Rabij)["abij"] +=  Xklij["klij"] * Xabij["abkl"];
+        (*Rabij)["abij"] +=  Xklij["klij"] * Xabij["abkl"];
       }
     }
 
@@ -719,75 +719,75 @@ PTR(FockVector<cc4s::complex>) CcsdEnergyFromCoulombIntegrals::getResiduum(
 
     if (ppl) {
       LOG(1, getCapitalizedAbbreviation()) <<
-	"Starting PPL"  << std::endl;
+        "Starting PPL"  << std::endl;
       if (isArgumentGiven("CoulombFactors")) {
 
-	// Read the factorsSliceSize.
-	auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
-	LambdaGR->set_name("LambdaGR");
+        // Read the factorsSliceSize.
+        auto LambdaGR(getTensorArgument<complex>("CoulombFactors"));
+        LambdaGR->set_name("LambdaGR");
 
-	int NR(LambdaGR->lens[1]);
+        int NR(LambdaGR->lens[1]);
 
-	int factorsSliceSize(
-			     getIntegerArgument("factorsSliceSize", DEFAULT_SLICE_SIZE)
-			     );
-	if (factorsSliceSize == -1) {
-	  if (isArgumentGiven("factorsSliceFactor")) {
-	    double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
-	    factorsSliceSize = NR * factorsSliceFactor;
-	  } else {
-	    factorsSliceSize = Nv;
-	  }
-	}
+        int factorsSliceSize(
+                             getIntegerArgument("factorsSliceSize", DEFAULT_SLICE_SIZE)
+                             );
+        if (factorsSliceSize == -1) {
+          if (isArgumentGiven("factorsSliceFactor")) {
+            double factorsSliceFactor(getRealArgument("factorsSliceFactor"));
+            factorsSliceSize = NR * factorsSliceFactor;
+          } else {
+            factorsSliceSize = Nv;
+          }
+        }
 
-	// Slice loop starts here
-	for (int b(0); b < NR; b += factorsSliceSize) {
-	  for (int a(0); a < NR; a += factorsSliceSize) {
-	    LOG(1, getCapitalizedAbbreviation()) <<
-	      "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
-	    auto Fabij(
-		       sliceAmplitudesFromCoupledCoulombFactors(
-								amplitudes, a, b, factorsSliceSize
-								)
-		       );
-	    Fabij->set_name("Fabij");
-	    (*Rabij)["abij"] += (*Fabij)["abij"];
-	    delete Fabij;
-	  }
-	}
+        // Slice loop starts here
+        for (int b(0); b < NR; b += factorsSliceSize) {
+          for (int a(0); a < NR; a += factorsSliceSize) {
+            LOG(1, getCapitalizedAbbreviation()) <<
+              "Evaluting Fabij at R=" << a << ", S=" << b << std::endl;
+            auto Fabij(
+                       sliceAmplitudesFromCoupledCoulombFactors(
+                                                                amplitudes, a, b, factorsSliceSize
+                                                                )
+                       );
+            Fabij->set_name("Fabij");
+            (*Rabij)["abij"] += (*Fabij)["abij"];
+            delete Fabij;
+          }
+        }
       } else {
-	// Read the integralsSliceSize. If not provided use No
-	int integralsSliceSize(getIntegerArgument("integralsSliceSize",DEFAULT_SLICE_SIZE));
-	if (integralsSliceSize == -1) {
-	  if (isArgumentGiven("integralsSliceFactor")) {
-	    double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
-	    integralsSliceSize = Nv * integralsSliceFactor;
-	  } else {
-	    integralsSliceSize = No;
-	  }
-	}
+        // Read the integralsSliceSize. If not provided use No
+        int integralsSliceSize(getIntegerArgument("integralsSliceSize",DEFAULT_SLICE_SIZE));
+        if (integralsSliceSize == -1) {
+          if (isArgumentGiven("integralsSliceFactor")) {
+            double integralsSliceFactor(getRealArgument("integralsSliceFactor"));
+            integralsSliceSize = Nv * integralsSliceFactor;
+          } else {
+            integralsSliceSize = No;
+          }
+        }
 
-	// Slice loop starts here
-	for (int b(0); b < Nv; b += integralsSliceSize) {
-	  for (int a(b); a < Nv; a += integralsSliceSize) {
-	    LOG(1, getCapitalizedAbbreviation()) <<
-	      "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
-	    auto Vxycd(
-		       sliceCoupledCoulombIntegrals(amplitudes, a, b, integralsSliceSize)
-		       );
-	    Vxycd->set_name("Vxycd");
-	    int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
-	    int syms[] = {NS, NS, NS, NS};
-	    Tensor<complex> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
+        // Slice loop starts here
+        for (int b(0); b < Nv; b += integralsSliceSize) {
+          for (int a(b); a < Nv; a += integralsSliceSize) {
+            LOG(1, getCapitalizedAbbreviation()) <<
+              "Evaluting Vabcd at a=" << a << ", b=" << b << std::endl;
+            auto Vxycd(
+                       sliceCoupledCoulombIntegrals(amplitudes, a, b, integralsSliceSize)
+                       );
+            Vxycd->set_name("Vxycd");
+            int lens[] = { Vxycd->lens[0], Vxycd->lens[1], No, No };
+            int syms[] = {NS, NS, NS, NS};
+            Tensor<complex> Rxyij(4, lens, syms, *Vxycd->wrld, "Rxyij");
 
-	    // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
-	    Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
+            // Contract sliced Vxycd with T2 and T1 Amplitudes using Xabij
+            Rxyij["xyij"] = (*Vxycd)["xycd"] * Xabij["cdij"];
 
-	    sliceIntoResiduum(Rxyij, a, b, *Rabij);
-	    // The integrals of this slice are not needed anymore
-	    delete Vxycd;
-	  }
-	}
+            sliceIntoResiduum(Rxyij, a, b, *Rabij);
+            // The integrals of this slice are not needed anymore
+            delete Vxycd;
+          }
+        }
       }
     }
 
