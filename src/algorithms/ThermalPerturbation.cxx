@@ -50,6 +50,7 @@ void ThermalPerturbation::run() {
   ) (
     (*epsa)["c"], Nc["c"]
   );
+  (*getTensorArgument("ThermalParticleOccupancies"))["c"] = Nc["c"];
   // holes in perturbation: contraction with shifted chemical potential
   Nk["k"] = 1.0;
   // Nk *= f_k = 1/(1+exp(+(eps_k-deltaMu)*beta))
@@ -60,6 +61,7 @@ void ThermalPerturbation::run() {
   ) (
     (*epsi)["k"], Nk["k"]
   );
+  (*getTensorArgument("ThermalHoleOccupancies"))["k"] = Nk["k"];
   // terms in effective potential: contraction with Hartree--Fock chemical pot.
   nk["k"] = 1.0;
   // nk *= f_k = 1/(1+exp(+(eps_k-0)*beta))

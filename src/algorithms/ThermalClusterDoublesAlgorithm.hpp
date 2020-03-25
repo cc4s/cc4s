@@ -149,6 +149,64 @@ namespace cc4s {
       }
     };
 
+    /**
+     * \brief Implements the integral for third order perturbation terms:
+     * \f$ \frac1\beta \int_0^{\beta}\rm d\tau_1
+     * \int_{\tau_1}^{\beta}\rm d\tau_2 \int_{\tau_2}^{\beta}\rm d\tau_3
+     * \rm e^{-\Lambda_1(\tau_3-\tau1)} \rm e^{-\Lambda_2(\tau_3-\tau_2)}\f$
+     */
+    class ThirdOrderIntegral: public ImaginaryTimeTransform {
+    public:
+      ThirdOrderIntegral(
+        real DTau_
+      ): ImaginaryTimeTransform(DTau_) {
+      }
+      void operator ()(const real lambda1, const real lambda2, real &hh) const {
+        const real x1(lambda1 * DTau);
+        const real x2(lambda2 * DTau);
+        constexpr real SMALL(1e-4);
+        if (std::abs(x1+x2) > SMALL) {
+          if (std::abs(x1) < SMALL) {
+            // checked
+            hh *= -(
+              (2*(1-exp(-x2)) - 2*x2 + x2*x2)*DTau*DTau
+            ) / (
+              2*x2*x2*x2
+            );
+          } else if (std::abs(x2) < SMALL) {
+            // checked
+            hh *= -(
+              (2*(exp(-x1)-1) + (1+exp(-x1))*x1)*DTau*DTau
+            ) / (
+              x1*x1*x1
+            );
+          } else {
+            // checked
+            hh *= -(
+              (
+                -x1*x1*exp(-x1-x2) + exp(-x1)*x1*x1 + 2*exp(-x1)*x1*x2
+                - 2*x1*x2 + x1*x1*x2
+                + exp(-x1)*x2*x2 - x2*x2  + x1*x2*x2
+              )*DTau*DTau
+            ) / (
+              x1*x1*x2*std::pow(x1+x2,2)
+            );
+          }
+        } else if (std::abs(x1) > SMALL) {
+          // checked
+          hh *= -(
+            (x1*x1 - 2*x1 + 2 - 2*exp(-x1))*DTau*DTau
+          ) / (
+            2*x1*x1*x1
+          );
+        } else {
+          // TODO: higher order terms
+          // TODO: check sign
+          hh *= -DTau*DTau/6;
+        }
+      }
+    };
+
     class ImaginaryTimePropagation: public ImaginaryTimeTransform {
     public:
       ImaginaryTimePropagation(
