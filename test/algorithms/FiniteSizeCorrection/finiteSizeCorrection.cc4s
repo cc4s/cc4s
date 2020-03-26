@@ -52,6 +52,7 @@ FiniteSizeCorrection [
   % Set the number of kpoints, the volume of the simulation cell, and the
   % constantFactor
 % (kpoints 1)
+  (FiniteSize 1)
   (volume 136.99)
   (constantFactor 0.002351)
 ] [
