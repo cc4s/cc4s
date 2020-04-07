@@ -204,37 +204,3 @@ void IterativePseudoInverse<cc4s::Float64>::test(World *world);
 template
 void IterativePseudoInverse<cc4s::Complex64>::test(World *world);
 
-
-template <typename F>
-DryIterativePseudoInverse<F>::DryIterativePseudoInverse(
-  DryTensor<F> const &matrix_
-):
-  matrix(matrix_),
-  square(
-    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[0]}}.data(),
-    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
-  ),
-  inverse(
-    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[1]}}.data(),
-    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
-  )
-{
-  DryTensor<F> conjugate(
-    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[1]}}.data(),
-    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
-  );
-  DryVector<F> rowAbsNorms(square.lens[0]);
-}
-
-template <typename F>
-DryTensor<F> &DryIterativePseudoInverse<F>::get() {
-  return inverse;
-}
-
-// instantiate
-template
-class DryIterativePseudoInverse<cc4s::Float64>;
-
-template
-class DryIterativePseudoInverse<cc4s::Complex64>;
-

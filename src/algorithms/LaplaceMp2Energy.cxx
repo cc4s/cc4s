@@ -251,7 +251,7 @@ void LaplaceMp2Energy::normalizeV(
   );
 }
 
-real realpart(const complex z) {
+cc4s::real realpart(const cc4s::complex z) {
   return std::real(z);
 }
 

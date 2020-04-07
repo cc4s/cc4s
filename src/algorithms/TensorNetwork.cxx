@@ -71,11 +71,11 @@ void TensorNetwork::dryRun() {
 */
     (*LambdaT)["RF"] <<= (*Lambda)["RF"],
     (*PiT)["Rb"] <<=
-      map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]),
+      tcc::map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]),
     (*D)["abij"] +=
       (*T)["cdij"] *
       (*Pi)["Rd"] *
-      map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]) *
+      tcc::map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]) *
       (*Pi)["Sc"] * (*PiT)["Sa"] *
       (*LambdaT)["SF"] * (*Lambda)["RF"],
     (*Pi)["Ra"] <<= (*Pi)["Ra"],

@@ -38,15 +38,16 @@ namespace cc4s {
   };
 
   // define explicit size float types
+  // DEPRECATED: use Real<32>, ... instead
   typedef FloatTypes<32>::type Float32;
   typedef FloatTypes<64>::type Float64;
   typedef FloatTypes<128>::type Float128;
 
-  // define machine supported float as real type
-  typedef FloatTypes<
-    MACHINE_FLOAT_BIT_SIZE < DEFAULT_FLOAT_BIT_SIZE ?
-      MACHINE_FLOAT_BIT_SIZE : DEFAULT_FLOAT_BIT_SIZE
-  >::type real;
+  template <int FloatSize=DEFAULT_FLOAT_BIT_SIZE>
+  using Real = typename FloatTypes<FloatSize>::type;
+
+  // DEPRECATED
+  typedef Real<> real;
 
 // define stream output for quadruple precision numbers
 #ifdef INTEL_COMPILER

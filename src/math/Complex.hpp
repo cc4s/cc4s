@@ -6,32 +6,32 @@
 
 namespace cc4s {
   // use standard library complex number support
-  template <typename Real>
-  using Complex = std::complex<Real>;
+  template <typename F=Real<>>
+  using Complex = std::complex<F>;
 
   // define explicit size complex types
+  // DEPRECATED: use Complex<Real<32>> instead
   typedef Complex<Float32> Complex32;
   typedef Complex<Float64> Complex64;
   typedef Complex<Float128> Complex128;
 
-  // define complex field over machine supported reals as default complex type
-  typedef Complex<real> complex;
+  // DEPRECATED:
+  typedef Complex<> complex;
 
-
-  template <typename Real>
-  inline Real absSqr(const Real x) {
+  template <typename F>
+  inline F absSqr(const F x) {
     return x*x;
   }
 
-  template <typename Real>
-  inline Real absSqr(const Complex<Real> z) {
+  template <typename F>
+  inline F absSqr(const Complex<F> z) {
     return absSqr(z.real()) + absSqr(z.imag());
   }
 
   // type info allowing inference of
   // extended type from given optinoally complex type. e.g.:
-  // ComplexTraits<complex>::ExtendedType = real
-  // ComplexTraits<real>::ExtendedType = real
+  // ComplexTraits<Complex<>>::ExtendedType = Real<>
+  // ComplexTraits<Real<>>::ExtendedType = Real<>
   // ComplexTraits<Complex<int>>::ExtendedType = int
   template <typename T>
   class ComplexTraits {
@@ -46,21 +46,21 @@ namespace cc4s {
   };
 
   // numeric conversions
-  template <typename Target, typename Source>
+  template <typename G, typename F>
   class Conversion;
 
-  template <typename Target, typename Real>
-  class Conversion<Target, Complex<Real>> {
+  template <typename G, typename F>
+  class Conversion<G, Complex<F>> {
   public:
-    static Target from(const Complex<Real> x) {
-      return Target(x);
+    static G from(const Complex<F> x) {
+      return G(x);
     }
   };
 
-  template <typename Real>
-  class Conversion<Real, Complex<Real>> {
+  template <typename F>
+  class Conversion<F, Complex<F>> {
   public:
-    static Real from(const Complex<Real> x) {
+    static F from(const Complex<F> x) {
       return std::real(x);
     }
   };

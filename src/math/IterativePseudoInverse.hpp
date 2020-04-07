@@ -27,17 +27,6 @@ namespace cc4s {
     CTF::Tensor<F> square, inverse;
     F alpha;
   };
-
-  template <typename F>
-  class DryIterativePseudoInverse {
-  public:
-    DryIterativePseudoInverse(DryTensor<F> const &matrix);
-    DryTensor<F> &get();
-
-  protected:
-    DryTensor<F> matrix;
-    DryTensor<F> square, inverse;
-  };
 }
 
 #endif
