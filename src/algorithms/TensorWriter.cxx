@@ -5,6 +5,7 @@
 #include <fstream> 
 #include <iomanip>
 #include <ctf.hpp>
+#include <util/Emitter.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -41,12 +42,13 @@ template <typename F>
 void TensorWriter::write(const std::string &name) {
   Tensor<F> *A(getTensorArgument<F>("Data"));
   A->set_name(name.c_str());
-
+  EMIT() << YAML::Key << "Data" << YAML::Value << name;
   std::string mode(getTextArgument("mode", "text"));
   if (mode == "binary") {
     // write binary
     std::string fileName(getTextArgument("file", name + ".bin"));
     TensorIo::writeBinary<F>(fileName, *A);
+    EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   } else {
     // write text
     std::string fileName(getTextArgument("file", name + ".dat"));
@@ -56,6 +58,14 @@ void TensorWriter::write(const std::string &name) {
     TensorIo::writeText<F>(
       fileName, *A, rowIndexOrder, columnIndexOrder, delimiter
     );
+    EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   }
+
+  int64_t indexCount(1);
+  for (int dim(0); dim < A->order; ++dim) {
+    indexCount *= A->lens[dim];
+  }
+  EMIT() << YAML::Key << "elements" << YAML::Value << indexCount;
+
 }
 

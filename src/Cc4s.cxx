@@ -8,9 +8,11 @@
 #include <util/FlopsCounter.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
+#include <util/Emitter.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
 #include <string>
+#include <sstream>
 
 // TODO: to be removed from the main class
 #include <math/MathFunctions.hpp>
@@ -25,11 +27,17 @@ Cc4s::~Cc4s() {
 }
 
 void Cc4s::run() {
+  EMIT() << YAML::BeginMap;
   printBanner();
+  listHosts();
   Parser parser(options->file);
   std::vector<Algorithm *> algorithms(parser.parse());
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms.size() << std::endl;
+  EMIT() <<
+    YAML::Key << "execution-plan-size" << YAML::Value << algorithms.size();
+
+  EMIT() << YAML::Key << "steps" << YAML::Value << YAML::BeginSeq;
 
   int64_t rootFlops, totalFlops;
   Time totalTime;
@@ -39,7 +47,10 @@ void Cc4s::run() {
     Timer totalTimer(&totalTime);
 
     for (unsigned int i(0); i < algorithms.size(); ++i) {
+      EMIT() << YAML::BeginMap;
       LOG(0, "root") << "step=" << (i+1) << ", " << algorithms[i]->getName() << std::endl;
+      EMIT() << YAML::Key << "step" << YAML::Value << (i+1)
+        << YAML::Key << "name" << YAML::Value << algorithms[i]->getName();
 
       int64_t flops;
       Time time;
@@ -50,22 +61,43 @@ void Cc4s::run() {
         delete algorithms[i];
       }
 
-      LOG(1, "root") << "step=" << (i+1) << ", realtime=" << time << " s"
+      std::stringstream realtime;
+      realtime << time;
+      LOG(1, "root") << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
         << ", operations=" << flops / 1e9 << " GFLOPS/core"
         << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
+      EMIT() << YAML::Key << "realtime" << YAML::Value << realtime.str()
+        << YAML::Comment(" seconds")
+        << YAML::Key << "floating-point-operations" << YAML::Value << flops
+        << YAML::Comment("on root process")
+        << YAML::Key << "flops" << YAML::Value << flops / time.getFractionalSeconds();
       printStatistics();
+      EMIT() << YAML::EndMap;
     }
   }
 
+  EMIT() << YAML::EndSeq;
+
   OUT() << std::endl;
-  LOG(0, "root") << "total realtime=" << totalTime << " s" << std::endl;
+  std::stringstream totalRealtime;
+  totalRealtime << totalTime;
+  LOG(0, "root") << "total realtime=" << totalRealtime.str() << " s" << std::endl;
   LOG(0, "root") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
     << " speed=" << rootFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
   LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
     << std::endl;
+  EMIT() << YAML::Key << "realtime" << YAML::Value << totalRealtime.str()
+    << YAML::Key << "floating-point-operations" << YAML::Value << rootFlops
+    << YAML::Comment("on root process")
+    << YAML::Key << "flops" << YAML::Value << rootFlops / totalTime.getFractionalSeconds()
+    << YAML::Key << "total-floating-point-operations" << totalFlops
+    << YAML::Comment("of all processes");
+
+  EMIT() << YAML::EndMap;
 }
 
 void Cc4s::dryRun() {
+  EMIT() << YAML::BeginMap;
   printBanner();
   LOG(0, "root") <<
     "DRY RUN - nothing will be calculated" << std::endl;
@@ -74,18 +106,35 @@ void Cc4s::dryRun() {
   std::vector<Algorithm *> algorithms(parser.parse());
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms.size() << std::endl;
+  EMIT() <<
+    YAML::Key << "execution-plan-size" << YAML::Value << algorithms.size();
+
+  EMIT() << YAML::Key << "steps" << YAML::Value << YAML::BeginSeq;
 
   for (unsigned int i(0); i < algorithms.size(); ++i) {
+    EMIT() << YAML::BeginMap;
     LOG(0, "root") << "step=" << (i+1) << ", " << algorithms[i]->getName() << std::endl;
+    EMIT() << YAML::Key << "step" << YAML::Value << (i+1)
+      << YAML::Key << "name" << YAML::Value << algorithms[i]->getName();
     algorithms[i]->dryRun();
     LOG(0, "root")
       << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
       << " GB" << std::endl;
+    EMIT()
+      << YAML::Key << "estimated-total-memory"
+      << YAML::Value << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
+      << YAML::Comment("GB");
+    EMIT() << YAML::EndMap;
   }
+  EMIT() << YAML::EndSeq;
+  EMIT() << YAML::EndMap;
 }
 
 
 void Cc4s::printBanner() {
+  std::stringstream buildDate;
+  buildDate << __DATE__ << " " << __TIME__;
+
   OUT() << "                __ __      " << std::endl
         << "     __________/ // / _____" << std::endl
         << "    / ___/ ___/ // /_/ ___/" << std::endl
@@ -94,10 +143,16 @@ void Cc4s::printBanner() {
         << "  Coupled Cluster for Solids" << std::endl << std::endl;
   LOG(0, "root") << "version=" << CC4S_VERSION <<
     ", date=" << CC4S_DATE << std::endl;
-  LOG(0, "root") << "build date=" << __DATE__ << " " << __TIME__ << std::endl;
+  LOG(0, "root") << "build date=" << buildDate.str() << std::endl;
   LOG(0, "root") << "compiler=" << COMPILER_VERSION << std::endl;
-  LOG(0, "root") << "number of processes=" << Cc4s::world->np << std::endl;
+  LOG(0, "root") << "total processes=" << Cc4s::world->np << std::endl;
   OUT() << std::endl;
+
+  EMIT()
+    << YAML::Key << "version" << YAML::Value << CC4S_VERSION
+    << YAML::Key << "build-date" << YAML::Value << buildDate.str()
+    << YAML::Key << "compiler" << YAML::Value << COMPILER_VERSION
+    << YAML::Key << "total-processes" << Cc4s::world->np;
 }
 
 void Cc4s::printStatistics() {
@@ -120,6 +175,11 @@ void Cc4s::printStatistics() {
   real unitsPerGB(1024.0*1024.0);
   LOG(0, "root") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
     << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
+  EMIT()
+    << YAML::Key << "peak-physical-memory" << YAML::Value << peakPhysicalSize / unitsPerGB
+    << YAML::Comment("GB/core")
+    << YAML::Key << "peak-virtual-memory" << YAML::Value <<  peakVirtualSize / unitsPerGB
+    << YAML::Comment("GB/core");
 
   int64_t globalPeakVirtualSize, globalPeakPhysicalSize;
   MpiCommunicator communicator(world->rank, world->np, world->comm);
@@ -128,6 +188,11 @@ void Cc4s::printStatistics() {
   LOG(0, "root") << "overall peak physical memory="
     << globalPeakPhysicalSize / unitsPerGB << " GB"
     << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
+  EMIT()
+    << YAML::Key << "total-peak-physical-memory" << YAML::Value << globalPeakPhysicalSize / unitsPerGB
+    << YAML::Comment("GB")
+    << YAML::Key << "peak-virtual-memory" << YAML::Value <<  globalPeakVirtualSize / unitsPerGB
+    << YAML::Comment("GB");
 }
 
 bool Cc4s::isDebugged() {
@@ -149,6 +214,49 @@ bool Cc4s::isDebugged() {
   return false;
 }
 
+void Cc4s::listHosts() {
+  char ownName[MPI_MAX_PROCESSOR_NAME];
+  int nameLength;
+  MPI_Get_processor_name(ownName, &nameLength);
+  ownName[nameLength] = 0;
+
+  if (world->rank == 0) {
+    std::map<std::string,std::vector<int>> ranksOfHosts;
+    // enter hostname/rank
+    ranksOfHosts[ownName].push_back(0);
+    // receive all names but own name from remote ranks
+    for (int remoteRank(1); remoteRank < world->np; ++remoteRank) {
+      char remoteName[MPI_MAX_PROCESSOR_NAME];
+      MPI_Recv(
+        remoteName, MPI_MAX_PROCESSOR_NAME, MPI_BYTE,
+        remoteRank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE
+      );
+      // and enter remote name/rank into map
+      ranksOfHosts[remoteName].push_back(remoteRank);
+    }
+    EMIT() << YAML::Key << "hosts" << YAML::Value;
+    EMIT() << YAML::BeginSeq;
+    for (auto &ranksOfHost: ranksOfHosts) {
+      EMIT() << YAML::BeginMap
+        << YAML::Key << "host" << YAML::Value << ranksOfHost.first
+        << YAML::Key << "ranks" << YAML::Value;
+      EMIT() << YAML::Flow << YAML::BeginSeq;
+      for (auto &rank: ranksOfHost.second) {
+        EMIT() << rank;
+      }
+      EMIT() << YAML::EndSeq;
+      EMIT() << YAML::EndMap;
+    }
+    EMIT() << YAML::EndSeq;
+  } else {
+    // send own name 
+    MPI_Send(
+      ownName, MPI_MAX_PROCESSOR_NAME, MPI_BYTE,
+      0, 0, MPI_COMM_WORLD
+    );
+  }
+}
+
 
 World *Cc4s::world;
 Options *Cc4s::options;
@@ -162,6 +270,8 @@ int main(int argumentCount, char **arguments) {
   Log::setRank(Cc4s::world->rank);
   Log::setFileName(Cc4s::options->logFile);
   Log::setLogLevel(Cc4s::options->logLevel);
+  Emitter::setFileName(Cc4s::options->yamlFile);
+  Emitter::setRank(Cc4s::world->rank);
 
   Cc4s cc4s;
   if (Cc4s::isDebugged()) {
@@ -177,6 +287,8 @@ int main(int argumentCount, char **arguments) {
       LOG(0) << std::endl << cause->getMessage() << std::endl;
     }
   }
+
+  EMIT_FLUSH();
   MPI_Finalize();
   return 0;
 }

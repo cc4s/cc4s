@@ -1,6 +1,9 @@
 [submodule "ctf"]
 	path = lib/src/ctf
-	url = https://github.com/solomonik/ctf.git
+	url = https://github.com/cyclops-community/ctf.git
 [submodule "resources"]
 	path = resources
 	url = hulldamage.org:/git/cc4s/resources.git
+[submodule "lib/src/yaml-cpp"]
+	path = lib/src/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git

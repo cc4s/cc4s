@@ -30,8 +30,10 @@ void BasisSetExtrapolation::run() {
   if(fQGG == 1){
     // slice QGG evalution in case of memory bottleneck for the exchange term
     int slice(getIntegerArgument("slice",-1));
+    int orbitalPairStart(getIntegerArgument("orbitalPairStart",-1));
+    int orbitalPairEnd(getIntegerArgument("orbitalPairEnd",-1));
     LOG(0,"BasisSetExtrapolation:") << "evaluating QGG" << std::endl;
-    evaluateQGG(slice);
+    evaluateQGG(orbitalPairStart,orbitalPairEnd,slice);
   }
 
   int fFitF12(getIntegerArgument("fitF12",-1));
@@ -50,7 +52,7 @@ void BasisSetExtrapolation::run() {
   }
 }
 
-void BasisSetExtrapolation::evaluateQGG(int slice){
+void BasisSetExtrapolation::evaluateQGG(int orbitalPairStart, int orbitalPairEnd, int slice){
 
   PTR(Tensor<complex>) GammaGai;
 
@@ -145,12 +147,28 @@ void BasisSetExtrapolation::evaluateQGG(int slice){
     NF = NF*2-1;
   }
   else{
-    LOG(1,"Build up Q(G,F)") << "working with full mesh" << std::endl;
+   LOG(1,"Build up Q(G,F)") << "working with full mesh" << std::endl;
     CGai = NEW(Tensor<complex>,*GammaGai);
   }
 
 
-  auto conjCGai(NEW(Tensor<complex>,*CGai));
+  if (orbitalPairStart < 0 || orbitalPairStart > No){
+   orbitalPairStart = 0;
+  }
+  if (orbitalPairEnd <= orbitalPairStart || orbitalPairEnd > No){
+   orbitalPairEnd = No;
+  }
+
+  LOG(1,"Orbital Pair analysis") << "Considering electron pairs " << orbitalPairStart
+                                 << " to " << orbitalPairEnd << std::endl;
+  No = orbitalPairEnd - orbitalPairStart;
+
+  int sCGaiStart[] = {0, 0, orbitalPairStart};
+  int sCGaiEnd[] =   {NF, Nv, orbitalPairEnd};
+
+  auto sCGai(NEW(Tensor<complex>, CGai->slice(sCGaiStart,sCGaiEnd)));
+
+  auto conjCGai(NEW(Tensor<complex>,*sCGai));
   conjugate(*conjCGai);
 
   int NGG[] = {NF, NF};
@@ -164,10 +182,22 @@ void BasisSetExtrapolation::evaluateQGG(int slice){
   FGone = NEW(Tensor<complex>,2,NGG);
   FGtwo = NEW(Tensor<complex>,2,NGG);
 
-  (*FGone)["GF"] =  (*conjCGai)["Gai"] * (*CGai)["Fai"];
-  (*FGtwo)["GF"] =  (*conjCGai)["Fbj"] * (*CGai)["Gbj"];
+//oldschool
+//  (*FGone)["GF"] =  (*conjCGai)["Gai"] * (*sCGai)["Fai"];
+//  (*FGtwo)["GF"] =  (*conjCGai)["Fbj"] * (*sCGai)["Gbj"];
+//  (*QGGs)["GF"]  = (0.5) * (*FGone)["GF"] * (*FGtwo)["GF"];
+//  (*QGGt)["GF"]  = (1.5) * (*QGGs)["GF"];
+//newschool
+  (*FGone)["GF"] = (*conjCGai)["Gbj"] * (*conjCGai)["Fbj"];
+  (*FGtwo)["GF"] = (*sCGai)["Gai"] * (*sCGai)["Fai"];
   (*QGGs)["GF"]  = (0.5) * (*FGone)["GF"] * (*FGtwo)["GF"];
   (*QGGt)["GF"]  = (1.5) * (*QGGs)["GF"];
+
+  if (isArgumentGiven("QGGd")){
+    auto QGGd(new Tensor<>(2,NGG));
+    fromComplexTensor(*QGGs,*QGGd);
+    allocatedTensorArgument<>("QGGd",QGGd);
+  }
 
   // Exchange part, slicing.
 
@@ -176,7 +206,10 @@ void BasisSetExtrapolation::evaluateQGG(int slice){
   LOG(0,"Number of bands treated simultaniously:") << slice << std::endl;
 
   int numberSlices(std::ceil(static_cast<double>(No)/static_cast<double>(slice)));
-
+  PTR(Tensor<complex>) cQGGx;
+  if(isArgumentGiven("QGGx")){
+    cQGGx = NEW(Tensor<complex>,2,NGG);
+  }
   for (int ii(0); ii<numberSlices; ++ii){
 
     int startBandSlice(ii*slice);
@@ -197,27 +230,46 @@ void BasisSetExtrapolation::evaluateQGG(int slice){
     int CGajStart[] = {0, 0, startBandSlice};
     int CGajEnd[]   = {NF, Nv, endBandSlice};
 
-    auto CGajSliced(NEW(Tensor<complex>, CGai->slice(CGajStart,CGajEnd)));
+    auto CGajSliced(NEW(Tensor<complex>, sCGai->slice(CGajStart,CGajEnd)));
     auto conjCGajSliced(NEW(Tensor<complex>, conjCGai->slice(CGajStart,CGajEnd)));
 
-    (*FGij)["GFij"] = (*conjCGai)["Gai"] * (*CGajSliced)["Faj"];
-    (*FGji)["GFij"] = (*conjCGai)["Fbi"] * (*CGajSliced)["Gbj"];
+// Oldschool
+//    (*FGij)["GFij"] = (*conjCGai)["Gai"] * (*CGajSliced)["Faj"];
+//    (*FGji)["GFij"] = (*conjCGai)["Fbi"] * (*CGajSliced)["Gbj"];
 
-    (*QGGs)["GF"]  += (0.5)* (*FGij)["GFij"] * (*FGji)["GFij"];
+//    (*QGGs)["GF"]  += (0.5)* (*FGij)["GFij"] * (*FGji)["GFij"];
+//    (*QGGt)["GF"]  += (-0.75)* (*FGij)["GFij"] * (*FGji)["GFij"];
+//newschool
+    (*FGij)["GFij"] = (*CGajSliced)["Gai"] * (*CGajSliced)["Faj"];
+    (*FGji)["GFij"] = (*conjCGajSliced)["Gbj"] * (*conjCGajSliced)["Fbi"];
+    (*QGGs)["GF"]  += ( 0.5) * (*FGij)["GFij"] * (*FGji)["GFij"];
     (*QGGt)["GF"]  += (-0.75)* (*FGij)["GFij"] * (*FGji)["GFij"];
-
-
+    if(isArgumentGiven("QGGx")){
+      (*cQGGx)["GF"] = (0.5) * (*FGij)["GFij"] * (*FGji)["GFij"];
+    }
   }
 
-  allocatedTensorArgument<complex>("QGGs",QGGs);
-  allocatedTensorArgument<complex>("QGGt",QGGt);
+  auto realQGGs(new Tensor<>(2,NGG));
+  auto realQGGt(new Tensor<>(2,NGG));
+
+  fromComplexTensor(*QGGs,*realQGGs);
+  fromComplexTensor(*QGGt,*realQGGt);
+  allocatedTensorArgument<>("QGGs",realQGGs);
+  allocatedTensorArgument<>("QGGt",realQGGt);
+
+  if(isArgumentGiven("QGGx")){
+    auto QGGx(new Tensor<>(2,NGG));
+    fromComplexTensor(*cQGGx,*QGGx);
+    allocatedTensorArgument<>("QGGx",QGGx);
+  }
+
 
 }
 
 void BasisSetExtrapolation::calculateNewSF(
   int type, real gamma, Tensor<> *coulombKernel, Tensor<> *newSF, Tensor<> *resNewSF){
 
-  CTF::Tensor<complex> *QGG(getTensorArgument<complex>("QGG"));
+  CTF::Tensor<> *QGG(getTensorArgument<>("QGG"));
   int NG(QGG->lens[0]);
   int NFF[] = {NG};
 
@@ -226,11 +278,11 @@ void BasisSetExtrapolation::calculateNewSF(
 
   real volume(getRealArgument("volume",-1.));
 
-  auto reciprocalYC(new Tensor<complex>(1,NFF));
+  auto reciprocalYC(new Tensor<>(1,NFF));
 
-  CTF::Transform<real, complex>(
-    std::function<void(real, complex &)>(
-      [&type, &volume, &gamma](real cK, complex &YC){
+  CTF::Transform<real, real>(
+    std::function<void(real, real &)>(
+      [&type, &volume, &gamma](real cK, real &YC){
         if ( cK == 0 ){
           YC = 0.;
         }
@@ -251,11 +303,11 @@ void BasisSetExtrapolation::calculateNewSF(
    (*cK)["G"],(*reciprocalYC)["G"]
   );
 
-  auto dReciprocalYC(new Tensor<complex>(1,NFF));
+  auto dReciprocalYC(new Tensor<>(1,NFF));
 
-  CTF::Transform<real, complex, complex >(
-    std::function<void(real, complex, complex &)>(
-      [&type, &volume, &gamma](real cK, complex YC, complex &dYC){
+  CTF::Transform<real, real, real >(
+    std::function<void(real, real, real &)>(
+      [&type, &volume, &gamma](real cK, real YC, real &dYC){
         if ( cK == 0){
           dYC = 0.;
         }
@@ -272,14 +324,10 @@ void BasisSetExtrapolation::calculateNewSF(
   )(
    (*cK)["G"],(*reciprocalYC)["G"],(*dReciprocalYC)["G"]
   );
-  auto complexNewSF(new Tensor<complex>(1,NFF));
-  auto complexResNewSF(new Tensor<complex>(1,NFF));
 
-  (*complexNewSF)["G"] = (*QGG)["GF"] * (*reciprocalYC)["F"];
-  (*complexResNewSF)["G"] = (*QGG)["GF"] * (*dReciprocalYC)["F"];
+  (*newSF)["G"] = (*QGG)["GF"] * (*reciprocalYC)["F"];
+  (*resNewSF)["G"] = (*QGG)["GF"] * (*dReciprocalYC)["F"];
 
-  fromComplexTensor(*complexNewSF,*newSF);
-  fromComplexTensor(*complexResNewSF,*resNewSF);
 
 }
 
@@ -327,7 +375,7 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
    (*coulombKernel)["G"],(*absoluteG)["G"]
   );
   real gamma(getRealArgument("gamma",1));
-
+  int iterations(getIntegerArgument("iterations",10));
   for (int i(0); i<=iterations; ++i){
 
     calculateNewSF(type,gamma,absoluteG,fittedSF,residuumFittedSF);
@@ -413,16 +461,16 @@ void BasisSetExtrapolation::fitF12(int type, real minG, real maxG){
 
 void BasisSetExtrapolation::invertQGG(){
 
-  Tensor<complex> *fullQGG(getTensorArgument<complex>("QGG"));
+  Tensor<> *fullQGG(getTensorArgument<>("QGG"));
 
   int NG(fullQGG->lens[0]);
   int twodStart[] = { 1 , 1 };
   int twodEnd[] = { NG, NG};
-  Tensor<complex> QGG( fullQGG->slice(twodStart,twodEnd));
+  Tensor<> QGG( fullQGG->slice(twodStart,twodEnd));
 
-  auto invQGG(new Tensor<complex>(false, QGG));
+  auto invQGG(new Tensor<>(false, QGG));
 //  (*invQGG)["PQ"] = IterativePseudoInverse<complex>(QGG).get()["PQ"];
-  (*invQGG)["PQ"] = PseudoInverseSvd<complex>(QGG).get()["PQ"];
+  (*invQGG)["PQ"] = PseudoInverseSvd<double>(QGG).get()["PQ"];
   int NF[] = { NG };
   Tensor<> getStructureFactor(getTensorArgument<>("StructureFactor"));
   int NS(getStructureFactor.lens[0]);
@@ -446,28 +494,20 @@ void BasisSetExtrapolation::invertQGG(){
     throw new EXCEPTION("dimension problems of Q(G,G') and S(G)");
   }
 
-  auto complexStructureFactor(new Tensor<complex>(1, NF ));
   int onedStart[] = { 1 };
   int onedEnd[] = { NG};
-
-  toComplexTensor(*structureFactor,*complexStructureFactor);
-
-
-  auto slicedStructureFactor(new Tensor<complex>(complexStructureFactor->slice(onedStart,onedEnd)));
-
-  auto complexF12(new Tensor<complex>(false,*slicedStructureFactor));
-
-  (*complexF12)["P"] = (*invQGG)["PQ"]* (*slicedStructureFactor)["Q"];
-
   int NGG(NG-1);
   int NFF[] = { NGG };
-  auto realF12(new Tensor<>(1,NFF));
 
-  fromComplexTensor(*complexF12,*realF12);
+  auto slicedStructureFactor(new Tensor<>(structureFactor->slice(onedStart,onedEnd)));
+
+  auto slicedF12(new Tensor<>(false,*slicedStructureFactor));
+
+  (*slicedF12)["P"] = (*invQGG)["PQ"]* (*slicedStructureFactor)["Q"];
 
   auto f12(new Tensor<>(1, NF));
   int dstStart[] = { 0 };
-  f12->slice(onedStart,onedEnd,1.0,*realF12,dstStart,NFF,1.0);
+  f12->slice(onedStart,onedEnd,1.0,*slicedF12,dstStart,NFF,1.0);
 
   allocatedTensorArgument<>("f12",f12);
 

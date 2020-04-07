@@ -7,7 +7,7 @@
 #include <ctf.hpp>
 
 using namespace cc4s;
-using namespace tcc;
+// using namespace tcc;
 
 ALGORITHM_REGISTRAR_DEFINITION(DrccdDensities);
 

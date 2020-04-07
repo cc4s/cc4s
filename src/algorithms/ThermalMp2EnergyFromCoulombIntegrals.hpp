@@ -1,4 +1,4 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef THERMAL_MP2_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
 #define THERMAL_MP2_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 
@@ -24,9 +24,11 @@ namespace cc4s {
     virtual void dryRun();
 
   protected:
-    real beta;
-    PTR(CTF::Tensor<>) Dabij;
+    real beta, deltaMu;
+    PTR(CTF::Tensor<>) Dabij, Dai;
 
+    void expandedChemicalPotential();
+    void shiftedChemicalPotential();
     void computeFreeEnergy();
     void computeEnergyMoments();
     void computeNumberMoments();
@@ -43,6 +45,7 @@ namespace cc4s {
     real getDLogZMp2(const unsigned int n = 0, const bool dbeta = D_BETA);
     real getDLogZHf(const unsigned int n = 0, const bool dbeta = D_BETA);
     real getDLogZH0(const unsigned int n = 0, const bool dbeta = D_BETA);
+    real getDLogZHfDEps();
 
     void testDLogZMp2(const unsigned int n = 0, const bool dbeta = D_BETA);
     void testDLogZHf(const unsigned int n = 0, const bool dbeta = D_BETA);
@@ -116,9 +119,13 @@ namespace cc4s {
   public:
     ThermalContraction(
       const real beta_,
+      const real deltaMu_,
       const bool particle,
       const unsigned int n = 0, const bool dbeta_ = true
-    ): beta(beta_), sign(particle ? -1 : +1), dbeta(dbeta_), a(n) {
+    ):
+      beta(beta_), deltaMu(deltaMu_), sign(particle ? -1 : +1),
+      dbeta(dbeta_), a(n)
+    {
       if (n > 0) {
         std::vector<int64_t> nextA(n);
         a[0] = 1;
@@ -132,7 +139,8 @@ namespace cc4s {
         }
       }
     }
-    void operator()(const real eps, F &t) {
+    void operator()(const real epsilon, F &t) {
+      const real eps(epsilon-deltaMu);
       F x( 1/(1+std::exp(sign*eps*beta)) );
       if (a.size() == 0) {
         // 0th derivative
@@ -146,6 +154,7 @@ namespace cc4s {
           y += a[k] * std::pow(x,k+1) * std::pow(1-x,a.size()-k);
         }
         if (dbeta) {
+          // d/dbeta
           t *= std::pow(sign*eps,a.size()) * y;
         } else {
           // d/dmu
@@ -154,7 +163,7 @@ namespace cc4s {
       }
     }
   protected:
-    real beta;
+    real beta, deltaMu;
     int sign;
     bool dbeta;
     std::vector<int64_t> a;

@@ -5,6 +5,7 @@
 #include <Cc4s.hpp>
 #include <fstream>
 #include <ctf.hpp>
+#include <util/Emitter.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -51,14 +52,24 @@ Tensor<F> *TensorReader::read(const std::string &name) {
   std::string mode(getTextArgument("mode", "text"));
   if (mode == "binary") {
     std::string fileName(getTextArgument("file", name + ".bin"));
+    EMIT() << YAML::Key << "file" << YAML::Value << fileName;
     A = TensorIo::readBinary<F>(fileName);
   } else {
     std::string fileName(getTextArgument("file", name + ".dat").c_str());
     std::string delimiter(getTextArgument("delimiter", " "));
     int64_t bufferSize(getIntegerArgument("bufferSize", 128l*1024*1024));
     A = TensorIo::readText<F>(fileName, delimiter, bufferSize);
+    EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   }
   A->set_name(name.c_str());
+  EMIT() << YAML::Key << "Data"  << YAML::Value << name;
+
+  int64_t indexCount(1);
+  for (int dim(0); dim < A->order; ++dim) {
+    indexCount *= A->lens[dim];
+  }
+  EMIT() << YAML::Key << "elements" << YAML::Value << indexCount;
+
   return A;
 }
 

@@ -7,6 +7,7 @@
 #include <util/Exception.hpp>
 #include <Cc4s.hpp>
 #include <ctf.hpp>
+#include <util/Emitter.hpp>
 
 using namespace cc4s;
 using namespace CTF;
@@ -38,6 +39,35 @@ void CoulombIntegralsFromVertex::run() {
   int No(epsi->lens[0]);
   int Nv(epsa->lens[0]);
   int Np(GammaGqr->lens[1]);
+  EMIT()
+    << YAML::Key << "NG" << YAML::Value << NG
+    << YAML::Key << "No" << YAML::Value << No
+    << YAML::Key << "Nv" << YAML::Value << Nv
+    << YAML::Key << "Np" << YAML::Value << Np;
+
+  std::vector<std::string> list;
+  if (isArgumentGiven("PHPHCoulombIntegrals")) { list.push_back("PHPHCoulombIntegrals");}
+  if (isArgumentGiven("PPHHCoulombIntegrals")) { list.push_back("PPHHCoulombIntegrals");}
+  if (isArgumentGiven("HHHHCoulombIntegrals")) { list.push_back("HHHHCoulombIntegrals");}
+  if (isArgumentGiven("HHHPCoulombIntegrals")) { list.push_back("HHHPCoulombIntegrals");}
+  if (isArgumentGiven("PPPPCoulombIntegrals")) { list.push_back("PPPPCoulombIntegrals");}
+  if (isArgumentGiven("PPPHCoulombIntegrals")) { list.push_back("PPPHCoulombIntegrals");}
+  if (isArgumentGiven("PHHHCoulombIntegrals")) { list.push_back("PHHHCoulombIntegrals");}
+  if (isArgumentGiven("HHPPCoulombIntegrals")) { list.push_back("HHPPCoulombIntegrals");}
+  if (isArgumentGiven("PHHPCoulombIntegrals")) { list.push_back("PHHPCoulombIntegrals");}
+  if (isArgumentGiven("HPHHCoulombIntegrals")) { list.push_back("HPHHCoulombIntegrals");}
+  if (isArgumentGiven("HPHPCoulombIntegrals")) { list.push_back("HPHPCoulombIntegrals");}
+  if (isArgumentGiven("HPPPCoulombIntegrals")) { list.push_back("HPPPCoulombIntegrals");}
+  if (isArgumentGiven("PPHPCoulombIntegrals")) { list.push_back("PPHPCoulombIntegrals");}
+  if (isArgumentGiven("HPPHCoulombIntegrals")) { list.push_back("HPPHCoulombIntegrals");}
+  if (isArgumentGiven("HHPHCoulombIntegrals")) { list.push_back("HHPHCoulombIntegrals");}
+  if (isArgumentGiven("PHPPCoulombIntegrals")) { list.push_back("PHPPCoulombIntegrals");}
+  EMIT() << YAML::Key << "integrals" << YAML::Value;
+  EMIT() << YAML::Flow << YAML::BeginSeq;
+  for ( size_t i(0); i < list.size(); i++){
+    EMIT() << list[i];
+  }
+  EMIT() << YAML::EndSeq;
 
   // Allocate coulomb integrals Vabij Vaibj Vaijb Vijkl Vabcd
   // TODO: calculate vvvv, vvvo  for COMPLEX
@@ -110,7 +140,7 @@ void CoulombIntegralsFromVertex::dryRun() {
   );
 
   LOG(0, "Integrals") <<
-    "Reading Coulomb integrals form vertex " << GammaGqr->get_name() 
+    "Reading Coulomb integrals form vertex " << GammaGqr->get_name()
     << std::endl;
 
   // Compute the No,Nv,NG,Np

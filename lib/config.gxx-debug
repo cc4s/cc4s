@@ -1,2 +1,2 @@
 # This configuration is to enable some debug features of CTF
-CTF_CONFIG='CXX=mpicxx AR=gcc-ar CXXFLAGS="-Ofast -march=native -flto -fopenmp -DPROFILE" --blas="-L${BLAS_PATH} -lopenblas -lgfortran" --scalapack="-L${SCALAPACK_PATH} -lscalapack"'
+CTF_CONFIG='CXX=mpicxx AR=gcc-ar CXXFLAGS="-Ofast -march=native -flto -fopenmp -DPROFILE" --no-dynamic'

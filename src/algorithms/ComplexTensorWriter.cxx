@@ -5,6 +5,7 @@
 #include <fstream> 
 #include <iomanip>
 #include <ctf.hpp>
+#include <util/Emitter.hpp>
 
 using namespace CTF;
 using namespace cc4s;
@@ -23,12 +24,13 @@ void ComplexTensorWriter::run() {
   Tensor<complex> *A(getTensorArgument<complex>("Data"));
   std::string dataName(getArgumentData("Data")->getName());
   A->set_name(dataName.c_str());
-
+  EMIT() << YAML::Key << "Data" << YAML::Value << dataName;
   std::string mode(getTextArgument("mode", "text"));
   if (mode == "binary") {
     // write binary
     std::string fileName(getTextArgument("file", dataName + ".bin"));
     TensorIo::writeBinary<complex>(fileName, *A);
+    EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   } else {
     // write text
     std::string fileName(getTextArgument("file", dataName + ".dat"));
@@ -38,6 +40,15 @@ void ComplexTensorWriter::run() {
     TensorIo::writeText<complex>(
       fileName, *A, rowIndexOrder, columnIndexOrder, delimiter
     );
+    EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   }
+
+  int64_t indexCount(1);
+  for (int dim(0); dim < A->order; ++dim) {
+    indexCount *= A->lens[dim];
+  }
+  EMIT() << YAML::Key << "elements" << YAML::Value << indexCount;
+
+
 }
 

@@ -19,7 +19,7 @@ PseudoInverseSvd<F>::PseudoInverseSvd(
   // convert CTF matrices into ScaLapack matrices
   BlacsWorld blacsWorld(A.wrld->rank, A.wrld->np);
   // TODO: only works for quadratic matrices
-  ScaLapackMatrix<F> ScaA(A, A.lens, &blacsWorld);
+  ScaLapackMatrix<F> ScaA(A, std::array<int,2>{{A.lens[0],A.lens[1]}}.data(), &blacsWorld);
   ScaLapackMatrix<F> ScaU(ScaA);
   ScaLapackMatrix<F> ScaVT(ScaA);
 

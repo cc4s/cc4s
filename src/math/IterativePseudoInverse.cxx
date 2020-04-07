@@ -5,6 +5,7 @@
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <complex>
+#include <array>
 #include <limits>
 
 using namespace cc4s;
@@ -17,18 +18,18 @@ IterativePseudoInverse<F>::IterativePseudoInverse(
 ):
   matrix(matrix_),
   square(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix_.wrld
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix_.wrld
   ),
   inverse(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix_.wrld
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[1]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix_.wrld
   ),
   alpha()
 {
   Tensor<F> conjugate(
-    2, std::array<int,2>({matrix.lens[1], matrix.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+    2, std::array<int,2>{{matrix.lens[1], matrix.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix.wrld
   );
   Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
@@ -38,7 +39,15 @@ IterativePseudoInverse<F>::IterativePseudoInverse(
   rowAbsNorms.sum(1.0,square,"ij", 0.0,"i",fAbs);
   std::vector<F> normValues(rowAbsNorms.lens[0]);
   rowAbsNorms.read_all(normValues.data());
-  F max(-std::numeric_limits<F>::infinity());
+  // [K.L. 11.07.2019] complex infinity has undefined behaviour depending
+  // on the compiler. Tested using icc-debug and icc config in complex case
+  // and it gives (-0,-0). That's why in complex case it works while in real
+  // case it doesn't (max=infinity).
+  // Anyway, it doesn't make sense to compare if a number is larger than
+  // abs(-infinity). 
+  // F max(-std::numeric_limits<F>::infinity());
+  // A temporary fix: set max default to double type 0. 
+  double max(0.);
   for (int i(0); i < square.lens[0]; ++i) {
     if (abs(normValues[i]) > abs(max)) max = abs(normValues[i]);
   }
@@ -53,14 +62,14 @@ template <typename F>
 void IterativePseudoInverse<F>::iterate(F accuracy) {
   Scalar<F> s;
   Tensor<F> conjugate(
-    2, std::array<int,2>({matrix.lens[1], matrix.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+    2, std::array<int,2>{{matrix.lens[1], matrix.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix.wrld
   );
   Univar_Function<F> fConj(&conj<F>);
   conjugate.sum(1.0,matrix,"ij", 0.0,"ji",fConj);
   Tensor<F> sqr(
-    2, std::array<int,2>({matrix.lens[0], matrix.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), *matrix.wrld
+    2, std::array<int,2>{{matrix.lens[0], matrix.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), *matrix.wrld
   );
   F remainder(1.0), minRemainder(std::numeric_limits<F>::infinity());
   int n(0), nMin(0);
@@ -156,7 +165,7 @@ void IterativePseudoInverse<F>::generateHilbertMatrix(Tensor<F> &m) {
 template <typename F>
 void IterativePseudoInverse<F>::test(World *world) {
   Tensor<F> m(
-    2, std::array<int,2>({5,8}).data(), std::array<int,2>({NS,NS}).data(),
+    2, std::array<int,2>{{5,8}}.data(), std::array<int,2>{{NS,NS}}.data(),
     *world
   );
   {
@@ -202,17 +211,17 @@ DryIterativePseudoInverse<F>::DryIterativePseudoInverse(
 ):
   matrix(matrix_),
   square(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[0]}).data(),
-    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[0]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
   ),
   inverse(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
-    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[1]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
   )
 {
   DryTensor<F> conjugate(
-    2, std::array<int,2>({matrix_.lens[0], matrix_.lens[1]}).data(),
-    std::array<int,2>({NS,NS}).data(), SOURCE_LOCATION
+    2, std::array<int,2>{{matrix_.lens[0], matrix_.lens[1]}}.data(),
+    std::array<int,2>{{NS,NS}}.data(), SOURCE_LOCATION
   );
   DryVector<F> rowAbsNorms(square.lens[0]);
 }

@@ -1,10 +1,21 @@
 # libraries needed by cc4s
-LIBRARIES=build/${CONFIG}/ctf/lib/libctf.a
+LIBRARIES= \
+build/${CONFIG}/ctf/lib/libctf.a \
+build/${CONFIG}/yaml-cpp/libyaml-cpp.a \
+build/${CONFIG}/yaml-cpp/include/yaml-cpp/yaml.h
 
 ###### ctf ######
 src/ctf/configure:
-	cd ..; git submodule init
-	cd ..; git submodule update
+	cd ..; git submodule init lib/src/ctf
+	cd ..; git submodule update lib/src/ctf
+
+src/yaml-cpp/CMakeLists.txt:
+	cd ..; git submodule init lib/src/yaml-cpp
+	cd ..; git submodule update lib/src/yaml-cpp
+
+#build/${CONFIG}/ctf/Makefile: src/ctf/configure
+#	mkdir -p build/${CONFIG}/ctf
+#	cd build/${CONFIG}/ctf && ../../../src/ctf/configure --no-dynamic '${CTF_CONFIG}'
 
 build/${CONFIG}/ctf/Makefile: src/ctf/configure
 	mkdir -p build/${CONFIG}/ctf
@@ -12,4 +23,15 @@ build/${CONFIG}/ctf/Makefile: src/ctf/configure
 
 build/${CONFIG}/ctf/lib/libctf.a: build/${CONFIG}/ctf/Makefile
 	$(CTF_CALLBACK)
-	$(MAKE) -C build/${CONFIG}/ctf
+	$(MAKE) -C build/${CONFIG}/ctf ctflib
+
+build/${CONFIG}/yaml-cpp/Makefile: src/yaml-cpp/CMakeLists.txt
+	mkdir -p build/${CONFIG}/yaml-cpp
+	cd build/${CONFIG}/yaml-cpp && cmake ../../../src/yaml-cpp
+
+build/${CONFIG}/yaml-cpp/libyaml-cpp.a: build/${CONFIG}/yaml-cpp/Makefile
+	$(MAKE) -C build/${CONFIG}/yaml-cpp
+
+build/${CONFIG}/yaml-cpp/include/yaml-cpp/yaml.h: src/yaml-cpp/CMakeLists.txt
+	cp -r src/yaml-cpp/include build/${CONFIG}/yaml-cpp
+

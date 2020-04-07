@@ -17,9 +17,8 @@ namespace cc4s {
     virtual void run();
   protected:
 
-    static constexpr int iterations = 10;
 
-    void evaluateQGG(int slice);
+    void evaluateQGG(int orbitalPairStart, int orbtialPairEnd, int slice);
     void fitF12(int type, real minG, real maxG);
     void calculateNewSF(
       int type, real gamma, CTF::Tensor<> *coulombKernel, CTF::Tensor<> *newSF, CTF::Tensor<> *resNewSF

@@ -80,9 +80,9 @@ void LaplaceTransform::run() {
   auto No( getTensorArgument<real>("ThermalHoleEigenEnergies")->lens[0] );
   auto Nv( getTensorArgument<real>("ThermalParticleEigenEnergies")->lens[0] );
   auto Nt( tn->lens[0] );
-  CTF::Tensor<real> Dai(2, std::vector<int>({Nv,No}).data());
+  CTF::Tensor<real> Dai(2, std::array<int,2>{{Nv,No}}.data());
   fetchDelta(Dai);
-  auto Tain( new CTF::Tensor<complex>(3, std::vector<int>({Nv,No,Nt}).data()) );
+  auto Tain( new CTF::Tensor<complex>(3, std::array<int,3>{{Nv,No,Nt}}.data()) );
   CTF::Transform<real, complex>(
     std::function<void(real, complex &)>(
       [](real Delta, complex &T) { T = Delta; }

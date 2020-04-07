@@ -104,6 +104,8 @@ void ThermalHolesAndParticles::determineChemicalPotential() {
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
   double NElectrons(getRealArgument("Electrons") / spins);
   kT = getRealArgument("Temperature");
+  muLower -= 10*kT;
+  muUpper += 10*kT;
   LOG(1,"FT")
     << "searching for mu in [" << muLower << "," << muUpper << "]" << std::endl;
   // current estimate for the chemical potential

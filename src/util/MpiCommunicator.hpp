@@ -33,7 +33,7 @@ namespace cc4s {
     void reduce(const F &src, F &dst, int rootRank = 0) {
       MPI_Reduce(
         &src, &dst,
-        MpiTypeTraits<F>::ElementCount, MpiTypeTraits<F>::ElementType,
+        MpiTypeTraits<F>::elementCount(), MpiTypeTraits<F>::elementType(),
         MPI_SUM, rootRank, comm
       );
     }
@@ -42,7 +42,7 @@ namespace cc4s {
     void allReduce(const F &src, F &dst) {
       MPI_Allreduce(
         &src, &dst,
-        MpiTypeTraits<F>::ElementCount, MpiTypeTraits<F>::ElementType,
+        MpiTypeTraits<F>::elementCount(), MpiTypeTraits<F>::elementType(),
         MPI_SUM, comm
       );
     }
@@ -61,10 +61,10 @@ namespace cc4s {
         dst.resize(0);
       }
       MPI_Gather(
-        src.data(), src.size() * MpiTypeTraits<F>::ElementCount,
-        MpiTypeTraits<F>::ElementType,
-        dst.data(), src.size() * MpiTypeTraits<F>::ElementCount,
-        MpiTypeTraits<F>::ElementType,
+        src.data(), src.size() * MpiTypeTraits<F>::elementCount(),
+        MpiTypeTraits<F>::elementType(),
+        dst.data(), src.size() * MpiTypeTraits<F>::elementCount(),
+        MpiTypeTraits<F>::elementType(),
         rootRank, comm
       );
     }
@@ -85,43 +85,45 @@ namespace cc4s {
   template <>
   class MpiTypeTraits<int> {
   public:
-    static constexpr MPI_Datatype ElementType = MPI_INT;
-    static constexpr int ElementCount = 1;
+    static MPI_Datatype elementType() { return MPI_INT; }
+    static int elementCount()  { return 1; }
   };
 
   template <>
   class MpiTypeTraits<int64_t> {
   public:
-    static constexpr MPI_Datatype ElementType = MPI_INTEGER8;
-    static constexpr int ElementCount = 1;
+    static MPI_Datatype elementType() { return MPI_INTEGER8; }
+    static int elementCount() { return 1; }
   };
 
   template <>
   class MpiTypeTraits<uint64_t> {
   public:
-    static constexpr MPI_Datatype ElementType = MPI_INTEGER8;
-    static constexpr int ElementCount = 1;
+    static MPI_Datatype elementType() { return MPI_INTEGER8; }
+    static int elementCount() { return 1; }
   };
 
   template <>
   class MpiTypeTraits<double> {
   public:
-    static constexpr MPI_Datatype ElementType = MPI_REAL8;
-    static constexpr int ElementCount = 1;
+    static MPI_Datatype elementType() { return MPI_REAL8; }
+    static int elementCount() { return 1; }
   };
 
   template <>
   class MpiTypeTraits<complex> {
   public:
-    static constexpr MPI_Datatype ElementType = MPI_DOUBLE_COMPLEX;
-    static constexpr int ElementCount = 1;
+    static MPI_Datatype elementType() { return MPI_DOUBLE_COMPLEX; }
+    static int elementCount() { return 1; }
   };
 
   template <typename F, int D>
   class MpiTypeTraits<Vector<F, D>> {
   public:
-    static constexpr MPI_Datatype ElementType = MpiTypeTraits<F>::ElementType;
-    static constexpr int ElementCount = D;
+    static MPI_Datatype elementType() {
+      return MpiTypeTraits<F>::elementType();
+    }
+    static int elementCount() { return D; }
   };
 }
 
