@@ -32,6 +32,6 @@ build/${CONFIG}/yaml-cpp/Makefile: src/yaml-cpp/CMakeLists.txt
 build/${CONFIG}/yaml-cpp/libyaml-cpp.a: build/${CONFIG}/yaml-cpp/Makefile
 	$(MAKE) -C build/${CONFIG}/yaml-cpp
 
-build/${CONFIG}/yaml-cpp/include/yaml-cpp/yaml.h: src/yaml-cpp/CMakeList.txt
+build/${CONFIG}/yaml-cpp/include/yaml-cpp/yaml.h: src/yaml-cpp/CMakeLists.txt
 	cp -r src/yaml-cpp/include build/${CONFIG}/yaml-cpp
 
