@@ -7,7 +7,7 @@
 #include <ctf.hpp>
 
 using namespace cc4s;
-using namespace tcc;
+// using namespace tcc;
 
 ALGORITHM_REGISTRAR_DEFINITION(DrccdDensities);
 
@@ -61,7 +61,7 @@ void DrccdDensities::dryRun() {
 template <typename T, typename MT>
 void DrccdDensities::run(T *ctfEpsi, T *ctfEpsa, T *ctfDabij, const bool ) {
   auto machineTensorFactory(MT::Factory::create());
-  auto tcc(Tcc<double>::create(machineTensorFactory));
+  auto tcc(tcc::Tcc<double>::create(machineTensorFactory));
 
   // Read the Drccd doubles amplitudes Tabij
   T *ctfTabij( getTensorArgument<double, T>("DrccdDoublesAmplitudes") );
