@@ -86,6 +86,23 @@ namespace tcc {
       f, A
     );
   }
+  /**
+   * \brief Creates a map expression of a unary map f and one tensor
+   * expressions A.
+   **/
+  template <
+    typename Target, typename RHS
+  >
+  inline
+  PTR(ESC(Map<Target,typename RHS::FieldType,typename RHS::TensorEngine>)) map(
+    Target (*f)(const typename RHS::FieldType),
+    const PTR(RHS) &A
+  ) {
+    return
+    Map<Target,typename RHS::FieldType,typename RHS::TensorEngine>::create(
+      std::function<Target(const typename RHS::FieldType)>(f), A
+    );
+  }
 }
 
 #endif

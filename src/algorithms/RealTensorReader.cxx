@@ -30,14 +30,14 @@ void RealTensorReader::run() {
   int64_t precision(getIntegerArgument("precision", 64));
   switch (precision) {
   case 64:
-    allocatedTensorArgument<Float64>(
-      "Data", read<Float64>(name)
+    allocatedTensorArgument<Real<64>>(
+      "Data", read<Real<64>>(name)
     );
     break;
   case 128:
 #ifndef INTEL_COMPILER
-    allocatedTensorArgument<Float128>(
-      "Data", read<Float128>(name)
+    allocatedTensorArgument<Real<128>>(
+      "Data", read<Real<128>>(name)
     );
 #else
     throw new EXCEPTION("Quadruple precision not supported for Intel");

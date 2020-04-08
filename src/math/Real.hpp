@@ -37,24 +37,15 @@ namespace cc4s {
 #endif
   };
 
-  // define explicit size float types
-  // DEPRECATED: use Real<32>, ... instead
-  typedef FloatTypes<32>::type Float32;
-  typedef FloatTypes<64>::type Float64;
-  typedef FloatTypes<128>::type Float128;
-
   template <int FloatSize=DEFAULT_FLOAT_BIT_SIZE>
   using Real = typename FloatTypes<FloatSize>::type;
-
-  // DEPRECATED
-  typedef Real<> real;
 
 // define stream output for quadruple precision numbers
 #ifdef INTEL_COMPILER
     // TODO: implement for intel
 #else
   inline std::ostream &operator <<(
-    std::ostream &stream, const Float128 x
+    std::ostream &stream, const Real<128> x
   ) {
     char buffer[1024];
     quadmath_snprintf(buffer, sizeof(buffer), "%*.36Qe", x);

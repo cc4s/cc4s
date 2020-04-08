@@ -166,7 +166,7 @@ void Cc4s::printStatistics() {
     // TODO: check memory unit, currently assumed to be kB
   }
   statusStream.close();
-  real unitsPerGB(1024.0*1024.0);
+  Real<> unitsPerGB(1024.0*1024.0);
   LOG(0, "root") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
     << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
   EMIT()

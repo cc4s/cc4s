@@ -23,11 +23,11 @@ DryMatrix<F>::DryMatrix(
 }
 // instantiate
 template
-DryMatrix<Float64>::DryMatrix(
+DryMatrix<Real<64>>::DryMatrix(
   size_t rows, size_t cols, int sym, SourceLocation const &location
 );
 template
-DryMatrix<Complex64>::DryMatrix(
+DryMatrix<Complex<64>>::DryMatrix(
   size_t rows, size_t cols, int sym, SourceLocation const &location
 );
 
@@ -44,9 +44,9 @@ DryVector<F>::DryVector(
 }
 // instantiate
 template
-DryVector<Float64>::DryVector(size_t elements, SourceLocation const &location);
+DryVector<Real<64>>::DryVector(size_t elements, SourceLocation const &location);
 template
-DryVector<Complex64>::DryVector(size_t elements, SourceLocation const &location);
+DryVector<Complex<64>>::DryVector(size_t elements, SourceLocation const &location);
 
 
 template <typename F>
@@ -62,9 +62,9 @@ DryScalar<F>::DryScalar(
 }
 // instantiate
 template
-DryScalar<Float64>::DryScalar(SourceLocation const &location);
+DryScalar<Real<64>>::DryScalar(SourceLocation const &location);
 template
-DryScalar<Complex64>::DryScalar(SourceLocation const &location);
+DryScalar<Complex<64>>::DryScalar(SourceLocation const &location);
 
 template <typename F>
 DryScalar<F>::DryScalar(
@@ -80,18 +80,18 @@ DryScalar<F>::DryScalar(
 }
 // instantiate
 template
-DryScalar<Float64>::DryScalar(
-  const Float64 value, SourceLocation const &location
+DryScalar<Real<64>>::DryScalar(
+  const Real<64> value, SourceLocation const &location
 );
 template
-DryScalar<Complex64>::DryScalar(
-  const Complex64 value, SourceLocation const &location
+DryScalar<Complex<64>>::DryScalar(
+  const Complex<64> value, SourceLocation const &location
 );
 template
-DryScalar<Float128>::DryScalar(
-  const Float128 value, SourceLocation const &location
+DryScalar<Real<128>>::DryScalar(
+  const Real<128> value, SourceLocation const &location
 );
 template
-DryScalar<Complex128>::DryScalar(
-  const Complex128 value, SourceLocation const &location
+DryScalar<Complex<128>>::DryScalar(
+  const Complex<128> value, SourceLocation const &location
 );

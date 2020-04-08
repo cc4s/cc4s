@@ -11,6 +11,7 @@
 #include <tcc/Tensor.hpp>
 
 #include <util/SharedPointer.hpp>
+#include <math/Real.hpp>
 
 // TODO: support slicing
 // TODO: expression definitions with local index renaming
@@ -30,21 +31,21 @@ namespace tcc {
     };
 
   public:
-    template <typename F=cc4s::real>
+    template <typename F=cc4s::Real<>>
     static PTR(ESC(Tensor<F,TensorEngine>)) tensor(
       const std::vector<size_t> &lens, const std::string &name
     ) {
       return Tensor<F,TensorEngine>::create(lens, name);
     }
 
-    template <typename F=cc4s::real>
+    template <typename F=cc4s::Real<>>
     static PTR(ESC(Tensor<F,TensorEngine>)) tensor(
       const PTR(ESC(Tensor<F,TensorEngine>)) &source, const std::string &name
     ) {
       return Tensor<F,TensorEngine>::create(source->getLens(), name);
     }
 
-    template <typename F=cc4s::real>
+    template <typename F=cc4s::Real<>>
     static PTR(ESC(Tensor<F,TensorEngine>)) tensor(const std::string &name) {
       return Tensor<F,TensorEngine>::create(name);
     }

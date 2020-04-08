@@ -60,22 +60,14 @@ void TensorNetwork::dryRun() {
     TCC::tensor(std::vector<size_t>({NR,Np}), "Pir")
   );
 
-//  CompoundDryTensorExpression<> Gamma("Fac") = PiT["Ra"] * Pi["Rc"] * Lambda["RG"]
-
   // compile a sequence (,) of operations. Note the required parenthesis
   auto ladderExpression = (
-/*
-    (*Gamma)["Fqr"] <<= (*Pi)["Rq"] * (*Pi)["Rr"] * (*Lambda)["RF"],
-    (*Pi)["Rr"] <<= (*LambdaT)["RF"] * (*PiT)["Rq"] * (*Gamma)["Fqr"],
-    (*T)["abij"] -= -1/4. *(*T)["abji"],
-*/
     (*LambdaT)["RF"] <<= (*Lambda)["RF"],
-    (*PiT)["Rb"] <<=
-      tcc::map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]),
+    (*PiT)["Rb"] <<= tcc::map(conj<Real<>>, (*Pi)["Rb"]),
     (*D)["abij"] +=
       (*T)["cdij"] *
       (*Pi)["Rd"] *
-      tcc::map(std::function<real(const real)>(cc4s::conj<real>), (*Pi)["Rb"]) *
+      tcc::map(conj<Real<>>, (*Pi)["Rb"]) *
       (*Pi)["Sc"] * (*PiT)["Sa"] *
       (*LambdaT)["SF"] * (*Lambda)["RF"],
     (*Pi)["Ra"] <<= (*Pi)["Ra"],
