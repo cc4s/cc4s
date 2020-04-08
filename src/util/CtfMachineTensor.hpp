@@ -11,6 +11,7 @@ namespace tcc {
   template <typename F,typename TE> class Tensor;
 }
 
+// TODO: specify MPI communicator when creating CtfEngine
 namespace cc4s {
   class CtfEngine;
 
@@ -35,9 +36,9 @@ namespace cc4s {
     ):
       tensor(
         static_cast<int>(lens.size()),
-        std::vector<int>(lens.begin(), lens.end()).data(),
+        std::vector<int64_t>(lens.begin(), lens.end()).data(),
         std::vector<int>(0, lens.size()).data(),
-        *Cc4s::world, name.c_str()
+        CTF::get_universe(), name.c_str()
       )
     {
     }
@@ -173,9 +174,9 @@ namespace cc4s {
       const std::vector<size_t> ends
     ) {
       LOG(2, "TCC") << "slice " <<
-        getName() << "[" << begins << "," ends << ") <<= " <<
+        getName() << "[" << begins << "," << ends << ") <<= " <<
         alpha << " * " <<
-        ctfA->getName() << "[" << aBegins << "," << aEnds << "] + " <<
+        A->getName() << "[" << aBegins << "," << aEnds << "] + " <<
         beta << " * " <<
         getName() << "[" << begins << "," << ends << "]" << std::endl;
       tensor.slice(

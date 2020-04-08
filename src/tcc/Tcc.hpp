@@ -10,7 +10,6 @@
 #include <tcc/Slice.hpp>
 #include <tcc/Tensor.hpp>
 
-#include <math/Float.hpp>
 #include <util/SharedPointer.hpp>
 
 // TODO: support slicing

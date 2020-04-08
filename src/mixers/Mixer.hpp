@@ -10,7 +10,7 @@
 #include <string>
 
 namespace cc4s {
-  template <typename F>
+  template <typename F, typename TE>
   class Mixer {
   public:
     Mixer(Algorithm *algorithm);
@@ -29,8 +29,8 @@ namespace cc4s {
      * A and R are not expected to change upon return.
      **/
     virtual void append(
-      const PTR(FockVector<F>) &A,
-      const PTR(FockVector<F>) &R
+      const PTR(ESC(FockVector<F,TE>)) &A,
+      const PTR(ESC(FockVector<F,TE>)) &R
     ) = 0;
 
     /**
@@ -39,7 +39,7 @@ namespace cc4s {
      * Requires one or more previous calls to append.
      * The returned FockVectors must not be changed.
      **/
-    virtual PTR(const FockVector<F>) get() = 0;
+    virtual PTR(ESC(const FockVector<F,TE>)) get() = 0;
 
     /**
      * \brief Returns the estimated residuum of the current best estimate
@@ -48,12 +48,12 @@ namespace cc4s {
      * Requires one or more previous calls to append.
      * The returned FockVectors must not be changed.
      **/
-    virtual PTR(const FockVector<F>) getResiduum() = 0;
+    virtual PTR(ESC(const FockVector<F,TE>)) getResiduum() = 0;
 
     Algorithm *algorithm;
   };
 
-  template <typename F>
+  template <typename F, typename TE>
   class MixerFactory {
   public:
 // FIXME: find out why typedef doesn't work in this case
@@ -69,28 +69,28 @@ namespace cc4s {
      * The instantiated mixer must be registered using the
      * MixerRegistrar class.
      */
-    static PTR(Mixer<F>) create(
+    static PTR(ESC(Mixer<F,TE>)) create(
       std::string const &name, Algorithm *algorithm
     ) {
       auto iterator(getMixerMap()->find(name));
       return iterator != getMixerMap()->end() ?
-        iterator->second(algorithm) : PTR(Mixer<F>)();
+        iterator->second(algorithm) : PTR(ESC(Mixer<F,TE>))();
     }
   protected:
     static std::map<
       std::string,
-      std::function<PTR(Mixer<F>) (Algorithm *algorithm)>
+      std::function<PTR(ESC(Mixer<F,TE>)) (Algorithm *algorithm)>
     > *getMixerMap() {
       return mixerMap ? mixerMap : (
         mixerMap = new std::map<
           std::string,
-          std::function<PTR(Mixer<F>) (Algorithm *)>
+          std::function<PTR(ESC(Mixer<F,TE)>) (Algorithm *)>
         >
       );
     }
     static std::map<
       std::string,
-      std::function<PTR(Mixer<F>) (Algorithm *)>
+      std::function<PTR(ESC(Mixer<F,TE>)) (Algorithm *)>
     > *mixerMap;
 /*
     static MixerMap *getMixerMap() {
@@ -103,8 +103,8 @@ namespace cc4s {
   /**
    * \brief template function creating an instance of the given class.
    */
-  template <typename F, typename MixerType>
-  PTR(Mixer<F>) createMixer(Algorithm *algorithm) {
+  template <typename F, typename TE, typename MixerType>
+  PTR(ESC(Mixer<F,TE>)) createMixer(Algorithm *algorithm) {
     return NEW(MixerType, algorithm);
   }
 
@@ -113,8 +113,8 @@ namespace cc4s {
    * it in the MixerFactory. Registered mixers can be instantiated
    * from the cc4s control language.
    */
-  template <typename F, typename MixerType>
-  class MixerRegistrar: protected MixerFactory<F> {
+  template <typename F, typename TE, typename MixerType>
+  class MixerRegistrar: protected MixerFactory<F,TE> {
   public:
     /**
      * \brief Constructs the registrating instance. The mixer type
@@ -122,19 +122,19 @@ namespace cc4s {
      * method argument.
      */
     MixerRegistrar(std::string const &name) {
-      (*MixerFactory<F>::getMixerMap())[name] = &createMixer<F, MixerType>;
+      (*MixerFactory<F,TE>::getMixerMap())[name] = &createMixer<F,TE,MixerType>;
     }
   };
 
   /**
    * \brief Auxiliary macro declaring the mixer registrar for
    * the mixer type of the given name. This macro is to be
-   * used in the algorith declaration within the .hpp file.
+   * used in the mixer declaration within the .hpp file.
    * Note that name is a symbol name not a string.
    */
   #define MIXER_REGISTRAR_DECLARATION(NAME) \
     virtual std::string getName() { return #NAME; } \
-    static MixerRegistrar<F, NAME<F>> registrar_;
+    static MixerRegistrar<F,TE,NAME<F,TE>> registrar_;
 
   /**
    * \brief Auxiliary macro defining the mixer registrar for
@@ -143,8 +143,8 @@ namespace cc4s {
    * Note that name is a symbol name not a string.
    */
   #define MIXER_REGISTRAR_DEFINITION(NAME) \
-    template <typename F> \
-    MixerRegistrar<F, NAME<F>> NAME<F>::registrar_(#NAME);
+    template <typename F, typename TE> \
+    MixerRegistrar<F,TE,NAME<F,TE>> NAME<F,TE>::registrar_(#NAME);
 }
 
 #endif

@@ -7,23 +7,23 @@
 #include <util/SharedPointer.hpp>
 
 namespace cc4s {
-  template <typename F>
-  class LinearMixer: public Mixer<F> {
+  template <typename F, typename TE>
+  class LinearMixer: public Mixer<F,TE> {
   public:
     MIXER_REGISTRAR_DECLARATION(LinearMixer);
     LinearMixer(Algorithm *algorithm);
     virtual ~LinearMixer();
 
     virtual void append(
-      const PTR(FockVector<F>) &A, const PTR(FockVector<F>) &R
+      const PTR(ESC(FockVector<F,TE>)) &A, const PTR(ESC(FockVector<F,TE>)) &R
     );
-    virtual PTR(const FockVector<F>) get();
-    virtual PTR(const FockVector<F>) getResiduum();
+    virtual PTR(ESC(const FockVector<F,TE>)) get();
+    virtual PTR(ESC(const FockVector<F,TE>)) getResiduum();
 
-    PTR(FockVector<F>) last;
-    PTR(FockVector<F>) lastResiduum;
+    PTR(ESC(FockVector<F,TE>)) last;
+    PTR(ESC(FockVector<F,TE>)) lastResiduum;
 
-    double ratio;
+    F ratio;
   };
 }
 

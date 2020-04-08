@@ -9,32 +9,32 @@
 
 namespace cc4s {
   // constants
-  template <typename F=double>
+  template <typename F=Real<>>
   constexpr F Pi() {
     return std::acos(F(-1));
   }
 
-  template <typename F=double>
+  template <typename F=Real<>>
   constexpr F Tau() {
     return 2 * Pi<F>();
   }
 
   // univariate functions
-  template <typename F=double>
+  template <typename F=Real<>>
   inline F sqrt(F const x) {
     return std::sqrt(x);
   }
 
-  template <typename F=double>
+  template <typename F=Real<>>
   inline F abs(F const x) {
     return std::abs(x);
   }
 
 #ifdef INTEL_COMPILER
-  Float128 __absq(Float128);
+  Real<128> __absq(Real<128>);
 #endif
 
-  inline Float128 abs(Float128 const x) {
+  inline Real<128> abs(Real<128> const x) {
 #ifndef INTEL_COMPILER
     return fabsq(x);
 #else
@@ -48,12 +48,12 @@ namespace cc4s {
   }
 
   template <>
-  inline double conj(double const x) {
+  inline Real<> conj(Real<> const x) {
     return x;
   }
 
   // bivariate functions
-  template <typename F=double>
+  template <typename F=Real<>>
   inline F dot(F const x, F const y) {
     return conj(x) * y;
   }
@@ -61,16 +61,17 @@ namespace cc4s {
   /**
    * \brief Calculates only the real part of x*conj(y).
    */
-  template <typename F=double>
+  template <typename F=Real<>>
   inline F realDot(F const x, F const y) {
     return std::real(x*conj(y));
   }
 
-  template <typename F=double>
+  template <typename F=Real<>>
   inline F divide(F const x, F const y) {
     return x / y;
   }
 
+/*
   template <typename F>
   inline double frobeniusNorm(CTF::Tensor<F> &t) {
     char *indices(new char[t.order+1]);
@@ -81,6 +82,7 @@ namespace cc4s {
     s.contract(1.0, t,indices, t,indices, 0.0,"", fRealDot);
     return std::sqrt(std::real(s.get_val()));
   }
+*/
 
   /**
    * \brief Calculate the sign of a permutation of strings, e.g.
