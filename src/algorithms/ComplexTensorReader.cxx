@@ -29,20 +29,20 @@ void ComplexTensorReader::run() {
   Cc4s::world->barrier();
 
   std::string mode(getTextArgument("mode", "text"));
-  Tensor<complex> *A;
+  Tensor<Complex<>> *A;
   if (mode == "binary") {
     std::string fileName(getTextArgument("file", dataName + ".bin"));
-    A = TensorIo::readBinary<complex>(fileName);
+    A = TensorIo::readBinary<Complex<>>(fileName);
     EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   } else {
     std::string fileName(getTextArgument("file", dataName + ".dat"));
     std::string delimiter(getTextArgument("delimiter", " "));
     int64_t bufferSize(getIntegerArgument("bufferSize", 128l*1024*1024));
-    A = TensorIo::readText<complex>(fileName, delimiter, bufferSize);
+    A = TensorIo::readText<Complex<>>(fileName, delimiter, bufferSize);
     EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   }
   A->set_name(dataName.c_str());
-  allocatedTensorArgument<complex>("Data", A);
+  allocatedTensorArgument<Complex<>>("Data", A);
   EMIT() << YAML::Key << "Data" << YAML::Value << dataName;
 
   int64_t indexCount(1);

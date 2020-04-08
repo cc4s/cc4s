@@ -9,15 +9,6 @@ namespace cc4s {
   template <int FloatSize=64>
   using Complex = std::complex<Real<FloatSize>>;
 
-  // define explicit size complex types
-  // DEPRECATED: use Complex<Real<32>> instead
-  typedef Complex<32> Complex32;
-  typedef Complex<64> Complex64;
-  typedef Complex<128> Complex128;
-
-  // DEPRECATED:
-  typedef Complex<> complex;
-
   template <typename F>
   inline F absSqr(const F x) {
     return x*x;

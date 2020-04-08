@@ -339,16 +339,16 @@ void Algorithm::allocatedTensorArgument<
 // TODO: remove specialized tensors (matrix, vector, scalar)
 template
 void Algorithm::allocatedTensorArgument<
-  cc4s::complex, CTF::Matrix<cc4s::complex>
->(std::string const &name, CTF::Matrix<cc4s::complex> *tensor);
+  Complex<64>, CTF::Matrix<Complex<64>>
+>(std::string const &name, CTF::Matrix<Complex<64>> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  cc4s::complex, CTF::Vector<cc4s::complex>
->(std::string const &name, CTF::Vector<cc4s::complex> *tensor);
+  Complex<64>, CTF::Vector<Complex<64>>
+>(std::string const &name, CTF::Vector<Complex<64>> *tensor);
 template
 void Algorithm::allocatedTensorArgument<
-  cc4s::complex, CTF::Scalar<cc4s::complex>
->(std::string const &name, CTF::Scalar<cc4s::complex> *tensor);
+  Complex<64>, CTF::Scalar<Complex<64>>
+>(std::string const &name, CTF::Scalar<Complex<64>> *tensor);
 
 template
 void Algorithm::allocatedTensorArgument<

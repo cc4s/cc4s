@@ -119,8 +119,8 @@ namespace util {
   class ComplexPolynomialRootFinder {
   public:
     ComplexPolynomialRootFinder(
-      ScaledPolynomial<complex> const * const p_
-    ): p(p_), roots(new complex[p_->degree()]) {
+      ScaledPolynomial<Complex<>> const * const p_
+    ): p(p_), roots(new Complex<>[p_->degree()]) {
       int rnd(1);
       // initialize the roots randomly wihtin the unit square [-1,1]^2
       // this is an upper bound for the roots of a scaled polynomial
@@ -129,24 +129,24 @@ namespace util {
         double re(2.0 * rnd/32749 - 1.0);
         rnd = (rnd*21839 + 3643) % 32749;
         double im(2.0 * rnd/32749 - 1.0);
-        roots[k] = complex(re,im);
+        roots[k] = Complex<>(re,im);
       }
     }
 
     void findRoots(double const accuracy = 1e-10) {
-      complex steps[p->degree()];
+      Complex<> steps[p->degree()];
       double epsilon;
       do {
         for (int k(0); k < p->degree(); ++k) {
-          complex r(
+          Complex<> r(
             p->at(roots[k]) / p->derivativeAt(roots[k])
           );
-          complex repulsion(0);
+          Complex<> repulsion(0);
           for (int j(0); j < p->degree(); ++j) {
             if (j != k) repulsion +=
-              complex(1) / (roots[k] - roots[j]);
+              Complex<>(1) / (roots[k] - roots[j]);
           }
-          steps[k] = r / (complex(1) - r * repulsion);
+          steps[k] = r / (Complex<>(1) - r * repulsion);
         }
         epsilon = 0.0;
         for (int k(0); k < p->degree(); ++k) {
@@ -157,16 +157,16 @@ namespace util {
       } while (epsilon > accuracy*accuracy);
     }
 
-    complex getRoot(int const k) const {
+    Complex<> getRoot(int const k) const {
       return roots[k];
     }
 
     static void test() {
-      complex a[] = {
+      Complex<> a[] = {
         -4.63144e+10, 2*7.47678e+16, 3*4.52909e+21, 4*2.85318e+27
       };
       {
-        ScaledPolynomial<complex> p(a, 3);
+        ScaledPolynomial<Complex<>> p(a, 3);
         ComplexPolynomialRootFinder rootFinder(&p);
         rootFinder.findRoots();
         for (int k(0); k < p.degree(); ++k) {
@@ -174,9 +174,9 @@ namespace util {
             rootFinder.getRoot(k) / p.getScale() << std::endl;
         }
       }
-      complex b[] = { -1, 0, 1};
+      Complex<> b[] = { -1, 0, 1};
       {
-        ScaledPolynomial<complex> p(b, 2);
+        ScaledPolynomial<Complex<>> p(b, 2);
         std::cout << "p(1)=" << p.at(2.0) << std::endl;
         ComplexPolynomialRootFinder rootFinder(&p);
         rootFinder.findRoots();
@@ -186,8 +186,8 @@ namespace util {
       }
     }
   protected:
-    ScaledPolynomial<complex> const *p;
-    complex *roots;
+    ScaledPolynomial<Complex<>> const *p;
+    Complex<> *roots;
   };
 }
 

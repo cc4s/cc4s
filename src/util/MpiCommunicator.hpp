@@ -108,14 +108,14 @@ namespace cc4s {
   };
 
   template <>
-  class MpiTypeTraits<double> {
+  class MpiTypeTraits<Real<64>> {
   public:
     static MPI_Datatype elementType() { return MPI_REAL8; }
     static int elementCount() { return 1; }
   };
 
   template <>
-  class MpiTypeTraits<complex> {
+  class MpiTypeTraits<Complex<64>> {
   public:
     static MPI_Datatype elementType() { return MPI_DOUBLE_COMPLEX; }
     static int elementCount() { return 1; }
@@ -129,6 +129,8 @@ namespace cc4s {
     }
     static int elementCount() { return D; }
   };
+
+  // TODO: 128 bit reals and floats
 }
 
 #endif

@@ -2,6 +2,7 @@
 #ifndef STATIC_ASSERT_DEFINED
 #define STATIC_ASSERT_DEFINED
 
+#include <math/Real.hpp>
 #include <math/Complex.hpp>
 
 namespace cc4s {
@@ -28,20 +29,22 @@ namespace cc4s {
   };
 
   template <>
-  class TypeRelations<int, double> {
+  class TypeRelations<int, Real<64>> {
   public:
     enum { EQUALS = false, POINTER_TO = false, CASTABLE_TO = true };
   };
   template <>
-  class TypeRelations<int, complex> {
+  class TypeRelations<int, Complex<64>> {
   public:
     enum { EQUALS = false, POINTER_TO = false, CASTABLE_TO = true };
   };
   template <>
-  class TypeRelations<double, complex> {
+  class TypeRelations<Real<64>, Complex<64>> {
   public:
     enum { EQUALS = false, POINTER_TO = false, CASTABLE_TO = true };
   };
+
+  // TODO: 128 bit real and complex
 }
 
 #endif

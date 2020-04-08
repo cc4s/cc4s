@@ -21,7 +21,7 @@ ComplexTensorWriter::~ComplexTensorWriter() {
 }
 
 void ComplexTensorWriter::run() {
-  Tensor<complex> *A(getTensorArgument<complex>("Data"));
+  Tensor<Complex<>> *A(getTensorArgument<Complex<>>("Data"));
   std::string dataName(getArgumentData("Data")->getName());
   A->set_name(dataName.c_str());
   EMIT() << YAML::Key << "Data" << YAML::Value << dataName;
@@ -29,7 +29,7 @@ void ComplexTensorWriter::run() {
   if (mode == "binary") {
     // write binary
     std::string fileName(getTextArgument("file", dataName + ".bin"));
-    TensorIo::writeBinary<complex>(fileName, *A);
+    TensorIo::writeBinary<Complex<>>(fileName, *A);
     EMIT() << YAML::Key << "file" << YAML::Value << fileName;
   } else {
     // write text
@@ -37,7 +37,7 @@ void ComplexTensorWriter::run() {
     std::string rowIndexOrder(getTextArgument("rowIndexOrder", ""));
     std::string columnIndexOrder(getTextArgument("columnIndexOrder", ""));
     std::string delimiter(getTextArgument("delimiter", " "));
-    TensorIo::writeText<complex>(
+    TensorIo::writeText<Complex<>>(
       fileName, *A, rowIndexOrder, columnIndexOrder, delimiter
     );
     EMIT() << YAML::Key << "file" << YAML::Value << fileName;

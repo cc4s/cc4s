@@ -2,6 +2,7 @@
 #ifndef LAPACK_GENERAL_EIGEN_SYSTEM_DEFINED
 #define LAPACK_GENERAL_EIGEN_SYSTEM_DEFINED
 
+#include <math/Real.hpp>
 #include <math/Complex.hpp>
 #include <util/LapackMatrix.hpp>
 #include <util/Exception.hpp>
@@ -12,21 +13,21 @@
 
 namespace cc4s {
   // base template
-  template <typename F=double>
+  template <typename F=Real<>>
   class LapackGeneralEigenSystem;
 
 
   template <>
-  class LapackGeneralEigenSystem<double> {
+  class LapackGeneralEigenSystem<Real<64>> {
   public:
     class EigenValueComparator {
     public:
       bool operator ()(
-        const std::pair<int, double> &a,
-        const std::pair<int, double> &b
+        const std::pair<int, Real<64>> &a,
+        const std::pair<int, Real<64>> &b
       ) {
-        double diff(b.second-a.second);
-        double magnitude( std::abs(a.second)+std::abs(b.second) );
+        Real<64> diff(b.second-a.second);
+        Real<64> magnitude( std::abs(a.second)+std::abs(b.second) );
         if (std::real(diff) > +1E-13*magnitude) return true;
         if (std::real(diff) < -1E-13*magnitude) return false;
         return a.first < b.first;
@@ -35,12 +36,12 @@ namespace cc4s {
   };
 
 /*
-  // specialization for double
+  // specialization for Real<64>
   template <>
-  class LapackGeneralEigenSystem<double> {
+  class LapackGeneralEigenSystem<Real<64>> {
   public:
     LapackGeneralEigenSystem(
-      const LapackMatrix<double> &A_
+      const LapackMatrix<Real<64>> &A_
     ):
       R(A_.getRows(), A_.getColumns()),
       L(A_.getRows(), A_.getColumns()),
@@ -50,10 +51,10 @@ namespace cc4s {
         throw EXCEPTION("EigenSystem requries a square matrix");
       }
       // copy A since it will be modified
-      LapackMatrix<double> A(A_);
+      LapackMatrix<Real<64>> A(A_);
       int rows(A_.getRows());
-      std::vector<double> lambdaReals(rows), lambdaImags(rows);
-      double optimalWork;
+      std::vector<Real<64>> lambdaReals(rows), lambdaImags(rows);
+      Real<64> optimalWork;
       int workCount(-1);
       int info;
       dgeev_(
@@ -68,7 +69,7 @@ namespace cc4s {
       );
       // TODO: check info
       workCount = static_cast<int>(optimalWork+0.5);
-      std::vector<double> work(workCount);
+      std::vector<Real<64>> work(workCount);
      
       dgeev_(
         "V", "V",
@@ -83,7 +84,7 @@ namespace cc4s {
       // TODO: check info
 
       for (int i(0); i < rows; ++i) {
-        lambdas[i] = complex(lambdaReals[i], lambdaImags[i]);
+        lambdas[i] = Complex<64>(lambdaReals[i], lambdaImags[i]);
         if (std::abs(lambdaImags[i]) > 1e-8*std::abs(lambdaReals[i])) {
           // TODO: decode eigenvectors to complex eigenvalues
         }
@@ -93,40 +94,40 @@ namespace cc4s {
     ~LapackGeneralEigenSystem() {
     }
 
-    const std::vector<complex> &getEigenValues() const {
+    const std::vector<Complex<64>> &getEigenValues() const {
       return lambda;
     }
 
-    const LapackMatrix<complex> &getRightEigenVectors() const {
+    const LapackMatrix<Complex<64>> &getRightEigenVectors() const {
       return R;
     }
 
-    const LapackMatrix<complex> &getLeftEigenVectors() const {
+    const LapackMatrix<Complex<64>> &getLeftEigenVectors() const {
       return L;
     }
 
   protected:
-    LapackMatrix<complex> R, L;
-    std::vector<complex> lambdas;
+    LapackMatrix<Complex<64>> R, L;
+    std::vector<Complex<64>> lambdas;
   };
 */
 
   // specialization for complex
   template <>
-  class LapackGeneralEigenSystem<complex> {
+  class LapackGeneralEigenSystem<Complex<64>> {
   public:
     LapackGeneralEigenSystem(
-      const LapackMatrix<complex> &A_,
+      const LapackMatrix<Complex<64>> &A_,
       bool computeRightEigenvectors = true,
       bool computeLeftEigenvectors = false
     ):
       R(
         computeRightEigenvectors ?
-          NEW(LapackMatrix<complex>, A_.getRows(), A_.getColumns()) : nullptr
+          NEW(LapackMatrix<Complex<64>>, A_.getRows(), A_.getColumns()) : nullptr
       ),
       L(
         computeLeftEigenvectors ?
-          NEW(LapackMatrix<complex>, A_.getRows(), A_.getColumns()) : nullptr
+          NEW(LapackMatrix<Complex<64>>, A_.getRows(), A_.getColumns()) : nullptr
       ),
       lambdas(A_.getRows())
     {
@@ -134,10 +135,10 @@ namespace cc4s {
         throw EXCEPTION("EigenSystem requries a square matrix");
       }
       // copy A since it will be modified
-      LapackMatrix<complex> A(A_);
+      LapackMatrix<Complex<64>> A(A_);
       int rows(A_.getRows());
-      std::vector<double> realWork(2*rows);
-      complex optimalWork;
+      std::vector<Real<64>> realWork(2*rows);
+      Complex<64> optimalWork;
       int workCount(-1);
       int info;
       zgeev_(
@@ -154,7 +155,7 @@ namespace cc4s {
       );
       // TODO: check info
       workCount = static_cast<int>(std::real(optimalWork)+0.5);
-      std::vector<complex> work(workCount);
+      std::vector<Complex<64>> work(workCount);
 
       zgeev_(
         computeLeftEigenvectors ? "V" : "N",
@@ -171,9 +172,9 @@ namespace cc4s {
       // TODO: check info
 
       // sort eigenvalues
-      std::vector<std::pair<int, complex>> sortedEigenValues(rows);
+      std::vector<std::pair<int, Complex<64>>> sortedEigenValues(rows);
       for (int i(0); i < rows; ++i) {
-        sortedEigenValues[i] = std::pair<int, complex>(i, lambdas[i]);
+        sortedEigenValues[i] = std::pair<int, Complex<64>>(i, lambdas[i]);
       }
       std::sort(
         sortedEigenValues.begin(), sortedEigenValues.end(),
@@ -194,29 +195,29 @@ namespace cc4s {
     ~LapackGeneralEigenSystem() {
     }
 
-    const std::vector<complex> &getEigenValues() const {
+    const std::vector<Complex<64>> &getEigenValues() const {
       return lambdas;
     }
 
-    const LapackMatrix<complex> &getRightEigenVectors() const {
+    const LapackMatrix<Complex<64>> &getRightEigenVectors() const {
       if (!R) {
         throw new EXCEPTION("Right eigenvectors were not computed in constructor.");
       }
       return *R;
     }
 
-    const LapackMatrix<complex> &getLeftEigenVectors() const {
+    const LapackMatrix<Complex<64>> &getLeftEigenVectors() const {
       if (!L) {
         throw new EXCEPTION("Left eigenvectors were not computed in constructor.");
       }
       return *L;
     }
 
-    double rightEigenError(const LapackMatrix<complex> &A) {
-      double error(0);
+    Real<64> rightEigenError(const LapackMatrix<Complex<64>> &A) {
+      Real<64> error(0);
       for (int i(0); i < A.getRows(); ++i) {
         for (int k(0); k < A.getRows(); ++k) {
-          complex element(0);
+          Complex<64> element(0);
           for (int j(0); j < A.getRows(); ++j) {
             element += A(i,j) * (*R)(j,k);
           }
@@ -226,11 +227,11 @@ namespace cc4s {
       }
       return error;
     }
-    double leftEigenError(const LapackMatrix<complex> &A) {
-      double error(0);
+    Real<64> leftEigenError(const LapackMatrix<Complex<64>> &A) {
+      Real<64> error(0);
       for (int j(0); j < A.getRows(); ++j) {
         for (int k(0); k < A.getRows(); ++k) {
-          complex element(0);
+          Complex<64> element(0);
           for (int i(0); i < A.getRows(); ++i) {
             element += std::conj((*L)(i,k)) * A(i,j);
           }
@@ -241,11 +242,11 @@ namespace cc4s {
       return error;
     }
 
-    double biorthogonalError() {
-      double error(0);
+    Real<64> biorthogonalError() {
+      Real<64> error(0);
       for (int i(0); i < R->getRows(); ++i) {
         for (int j(0); j < R->getRows(); ++j) {
-          complex element(0);
+          Complex<64> element(0);
           for (int k(0); k < R->getRows(); ++k) {
             element += std::conj((*R)(i,k)) * (*R)(j,k);
           }
@@ -259,19 +260,19 @@ namespace cc4s {
     class EigenValueComparator {
     public:
       bool operator ()(
-        const std::pair<int, complex> &a,
-        const std::pair<int, complex> &b
+        const std::pair<int, Complex<64>> &a,
+        const std::pair<int, Complex<64>> &b
       ) {
         // FIXME: Move the inf code into particular implementations
-        double inf = std::numeric_limits<double>::infinity();
-        complex A(
-          std::abs(a.second) < 1E-4 ? *(new complex(inf,inf)) : a.second
+        Real<64> inf = std::numeric_limits<Real<64>>::infinity();
+        Complex<64> A(
+          std::abs(a.second) < 1E-4 ? *(new Complex<64>(inf,inf)) : a.second
         );
-        complex B(
-          std::abs(b.second) < 1E-4 ? *(new complex(inf,inf)) : b.second
+        Complex<64> B(
+          std::abs(b.second) < 1E-4 ? *(new Complex<64>(inf,inf)) : b.second
         );
-        complex diff(B-A);
-        double magnitude( std::abs(a.second)+std::abs(b.second) );
+        Complex<64> diff(B-A);
+        Real<64> magnitude( std::abs(a.second)+std::abs(b.second) );
         if (std::real(diff) > +1E-13*magnitude) return true;
         if (std::real(diff) < -1E-13*magnitude) return false;
         if (std::imag(diff) > +1E-13*magnitude) return false;
@@ -281,14 +282,14 @@ namespace cc4s {
     };
 
   protected:
-    PTR(LapackMatrix<complex>) R, L;
-    std::vector<complex> lambdas;
+    PTR(LapackMatrix<Complex<64>>) R, L;
+    std::vector<Complex<64>> lambdas;
 
     void orderEigenVectors(
-      const std::vector<std::pair<int, complex>> &sortedEigenValues,
-      LapackMatrix<complex> &U
+      const std::vector<std::pair<int, Complex<64>>> &sortedEigenValues,
+      LapackMatrix<Complex<64>> &U
     ) {
-      LapackMatrix<complex> unsortedU(U);
+      LapackMatrix<Complex<64>> unsortedU(U);
       for (int j(0); j < U.getRows(); ++j) {
         int unsortedJ( sortedEigenValues[j].first );
         for (int i(0); i < U.getRows(); ++i) {
