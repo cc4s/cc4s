@@ -164,8 +164,11 @@ namespace cc4s {
     FockVector &operator -= (const FockVector &a) {
       checkCompatibilityTo(a);
       for (size_t i(0); i < componentTensors.size(); ++i) {
-        const char *indices(getIndices(i).c_str());
-        get(i)->sum(-1.0, *a.get(i), indices, 1.0, indices);
+//        const char *indices(getIndices(i).c_str());
+//        get(i)->sum(-1.0, *a.get(i), indices, 1.0, indices);
+        (
+          (*get(i))[getIndices(i)] -= (*a.get(i))[getIndices(i)]
+        )->compile()->execute();
       }
       return *this;
     }
@@ -228,11 +231,11 @@ namespace cc4s {
      **/
     F braket(const FockVector &ket) const {
       checkDualCompatibility(ket);
-      tcc::Tensor<F,TE> result(std::vector<size_t>({}));
+      auto result( NEW(ESC(tcc::Tensor<F,TE>), std::vector<size_t>({})) );
       for (size_t i(0); i < componentTensors.size(); ++i) {
         // add to result
         (
-          result[""] +=
+          (*result)[""] +=
             (*get(i))[getIndices(i)] * (*ket.get(i))[ket.getIndices(i)]
         )->compile()->execute();
       }
@@ -249,15 +252,12 @@ namespace cc4s {
      **/
     F dot(const FockVector &a) const {
       checkCompatibilityTo(a);
-      tcc::Tensor<F,TE> result(std::vector<size_t>({}));
+      auto result( NEW(ESC(tcc::Tensor<F,TE>), std::vector<size_t>({})) );
       for (size_t i(0); i < componentTensors.size(); ++i) {
-        const char *indices(getIndices(i).c_str());
-        CTF::Bivar_Function<F> fDot(&cc4s::dot<F>);
         // add to result
         (
-          result[""] += tcc::map(cc4s::dot<F>,
-            (*get(i))[getIndices(i)] * (*a.get(i))[getIndices(i)]
-          )
+          (*result)[""] += (*get(i))[getIndices(i)] *
+            tcc::map(cc4s::conj<F>, (*a.get(i))[getIndices(i)])
         )->compile()->execute();
       }
       // FIXME: to be implemented in tcc:

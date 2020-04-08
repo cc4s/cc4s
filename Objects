@@ -13,13 +13,11 @@ build/${CONFIG}/obj/mixers/Mixer.o \
 build/${CONFIG}/obj/mixers/LinearMixer.o \
 build/${CONFIG}/obj/algorithms/Algorithm.o \
 build/${CONFIG}/obj/algorithms/RealTensorReader.o \
-build/${CONFIG}/obj/algorithms/RealTensorWriter.o \
 build/${CONFIG}/obj/algorithms/TensorNetwork.o \
 build/${CONFIG}/obj/algorithms/ComplexTensorReader.o \
-build/${CONFIG}/obj/algorithms/ComplexTensorWriter.o \
-build/${CONFIG}/obj/algorithms/CoulombIntegralsFromVertex.o \
-build/${CONFIG}/obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/algorithms/Delete.o \
+#build/${CONFIG}/obj/algorithms/CoulombIntegralsFromVertex.o \
+#build/${CONFIG}/obj/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 
 TESTS_OBJECTS = \
 build/${CONFIG}/obj/test/math/Antisymmetrize.o \

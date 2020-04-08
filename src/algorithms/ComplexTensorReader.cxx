@@ -26,7 +26,7 @@ void ComplexTensorReader::run() {
 
   // make sure all processes start reading the file at the same time in case
   // it has been modified before
-  MPI_Barrier(Cc4s::world->comm);
+  Cc4s::world->barrier();
 
   std::string mode(getTextArgument("mode", "text"));
   Tensor<complex> *A;

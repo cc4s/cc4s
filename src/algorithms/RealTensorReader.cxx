@@ -1,5 +1,5 @@
 /*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#include <algorithms/TensorReader.hpp>
+#include <algorithms/RealTensorReader.hpp>
 #include <util/TensorIo.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
@@ -10,22 +10,22 @@
 using namespace CTF;
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(TensorReader);
+ALGORITHM_REGISTRAR_DEFINITION(RealTensorReader);
 
-TensorReader::TensorReader(
+RealTensorReader::RealTensorReader(
   std::vector<Argument> const &argumentList
 ): Algorithm(argumentList) {
 }
 
-TensorReader::~TensorReader() {
+RealTensorReader::~RealTensorReader() {
 }
 
-void TensorReader::run() {
+void RealTensorReader::run() {
   std::string name(getArgumentData("Data")->getName());
 
   // make sure all processes start reading the file at the same time in case
   // it has been modified before
-  MPI_Barrier(Cc4s::world->comm);
+  Cc4s::world->barrier();
 
   int64_t precision(getIntegerArgument("precision", 64));
   switch (precision) {
@@ -47,7 +47,7 @@ void TensorReader::run() {
 }
 
 template <typename F>
-Tensor<F> *TensorReader::read(const std::string &name) {
+Tensor<F> *RealTensorReader::read(const std::string &name) {
   Tensor<F> *A;
   std::string mode(getTextArgument("mode", "text"));
   if (mode == "binary") {

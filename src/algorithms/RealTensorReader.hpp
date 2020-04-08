@@ -1,17 +1,17 @@
 /*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef TENSOR_READER_DEFINED 
-#define TENSOR_READER_DEFINED
+#ifndef REAL_TENSOR_READER_DEFINED 
+#define REAL_TENSOR_READER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 
 namespace cc4s {
-  class TensorReader: public Algorithm {
+  class RealTensorReader: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(TensorReader);
-    TensorReader(
+    ALGORITHM_REGISTRAR_DECLARATION(RealTensorReader);
+    RealTensorReader(
       std::vector<Argument> const &argumentList
     );
-    virtual ~TensorReader();
+    virtual ~RealTensorReader();
     /**
      * \brief Reads real tensor data into the tensor Data.
      */
