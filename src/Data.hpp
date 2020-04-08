@@ -3,7 +3,7 @@
 #define DATA_DEFINED
 
 #include <util/Log.hpp>
-#include <math/Float.hpp>
+#include <math/Real.hpp>
 #include <math/Complex.hpp>
 #include <string>
 #include <map>
@@ -31,24 +31,24 @@ namespace cc4s {
     static std::string getName() { return "integer"; }
   };
   template <>
-  class TypeTraits<Float64> {
+  class TypeTraits<Real<64>> {
   public:
-    static std::string getName() { return "real"; }
+    static std::string getName() { return "real<64>"; }
   };
   template <>
-  class TypeTraits<Complex64> {
+  class TypeTraits<Complex<64>> {
   public:
-    static std::string getName() { return "complex"; }
+    static std::string getName() { return "complex<64>"; }
   };
   template <>
-  class TypeTraits<Float128> {
+  class TypeTraits<Real<128>> {
   public:
-    static std::string getName() { return "qreal"; }
+    static std::string getName() { return "real<128>"; }
   };
   template <>
-  class TypeTraits<Complex128> {
+  class TypeTraits<Complex<128>> {
   public:
-    static std::string getName() { return "qcomplex"; }
+    static std::string getName() { return "complex<128>"; }
   };
 
   class Data {

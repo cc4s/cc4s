@@ -1,6 +1,8 @@
 #ifndef RANDOM_GENERATOR_DEFINED
 #define RANDOM_GENERATOR_DEFINED
 
+#include <Real.hpp>
+
 #include <cstdint>
 
 /**
@@ -24,13 +26,13 @@ namespace cc4s {
       for (int i(0); i < shaking; ++i) nextInteger();
     }
 
-    double nextUniform() {
+    Real<> nextUniform() {
       uint64_t i(nextCoarseInteger() >> 20);
       for (int j(1); j < 6; ++j) {
         i <<= 8;
         i |= nextCoarseInteger() >> 24;
       }
-      return static_cast<double>(i) / static_cast<double>(1l << 52);
+      return static_cast<Real<>>(i) / static_cast<Real<>>(1l << 52);
     }
 
     /**

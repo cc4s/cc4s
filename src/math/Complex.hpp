@@ -1,19 +1,19 @@
 #ifndef COMPLEX_DEFINED
 #define COMPLEX_DEFINED
 
-#include <math/Float.hpp>
+#include <math/Real.hpp>
 #include <complex>
 
 namespace cc4s {
   // use standard library complex number support
-  template <typename F=Real<>>
-  using Complex = std::complex<F>;
+  template <int FloatSize=64>
+  using Complex = std::complex<Real<FloatSize>>;
 
   // define explicit size complex types
   // DEPRECATED: use Complex<Real<32>> instead
-  typedef Complex<Float32> Complex32;
-  typedef Complex<Float64> Complex64;
-  typedef Complex<Float128> Complex128;
+  typedef Complex<32> Complex32;
+  typedef Complex<64> Complex64;
+  typedef Complex<128> Complex128;
 
   // DEPRECATED:
   typedef Complex<> complex;
@@ -23,8 +23,8 @@ namespace cc4s {
     return x*x;
   }
 
-  template <typename F>
-  inline F absSqr(const Complex<F> z) {
+  template <int FloatSize>
+  inline Real<FloatSize> absSqr(const Complex<FloatSize> z) {
     return absSqr(z.real()) + absSqr(z.imag());
   }
 
@@ -32,35 +32,55 @@ namespace cc4s {
   // extended type from given optinoally complex type. e.g.:
   // ComplexTraits<Complex<>>::ExtendedType = Real<>
   // ComplexTraits<Real<>>::ExtendedType = Real<>
-  // ComplexTraits<Complex<int>>::ExtendedType = int
   template <typename T>
   class ComplexTraits {
   public:
     typedef T ExtendedType;
   };
 
-  template <typename T>
-  class ComplexTraits<Complex<T>> {
+  template <>
+  class ComplexTraits<Complex<32>> {
   public:
-    typedef T ExtendedType;
+    typedef Real<32> ExtendedType;
+  };
+  template <>
+  class ComplexTraits<Complex<64>> {
+  public:
+    typedef Real<64> ExtendedType;
+  };
+  template <>
+  class ComplexTraits<Complex<128>> {
+  public:
+    typedef Real<128> ExtendedType;
   };
 
-  // numeric conversions
+  // narrowing numeric conversions
   template <typename G, typename F>
-  class Conversion;
-
-  template <typename G, typename F>
-  class Conversion<G, Complex<F>> {
+  class NarrowingConversion {
   public:
-    static G from(const Complex<F> x) {
+    static G from(const G x) {
       return G(x);
     }
   };
 
-  template <typename F>
-  class Conversion<F, Complex<F>> {
+  template <>
+  class NarrowingConversion<Real<32>, Complex<32>> {
   public:
-    static F from(const Complex<F> x) {
+    static Real<32> from(const Complex<32> x) {
+      return std::real(x);
+    }
+  };
+  template <>
+  class NarrowingConversion<Real<64>, Complex<64>> {
+  public:
+    static Real<64> from(const Complex<64> x) {
+      return std::real(x);
+    }
+  };
+  template <>
+  class NarrowingConversion<Real<128>, Complex<128>> {
+  public:
+    static Real<128> from(const Complex<128> x) {
       return std::real(x);
     }
   };
@@ -69,7 +89,7 @@ namespace cc4s {
     // TODO: implement for intel
 #else
   inline std::ostream &operator <<(
-    std::ostream &stream, const Complex128 z
+    std::ostream &stream, const Complex<128> z
   ) {
     return stream << '(' << std::real(z) << ',' << std::imag(z) << ')';
   }

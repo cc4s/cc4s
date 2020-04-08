@@ -5,7 +5,6 @@
 #include <algorithms/Algorithm.hpp>
 #include <util/Timer.hpp>
 #include <tcc/DryTensor.hpp>
-#include <util/FlopsCounter.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <util/Emitter.hpp>
@@ -14,11 +13,7 @@
 #include <string>
 #include <sstream>
 
-// TODO: to be removed from the main class
-#include <math/MathFunctions.hpp>
-
 using namespace cc4s;
-using namespace CTF;
 
 Cc4s::Cc4s() {
 }
@@ -39,11 +34,10 @@ void Cc4s::run() {
 
   EMIT() << YAML::Key << "steps" << YAML::Value << YAML::BeginSeq;
 
-  int64_t rootFlops, totalFlops;
+  size_t rootFlops, totalFlops;
   Time totalTime;
   {
-    FlopsCounter rootCounter(&rootFlops);
-    FlopsCounter totalCounter(&totalFlops, world->comm);
+    // TODO: flops counter
     Timer totalTimer(&totalTime);
 
     for (unsigned int i(0); i < algorithms.size(); ++i) {
@@ -52,10 +46,10 @@ void Cc4s::run() {
       EMIT() << YAML::Key << "step" << YAML::Value << (i+1)
         << YAML::Key << "name" << YAML::Value << algorithms[i]->getName();
 
-      int64_t flops;
+      size_t flops;
       Time time;
       {
-        FlopsCounter flopsCounter(&flops);
+        // TODO: flops counter
         Timer timer(&time);
         algorithms[i]->run();
         delete algorithms[i];
@@ -145,14 +139,14 @@ void Cc4s::printBanner() {
     ", date=" << CC4S_DATE << std::endl;
   LOG(0, "root") << "build date=" << buildDate.str() << std::endl;
   LOG(0, "root") << "compiler=" << COMPILER_VERSION << std::endl;
-  LOG(0, "root") << "total processes=" << Cc4s::world->np << std::endl;
+  LOG(0, "root") << "total processes=" << world->getProcesses() << std::endl;
   OUT() << std::endl;
 
   EMIT()
     << YAML::Key << "version" << YAML::Value << CC4S_VERSION
     << YAML::Key << "build-date" << YAML::Value << buildDate.str()
     << YAML::Key << "compiler" << YAML::Value << COMPILER_VERSION
-    << YAML::Key << "total-processes" << Cc4s::world->np;
+    << YAML::Key << "total-processes" << world->getProcesses();
 }
 
 void Cc4s::printStatistics() {
@@ -182,9 +176,8 @@ void Cc4s::printStatistics() {
     << YAML::Comment("GB/core");
 
   int64_t globalPeakVirtualSize, globalPeakPhysicalSize;
-  MpiCommunicator communicator(world->rank, world->np, world->comm);
-  communicator.reduce(peakPhysicalSize, globalPeakPhysicalSize);
-  communicator.reduce(peakVirtualSize, globalPeakVirtualSize);
+  world->reduce(peakPhysicalSize, globalPeakPhysicalSize);
+  world->reduce(peakVirtualSize, globalPeakVirtualSize);
   LOG(0, "root") << "overall peak physical memory="
     << globalPeakPhysicalSize / unitsPerGB << " GB"
     << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
@@ -220,12 +213,12 @@ void Cc4s::listHosts() {
   MPI_Get_processor_name(ownName, &nameLength);
   ownName[nameLength] = 0;
 
-  if (world->rank == 0) {
+  if (world->getRank() == 0) {
     std::map<std::string,std::vector<int>> ranksOfHosts;
     // enter hostname/rank
     ranksOfHosts[ownName].push_back(0);
     // receive all names but own name from remote ranks
-    for (int remoteRank(1); remoteRank < world->np; ++remoteRank) {
+    for (int remoteRank(1); remoteRank < world->getProcesses(); ++remoteRank) {
       char remoteName[MPI_MAX_PROCESSOR_NAME];
       MPI_Recv(
         remoteName, MPI_MAX_PROCESSOR_NAME, MPI_BYTE,
@@ -258,20 +251,20 @@ void Cc4s::listHosts() {
 }
 
 
-World *Cc4s::world;
+PTR(MpiCommunicator) Cc4s::world;
 Options *Cc4s::options;
 
 
 int main(int argumentCount, char **arguments) {
   MPI_Init(&argumentCount, &arguments);
 
-  Cc4s::world = new World(argumentCount, arguments);
+  Cc4s::world = NEW(MpiCommunicator);
   Cc4s::options = new Options(argumentCount, arguments);
-  Log::setRank(Cc4s::world->rank);
+  Log::setRank(Cc4s::world->getRank());
   Log::setFileName(Cc4s::options->logFile);
   Log::setLogLevel(Cc4s::options->logLevel);
   Emitter::setFileName(Cc4s::options->yamlFile);
-  Emitter::setRank(Cc4s::world->rank);
+  Emitter::setRank(Cc4s::world->getRank());
 
   Cc4s cc4s;
   if (Cc4s::isDebugged()) {

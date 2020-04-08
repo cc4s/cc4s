@@ -2,9 +2,8 @@
 #ifndef CC4S_DEFINED
 #define CC4S_DEFINED
 
-#include <util/Time.hpp>
-
-#include <ctf.hpp>
+#include <util/SharedPointer.hpp>
+#include <util/MpiCommunicator.hpp>
 #include <Options.hpp>
 
 namespace cc4s {
@@ -18,7 +17,7 @@ namespace cc4s {
     static bool isDebugged();
 
     // static properties, accessible from everywhere
-    static CTF::World *world;
+    static PTR(MpiCommunicator) world;
     static Options *options;
 
   protected:

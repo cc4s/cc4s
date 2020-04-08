@@ -2,7 +2,7 @@
 #ifndef SCANNER_DEFINED
 #define SCANNER_DEFINED
 
-#include <math/Float.hpp>
+#include <math/Real.hpp>
 #include <math/Complex.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -79,19 +79,19 @@ namespace cc4s {
   };
 
   // double precision float
-  template <typename NumberType=Float64>
+  template <typename NumberType=Real<64>>
   class NumberScanner {
   };
   template <>
-  class NumberScanner<Float64> {
+  class NumberScanner<Real<64>> {
     public:
     NumberScanner(Scanner *scanner_): scanner(scanner_) {
     }
-    Float64 nextNumber() {
+    Real<64> nextNumber() {
       scanner->refillBuffer();
       return scanReal(&scanner->pos);
     }
-    static Float64 scanReal(char **position) {
+    static Real<64> scanReal(char **position) {
       return std::strtod(*position, position);
     }
   protected:
@@ -101,15 +101,15 @@ namespace cc4s {
 #ifndef INTEL_COMPILER
   // quadruple precision float
   template <>
-  class NumberScanner<Float128> {
+  class NumberScanner<Real<128>> {
     public:
     NumberScanner(Scanner *scanner_): scanner(scanner_) {
     }
-    Float128 nextNumber() {
+    Real<128> nextNumber() {
       scanner->refillBuffer();
       return scanReal(&scanner->pos);
     }
-    static Float128 scanReal(char **position) {
+    static Real<128> scanReal(char **position) {
       return strtoflt128(*position, position);
     }
   protected:
@@ -117,24 +117,47 @@ namespace cc4s {
   };
 #endif
 
-  // complex numbers
-  template <typename Real>
-  class NumberScanner<Complex<Real>> {
+  // complex 64 bit
+  template <>
+  class NumberScanner<Complex<64>> {
     public:
     NumberScanner(Scanner *scanner_): scanner(scanner_) {
     }
-    Complex<Real> nextNumber() {
+    Complex<64> nextNumber() {
       scanner->refillBuffer();
       while (isspace(*scanner->pos) || *scanner->pos == '(') ++scanner->pos;
       // read real part
-      Real r(NumberScanner<Real>::scanReal(&scanner->pos));
+      Real<64> r(NumberScanner<Real<64>>::scanReal(&scanner->pos));
       // skip ','
       ++scanner->pos;
       // read imaginary part
-      Real i(NumberScanner<Real>::scanReal(&scanner->pos));
+      Real<64> i(NumberScanner<Real<64>>::scanReal(&scanner->pos));
       // skip ')'
       ++scanner->pos;
-      return complex(r, i);
+      return Complex<64>(r, i);
+    }
+  protected:
+    Scanner *scanner;
+  };
+
+  // complex 128 bit
+  template <>
+  class NumberScanner<Complex<128>> {
+    public:
+    NumberScanner(Scanner *scanner_): scanner(scanner_) {
+    }
+    Complex<128> nextNumber() {
+      scanner->refillBuffer();
+      while (isspace(*scanner->pos) || *scanner->pos == '(') ++scanner->pos;
+      // read real part
+      Real<128> r(NumberScanner<Real<128>>::scanReal(&scanner->pos));
+      // skip ','
+      ++scanner->pos;
+      // read imaginary part
+      Real<128> i(NumberScanner<Real<128>>::scanReal(&scanner->pos));
+      // skip ')'
+      ++scanner->pos;
+      return Complex<128>(r, i);
     }
   protected:
     Scanner *scanner;
