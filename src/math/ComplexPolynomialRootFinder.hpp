@@ -3,155 +3,54 @@
 #define COMPLEX_POLYNOMIAL_ROOT_FINDER_DEFINED
 
 #include <math/Complex.hpp>
+#include <math/MathFunctions.hpp>
+
+#include <vector>
 
 namespace util {
-  template <typename T>
-  class Polynomial {
-  public:
-    Polynomial(
-      Polynomial const &p
-    ): a(new T[p.n+1]), n(p.n) {
-      for (int k(0); k < n; ++k) {
-        a[k] = p.a[k];
-      }
-    }
-
-    Polynomial(T const *a_, int const n_): a(new T[n_ + 1]), n(n_) {
-      for (int k(0); k <= n; ++k) {
-        a[k] = a_[k];
-      }
-    }
-    ~Polynomial() {
-      delete []a;
-      a = nullptr;
-    }
-
-    int degree() const {
-      return n;
-    }
-
-    T at(T const x) const {
-      T p(a[n]);
-      for (int k(n-1); k >= 0; --k) {
-        p = p*x + a[k];
-      }
-      return p;
-    }
-
-    T derivativeAt(T const x) const {
-      T p(n*a[n]);
-      for (int k(n-1); k >= 1; --k) {
-        p = p*x + T(k)*a[k];
-      }
-      return p;
-    }
-
-  protected:
-    T *a;
-    int n;
-  };
-
-  template <typename T>
-  class ScaledPolynomial {
-  public:
-    ScaledPolynomial(
-      ScaledPolynomial const &p
-    ): a(new T[p.n]), n(p.n), an(p.an), shift(p.shift) {
-      for (int k(0); k < n; ++k) {
-        a[k] = p.a[k];
-      }
-    }
-
-    ScaledPolynomial(
-      T const *a_, int const n_
-    ): a(new T[n_]), n(n_), an(a_[n_]), shift(0) {
-      // scale the polynomial in y
-      for (int k(0); k < n; ++k) {
-        a[k] = a_[k] / an;
-        int sk;
-        std::frexp(std::abs(a[k]), &sk);
-        shift = std::max(shift, sk/(n-k));
-      }
-      // scale the polynomial in x
-      for (int k(0); k < n; ++k) {
-        a[k] *= std::ldexp(1.0, shift*(k-n));;
-      }
-    }
-    ~ScaledPolynomial() {
-      delete []a;
-      a = nullptr;
-    }
-
-    int degree() const {
-      return n;
-    }
-
-    T at(T const x) const {
-      T p(1);
-      for (int k(n-1); k >= 0; --k) {
-        p = p*x + a[k];
-      }
-      return p;
-    }
-
-    T derivativeAt(T const x) const {
-      T p(n);
-      for (int k(n-1); k >= 1; --k) {
-        p = p*x + T(k)*a[k];
-      }
-      return p;
-    }
-
-    double getScale() const {
-      return std::ldexp(1.0, shift);
-    }
-
-  protected:
-    T *a;
-    int n;
-    T an;
-    int shift;
-  };
-
   /**
   * \brief Finds complex roots of a polynomial of arbitrary ordrer.
   */
+  template <typename F>
   class ComplexPolynomialRootFinder {
   public:
+    typedef typename ComplexTraits<F>::ExtendedType RealType;
+
     ComplexPolynomialRootFinder(
-      ScaledPolynomial<Complex<>> const * const p_
-    ): p(p_), roots(new Complex<>[p_->degree()]) {
+      const std::vector<F> &coefficients
+    ): p(coefficients), roots(coefficients.size()-1) {
       int rnd(1);
       // initialize the roots randomly wihtin the unit square [-1,1]^2
       // this is an upper bound for the roots of a scaled polynomial
-      for (int k(0); k < p->degree(); ++k) {
+      for (size_t k(0); k < p->degree(); ++k) {
         rnd = (rnd*21839 + 3643) % 32749;
-        double re(2.0 * rnd/32749 - 1.0);
+        RealType re(RealType(2) * rnd/32749 - 1);
         rnd = (rnd*21839 + 3643) % 32749;
-        double im(2.0 * rnd/32749 - 1.0);
-        roots[k] = Complex<>(re,im);
+        RealType im(RealType(2) * rnd/32749 - 1);
+        roots[k] = F(re,im);
       }
     }
 
-    void findRoots(double const accuracy = 1e-10) {
-      Complex<> steps[p->degree()];
-      double epsilon;
+    void findRoots(
+      const RealType accuracy = std::numeric_limits<RealType>::epsilon()
+    ) {
+      F steps[p->degree()];
+      RealType epsilon;
       do {
-        for (int k(0); k < p->degree(); ++k) {
-          Complex<> r(
+        for (size_t k(0); k < p->degree(); ++k) {
+          F r(
             p->at(roots[k]) / p->derivativeAt(roots[k])
           );
-          Complex<> repulsion(0);
-          for (int j(0); j < p->degree(); ++j) {
-            if (j != k) repulsion +=
-              Complex<>(1) / (roots[k] - roots[j]);
+          F repulsion(0);
+          for (size_t j(0); j < p->degree(); ++j) {
+            if (j != k) repulsion += 1 / (roots[k] - roots[j]);
           }
-          steps[k] = r / (Complex<>(1) - r * repulsion);
+          steps[k] = r / (1 - r * repulsion);
         }
         epsilon = 0.0;
-        for (int k(0); k < p->degree(); ++k) {
-          epsilon += steps[k].real() * steps[k].real();
-          epsilon += steps[k].imag() * steps[k].imag();
+        for (size)_t k(0); k < p->degree(); ++k) {
+          epsilon += real(steps[k]) * real(steps[k]);
+          epsilon += imag(steps[k]) * imag(steps[k]);
           roots[k] -= steps[k];
         }
       } while (epsilon > accuracy*accuracy);
@@ -186,8 +85,65 @@ namespace util {
       }
     }
   protected:
-    ScaledPolynomial<Complex<>> const *p;
-    Complex<> *roots;
+    class ScaledPolynomial {
+    public:
+      ScaledPolynomial(
+        const std::vector<F> coefficients
+      ):
+        normalizedCoefficients(coefficients.size()-1),
+        leadingCoefficient(coefficients.back()),
+        exponent(std::numeric_limits<int>::min())
+      {
+        // scale the polynomial in y
+        for (size_t k(0); k < degree(); ++k) {
+          normalizedCoefficients[k] = coefficients[k] / leadingCoefficient;
+          int thisExponent;
+          frexp(abs(normalizedCoefficients[k]), thisExponent);
+          exponent = std::max(exponent, thisExponent/(degree()-k));
+        }
+        // scale the polynomial in x
+        for (size_t k(0); k < degree(); ++k) {
+          normalizedCoefficients[k] *= ldexp(
+            typename ComplexTraits<F>::ExtendedType(1),
+            exponent*(k-degree())
+          );
+        }
+      }
+
+      size_t degree() const {
+        return normalizedCoefficients.size();
+      }
+
+      F at(const F x) const {
+        F y(0);
+        for (auto aIt(as.crbegin()); aIt != as.crend(); ++aIt) {
+          y = y*x + *aIt;
+        }
+        return y;
+      }
+
+      F derivativeAt(const F x) const {
+        F y(0);
+        size_t k(degree());
+        for (auto aIt(as.crbegin()); aIt != as.crend(); ++aIt) {
+          y = y*x + *aIt * typename ComplexTraits<F>::ExtendedType(k);
+          --k;
+        }
+        return y;
+      }
+
+      typename ComplexTraits<F>::ExtendedType getScale() const {
+        return ldexp(typename ComplexTraits<F>::ExtendedType(1), exponent);
+      }
+
+    protected:
+      std::vector<F> normalizedCoefficients;
+      F leadingCoefficient;
+      int exponent;
+    };
+
+    const ScaledPolynomial p;
+    std::vector<F> roots;
   };
 }
 

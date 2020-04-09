@@ -1,6 +1,7 @@
 #ifndef MATH_FUNCTIONS_DEFINED
 #define MATH_FUNCTIONS_DEFINED
 
+#include <math/Real.hpp>
 #include <math/Complex.hpp>
 #include <cmath>
 #include <string>
@@ -8,127 +9,188 @@
 #include <util/Log.hpp>
 
 namespace cc4s {
+  // Provides template typed wrappers for std:: math constants and functions,
+  // allowing unified usage as strongly typed function objects, also
+  // inside class or function templates.
+  // non-standard 128 bit reals are also wrapped where available.
+
+  inline __complex128 toComplex128(const Complex<128> c) {
+    return *reinterpret_cast<const __complex128 *>(&c);
+  }
+
+  inline Complex<128> fromComplex128(const __complex128 c) {
+    return *reinterpret_cast<const Complex<128> *>(&c);
+  }
+
   // constants
   template <typename F=Real<>>
   constexpr F Pi() {
-    return std::acos(F(-1));
+    return acos(F(-1));
   }
-
   template <typename F=Real<>>
   constexpr F Tau() {
     return 2 * Pi<F>();
   }
 
-  // univariate functions
-  template <typename F=Real<>>
-  inline F sqrt(F const x) {
-    return std::sqrt(x);
-  }
-
-  template <typename F=Real<>>
-  inline F abs(F const x) {
+  // functions
+  template <typename F>
+  inline typename ComplexTraits<F>::RealType abs(const F x) {
     return std::abs(x);
   }
-
-#ifdef INTEL_COMPILER
-  Real<128> __absq(Real<128>);
-#endif
-
-  inline Real<128> abs(Real<128> const x) {
-#ifndef INTEL_COMPILER
+  template <>
+  inline Real<128> abs(const Real<128> x) { 
     return fabsq(x);
-#else
-    return __absq(x);
-#endif
+  }
+  template <>
+  inline Real<128> abs(const Complex<128> c) {
+    return cabsq(toComplex128(c));
   }
 
+  // real part, same if real
   template <typename F>
-  inline F conj(F const x) {
+  inline typename ComplexTraits<F>::RealType real(const F c) {
+    return std::real(c);
+  }
+  template <>
+  inline Real<128> real(const Real<128> c) {
+    return c;
+  }
+  template <>
+  inline Real<128> real(const Complex<128> c) {
+    return crealq(toComplex128(c));
+  }
+
+  // imaginary part, 0 if real
+  template <typename F>
+  inline typename ComplexTraits<F>::RealType imag(const F c) {
+    return std::imag(c);
+  }
+  template <>
+  inline Real<128> imag(const Real<128> c) {
+    return 0;
+  }
+  template <>
+  inline Real<128> imag(const Complex<128> c) {
+    return cimagq(toComplex128(c));
+  }
+
+  // complex argument, 0 if real
+  template <typename F>
+  inline typename ComplexTraits<F>::RealType arg(const F c) {
+    return std::arg(c);
+  }
+  template <>
+  inline Real<128> arg(const Real<128> c) {
+    return 0;
+  }
+  template <>
+  inline Real<128> arg(const Complex<128> c) {
+    return cargq(toComplex128(c));
+  }
+
+  // complex conjugate, same if real
+  template <typename F>
+  inline F conj(const F x) {
     return std::conj(x);
   }
-
   template <>
-  inline Real<> conj(Real<> const x) {
+  inline Real<128> conj(const Real<128> x) {
     return x;
   }
-
-  // bivariate functions
-  template <typename F=Real<>>
-  inline F dot(F const x, F const y) {
-    return conj(x) * y;
+  template <>
+  inline Complex<128> conj(const Complex<128> x) {
+    return fromComplex128(conjq(toComplex128(x)));
   }
 
-  /**
-   * \brief Calculates only the real part of x*conj(y).
-   */
-  template <typename F=Real<>>
-  inline F realDot(F const x, F const y) {
-    return std::real(x*conj(y));
-  }
-
-  template <typename F=Real<>>
-  inline F divide(F const x, F const y) {
-    return x / y;
-  }
-
-/*
+  // functions defined on real and complex domain
   template <typename F>
-  inline double frobeniusNorm(CTF::Tensor<F> &t) {
-    char *indices(new char[t.order+1]);
-    for (int index(0); index < t.order; ++index) indices[index] = 'a' + index;
-    indices[t.order] = 0;
-    CTF::Bivar_Function<F> fRealDot(&cc4s::realDot<F>);
-    CTF::Scalar<F> s(*t.wrld);
-    s.contract(1.0, t,indices, t,indices, 0.0,"", fRealDot);
-    return std::sqrt(std::real(s.get_val()));
+  inline F pow(const F x, const F e) {
+    return std::pow(x,e);
   }
-*/
+  template <>
+  inline Real<128> pow(const Real<128> x, const Real<128> e) {
+    return powq(x,e);
+  }
+  template <>
+  inline Complex<128> pow(const Complex<128> x, const Complex<128> e) {
+    return fromComplex128(cpowq(toComplex128(x),toComplex128(e)));
+  }
 
-  /**
-   * \brief Calculate the sign of a permutation of strings, e.g.
-   * sign("abcd", "bacd") = -1
-   */
-  int permutationSign(const std::string &original, const std::string &permuted);
+#define COMPLEX_AND_REAL_FUNCTION_DEFINITION(NAME) \
+  template <typename F> \
+  inline F NAME(const F x) { \
+    return std::NAME(x); \
+  } \
+  template <> \
+  inline Real<128> NAME(const Real<128> x) { \
+    return NAME##q(x); \
+  } \
+  template <> \
+  inline Complex<128> NAME(const Complex<128> x) { \
+    return fromComplex128(c##NAME##q(toComplex128(x))); \
+  }
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(sqrt)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(exp)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(log)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(cos)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(sin)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(tan)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(acos)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(asin)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(atan)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(cosh)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(sinh)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(tanh)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(acosh)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(asinh)
+  COMPLEX_AND_REAL_FUNCTION_DEFINITION(atanh)
 
-  /**
-   * \brief Apply a permutation operator and antisymmetrize accordingly, e.g.
-   *  antiSymmetrize(X, "abcd", "abdc") is replaced by
-   *  -1 X["abcd"] = X["abcd"] + sign(abcd -> abdc) X["abdc"]
-   *
-   */
+  // functions on the real domain only
   template <typename F>
-  inline void antiSymmetrize(std::string indices, std::string permuted,
-      CTF::Tensor<F> &t, F prefactor=1) {
-    double sign(permutationSign(indices, permuted));
-    t[indices.c_str()] += prefactor * sign * t[permuted.c_str()];
+  inline F frexp(const F x, int &e) {
+    return std::frexp(x,&e);
   }
-  /**
-   * \brief Apply a permutation operator and antisymmetrize accordingly, e.g.
-   *  antiSymmetrize(X, "abcd", "abdc") is replaced by
-   *  -1 X["abcd"] = X["abcd"] + sign(abcd -> abdc) X["abdc"]
-   *
-   */
+  template <>
+  inline Real<128> frexp(const Real<128> x, int &e) {
+    return frexpq(x,&e);
+  }
+
   template <typename F>
-  inline void symmetrize(std::string indices, std::string permuted,
-      CTF::Tensor<F> &t, F prefactor=1) {
-    t[indices.c_str()] += prefactor * t[permuted.c_str()];
+  inline F ldexp(const F x, const int e) {
+    return std::ldexp(x,e);
   }
+  template <>
+  inline Real<128> ldexp(const Real<128> x, const int e) {
+    return ldexpq(x,e);
+  }
+
   template <typename F>
-  inline void checkAntisymmetry(CTF::Tensor<F> &t){
-    CTF::Tensor<F> testResultUp(t);
-    CTF::Tensor<F> testResultDown(t);
-    F normValue;
-    testResultUp["abij"] += testResultUp["baij"];
-    testResultDown["abij"] += testResultDown["abji"];
-    normValue = testResultUp.norm1();
-    normValue += testResultDown.norm1();
-    if (normValue >= 1e-3) {
-      t.print();
-      LOG(0, "AntisymmetryCheck") << t.get_name()
-        << ": zero tensor norm " << normValue << std::endl;
-      exit(1);
-    }
+  inline F fmod(const F x, const F y) {
+    return std::fmod(x,y);
   }
+  template <>
+  inline Real<128> fmod(const Real<128> x, const Real<128> y) {
+    return fmodq(x,y);
+  }
+
+#define REAL_FUNCTION_DEFINITION(NAME) \
+  template <typename F> \
+  inline F NAME(const F x) { \
+    return std::NAME(x); \
+  } \
+  template <> \
+  inline Real<128> NAME(const Real<128> x) { \
+    return NAME##q(x); \
+  }
+  REAL_FUNCTION_DEFINITION(cbrt)
+  REAL_FUNCTION_DEFINITION(erf)
+  REAL_FUNCTION_DEFINITION(erfc)
+  REAL_FUNCTION_DEFINITION(lgamma)
+  REAL_FUNCTION_DEFINITION(tgamma)
+  REAL_FUNCTION_DEFINITION(floor)
+  REAL_FUNCTION_DEFINITION(ceil)
+  REAL_FUNCTION_DEFINITION(trunc)
+  REAL_FUNCTION_DEFINITION(round)
 }
 
 #endif

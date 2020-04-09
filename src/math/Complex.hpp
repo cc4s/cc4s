@@ -6,7 +6,7 @@
 
 namespace cc4s {
   // use standard library complex number support
-  template <int FloatSize=64>
+  template <int FloatSize=DEFAULT_FLOAT_BIT_SIZE>
   using Complex = std::complex<Real<FloatSize>>;
 
   template <typename F>
@@ -20,32 +20,47 @@ namespace cc4s {
   }
 
   // type info allowing inference of
-  // extended type from given optinoally complex type. e.g.:
-  // ComplexTraits<Complex<>>::ExtendedType = Real<>
-  // ComplexTraits<Real<>>::ExtendedType = Real<>
-  template <typename T>
-  class ComplexTraits {
+  // real type from given optinoally complex type. e.g.:
+  // ComplexTraits<Complex<32>>::RealType = Real<32>
+  // ComplexTraits<Real<64>>::RealType = Real<64>
+  template <typename F>
+  class ComplexTraits;
+
+  template <>
+  class ComplexTraits<Real<32>> {
   public:
-    typedef T ExtendedType;
+    typedef Real<32> RealType;
+  };
+  template <>
+  class ComplexTraits<Real<64>> {
+  public:
+    typedef Real<64> RealType;
+  };
+  template <>
+  class ComplexTraits<Real<128>> {
+  public:
+    typedef Real<128> RealType;
   };
 
   template <>
   class ComplexTraits<Complex<32>> {
   public:
-    typedef Real<32> ExtendedType;
+    typedef Real<32> RealType;
   };
   template <>
   class ComplexTraits<Complex<64>> {
   public:
-    typedef Real<64> ExtendedType;
+    typedef Real<64> RealType;
   };
   template <>
   class ComplexTraits<Complex<128>> {
   public:
-    typedef Real<128> ExtendedType;
+    typedef Real<128> RealType;
   };
 
   // narrowing numeric conversions
+  // TODO: implement usage properly
+/*
   template <typename G, typename F>
   class NarrowingConversion {
   public:
@@ -58,33 +73,30 @@ namespace cc4s {
   class NarrowingConversion<Real<32>, Complex<32>> {
   public:
     static Real<32> from(const Complex<32> x) {
-      return std::real(x);
+      return real(x);
     }
   };
   template <>
   class NarrowingConversion<Real<64>, Complex<64>> {
   public:
     static Real<64> from(const Complex<64> x) {
-      return std::real(x);
+      return real(x);
     }
   };
   template <>
   class NarrowingConversion<Real<128>, Complex<128>> {
   public:
     static Real<128> from(const Complex<128> x) {
-      return std::real(x);
+      return real(x);
     }
   };
+*/
 
-#ifdef INTEL_COMPILER
-    // TODO: implement for intel
-#else
-  inline std::ostream &operator <<(
-    std::ostream &stream, const Complex<128> z
+  inline std::basic_ostream<char> &operator <<(
+    std::basic_ostream<char> &stream, const cc4s::Complex<128> x
   ) {
-    return stream << '(' << std::real(z) << ',' << std::imag(z) << ')';
+    return stream << '(' << x.real() << ',' << x.imag() << ')';
   }
-#endif
 }
 
 #endif

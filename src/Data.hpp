@@ -170,7 +170,7 @@ namespace cc4s {
     int64_t value;
   };
 
-  template < typename F=double, typename T=CTF::Tensor<F> >
+  template < typename F=Real<>, typename T=CTF::Tensor<F> >
   class TensorData: public NumericData {
   public:
     TensorData(

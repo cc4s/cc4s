@@ -5,7 +5,7 @@
 #include <iostream>
 
 namespace cc4s {
-  template <typename F=double, int D=3>
+  template <typename F=Real<>, int D=3>
   class Vector {
   public:
     typedef F FieldType;
@@ -105,26 +105,26 @@ namespace cc4s {
     F dot(Vector<F,D> const &v) const {
       F sum(0);
       for (int d(0); d<D; ++d) {
-        sum += cc4s::dot(coordinate[d], v.coordinate[d]);
+        sum += coordinate[d] * conj(v.coordinate[d]);
       }
       return sum;
     }
 
     // TODO: improve name
-    int approximately(Vector<F,D> const &v, const double epsilon = 1e-10) const {
+    int approximately(Vector<F,D> const &v, const Real<> epsilon = 1e-10) const {
       Vector<F,D> u(*this);
       u -= v;
       return std::real(u.dot(u)) < epsilon;
     }
 
     // TODO: improve name
-    double distance(Vector<F, D> const &v) const {
+    Real<> distance(Vector<F, D> const &v) const {
       Vector<F,D> u(*this);
       u -= v;
       return std::real(u.dot(u));
     }
 
-    double length() const {
+    Real<> length() const {
       Vector<F,D> u(*this);
       return std::sqrt(std::real(u.dot(u)));
     }
@@ -151,7 +151,7 @@ namespace cc4s {
     }
 
     bool operator < (Vector<F, D>  const &v) const {
-      const double epsilon(1e-10);
+      const Real<> epsilon(1e-10);
       for (int d(0); d<D; ++d) {
         if (coordinate[d] < v.coordinate[d] - epsilon) {
           return true;
@@ -164,18 +164,18 @@ namespace cc4s {
     F coordinate[D];
   };
 
-  template <typename F=double, int D=3>
+  template <typename F=Real<>, int D=3>
   inline Vector<F,D> operator *(const F f, const Vector<F,D> &v) {
     return Vector<F,D>(v*f);
   }
 
-  template <typename F=double, int D=3>
+  template <typename F=Real<>, int D=3>
   inline Vector<F,D> &&operator *(const F f, Vector<F,D> &&v) {
     v *= f;
     return v;
   }
 
-  template <typename F=double, int D=3>
+  template <typename F=Real<>, int D=3>
   inline std::ostream &operator << (std::ostream &stream, cc4s::Vector<F,D> const &v) {
     for (int d(0); d<D-1; ++d) {
       stream << v.coordinate[d] << ",";

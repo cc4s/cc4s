@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <ctf.hpp>
 
-using namespace CTF;
 using namespace cc4s;
 
 template <typename F, typename T>
@@ -77,7 +76,7 @@ T *TensorIo::readText(
     ++storedIndex;
   }
 
-  T *B(new T(order, storedLens, syms, get_universe(), name.c_str()));
+  T *B(new T(order, storedLens, syms, CTF::get_universe(), name.c_str()));
 
   int64_t indexCount(1);
   for (int dim(0); dim < B->order; ++dim) {
@@ -260,94 +259,83 @@ T *TensorIo::readBinaryHeader(MPI_File &file, int64_t &offset) {
   }
 
   // allocate tensor
-  return new T(header.order, lens, syms, get_universe());
+  return new T(header.order, lens, syms, CTF::get_universe());
 }
 
 
 
 // instantiate
 template
-Tensor<Real<64>> *TensorIo::readBinary<Real<64>>(
+CTF::Tensor<Real<64>> *TensorIo::readBinary<Real<64>>(
   std::string const &fileName
 );
 template
-Tensor<Complex<64>> *TensorIo::readBinary<Complex<64>>(
-  std::string const &fileName
-);
-#ifndef INTEL_COMPILER
-template
-Tensor<Real<128>> *TensorIo::readBinary<Real<128>>(
+CTF::Tensor<Complex<64>> *TensorIo::readBinary<Complex<64>>(
   std::string const &fileName
 );
 template
-Tensor<Complex<128>>
+CTF::Tensor<Real<128>> *TensorIo::readBinary<Real<128>>(
+  std::string const &fileName
+);
+template
+CTF::Tensor<Complex<128>>
 *TensorIo::readBinary<Complex<128>>(
   std::string const &fileName
 );
-#endif
-
 template
-Tensor<Real<64>> *TensorIo::readText<Real<64>>(
+CTF::Tensor<Real<64>> *TensorIo::readText<Real<64>>(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize
 );
 template
-Tensor<Complex<64>> *TensorIo::readText<Complex<64>>(
-  std::string const &fileName,
-  std::string const &delimiter,
-  int64_t const bufferSize
-);
-#ifndef INTEL_COMPILER
-template
-Tensor<Real<128>> *TensorIo::readText<Real<128>>(
+CTF::Tensor<Complex<64>> *TensorIo::readText<Complex<64>>(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize
 );
 template
-Tensor<Complex<128>> *TensorIo::readText<Complex<128>>(
+CTF::Tensor<Real<128>> *TensorIo::readText<Real<128>>(
   std::string const &fileName,
   std::string const &delimiter,
   int64_t const bufferSize
 );
-#endif
-
+template
+CTF::Tensor<Complex<128>> *TensorIo::readText<Complex<128>>(
+  std::string const &fileName,
+  std::string const &delimiter,
+  int64_t const bufferSize
+);
 template void TensorIo::writeBinary<Real<64>>(
-  std::string const &fileName, Tensor<Real<64>> &A
+  std::string const &fileName, CTF::Tensor<Real<64>> &A
 );
 template void TensorIo::writeBinary<Complex<64>>(
-  std::string const &fileName, Tensor<Complex<64>> &A
+  std::string const &fileName, CTF::Tensor<Complex<64>> &A
 );
-#ifndef INTEL_COMPILER
 template void TensorIo::writeBinary<Real<128>>(
-  std::string const &fileName, Tensor<Real<128>> &A
+  std::string const &fileName, CTF::Tensor<Real<128>> &A
 );
 template void TensorIo::writeBinary<Complex<128>>(
-  std::string const &fileName, Tensor<Complex<128>> &A
+  std::string const &fileName, CTF::Tensor<Complex<128>> &A
 );
-#endif
-
 template void TensorIo::writeText<Real<64>>(
-  std::string const &fileName, Tensor<Real<64>> &A,
+  std::string const &fileName, CTF::Tensor<Real<64>> &A,
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );
 template void TensorIo::writeText<Complex<64>>(
-  std::string const &fileName, Tensor<Complex<64>> &A,
+  std::string const &fileName, CTF::Tensor<Complex<64>> &A,
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );
-#ifndef INTEL_COMPILER
 template void TensorIo::writeText<Real<128>>(
-  std::string const &fileName, Tensor<Real<128>> &A,
+  std::string const &fileName, CTF::Tensor<Real<128>> &A,
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );
 template void TensorIo::writeText<Complex<128>>(
-  std::string const &fileName, Tensor<Complex<128>> &A,
+  std::string const &fileName, CTF::Tensor<Complex<128>> &A,
   std::string const &rowIndexOrder, std::string const &columnIndexOrder,
   std::string const &delimiter
 );
-#endif
 

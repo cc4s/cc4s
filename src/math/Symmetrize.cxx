@@ -1,4 +1,4 @@
-#include <math/MathFunctions.hpp>
+#include <math/Symmetrize.hpp>
 
 #include <util/Log.hpp>
 
