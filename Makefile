@@ -9,7 +9,7 @@ ifneq ($(IS_CLEANING),TRUE)
 	# include created dependencies
 	# if the makefile is compiling
 	-include ${OBJECTS:.o=.d}
-	-include build/${CONFIG}/obj/${TARGET}.d
+	-include build/${CONFIG}/obj/main/${TARGET}.d
 endif
 
 # goals:
@@ -42,7 +42,7 @@ install: build/${CONFIG}/bin/${TARGET}
 	cp build/${CONFIG}/bin/${TARGET} ${INSTALL}
 
 # build dependencies only
-depend: ${OBJECTS:.o=.d} build/${CONFIG}/obj/${TARGET}.d
+depend: ${OBJECTS:.o=.d} build/${CONFIG}/obj/main/${TARGET}.d
 
 
 # retrieve build environment
@@ -51,7 +51,7 @@ DATE:=$(shell git log -1 --format="%cd")
 COMPILER_VERSION:=$(shell ${CXX} --version | head -n 1)
 
 # add build environment specifics to INCLUDE and to OPTIONS
-INCLUDE+=-Isrc
+INCLUDE+=-Isrc/main
 OPTIONS+= -std=c++11 -Wall -fmax-errors=3 \
 -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
@@ -69,7 +69,7 @@ build/${CONFIG}/obj/%.d: src/%.cxx
 .PRECIOUS: build/${CONFIG}/obj/%.o ${OBJECTS}
 
 
-# compile a object file
+# compile an object file
 build/${CONFIG}/obj/%.o: build/${CONFIG}/obj/%.d
 	mkdir -p $(dir $@)
 	${CXX} ${OPTIONS} ${OPTIMIZE} ${INCLUDE} -c src/$*.cxx -o $@
@@ -78,9 +78,9 @@ build/${CONFIG}/obj/%.o: build/${CONFIG}/obj/%.d
 .PRECIOUS: build/${CONFIG}/obj/%.o ${OBJECTS}
 
 # compile and link executable
-build/${CONFIG}/bin/%: build/${CONFIG}/obj/%.o ${OBJECTS}
+build/${CONFIG}/bin/%: build/${CONFIG}/obj/main/%.o ${OBJECTS}
 	mkdir -p $(dir $@)
-	${CXX} ${OPTIONS} ${OPTIMIZE} ${OBJECTS} build/${CONFIG}/obj/${TARGET}.o ${INCLUDE} ${LIBS} -o $@
+	${CXX} ${OPTIONS} ${OPTIMIZE} ${OBJECTS} build/${CONFIG}/obj/main/${TARGET}.o ${INCLUDE} ${LIBS} -o $@
 
 # compile and link test executable
 build/${CONFIG}/bin/Test: ${OBJECTS} $(TESTS_OBJECTS)
