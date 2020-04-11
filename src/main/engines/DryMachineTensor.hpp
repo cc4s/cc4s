@@ -2,8 +2,7 @@
 #ifndef DRY_MACHINE_TENSOR_DEFINED
 #define DRY_MACHINE_TENSOR_DEFINED
 
-#include <tcc/engines/DryTensor.hpp>
-
+#include <engines/DryTensor.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
@@ -169,17 +168,6 @@ namespace cc4s {
     }
   protected:
     friend class Tensor<F,DryTensorEngine>;
-  };
-
-  /**
-   * \brief Traits for inferring the respective DryMachineTensor types
-   * from the respective tensor field types.
-   * Tcc is given these traits upon compiling and execution.
-   **/
-  class DryTensorEngine {
-  public:
-    template <typename FieldType>
-    using MachineTensor = DryMachineTensor<FieldType>;
   };
 }
 

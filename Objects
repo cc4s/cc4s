@@ -7,7 +7,7 @@ build/${CONFIG}/obj/main/util/Emitter.o \
 build/${CONFIG}/obj/main/util/Timer.o \
 build/${CONFIG}/obj/main/util/TensorIo.o \
 build/${CONFIG}/obj/main/util/BlacsWorld.o \
-build/${CONFIG}/obj/main/tcc/DryTensor.o \
+build/${CONFIG}/obj/main/engines/DryTensor.o \
 build/${CONFIG}/obj/main/mixers/Mixer.o \
 build/${CONFIG}/obj/main/mixers/LinearMixer.o \
 build/${CONFIG}/obj/main/algorithms/Algorithm.o \

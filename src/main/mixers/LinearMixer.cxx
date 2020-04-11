@@ -2,9 +2,7 @@
 #include <util/SharedPointer.hpp>
 #include <util/Emitter.hpp>
 #include <util/Log.hpp>
-#include <Cc4s.hpp>
-#include <tcc/engines/DryMachineTensor.hpp>
-#include <tcc/engines/CtfMachineTensor.hpp>
+#include <Data.hpp>
 
 using namespace cc4s;
 
@@ -59,8 +57,8 @@ PTR(ESC(const FockVector<F,TE>)) LinearMixer<F,TE>::getResiduum() {
 }
 
 // instantiate
-template class LinearMixer<cc4s::Real<64>, DryEngine>;
-template class LinearMixer<cc4s::Complex<64>, DryEngine>;
-template class LinearMixer<cc4s::Real<64>, CtfEngine>;
-template class LinearMixer<cc4s::Complex<64>, CtfEngine>;
+template class LinearMixer<Real<64>, DryTensorEngine>;
+template class LinearMixer<Complex<64>, DryTensorEngine>;
+template class LinearMixer<Real<64>, DefaultTensorEngine>;
+template class LinearMixer<Complex<64>, DefaultTensorEngine>;
 

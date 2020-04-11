@@ -1,9 +1,8 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CTF_MACHINE_TENSOR_DEFINED
 #define CTF_MACHINE_TENSOR_DEFINED
 
 #include <util/SharedPointer.hpp>
-#include <Cc4s.hpp>
 #include <ctf.hpp>
 #include <string>
 
@@ -218,17 +217,6 @@ namespace cc4s {
     }
 
     friend class tcc::Tensor<F,CtfTensorEngine>;
-  };
-
-  /**
-   * \brief Traits for inferring the respective DryMachineTensor types
-   * from the respective tensor field types.
-   * Tcc is given these traits upon compiling and execution.
-   **/
-  class CtfTensorEngine {
-  public:
-    template <typename FieldType>
-    using MachineTensor = CtfMachineTensor<FieldType>;
   };
 }
 

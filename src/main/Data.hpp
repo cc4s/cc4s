@@ -9,15 +9,14 @@
 #include <util/Exception.hpp>
 
 // tensor engine selection
-#include <tcc/engines/DryMachineTensor.hpp>
-#include <tcc/engines/CtfMachineTensor.hpp>
+#include <engines/DryTensorEngine.hpp>
+#include <engines/CtfTensorEngine.hpp>
 namespace cc4s {
   typedef cc4s::CtfTensorEngine DefaultTensorEngine;
 }
 
 #include <string>
 #include <map>
-#include <ctf.hpp>
 
 namespace cc4s {
   /**

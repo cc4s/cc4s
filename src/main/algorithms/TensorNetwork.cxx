@@ -1,13 +1,9 @@
 #include <algorithms/TensorNetwork.hpp>
 
 #include <tcc/Tcc.hpp>
-#include <tcc/engines/DryMachineTensor.hpp>
 #include <math/MathFunctions.hpp>
-#include <Cc4s.hpp>
+#include <Data.hpp>
 #include <vector>
-#include <memory>
-
-using std::shared_ptr;
 
 using namespace cc4s;
 using namespace tcc;
@@ -34,7 +30,7 @@ void TensorNetwork::dryRun() {
   size_t Np(No+Nv);
   size_t NF(200);
   size_t NR(400);
-  typedef Tcc<DryEngine> TCC;
+  typedef Tcc<DryTensorEngine> TCC;
   auto T(
     TCC::tensor(std::vector<size_t>({Nv,Nv,No,No}), "T")
   );
