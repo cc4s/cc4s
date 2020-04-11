@@ -4,7 +4,6 @@
 #include <Parser.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <util/Timer.hpp>
-#include <tcc/DryTensor.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <util/Emitter.hpp>

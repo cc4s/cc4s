@@ -1,8 +1,8 @@
 /*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <mixers/Mixer.hpp>
-#include <tcc/DryMachineTensor.hpp>
-#include <util/CtfMachineTensor.hpp>
+#include <tcc/engines/DryMachineTensor.hpp>
+#include <tcc/engines/CtfMachineTensor.hpp>
 
 using namespace cc4s;
 

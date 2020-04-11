@@ -11,9 +11,9 @@ namespace tcc {
   template <typename F,typename TE> class Tensor;
 }
 
-// TODO: specify MPI communicator when creating CtfEngine
+// TODO: specify MPI communicator when creating CtfTensorEngine
 namespace cc4s {
-  class CtfEngine;
+  class CtfTensorEngine;
 
   /**
    * \brief MachineTensor adapter for a CTF::Tensor
@@ -26,7 +26,7 @@ namespace cc4s {
 
   public:
     typedef CTF::Tensor<F> T;
-    typedef CtfEngine TensorEngine;
+    typedef CtfTensorEngine TensorEngine;
 
     // constructors
     CtfMachineTensor(
@@ -217,7 +217,7 @@ namespace cc4s {
       return NEW(CtfMachineTensor<F>, lens, name, ProtectedToken());
     }
 
-    friend class tcc::Tensor<F,CtfEngine>;
+    friend class tcc::Tensor<F,CtfTensorEngine>;
   };
 
   /**
@@ -225,7 +225,7 @@ namespace cc4s {
    * from the respective tensor field types.
    * Tcc is given these traits upon compiling and execution.
    **/
-  class CtfEngine {
+  class CtfTensorEngine {
   public:
     template <typename FieldType>
     using MachineTensor = CtfMachineTensor<FieldType>;

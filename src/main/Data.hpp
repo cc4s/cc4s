@@ -5,11 +5,19 @@
 #include <util/Log.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>
+// TODO: find out why Exception must be included after string,map and ctf
+#include <util/Exception.hpp>
+
+// tensor engine selection
+#include <tcc/engines/DryMachineTensor.hpp>
+#include <tcc/engines/CtfMachineTensor.hpp>
+namespace cc4s {
+  typedef cc4s::CtfTensorEngine DefaultTensorEngine;
+}
+
 #include <string>
 #include <map>
 #include <ctf.hpp>
-// TODO: find out why Exception must be included after string,map and ctf
-#include <util/Exception.hpp>
 
 namespace cc4s {
   /**
@@ -170,23 +178,20 @@ namespace cc4s {
     int64_t value;
   };
 
-  template < typename F=Real<>, typename T=CTF::Tensor<F> >
+  template < typename F=Real<>, typename TE=DefaultTensorEngine >
   class TensorData: public NumericData {
   public:
     TensorData(
-      T *value_
+      const PTR(ESC(tcc::Tensor<F,TE>)) &value_
     ): NumericData("tensor of " + TypeTraits<F>::getName()), value(value_) {
     }
     TensorData(
-      std::string const &name_, T *value_
+      std::string const &name_, const PTR(ESC(tcc::Tensor<F,TE>)) &value_
     ):
       NumericData(name_, "tensor of " + TypeTraits<F>::getName()), value(value_)
     {
     }
-    virtual ~TensorData() {
-      if (value) delete value;
-    }
-    T *value;
+    PTR(ESC(tcc::Tensor<F,TE>)) value;
   };
 }
 

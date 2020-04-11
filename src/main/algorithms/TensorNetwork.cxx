@@ -1,7 +1,7 @@
 #include <algorithms/TensorNetwork.hpp>
 
 #include <tcc/Tcc.hpp>
-#include <tcc/DryMachineTensor.hpp>
+#include <tcc/engines/DryMachineTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <Cc4s.hpp>
 #include <vector>

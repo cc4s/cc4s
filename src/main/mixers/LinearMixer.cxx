@@ -3,8 +3,8 @@
 #include <util/Emitter.hpp>
 #include <util/Log.hpp>
 #include <Cc4s.hpp>
-#include <tcc/DryMachineTensor.hpp>
-#include <util/CtfMachineTensor.hpp>
+#include <tcc/engines/DryMachineTensor.hpp>
+#include <tcc/engines/CtfMachineTensor.hpp>
 
 using namespace cc4s;
 

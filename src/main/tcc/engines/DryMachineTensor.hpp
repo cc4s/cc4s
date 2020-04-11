@@ -2,7 +2,7 @@
 #ifndef DRY_MACHINE_TENSOR_DEFINED
 #define DRY_MACHINE_TENSOR_DEFINED
 
-#include <tcc/DryTensor.hpp>
+#include <tcc/engines/DryTensor.hpp>
 
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
@@ -11,7 +11,7 @@
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;
-  class DryEngine;
+  class DryTensorEngine;
 
   /**
    * \brief MachineTensor adapter for a DryTensor
@@ -24,7 +24,7 @@ namespace cc4s {
 
   public:
     typedef DryTensor<F> T;
-    typedef DryEngine TensorEngine;
+    typedef DryTensorEngine TensorEngine;
 
     // constructors called by factory
     DryMachineTensor(
@@ -168,7 +168,7 @@ namespace cc4s {
       return NEW(DryMachineTensor<F>, lens, name, ProtectedToken());
     }
   protected:
-    friend class Tensor<F,DryEngine>;
+    friend class Tensor<F,DryTensorEngine>;
   };
 
   /**
@@ -176,7 +176,7 @@ namespace cc4s {
    * from the respective tensor field types.
    * Tcc is given these traits upon compiling and execution.
    **/
-  class DryEngine {
+  class DryTensorEngine {
   public:
     template <typename FieldType>
     using MachineTensor = DryMachineTensor<FieldType>;
