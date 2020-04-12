@@ -4,6 +4,7 @@
 #include <Data.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <util/LineNumberStream.hpp>
+#include <util/SharedPointer.hpp>
 #include <string>
 #include <vector>
 
@@ -18,32 +19,32 @@ namespace cc4s {
      * \brief Creates a new interpreter for a cc4s file of the given name.
      * Upon creation the file will be openend but not yet read.
      */
-    Parser(std::string const &fileName);
+    Parser(const std::string &fileName);
     ~Parser();
 
     /**
      * \brief Parses the cc4s algorithms contained in the stream.
      * This method must be called with the same stream content on all processes.
      */
-    std::vector<Algorithm *> parse();
+    std::vector<PTR(Algorithm)> parse();
 
   protected:
-    Algorithm *parseAlgorithm();
+    PTR(Algorithm) parseAlgorithm();
     std::vector<Argument> parseArguments();
     Argument parseArgument();
     Argument parseImplicitlyNamedArgument();
     Argument parseExplicitlyNamedArgument();
     std::string parseData();
     std::string parseSymbolName();
-    Data *parseSymbol();
-    TextData *parseText();
-    NumericData *parseNumber();
-    RealData *parseReal(int64_t const sign, int64_t const integerPart);
+    PTR(Data) parseSymbol();
+    PTR(TextData) parseText();
+    PTR(NumericData) parseNumber();
+    PTR(RealData) parseReal(const int64_t sign, const int64_t integerPart);
 
     void skipIrrelevantCharacters();
     void skipComment();
     void skipWhiteSpaceCharacters();
-    void expectCharacter(char const character);
+    void expectCharacter(const char character);
 
     LineNumberStream stream;
   };

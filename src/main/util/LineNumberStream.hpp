@@ -1,6 +1,7 @@
 #ifndef LINE_NUMBER_STREAM_DEFINED
 #define LINE_NUMBER_STREAM_DEFINED
 
+#include <util/SharedPointer.hpp>
 #include <string>
 
 namespace cc4s {
@@ -15,16 +16,11 @@ namespace cc4s {
      * The wrapper takes ownership of the given pointer.
      */
     LineNumberStream(
-      std::istream *stream_, std::string const &source_, int const tabWidth_=2
+      const PTR(std::istream) &stream_,
+      const std::string &source_, const size_t tabWidth_=2
     ):
-      line(1), column(1), tabWidth(tabWidth_), stream(stream_), source(source_)
+      stream(stream_), line(1), column(1), tabWidth(tabWidth_), source(source_)
     { }
-    /**
-     * \brief Destroys this stream and delete the underlying stream.
-     */
-    ~LineNumberStream() {
-      delete stream;
-    }
     /**
      * \brief Peeks one character from the underlying stream.
      */
@@ -50,7 +46,7 @@ namespace cc4s {
     /**
      * \brief Returns the underlying std::istream.
      */
-    std::istream *getStream() { return stream; }
+    PTR(std::istream) getStream() { return stream; }
     /**
      * \brief Returns the source name of the underlying stream,
      * usually its file name.
@@ -66,8 +62,8 @@ namespace cc4s {
     int getColumn() { return column; }
 
   protected:
-    int line, column, tabWidth;
-    std::istream *stream;
+    PTR(std::istream) stream;
+    size_t line, column, tabWidth;
     std::string source;
   };
 }

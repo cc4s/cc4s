@@ -10,47 +10,49 @@ namespace cc4s {
   class Argument {
   public:
     Argument(
-      std::string const &name_
+      const std::string &name_
     ): name(name_), data(name_) {
     }
     Argument(
-      std::string const &name_, std::string const &data_
+      const std::string &name_, const std::string &data_
     ): name(name_), data(data_) {
     }
-    std::string const &getName() const { return name; }
-    std::string const &getData() const { return data; }
+    const std::string &getName() const { return name; }
+    const std::string &getData() const { return data; }
   protected:
     std::string name, data;
   };
 
   class Algorithm {
   public:
-    Algorithm(std::vector<Argument> const &argumentList);
+    Algorithm(const std::vector<Argument> &argumentList);
     virtual ~Algorithm();
     virtual std::string getName() = 0;
     virtual void run() = 0;
     virtual void dryRun();
 
-    bool isArgumentGiven(std::string const &argumentName);
+    bool isArgumentGiven(const std::string &argumentName);
     // retrieving input arguments
-    std::string getTextArgument(std::string const &argumentName);
-    std::string getTextArgument(
-      std::string const &argumentName, std::string const &defaultValue
+    const std::string &getTextArgument(const std::string &argumentName);
+    const std::string &getTextArgument(
+      const std::string &argumentName, const std::string &defaultValue
     );
-    bool getBooleanArgument(std::string const &name);
+    bool getBooleanArgument(const std::string &name);
     bool getBooleanArgument(
-      std::string const &name, bool const &defaultValue
+      const std::string &name, const bool defaultValue
     );
-    int64_t getIntegerArgument(std::string const &argumentName);
+    int64_t getIntegerArgument(const std::string &argumentName);
     int64_t getIntegerArgument(
-      std::string const &argumentName, int64_t const defaultValue
+      const std::string &argumentName, const int64_t defaultValue
     );
-    Real<> getRealArgument(std::string const &argumentName);
+    Real<> getRealArgument(const std::string &argumentName);
     Real<> getRealArgument(
-      std::string const &argumentName, Real<> const defaultValue
+      const std::string &argumentName, const Real<> defaultValue
     );
-    template < typename F=Real<>, typename T=CTF::Tensor<F> >
-    T *getTensorArgument(std::string const &argumentName);
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    PTR(ESC(tcc::Tensor<F,TE>)) getTensorArgument(
+      const std::string &argumentName
+    );
 
     // typing, allocating and setting output arguments
     /**
@@ -61,24 +63,31 @@ namespace cc4s {
      * \note
      * often explicit instantiation may be necessary, e.g.
      * \code{.cxx}
-     * allocatedTensorArgument<complex>(complexTensor);
+     * setTensorArgument<complex>(complexTensor);
      * \endcode
      */
-    template < typename F=Real<>, typename T=CTF::Tensor<F> >
-    void allocatedTensorArgument(
-      std::string const &argumentName, T *tensor
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    void setTensorArgument(
+      const std::string &argumentName, const PTR(ESC(tcc::Tensor<F,TE>)) &tensor
     );
-    void setRealArgument(std::string const &argumentName, Real<> const value);
-    void setIntegerArgument(std::string const &argumentName, int const value);
+    void setRealArgument(const std::string &argumentName, const Real<> value);
+    void setIntegerArgument(
+      const std::string &argumentName, const int64_t value
+    );
 
   protected:
     // type promotions:
-    Real<> getRealArgumentFromInteger(IntegerData *data);
-    Real<> getRealArgumentFromTensor(TensorData<Real<>> *data);
-    template < typename F=Real<>, typename T=CTF::Tensor<F> >
-    T *getTensorArgumentFromReal(RealData *realData);
+    Real<> getRealArgumentFromInteger(const PTR(IntegerData) &data);
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    F getRealArgumentFromTensor(
+      const PTR(ESC(const TensorData<F,TE>)) &tensorData
+    );
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    PTR(ESC(tcc::Tensor<F,TE>)) getTensorArgumentFromReal(
+      const PTR(RealData) &realData
+    );
 
-    Data *getArgumentData(std::string const &argumentName);
+    PTR(Data) getArgumentData(const std::string &argumentName);
     std::map<std::string, std::string> arguments;
   };
 
@@ -86,7 +95,7 @@ namespace cc4s {
   public:
     typedef std::map<
       std::string,
-      std::function<Algorithm *(std::vector<Argument> const &)>
+      std::function<PTR(Algorithm)(const std::vector<Argument> &)>
     > AlgorithmMap;
 
     /**
@@ -96,26 +105,26 @@ namespace cc4s {
      * The instantiated algorithm must be registered using the
      * AlgorithmRegistrar class.
      */
-    static Algorithm *create(
-      std::string const &name, std::vector<Argument> const &arguments
+    static PTR(Algorithm) create(
+      const std::string &name, const std::vector<Argument> &arguments
     ) {
       auto iterator(getAlgorithmMap()->find(name));
       return iterator != getAlgorithmMap()->end() ?
         iterator->second(arguments) : nullptr;
     }
   protected:
-    static AlgorithmMap *getAlgorithmMap() {
-      return algorithmMap ? algorithmMap : (algorithmMap = new AlgorithmMap);
+    static PTR(AlgorithmMap) getAlgorithmMap() {
+      return algorithmMap ? algorithmMap : (algorithmMap = NEW(AlgorithmMap));
     }
-    static AlgorithmMap *algorithmMap;
+    static PTR(AlgorithmMap) algorithmMap;
   };
 
   /**
    * \brief template function creating an instance of the given class.
    */
   template <typename AlgorithmType>
-  Algorithm *createAlgorithm(std::vector<Argument> const &arguments) {
-    return new AlgorithmType(arguments);
+  PTR(Algorithm) createAlgorithm(const std::vector<Argument> &arguments) {
+    return NEW(AlgorithmType, arguments);
   }
 
   /**
@@ -131,7 +140,7 @@ namespace cc4s {
      * must be given as template argument, the algorithm name as
      * method argument.
      */
-    AlgorithmRegistrar(std::string const &name) {
+    AlgorithmRegistrar(const std::string &name) {
       (*getAlgorithmMap())[name] = &createAlgorithm<AlgorithmType>;
     }
   };

@@ -25,7 +25,7 @@ void Cc4s::run() {
   printBanner();
   listHosts();
   Parser parser(options->file);
-  std::vector<Algorithm *> algorithms(parser.parse());
+  std::vector<PTR(Algorithm)> algorithms(parser.parse());
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms.size() << std::endl;
   EMIT() <<
@@ -51,7 +51,8 @@ void Cc4s::run() {
         // TODO: flops counter
         Timer timer(&time);
         algorithms[i]->run();
-        delete algorithms[i];
+        // release resources which maybe held by the algorithm
+        algorithms[i] = nullptr;
       }
 
       std::stringstream realtime;
@@ -96,7 +97,7 @@ void Cc4s::dryRun() {
     "DRY RUN - nothing will be calculated" << std::endl;
   OUT() << std::endl;
   Parser parser(options->file);
-  std::vector<Algorithm *> algorithms(parser.parse());
+  std::vector<PTR(Algorithm)> algorithms(parser.parse());
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms.size() << std::endl;
   EMIT() <<

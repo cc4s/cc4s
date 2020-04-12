@@ -11,9 +11,8 @@ using namespace cc4s;
 
 Parser::Parser(
   std::string const &fileName
-): stream(new std::ifstream(fileName.c_str()), fileName) {
-  std::ifstream *fileStream(dynamic_cast<std::ifstream *>(stream.getStream()));
-  if (!fileStream->is_open()) {
+): stream(NEW(std::ifstream, fileName.c_str()), fileName) {
+  if (!dynamic_pointer_cast<std::ifstream>(stream.getStream())->is_open()) {
     std::stringstream sStream;
     sStream << "Failed to open file " << fileName;
     throw new EXCEPTION(sStream.str());
@@ -23,8 +22,8 @@ Parser::Parser(
 Parser::~Parser() {
 }
 
-std::vector<Algorithm *> Parser::parse() {
-  std::vector<Algorithm *> algorithms;
+std::vector<PTR(Algorithm)> Parser::parse() {
+  std::vector<PTR(Algorithm)> algorithms;
   skipIrrelevantCharacters();
   while (stream.peek() > 0) {
     algorithms.push_back(parseAlgorithm());
@@ -33,7 +32,7 @@ std::vector<Algorithm *> Parser::parse() {
   return algorithms;
 }
 
-Algorithm *Parser::parseAlgorithm() {
+PTR(Algorithm) Parser::parseAlgorithm() {
   int line(stream.getLine()), column(stream.getColumn());
   // an algorithm starts with the name
   std::string algorithmName(parseSymbolName());
@@ -51,7 +50,7 @@ Algorithm *Parser::parseAlgorithm() {
     arguments.end(), outputArguments.begin(), outputArguments.end()
   );
   // create and return an instance of the algorithm
-  Algorithm *algorithm(AlgorithmFactory::create(algorithmName, arguments));
+  PTR(Algorithm) algorithm(AlgorithmFactory::create(algorithmName, arguments));
   if (!algorithm) {
     std::stringstream sStream;
     sStream << "Unknown algorithm " << algorithmName;
@@ -80,7 +79,7 @@ Argument Parser::parseArgument() {
 Argument Parser::parseImplicitlyNamedArgument() {
   // TODO: store debug info for later reference in case of errors
   std::string argumentName(parseSymbolName());
-  Data *data(Data::get(argumentName));
+  PTR(Data) data(Data::get(argumentName));
   if (!data) new Data(argumentName);
   return Argument(argumentName, argumentName);
 }
@@ -125,13 +124,13 @@ std::string Parser::parseSymbolName() {
   return sStream.str();
 }
 
-Data *Parser::parseSymbol() {
+PTR(Data) Parser::parseSymbol() {
   std::string symbolName(parseSymbolName());
-  Data *data(Data::get(symbolName));
-  return data ? data : new Data(symbolName);
+  PTR(Data) data(Data::get(symbolName));
+  return data ? data : NEW(Data, symbolName);
 }
 
-TextData *Parser::parseText() {
+PTR(TextData) Parser::parseText() {
   std::stringstream sStream;
   // TODO: parse escape sequences
   // the first character is expected to be a double quote '"'
@@ -141,10 +140,10 @@ TextData *Parser::parseText() {
     sStream.put(stream.get());
   }
   expectCharacter('"');
-  return new TextData(sStream.str());
+  return NEW(TextData, sStream.str());
 }
 
-NumericData *Parser::parseNumber() {
+PTR(NumericData) Parser::parseNumber() {
   // the first character can be a sign
   int64_t sign(1);
   switch (stream.peek()) {
@@ -166,10 +165,10 @@ NumericData *Parser::parseNumber() {
     integer += stream.get() - '0';
   }
   if (stream.peek() == '.') return parseReal(sign, integer);
-  else return new IntegerData(sign * integer);
+  else return NEW(IntegerData, sign * integer);
 }
 
-RealData *Parser::parseReal(
+PTR(RealData) Parser::parseReal(
   const int64_t sign, const int64_t integerPart
 ) {
   // the first character is expected to be the decimal point
@@ -180,8 +179,8 @@ RealData *Parser::parseReal(
     numerator += stream.get() - '0';
   }
   // TODO: parse scientific notatoin e-1
-  return new RealData(
-    sign * (integerPart + double(numerator) / denominator)
+  return NEW(RealData,
+    sign * (integerPart + Real<>(numerator) / denominator)
   );
 }
 

@@ -1,4 +1,4 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DATA_DEFINED
 #define DATA_DEFINED
 
@@ -7,6 +7,7 @@
 #include <math/Complex.hpp>
 // TODO: find out why Exception must be included after string,map and ctf
 #include <util/Exception.hpp>
+#include <util/SharedPointer.hpp>
 
 // tensor engine selection
 #include <engines/DryTensorEngine.hpp>
@@ -17,6 +18,7 @@ namespace cc4s {
 
 #include <string>
 #include <map>
+#include <sstream>
 
 namespace cc4s {
   /**
@@ -58,22 +60,27 @@ namespace cc4s {
     static std::string getName() { return "complex<128>"; }
   };
 
-  class Data {
+  class Data: public THISABLE(Data) {
   public:
     enum Stage {
       MENTIONED = 0, TYPED = 1, ALLOCATED = 2, 
       READY = 3,
       UNUSED = 4, LINGERING = 5
     };
-    Data(std::string const &name_);
-    virtual ~Data() {
-      dataMap[name] = nullptr;
+    Data(const std::string &name_) {
+      std::stringstream sStream;
+      sStream << name_ << " of yet unknown type";
+      typeName = sStream.str();
+      // enter datum in global data map
+      dataMap[name_] = THIS(Data);
     }
-    std::string   getName() const { return name; }
+    virtual ~Data() {
+    }
+    std::string getName() const { return name; }
     std::string getTypeName() const { return typeName; }
     Stage getStage() const { return stage; }
 
-    static Data *get(std::string const &name) {
+    static PTR(Data) get(const std::string &name) {
       auto iterator(dataMap.find(name));
       return (iterator != dataMap.end()) ? iterator->second : nullptr;
     }
@@ -82,24 +89,21 @@ namespace cc4s {
      * \brief protected constructor for typed data.
      */
     Data(
-      std::string const &name_, std::string const &typeName_
+      const std::string &name_, const std::string &typeName_
     ): name(name_), typeName(typeName_), stage(TYPED) {
-      Data *mentionedData(dataMap[name_]);
+      PTR(Data) mentionedData(dataMap[name_]);
       if (mentionedData) {
-        if (mentionedData->getStage() == MENTIONED) {
-          delete mentionedData;
-        } else {
+        if (mentionedData->getStage() != MENTIONED) {
           LOG(1,"Data") << "overwriting existing data: " << name_ << std::endl;
-          delete mentionedData;
 //          throw new EXCEPTION("Trying to overwrite existing data");
         }
       }
-      dataMap[name_] = this;
+      dataMap[name_] = THIS(Data);
     }
     std::string name, typeName;
     Stage stage;
 
-    static std::map<std::string, Data *> dataMap;
+    static std::map<std::string, PTR(Data)> dataMap;
     static int64_t nextAnynomousDataId;
   };
 
@@ -108,13 +112,13 @@ namespace cc4s {
     /**
      * \brief Protected constructor for anonymous constant data.
      */
-    TypedData(std::string const &typeName_): Data(nextName(), typeName_) {
+    TypedData(const std::string &typeName_): Data(nextName(), typeName_) {
     }
     /**
      * \brief Protected constructor for named data.
      */
     TypedData(
-      std::string const &name_, std::string const &typeName_
+      const std::string &name_, const std::string &typeName_
     ): Data(name_, typeName_) {
     }
 
@@ -129,32 +133,32 @@ namespace cc4s {
      * They will be named "Constant0", "Constant1", ...
      * regardless of the type.
      */
-    static int nextId;
+    static size_t nextId;
   };
 
   class TextData: public TypedData {
   public:
-    TextData(std::string const &value_): TypedData("text"), value(value_) { }
+    TextData(const std::string &value_): TypedData("text"), value(value_) { }
     TextData(
-      std::string const &name_, std::string const &value_
+      const std::string &name_, const std::string &value_
     ): TypedData(name_, "text"), value(value_) { }
     std::string value;
   };
 
   class BooleanData: public TypedData {
   public:
-    BooleanData(bool const value_): TypedData("boolean"), value(value_) { }
+    BooleanData(const bool value_): TypedData("boolean"), value(value_) { }
     BooleanData(
-      std::string const &name_, bool const value_
+      const std::string &name_, const bool value_
     ): TypedData(name_, "boolean"), value(value_) { }
     bool value;
   };
 
   class NumericData: public TypedData {
   protected:
-    NumericData(std::string const &typeName_): TypedData(typeName_) { }
+    NumericData(const std::string &typeName_): TypedData(typeName_) { }
     NumericData(
-      std::string const &name_, std::string const &typeName_
+      const std::string &name_, const std::string &typeName_
     ): TypedData(name_, typeName_) {
     }
   };
@@ -163,7 +167,7 @@ namespace cc4s {
   public:
     RealData(Real<64> value_): NumericData("real<64>"), value(value_) { }
     RealData(
-      std::string const &name_, const Real<64> value_
+      const std::string &name_, const Real<64> value_
     ): NumericData(name_, "real<64>"), value(value_) { }
     Real<64> value;
   };
@@ -172,12 +176,12 @@ namespace cc4s {
   public:
     IntegerData(int64_t value_): NumericData("integer"), value(value_) { }
     IntegerData(
-      std::string const &name_, int64_t const value_
+      const std::string &name_, const int64_t value_
     ): NumericData(name_, "integer"), value(value_) { }
     int64_t value;
   };
 
-  template < typename F=Real<>, typename TE=DefaultTensorEngine >
+  template <typename F=Real<>, typename TE=DefaultTensorEngine>
   class TensorData: public NumericData {
   public:
     TensorData(
@@ -185,7 +189,7 @@ namespace cc4s {
     ): NumericData("tensor of " + TypeTraits<F>::getName()), value(value_) {
     }
     TensorData(
-      std::string const &name_, const PTR(ESC(tcc::Tensor<F,TE>)) &value_
+      const std::string &name_, const PTR(ESC(tcc::Tensor<F,TE>)) &value_
     ):
       NumericData(name_, "tensor of " + TypeTraits<F>::getName()), value(value_)
     {
