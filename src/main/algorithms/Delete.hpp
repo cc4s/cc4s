@@ -11,7 +11,6 @@ namespace cc4s {
     Delete(
       std::vector<Argument> const &argumentList
     );
-    virtual ~Delete();
     /**
      * \brief Frees all associated resources of the given tensor
      */

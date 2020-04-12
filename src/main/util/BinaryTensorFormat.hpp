@@ -9,13 +9,13 @@ namespace cc4s {
   class BinaryTensorHeaderBase {
   public:
     char magic[4];
-    int32_t version;
+    uint32_t version;
     char numberType[4];
-    int32_t bytesPerNumber;
-    int32_t numbersPerElement;
-    int32_t order;
-    int32_t flags;
-    int32_t reserved;
+    uint32_t bytesPerNumber;
+    uint32_t numbersPerElement;
+    uint32_t order;
+    uint32_t flags;
+    uint32_t reserved;
 
     static constexpr char const *MAGIC = "TENS";
     static constexpr int32_t VERSION = 0x09000;
@@ -25,7 +25,7 @@ namespace cc4s {
     BinaryTensorHeaderBase() {
     }
     BinaryTensorHeaderBase(
-      int32_t bytesPerNumber_, int32_t numsPerElement_, int32_t order_
+      uint32_t bytesPerNumber_, uint32_t numsPerElement_, uint32_t order_
     ):
       version(VERSION),
       bytesPerNumber(bytesPerNumber_),
@@ -69,15 +69,15 @@ namespace cc4s {
 
   class BinaryTensorDimensionHeader {
   public:
-    int32_t length;
+    uint32_t length;
     char indexName[1];
-    int8_t flags;
-    int16_t reserved;
+    uint8_t flags;
+    uint16_t reserved;
 
     BinaryTensorDimensionHeader() {
     }
     BinaryTensorDimensionHeader(
-      int32_t length_, char indexName_
+      uint32_t length_, char indexName_
     ):
       length(length_)
     {

@@ -3,15 +3,17 @@
 #include <util/BinaryTensorFormat.hpp>
 #include <util/Scanner.hpp>
 #include <util/Log.hpp>
+#include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
+#include <Data.hpp>
 #include <fstream>
 #include <iomanip>
-#include <ctf.hpp>
 
 using namespace cc4s;
+using namespace tcc;
 
-template <typename F, typename T>
-T *TensorIo::readBinary(std::string const &fileName) {
+template <typename F, typename TE>
+PTR(ESC(tcc::Tensor<F,TE>)) TensorIo::readBinary(const std::string &fileName) {
   // open the file
   MPI_File file;
   int mpiError(
@@ -26,22 +28,23 @@ T *TensorIo::readBinary(std::string const &fileName) {
     throw new EXCEPTION(explanation.str());
   }
 
-  int64_t offset(0);
-  T *A(readBinaryHeader<F,T>(file, offset));
+  size_t offset(0);
+  auto A( readBinaryHeader<F,TE>(file, offset) );
 
   // read dense data
-  A->read_dense_from_file(file, offset);
+  // FIXME: invoke tcc read from file calls
+//  A->read_dense_from_file(file, offset);
 
   // done
   MPI_File_close(&file);
   return A;
 }
 
-template <typename F, typename T>
-T *TensorIo::readText(
-  std::string const &fileName,
-  std::string const &delimiter,
-  int64_t const bufferSize
+template <typename F, typename TE>
+PTR(ESC(tcc::Tensor<F,TE>)) TensorIo::readText(
+  const std::string &fileName,
+  const std::string &delimiter,
+  const size_t bufferSize
 ) {
   std::ifstream stream(fileName.c_str());
   if (stream.fail()) {
@@ -52,189 +55,107 @@ T *TensorIo::readText(
   Scanner scanner(&stream);
   std::string name(scanner.nextLine(' '));
   std::stringstream lineStream(scanner.nextLine());
-  int order;
+  unsigned int order;
   lineStream >> order;
-  int lens[order];
-  int syms[order];
-  for (int dim(0); dim < order; ++dim) {
+  std::vector<size_t> lens(order);
+  for (unsigned int dim(0); dim < order; ++dim) {
     lineStream >> lens[dim];
-    syms[dim] = NS;
   }
 
-  std::string rowIndexOrder(scanner.nextLine(' '));
+  // dismiss index order string
   std::string columnIndexOrder(scanner.nextLine());
 
-  int storedLens[order];
-  int storedIndex(0);
-  for (unsigned int dim(0); dim < columnIndexOrder.length(); ++dim) {
-    // FIXME: i,j,k ... assumed in indexOrder strings
-    storedLens[storedIndex] = lens[columnIndexOrder[dim] - 'i'];
-    ++storedIndex;
-  }
-  for (unsigned int dim(0); dim < rowIndexOrder.length(); ++dim) {
-    storedLens[storedIndex] = lens[rowIndexOrder[dim] - 'i'];
-    ++storedIndex;
-  }
-
-  T *B(new T(order, storedLens, syms, CTF::get_universe(), name.c_str()));
-
-  int64_t indexCount(1);
-  for (int dim(0); dim < B->order; ++dim) {
-    indexCount *= B->lens[dim];
-  }
+  // create tensor
+  auto A( Tcc<TE>::template tensor<F>(lens, name) );
 
   // read the values only on root
-  int64_t localBufferSize(B->wrld->rank == 0 ? bufferSize : 0);
-  int64_t *indices(new int64_t[localBufferSize]);
-  F *values(new F[localBufferSize]);
+  size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
+  std::vector<int64_t> indices(localBufferSize);
+  std::vector<F> values(localBufferSize);
 
-  int64_t index(0);
-  LOG(1, "TensorReader") << "indexCount=" << indexCount << std::endl;
+  size_t index(0);
+  LOG(1, "TensorReader") << "indexCount=" << A->getElementsCount() << std::endl;
   NumberScanner<F> numberScanner(&scanner);
-  while (index < indexCount) {
-    int64_t elementsCount(std::min(bufferSize, indexCount-index));
-    int64_t localElementsCount(B->wrld->rank == 0 ? elementsCount : 0);
-    for (int64_t i(0); i < localElementsCount; ++i) {
+  while (index < A->getElementsCount()) {
+    size_t elementsCount(std::min(bufferSize, A->getElementsCount()-index));
+    size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
+    for (size_t i(0); i < localElementsCount; ++i) {
       indices[i] = index+i;
       values[i] = numberScanner.nextNumber();
     }
-    // wait until all processes finished reading this buffer
+    // wait until all processes finished reading this buffer into the tensor
     Cc4s::world->barrier();
-    LOG(1, "TensorReader") << "writing " << elementsCount << " values to tensor..." << std::endl;
-    B->write(localElementsCount, indices, values);
+    LOG(2, "TensorReader") << "writing " << elementsCount << " values to tensor..." << std::endl;
+    // FIXME: invoke tcc io
+    //A->write(localElementsCount, indices.data(), values.data());
     index += elementsCount;
   }
-  delete[] indices;
-  delete[] values;
 
-  char indexOrder[B->order + 1];
-  for (int dim(0); dim < B->order; ++dim) {
-    indexOrder[dim] = 'i' + dim;
-  }
-  indexOrder[B->order] = 0;
-  std::string storedIndexOrder(columnIndexOrder + rowIndexOrder);
-  if (std::string(indexOrder) != storedIndexOrder) {
-    T *A(new T(order, lens, syms, *B->wrld, B->get_name()));
-    (*A)[indexOrder] = (*B)[storedIndexOrder.c_str()];
-    delete B;
-    return A;
-  } else {
-    return B;
-  }
+  return A;
 }
 
-template <typename F, typename T>
-void TensorIo::writeBinary(std::string const &fileName, T &A) {
+template <typename F, typename TE>
+void TensorIo::writeBinary(
+  const std::string &fileName, const PTR(ESC(tcc::Tensor<F,TE>)) &A
+) {
   MPI_File file;
-  MPI_Status status;
   MPI_File_open(
-    A.wrld->comm, fileName.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY,
+    Cc4s::world->getComm(), fileName.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY,
     MPI_INFO_NULL, &file
   );
-  int64_t offset(0);
+  size_t offset(0);
 
   // truncate possibly existing file
   MPI_File_set_size(file, offset);
-  // write header
-  BinaryTensorHeader header(A);
-  MPI_File_write_at(file, offset, &header, sizeof(header), MPI_BYTE, &status);
-  offset += sizeof(header);
-  // FIXME: status checking
-
-  // write dimension header for each dimension
-  for (int dim(0); dim < A.order; ++dim) {
-    BinaryTensorDimensionHeader dimensionHeader(A.lens[dim], 'a'+dim);
-    MPI_File_write_at(
-      file, offset, &dimensionHeader, sizeof(dimensionHeader), MPI_BYTE, &status
-    );
-    offset += sizeof(dimensionHeader);
-  }
 
   // write dense data
-  A.write_dense_to_file(file, offset);
+  // FIXME: invoke tcc write to file calls
+  // A.write_dense_to_file(file, offset);
 
   // done
   MPI_File_close(&file);
 }
 
-template <typename F, typename T>
+template <typename F, typename TE>
 void TensorIo::writeText(
-  std::string const &fileName, T &A,
-  std::string const &givenRowIndexOrder, std::string const &columnIndexOrder,
-  std::string const &delimiter
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<F,TE>)) &A,
+  const std::string &givenRowIndexOrder, const std::string &columnIndexOrder,
+  const std::string &delimiter
 ) {
-  char defaultIndexOrder[A.order + 1];
-  for (int dim(0); dim < A.order; ++dim) defaultIndexOrder[dim] = 'i' + dim;
-  defaultIndexOrder[A.order] = 0;
-  std::string rowIndexOrder(
-    givenRowIndexOrder == "" && columnIndexOrder == "" ?
-      defaultIndexOrder : givenRowIndexOrder
-  );
-  Assert(
-    rowIndexOrder.length()+columnIndexOrder.length() == unsigned(A.order),
-    "Number of indices in rowIndexOrder and columnIndexOrder must match tensor order"
-  );
-  char indexOrder[A.order+1];
-  int lens[A.order];
-  int syms[A.order];
-  int64_t columnElementsCount(1);
-  int columnOrder(columnIndexOrder.length());
-  for (int dim(0); dim < columnOrder; ++dim) {
-    indexOrder[dim] = columnIndexOrder[dim];
-    lens[dim] = A.lens[columnIndexOrder[dim]-'i'];
-    syms[dim] = NS;
-    columnElementsCount *= lens[dim];
-  }
-  int64_t rowElementsCount(1);
-  int rowOrder(rowIndexOrder.length());
-  for (int dim(0); dim < rowOrder; ++dim) {
-    indexOrder[columnOrder+dim] = rowIndexOrder[dim];
-    lens[columnOrder+dim] = A.lens[rowIndexOrder[dim]-'i'];
-    syms[columnOrder+dim] = NS;
-    rowElementsCount *= lens[columnOrder+dim];
-  }
-  indexOrder[A.order] = 0;
-  T B(A.order, lens, syms, *A.wrld, "DataOrdered");
-  // reorder indices for writing:
-  B[indexOrder] = A[defaultIndexOrder];
-  int64_t valuesCount;
-  F *values;
-  // and unpack symmetries for writing
   // TODO: implement memory scalable version
-  B.read_all(&valuesCount, &values, true);
-  Assert(
-    rowElementsCount*columnElementsCount == valuesCount,
-    "Wrong number of elements read"
-  );
+  size_t elementsCount(Cc4s::world->getRank() == 0 ? A->getElementsCount() : 0);
+  std::vector<size_t> indices(elementsCount);
+  for (size_t i(0); i < elementsCount; ++i) {
+    indices[i] = i;
+  }
+  std::vector<F> values(elementsCount);
+  // FIXME: invoke tcc read
+  //A->read(elementsCount, indices.data(), values.data());
 
   // only the root writes the file
-  if (A.wrld->rank == 0) {
+  if (elementsCount > 0) {
     std::ofstream file(fileName.c_str());
-    file << A.get_name() << delimiter << A.order;
-    for (int i(0); i < A.order; ++i) {
-      file << delimiter << A.lens[i];
+    file << A->getName() << delimiter << A->getLens().size();
+    for (size_t len: A->getLens()) {
+      file << delimiter << len;
     }
-    file << std::endl;
-    file << rowIndexOrder << delimiter << columnIndexOrder << std::endl;
+    file << '\n';
+    file << "" << delimiter << "" << '\n';
 
     // write the actual data
-    int64_t index(0);
-    LOG(1, "Writer") << "rows=" << rowElementsCount
-      << ", columns=" << columnElementsCount << std::endl;
     file << std::setprecision(16);
-    for (int64_t row(0); row < rowElementsCount; ++row) {
+    for (size_t index(0); index < elementsCount; ++index) {
       file << values[index++];
-      for (int64_t column(1); column < columnElementsCount; ++column) {
-        file << delimiter << values[index++];
-      }
-      file << std::endl;
+      file << '\n';
     }
   }
-  free(values);
 }
 
-template <typename F, typename T>
-T *TensorIo::readBinaryHeader(MPI_File &file, int64_t &offset) {
+template <typename F, typename TE>
+PTR(ESC(tcc::Tensor<F,TE>)) TensorIo::readBinaryHeader(
+  MPI_File &file, size_t &offset
+) {
   MPI_Status status;
   // reade header
   BinaryTensorHeader header;
@@ -246,96 +167,124 @@ T *TensorIo::readBinaryHeader(MPI_File &file, int64_t &offset) {
     throw new EXCEPTION("Incompatible file format version");
 
   // read dimension headers
-  int lens[header.order];
-  int syms[header.order];
-  for (int dim(0); dim < header.order; ++dim) {
+  std::vector<size_t> lens(header.order);
+  for (unsigned int dim(0); dim < header.order; ++dim) {
     BinaryTensorDimensionHeader dimensionHeader;
     MPI_File_read_at(
       file, offset, &dimensionHeader, sizeof(dimensionHeader), MPI_BYTE, &status
     );
     offset += sizeof(dimensionHeader);
     lens[dim] = dimensionHeader.length;
-    syms[dim] = NS;
   }
 
   // allocate tensor
-  return new T(header.order, lens, syms, CTF::get_universe());
+  return Tcc<TE>::template tensor<F>(lens, "binary");
 }
 
 
 
 // instantiate
 template
-CTF::Tensor<Real<64>> *TensorIo::readBinary<Real<64>>(
-  std::string const &fileName
+PTR(ESC(tcc::Tensor<Real<64>,DefaultTensorEngine>))
+TensorIo::readBinary<Real<64>,DefaultTensorEngine>(
+  const std::string &fileName
 );
 template
-CTF::Tensor<Complex<64>> *TensorIo::readBinary<Complex<64>>(
-  std::string const &fileName
+PTR(ESC(tcc::Tensor<Complex<64>,DefaultTensorEngine>))
+TensorIo::readBinary<Complex<64>,DefaultTensorEngine>(
+  const std::string &fileName
 );
 template
-CTF::Tensor<Real<128>> *TensorIo::readBinary<Real<128>>(
-  std::string const &fileName
+PTR(ESC(tcc::Tensor<Real<64>,DryTensorEngine>))
+TensorIo::readBinary<Real<64>,DryTensorEngine>(
+  const std::string &fileName
 );
 template
-CTF::Tensor<Complex<128>>
-*TensorIo::readBinary<Complex<128>>(
-  std::string const &fileName
+PTR(ESC(tcc::Tensor<Complex<64>,DryTensorEngine>))
+TensorIo::readBinary<Complex<64>,DryTensorEngine>(
+  const std::string &fileName
+);
+// TODO: 128 bit tensors
+
+template
+PTR(ESC(tcc::Tensor<Real<64>,DefaultTensorEngine>))
+TensorIo::readText<Real<64>,DefaultTensorEngine>(
+  const std::string &fileName,
+  const std::string &delimiter,
+  const size_t bufferSize
 );
 template
-CTF::Tensor<Real<64>> *TensorIo::readText<Real<64>>(
-  std::string const &fileName,
-  std::string const &delimiter,
-  int64_t const bufferSize
+PTR(ESC(tcc::Tensor<Complex<64>,DefaultTensorEngine>))
+TensorIo::readText<Complex<64>>(
+  const std::string &fileName,
+  const std::string &delimiter,
+  const size_t bufferSize
 );
 template
-CTF::Tensor<Complex<64>> *TensorIo::readText<Complex<64>>(
-  std::string const &fileName,
-  std::string const &delimiter,
-  int64_t const bufferSize
+PTR(ESC(tcc::Tensor<Real<64>,DryTensorEngine>))
+TensorIo::readText<Real<64>,DryTensorEngine>(
+  const std::string &fileName,
+  const std::string &delimiter,
+  const size_t bufferSize
 );
 template
-CTF::Tensor<Real<128>> *TensorIo::readText<Real<128>>(
-  std::string const &fileName,
-  std::string const &delimiter,
-  int64_t const bufferSize
+PTR(ESC(tcc::Tensor<Complex<64>,DryTensorEngine>))
+TensorIo::readText<Complex<64>,DryTensorEngine>(
+  const std::string &fileName,
+  const std::string &delimiter,
+  const size_t bufferSize
+);
+// TODO: 128 bit tensors
+
+template
+void TensorIo::writeBinary<Real<64>,DefaultTensorEngine>(
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<Real<64>,DefaultTensorEngine>)) &A
 );
 template
-CTF::Tensor<Complex<128>> *TensorIo::readText<Complex<128>>(
-  std::string const &fileName,
-  std::string const &delimiter,
-  int64_t const bufferSize
+void TensorIo::writeBinary<Complex<64>,DefaultTensorEngine>(
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<Complex<64>,DefaultTensorEngine>)) &A
 );
-template void TensorIo::writeBinary<Real<64>>(
-  std::string const &fileName, CTF::Tensor<Real<64>> &A
+template
+void TensorIo::writeBinary<Real<64>,DryTensorEngine>(
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<Real<64>,DryTensorEngine>)) &A
 );
-template void TensorIo::writeBinary<Complex<64>>(
-  std::string const &fileName, CTF::Tensor<Complex<64>> &A
+template
+void TensorIo::writeBinary<Complex<64>,DryTensorEngine>(
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<Complex<64>,DryTensorEngine>)) &A
 );
-template void TensorIo::writeBinary<Real<128>>(
-  std::string const &fileName, CTF::Tensor<Real<128>> &A
+// TODO: 128 bit tensors
+
+template
+void TensorIo::writeText<Real<64>,DefaultTensorEngine>(
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<Real<64>,DefaultTensorEngine>)) &A,
+  const std::string &rowIndexOrder, const std::string &columnIndexOrder,
+  const std::string &delimiter
 );
-template void TensorIo::writeBinary<Complex<128>>(
-  std::string const &fileName, CTF::Tensor<Complex<128>> &A
+template
+void TensorIo::writeText<Complex<64>,DefaultTensorEngine>(
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<Complex<64>,DefaultTensorEngine>)) &A,
+  const std::string &rowIndexOrder, const std::string &columnIndexOrder,
+  const std::string &delimiter
 );
-template void TensorIo::writeText<Real<64>>(
-  std::string const &fileName, CTF::Tensor<Real<64>> &A,
-  std::string const &rowIndexOrder, std::string const &columnIndexOrder,
-  std::string const &delimiter
+template
+void TensorIo::writeText<Real<64>,DryTensorEngine>(
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<Real<64>,DryTensorEngine>)) &A,
+  const std::string &rowIndexOrder, const std::string &columnIndexOrder,
+  const std::string &delimiter
 );
-template void TensorIo::writeText<Complex<64>>(
-  std::string const &fileName, CTF::Tensor<Complex<64>> &A,
-  std::string const &rowIndexOrder, std::string const &columnIndexOrder,
-  std::string const &delimiter
+template
+void TensorIo::writeText<Complex<64>,DryTensorEngine>(
+  const std::string &fileName,
+  const PTR(ESC(tcc::Tensor<Complex<64>,DryTensorEngine>)) &A,
+  const std::string &rowIndexOrder, const std::string &columnIndexOrder,
+  const std::string &delimiter
 );
-template void TensorIo::writeText<Real<128>>(
-  std::string const &fileName, CTF::Tensor<Real<128>> &A,
-  std::string const &rowIndexOrder, std::string const &columnIndexOrder,
-  std::string const &delimiter
-);
-template void TensorIo::writeText<Complex<128>>(
-  std::string const &fileName, CTF::Tensor<Complex<128>> &A,
-  std::string const &rowIndexOrder, std::string const &columnIndexOrder,
-  std::string const &delimiter
-);
+// TODO: 128 bit tensors
 

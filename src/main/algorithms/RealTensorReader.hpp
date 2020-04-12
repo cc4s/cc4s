@@ -11,14 +11,13 @@ namespace cc4s {
     RealTensorReader(
       std::vector<Argument> const &argumentList
     );
-    virtual ~RealTensorReader();
     /**
-     * \brief Reads real tensor data into the tensor Data.
+     * \brief Reads real tensor data into the tensor specified by Data.
      */
     virtual void run();
   protected:
-    template <typename F>
-    CTF::Tensor<F> *read(const std::string &name);
+    template <typename F, typename TE>
+    PTR(ESC(tcc::Tensor<F,TE>)) read(const std::string &name);
   };
 }
 

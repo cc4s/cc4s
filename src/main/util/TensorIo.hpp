@@ -2,33 +2,43 @@
 #define TENSOR_IO_DEFINED
 
 #include <util/Scanner.hpp>
-#include <ctf.hpp>
+#include <Data.hpp>
 
 namespace cc4s {
   class TensorIo {
   public:
-    template <typename F=Real<>, typename T=CTF::Tensor<F>>
-    static T *readBinary(std::string const &fileName);
-    template <typename F=Real<>, typename T=CTF::Tensor<F>>
-    static T *readText(
-      std::string const &fileName,
-      std::string const &delimiter = " ",
-      int64_t const bufferSize = 1024*1024*1024
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    static PTR(ESC(tcc::Tensor<F,TE>)) readBinary(
+      const std::string &fileName
+    );
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    static PTR(ESC(tcc::Tensor<F,TE>)) readText(
+      const std::string &fileName,
+      const std::string &delimiter = " ",
+      const size_t bufferSize = 1024*1024*1024
     );
 
-    template <typename F=Real<>, typename T=CTF::Tensor<F>>
-    static void writeBinary(std::string const &fileName, T &A);
-    template <typename F=Real<>, typename T=CTF::Tensor<F>>
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    static void writeBinary(
+      const std::string &fileName,
+      const PTR(ESC(tcc::Tensor<F,TE>)) &A
+    );
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
     static void writeText(
-      std::string const &fileName, T &A,
-      std::string const &rowIndexOrder, std::string const &columnIndexOrder,
-      std::string const &delimiter = " "
+      const std::string &fileName,
+      const PTR(ESC(tcc::Tensor<F,TE>)) &A,
+      const std::string &rowIndexOrder, const std::string &columnIndexOrder,
+      const std::string &delimiter = " "
     );
   protected:
-    template <typename F=Real<>, typename T=CTF::Tensor<F>>
-    static T *readBinaryHeader(MPI_File &file, int64_t &offset);
-    template <typename F=Real<>, typename T=CTF::Tensor<F>>
-    static T *readTextHeader(Scanner &scanner);
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    static PTR(ESC(tcc::Tensor<F,TE>)) readBinaryHeader(
+      MPI_File &file, size_t &offset
+    );
+    template <typename F=Real<>, typename TE=DefaultTensorEngine>
+    static PTR(ESC(tcc::Tensor<F,TE>)) readTextHeader(
+      Scanner &scanner
+    );
   };
 }
 
