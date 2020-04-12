@@ -19,5 +19,27 @@
 // list
 #define ESC(...) __VA_ARGS__
 
+namespace cc4s {
+  template <typename T>
+  using Ptr = std::shared_ptr<T>;
+
+  template <typename T>
+  using WeakPtr = std::weak_ptr<T>;
+
+  template <typename T, typename... Args>
+  inline Ptr<T> New(Args&&... args) {
+    return std::make_shared<T>(args...);
+  }
+
+  template <typename B>
+  class Thisable: public std::enable_shared_from_this<B> {
+  public:
+    template <typename S>
+    inline Ptr<S> toPtr() {
+      return std::dynamic_pointer_cast<S>(this->shared_from_this());
+    }
+  };
+}
+
 #endif
 

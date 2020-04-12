@@ -32,26 +32,26 @@ namespace tcc {
 
   public:
     template <typename F=cc4s::Real<>>
-    static PTR(ESC(Tensor<F,TensorEngine>)) tensor(
+    static cc4s::Ptr<Tensor<F,TensorEngine>> tensor(
       const std::vector<size_t> &lens, const std::string &name
     ) {
       return Tensor<F,TensorEngine>::create(lens, name);
     }
 
     template <typename F=cc4s::Real<>>
-    static PTR(ESC(Tensor<F,TensorEngine>)) tensor(
-      const PTR(ESC(Tensor<F,TensorEngine>)) &source, const std::string &name
+    static cc4s::Ptr<Tensor<F,TensorEngine>> tensor(
+      const cc4s::Ptr<Tensor<F,TensorEngine>> &source, const std::string &name
     ) {
       return Tensor<F,TensorEngine>::create(source->getLens(), name);
     }
 
     template <typename F=cc4s::Real<>>
-    static PTR(ESC(Tensor<F,TensorEngine>)) tensor(const std::string &name) {
+    static cc4s::Ptr<Tensor<F,TensorEngine>> tensor(const std::string &name) {
       return Tensor<F,TensorEngine>::create(name);
     }
 
-    static PTR(Sequence<TensorEngine>) nothing() {
-      return NEW(Sequence<TensorEngine>);
+    static cc4s::Ptr<Sequence<TensorEngine>> nothing() {
+      return cc4s::New<Sequence<TensorEngine>>();
     }
   };
 }

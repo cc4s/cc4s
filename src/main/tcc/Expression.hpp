@@ -8,7 +8,7 @@
 
 namespace tcc {
   template <typename TE>
-  class Expression: public THISABLE(Expression<TE>) {
+  class Expression: public cc4s::Thisable<Expression<TE>> {
   public:
     /**
      * \brief Allow inferring the tensor engine TE given any expression types.

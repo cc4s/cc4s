@@ -146,7 +146,7 @@ namespace tcc {
 
     virtual PTR(Operation<TE>) compile(Scope &) {
       return TensorLoadOperation<F,TE>::create(
-        THIS(ESC(Tensor<F,TE>)),
+        this->template toPtr<Tensor<F,TE>>(),
         Costs(getElementsCount())
       );
     }
@@ -176,7 +176,7 @@ namespace tcc {
         );
       }
       // make the rhs operation directly operate on this tensor
-      rhsOperation->result = THIS(ESC(Tensor<F,TE>));
+      rhsOperation->result = this->template toPtr<Tensor<F,TE>>();
       return rhsOperation;
     }
 
