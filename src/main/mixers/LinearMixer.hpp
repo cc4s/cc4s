@@ -15,13 +15,13 @@ namespace cc4s {
     virtual ~LinearMixer();
 
     virtual void append(
-      const PTR(ESC(FockVector<F,TE>)) &A, const PTR(ESC(FockVector<F,TE>)) &R
+      const Ptr<FockVector<F,TE>> &A, const Ptr<FockVector<F,TE>> &R
     );
-    virtual PTR(ESC(const FockVector<F,TE>)) get();
-    virtual PTR(ESC(const FockVector<F,TE>)) getResiduum();
+    virtual Ptr<const FockVector<F,TE>> get();
+    virtual Ptr<const FockVector<F,TE>> getResiduum();
 
-    PTR(ESC(FockVector<F,TE>)) last;
-    PTR(ESC(FockVector<F,TE>)) lastResiduum;
+    Ptr<FockVector<F,TE>> last;
+    Ptr<FockVector<F,TE>> lastResiduum;
 
     F ratio;
   };

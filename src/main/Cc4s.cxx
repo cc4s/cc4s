@@ -25,7 +25,7 @@ void Cc4s::run() {
   printBanner();
   listHosts();
   Parser parser(options->file);
-  std::vector<PTR(Algorithm)> algorithms(parser.parse());
+  std::vector<Ptr<Algorithm>> algorithms(parser.parse());
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms.size() << std::endl;
   EMIT() <<
@@ -97,7 +97,7 @@ void Cc4s::dryRun() {
     "DRY RUN - nothing will be calculated" << std::endl;
   OUT() << std::endl;
   Parser parser(options->file);
-  std::vector<PTR(Algorithm)> algorithms(parser.parse());
+  std::vector<Ptr<Algorithm>> algorithms(parser.parse());
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms.size() << std::endl;
   EMIT() <<
@@ -251,7 +251,7 @@ void Cc4s::listHosts() {
 }
 
 
-PTR(MpiCommunicator) Cc4s::world;
+Ptr<MpiCommunicator> Cc4s::world;
 Options *Cc4s::options;
 
 

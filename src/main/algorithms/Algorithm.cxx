@@ -34,7 +34,7 @@ bool Algorithm::isArgumentGiven(const std::string &name) {
   return arguments.find(name) != arguments.end();
 }
 
-PTR(Data) Algorithm::getArgumentData(const std::string &name) {
+Ptr<Data> Algorithm::getArgumentData(const std::string &name) {
   auto dataIterator(arguments.find(name));
   if (dataIterator == arguments.end()) {
     std::stringstream sStream;
@@ -42,7 +42,7 @@ PTR(Data) Algorithm::getArgumentData(const std::string &name) {
 //    throw new EXCEPTION(std::stringstream() << "Missing argument: " << name);
     throw new EXCEPTION(sStream.str());
   }
-  PTR(Data) data = Data::get(dataIterator->second);
+  Ptr<Data> data = Data::get(dataIterator->second);
   if (!data) {
     std::stringstream sStream;
     sStream << "Missing data: " << dataIterator->second;
@@ -53,8 +53,8 @@ PTR(Data) Algorithm::getArgumentData(const std::string &name) {
 }
 
 const std::string &Algorithm::getTextArgument(const std::string &name) {
-  PTR(Data) data(getArgumentData(name));
-  PTR(TextData) textData( dynamic_pointer_cast<TextData>(data) );
+  Ptr<Data> data(getArgumentData(name));
+  Ptr<TextData> textData( dynamic_pointer_cast<TextData>(data) );
   if (!textData) {
     std::stringstream sstream;
     sstream << "Incompatible type for argument: " << name << ". "
@@ -97,7 +97,7 @@ bool Algorithm::getBooleanArgument(
 }
 
 int64_t Algorithm::getIntegerArgument(const std::string &name) {
-  PTR(Data) data(getArgumentData(name));
+  Ptr<Data> data(getArgumentData(name));
   auto integerData( dynamic_pointer_cast<IntegerData >(data) );
   if (!integerData) {
     std::stringstream sstream;
@@ -114,7 +114,7 @@ int64_t Algorithm::getIntegerArgument(
 }
 
 Real<> Algorithm::getRealArgument(const std::string &name) {
-  PTR(Data) data(getArgumentData(name));
+  Ptr<Data> data(getArgumentData(name));
   auto realData( dynamic_pointer_cast<RealData>(data) );
   if (realData) return realData->value;
   auto integerData( dynamic_pointer_cast<IntegerData>(data) );
@@ -146,7 +146,7 @@ Real<> Algorithm::getRealArgument(
   return isArgumentGiven(name) ? getRealArgument(name) : defaultValue;
 }
 Real<> Algorithm::getRealArgumentFromInteger(
-  const PTR(IntegerData) &integerData
+  const Ptr<IntegerData> &integerData
 ) {
   Real<> value(integerData->value);
   if (int64_t(value) != integerData->value) {
@@ -157,7 +157,7 @@ Real<> Algorithm::getRealArgumentFromInteger(
 }
 template <typename F, typename TE>
 F Algorithm::getRealArgumentFromTensor(
-  const PTR(ESC(const TensorData<F,TE>)) &tensorData
+  const Ptr<const TensorData<F,TE>> &tensorData
 ) {
   Assert(
     tensorData->value->lens.size() == 0,
@@ -174,7 +174,7 @@ F Algorithm::getRealArgumentFromTensor(
 }
 
 template <typename F, typename TE>
-PTR(ESC(Tensor<F,TE>)) Algorithm::getTensorArgument(
+Ptr<Tensor<F,TE>> Algorithm::getTensorArgument(
   const std::string &name
 ) {
   auto data(getArgumentData(name));
@@ -190,22 +190,22 @@ PTR(ESC(Tensor<F,TE>)) Algorithm::getTensorArgument(
 }
 // instantiate
 template
-PTR(ESC(Tensor<Real<64>,DefaultTensorEngine>))
+Ptr<Tensor<Real<64>,DefaultTensorEngine>>
 Algorithm::getTensorArgument<Real<64>, DefaultTensorEngine>(
   const std::string &
 );
 template
-PTR(ESC(Tensor<Complex<64>,DefaultTensorEngine>))
+Ptr<Tensor<Complex<64>,DefaultTensorEngine>>
 Algorithm::getTensorArgument<Complex<64>, DefaultTensorEngine>(
   const std::string &
 );
 template
-PTR(ESC(Tensor<Real<64>,DryTensorEngine>))
+Ptr<Tensor<Real<64>,DryTensorEngine>>
 Algorithm::getTensorArgument<Real<64>, DryTensorEngine>(
   const std::string &
 );
 template
-PTR(ESC(Tensor<Complex<64>,DryTensorEngine>))
+Ptr<Tensor<Complex<64>,DryTensorEngine>>
 Algorithm::getTensorArgument<Complex<64>, DryTensorEngine>(
   const std::string &
 );
@@ -218,8 +218,8 @@ Algorithm::getTensorArgument<Complex<64>, DryTensorEngine>(
  * \brief Converts the given real data into a scalar tensor.
  */
 template <typename F, typename TE>
-PTR(ESC(Tensor<F,TE>)) Algorithm::getTensorArgumentFromReal(
-  const PTR(RealData) &realData
+Ptr<Tensor<F,TE>> Algorithm::getTensorArgumentFromReal(
+  const Ptr<RealData> &realData
 ) {
   // FIXME: write scalar value to tensor
   return Tcc<TE>::template tensor<F>(
@@ -228,34 +228,34 @@ PTR(ESC(Tensor<F,TE>)) Algorithm::getTensorArgumentFromReal(
 }
 // instantiate
 template
-PTR(ESC(Tensor<Real<64>,DefaultTensorEngine>))
+Ptr<Tensor<Real<64>,DefaultTensorEngine>>
 Algorithm::getTensorArgumentFromReal<Real<64>,DefaultTensorEngine>(
-  const PTR(RealData) &
+  const Ptr<RealData> &
 );
 template
-PTR(ESC(Tensor<Complex<64>,DefaultTensorEngine>))
+Ptr<Tensor<Complex<64>,DefaultTensorEngine>>
 Algorithm::getTensorArgumentFromReal<Complex<64>,DefaultTensorEngine>(
-  const PTR(RealData) &
+  const Ptr<RealData> &
 );
 template
-PTR(ESC(Tensor<Real<64>,DryTensorEngine>))
+Ptr<Tensor<Real<64>,DryTensorEngine>>
 Algorithm::getTensorArgumentFromReal<Real<64>,DryTensorEngine>(
-  const PTR(RealData) &
+  const Ptr<RealData> &
 );
 template
-PTR(ESC(Tensor<Complex<64>,DryTensorEngine>))
+Ptr<Tensor<Complex<64>,DryTensorEngine>>
 Algorithm::getTensorArgumentFromReal<Complex<64>,DryTensorEngine>(
-  const PTR(RealData) &
+  const Ptr<RealData> &
 );
 
 
 
 template <typename F, typename TE>
 void Algorithm::setTensorArgument(
-  const std::string &name, const PTR(ESC(Tensor<F,TE>)) &tensor
+  const std::string &name, const Ptr<Tensor<F,TE>> &tensor
 ) {
-  PTR(Data) mentionedData(getArgumentData(name));
-  NEW(ESC(TensorData<F,TE>), mentionedData->getName(), tensor);
+  Ptr<Data> mentionedData(getArgumentData(name));
+  New<TensorData<F,TE>>(mentionedData->getName(), tensor);
   // NOTE: the constructor of TensorData enteres its location in the
   // data map and destroys the previous content, i.e. mentionedData.
 }
@@ -263,38 +263,38 @@ void Algorithm::setTensorArgument(
 template
 void Algorithm::setTensorArgument<Real<64>, DefaultTensorEngine>(
   const std::string &name,
-  const PTR(ESC(Tensor<Real<64>,DefaultTensorEngine>)) &tensor
+  const Ptr<Tensor<Real<64>,DefaultTensorEngine>> &tensor
 );
 template
 void Algorithm::setTensorArgument<Complex<64>, DefaultTensorEngine>(
   const std::string &name,
-  const PTR(ESC(Tensor<Complex<64>,DefaultTensorEngine>)) &tensor
+  const Ptr<Tensor<Complex<64>,DefaultTensorEngine>> &tensor
 );
 template
 void Algorithm::setTensorArgument<Real<64>, DryTensorEngine>(
   const std::string &name,
-  const PTR(ESC(Tensor<Real<64>,DryTensorEngine>)) &tensor
+  const Ptr<Tensor<Real<64>,DryTensorEngine>> &tensor
 );
 template
 void Algorithm::setTensorArgument<Complex<64>, DryTensorEngine>(
   const std::string &name,
-  const PTR(ESC(Tensor<Complex<64>,DryTensorEngine>)) &tensor
+  const Ptr<Tensor<Complex<64>,DryTensorEngine>> &tensor
 );
 
 // TODO: 128 bit tensors
 
 
 void Algorithm::setRealArgument(const std::string &name, const Real<> value) {
-  PTR(Data) mentionedData(getArgumentData(name));
-  NEW(RealData, mentionedData->getName(), value);
+  Ptr<Data> mentionedData(getArgumentData(name));
+  New<RealData>(mentionedData->getName(), value);
 }
 
 void Algorithm::setIntegerArgument(
   const std::string &name, const int64_t value
 ) {
-  PTR(Data) mentionedData(getArgumentData(name));
-  NEW(IntegerData, mentionedData->getName(), value);
+  Ptr<Data> mentionedData(getArgumentData(name));
+  New<IntegerData>(mentionedData->getName(), value);
 }
 
-PTR(AlgorithmFactory::AlgorithmMap) AlgorithmFactory::algorithmMap;
+Ptr<AlgorithmFactory::AlgorithmMap> AlgorithmFactory::algorithmMap;
 

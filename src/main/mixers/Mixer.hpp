@@ -29,8 +29,8 @@ namespace cc4s {
      * A and R are not expected to change upon return.
      **/
     virtual void append(
-      const PTR(ESC(FockVector<F,TE>)) &A,
-      const PTR(ESC(FockVector<F,TE>)) &R
+      const Ptr<FockVector<F,TE>> &A,
+      const Ptr<FockVector<F,TE>> &R
     ) = 0;
 
     /**
@@ -39,7 +39,7 @@ namespace cc4s {
      * Requires one or more previous calls to append.
      * The returned FockVectors must not be changed.
      **/
-    virtual PTR(ESC(const FockVector<F,TE>)) get() = 0;
+    virtual Ptr<const FockVector<F,TE>> get() = 0;
 
     /**
      * \brief Returns the estimated residuum of the current best estimate
@@ -48,7 +48,7 @@ namespace cc4s {
      * Requires one or more previous calls to append.
      * The returned FockVectors must not be changed.
      **/
-    virtual PTR(ESC(const FockVector<F,TE>)) getResiduum() = 0;
+    virtual Ptr<const FockVector<F,TE>> getResiduum() = 0;
 
     Algorithm *algorithm;
   };
@@ -69,28 +69,28 @@ namespace cc4s {
      * The instantiated mixer must be registered using the
      * MixerRegistrar class.
      */
-    static PTR(ESC(Mixer<F,TE>)) create(
+    static Ptr<Mixer<F,TE>> create(
       std::string const &name, Algorithm *algorithm
     ) {
       auto iterator(getMixerMap()->find(name));
       return iterator != getMixerMap()->end() ?
-        iterator->second(algorithm) : PTR(ESC(Mixer<F,TE>))();
+        iterator->second(algorithm) : Ptr<Mixer<F,TE>>();
     }
   protected:
     static std::map<
       std::string,
-      std::function<PTR(ESC(Mixer<F,TE>)) (Algorithm *algorithm)>
+      std::function<Ptr<Mixer<F,TE>> (Algorithm *algorithm)>
     > *getMixerMap() {
       return mixerMap ? mixerMap : (
         mixerMap = new std::map<
           std::string,
-          std::function<PTR(ESC(Mixer<F,TE)>) (Algorithm *)>
+          std::function<Ptr<Mixer<F,TE>> (Algorithm *)>
         >
       );
     }
     static std::map<
       std::string,
-      std::function<PTR(ESC(Mixer<F,TE>)) (Algorithm *)>
+      std::function<Ptr<Mixer<F,TE>> (Algorithm *)>
     > *mixerMap;
 /*
     static MixerMap *getMixerMap() {
@@ -104,7 +104,7 @@ namespace cc4s {
    * \brief template function creating an instance of the given class.
    */
   template <typename F, typename TE, typename MixerType>
-  PTR(ESC(Mixer<F,TE>)) createMixer(Algorithm *algorithm) {
+  Ptr<Mixer<F,TE>> createMixer(Algorithm *algorithm) {
     return NEW(MixerType, algorithm);
   }
 

@@ -16,7 +16,7 @@ namespace cc4s {
      * The wrapper takes ownership of the given pointer.
      */
     LineNumberStream(
-      const PTR(std::istream) &stream_,
+      const Ptr<std::istream> &stream_,
       const std::string &source_, const size_t tabWidth_=2
     ):
       stream(stream_), line(1), column(1), tabWidth(tabWidth_), source(source_)
@@ -46,7 +46,7 @@ namespace cc4s {
     /**
      * \brief Returns the underlying std::istream.
      */
-    PTR(std::istream) getStream() { return stream; }
+    Ptr<std::istream> getStream() { return stream; }
     /**
      * \brief Returns the source name of the underlying stream,
      * usually its file name.
@@ -62,7 +62,7 @@ namespace cc4s {
     int getColumn() { return column; }
 
   protected:
-    PTR(std::istream) stream;
+    Ptr<std::istream> stream;
     size_t line, column, tabWidth;
     std::string source;
   };

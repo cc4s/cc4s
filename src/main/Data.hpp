@@ -80,7 +80,7 @@ namespace cc4s {
     std::string getTypeName() const { return typeName; }
     Stage getStage() const { return stage; }
 
-    static PTR(Data) get(const std::string &name) {
+    static Ptr<Data> get(const std::string &name) {
       auto iterator(dataMap.find(name));
       return (iterator != dataMap.end()) ? iterator->second : nullptr;
     }
@@ -91,7 +91,7 @@ namespace cc4s {
     Data(
       const std::string &name_, const std::string &typeName_
     ): name(name_), typeName(typeName_), stage(TYPED) {
-      PTR(Data) mentionedData(dataMap[name_]);
+      Ptr<Data> mentionedData(dataMap[name_]);
       if (mentionedData) {
         if (mentionedData->getStage() != MENTIONED) {
           LOG(1,"Data") << "overwriting existing data: " << name_ << std::endl;
@@ -103,7 +103,7 @@ namespace cc4s {
     std::string name, typeName;
     Stage stage;
 
-    static std::map<std::string, PTR(Data)> dataMap;
+    static std::map<std::string, Ptr<Data>> dataMap;
     static int64_t nextAnynomousDataId;
   };
 
@@ -185,16 +185,16 @@ namespace cc4s {
   class TensorData: public NumericData {
   public:
     TensorData(
-      const PTR(ESC(Tensor<F,TE>)) &value_
+      const Ptr<Tensor<F,TE>> &value_
     ): NumericData("tensor of " + TypeTraits<F>::getName()), value(value_) {
     }
     TensorData(
-      const std::string &name_, const PTR(ESC(Tensor<F,TE>)) &value_
+      const std::string &name_, const Ptr<Tensor<F,TE>> &value_
     ):
       NumericData(name_, "tensor of " + TypeTraits<F>::getName()), value(value_)
     {
     }
-    PTR(ESC(Tensor<F,TE>)) value;
+    Ptr<Tensor<F,TE>> value;
   };
 }
 

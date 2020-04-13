@@ -22,8 +22,8 @@ Parser::Parser(
 Parser::~Parser() {
 }
 
-std::vector<PTR(Algorithm)> Parser::parse() {
-  std::vector<PTR(Algorithm)> algorithms;
+std::vector<Ptr<Algorithm>> Parser::parse() {
+  std::vector<Ptr<Algorithm>> algorithms;
   skipIrrelevantCharacters();
   while (stream.peek() > 0) {
     algorithms.push_back(parseAlgorithm());
@@ -32,7 +32,7 @@ std::vector<PTR(Algorithm)> Parser::parse() {
   return algorithms;
 }
 
-PTR(Algorithm) Parser::parseAlgorithm() {
+Ptr<Algorithm> Parser::parseAlgorithm() {
   int line(stream.getLine()), column(stream.getColumn());
   // an algorithm starts with the name
   std::string algorithmName(parseSymbolName());
@@ -50,7 +50,7 @@ PTR(Algorithm) Parser::parseAlgorithm() {
     arguments.end(), outputArguments.begin(), outputArguments.end()
   );
   // create and return an instance of the algorithm
-  PTR(Algorithm) algorithm(AlgorithmFactory::create(algorithmName, arguments));
+  Ptr<Algorithm> algorithm(AlgorithmFactory::create(algorithmName, arguments));
   if (!algorithm) {
     std::stringstream sStream;
     sStream << "Unknown algorithm " << algorithmName;
@@ -79,7 +79,7 @@ Argument Parser::parseArgument() {
 Argument Parser::parseImplicitlyNamedArgument() {
   // TODO: store debug info for later reference in case of errors
   std::string argumentName(parseSymbolName());
-  PTR(Data) data(Data::get(argumentName));
+  Ptr<Data> data(Data::get(argumentName));
   if (!data) new Data(argumentName);
   return Argument(argumentName, argumentName);
 }
@@ -124,13 +124,13 @@ std::string Parser::parseSymbolName() {
   return sStream.str();
 }
 
-PTR(Data) Parser::parseSymbol() {
+Ptr<Data> Parser::parseSymbol() {
   std::string symbolName(parseSymbolName());
-  PTR(Data) data(Data::get(symbolName));
+  Ptr<Data> data(Data::get(symbolName));
   return data ? data : NEW(Data, symbolName);
 }
 
-PTR(TextData) Parser::parseText() {
+Ptr<TextData> Parser::parseText() {
   std::stringstream sStream;
   // TODO: parse escape sequences
   // the first character is expected to be a double quote '"'
@@ -143,7 +143,7 @@ PTR(TextData) Parser::parseText() {
   return NEW(TextData, sStream.str());
 }
 
-PTR(NumericData) Parser::parseNumber() {
+Ptr<NumericData> Parser::parseNumber() {
   // the first character can be a sign
   int64_t sign(1);
   switch (stream.peek()) {
@@ -168,7 +168,7 @@ PTR(NumericData) Parser::parseNumber() {
   else return NEW(IntegerData, sign * integer);
 }
 
-PTR(RealData) Parser::parseReal(
+Ptr<RealData> Parser::parseReal(
   const int64_t sign, const int64_t integerPart
 ) {
   // the first character is expected to be the decimal point

@@ -49,7 +49,7 @@ namespace cc4s {
     // this[bIndices] = alpha * A[aIndices] + beta*this[bIndices]
     void sum(
       F alpha,
-      const PTR(CtfMachineTensor<F>) &A,
+      const Ptr<CtfMachineTensor<F>> &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices
@@ -69,7 +69,7 @@ namespace cc4s {
     // this[bIndices] = alpha * f(A[aIndices]) + beta*this[bIndices]
     void sum(
       F alpha,
-      const PTR(CtfMachineTensor<F>) &A,
+      const Ptr<CtfMachineTensor<F>> &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices,
@@ -91,7 +91,7 @@ namespace cc4s {
     template <typename G>
     void sum(
       G alpha,
-      const PTR(CtfMachineTensor<G>) &A,
+      const Ptr<CtfMachineTensor<G>> &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices,
@@ -113,9 +113,9 @@ namespace cc4s {
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]
     void contract(
       F alpha,
-      const PTR(CtfMachineTensor<F>) &A,
+      const Ptr<CtfMachineTensor<F>> &A,
       const std::string &aIndices,
-      const PTR(CtfMachineTensor<F>) &B,
+      const Ptr<CtfMachineTensor<F>> &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices
@@ -162,7 +162,7 @@ namespace cc4s {
 
     void slice(
       F alpha,
-      const PTR(CtfMachineTensor<F>) &A,
+      const Ptr<CtfMachineTensor<F>> &A,
       const std::vector<size_t> aBegins,
       const std::vector<size_t> aEnds,
       F beta,
@@ -202,11 +202,11 @@ namespace cc4s {
     T tensor;
 
   protected:
-    static PTR(CtfMachineTensor<F>) create(const T &t) {
+    static Ptr<CtfMachineTensor<F>> create(const T &t) {
       return NEW(CtfMachineTensor<F>, t, ProtectedToken());
     }
 
-    static PTR(CtfMachineTensor<F>) create(
+    static Ptr<CtfMachineTensor<F>> create(
       const std::vector<size_t> &lens,
       const std::string &name
     ) {

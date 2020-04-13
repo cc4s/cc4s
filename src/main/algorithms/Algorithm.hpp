@@ -50,7 +50,7 @@ namespace cc4s {
       const std::string &argumentName, const Real<> defaultValue
     );
     template <typename F=Real<>, typename TE=DefaultTensorEngine>
-    PTR(ESC(Tensor<F,TE>)) getTensorArgument(
+    Ptr<Tensor<F,TE>> getTensorArgument(
       const std::string &argumentName
     );
 
@@ -68,7 +68,7 @@ namespace cc4s {
      */
     template <typename F=Real<>, typename TE=DefaultTensorEngine>
     void setTensorArgument(
-      const std::string &argumentName, const PTR(ESC(Tensor<F,TE>)) &tensor
+      const std::string &argumentName, const Ptr<Tensor<F,TE>> &tensor
     );
     void setRealArgument(const std::string &argumentName, const Real<> value);
     void setIntegerArgument(
@@ -77,17 +77,17 @@ namespace cc4s {
 
   protected:
     // type promotions:
-    Real<> getRealArgumentFromInteger(const PTR(IntegerData) &data);
+    Real<> getRealArgumentFromInteger(const Ptr<IntegerData> &data);
     template <typename F=Real<>, typename TE=DefaultTensorEngine>
     F getRealArgumentFromTensor(
-      const PTR(ESC(const TensorData<F,TE>)) &tensorData
+      const Ptr<const TensorData<F,TE>> &tensorData
     );
     template <typename F=Real<>, typename TE=DefaultTensorEngine>
-    PTR(ESC(Tensor<F,TE>)) getTensorArgumentFromReal(
-      const PTR(RealData) &realData
+    Ptr<Tensor<F,TE>> getTensorArgumentFromReal(
+      const Ptr<RealData> &realData
     );
 
-    PTR(Data) getArgumentData(const std::string &argumentName);
+    Ptr<Data> getArgumentData(const std::string &argumentName);
     std::map<std::string, std::string> arguments;
   };
 
@@ -95,7 +95,7 @@ namespace cc4s {
   public:
     typedef std::map<
       std::string,
-      std::function<PTR(Algorithm)(const std::vector<Argument> &)>
+      std::function<Ptr<Algorithm>(const std::vector<Argument> &)>
     > AlgorithmMap;
 
     /**
@@ -105,7 +105,7 @@ namespace cc4s {
      * The instantiated algorithm must be registered using the
      * AlgorithmRegistrar class.
      */
-    static PTR(Algorithm) create(
+    static Ptr<Algorithm> create(
       const std::string &name, const std::vector<Argument> &arguments
     ) {
       auto iterator(getAlgorithmMap()->find(name));
@@ -113,18 +113,18 @@ namespace cc4s {
         iterator->second(arguments) : nullptr;
     }
   protected:
-    static PTR(AlgorithmMap) getAlgorithmMap() {
-      return algorithmMap ? algorithmMap : (algorithmMap = NEW(AlgorithmMap));
+    static Ptr<AlgorithmMap> getAlgorithmMap() {
+      return algorithmMap ? algorithmMap : (algorithmMap = New<AlgorithmMap>());
     }
-    static PTR(AlgorithmMap) algorithmMap;
+    static Ptr<AlgorithmMap> algorithmMap;
   };
 
   /**
    * \brief template function creating an instance of the given class.
    */
   template <typename AlgorithmType>
-  PTR(Algorithm) createAlgorithm(const std::vector<Argument> &arguments) {
-    return NEW(AlgorithmType, arguments);
+  Ptr<Algorithm> createAlgorithm(const std::vector<Argument> &arguments) {
+    return New<AlgorithmType>(arguments);
   }
 
   /**

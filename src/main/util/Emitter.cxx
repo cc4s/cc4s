@@ -8,8 +8,8 @@ using namespace cc4s;
 
 int Emitter::rank(-1);
 std::string Emitter::fileName("cc4s.yaml");
-PTR(std::ofstream) Emitter::yamlFile;
-PTR(YAML::Emitter) Emitter::yamlEmitter;
+Ptr<std::ofstream> Emitter::yamlFile;
+Ptr<YAML::Emitter> Emitter::yamlEmitter;
 
 void Emitter::setRank(int const rank_) {
   rank = rank_;

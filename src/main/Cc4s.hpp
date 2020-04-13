@@ -17,7 +17,7 @@ namespace cc4s {
     static bool isDebugged();
 
     // static properties, accessible from everywhere
-    static PTR(MpiCommunicator) world;
+    static Ptr<MpiCommunicator> world;
     static Options *options;
 
   protected:

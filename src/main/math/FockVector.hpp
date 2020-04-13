@@ -23,7 +23,7 @@ namespace cc4s {
   public:
     typedef F FieldType;
 
-    std::vector<PTR(ESC(Tensor<F,TE>))> componentTensors;
+    std::vector<Ptr<Tensor<F,TE>>> componentTensors;
     std::vector<std::string> componentIndices;
 
     /**
@@ -63,7 +63,7 @@ namespace cc4s {
      * \brief Move constructor taking possession of the tensors given.
      **/
     FockVector(
-      const std::vector<PTR(ESC(Tensor<F,TE>))> &tensors,
+      const std::vector<Ptr<Tensor<F,TE>>> &tensors,
       const std::vector<std::string> &indices
     ):
       componentTensors(tensors),
@@ -95,14 +95,14 @@ namespace cc4s {
      * required also in non-modifying tensor operations.
      **/
     // TODO: work out constnes of tensors
-    const PTR(ESC(Tensor<F,TE>)) &get(const size_t i) const {
+    const Ptr<Tensor<F,TE>> &get(const size_t i) const {
       return componentTensors[i];
     }
 
     /**
      * \brief Retrieves the i-th component tensor.
      **/
-    PTR(ESC(Tensor<F,TE>)) &get(const size_t i) {
+    Ptr<Tensor<F,TE>> &get(const size_t i) {
       return componentTensors[i];
     }
 
@@ -399,10 +399,18 @@ namespace cc4s {
      * \brief Sets this FockVector's component tensors by copying the given
      * component tensors. Called by copy constructors and copy assignments.
      **/
-    void copyComponents(const std::vector<PTR(CTF::Tensor<F>)> &components) {
+    void copyComponents(const std::vector<Ptr<Tensor<F,TE>>> &components) {
       componentTensors.resize(components.size());
       for (size_t i(0); i < components.size(); ++i) {
-        componentTensors[i] = NEW(CTF::Tensor<F>, *components[i]);
+        // create tensor of identical shape, NOTE: no data is copied yet
+        componentTensors[i] = Tcc<TE>::template tensor<F>(
+          *components[i], "unnamed"
+        );
+        // copy data
+        (
+          (*componentTensors[i])[componentIndices[i]] <<=
+            (*components[i])[componentIndices[i]]
+        )->compile()->execute();
       }
     }
 

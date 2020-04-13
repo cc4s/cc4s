@@ -23,7 +23,7 @@ template class Mixer<Complex<64>,DefaultTensorEngine>;
 template <typename F, typename TE>
 std::map<
   std::string,
-  std::function<PTR(ESC(Mixer<F,TE>)) (Algorithm *algorithm)>
+  std::function<Ptr<Mixer<F,TE>> (Algorithm *algorithm)>
 > *MixerFactory<F,TE>::mixerMap;
 
 // instantiate

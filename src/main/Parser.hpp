@@ -26,20 +26,20 @@ namespace cc4s {
      * \brief Parses the cc4s algorithms contained in the stream.
      * This method must be called with the same stream content on all processes.
      */
-    std::vector<PTR(Algorithm)> parse();
+    std::vector<Ptr<Algorithm>> parse();
 
   protected:
-    PTR(Algorithm) parseAlgorithm();
+    Ptr<Algorithm> parseAlgorithm();
     std::vector<Argument> parseArguments();
     Argument parseArgument();
     Argument parseImplicitlyNamedArgument();
     Argument parseExplicitlyNamedArgument();
     std::string parseData();
     std::string parseSymbolName();
-    PTR(Data) parseSymbol();
-    PTR(TextData) parseText();
-    PTR(NumericData) parseNumber();
-    PTR(RealData) parseReal(const int64_t sign, const int64_t integerPart);
+    Ptr<Data> parseSymbol();
+    Ptr<TextData> parseText();
+    Ptr<NumericData> parseNumber();
+    Ptr<RealData> parseReal(const int64_t sign, const int64_t integerPart);
 
     void skipIrrelevantCharacters();
     void skipComment();

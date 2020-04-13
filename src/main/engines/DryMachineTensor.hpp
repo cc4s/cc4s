@@ -49,7 +49,7 @@ namespace cc4s {
     // this[bIndices] = alpha * A[aIndices] + beta*this[bIndices]
     void sum(
       F alpha,
-      const PTR(DryMachineTensor<F>) &A,
+      const Ptr<DryMachineTensor<F>> &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices
@@ -64,7 +64,7 @@ namespace cc4s {
     template <typename Domain>
     void sum(
       Domain alpha,
-      const PTR(DryMachineTensor<Domain>) &A,
+      const Ptr<DryMachineTensor<Domain>> &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices,
@@ -79,9 +79,9 @@ namespace cc4s {
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]
     void contract(
       F alpha,
-      const PTR(DryMachineTensor<F>) &A,
+      const Ptr<DryMachineTensor<F>> &A,
       const std::string &aIndices,
-      const PTR(DryMachineTensor<F>) &B,
+      const Ptr<DryMachineTensor<F>> &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices
@@ -96,9 +96,9 @@ namespace cc4s {
     // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
     void contract(
       F alpha,
-      const PTR(DryMachineTensor<F>) &A,
+      const Ptr<DryMachineTensor<F>> &A,
       const std::string &aIndices,
-      const PTR(DryMachineTensor<F>) &B,
+      const Ptr<DryMachineTensor<F>> &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices,
@@ -113,7 +113,7 @@ namespace cc4s {
 
     void slice(
       F alpha,
-      const PTR(DryMachineTensor<F>) &A,
+      const Ptr<DryMachineTensor<F>> &A,
       const std::vector<size_t> aBegins,
       const std::vector<size_t> aEnds,
       F beta,
@@ -155,12 +155,12 @@ namespace cc4s {
 
     // TODO: protect
     // create adapater from given DryTensor
-    static PTR(DryMachineTensor<F>) create(const T &t) {
+    static Ptr<DryMachineTensor<F>> create(const T &t) {
       return NEW(DryMachineTensor<F>, t, ProtectedToken());
     }
 
     // create adapter from shape and name
-    static PTR(DryMachineTensor<F>) create(
+    static Ptr<DryMachineTensor<F>> create(
       const std::vector<size_t> &lens,
       const std::string &name
     ) {

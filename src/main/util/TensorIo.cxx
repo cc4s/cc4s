@@ -12,7 +12,7 @@
 using namespace cc4s;
 
 template <typename F, typename TE>
-PTR(ESC(Tensor<F,TE>)) TensorIo::readBinary(const std::string &fileName) {
+Ptr<Tensor<F,TE>> TensorIo::readBinary(const std::string &fileName) {
   // open the file
   MPI_File file;
   int mpiError(
@@ -40,7 +40,7 @@ PTR(ESC(Tensor<F,TE>)) TensorIo::readBinary(const std::string &fileName) {
 }
 
 template <typename F, typename TE>
-PTR(ESC(Tensor<F,TE>)) TensorIo::readText(
+Ptr<Tensor<F,TE>> TensorIo::readText(
   const std::string &fileName,
   const std::string &delimiter,
   const size_t bufferSize
@@ -95,7 +95,7 @@ PTR(ESC(Tensor<F,TE>)) TensorIo::readText(
 
 template <typename F, typename TE>
 void TensorIo::writeBinary(
-  const std::string &fileName, const PTR(ESC(Tensor<F,TE>)) &A
+  const std::string &fileName, const Ptr<Tensor<F,TE>> &A
 ) {
   MPI_File file;
   MPI_File_open(
@@ -118,7 +118,7 @@ void TensorIo::writeBinary(
 template <typename F, typename TE>
 void TensorIo::writeText(
   const std::string &fileName,
-  const PTR(ESC(Tensor<F,TE>)) &A,
+  const Ptr<Tensor<F,TE>> &A,
   const std::string &givenRowIndexOrder, const std::string &columnIndexOrder,
   const std::string &delimiter
 ) {
@@ -152,7 +152,7 @@ void TensorIo::writeText(
 }
 
 template <typename F, typename TE>
-PTR(ESC(Tensor<F,TE>)) TensorIo::readBinaryHeader(
+Ptr<Tensor<F,TE>> TensorIo::readBinaryHeader(
   MPI_File &file, size_t &offset
 ) {
   MPI_Status status;
@@ -184,50 +184,50 @@ PTR(ESC(Tensor<F,TE>)) TensorIo::readBinaryHeader(
 
 // instantiate
 template
-PTR(ESC(Tensor<Real<64>,DefaultTensorEngine>))
+Ptr<Tensor<Real<64>,DefaultTensorEngine>>
 TensorIo::readBinary<Real<64>,DefaultTensorEngine>(
   const std::string &fileName
 );
 template
-PTR(ESC(Tensor<Complex<64>,DefaultTensorEngine>))
+Ptr<Tensor<Complex<64>,DefaultTensorEngine>>
 TensorIo::readBinary<Complex<64>,DefaultTensorEngine>(
   const std::string &fileName
 );
 template
-PTR(ESC(Tensor<Real<64>,DryTensorEngine>))
+Ptr<Tensor<Real<64>,DryTensorEngine>>
 TensorIo::readBinary<Real<64>,DryTensorEngine>(
   const std::string &fileName
 );
 template
-PTR(ESC(Tensor<Complex<64>,DryTensorEngine>))
+Ptr<Tensor<Complex<64>,DryTensorEngine>>
 TensorIo::readBinary<Complex<64>,DryTensorEngine>(
   const std::string &fileName
 );
 // TODO: 128 bit tensors
 
 template
-PTR(ESC(Tensor<Real<64>,DefaultTensorEngine>))
+Ptr<Tensor<Real<64>,DefaultTensorEngine>>
 TensorIo::readText<Real<64>,DefaultTensorEngine>(
   const std::string &fileName,
   const std::string &delimiter,
   const size_t bufferSize
 );
 template
-PTR(ESC(Tensor<Complex<64>,DefaultTensorEngine>))
+Ptr<Tensor<Complex<64>,DefaultTensorEngine>>
 TensorIo::readText<Complex<64>>(
   const std::string &fileName,
   const std::string &delimiter,
   const size_t bufferSize
 );
 template
-PTR(ESC(Tensor<Real<64>,DryTensorEngine>))
+Ptr<Tensor<Real<64>,DryTensorEngine>>
 TensorIo::readText<Real<64>,DryTensorEngine>(
   const std::string &fileName,
   const std::string &delimiter,
   const size_t bufferSize
 );
 template
-PTR(ESC(Tensor<Complex<64>,DryTensorEngine>))
+Ptr<Tensor<Complex<64>,DryTensorEngine>>
 TensorIo::readText<Complex<64>,DryTensorEngine>(
   const std::string &fileName,
   const std::string &delimiter,
@@ -238,50 +238,50 @@ TensorIo::readText<Complex<64>,DryTensorEngine>(
 template
 void TensorIo::writeBinary<Real<64>,DefaultTensorEngine>(
   const std::string &fileName,
-  const PTR(ESC(Tensor<Real<64>,DefaultTensorEngine>)) &A
+  const Ptr<Tensor<Real<64>,DefaultTensorEngine>> &A
 );
 template
 void TensorIo::writeBinary<Complex<64>,DefaultTensorEngine>(
   const std::string &fileName,
-  const PTR(ESC(Tensor<Complex<64>,DefaultTensorEngine>)) &A
+  const Ptr<Tensor<Complex<64>,DefaultTensorEngine>> &A
 );
 template
 void TensorIo::writeBinary<Real<64>,DryTensorEngine>(
   const std::string &fileName,
-  const PTR(ESC(Tensor<Real<64>,DryTensorEngine>)) &A
+  const Ptr<Tensor<Real<64>,DryTensorEngine>> &A
 );
 template
 void TensorIo::writeBinary<Complex<64>,DryTensorEngine>(
   const std::string &fileName,
-  const PTR(ESC(Tensor<Complex<64>,DryTensorEngine>)) &A
+  const Ptr<Tensor<Complex<64>,DryTensorEngine>> &A
 );
 // TODO: 128 bit tensors
 
 template
 void TensorIo::writeText<Real<64>,DefaultTensorEngine>(
   const std::string &fileName,
-  const PTR(ESC(Tensor<Real<64>,DefaultTensorEngine>)) &A,
+  const Ptr<Tensor<Real<64>,DefaultTensorEngine>> &A,
   const std::string &rowIndexOrder, const std::string &columnIndexOrder,
   const std::string &delimiter
 );
 template
 void TensorIo::writeText<Complex<64>,DefaultTensorEngine>(
   const std::string &fileName,
-  const PTR(ESC(Tensor<Complex<64>,DefaultTensorEngine>)) &A,
+  const Ptr<Tensor<Complex<64>,DefaultTensorEngine>> &A,
   const std::string &rowIndexOrder, const std::string &columnIndexOrder,
   const std::string &delimiter
 );
 template
 void TensorIo::writeText<Real<64>,DryTensorEngine>(
   const std::string &fileName,
-  const PTR(ESC(Tensor<Real<64>,DryTensorEngine>)) &A,
+  const Ptr<Tensor<Real<64>,DryTensorEngine>> &A,
   const std::string &rowIndexOrder, const std::string &columnIndexOrder,
   const std::string &delimiter
 );
 template
 void TensorIo::writeText<Complex<64>,DryTensorEngine>(
   const std::string &fileName,
-  const PTR(ESC(Tensor<Complex<64>,DryTensorEngine>)) &A,
+  const Ptr<Tensor<Complex<64>,DryTensorEngine>> &A,
   const std::string &rowIndexOrder, const std::string &columnIndexOrder,
   const std::string &delimiter
 );

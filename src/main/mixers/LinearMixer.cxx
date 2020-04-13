@@ -29,8 +29,8 @@ LinearMixer<F,TE>::~LinearMixer() {
 
 template <typename F, typename TE>
 void LinearMixer<F,TE>::append(
-  const PTR(ESC(FockVector<F,TE>)) &next,
-  const PTR(ESC(FockVector<F,TE>)) &nextResiduum
+  const Ptr<FockVector<F,TE>> &next,
+  const Ptr<FockVector<F,TE>> &nextResiduum
 ) {
   if (last) {
     // mix accordingly
@@ -47,12 +47,12 @@ void LinearMixer<F,TE>::append(
 }
 
 template <typename F, typename TE>
-PTR(ESC(const FockVector<F,TE>)) LinearMixer<F,TE>::get() {
+Ptr<const FockVector<F,TE>> LinearMixer<F,TE>::get() {
     return last;
 }
 
 template <typename F, typename TE>
-PTR(ESC(const FockVector<F,TE>)) LinearMixer<F,TE>::getResiduum() {
+Ptr<const FockVector<F,TE>> LinearMixer<F,TE>::getResiduum() {
     return lastResiduum;
 }
 

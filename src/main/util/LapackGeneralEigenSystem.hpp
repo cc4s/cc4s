@@ -282,7 +282,7 @@ namespace cc4s {
     };
 
   protected:
-    PTR(LapackMatrix<Complex<64>>) R, L;
+    Ptr<LapackMatrix<Complex<64>>> R, L;
     std::vector<Complex<64>> lambdas;
 
     void orderEigenVectors(

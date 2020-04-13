@@ -23,8 +23,8 @@ namespace cc4s {
   protected:
     static int rank;
     static std::string fileName;
-    static PTR(std::ofstream) yamlFile;
-    static PTR(YAML::Emitter) yamlEmitter;
+    static Ptr<std::ofstream> yamlFile;
+    static Ptr<YAML::Emitter> yamlEmitter;
   };
 }
 
