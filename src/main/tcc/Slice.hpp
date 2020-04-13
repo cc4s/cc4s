@@ -9,7 +9,7 @@
 #include <util/SharedPointer.hpp>
 #include <vector>
 
-namespace tcc {
+namespace cc4s {
   /**
    * \brief 
    **/

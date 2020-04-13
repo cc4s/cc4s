@@ -2,7 +2,7 @@
 #ifndef TCC_SCOPE_DEFINED
 #define TCC_SCOPE_DEFINED
 
-namespace tcc {
+namespace cc4s {
   /**
    * \brief Contains frequency counts for all indices within tht
    * contraction including the indices on the left hand side.

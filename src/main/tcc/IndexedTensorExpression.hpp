@@ -4,7 +4,7 @@
 
 #include <tcc/TensorExpression.hpp>
 
-namespace tcc {
+namespace cc4s {
   /**
    * \brief Indexed tensor expressions are tensor valued expressions
    * whose dimensions are referred to by a specific index labels

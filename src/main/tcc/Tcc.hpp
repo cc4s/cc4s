@@ -23,7 +23,7 @@
 // TODO: fix max memory assessment
 // TODO: permutation and anti-permutation operator
 
-namespace tcc {
+namespace cc4s {
   template <typename TensorEngine>
   class Tcc {
   protected:
@@ -31,27 +31,27 @@ namespace tcc {
     };
 
   public:
-    template <typename F=cc4s::Real<>>
-    static cc4s::Ptr<Tensor<F,TensorEngine>> tensor(
+    template <typename F=Real<>>
+    static Ptr<Tensor<F,TensorEngine>> tensor(
       const std::vector<size_t> &lens, const std::string &name
     ) {
       return Tensor<F,TensorEngine>::create(lens, name);
     }
 
-    template <typename F=cc4s::Real<>>
-    static cc4s::Ptr<Tensor<F,TensorEngine>> tensor(
-      const cc4s::Ptr<Tensor<F,TensorEngine>> &source, const std::string &name
+    template <typename F=Real<>>
+    static Ptr<Tensor<F,TensorEngine>> tensor(
+      const Ptr<Tensor<F,TensorEngine>> &source, const std::string &name
     ) {
       return Tensor<F,TensorEngine>::create(source->getLens(), name);
     }
 
-    template <typename F=cc4s::Real<>>
-    static cc4s::Ptr<Tensor<F,TensorEngine>> tensor(const std::string &name) {
+    template <typename F=Real<>>
+    static Ptr<Tensor<F,TensorEngine>> tensor(const std::string &name) {
       return Tensor<F,TensorEngine>::create(name);
     }
 
-    static cc4s::Ptr<Sequence<TensorEngine>> nothing() {
-      return cc4s::New<Sequence<TensorEngine>>();
+    static Ptr<Sequence<TensorEngine>> nothing() {
+      return New<Sequence<TensorEngine>>();
     }
   };
 }

@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 
-namespace tcc {
+namespace cc4s {
   /**
    * \brief 
    **/

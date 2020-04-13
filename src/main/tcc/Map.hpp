@@ -8,7 +8,7 @@
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 
-namespace tcc {
+namespace cc4s {
   template <typename Target, typename Domain, typename TE>
   class Map: public IndexedTensorExpression<Target,TE> {
   public:

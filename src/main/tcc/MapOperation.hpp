@@ -6,7 +6,7 @@
 
 #include <util/SharedPointer.hpp>
 
-namespace tcc {
+namespace cc4s {
   template <typename Target, typename Domain, typename TE> class Map;
 
   template <typename Target, typename Domain, typename TE>

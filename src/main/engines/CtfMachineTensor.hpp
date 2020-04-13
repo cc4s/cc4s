@@ -6,12 +6,9 @@
 #include <ctf.hpp>
 #include <string>
 
-namespace tcc {
-  template <typename F,typename TE> class Tensor;
-}
-
 // TODO: specify MPI communicator when creating CtfTensorEngine
 namespace cc4s {
+  template <typename F,typename TE> class Tensor;
   class CtfTensorEngine;
 
   /**
@@ -216,7 +213,7 @@ namespace cc4s {
       return NEW(CtfMachineTensor<F>, lens, name, ProtectedToken());
     }
 
-    friend class tcc::Tensor<F,CtfTensorEngine>;
+    friend class Tensor<F,CtfTensorEngine>;
   };
 }
 

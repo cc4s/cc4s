@@ -4,7 +4,7 @@
 
 #include <limits>
 
-namespace tcc {
+namespace cc4s {
   class Costs {
   public:
     Costs(

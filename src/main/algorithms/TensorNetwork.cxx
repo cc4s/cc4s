@@ -6,7 +6,6 @@
 #include <vector>
 
 using namespace cc4s;
-using namespace tcc;
 
 ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);
 
@@ -59,11 +58,11 @@ void TensorNetwork::dryRun() {
   // compile a sequence (,) of operations. Note the required parenthesis
   auto ladderExpression = (
     (*LambdaT)["RF"] <<= (*Lambda)["RF"],
-    (*PiT)["Rb"] <<= tcc::map(conj<Real<>>, (*Pi)["Rb"]),
+    (*PiT)["Rb"] <<= map(conj<Real<>>, (*Pi)["Rb"]),
     (*D)["abij"] +=
       (*T)["cdij"] *
       (*Pi)["Rd"] *
-      tcc::map(conj<Real<>>, (*Pi)["Rb"]) *
+      map(conj<Real<>>, (*Pi)["Rb"]) *
       (*Pi)["Sc"] * (*PiT)["Sa"] *
       (*LambdaT)["SF"] * (*Lambda)["RF"],
     (*Pi)["Ra"] <<= (*Pi)["Ra"],

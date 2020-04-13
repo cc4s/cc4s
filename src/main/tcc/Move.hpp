@@ -9,7 +9,7 @@
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 
-namespace tcc {
+namespace cc4s {
   template <typename F, typename TE>
   class Indexing;
 
@@ -29,7 +29,7 @@ namespace tcc {
       const S beta
     ) {
       static_assert(
-        cc4s::TypeRelations<S, typename LHS::FieldType>::CASTABLE_TO,
+        TypeRelations<S, typename LHS::FieldType>::CASTABLE_TO,
         "The type of the scalar must be convertible to the tensor type."
       );
       return NEW(ESC(Move<typename LHS::FieldType,TE>),
@@ -52,7 +52,7 @@ namespace tcc {
       const typename Expression<TE>::ProtectedToken &
     ) {
       static_assert(
-        cc4s::StaticAssert<F>::FALSE,
+        StaticAssert<F>::FALSE,
         "The result type of the right-hand-side must match that of the left-hand-side."
       );
     }
@@ -209,13 +209,13 @@ namespace tcc {
     const PTR(LHS) &, const PTR(RHS) &rhs
   ) {
     static_assert(
-      cc4s::TypeRelations<
+      TypeRelations<
         typename LHS::FieldType, typename RHS::FieldType
       >::EQUALS,
       "Move operations requires tensors of same type."
     );
     static_assert(
-      cc4s::StaticAssert<RHS>::FALSE,
+      StaticAssert<RHS>::FALSE,
       "Only indexed tensors may be used as the left hand side of a move operation."
     );
     return PTR(ESC(Move<typename RHS::FieldType,typename RHS::TensorEngine>))();

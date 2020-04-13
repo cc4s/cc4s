@@ -5,7 +5,7 @@
 #include <tcc/Expression.hpp>
 #include <tcc/TensorOperation.hpp>
 
-namespace tcc {
+namespace cc4s {
   template <typename F, typename TE>
   class TensorExpression: public Expression<TE> {
   public:

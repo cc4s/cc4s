@@ -2,7 +2,7 @@
 #ifndef TCC_SCOPE_DEFINED
 #define TCC_SCOPE_DEFINED
 
-namespace tcc {
+namespace cc4s {
   /**
    * \brief Represents the current scope of index variables.
    * Contains frequency counts for all indices within the scope

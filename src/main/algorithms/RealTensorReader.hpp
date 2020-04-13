@@ -17,7 +17,7 @@ namespace cc4s {
     virtual void run();
   protected:
     template <typename F, typename TE>
-    PTR(ESC(tcc::Tensor<F,TE>)) read(const std::string &name);
+    PTR(ESC(Tensor<F,TE>)) read(const std::string &name);
   };
 }
 

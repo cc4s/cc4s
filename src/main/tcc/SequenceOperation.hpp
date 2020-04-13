@@ -7,7 +7,7 @@
 #include <util/SharedPointer.hpp>
 #include <vector>
 
-namespace tcc {
+namespace cc4s {
   template <typename TE> class Sequence;
 
   template <typename TE>

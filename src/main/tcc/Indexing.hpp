@@ -8,7 +8,7 @@
 #include <util/SharedPointer.hpp>
 #include <string>
 
-namespace tcc {
+namespace cc4s {
   template <typename F, typename TE> class ClosedTensorExpression;
 
   template <typename F, typename TE>
@@ -18,7 +18,7 @@ namespace tcc {
      * \brief Creates an expression with named indices from the closed tensor
      * source expression for further operations such as sums or contractions.
      * Not for direct invocation. Use the operator [] on
-     * tcc::ClosedTensorExpression<F,TE> objects instead.
+     * ClosedTensorExpression<F,TE> objects instead.
      **/
     Indexing(
       const PTR(ESC(ClosedTensorExpression<F,TE>)) &source_,

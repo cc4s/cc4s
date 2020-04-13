@@ -9,7 +9,7 @@
 #include <util/SharedPointer.hpp>
 #include <string>
 
-namespace tcc {
+namespace cc4s {
   template <typename F, typename TE> class Contraction;
 
   template <typename F, typename TE>

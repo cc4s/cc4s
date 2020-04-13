@@ -9,7 +9,7 @@
 #include <util/StaticAssert.hpp>
 #include <vector>
 
-namespace tcc {
+namespace cc4s {
   template <typename F, typename TE>
   class Move;
 
@@ -25,7 +25,7 @@ namespace tcc {
       const PTR(LHS) &A, const PTR(RHS) &B
     ) {
       static_assert(
-        cc4s::TypeRelations<
+        TypeRelations<
           typename LHS::TensorEngine, typename RHS::TensorEngine
         >::EQUALS,
         "All expressions within a sequence must have the same tensor engine."
@@ -112,7 +112,7 @@ namespace tcc {
       const typename Expression<TE>::ProtectedToken &
     ) {
       static_assert(
-        cc4s::StaticAssert<TE>::FALSE,
+        StaticAssert<TE>::FALSE,
         "Only sequences of moves are possible."
       );
     }

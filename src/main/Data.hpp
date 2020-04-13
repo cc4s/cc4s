@@ -185,16 +185,16 @@ namespace cc4s {
   class TensorData: public NumericData {
   public:
     TensorData(
-      const PTR(ESC(tcc::Tensor<F,TE>)) &value_
+      const PTR(ESC(Tensor<F,TE>)) &value_
     ): NumericData("tensor of " + TypeTraits<F>::getName()), value(value_) {
     }
     TensorData(
-      const std::string &name_, const PTR(ESC(tcc::Tensor<F,TE>)) &value_
+      const std::string &name_, const PTR(ESC(Tensor<F,TE>)) &value_
     ):
       NumericData(name_, "tensor of " + TypeTraits<F>::getName()), value(value_)
     {
     }
-    PTR(ESC(tcc::Tensor<F,TE>)) value;
+    PTR(ESC(Tensor<F,TE>)) value;
   };
 }
 

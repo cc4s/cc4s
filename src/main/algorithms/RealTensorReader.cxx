@@ -9,7 +9,6 @@
 
 #include <fstream>
 
-using namespace tcc;
 using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(RealTensorReader);
@@ -31,8 +30,8 @@ void RealTensorReader::run() {
 }
 
 template <typename F, typename TE>
-PTR(ESC(tcc::Tensor<F,TE>)) RealTensorReader::read(const std::string &name) {
-  PTR(ESC(tcc::Tensor<F,TE>)) A;
+PTR(ESC(Tensor<F,TE>)) RealTensorReader::read(const std::string &name) {
+  PTR(ESC(Tensor<F,TE>)) A;
   std::string mode(getTextArgument("mode", "text"));
   if (mode == "binary") {
     std::string fileName(getTextArgument("file", name + ".bin"));

@@ -23,7 +23,7 @@ namespace cc4s {
   public:
     typedef F FieldType;
 
-    std::vector<PTR(ESC(tcc::Tensor<F,TE>))> componentTensors;
+    std::vector<PTR(ESC(Tensor<F,TE>))> componentTensors;
     std::vector<std::string> componentIndices;
 
     /**
@@ -63,7 +63,7 @@ namespace cc4s {
      * \brief Move constructor taking possession of the tensors given.
      **/
     FockVector(
-      const std::vector<PTR(ESC(tcc::Tensor<F,TE>))> &tensors,
+      const std::vector<PTR(ESC(Tensor<F,TE>))> &tensors,
       const std::vector<std::string> &indices
     ):
       componentTensors(tensors),
@@ -91,18 +91,18 @@ namespace cc4s {
 
     /**
      * \brief Retrieves the i-th component tensor. Note that
-     * the tcc::Tensor is not const since rearrangement may be
+     * the Tensor is not const since rearrangement may be
      * required also in non-modifying tensor operations.
      **/
     // TODO: work out constnes of tensors
-    const PTR(ESC(tcc::Tensor<F,TE>)) &get(const size_t i) const {
+    const PTR(ESC(Tensor<F,TE>)) &get(const size_t i) const {
       return componentTensors[i];
     }
 
     /**
      * \brief Retrieves the i-th component tensor.
      **/
-    PTR(ESC(tcc::Tensor<F,TE>)) &get(const size_t i) {
+    PTR(ESC(Tensor<F,TE>)) &get(const size_t i) {
       return componentTensors[i];
     }
 
@@ -206,7 +206,7 @@ namespace cc4s {
           transposedLens.begin() + 2*order
         );
         result.componentTensors.push_back(
-          NEW(ESC(tcc::Tensor<F,TE>),
+          NEW(ESC(Tensor<F,TE>),
             transposedLens.size(), transposedLens.data(),
             get(i)->sym, *get(i)->wrld,
             (std::string(get(i)->get_name()) + "*").c_str()
@@ -216,7 +216,7 @@ namespace cc4s {
           getIndices(i).substr(order, 2*order) + getIndices(i).substr(0, order)
         );
         (
-          (*result.get(i))[result.getIndices(i)] <<= tcc::map(
+          (*result.get(i))[result.getIndices(i)] <<= map(
             std::function<Real<>(const Real<>)>(cc4s::conj<Real<>>),
             (*get(i))[getIndices(i)]
           )
@@ -231,7 +231,7 @@ namespace cc4s {
      **/
     F braket(const FockVector &ket) const {
       checkDualCompatibility(ket);
-      auto result( NEW(ESC(tcc::Tensor<F,TE>), std::vector<size_t>({})) );
+      auto result( NEW(ESC(Tensor<F,TE>), std::vector<size_t>({})) );
       for (size_t i(0); i < componentTensors.size(); ++i) {
         // add to result
         (
@@ -252,12 +252,12 @@ namespace cc4s {
      **/
     F dot(const FockVector &a) const {
       checkCompatibilityTo(a);
-      auto result( NEW(ESC(tcc::Tensor<F,TE>), std::vector<size_t>({})) );
+      auto result( NEW(ESC(Tensor<F,TE>), std::vector<size_t>({})) );
       for (size_t i(0); i < componentTensors.size(); ++i) {
         // add to result
         (
           (*result)[""] += (*get(i))[getIndices(i)] *
-            tcc::map(cc4s::conj<F>, (*a.get(i))[getIndices(i)])
+            map(cc4s::conj<F>, (*a.get(i))[getIndices(i)])
         )->compile()->execute();
       }
       // FIXME: to be implemented in tcc:

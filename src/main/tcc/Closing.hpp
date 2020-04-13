@@ -8,7 +8,7 @@
 #include <util/SharedPointer.hpp>
 #include <string>
 
-namespace tcc {
+namespace cc4s {
   template <typename F, typename TE>
   class Closing: public ClosedTensorExpression<F,TE> {
   public:
@@ -50,7 +50,7 @@ namespace tcc {
       const std::string &indices
     ) {
       static_assert(
-        cc4s::StaticAssert<RHS>::FALSE,
+        StaticAssert<RHS>::FALSE,
         "Only indexed tensor expressions can be closed."
       );
       return NEW(ESC(Closing<F,TE>),

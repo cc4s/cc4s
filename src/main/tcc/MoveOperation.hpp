@@ -6,7 +6,7 @@
 
 #include <util/SharedPointer.hpp>
 
-namespace tcc {
+namespace cc4s {
   template <typename F, typename TE> class Contraction;
 
   template <typename F, typename TE>
@@ -17,8 +17,8 @@ namespace tcc {
      * the right hand side operation into given tensor of the
      * left hand side after applying the function f.
      * The function f defaults to the identity operation.
-     * Not intended for direct invocation. Use Tcc::compile(expression) to
-     * generate operations.
+     * Not intended for direct invocation. Use expression->compile()
+     * to generate operations.
      **/
     MoveOperation(
       const PTR(ESC(IndexedTensorOperation<F,TE>)) &rhs_,

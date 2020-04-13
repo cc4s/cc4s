@@ -6,9 +6,9 @@
 #include <tcc/Operation.hpp>
 #include <tcc/Scope.hpp>
 
-namespace tcc {
+namespace cc4s {
   template <typename TE>
-  class Expression: public cc4s::Thisable<Expression<TE>> {
+  class Expression: public Thisable<Expression<TE>> {
   public:
     /**
      * \brief Allow inferring the tensor engine TE given any expression types.

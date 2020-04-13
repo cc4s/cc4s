@@ -9,7 +9,7 @@
 #include <util/SharedPointer.hpp>
 #include <initializer_list>
 
-namespace tcc {
+namespace cc4s {
   /**
    * \brief Closed tensor expressions are tensor valued expressions
    * whose dimensions are referred to by their slot number rather than

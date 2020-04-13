@@ -4,7 +4,7 @@
 
 #include <tcc/Costs.hpp>
 
-namespace tcc {
+namespace cc4s {
   template <typename TE>
   class Operation {
   public:

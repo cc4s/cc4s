@@ -50,7 +50,7 @@ namespace cc4s {
       const std::string &argumentName, const Real<> defaultValue
     );
     template <typename F=Real<>, typename TE=DefaultTensorEngine>
-    PTR(ESC(tcc::Tensor<F,TE>)) getTensorArgument(
+    PTR(ESC(Tensor<F,TE>)) getTensorArgument(
       const std::string &argumentName
     );
 
@@ -68,7 +68,7 @@ namespace cc4s {
      */
     template <typename F=Real<>, typename TE=DefaultTensorEngine>
     void setTensorArgument(
-      const std::string &argumentName, const PTR(ESC(tcc::Tensor<F,TE>)) &tensor
+      const std::string &argumentName, const PTR(ESC(Tensor<F,TE>)) &tensor
     );
     void setRealArgument(const std::string &argumentName, const Real<> value);
     void setIntegerArgument(
@@ -83,7 +83,7 @@ namespace cc4s {
       const PTR(ESC(const TensorData<F,TE>)) &tensorData
     );
     template <typename F=Real<>, typename TE=DefaultTensorEngine>
-    PTR(ESC(tcc::Tensor<F,TE>)) getTensorArgumentFromReal(
+    PTR(ESC(Tensor<F,TE>)) getTensorArgumentFromReal(
       const PTR(RealData) &realData
     );
 

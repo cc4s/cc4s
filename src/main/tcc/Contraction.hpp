@@ -10,7 +10,7 @@
 #include <util/StaticAssert.hpp>
 #include <vector>
 
-namespace tcc {
+namespace cc4s {
   template <typename F, typename TE> class Indexing;
 
   template <typename F, typename TE>
@@ -27,7 +27,7 @@ namespace tcc {
       const PTR(LHS) &A, const PTR(RHS) &B
     ) {
       static_assert(
-        cc4s::TypeRelations<
+        TypeRelations<
           typename LHS::FieldType, typename RHS::FieldType
         >::EQUALS,
         "Only tensors of the same type can be contracted."
@@ -50,7 +50,7 @@ namespace tcc {
       const S alpha, const PTR(LHS) &A
     ) {
       static_assert(
-        cc4s::TypeRelations<S, typename LHS::FieldType>::CASTABLE_TO,
+        TypeRelations<S, typename LHS::FieldType>::CASTABLE_TO,
         "The type of the scalar must be convertible to the tensor type."
       );
       return NEW(
