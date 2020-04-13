@@ -11,7 +11,7 @@ namespace cc4s {
   class LinearMixer: public Mixer<F,TE> {
   public:
     MIXER_REGISTRAR_DECLARATION(LinearMixer);
-    LinearMixer(Algorithm *algorithm);
+    LinearMixer(const Ptr<Algorithm> &algorithm);
     virtual ~LinearMixer();
 
     virtual void append(

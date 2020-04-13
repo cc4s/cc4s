@@ -13,7 +13,7 @@ namespace cc4s {
   template <typename F, typename TE>
   class Mixer {
   public:
-    Mixer(Algorithm *algorithm);
+    Mixer(const Ptr<Algorithm> &algorithm);
     virtual ~Mixer();
 
     /**
@@ -50,19 +50,12 @@ namespace cc4s {
      **/
     virtual Ptr<const FockVector<F,TE>> getResiduum() = 0;
 
-    Algorithm *algorithm;
+    Ptr<Algorithm> algorithm;
   };
 
   template <typename F, typename TE>
   class MixerFactory {
   public:
-// FIXME: find out why typedef doesn't work in this case
-/*
-    typedef std::map<
-      std::string,
-      std::function<Mixer<F> *(Algorithm *)>
-    > MixerMap;
-*/
     /**
      * \brief Creates a mixer object of the mixer type specified
      * by the given name.
@@ -70,42 +63,30 @@ namespace cc4s {
      * MixerRegistrar class.
      */
     static Ptr<Mixer<F,TE>> create(
-      std::string const &name, Algorithm *algorithm
+      std::string const &name, const Ptr<Algorithm> algorithm
     ) {
       auto iterator(getMixerMap()->find(name));
       return iterator != getMixerMap()->end() ?
         iterator->second(algorithm) : Ptr<Mixer<F,TE>>();
     }
   protected:
-    static std::map<
+    typedef std::map<
       std::string,
-      std::function<Ptr<Mixer<F,TE>> (Algorithm *algorithm)>
-    > *getMixerMap() {
-      return mixerMap ? mixerMap : (
-        mixerMap = new std::map<
-          std::string,
-          std::function<Ptr<Mixer<F,TE>> (Algorithm *)>
-        >
-      );
+      std::function<Ptr<Mixer<F,TE>> (const Ptr<Algorithm> &algorithm)>
+    > MixerMap;
+
+    static Ptr<MixerMap> getMixerMap() {
+      return mixerMap ? mixerMap : (mixerMap = New<MixerMap>());
     }
-    static std::map<
-      std::string,
-      std::function<Ptr<Mixer<F,TE>> (Algorithm *)>
-    > *mixerMap;
-/*
-    static MixerMap *getMixerMap() {
-      return mixerMap ? mixerMap : (mixerMap = new MixerMap);
-    }
-    static MixerMap *mixerMap;
-*/
+    static Ptr<MixerMap> mixerMap;
   };
 
   /**
    * \brief template function creating an instance of the given class.
    */
   template <typename F, typename TE, typename MixerType>
-  Ptr<Mixer<F,TE>> createMixer(Algorithm *algorithm) {
-    return NEW(MixerType, algorithm);
+  Ptr<Mixer<F,TE>> createMixer(const Ptr<Algorithm> &algorithm) {
+    return New<MixerType>(algorithm);
   }
 
   /**

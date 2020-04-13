@@ -6,7 +6,7 @@
 using namespace cc4s;
 
 template <typename F, typename TE>
-Mixer<F,TE>::Mixer(Algorithm *algorithm_): algorithm(algorithm_) {
+Mixer<F,TE>::Mixer(const Ptr<Algorithm> &algorithm_): algorithm(algorithm_) {
 }
 
 template <typename F, typename TE>
@@ -21,10 +21,7 @@ template class Mixer<Complex<64>,DefaultTensorEngine>;
 
 
 template <typename F, typename TE>
-std::map<
-  std::string,
-  std::function<Ptr<Mixer<F,TE>> (Algorithm *algorithm)>
-> *MixerFactory<F,TE>::mixerMap;
+Ptr<typename MixerFactory<F,TE>::MixerMap> MixerFactory<F,TE>::mixerMap;
 
 // instantiate
 template class MixerFactory<Real<64>,DryTensorEngine>;

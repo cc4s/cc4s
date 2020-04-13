@@ -10,7 +10,7 @@ MIXER_REGISTRAR_DEFINITION(LinearMixer);
 
 template <typename F, typename TE>
 LinearMixer<F,TE>::LinearMixer(
-  Algorithm *algorithm
+  const Ptr<Algorithm> &algorithm
 ):
   Mixer<F,TE>(algorithm), last(nullptr), lastResiduum(nullptr)
 {
