@@ -2,28 +2,20 @@
 
 #include <tcc/Tcc.hpp>
 #include <math/MathFunctions.hpp>
-#include <Data.hpp>
 #include <vector>
 
 using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);
 
-TensorNetwork::TensorNetwork(
-  std::vector<Argument> const &argumentList
-): Algorithm(argumentList) {
-}
-
-TensorNetwork::~TensorNetwork() {
-}
-
 /**
  * \brief Testing environement
  */
-void TensorNetwork::run() {
+Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
+  return arguments;
 }
 
-void TensorNetwork::dryRun() {
+Ptr<MapNode> TensorNetwork::dryRun(const Ptr<MapNode> &arguments) {
   size_t No(10);
   size_t Nv(90);
   size_t Np(No+Nv);
@@ -110,6 +102,7 @@ void TensorNetwork::dryRun() {
   );
   imaginaryTimeMp2Operation->execute();
 */
+  return arguments;
 }
 
 

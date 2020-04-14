@@ -9,18 +9,15 @@
 #include <util/Exception.hpp>
 #include <util/SharedPointer.hpp>
 
-// tensor engine selection
-#include <engines/DryTensorEngine.hpp>
-#include <engines/CtfTensorEngine.hpp>
-namespace cc4s {
-  typedef cc4s::CtfTensorEngine DefaultTensorEngine;
-}
-
 #include <string>
 #include <map>
+#include <vector>
 #include <sstream>
 
 namespace cc4s {
+  class MapNode;
+  template <typename AtomicType> class AtomicNode;
+
   class Node: public Thisable<Node> {
   public:
     virtual ~Node() {
@@ -28,16 +25,23 @@ namespace cc4s {
     virtual bool isAtomic() {
       return true;
     }
-    virtual Ptr<Node> get(const std::string &element) {
+    virtual Ptr<Node> &get(const std::string &element) {
       Assert(false, "atomic node does not have element " + element);
     }
-    virtual Ptr<Node> get(const size_t element) {
+    virtual Ptr<Node> &get(const size_t element) {
       Assert(false, "atomic node does not have element " + element);
+    }
+    // provide convenience cast routines
+    Ptr<MapNode> map() {
+      return std::dynamic_pointer_cast<MapNode>(this->toPtr<Node>());
     }
     template <typename AtomicType>
-    AtomicType value() {
-      return std::dynamic_pointer_cast<AtomicNode<AtomicType>>(this)->value;
+    Ptr<AtomicNode<AtomicType>> atom() {
+      return std::dynamic_pointer_cast<AtomicNode<AtomicType>>(
+        this->toPtr<Node>()
+      );
     }
+    std::string comment;
   };
 
   class MapNode: public Node {
@@ -53,6 +57,20 @@ namespace cc4s {
     Ptr<Node> &get(const size_t element) override {
       return elements["" + element];
     }
+/*
+    // TODO: proper key iterators
+    std::vector<std::string> getKeys() const {
+      std::vector<const std::string> keys();
+      keys.reserve(elements.size());
+      for (auto iterator: elements) {
+        keys.push_back(iterator->first);
+      }
+      return keys;
+    }
+*/
+    size_t size() const {
+      return elements.size();
+    }
   protected:
     std::map<std::string,Ptr<Node>> elements;
   };
@@ -66,6 +84,16 @@ namespace cc4s {
     AtomicNode(const AtomicType &value_): value(value_) {
     }
     AtomicType value;
+  };
+
+  class SymbolNode: public Node {
+  public:
+    /**
+     * \brief Constructor for symbol nodes.
+     */
+    SymbolNode(const std::string &value_): value(value_) {
+    }
+    std::string value;
   };
 
   // root node where all data is stored
@@ -115,6 +143,7 @@ namespace cc4s {
   public:
     static std::string getName() { return "complex<128>"; }
   };
+/*
   template <F,TE>
   class TypeTraits<Tensor<F,TE>> {
   public:
@@ -122,6 +151,7 @@ namespace cc4s {
       return "tensor of " + TypeTraits<F>::getName();
     }
   };
+*/
 }
 
 #endif

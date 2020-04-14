@@ -8,16 +8,8 @@ namespace cc4s {
   class TensorNetwork: public Algorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(TensorNetwork);
-    TensorNetwork(
-      std::vector<Argument> const &argumentList
-    );
-    virtual ~TensorNetwork();
-    virtual void run();
-    virtual void dryRun();
-
-    static Algorithm *create(std::vector<Argument> const &argumentList) {
-      return new TensorNetwork(argumentList);
-    }
+    Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
+    Ptr<MapNode> dryRun(const Ptr<MapNode> &arguments) override;
   };
 }
 

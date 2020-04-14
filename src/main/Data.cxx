@@ -4,5 +4,5 @@
 
 using namespace cc4s;
 
-Ptr<MapNode> Data::root;
+Ptr<MapNode> root;
 

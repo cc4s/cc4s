@@ -7,8 +7,8 @@
 namespace cc4s {
   struct Options {
 
+    std::string inFile, outFile, logFile;
     int logLevel;
-    std::string yamlFile, logFile, file;
     bool dryRun;
 
     const int DEFAULT_LOG_LEVEL = 1;

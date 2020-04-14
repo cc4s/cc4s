@@ -9,16 +9,13 @@
 namespace cc4s {
   class Cc4s {
   public:
-    Cc4s();
-    ~Cc4s();
     void run();
-    void dryRun();
 
     static bool isDebugged();
 
     // static properties, accessible from everywhere
     static Ptr<MpiCommunicator> world;
-    static Options *options;
+    static Ptr<Options> options;
 
   protected:
     void printBanner();

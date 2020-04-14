@@ -3,100 +3,27 @@
 #define ALGORITHM_DEFINED
 
 #include <Data.hpp>
-#include <string>
-#include <ctf.hpp>
+
+// tensor engine selection
+#include <engines/DryTensorEngine.hpp>
+#include <engines/CtfTensorEngine.hpp>
+namespace cc4s {
+  typedef cc4s::CtfTensorEngine DefaultTensorEngine;
+}
 
 namespace cc4s {
-  class Argument {
-  public:
-    Argument(
-      const std::string &name_
-    ): name(name_), data(name_) {
-    }
-    Argument(
-      const std::string &name_, const std::string &data_
-    ): name(name_), data(data_) {
-    }
-    const std::string &getName() const { return name; }
-    const std::string &getData() const { return data; }
-  protected:
-    std::string name, data;
-  };
-
   class Algorithm {
   public:
-    Algorithm(const std::vector<Argument> &argumentList);
+    Algorithm();
     virtual ~Algorithm();
     virtual std::string getName() = 0;
-    virtual void run() = 0;
-    virtual void dryRun();
-
-    bool isArgumentGiven(const std::string &argumentName);
-    // retrieving input arguments
-    const std::string &getTextArgument(const std::string &argumentName);
-    const std::string &getTextArgument(
-      const std::string &argumentName, const std::string &defaultValue
-    );
-    bool getBooleanArgument(const std::string &name);
-    bool getBooleanArgument(
-      const std::string &name, const bool defaultValue
-    );
-    int64_t getIntegerArgument(const std::string &argumentName);
-    int64_t getIntegerArgument(
-      const std::string &argumentName, const int64_t defaultValue
-    );
-    Real<> getRealArgument(const std::string &argumentName);
-    Real<> getRealArgument(
-      const std::string &argumentName, const Real<> defaultValue
-    );
-    template <typename F=Real<>, typename TE=DefaultTensorEngine>
-    Ptr<Tensor<F,TE>> getTensorArgument(
-      const std::string &argumentName
-    );
-
-    // typing, allocating and setting output arguments
-    /**
-     * \brief Specifies the location of an output tensor data.
-     * \param[in] argumentName The argument name as specified in the cc4s file
-     * \param[in] tensor The reference of the tensor data allocated by the
-     * caller and later freed by the system if not needed any further.
-     * \note
-     * often explicit instantiation may be necessary, e.g.
-     * \code{.cxx}
-     * setTensorArgument<complex>(complexTensor);
-     * \endcode
-     */
-    template <typename F=Real<>, typename TE=DefaultTensorEngine>
-    void setTensorArgument(
-      const std::string &argumentName, const Ptr<Tensor<F,TE>> &tensor
-    );
-    void setRealArgument(const std::string &argumentName, const Real<> value);
-    void setIntegerArgument(
-      const std::string &argumentName, const int64_t value
-    );
-
-  protected:
-    // type promotions:
-    Real<> getRealArgumentFromInteger(const Ptr<IntegerData> &data);
-    template <typename F=Real<>, typename TE=DefaultTensorEngine>
-    F getRealArgumentFromTensor(
-      const Ptr<const TensorData<F,TE>> &tensorData
-    );
-    template <typename F=Real<>, typename TE=DefaultTensorEngine>
-    Ptr<Tensor<F,TE>> getTensorArgumentFromReal(
-      const Ptr<RealData> &realData
-    );
-
-    Ptr<Data> getArgumentData(const std::string &argumentName);
-    std::map<std::string, std::string> arguments;
+    virtual Ptr<MapNode> run(const Ptr<MapNode> &arguments) = 0;
+    virtual Ptr<MapNode> dryRun(const Ptr<MapNode> &arguments);
   };
 
   class AlgorithmFactory {
   public:
-    typedef std::map<
-      std::string,
-      std::function<Ptr<Algorithm>(const std::vector<Argument> &)>
-    > AlgorithmMap;
+    typedef std::map<std::string,std::function<Ptr<Algorithm>()>> AlgorithmMap;
 
     /**
      * \brief Creates an algorithm object of the algorithm type specified
@@ -105,12 +32,10 @@ namespace cc4s {
      * The instantiated algorithm must be registered using the
      * AlgorithmRegistrar class.
      */
-    static Ptr<Algorithm> create(
-      const std::string &name, const std::vector<Argument> &arguments
-    ) {
+    static Ptr<Algorithm> create(const std::string &name) {
       auto iterator(getAlgorithmMap()->find(name));
       return iterator != getAlgorithmMap()->end() ?
-        iterator->second(arguments) : nullptr;
+        iterator->second() : nullptr;
     }
   protected:
     static Ptr<AlgorithmMap> getAlgorithmMap() {
@@ -123,8 +48,8 @@ namespace cc4s {
    * \brief template function creating an instance of the given class.
    */
   template <typename AlgorithmType>
-  Ptr<Algorithm> createAlgorithm(const std::vector<Argument> &arguments) {
-    return New<AlgorithmType>(arguments);
+  Ptr<Algorithm> createAlgorithm() {
+    return New<AlgorithmType>();
   }
 
   /**

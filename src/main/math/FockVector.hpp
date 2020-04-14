@@ -206,7 +206,7 @@ namespace cc4s {
           transposedLens.begin() + 2*order
         );
         result.componentTensors.push_back(
-          NEW(ESC(Tensor<F,TE>),
+          New<Tensor<F,TE>>(
             transposedLens.size(), transposedLens.data(),
             get(i)->sym, *get(i)->wrld,
             (std::string(get(i)->get_name()) + "*").c_str()
@@ -231,7 +231,7 @@ namespace cc4s {
      **/
     F braket(const FockVector &ket) const {
       checkDualCompatibility(ket);
-      auto result( NEW(ESC(Tensor<F,TE>), std::vector<size_t>({})) );
+      auto result( New<Tensor<F,TE>>(std::vector<size_t>({})) );
       for (size_t i(0); i < componentTensors.size(); ++i) {
         // add to result
         (
@@ -252,7 +252,7 @@ namespace cc4s {
      **/
     F dot(const FockVector &a) const {
       checkCompatibilityTo(a);
-      auto result( NEW(ESC(Tensor<F,TE>), std::vector<size_t>({})) );
+      auto result( New<Tensor<F,TE>>(std::vector<size_t>({})) );
       for (size_t i(0); i < componentTensors.size(); ++i) {
         // add to result
         (

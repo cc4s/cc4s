@@ -2,7 +2,7 @@
 #define TENSOR_IO_DEFINED
 
 #include <util/Scanner.hpp>
-#include <Data.hpp>
+#include <algorithms/Algorithm.hpp>
 
 namespace cc4s {
   class TensorIo {
