@@ -4,6 +4,5 @@
 
 using namespace cc4s;
 
-std::map<std::string, Ptr<Data>> Data::dataMap;
-size_t TypedData::nextId;
+Ptr<MapNode> Data::root;
 

@@ -21,6 +21,57 @@ namespace cc4s {
 #include <sstream>
 
 namespace cc4s {
+  class Node: public Thisable<Node> {
+  public:
+    virtual ~Node() {
+    }
+    virtual bool isAtomic() {
+      return true;
+    }
+    virtual Ptr<Node> get(const std::string &element) {
+      Assert(false, "atomic node does not have element " + element);
+    }
+    virtual Ptr<Node> get(const size_t element) {
+      Assert(false, "atomic node does not have element " + element);
+    }
+    template <typename AtomicType>
+    AtomicType value() {
+      return std::dynamic_pointer_cast<AtomicNode<AtomicType>>(this)->value;
+    }
+  };
+
+  class MapNode: public Node {
+  public:
+    MapNode() {
+    }
+    bool isAtomic() override {
+      return false;
+    }
+    Ptr<Node> &get(const std::string &element) override {
+      return elements[element];
+    }
+    Ptr<Node> &get(const size_t element) override {
+      return elements["" + element];
+    }
+  protected:
+    std::map<std::string,Ptr<Node>> elements;
+  };
+
+  template <typename AtomicType>
+  class AtomicNode: public Node {
+  public:
+    /**
+     * \brief Constructor for atomic nodes.
+     */
+    AtomicNode(const AtomicType &value_): value(value_) {
+    }
+    AtomicType value;
+  };
+
+  // root node where all data is stored
+  static Ptr<MapNode> root;
+
+
   /**
    * Traits class for tensor element types used in cc4s.
    * It provides type specific information such as type name to
@@ -29,6 +80,11 @@ namespace cc4s {
   template <typename F>
   class TypeTraits;
 
+  template <>
+  class TypeTraits<std::string> {
+  public:
+    static std::string getName() { return "text"; }
+  };
   template <>
   class TypeTraits<bool> {
   public:
@@ -59,142 +115,12 @@ namespace cc4s {
   public:
     static std::string getName() { return "complex<128>"; }
   };
-
-  class Data: public THISABLE(Data) {
+  template <F,TE>
+  class TypeTraits<Tensor<F,TE>> {
   public:
-    enum Stage {
-      MENTIONED = 0, TYPED = 1, ALLOCATED = 2, 
-      READY = 3,
-      UNUSED = 4, LINGERING = 5
-    };
-    Data(const std::string &name_) {
-      std::stringstream sStream;
-      sStream << name_ << " of yet unknown type";
-      typeName = sStream.str();
-      // enter datum in global data map
-      dataMap[name_] = THIS(Data);
+    static std::string getName() {
+      return "tensor of " + TypeTraits<F>::getName();
     }
-    virtual ~Data() {
-    }
-    std::string getName() const { return name; }
-    std::string getTypeName() const { return typeName; }
-    Stage getStage() const { return stage; }
-
-    static Ptr<Data> get(const std::string &name) {
-      auto iterator(dataMap.find(name));
-      return (iterator != dataMap.end()) ? iterator->second : nullptr;
-    }
-  protected:
-    /**
-     * \brief protected constructor for typed data.
-     */
-    Data(
-      const std::string &name_, const std::string &typeName_
-    ): name(name_), typeName(typeName_), stage(TYPED) {
-      Ptr<Data> mentionedData(dataMap[name_]);
-      if (mentionedData) {
-        if (mentionedData->getStage() != MENTIONED) {
-          LOG(1,"Data") << "overwriting existing data: " << name_ << std::endl;
-//          throw new EXCEPTION("Trying to overwrite existing data");
-        }
-      }
-      dataMap[name_] = THIS(Data);
-    }
-    std::string name, typeName;
-    Stage stage;
-
-    static std::map<std::string, Ptr<Data>> dataMap;
-    static int64_t nextAnynomousDataId;
-  };
-
-  class TypedData: public Data {
-  protected:
-    /**
-     * \brief Protected constructor for anonymous constant data.
-     */
-    TypedData(const std::string &typeName_): Data(nextName(), typeName_) {
-    }
-    /**
-     * \brief Protected constructor for named data.
-     */
-    TypedData(
-      const std::string &name_, const std::string &typeName_
-    ): Data(name_, typeName_) {
-    }
-
-    static std::string nextName() {
-      std::stringstream sStream;
-      sStream << "Constant" << nextId++;
-      return sStream.str();
-    }
-
-    /**
-     * \brief next id number to be given anonymous constant data.
-     * They will be named "Constant0", "Constant1", ...
-     * regardless of the type.
-     */
-    static size_t nextId;
-  };
-
-  class TextData: public TypedData {
-  public:
-    TextData(const std::string &value_): TypedData("text"), value(value_) { }
-    TextData(
-      const std::string &name_, const std::string &value_
-    ): TypedData(name_, "text"), value(value_) { }
-    std::string value;
-  };
-
-  class BooleanData: public TypedData {
-  public:
-    BooleanData(const bool value_): TypedData("boolean"), value(value_) { }
-    BooleanData(
-      const std::string &name_, const bool value_
-    ): TypedData(name_, "boolean"), value(value_) { }
-    bool value;
-  };
-
-  class NumericData: public TypedData {
-  protected:
-    NumericData(const std::string &typeName_): TypedData(typeName_) { }
-    NumericData(
-      const std::string &name_, const std::string &typeName_
-    ): TypedData(name_, typeName_) {
-    }
-  };
-
-  class RealData: public NumericData {
-  public:
-    RealData(Real<64> value_): NumericData("real<64>"), value(value_) { }
-    RealData(
-      const std::string &name_, const Real<64> value_
-    ): NumericData(name_, "real<64>"), value(value_) { }
-    Real<64> value;
-  };
-
-  class IntegerData: public NumericData {
-  public:
-    IntegerData(int64_t value_): NumericData("integer"), value(value_) { }
-    IntegerData(
-      const std::string &name_, const int64_t value_
-    ): NumericData(name_, "integer"), value(value_) { }
-    int64_t value;
-  };
-
-  template <typename F=Real<>, typename TE=DefaultTensorEngine>
-  class TensorData: public NumericData {
-  public:
-    TensorData(
-      const Ptr<Tensor<F,TE>> &value_
-    ): NumericData("tensor of " + TypeTraits<F>::getName()), value(value_) {
-    }
-    TensorData(
-      const std::string &name_, const Ptr<Tensor<F,TE>> &value_
-    ):
-      NumericData(name_, "tensor of " + TypeTraits<F>::getName()), value(value_)
-    {
-    }
-    Ptr<Tensor<F,TE>> value;
   };
 }
 

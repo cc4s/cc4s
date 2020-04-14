@@ -11,7 +11,7 @@ using namespace cc4s;
 
 Parser::Parser(
   std::string const &fileName
-): stream(NEW(std::ifstream, fileName.c_str()), fileName) {
+): stream(New<std::ifstream>(fileName.c_str()), fileName) {
   if (!dynamic_pointer_cast<std::ifstream>(stream.getStream())->is_open()) {
     std::stringstream sStream;
     sStream << "Failed to open file " << fileName;
@@ -79,8 +79,6 @@ Argument Parser::parseArgument() {
 Argument Parser::parseImplicitlyNamedArgument() {
   // TODO: store debug info for later reference in case of errors
   std::string argumentName(parseSymbolName());
-  Ptr<Data> data(Data::get(argumentName));
-  if (!data) new Data(argumentName);
   return Argument(argumentName, argumentName);
 }
 
@@ -127,7 +125,7 @@ std::string Parser::parseSymbolName() {
 Ptr<Data> Parser::parseSymbol() {
   std::string symbolName(parseSymbolName());
   Ptr<Data> data(Data::get(symbolName));
-  return data ? data : NEW(Data, symbolName);
+  return data ? data : New<Data>(symbolName);
 }
 
 Ptr<TextData> Parser::parseText() {
@@ -140,7 +138,7 @@ Ptr<TextData> Parser::parseText() {
     sStream.put(stream.get());
   }
   expectCharacter('"');
-  return NEW(TextData, sStream.str());
+  return New<TextData>(sStream.str());
 }
 
 Ptr<NumericData> Parser::parseNumber() {
@@ -165,7 +163,7 @@ Ptr<NumericData> Parser::parseNumber() {
     integer += stream.get() - '0';
   }
   if (stream.peek() == '.') return parseReal(sign, integer);
-  else return NEW(IntegerData, sign * integer);
+  else return New<IntegerData>(sign * integer);
 }
 
 Ptr<RealData> Parser::parseReal(
@@ -179,7 +177,7 @@ Ptr<RealData> Parser::parseReal(
     numerator += stream.get() - '0';
   }
   // TODO: parse scientific notatoin e-1
-  return NEW(RealData,
+  return New<RealData>(
     sign * (integerPart + Real<>(numerator) / denominator)
   );
 }
