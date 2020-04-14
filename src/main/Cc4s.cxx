@@ -55,23 +55,37 @@ void Cc4s::run() {
       Assert(algorithm, "unknown algorithm: " + algorithmName);
 
       // get input arguments
+      Assert(
+        algorithmNode->get("in"),
+        "expecting key 'in' in algorithm " + algorithmName
+      );
       auto inputArguments(algorithmNode->get("in")->map());
       Assert(
         inputArguments,
-        "missing map 'in' of input arguments in algorithm " + algorithmName
+        "expecting map 'in' of input arguments in algorithm " + algorithmName
       );
+      // FIXME: move input arguments from storage
+
       size_t flops;
       Time time;
       {
         // TODO: flops counter
         Timer timer(&time);
-        auto outputArguments(
+        auto output(
           options->dryRun ?
             algorithm->dryRun(inputArguments) : algorithm->run(inputArguments)
         );
       }
 
-      // FIXME: store tensors in output symbols
+      // get output arguments
+      if (algorithmNode->get("out")) {
+        auto outputArguments(algorithmNode->get("out")->map());
+        Assert(
+          outputArguments,
+          "expecting map 'out' of output arguments in algorithm " + algorithmName
+        );
+        // FIXME: move output arguments to storage
+      }
 
       std::stringstream realtime;
       realtime << time;

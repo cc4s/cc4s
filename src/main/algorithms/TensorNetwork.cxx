@@ -1,6 +1,8 @@
 #include <algorithms/TensorNetwork.hpp>
 
 #include <tcc/Tcc.hpp>
+#include <math/Real.hpp>
+#include <math/Complex.hpp>
 #include <math/MathFunctions.hpp>
 #include <vector>
 
@@ -16,6 +18,16 @@ Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
 }
 
 Ptr<MapNode> TensorNetwork::dryRun(const Ptr<MapNode> &arguments) {
+  // complex argument
+//  auto z(arguments->get("z")->atom<Complex<>>()->value);
+  // optional argument
+  Real<> shift(0);
+  if (arguments->get("shift")) {
+    shift = arguments->get("shift")->atom<Real<>>()->value;
+  }
+  LOG(1,"TensorNetwork") << shift << std::endl;
+//  LOG(1,"TensorNetwork") << z << std::endl;
+
   size_t No(10);
   size_t Nv(90);
   size_t Np(No+Nv);

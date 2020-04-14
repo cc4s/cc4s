@@ -62,7 +62,7 @@ namespace cc4s {
       return elements[element];
     }
     Ptr<Node> &get(const size_t element) override {
-      return elements["" + element];
+      return elements[std::to_string(element)];
     }
 /*
     // TODO: proper key iterators
@@ -104,7 +104,7 @@ namespace cc4s {
   };
 
   // root node where all data is stored
-  static Ptr<MapNode> root;
+  static Ptr<MapNode> storage;
 
 
   /**
