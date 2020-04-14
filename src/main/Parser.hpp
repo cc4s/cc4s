@@ -34,13 +34,14 @@ namespace cc4s {
      * This method must be called with the same stream content on all processes.
      */
     Ptr<Node> parse() {
-      YAML::Node yamlNode(YAML::Load(fileName));
+      LOG(1,"Parser") << "Parsing file " << fileName << std::endl;
+      YAML::Node yamlNode(YAML::LoadFile(fileName));
       return parseNode(yamlNode);
     }
 
   protected:
     Ptr<Node> parseNode(const YAML::Node &yamlNode) {
-      LOG(1,"Parser") << "node type: " << yamlNode.Type() << std::endl;
+      LOG(1,"Parser") << "node type: " << yamlNode.Type() << " " << YAML::NodeType::Scalar << std::endl;
       LOG(1,"Parser") << "node tag: " << yamlNode.Tag() << std::endl;
       switch (yamlNode.Type()) {
       case YAML::NodeType::Map:
