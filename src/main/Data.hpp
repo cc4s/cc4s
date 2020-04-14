@@ -16,7 +16,11 @@
 
 namespace cc4s {
   class MapNode;
+  class SymbolNode;
   template <typename AtomicType> class AtomicNode;
+
+  template <typename F>
+  class TypeTraits;
 
   class Node: public Thisable<Node> {
   public:
@@ -34,6 +38,9 @@ namespace cc4s {
     // provide convenience cast routines
     Ptr<MapNode> map() {
       return std::dynamic_pointer_cast<MapNode>(this->toPtr<Node>());
+    }
+    Ptr<SymbolNode> symbol() {
+      return std::dynamic_pointer_cast<SymbolNode>(this->toPtr<Node>());
     }
     template <typename AtomicType>
     Ptr<AtomicNode<AtomicType>> atom() {
@@ -75,6 +82,16 @@ namespace cc4s {
     std::map<std::string,Ptr<Node>> elements;
   };
 
+  class SymbolNode: public Node {
+  public:
+    /**
+     * \brief Constructor for symbol nodes.
+     */
+    SymbolNode(const std::string &value_): value(value_) {
+    }
+    std::string value;
+  };
+
   template <typename AtomicType>
   class AtomicNode: public Node {
   public:
@@ -84,16 +101,6 @@ namespace cc4s {
     AtomicNode(const AtomicType &value_): value(value_) {
     }
     AtomicType value;
-  };
-
-  class SymbolNode: public Node {
-  public:
-    /**
-     * \brief Constructor for symbol nodes.
-     */
-    SymbolNode(const std::string &value_): value(value_) {
-    }
-    std::string value;
   };
 
   // root node where all data is stored
@@ -126,22 +133,22 @@ namespace cc4s {
   template <>
   class TypeTraits<Real<64>> {
   public:
-    static std::string getName() { return "real<64>"; }
+    static std::string getName() { return "real64"; }
   };
   template <>
   class TypeTraits<Complex<64>> {
   public:
-    static std::string getName() { return "complex<64>"; }
+    static std::string getName() { return "complex64"; }
   };
   template <>
   class TypeTraits<Real<128>> {
   public:
-    static std::string getName() { return "real<128>"; }
+    static std::string getName() { return "real128"; }
   };
   template <>
   class TypeTraits<Complex<128>> {
   public:
-    static std::string getName() { return "complex<128>"; }
+    static std::string getName() { return "complex128"; }
   };
 /*
   template <F,TE>

@@ -21,8 +21,11 @@ void Cc4s::run() {
 
   // parse input
   Parser parser(options->inFile);
-  Ptr<MapNode> algorithms(parser.parse()->map());
-  Assert(algorithms, "sequence of algorithms expected as input");
+  auto root(parser.parse()->map());
+  Assert(root, "expecting map as input root");
+  Assert(root->get("algorithms"), "expecting key 'algorithms'");
+  auto algorithms(root->get("algorithms")->map());
+  Assert(algorithms, "expecting 'algorithms' to be a sequence");
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms->size() << std::endl;
   EMIT() <<
@@ -41,7 +44,7 @@ void Cc4s::run() {
       auto algorithmNode(algorithms->get(i)->map());
       Assert(algorithmNode, "map expected for algorithm #" + (i+1));
       auto algorithmName(
-        algorithmNode->get("name")->atom<std::string>()->value
+        algorithmNode->get("name")->symbol()->value
       );
       LOG(0, "root") << "step=" << (i+1) << ", " << algorithmName << std::endl;
       EMIT() << YAML::Key << "step" << YAML::Value << (i+1)

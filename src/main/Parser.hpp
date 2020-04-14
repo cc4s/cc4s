@@ -49,29 +49,31 @@ namespace cc4s {
       case YAML::NodeType::Sequence:
         return parseSequence(yamlNode);
       case YAML::NodeType::Scalar:
-        if (yamlNode.Tag() == "str") {
+        if (yamlNode.Tag().find("str") != std::string::npos) {
           // by default, strings are symbol names
           return parseSymbol(yamlNode);
-        } else if (yamlNode.Tag() == "text") {
+        } else if (yamlNode.Tag().find("text") != std::string::npos) {
           // literal strings have to be given the !!text tag
           return parseAtom<std::string>(yamlNode);
-        } else if (yamlNode.Tag() == "int") {
+        } else if (yamlNode.Tag().find("int") != std::string::npos) {
           // default integers
           return parseAtom<int64_t>(yamlNode);
-        } else if (yamlNode.Tag() == "float") {
+        } else if (yamlNode.Tag().find("float") != std::string::npos) {
           // default reals
           return parseAtom<Real<>>(yamlNode);
-        } else if (yamlNode.Tag() == "real64") {
+        } else if (yamlNode.Tag().find("real64") != std::string::npos) {
           // explicity size reals
           return parseAtom<Real<64>>(yamlNode);
-        } else if (yamlNode.Tag() == "real128") {
+        } else if (yamlNode.Tag().find("real128") != std::string::npos) {
           // explicity size reals
           // TODO: 128 bit real parsing
           return nullptr;
 //          return parseAtom<Real<128>>(yamlNode);
+        } else {
+          return parseSymbol(yamlNode);
         }
       default:
-        Assert(false, "unknown node type: " + yamlNode.Tag());
+        Assert(false, "unknown node type: " + yamlNode.Type());
       }
     }
 

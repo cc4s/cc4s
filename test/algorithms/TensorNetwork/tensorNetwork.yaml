@@ -1,3 +1,9 @@
 ---
-algorithms: bla
+algorithms:
+  - name: TensorNetwork
+    in: {}
+    out: {}
+  - name: TensorNetwork
+    in: {}
+    out: {}
 
