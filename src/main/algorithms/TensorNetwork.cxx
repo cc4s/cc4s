@@ -7,6 +7,14 @@
 #include <math/MathFunctions.hpp>
 #include <vector>
 
+template <typename T>
+inline std::stringstream &operator >>(
+  std::stringstream &stream, const cc4s::Ptr<T> &P
+) {
+  // do nothing
+  return stream;
+}
+
 using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);
@@ -15,12 +23,23 @@ ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);
  * \brief Testing environement
  */
 Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
-  // complex argument
-//  auto z(arguments->get("z")->atom<Complex<>>()->value);
   // optional argument
   auto spins(arguments->getValue<int64_t>("spins", 2));
   // mandatory argument
   auto shift(arguments->getValue<Real<>>("shift"));
+  // tensor meta data
+  auto matrix(arguments->getMap("matrix"));
+  // actual tensor data type, depends on dry-run or not
+  if (Cc4s::options->dryRun) {
+    typedef Tensor<Real<>,DryTensorEngine> T;
+    auto matrixData(matrix->getValue<Ptr<T> >("data"));
+    ((*matrixData)["ij"] <<= (*matrixData)["ji"])->compile()->execute();
+  } else {
+    typedef Tensor<Real<>,DefaultTensorEngine> T;
+    auto matrixData(matrix->getValue<Ptr<T> >("data"));
+    ((*matrixData)["ij"] <<= (*matrixData)["ji"])->compile()->execute();
+  }
+
   LOG(1,"TensorNetwork") << spins << std::endl;
   LOG(1,"TensorNetwork") << shift << std::endl;
 //  LOG(1,"TensorNetwork") << z << std::endl;

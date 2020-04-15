@@ -9,6 +9,17 @@ namespace cc4s {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(TensorReader);
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
+  protected:
+    Ptr<Node> readText(
+      const std::string &fileName,
+      const std::vector<size_t> &lens,
+      const std::string &scalarType
+    );
+    template <typename F, typename TE>
+    Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> readText(
+      const std::string &fileName,
+      const std::vector<size_t> &lens
+    );
   };
 }
 
