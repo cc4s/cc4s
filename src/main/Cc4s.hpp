@@ -5,6 +5,7 @@
 #include <util/SharedPointer.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <Options.hpp>
+#include <Data.hpp>
 
 namespace cc4s {
   class Cc4s {
@@ -18,9 +19,9 @@ namespace cc4s {
     static Ptr<Options> options;
 
   protected:
-    void printBanner();
-    void printStatistics();
-    void listHosts();
+    void printBanner(const Ptr<MapNode> &job);
+    void printStatistics(const Ptr<MapNode> &job);
+    void listHosts(const Ptr<MapNode> &job);
   };
 }
 

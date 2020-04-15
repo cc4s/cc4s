@@ -2,11 +2,11 @@
 
 #include <Cc4s.hpp>
 #include <Parser.hpp>
+#include <Emitter.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <util/Timer.hpp>
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
-#include <util/Emitter.hpp>
 #include <util/Exception.hpp>
 #include <fstream>
 #include <string>
@@ -15,21 +15,17 @@
 using namespace cc4s;
 
 void Cc4s::run() {
-  EMIT() << YAML::BeginMap;
-  printBanner();
-  listHosts();
+  auto job(New<MapNode>());
+  printBanner(job);
+  listHosts(job);
 
   // parse input
   Parser parser(options->inFile);
-  auto root(parser.parse()->map());
-  Assert(root, "expecting map as input root");
-  auto algorithms(root->getMap("algorithms"));
+  auto algorithms(parser.parse()->map());
+  Assert(algorithms, "expecting map as input");
+  job->get("algorithms") = algorithms;
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms->size() << std::endl;
-  EMIT() <<
-    YAML::Key << "execution-plan-size" << YAML::Value << algorithms->size();
-
-  EMIT() << YAML::Key << "steps" << YAML::Value << YAML::BeginSeq;
 
   size_t rootFlops, totalFlops;
   Time totalTime;
@@ -38,12 +34,9 @@ void Cc4s::run() {
     Timer totalTimer(&totalTime);
 
     for (unsigned int i(0); i < algorithms->size(); ++i) {
-      EMIT() << YAML::BeginMap;
       auto algorithmNode(algorithms->getMap(i));
       auto algorithmName(algorithmNode->getSymbol("name"));
       LOG(0, "root") << "step=" << (i+1) << ", " << algorithmName << std::endl;
-      EMIT() << YAML::Key << "step" << YAML::Value << (i+1)
-        << YAML::Key << "name" << YAML::Value << algorithmName;
 
       // create algorithm
       auto algorithm(AlgorithmFactory::create(algorithmName));
@@ -75,18 +68,19 @@ void Cc4s::run() {
       LOG(1, "root") << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
         << ", operations=" << flops / 1e9 << " GFLOPS/core"
         << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
+      // TODO: enter data in node tree
+/*
       EMIT() << YAML::Key << "realtime" << YAML::Value << realtime.str()
         << YAML::Comment(" seconds")
         << YAML::Key << "floating-point-operations" << YAML::Value << flops
         << YAML::Comment("on root process")
         << YAML::Key << "flops" << YAML::Value << flops / time.getFractionalSeconds();
-      printStatistics();
       EMIT() << YAML::EndMap;
+*/
+      printStatistics(job);
       // resources which maybe held by the algorithm automatically released
     }
   }
-
-  EMIT() << YAML::EndSeq;
 
   OUT() << std::endl;
   std::stringstream totalRealtime;
@@ -97,6 +91,7 @@ void Cc4s::run() {
   LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
     << std::endl;
   // TODO: flops counter
+/*
   EMIT() << YAML::Key << "realtime" << YAML::Value << totalRealtime.str()
     << YAML::Key << "floating-point-operations" << YAML::Value << rootFlops
     << YAML::Comment("on root process")
@@ -105,10 +100,15 @@ void Cc4s::run() {
     << YAML::Comment("of all processes");
 
   EMIT() << YAML::EndMap;
+*/
+
+  // emit job node structure
+  Emitter emitter(options->outFile);
+  emitter.emit(job);
 }
 
 
-void Cc4s::printBanner() {
+void Cc4s::printBanner(const Ptr<MapNode> &job) {
   std::stringstream buildDate;
   buildDate << __DATE__ << " " << __TIME__;
 
@@ -125,27 +125,34 @@ void Cc4s::printBanner() {
   LOG(0, "root") << "total processes=" << world->getProcesses() << std::endl;
   OUT() << std::endl;
 
+  job->setValue<std::string>("version", CC4S_VERSION);
+  job->setValue("buildDate", buildDate.str());
+  job->setValue<std::string>("compiler", COMPILER_VERSION);
+  job->setValue("dryRun", options->dryRun);
+/*
   EMIT()
     << YAML::Key << "version" << YAML::Value << CC4S_VERSION
     << YAML::Key << "build-date" << YAML::Value << buildDate.str()
     << YAML::Key << "compiler" << YAML::Value << COMPILER_VERSION
     << YAML::Key << "total-processes" << world->getProcesses();
-
+*/
   if (options->dryRun) {
     LOG(0, "root") <<
       "DRY RUN - nothing will be calculated" << std::endl;
   }
 }
 
-void Cc4s::printStatistics() {
+void Cc4s::printStatistics(const Ptr<MapNode> &job) {
   if (options->dryRun) {
     LOG(0, "root")
       << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
       << " GB" << std::endl;
+/*
     EMIT()
       << YAML::Key << "estimated-total-memory"
       << YAML::Value << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
       << YAML::Comment("GB");
+*/
   } else {
     std::string fieldName;
     int64_t peakVirtualSize, peakPhysicalSize;
@@ -166,23 +173,26 @@ void Cc4s::printStatistics() {
     Real<> unitsPerGB(1024.0*1024.0);
     LOG(0, "root") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
       << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
+/*
     EMIT()
       << YAML::Key << "peak-physical-memory" << YAML::Value << peakPhysicalSize / unitsPerGB
       << YAML::Comment("GB/core")
       << YAML::Key << "peak-virtual-memory" << YAML::Value <<  peakVirtualSize / unitsPerGB
       << YAML::Comment("GB/core");
-
+*/
     int64_t globalPeakVirtualSize, globalPeakPhysicalSize;
     world->reduce(peakPhysicalSize, globalPeakPhysicalSize);
     world->reduce(peakVirtualSize, globalPeakVirtualSize);
     LOG(0, "root") << "overall peak physical memory="
       << globalPeakPhysicalSize / unitsPerGB << " GB"
       << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
+/*
     EMIT()
       << YAML::Key << "total-peak-physical-memory" << YAML::Value << globalPeakPhysicalSize / unitsPerGB
       << YAML::Comment("GB")
       << YAML::Key << "peak-virtual-memory" << YAML::Value <<  globalPeakVirtualSize / unitsPerGB
       << YAML::Comment("GB");
+*/
   }
 }
 
@@ -205,7 +215,7 @@ bool Cc4s::isDebugged() {
   return false;
 }
 
-void Cc4s::listHosts() {
+void Cc4s::listHosts(const Ptr<MapNode> &job) {
   // TODO: list planned execution environment from options
   if (!options->dryRun) {
     char ownName[MPI_MAX_PROCESSOR_NAME];
@@ -213,8 +223,8 @@ void Cc4s::listHosts() {
     MPI_Get_processor_name(ownName, &nameLength);
     ownName[nameLength] = 0;
 
+    std::map<std::string,std::vector<int>> ranksOfHosts;
     if (world->getRank() == 0) {
-      std::map<std::string,std::vector<int>> ranksOfHosts;
       // enter hostname/rank
       ranksOfHosts[ownName].push_back(0);
       // receive all names but own name from remote ranks
@@ -227,20 +237,18 @@ void Cc4s::listHosts() {
         // and enter remote name/rank into map
         ranksOfHosts[remoteName].push_back(remoteRank);
       }
-      EMIT() << YAML::Key << "hosts" << YAML::Value;
-      EMIT() << YAML::BeginSeq;
+      auto hosts(New<MapNode>());
       for (auto &ranksOfHost: ranksOfHosts) {
-        EMIT() << YAML::BeginMap
-          << YAML::Key << "host" << YAML::Value << ranksOfHost.first
-          << YAML::Key << "ranks" << YAML::Value;
-        EMIT() << YAML::Flow << YAML::BeginSeq;
+        auto host(New<MapNode>());
+        host->setValue("host", ranksOfHost.first);
+        auto ranks(New<MapNode>());
         for (auto &rank: ranksOfHost.second) {
-          EMIT() << rank;
+          ranks->push_back(New<AtomicNode<int64_t>>(rank));
         }
-        EMIT() << YAML::EndSeq;
-        EMIT() << YAML::EndMap;
+        host->get("ranks") = ranks;
+        hosts->push_back(host);
       }
-      EMIT() << YAML::EndSeq;
+      job->get("hosts") = hosts;
     } else {
       // send own name 
       MPI_Send(
@@ -264,8 +272,6 @@ int main(int argumentCount, char **arguments) {
   Log::setRank(Cc4s::world->getRank());
   Log::setFileName(Cc4s::options->logFile);
   Log::setLogLevel(Cc4s::options->logLevel);
-  Emitter::setFileName(Cc4s::options->outFile);
-  Emitter::setRank(Cc4s::world->getRank());
 
   Cc4s cc4s;
   if (Cc4s::isDebugged()) {
@@ -280,7 +286,6 @@ int main(int argumentCount, char **arguments) {
     }
   }
 
-  EMIT_FLUSH();
   MPI_Finalize();
   return 0;
 }

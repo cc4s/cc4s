@@ -5,7 +5,6 @@
 #include <util/Log.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>
-// TODO: find out why Exception must be included after string,map and ctf
 #include <util/Exception.hpp>
 #include <util/SharedPointer.hpp>
 
@@ -28,12 +27,6 @@ namespace cc4s {
     }
     virtual bool isAtomic() {
       return true;
-    }
-    virtual Ptr<Node> &get(const std::string &element) {
-      Assert(false, "atomic node does not have element " + element);
-    }
-    virtual Ptr<Node> &get(const size_t element) {
-      Assert(false, "atomic node does not have element " + element);
     }
     virtual std::string toString() = 0;
     // provide convenience cast routines
@@ -75,7 +68,8 @@ namespace cc4s {
     }
     std::string toString() override {
       std::stringstream stream;
-      stream << value;
+      // FIXME: fixed precision
+      stream << std::setprecision(17) << value;
       return stream.str();
     }
     AtomicType value;
@@ -88,66 +82,67 @@ namespace cc4s {
     bool isAtomic() override {
       return false;
     }
-    Ptr<Node> &get(const std::string &element) override {
-      return elements[element];
-    }
-    Ptr<Node> &get(const size_t element) override {
-      return elements[std::to_string(element)];
-    }
     std::string toString() override {
       // FIXME: implement
       return "{...}";
     }
-/*
+    Ptr<Node> &get(const std::string &key) {
+      return elements[key];
+    }
+    Ptr<Node> &get(const size_t key) {
+      return elements[std::to_string(key)];
+    }
     // TODO: proper key iterators
     std::vector<std::string> getKeys() const {
-      std::vector<const std::string> keys();
+      std::vector<std::string> keys;
       keys.reserve(elements.size());
-      for (auto iterator: elements) {
-        keys.push_back(iterator->first);
+      for (auto pairs: elements) {
+        keys.push_back(pairs.first);
       }
       return keys;
     }
-*/
     size_t size() const {
       return elements.size();
     }
 
     // convenience member access
-    std::string getSymbol(const std::string &element) {
-      Assert(get(element), "expecting key '" + element + "'");
-      auto symbolNode(get(element)->symbol());
-      Assert(symbolNode, "expecting '" + element + "' to be a symbol");
+    std::string getSymbol(const std::string &key) {
+      Assert(get(key), "expecting key '" + key + "'");
+      auto symbolNode(get(key)->symbol());
+      Assert(symbolNode, "expecting '" + key + "' to be a symbol");
       return symbolNode->value;
     }
+    void setSymbol(const std::string &key, const std::string &value) {
+      get(key) = New<SymbolNode>(value);
+    }
     template <typename Target>
-    Target getValue(const std::string &element) {
-      Assert(get(element), "expecting key '" + element + "'");
+    Target getValue(const std::string &key) {
+      Assert(get(key), "expecting key '" + key + "'");
       // first, try to convert to expected type node
-      auto targetAtomNode(get(element)->atom<Target>());
+      auto targetAtomNode(get(key)->atom<Target>());
       if (targetAtomNode) {
         return targetAtomNode->value;
       } else {
         // otherwise, try to convert to string and then to requested target
-        std::stringstream stream(get(element)->toString());
+        std::stringstream stream(get(key)->toString());
         Target targetValue;
         stream >> targetValue;
         // FIXME: properly throw exception when nothing meaningful is done
 /*
         Assert(
-          stream.str().size() < get(element)->toString().size(),
-           "failed to convert '" + get(element)->toString() + "' to "
+          stream.str().size() < get(key)->toString().size(),
+           "failed to convert '" + get(key)->toString() + "' to "
            + TypeTraits<Target>::getName() + ", left: " + stream.str()
         );
 */
         if (stream.str().size() > 0) {
           LOG(0, "getValue")
             << "WARNING: not all data used converting '"
-            << get(element)->toString() << "' to "
+            << get(key)->toString() << "' to "
             << TypeTraits<Target>::getName() << std::endl;
         }
         // if successful replace previous node with converted one
-        get(element) = New<AtomicNode<Target>>(targetValue);
+        get(key) = New<AtomicNode<Target>>(targetValue);
         return targetValue;
       }
     }
@@ -162,6 +157,11 @@ namespace cc4s {
         return defaultValue;
       }
     }
+    template <typename Target>
+    void setValue(const std::string &key, const Target &value) {
+      get(key) = New<AtomicNode<Target>>(value);
+    }
+
     Ptr<MapNode> getMap(const std::string &element) {
       Assert(get(element), "expecting key '" + element + "'");
       auto mapNode(get(element)->map());
@@ -170,6 +170,9 @@ namespace cc4s {
     }
     Ptr<MapNode> getMap(const size_t element) {
       return getMap(std::to_string(element));
+    }
+    void push_back(const Ptr<Node> &node) {
+      get(size()) = node;
     }
   protected:
     std::map<std::string,Ptr<Node>> elements;

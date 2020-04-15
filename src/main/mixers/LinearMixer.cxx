@@ -1,6 +1,5 @@
 #include <mixers/LinearMixer.hpp>
 #include <util/SharedPointer.hpp>
-#include <util/Emitter.hpp>
 #include <util/Log.hpp>
 #include <Data.hpp>
 
@@ -16,11 +15,6 @@ LinearMixer<F,TE>::LinearMixer(
 {
   ratio = (algorithm->getRealArgument("mixingRatio", 1.0));
   LOG(1,"LinearMixer") << "ratio=" << std::real(ratio) << std::endl;
-  EMIT() << YAML::Key << "mixer" << YAML::Value;
-  EMIT() << YAML::BeginMap;
-  EMIT() << YAML::Key << "type" << YAML::Value << "linear";
-  EMIT() << YAML::Key << "ratio" << YAML::Value << std::real(ratio);
-  EMIT() << YAML::EndMap;
 }
 
 template <typename F, typename TE>

@@ -2,7 +2,6 @@
 #define PARSER_DEFINED
 
 #include <Data.hpp>
-#include <util/LineNumberStream.hpp>
 #include <util/SharedPointer.hpp>
 #include <yaml-cpp/yaml.h>
 #include <string>
