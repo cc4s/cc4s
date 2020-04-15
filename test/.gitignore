@@ -1,6 +1,6 @@
 *.out
 *.err
-cc4s.yaml
+output.yaml
 cc4s.log
 *.dat
 *.bin

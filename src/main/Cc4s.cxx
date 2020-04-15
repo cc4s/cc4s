@@ -24,11 +24,11 @@ void Cc4s::run() {
 
   // parse input
   Parser parser(options->inFile);
-  auto algorithms(parser.parse()->map());
-  Assert(algorithms, "expecting map as input");
-  job->get("algorithms") = algorithms;
+  auto steps(parser.parse()->map());
+  Assert(steps, "expecting map as input");
+  job->get("steps") = steps;
   LOG(0, "root") <<
-    "execution plan read, steps=" << algorithms->size() << std::endl;
+    "execution plan read, steps=" << steps->size() << std::endl;
 
   size_t rootFlops, totalFlops;
   Time totalTime;
@@ -36,9 +36,9 @@ void Cc4s::run() {
     // TODO: flops counter
     Timer totalTimer(&totalTime);
 
-    for (unsigned int i(0); i < algorithms->size(); ++i) {
-      auto algorithmNode(algorithms->getMap(i));
-      auto algorithmName(algorithmNode->getSymbol("name"));
+    for (unsigned int i(0); i < steps->size(); ++i) {
+      auto step(steps->getMap(i));
+      auto algorithmName(step->getSymbol("name"));
       LOG(0, "root") << "step=" << (i+1) << ", " << algorithmName << std::endl;
 
       // create algorithm
@@ -46,7 +46,7 @@ void Cc4s::run() {
       Assert(algorithm, "unknown algorithm: " + algorithmName);
 
       // get input arguments
-      auto inputArguments(algorithmNode->getMap("in"));
+      auto inputArguments(step->getMap("in"));
       fetchSymbols(inputArguments);
 
       size_t flops;
@@ -59,10 +59,12 @@ void Cc4s::run() {
       }
 
       // get output variables
-      if (algorithmNode->get("out")) {
-        auto outputVariables(algorithmNode->getMap("out"));
+      if (step->get("out")) {
+        auto outputVariables(step->getMap("out"));
         storeSymbols(output, outputVariables);
       }
+      // store output in job data
+      step->get("out") = output;
 
       std::stringstream realtime;
       realtime << time;
@@ -117,13 +119,11 @@ void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
     }
     auto symbolNode(arguments->get(key)->symbol());
     if (symbolNode) {
-      LOG(1, "Fetch") << "searching for symbol " << key << std::endl;
       // search symbol in storage
       auto storedNode(storage->get(symbolNode->value));
       // if found, replace symbol with stored node
       if (storedNode) {
         arguments->get(key) = storedNode;
-        LOG(1, "Fetch") << "replacement found" << std::endl;
       }
     }
   }
