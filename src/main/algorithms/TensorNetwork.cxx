@@ -39,7 +39,8 @@ Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
 template <typename TE>
 Real<> TensorNetwork::getTrace(const Ptr<MapNode> &matrix) {
   typedef Tensor<Real<>,TE> T;
-  auto matrixData(matrix->getValue<Ptr<T> >("data"));
+  auto matrixData(matrix->getValue<Ptr<T>>("data"));
+  Assert(matrixData, "expecting matrix to be real");
   // FIXME: should compile but complains
 /*
   auto scalar( Tcc<TE>::template tensor<Real<>>(std::vector<size_t>({}), "s") );

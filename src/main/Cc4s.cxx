@@ -15,6 +15,7 @@
 using namespace cc4s;
 
 void Cc4s::run() {
+  // TODO: truncate output.yaml or write it also in case of failure
   auto job(New<MapNode>());
   printBanner(job);
   listHosts(job);
