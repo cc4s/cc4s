@@ -18,7 +18,9 @@ ALGORITHM_REGISTRAR_DEFINITION(TensorReader);
  */
 Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   auto fileName(arguments->getValue<std::string>("fileName"));
+  // get tensor meta data from given file
   auto tensor(Parser(fileName).parse()->map());
+  // get dimensions from meta data
   auto dimensions(tensor->getMap("dimensions"));
   std::vector<size_t> lens;
   for (auto key: dimensions->getKeys()) {
@@ -93,7 +95,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
 
   // read the values only on root, all others still pariticipate calling MPI
   size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
-  std::vector<int64_t> indices(localBufferSize);
+  std::vector<size_t> indices(localBufferSize);
   std::vector<F> values(localBufferSize);
 
   size_t index(0);
@@ -109,8 +111,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
     // wait until all processes finished reading this buffer into the tensor
     Cc4s::world->barrier();
     LOG(2, "TensorReader") << "writing " << elementsCount << " values to tensor..." << std::endl;
-    // FIXME: invoke tcc io
-    //A->write(localElementsCount, indices.data(), values.data());
+    A->write(localElementsCount, indices.data(), values.data());
     index += elementsCount;
   }
 

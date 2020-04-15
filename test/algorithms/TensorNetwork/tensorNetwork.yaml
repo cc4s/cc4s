@@ -6,9 +6,7 @@
 - name: TensorNetwork
   in:
     matrix: Matrix
-    z: (0,1)
-    shift: 5
     spins: 1.4
   out:
-    sum: shift
+    trace: Trace
 

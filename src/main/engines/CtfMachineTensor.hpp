@@ -188,6 +188,28 @@ namespace cc4s {
 
     // TODO: interfaces to be defined: permute, transform
 
+    // read tensor elements to buffer
+    void read(
+      const size_t elementsCount, const size_t *indexData, F *valueData
+    ) {
+      tensor.read(
+        elementsCount,
+        reinterpret_cast<const int64_t *>(indexData),
+        valueData
+      );
+    }
+
+    // write tensor elements to buffer
+    void write(
+      const size_t elementsCount, const size_t *indexData, const F *valueData
+    ) {
+      tensor.write(
+        elementsCount,
+        reinterpret_cast<const int64_t *>(indexData),
+        valueData
+      );
+    }
+
     std::vector<size_t> getLens() const {
       return std::vector<size_t>(tensor.lens, tensor.lens+tensor.order);
     }

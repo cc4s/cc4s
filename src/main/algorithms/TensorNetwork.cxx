@@ -17,24 +17,39 @@ ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);
 Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
   // optional argument
   auto spins(arguments->getValue<int64_t>("spins", 2));
-  // mandatory argument
-  auto shift(arguments->getValue<Real<>>("shift"));
   // tensor meta data
   auto matrix(arguments->getMap("matrix"));
-  // actual tensor data type, depends on dry-run or not
+  Real<> trace;
+  // multiplex calls to template methods
   if (Cc4s::options->dryRun) {
-    typedef Tensor<Real<>,DryTensorEngine> T;
-    auto matrixData(matrix->getValue<Ptr<T> >("data"));
-    ((*matrixData)["ij"] <<= (*matrixData)["ji"])->compile()->execute();
+    trace = getTrace<DryTensorEngine>(matrix);
   } else {
-    typedef Tensor<Real<>,DefaultTensorEngine> T;
-    auto matrixData(matrix->getValue<Ptr<T> >("data"));
-    ((*matrixData)["ij"] <<= (*matrixData)["ji"])->compile()->execute();
+    trace = getTrace<DefaultTensorEngine>(matrix);
   }
 
-  LOG(1,"TensorNetwork") << spins << std::endl;
-  LOG(1,"TensorNetwork") << shift << std::endl;
-//  LOG(1,"TensorNetwork") << z << std::endl;
+  LOG(1,"TensorNetwork") << "spins=" << spins << std::endl;
+  LOG(1,"TensorNetwork") << "trace=" << trace << std::endl;
+
+  // build result
+  auto result(New<MapNode>());
+  result->setValue<Real<>>("trace", trace);
+  return result;
+}
+
+template <typename TE>
+Real<> TensorNetwork::getTrace(const Ptr<MapNode> &matrix) {
+  typedef Tensor<Real<>,TE> T;
+  auto matrixData(matrix->getValue<Ptr<T> >("data"));
+  // FIXME: should compile but complains
+/*
+  auto scalar( Tcc<TE>::template tensor<Real<>>(std::vector<size_t>({}), "s") );
+  // get trace
+  ((*scalar)[""] <<= (*matrixData)["ii"])->compile()->execute();
+*/
+  return matrixData->read();
+}
+
+/*
   if (Cc4s::options->dryRun) {
     size_t No(10);
     size_t Nv(90);
@@ -88,7 +103,7 @@ Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
       std::string(*ladderOperation) << std::endl;
     ladderOperation->execute();
   }
-
+*/
   // this contraction already requires heuristics
 /*
   shared_ptr<Tensor<>> Pia(
@@ -123,9 +138,4 @@ Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
   );
   imaginaryTimeMp2Operation->execute();
 */
-  auto result(New<MapNode>());
-  result->setValue<Real<>>("sum", -3.0);
-  return result;
-}
-
 

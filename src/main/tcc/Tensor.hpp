@@ -126,6 +126,28 @@ namespace cc4s {
       return machineTensor;
     }
 
+    // read tensor elements to buffer
+    void read(
+      const size_t elementsCount, const size_t *indexData, F *valueData
+    ) {
+      getMachineTensor()->read(elementsCount, indexData, valueData);
+    }
+    F read(size_t index = 0) {
+      F value;
+      read(1, &index, &value);
+      return value;
+    }
+
+    // write tensor elements from buffer
+    void write(
+      const size_t elementsCount, const size_t *indexData, const F *valueData
+    ) {
+      getMachineTensor()->write(elementsCount, indexData, valueData);
+    }
+    void write(F value, size_t index = 0) {
+      write(1, &index, &value);
+    }
+
     const std::vector<size_t> &getLens() const {
       return lens;
     }
@@ -141,7 +163,7 @@ namespace cc4s {
       return elementsCount;
     }
 
-    std::vector<size_t> lens;    
+    std::vector<size_t> lens;
     bool assumedShape;
 
     virtual PTR(Operation<TE>) compile(Scope &) {

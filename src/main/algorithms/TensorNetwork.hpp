@@ -9,6 +9,9 @@ namespace cc4s {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(TensorNetwork);
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
+  protected:
+    template <typename TE>
+    Real<> getTrace(const Ptr<MapNode> &tensor);
   };
 }
 
