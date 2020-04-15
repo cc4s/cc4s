@@ -58,7 +58,7 @@ void Cc4s::run() {
         output = algorithm->run(inputArguments);
       }
 
-      // get output variables
+      // get output variables, if given
       if (step->get("out")) {
         auto outputVariables(step->getMap("out"));
         storeSymbols(output, outputVariables);
@@ -130,12 +130,15 @@ void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
 }
 
 void Cc4s::storeSymbols(const Ptr<MapNode> &result, const Ptr<MapNode> &variables) {
-  for (auto key: result->getKeys()) {
-    // search key in variables
-    if (variables->get(key)) {
+  for (auto key: variables->getKeys()) {
+    // search key in result
+    if (result->get(key)) {
       // store key's value node in storage under given symbol name
       auto symbolName(variables->getSymbol(key));
       storage->get(symbolName) = result->get(key);
+    } else {
+      LOG(0,"Storage") << "Symbol '" << key
+        << "' should be stored but is not present in output" << std::endl;
     }
   }
 }
