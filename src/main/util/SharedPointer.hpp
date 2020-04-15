@@ -41,5 +41,15 @@ namespace cc4s {
   };
 }
 
+// support dummy input to Ptr<> from streams
+template <typename T>
+inline std::istream &operator >>(
+  std::istream &stream, const cc4s::Ptr<T> &P
+) {
+  // do nothing
+  return stream;
+}
+
+
 #endif
 

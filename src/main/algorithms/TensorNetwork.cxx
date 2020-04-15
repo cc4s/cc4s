@@ -7,14 +7,6 @@
 #include <math/MathFunctions.hpp>
 #include <vector>
 
-template <typename T>
-inline std::stringstream &operator >>(
-  std::stringstream &stream, const cc4s::Ptr<T> &P
-) {
-  // do nothing
-  return stream;
-}
-
 using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);

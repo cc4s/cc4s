@@ -46,7 +46,7 @@ Ptr<Node> TensorReader::readText(
   const std::vector<size_t> &lens,
   const std::string &scalarType
 ) {
-  // multiplex calls to template methods
+  // multiplex calls to template methods depending on tensor engine and type
   if (Cc4s::options->dryRun) {
     if (scalarType == "real") {
       return readText<Real<>,DryTensorEngine>(fileName, lens);
