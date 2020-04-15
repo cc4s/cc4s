@@ -134,13 +134,13 @@ namespace cc4s {
            "failed to convert '" + get(key)->toString() + "' to "
            + TypeTraits<Target>::getName() + ", left: " + stream.str()
         );
-*/
         if (stream.str().size() > 0) {
           LOG(0, "getValue")
             << "WARNING: not all data used converting '"
             << get(key)->toString() << "' to "
             << TypeTraits<Target>::getName() << std::endl;
         }
+*/
         // if successful replace previous node with converted one
         get(key) = New<AtomicNode<Target>>(targetValue);
         return targetValue;

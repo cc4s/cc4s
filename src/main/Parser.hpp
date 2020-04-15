@@ -65,9 +65,8 @@ namespace cc4s {
     Ptr<MapNode> parseSequence(const YAML::Node &yamlNode) {
       auto node(New<MapNode>());
       size_t index(0);
-      for (auto iterator: yamlNode) {
-        LOG(1,"Parser") << "parsing sequence #" << index << std::endl;
-        node->get(index++) = parseNode(iterator);
+      for (auto subNode: yamlNode) {
+        node->get(index++) = parseNode(subNode);
       }
       return node;
     }

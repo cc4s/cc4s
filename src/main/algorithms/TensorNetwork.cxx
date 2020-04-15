@@ -1,5 +1,6 @@
 #include <algorithms/TensorNetwork.hpp>
 
+#include <Cc4s.hpp>
 #include <tcc/Tcc.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>
@@ -14,10 +15,6 @@ ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);
  * \brief Testing environement
  */
 Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
-  return arguments;
-}
-
-Ptr<MapNode> TensorNetwork::dryRun(const Ptr<MapNode> &arguments) {
   // complex argument
 //  auto z(arguments->get("z")->atom<Complex<>>()->value);
   // optional argument
@@ -27,60 +24,61 @@ Ptr<MapNode> TensorNetwork::dryRun(const Ptr<MapNode> &arguments) {
   LOG(1,"TensorNetwork") << spins << std::endl;
   LOG(1,"TensorNetwork") << shift << std::endl;
 //  LOG(1,"TensorNetwork") << z << std::endl;
+  if (Cc4s::options->dryRun) {
+    size_t No(10);
+    size_t Nv(90);
+    size_t Np(No+Nv);
+    size_t NF(200);
+    size_t NR(400);
+    typedef Tcc<DryTensorEngine> TCC;
+    auto T(
+      TCC::tensor(std::vector<size_t>({Nv,Nv,No,No}), "T")
+    );
+    auto D(
+      TCC::tensor(std::vector<size_t>({Nv,Nv,No,No}), "D")
+    );
+    auto Pi(
+      TCC::tensor(std::vector<size_t>({NR,Nv}), "Pi")
+    );
+    auto PiT(
+      TCC::tensor(std::vector<size_t>({NR,Nv}), "PiT")
+    );
+    auto Lambda(
+      TCC::tensor(std::vector<size_t>({NR,NF}), "Lambda")
+    );
+    auto LambdaT(
+      TCC::tensor(std::vector<size_t>({NR,NF}), "LambdaT")
+    );
+    auto Gamma(
+      TCC::tensor(std::vector<size_t>({NF,Nv,Nv}), "Gamma")
+    );
+    auto Pir(
+      TCC::tensor(std::vector<size_t>({NR,Np}), "Pir")
+    );
 
-  size_t No(10);
-  size_t Nv(90);
-  size_t Np(No+Nv);
-  size_t NF(200);
-  size_t NR(400);
-  typedef Tcc<DryTensorEngine> TCC;
-  auto T(
-    TCC::tensor(std::vector<size_t>({Nv,Nv,No,No}), "T")
-  );
-  auto D(
-    TCC::tensor(std::vector<size_t>({Nv,Nv,No,No}), "D")
-  );
-  auto Pi(
-    TCC::tensor(std::vector<size_t>({NR,Nv}), "Pi")
-  );
-  auto PiT(
-    TCC::tensor(std::vector<size_t>({NR,Nv}), "PiT")
-  );
-  auto Lambda(
-    TCC::tensor(std::vector<size_t>({NR,NF}), "Lambda")
-  );
-  auto LambdaT(
-    TCC::tensor(std::vector<size_t>({NR,NF}), "LambdaT")
-  );
-  auto Gamma(
-    TCC::tensor(std::vector<size_t>({NF,Nv,Nv}), "Gamma")
-  );
-  auto Pir(
-    TCC::tensor(std::vector<size_t>({NR,Np}), "Pir")
-  );
+    // compile a sequence (,) of operations. Note the required parenthesis
+    auto ladderExpression = (
+      (*LambdaT)["RF"] <<= (*Lambda)["RF"],
+      (*PiT)["Rb"] <<= map(conj<Real<>>, (*Pi)["Rb"]),
+      (*D)["abij"] +=
+        (*T)["cdij"] *
+        (*Pi)["Rd"] *
+        map(conj<Real<>>, (*Pi)["Rb"]) *
+        (*Pi)["Sc"] * (*PiT)["Sa"] *
+        (*LambdaT)["SF"] * (*Lambda)["RF"],
+      (*Pi)["Ra"] <<= (*Pi)["Ra"],
+      (*Pi)["Ra"] <<= (*(*Pir)({0,No},{NR,Np}))["Ra"],
+      (*(*Pir)({0,No},{NR,Np}))["Ra"] -= (*Pi)["Ra"]
+    );
+    LOG(1,"TensorNetwork") << "Expression = " <<
+      std::string(*ladderExpression) << std::endl;
+    auto ladderOperation(ladderExpression->compile());
+    LOG(1,"TensorNetwork") << "Operation = " <<
+      std::string(*ladderOperation) << std::endl;
+    ladderOperation->execute();
+  }
 
-  // compile a sequence (,) of operations. Note the required parenthesis
-  auto ladderExpression = (
-    (*LambdaT)["RF"] <<= (*Lambda)["RF"],
-    (*PiT)["Rb"] <<= map(conj<Real<>>, (*Pi)["Rb"]),
-    (*D)["abij"] +=
-      (*T)["cdij"] *
-      (*Pi)["Rd"] *
-      map(conj<Real<>>, (*Pi)["Rb"]) *
-      (*Pi)["Sc"] * (*PiT)["Sa"] *
-      (*LambdaT)["SF"] * (*Lambda)["RF"],
-    (*Pi)["Ra"] <<= (*Pi)["Ra"],
-    (*Pi)["Ra"] <<= (*(*Pir)({0,No},{NR,Np}))["Ra"],
-    (*(*Pir)({0,No},{NR,Np}))["Ra"] -= (*Pi)["Ra"]
-  );
-  LOG(1,"TensorNetwork") << "Expression = " <<
-    std::string(*ladderExpression) << std::endl;
-  auto ladderOperation(ladderExpression->compile());
-  LOG(1,"TensorNetwork") << "Operation = " <<
-    std::string(*ladderOperation) << std::endl;
-  ladderOperation->execute();
-
-// this contraction already requires heuristics
+  // this contraction already requires heuristics
 /*
   shared_ptr<Tensor<>> Pia(
     TCC::tensor(std::vector<size_t>({NR,Nv}), "Pia")

@@ -18,7 +18,6 @@ namespace cc4s {
     virtual ~Algorithm();
     virtual std::string getName() = 0;
     virtual Ptr<MapNode> run(const Ptr<MapNode> &arguments) = 0;
-    virtual Ptr<MapNode> dryRun(const Ptr<MapNode> &arguments);
   };
 
   class AlgorithmFactory {

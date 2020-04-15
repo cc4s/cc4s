@@ -9,7 +9,6 @@ namespace cc4s {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(TensorNetwork);
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
-    Ptr<MapNode> dryRun(const Ptr<MapNode> &arguments) override;
   };
 }
 

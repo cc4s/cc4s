@@ -47,7 +47,7 @@ void Cc4s::run() {
 
       // get input arguments
       auto inputArguments(algorithmNode->getMap("in"));
-      fetch(inputArguments);
+      fetchSymbols(inputArguments);
 
       size_t flops;
       Ptr<MapNode> output;
@@ -55,14 +55,13 @@ void Cc4s::run() {
       {
         // TODO: flops counter
         Timer timer(&time);
-        output = options->dryRun ?
-          algorithm->dryRun(inputArguments) : algorithm->run(inputArguments);
+        output = algorithm->run(inputArguments);
       }
 
-      // get output arguments
+      // get output variables
       if (algorithmNode->get("out")) {
-        auto outputArguments(algorithmNode->getMap("out"));
-        store(output, outputArguments);
+        auto outputVariables(algorithmNode->getMap("out"));
+        storeSymbols(output, outputVariables);
       }
 
       std::stringstream realtime;
@@ -104,30 +103,33 @@ void Cc4s::run() {
   EMIT() << YAML::EndMap;
 */
 
-  // emit job node structure
+  // emit job output
   Emitter emitter(options->outFile);
   emitter.emit(job);
 }
 
-void Cc4s::fetch(const Ptr<MapNode> &arguments) {
+void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
   for (auto key: arguments->getKeys()) {
     auto mapNode(arguments->get(key)->map());
     if (mapNode) {
-      fetch(mapNode);
+      fetchSymbols(mapNode);
       break;
     }
     auto symbolNode(arguments->get(key)->symbol());
     if (symbolNode) {
+      LOG(1, "Fetch") << "searching for symbol " << key << std::endl;
       // search symbol in storage
       auto storedNode(storage->get(symbolNode->value));
       // if found, replace symbol with stored node
-      if (storedNode) arguments->get(key) = storedNode;
+      if (storedNode) {
+        arguments->get(key) = storedNode;
+        LOG(1, "Fetch") << "replacement found" << std::endl;
+      }
     }
   }
 }
 
-// TODO: store keys in deeper expression levels or only on level 1, like now
-void Cc4s::store(const Ptr<MapNode> &result, const Ptr<MapNode> &variables) {
+void Cc4s::storeSymbols(const Ptr<MapNode> &result, const Ptr<MapNode> &variables) {
   for (auto key: result->getKeys()) {
     // search key in variables
     if (variables->get(key)) {
