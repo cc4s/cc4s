@@ -19,9 +19,14 @@ namespace cc4s {
     static Ptr<Options> options;
 
   protected:
+    void fetch(const Ptr<MapNode> &arguments);
+    void store(const Ptr<MapNode> &result, const Ptr<MapNode> &variables);
+
     void printBanner(const Ptr<MapNode> &job);
     void printStatistics(const Ptr<MapNode> &job);
     void listHosts(const Ptr<MapNode> &job);
+
+    Ptr<MapNode> storage;
   };
 }
 

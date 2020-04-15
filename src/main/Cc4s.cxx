@@ -19,6 +19,9 @@ void Cc4s::run() {
   printBanner(job);
   listHosts(job);
 
+  // start with empty storage
+  storage = New<MapNode>();
+
   // parse input
   Parser parser(options->inFile);
   auto algorithms(parser.parse()->map());
@@ -44,23 +47,22 @@ void Cc4s::run() {
 
       // get input arguments
       auto inputArguments(algorithmNode->getMap("in"));
-      // FIXME: move input arguments from storage
+      fetch(inputArguments);
 
       size_t flops;
+      Ptr<MapNode> output;
       Time time;
       {
         // TODO: flops counter
         Timer timer(&time);
-        auto output(
-          options->dryRun ?
-            algorithm->dryRun(inputArguments) : algorithm->run(inputArguments)
-        );
+        output = options->dryRun ?
+          algorithm->dryRun(inputArguments) : algorithm->run(inputArguments);
       }
 
       // get output arguments
       if (algorithmNode->get("out")) {
         auto outputArguments(algorithmNode->getMap("out"));
-        // FIXME: move output arguments to storage
+        store(output, outputArguments);
       }
 
       std::stringstream realtime;
@@ -105,6 +107,35 @@ void Cc4s::run() {
   // emit job node structure
   Emitter emitter(options->outFile);
   emitter.emit(job);
+}
+
+void Cc4s::fetch(const Ptr<MapNode> &arguments) {
+  for (auto key: arguments->getKeys()) {
+    auto mapNode(arguments->get(key)->map());
+    if (mapNode) {
+      fetch(mapNode);
+      break;
+    }
+    auto symbolNode(arguments->get(key)->symbol());
+    if (symbolNode) {
+      // search symbol in storage
+      auto storedNode(storage->get(symbolNode->value));
+      // if found, replace symbol with stored node
+      if (storedNode) arguments->get(key) = storedNode;
+    }
+  }
+}
+
+// TODO: store keys in deeper expression levels or only on level 1, like now
+void Cc4s::store(const Ptr<MapNode> &result, const Ptr<MapNode> &variables) {
+  for (auto key: result->getKeys()) {
+    // search key in variables
+    if (variables->get(key)) {
+      // store key's value node in storage under given symbol name
+      auto symbolName(variables->getSymbol(key));
+      storage->get(symbolName) = result->get(key);
+    }
+  }
 }
 
 

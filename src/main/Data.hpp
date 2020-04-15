@@ -178,10 +178,6 @@ namespace cc4s {
     std::map<std::string,Ptr<Node>> elements;
   };
 
-
-  // root node where all data is stored
-  static Ptr<MapNode> storage;
-
   /**
    * Traits class for tensor element types used in cc4s.
    * It provides type specific information such as type name to
