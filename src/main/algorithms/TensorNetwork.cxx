@@ -21,10 +21,10 @@ Ptr<MapNode> TensorNetwork::dryRun(const Ptr<MapNode> &arguments) {
   // complex argument
 //  auto z(arguments->get("z")->atom<Complex<>>()->value);
   // optional argument
-  Real<> shift(0);
-  if (arguments->get("shift")) {
-    shift = arguments->get("shift")->atom<Real<>>()->value;
-  }
+  auto spins(arguments->getValue<int64_t>("spins", 2));
+  // mandatory argument
+  auto shift(arguments->getValue<Real<>>("shift"));
+  LOG(1,"TensorNetwork") << spins << std::endl;
   LOG(1,"TensorNetwork") << shift << std::endl;
 //  LOG(1,"TensorNetwork") << z << std::endl;
 

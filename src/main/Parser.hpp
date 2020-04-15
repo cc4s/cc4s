@@ -19,6 +19,8 @@ namespace cc4s {
      * \brief Creates a new interpreter for a cc4s yaml file of the given name.
      * Upon creation the file will be openend but not yet read.
      */
+    // TODO: parse from stream
+    // TODO: maybe store source location info (file,line,column) in node
 /*
     Parser(const std::string &fileName): stream(New<std::ifstream>(fileName)) {
       if (!std::dynamic_pointer_cast<std::ifstream>(stream)->is_open()) {
@@ -74,41 +76,38 @@ namespace cc4s {
     Ptr<Node> parseScalar(const YAML::Node &yamlNode) {
       // use explicitly node type, if given
       auto tag(yamlNode.Tag());
-      if (tag.find("str") != std::string::npos) {
+      if (tag.find(":str") != std::string::npos) {
         // by default, strings are symbol names
         return parseSymbol(yamlNode);
-      } else if (tag.find("text") != std::string::npos) {
+      } else if (tag.find(":text") != std::string::npos) {
         // literal strings have to be given the !!text tag
         return parseAtom<std::string>(yamlNode);
-      } else if (
-        tag.find("int") != std::string::npos  ||
-        tag.find("integer") != std::string::npos
-      ) {
+      } else if (tag.find(":int") != std::string::npos) {
         // default integers
         return parseAtom<int64_t>(yamlNode);
       } else if (
-        tag.find("float") != std::string::npos  ||
-        tag.find("real") != std::string::npos
+        tag.find(":float") != std::string::npos  ||
+        tag.find(":real") != std::string::npos
       ) {
         // default reals
         return parseAtom<Real<>>(yamlNode);
-      } else if (tag.find("real64") != std::string::npos) {
+      } else if (tag.find(":real64") != std::string::npos) {
         // explicit size reals
         return parseAtom<Real<64>>(yamlNode);
 /*
-      } else if (tag.find("real128") != std::string::npos) {
+      } else if (tag.find(":real128") != std::string::npos) {
         // TODO: 128 bit real parsing
         // explicity size reals
         return parseAtom<Real<128>>(yamlNode);
 */
-      } else if (tag.find("complex") != std::string::npos) {
+      } else if (tag.find(":complex") != std::string::npos) {
         // default  complex
         return parseAtom<Complex<>>(yamlNode);
-      } else if (tag.find("complex64") != std::string::npos) {
+      } else if (tag.find(":complex64") != std::string::npos) {
         // explicit size complex
         return parseAtom<Complex<64>>(yamlNode);
 /*
-      } else if (tag.find("complex128") != std::string::npos) {
+      } else if (tag.find(":complex128") != std::string::npos) {
         // TODO: 128 bit real parsing
         // explicit size complex
         return parseAtom<Complex<128>>(yamlNode);
@@ -170,7 +169,6 @@ namespace cc4s {
       return New<AtomicNode<AtomicType>>(yamlNode.as<AtomicType>());
     }
 
-    Ptr<std::istream> stream;
     std::string fileName;
   };
 }

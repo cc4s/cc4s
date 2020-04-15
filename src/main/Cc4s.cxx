@@ -23,9 +23,7 @@ void Cc4s::run() {
   Parser parser(options->inFile);
   auto root(parser.parse()->map());
   Assert(root, "expecting map as input root");
-  Assert(root->get("algorithms"), "expecting key 'algorithms'");
-  auto algorithms(root->get("algorithms")->map());
-  Assert(algorithms, "expecting 'algorithms' to be a sequence");
+  auto algorithms(root->getMap("algorithms"));
   LOG(0, "root") <<
     "execution plan read, steps=" << algorithms->size() << std::endl;
   EMIT() <<
@@ -41,11 +39,8 @@ void Cc4s::run() {
 
     for (unsigned int i(0); i < algorithms->size(); ++i) {
       EMIT() << YAML::BeginMap;
-      auto algorithmNode(algorithms->get(i)->map());
-      Assert(algorithmNode, "map expected for algorithm #" + (i+1));
-      auto algorithmName(
-        algorithmNode->get("name")->symbol()->value
-      );
+      auto algorithmNode(algorithms->getMap(i));
+      auto algorithmName(algorithmNode->getSymbol("name"));
       LOG(0, "root") << "step=" << (i+1) << ", " << algorithmName << std::endl;
       EMIT() << YAML::Key << "step" << YAML::Value << (i+1)
         << YAML::Key << "name" << YAML::Value << algorithmName;
@@ -55,15 +50,7 @@ void Cc4s::run() {
       Assert(algorithm, "unknown algorithm: " + algorithmName);
 
       // get input arguments
-      Assert(
-        algorithmNode->get("in"),
-        "expecting key 'in' in algorithm " + algorithmName
-      );
-      auto inputArguments(algorithmNode->get("in")->map());
-      Assert(
-        inputArguments,
-        "expecting map 'in' of input arguments in algorithm " + algorithmName
-      );
+      auto inputArguments(algorithmNode->getMap("in"));
       // FIXME: move input arguments from storage
 
       size_t flops;
@@ -79,11 +66,7 @@ void Cc4s::run() {
 
       // get output arguments
       if (algorithmNode->get("out")) {
-        auto outputArguments(algorithmNode->get("out")->map());
-        Assert(
-          outputArguments,
-          "expecting map 'out' of output arguments in algorithm " + algorithmName
-        );
+        auto outputArguments(algorithmNode->getMap("out"));
         // FIXME: move output arguments to storage
       }
 
