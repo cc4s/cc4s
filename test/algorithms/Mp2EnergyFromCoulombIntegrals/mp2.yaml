@@ -22,10 +22,10 @@
   out:
     coulombIntegrals: CoulombIntegrals
 
-#- name: Mp2EnergyFromCoulombIntegrals
-#  in:
-#    coulombIntegrals: CoulombIntegrals
-#    holeEigenEnergies: HoleEigenEnergies
-#    particleEigenEnergies: ParticleEigenEnergies
-#  out:
-#    energy: Mp2Energy
+- name: Mp2EnergyFromCoulombIntegrals
+  in:
+    coulombIntegrals: CoulombIntegrals
+    holeEigenEnergies: HoleEigenEnergies
+    particleEigenEnergies: ParticleEigenEnergies
+  out:
+    energy: Mp2Energy

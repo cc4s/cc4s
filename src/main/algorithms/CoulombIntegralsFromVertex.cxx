@@ -53,8 +53,8 @@ template <typename TE>
 Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   const Ptr<MapNode> &arguments
 ) {
-  auto coulombVertex(arguments->getMap("coulombVertex"));
   typedef Tensor<Complex<>,TE> T;
+  auto coulombVertex(arguments->getMap("coulombVertex"));
   auto GammaGqr(coulombVertex->getValue<Ptr<T>>("data"));
   Assert(GammaGqr, "expecting coulombVertex to be complex");
 
@@ -95,10 +95,11 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   coulombIntegrals->setValue<size_t>(
     "spins", coulombVertex->getValue<size_t>("spins")
   );
-  coulombIntegrals->setValue<std::string>(
-    "orbitals", coulombVertex->getValue<std::string>("orbitals")
-  );
-  return coulombIntegrals;
+
+  // create result
+  auto result(New<MapNode>());
+  result->get("coulombIntegrals") = coulombIntegrals;
+  return result;
 }
 
 template <typename TE>

@@ -1,63 +1,94 @@
 #include <algorithms/Mp2EnergyFromCoulombIntegrals.hpp>
 #include <math/MathFunctions.hpp>
-#include <math/ComplexTensor.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
-#include <Data.hpp>
-#include <Options.hpp>
+#include <tcc/Tcc.hpp>
+#include <Cc4s.hpp>
 
-using namespace CTF;
 using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(Mp2EnergyFromCoulombIntegrals);
 
-Mp2EnergyFromCoulombIntegrals::Mp2EnergyFromCoulombIntegrals(
-  std::vector<Argument> const &argumentList
-): Algorithm(argumentList) {
-}
-
-Mp2EnergyFromCoulombIntegrals::~Mp2EnergyFromCoulombIntegrals() {
-}
-
-void Mp2EnergyFromCoulombIntegrals::run() {
-  Data *Vabij(getArgumentData("PPHHCoulombIntegrals"));
-  TensorData<double> *realVabij(dynamic_cast<TensorData<double> *>(Vabij));
-  TensorData<complex> *complexVabij(dynamic_cast<TensorData<complex> *>(Vabij));
-  double e(0.0);
-  if (realVabij) {
-    e = calculateMp2Energy<double>(*realVabij->value);
+Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
+  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
+  auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
+  // multiplex calls to template methods
+  if (scalarType == "real64") {
+    if (Cc4s::options->dryRun) {
+      return calculateMp2Energy<Real<>,DryTensorEngine>(arguments);
+    } else {
+      return calculateMp2Energy<Real<>,DefaultTensorEngine>(arguments);
+    }
+/*
+  } else if (scalarType == "complex64") {
+    if (Cc4s::options->dryRun) {
+      return calculateMp2Energy<Complex<>,DryTensorEngine>(arguments);
+    } else {
+      return calculateMp2Energy<Complex<>,DefaultTensorEngine>(arguments);
+    }
   } else {
-    e = std::real(calculateMp2Energy<complex>(*complexVabij->value));
+*/
+  } else {
+    Assert(false, "unsupported scalar type '" + scalarType + "'");
   }
-  setRealArgument("Mp2Energy", e);
 }
 
-// FIXME: update dryRun to work in the complex case as well
-void Mp2EnergyFromCoulombIntegrals::dryRun() {
-  //DryTensor<> *Vabij(
-  getTensorArgument<double, DryTensor<double>>("PPHHCoulombIntegrals");
-  //);
+template <typename F, typename TE>
+Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
+  const Ptr<MapNode> &arguments
+) {
+  typedef Tensor<F,TE> T;
+  typedef Tensor<Real<>,TE> RT;
+  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
+  auto Vabij(coulombIntegrals->getValue<Ptr<T>>("data"));
+  Real<> spins(coulombIntegrals->getValue<size_t>("spins"));
 
-  // Read the Particle/Hole Eigenenergies epsi epsa required for the energy
-  DryTensor<> *epsi(
-    getTensorArgument<double, DryTensor<double>>("HoleEigenEnergies")
+  auto holeEnergies(arguments->getMap("holeEigenEnergies"));
+  auto epsi(holeEnergies->getValue<Ptr<RT>>("data"));
+  auto particleEnergies(arguments->getMap("particleEigenEnergies"));
+  auto epsa(particleEnergies->getValue<Ptr<RT>>("data"));
+
+  auto No(epsi->lens[0]);
+  auto Nv(epsa->lens[0]);
+  auto Dabij(
+    Tcc<TE>::template tensor<Real<>>(std::vector<size_t>({Nv,Nv,No,No}),"Dabij")
   );
-  DryTensor<> *epsa(
-    getTensorArgument<double, DryTensor<double>>("ParticleEigenEnergies")
-  );
+  auto direct( Tcc<TE>::template tensor<F>("D") );
+  auto exchange( Tcc<TE>::template tensor<F>("X") );
+  (
+// FIXME: wrong indexing assumption that indices on lhs and rhs must match
+/*
+    (*Dabij)["abij"] <<= (*epsa)["a"],
+    (*Dabij)["abij"] +=  (*epsa)["b"],
+    (*Dabij)["abij"] -=  (*epsi)["i"],
+    (*Dabij)["abij"] -=  (*epsi)["j"],
+*/
+    (*Dabij)["abij"] <<= map(conj<F>, (*Vabij)["abij"])
+      * map(
+        std::function<Real<>(const Real<>)>([](const Real<> eps) { return 1; }),
+        (*Dabij)["abij"]
+      ),
+    (*direct)[""] <<= -0.5*spins*spins * (*Vabij)["abij"] * (*Dabij)["abij"],
+    (*exchange)[""] <<= +0.5*spins * (*Vabij)["abji"] * (*Dabij)["abij"]
+  )->compile()->execute();
 
-  // Compute the No,Nv
-  size_t No(epsi->lens[0]);
-  size_t Nv(epsa->lens[0]);
-
-  // Allocate the doubles amplitudes
-  int syms[] = { NS, NS, NS, NS };
-  size_t vvoo[] = { Nv, Nv, No, No };
-  DryTensor<> Tabij(4, vvoo, syms);
-
-  DryScalar<> energy();
+  F D, X;
+  D = direct->read();
+  X = exchange->read();
+  LOG(1,getName()) << "direct=" << D << std::endl;
+  LOG(1,getName()) << "exchange=" << X << std::endl;
+  
+  auto energy(New<MapNode>());
+  energy->setValue<Real<>>("direct", D);
+  energy->setValue<Real<>>("exchange", X);
+  energy->setValue<Real<>>("value", D+X);
+  energy->setValue<Real<>>("unit", holeEnergies->getValue<Real<>>("unit"));
+  auto result(New<MapNode>());
+  result->get("energy") = energy;
+  return result;
 }
 
+/*
 template <typename F>
 F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
   double spins(getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0);
@@ -90,7 +121,7 @@ F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
   ) (
     Vabij["abij"], (*Tabij)["abij"]
   );
-
+*/
 // TODO: below method requires less memory but does not work with current CTF
 /*
   Matrix<> Dai(Vabij.lens[0], Vabij.lens[2], NS, *Vabij.wrld, "Dai");
@@ -109,7 +140,7 @@ F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
     Dai["ai"], Dai["bj"], Tabij["abij"]
   );
 */
-
+/*
   Scalar<F> energy(*Cc4s::world);
   F dire, exce;
 
@@ -141,4 +172,5 @@ F Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(CTF::Tensor<F> &Vabij) {
 
   return dire + exce;
 }
+*/
 

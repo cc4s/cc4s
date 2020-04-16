@@ -11,19 +11,13 @@ namespace cc4s {
   class Mp2EnergyFromCoulombIntegrals: public Algorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(Mp2EnergyFromCoulombIntegrals);
-    Mp2EnergyFromCoulombIntegrals(std::vector<Argument> const &argumentList);
-    virtual ~Mp2EnergyFromCoulombIntegrals();
     /**
      * \brief Calculates MP2 energy from Coulomb integrals Vabij
      */
-    virtual void run();
-    /**
-     * \brief Dry run for the MP2 energy from Coulomb integrals Vabij
-     */
-    virtual void dryRun();
+    Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
-    template <typename F>
-    F calculateMp2Energy(CTF::Tensor<F> &Vabij);
+    template <typename F, typename TE>
+    Ptr<MapNode> calculateMp2Energy(const Ptr<MapNode> &arguments);
   };
 }
 
