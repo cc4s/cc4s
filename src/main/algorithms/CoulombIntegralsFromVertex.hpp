@@ -16,38 +16,24 @@ namespace cc4s {
   class CoulombIntegralsFromVertex: public Algorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(CoulombIntegralsFromVertex);
-    CoulombIntegralsFromVertex(
-      std::vector<Argument> const &argumentList
-    );
-    virtual ~CoulombIntegralsFromVertex();
     /**
      * \brief Calculates Coulomb integrals Vabcd,Vabij,Vaibj,Vabci,Vijka,Vijkl
      * from GammaGai,GammaGab,GammaGij Coulomb Vertices.
      * Arguments can be any combination of the sort
      * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
     */
-    virtual void run();
-    /**
-     * \brief Dry run for calculating Coulomb integrals
-     * Vabcd,Vabij,Vaibj,Vabci,Vijka Vijkl
-     * from GammaGai,GammaGab,GammaGij Coulomb Vertices.
-     * Arguments can be any combination of the sort
-     * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
-    */
-    virtual void dryRun();
+    Ptr<MapData> run(const Ptr<MapData> &arguments) override;
   protected:
     void calculateRealIntegrals();
     void calculateComplexIntegrals();
 
-    void dryCalculateRealIntegrals();
-    void dryCalculateComplexIntegrals();
-
-    CTF::Tensor<complex> *GammaGai;
-    CTF::Tensor<complex> *GammaGia;
+    Ptr<MapNode> GammaGai, GammaGia;
+/*
     CTF::Tensor<complex> *GammaGab;
     CTF::Tensor<complex> *GammaGij;
     std::array<int,4> syms, vvvv, vovo, vvoo, voov, oovv, oooo, ooov, vooo,
                             vvvo, ovoo, ovov, ovvv, vvov, ovvo, oovo, vovv;
+*/
   };
 }
 

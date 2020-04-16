@@ -81,7 +81,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
   const std::string &fileName,
   const std::vector<size_t> &lens
 ) {
-  constexpr size_t bufferSize(128*1024*1024);
+  constexpr size_t MAX_BUFFER_SIZE(128*1024*1024);
   std::ifstream stream(fileName.c_str());
   if (stream.fail()) {
     std::stringstream explanation;
@@ -94,6 +94,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
 
   // read the values only on root, all others still pariticipate calling MPI
+  const size_t bufferSize(std::min(A->getElementsCount(), MAX_BUFFER_SIZE));
   size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
   std::vector<size_t> indices(localBufferSize);
   std::vector<F> values(localBufferSize);
