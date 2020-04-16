@@ -147,6 +147,10 @@ namespace cc4s {
       }
     }
     template <typename Target>
+    Target getValue(const size_t index) {
+      return getValue<Target>(std::to_string(index));
+    }
+    template <typename Target>
     Target getValue(const std::string &element, const Target &defaultValue) {
       if (get(element)) {
         // if key present, proceed
@@ -158,8 +162,16 @@ namespace cc4s {
       }
     }
     template <typename Target>
+    Target getValue(const size_t index, const Target &defaultValue) {
+      return getValue<Target>(std::to_string(index), defaultValue);
+    }
+    template <typename Target>
     void setValue(const std::string &key, const Target &value) {
       get(key) = New<AtomicNode<Target>>(value);
+    }
+    template <typename Target>
+    void setValue(const size_t index, const Target &value) {
+      get(index) = New<AtomicNode<Target>>(value);
     }
 
     Ptr<MapNode> getMap(const std::string &element) {

@@ -26,6 +26,17 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   for (auto key: dimensions->getKeys()) {
     lens.push_back(dimensions->getValue<size_t>(key));
   }
+
+  // if fileName contains '/' change directory
+  char currentDirectory[PATH_MAX];
+  getcwd(currentDirectory, sizeof(currentDirectory));
+  // TODO: support other filesystems
+  auto slashPosition(fileName.rfind('/'));
+  if (slashPosition != std::string::npos) {
+    auto fileDirectory(fileName.substr(0, slashPosition));
+    chdir(fileDirectory.c_str());
+  }
+
   // read tensor data from file named by 'data' entry
   auto tensorData(
     readText(
@@ -34,6 +45,10 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
       tensor->getValue<std::string>("scalarType")
     )
   );
+
+  // change back to current directory
+  chdir(currentDirectory);
+
   // replace data entry with actual tensor
   tensor->get("data") = tensorData;
 

@@ -110,6 +110,8 @@ namespace cc4s {
         // explicit size complex
         return parseAtom<Complex<128>>(yamlNode);
 */
+      } else if (tag == "!" ){
+        return parseAtom<std::string>(yamlNode);
       } else if (tag == "?" ){
         return parseImplicitTypeScalar(yamlNode);
       } else {

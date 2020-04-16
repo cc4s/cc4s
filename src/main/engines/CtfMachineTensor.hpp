@@ -169,12 +169,6 @@ namespace cc4s {
       const std::vector<size_t> begins,
       const std::vector<size_t> ends
     ) {
-      LOG(2, "TCC") << "slice " <<
-        getName() << "[" << begins << "," << ends << ") <<= " <<
-        alpha << " * " <<
-        A->getName() << "[" << aBegins << "," << aEnds << "] + " <<
-        beta << " * " <<
-        getName() << "[" << begins << "," << ends << "]" << std::endl;
       tensor.slice(
         std::vector<int>(begins.begin(), begins.end()).data(),
         std::vector<int>(ends.begin(), ends.end()).data(),

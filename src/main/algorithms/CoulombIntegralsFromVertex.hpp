@@ -1,9 +1,8 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef COULOMB_INTEGRALS_FROM_VERTEX_DEFINED
 #define COULOMB_INTEGRALS_FROM_VERTEX_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <array>
 
 namespace cc4s {
   /**
@@ -22,10 +21,12 @@ namespace cc4s {
      * Arguments can be any combination of the sort
      * PPPP, PHPH, PPHH, HHHH, HHHP, PPPHCoulombIntegrals.
     */
-    Ptr<MapData> run(const Ptr<MapData> &arguments) override;
+    Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
-    void calculateRealIntegrals();
-    void calculateComplexIntegrals();
+    template <typename TE>
+    Ptr<MapNode> calculateRealIntegrals(const Ptr<MapNode> &arguments);
+    template <typename TE>
+    Ptr<MapNode> calculateComplexIntegrals(const Ptr<MapNode> &arguments);
 
     Ptr<MapNode> GammaGai, GammaGia;
 /*

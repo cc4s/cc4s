@@ -8,11 +8,11 @@ build/${CONFIG}/obj/main/engines/DryTensor.o \
 build/${CONFIG}/obj/main/algorithms/Algorithm.o \
 build/${CONFIG}/obj/main/algorithms/TensorReader.o \
 build/${CONFIG}/obj/main/algorithms/TensorNetwork.o \
+build/${CONFIG}/obj/main/algorithms/CoulombIntegralsFromVertex.o \
 #build/${CONFIG}/obj/main/algorithms/RealTensorReader.o \
 #build/${CONFIG}/obj/main/mixers/Mixer.o \
 #build/${CONFIG}/obj/main/mixers/LinearMixer.o \
 #build/${CONFIG}/obj/main/algorithms/ComplexTensorReader.o \
-#build/${CONFIG}/obj/main/algorithms/CoulombIntegralsFromVertex.o \
 #build/${CONFIG}/obj/main/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 
 TESTS_OBJECTS = \

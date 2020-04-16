@@ -1,26 +1,115 @@
 #include <algorithms/CoulombIntegralsFromVertex.hpp>
+
 #include <math/Complex.hpp>
-#include <math/ComplexTensor.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
-#include <util/Emitter.hpp>
 #include <util/Exception.hpp>
+#include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
-#include <Data.hpp>
 
 using namespace cc4s;
-using namespace CTF;
 
 ALGORITHM_REGISTRAR_DEFINITION(CoulombIntegralsFromVertex);
 
-CoulombIntegralsFromVertex::CoulombIntegralsFromVertex(
-  std::vector<Argument> const &argumentList
-): Algorithm(argumentList) {
+template <typename F, typename TE>
+Ptr<MapNode> createTensorNode(const Ptr<Tensor<F,TE>> &tensorData) {
+  auto tensor(New<MapNode>());
+  tensor->setValue<std::string>("version", "v1.0");
+  auto dimensions(New<MapNode>());
+  for (auto len: tensorData->lens) {
+    dimensions->push_back(New<AtomicNode<size_t>>(len));
+  }
+  tensor->get("dimensions") = dimensions;
+  tensor->setValue<std::string>("scalarType", TypeTraits<F>::getName());
+  tensor->setValue<Ptr<Tensor<F,TE>>>("data", tensorData);
+  return tensor;
 }
 
-CoulombIntegralsFromVertex::~CoulombIntegralsFromVertex() {
+Ptr<MapNode> CoulombIntegralsFromVertex::run(const Ptr<MapNode> &arguments) {
+  auto coulombVertex(arguments->getMap("coulombVertex"));
+  auto orbitals(coulombVertex->getValue<std::string>("orbitals"));
+
+  // multiplex calls to template methods
+  if (orbitals == "real") {
+    if (Cc4s::options->dryRun) {
+      return calculateRealIntegrals<DryTensorEngine>(arguments);
+    } else {
+      return calculateRealIntegrals<DefaultTensorEngine>(arguments);
+    }
+  } else if (orbitals == "complex") {
+    if (Cc4s::options->dryRun) {
+      return calculateComplexIntegrals<DryTensorEngine>(arguments);
+    } else {
+      return calculateComplexIntegrals<DefaultTensorEngine>(arguments);
+    }
+  } else {
+    Assert(
+      false, "'orbitals' must specify either 'real' or 'complex' orbitals"
+    );
+  }
 }
 
+template <typename TE>
+Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
+  const Ptr<MapNode> &arguments
+) {
+  auto coulombVertex(arguments->getMap("coulombVertex"));
+  typedef Tensor<Complex<>,TE> T;
+  auto GammaGqr(coulombVertex->getValue<Ptr<T>>("data"));
+  Assert(GammaGqr, "expecting coulombVertex to be complex");
+
+
+  auto holeEnergies(arguments->getMap("holeEigenEnergies"));
+  auto No(holeEnergies->getMap("dimensions")->getValue<size_t>(0));
+  auto particleEnergies(arguments->getMap("particleEigenEnergies"));
+  auto Nv(particleEnergies->getMap("dimensions")->getValue<size_t>(0));
+
+
+  auto NG(GammaGqr->lens[0]);
+  auto Np(GammaGqr->lens[1]);
+
+  LOG(1,getName()) << "NG=" << NG << std::endl;
+  LOG(1,getName()) << "No=" << No << std::endl;
+  LOG(1,getName()) << "Nv=" << Nv << std::endl;
+  LOG(1,getName()) << "Np=" << Np << std::endl;
+
+  // NOTE: tensors assume shape on first assignment
+  // sliced particle-hole coulomb vertex
+  auto GammaGai( Tcc<TE>::template tensor<Complex<>>("GammaGai") );
+  auto Vabij( Tcc<TE>::template tensor<Real<>>("Vabij") );
+  (
+    (*GammaGai)["Gai"] <<= (*(*GammaGqr)({0,No,0},{NG,Np,No}))["Gai"],
+    (*Vabij)["abij"] <<= map(real<Complex<>>, (*GammaGai)["Gai"])
+      * map(real<Complex<>>, (*GammaGai)["Gbj"]),
+    (*Vabij)["abij"] += map(imag<Complex<>>, (*GammaGai)["Gai"])
+      * map(imag<Complex<>>, (*GammaGai)["Gbj"])
+  )->compile()->execute();
+
+  // construct result node
+  // FIXME: why does "auto" fail
+  Ptr<MapNode> coulombIntegrals(createTensorNode<Real<>,TE>(Vabij));
+  // append meta data
+  coulombIntegrals->setValue<Real<>>(
+    "unit", pow<Real<>>(coulombVertex->getValue<Real<>>("unit"),2)
+  );
+  coulombIntegrals->setValue<size_t>(
+    "spins", coulombVertex->getValue<size_t>("spins")
+  );
+  coulombIntegrals->setValue<std::string>(
+    "orbitals", coulombVertex->getValue<std::string>("orbitals")
+  );
+  return coulombIntegrals;
+}
+
+template <typename TE>
+Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
+  const Ptr<MapNode> &vertex
+) {
+  // TODO: implement
+  return New<MapNode>();
+}
+
+/*
 void CoulombIntegralsFromVertex::run() {
   // Read the Coulomb vertex GammaGqr
   Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex"));
@@ -717,3 +806,5 @@ void CoulombIntegralsFromVertex::dryCalculateComplexIntegrals() {
     );
   }
 }
+*/
+
