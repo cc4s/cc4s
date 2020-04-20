@@ -395,6 +395,9 @@ namespace cc4s {
       uniqueIndices[u] = 0;
 
       size_t outerElementsCount(1), summedElementsCount(1);
+
+      // take out the indices of the factor
+      scope.add(a->getResultIndices(), -1);
       for (unsigned int i(0); i < u; ++i) {
         const char index(uniqueIndices[i]);
         // go through unique indices
@@ -410,6 +413,8 @@ namespace cc4s {
           ++c;
         }
       }
+      // add the indices of factor a again
+      scope.add(a->getResultIndices(), +1);
       outerIndices[o] = 0;
 
       // allocate intermedate result
@@ -424,8 +429,9 @@ namespace cc4s {
         sumResult->getElementsCount(),
         0,
         0, // no multiplications
-        outerElementsCount * summedElementsCount - outerElementsCount
+        outerElementsCount * (summedElementsCount - 1)
       );
+      ++scope.triedPossibilitiesCount;
       return MoveOperation<F,TE>::create(
         a,
         sumResult, static_cast<const char *>(outerIndices),
