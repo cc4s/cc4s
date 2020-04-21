@@ -124,6 +124,10 @@ namespace cc4s {
       return machineTensor;
     }
 
+    bool allocated() {
+      return machineTensor != nullptr;
+    }
+
     // read tensor elements to buffer
     void read(
       const size_t elementsCount, const size_t *indexData, F *valueData
@@ -193,6 +197,8 @@ namespace cc4s {
           // let this lhs tensor assume the shape of the rhs result
           lens = rhsOperation->getResult()->getLens();
           assumedShape = true;
+          // also assume name if empy
+          if (name == "") name = rhsOperation->getResult()->getName();
         }
       } else {
         if (!rhsOperation->getResult()->assumedShape) {

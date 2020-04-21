@@ -28,10 +28,7 @@ namespace cc4s {
     {
     }
 
-    virtual ~TensorOperation() {
-    }
-
-    virtual void execute() {
+    void execute() override {
       // a tensor operation occurring as an atomic operation is a fetch
       // operation of the operand tensor, which result points to.
       // there is nothing more to do.

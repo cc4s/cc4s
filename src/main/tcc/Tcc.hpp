@@ -8,6 +8,7 @@
 #include <tcc/Map.hpp>
 #include <tcc/Sequence.hpp>
 #include <tcc/Slice.hpp>
+#include <tcc/PrecompiledTensorExpression.hpp>
 #include <tcc/Tensor.hpp>
 
 #include <util/SharedPointer.hpp>
