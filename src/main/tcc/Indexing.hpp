@@ -5,6 +5,7 @@
 #include <tcc/IndexedTensorExpression.hpp>
 
 #include <tcc/IndexingOperation.hpp>
+#include <tcc/MoveOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <string>
 
@@ -24,7 +25,8 @@ namespace cc4s {
       const PTR(ESC(ClosedTensorExpression<F,TE>)) &source_,
       const std::string &indices_,
       const typename Expression<TE>::ProtectedToken &
-    ): source(source_), indices(indices_) {
+    ): source(source_), indices(indices_), canonicalIndices(indices_) {
+      std::sort(canonicalIndices.begin(), canonicalIndices.end());
     }
 
     virtual ~Indexing() {
@@ -70,17 +72,48 @@ namespace cc4s {
       auto indexedRhs(
         DYNAMIC_PTR_CAST(ESC(IndexedTensorOperation<F,TE>), rhsOperation)
       );
-      if (indexedRhs) {
-        // change index order of indexed operation result according to
-        // index order provided by this indexing expression
-        transposeResult(indexedRhs);
-        // continue lhs compiling of contained closed tensor expression
-        return source->lhsCompile(indexedRhs);
-      }
-      throw new EXCEPTION(
-        "Expecting indexed expression ([\"...\"]) on the left-hand-side of "
-        "an assignment if the right-hand-side carries indices."
+      Assert (indexedRhs,
+        "Expecting indexed expression ([\"...\"]) on the right-hand-side of "
+        "an assignment, got " + static_cast<std::string>(*rhsOperation)
       );
+
+      auto canonicalRhsIndices(indexedRhs->getResultIndices());
+      std::sort(canonicalRhsIndices.begin(),canonicalRhsIndices.end());
+      if (canonicalIndices == canonicalRhsIndices) {
+        // rhs can be transposed to match lhs:
+        // transposes the result of the indexed rhs tensor to match the index
+        // order of this lhs indexed expression
+        // determine shape of lhs
+        size_t lenOfIndex[std::numeric_limits<char>::max()+1];
+        // enter which indices correspond to which length on the rhs
+        for (unsigned int i(0); i < indices.length(); ++i) {
+          lenOfIndex[static_cast<unsigned int>(
+            indexedRhs->getResultIndices()[i])
+          ]= indexedRhs->getResult()->lens[i];
+        }
+        // transpose rhs result tensor
+        for (unsigned int i(0); i < indices.length(); ++i) {
+          indexedRhs->getResult()->lens[i] = lenOfIndex[
+            static_cast<unsigned int>(indices[i])
+          ];
+        }
+      } else {
+        // otherwise: create new intermediate result tensor of unknown shape
+        // it is expected to be overwritten by lhsCompile of lhs result tensor
+        auto indexingResult(
+          Tensor<F,TE>::create(
+            indexedRhs->getResult()->getName() + "`"
+          )
+        );
+        // use this result instead of the intermediate rhs result
+        // in the last rhs operation together with the indices of the lhs
+        indexedRhs->result = indexingResult;
+        // TODO: assess costs of copy to larger lhs
+      }
+      // in any case, use the indices of the lhs in the last operation
+      indexedRhs->resultIndices = indices;
+      // continue lhs compiling of contained closed tensor expression
+      return source->lhsCompile(indexedRhs);
     }
 
     virtual void countIndices(Scope &scope) {
@@ -92,35 +125,9 @@ namespace cc4s {
     }
 
     PTR(ESC(ClosedTensorExpression<F,TE>)) source;
-    std::string indices;
+    std::string indices, canonicalIndices;
 
   protected:
-    // transposes the result of the indexed rhs tensor to match the index
-    // order of this lhs indexed expression
-    void transposeResult(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &rhs
-    ) {
-      if (indices.length() != rhs->getResultIndices().length()) {
-        throw new EXCEPTION(
-          "Number of indices of left-hand-side expression "
-          "must match the number of indices of the right-hand-side result."
-        );
-      }
-      // determine shape of lhs
-      size_t lenOfIndex[std::numeric_limits<char>::max()+1];
-      // enter which indices correspond to which length on the rhs
-      for (unsigned int i(0); i < indices.length(); ++i) {
-        lenOfIndex[static_cast<unsigned int>(rhs->getResultIndices()[i])]=
-          rhs->getResult()->lens[i];
-      }
-      // transpose rhs result
-      for (unsigned int i(0); i < indices.length(); ++i) {
-        rhs->getResult()->lens[i] = lenOfIndex[
-          static_cast<unsigned int>(indices[i])
-        ];
-      }
-      rhs->resultIndices = indices;
-    }
   };
 }
 

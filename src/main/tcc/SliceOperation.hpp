@@ -31,7 +31,7 @@ namespace cc4s {
     virtual ~SliceOperation() {
     }
 
-    virtual void execute() {\
+    virtual void execute() {
       source->execute();
       this->getResult()->getMachineTensor()->slice(
         F(1),

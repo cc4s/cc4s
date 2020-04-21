@@ -56,16 +56,14 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   auto direct( Tcc<TE>::template tensor<F>("D") );
   auto exchange( Tcc<TE>::template tensor<F>("X") );
   (
-// FIXME: wrong indexing assumption that indices on lhs and rhs must match
-/*
     (*Dabij)["abij"] <<= (*epsa)["a"],
     (*Dabij)["abij"] +=  (*epsa)["b"],
     (*Dabij)["abij"] -=  (*epsi)["i"],
     (*Dabij)["abij"] -=  (*epsi)["j"],
-*/
-    (*Dabij)["abij"] <<= map(conj<F>, (*Vabij)["abij"])
-      * map(
-        std::function<Real<>(const Real<>)>([](const Real<> eps) { return 1; }),
+    (*Dabij)["abij"] <<= map(conj<F>, (*Vabij)["abij"]) *
+      map(
+        // TODO: allow passing of lambdas to cc4s::map
+        std::function<Real<>(const Real<>)>([](const Real<> eps) { return 1/eps; }),
         (*Dabij)["abij"]
       ),
     (*direct)[""] <<= -0.5*spins*spins * (*Vabij)["abij"] * (*Dabij)["abij"],

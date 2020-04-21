@@ -34,7 +34,7 @@ namespace cc4s {
       );
     }
 
-    virtual PTR(Operation<TE>) compile(Scope &) {
+    PTR(Operation<TE>) compile(Scope &) override {
       auto sourceOperation(
         DYNAMIC_PTR_CAST(ESC(TensorOperation<F,TE>), source->compile())
       );
@@ -50,28 +50,49 @@ namespace cc4s {
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
+    PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
-    ) {
-      auto targetTensor(DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), source));
-      if (!targetTensor) {
+    ) override {
+      auto lhsTensor(DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), source));
+      if (!lhsTensor) {
         throw new EXCEPTION("Expecting tensor for slice operation on left-hand-side.");
       }
+      if (!rhsOperation->getResult()->assumedShape) {
+        // create intermediate tensor as result tensor for rhsOperation
+        auto resultLens(ends);
+        for (size_t i(0); i < resultLens.size(); ++i) resultLens[i] -= begins[i];
+        auto intermediateTensor(
+          Tensor<F,TE>::create(resultLens, lhsTensor->getName() + "'")
+        );
+        rhsOperation->result = intermediateTensor;
+        LOG(0,"TCC") <<
+          "NOTE: updating parts of a slice on the left-hand-side "
+          "currently requires the entire slice as intermediate tensor. "
+          "This is less efficient than using write or read "
+          "for the intended indices." << std::endl;
+        if (rhsOperation->beta != F(1)) {
+          LOG(0,"TCC") <<
+            "WARNING: updating slice parts with operations other than += or -= "
+            "may currently give wrong results as the entire slice is not "
+            "read from the left-hand-side tensor before doing the update "
+            "with the right-hand-side." << std::endl;
+        }
+      }
       auto sliceIntoOperation(
-          SliceIntoOperation<F,TE>::create(
+        SliceIntoOperation<F,TE>::create(
           rhsOperation,
-          targetTensor,
+          lhsTensor,
           begins, ends
         )
       );
       // transfer beta from inner to outer operation
       sliceIntoOperation->beta = rhsOperation->beta;
-      rhsOperation->beta = 0.0;
+      rhsOperation->beta = F(0);
       // TODO: transfer alpha in case of moves or contractions
       return sliceIntoOperation;
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       return std::string(*source) + "( " +
         SliceOperation<F,TE>::coordinateString(begins) + "-" +
         SliceOperation<F,TE>::coordinateString(ends) + " )";
@@ -86,7 +107,7 @@ namespace cc4s {
       return lens;
     }
 
-    PTR(ESC(ClosedTensorExpression<F,TE>)) source;
+    Ptr<ClosedTensorExpression<F,TE>> source;
     std::vector<size_t> begins, ends;
   };
 }

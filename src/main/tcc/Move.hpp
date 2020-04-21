@@ -97,7 +97,7 @@ namespace cc4s {
       // and determine how often each index is used
       countIndices(scope);
 
-      // TODO: currently only move(lhs,contraction(factors...)) are done
+      // NOTE: currently only move(lhs,contraction(factors...)) are done
       scope.triedPossibilitiesCount = 0;
       auto operation(
         // compile right-hand-side in the namespace of this move
@@ -108,11 +108,9 @@ namespace cc4s {
 
       LOG(2, "TCC") <<
         "possibilites tried=" << scope.triedPossibilitiesCount <<
-        ", FLOPS=" <<
-          operation->costs.multiplicationsCount +
-          operation->costs.additionsCount <<
-        ", maximum elements stored=" <<
-          operation->costs.maxElementsCount <<
+        ", scalar multiplications=" << operation->costs.multiplicationsCount <<
+        ", scalar additions=" << operation->costs.additionsCount <<
+        ", maximum elements stored=" << operation->costs.maxElementsCount <<
         std::endl;
 
       operation->beta = beta;

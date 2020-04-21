@@ -76,6 +76,7 @@ namespace cc4s {
 //    F alpha, beta;
 
     friend class Contraction<F,TE>;
+    friend class Indexing<F,TE>;
   };
 }
 

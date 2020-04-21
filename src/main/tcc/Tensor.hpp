@@ -114,12 +114,10 @@ namespace cc4s {
 
     PTR(MT) getMachineTensor() {
       if (!machineTensor) {
-        if (!assumedShape) {
-          throw new EXCEPTION(
-            "Tried to execute operation on tensor " + name +
-            " before its shape has been assumed."
-          );
-        }
+        Assert(assumedShape,
+          "Tried to execute operation on tensor " + name +
+          " before its shape has been assumed."
+        );
         // allocate the implementation specific machine tensor upon request
         machineTensor = MT::create(lens, name);
       }
@@ -179,24 +177,46 @@ namespace cc4s {
     virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     ) {
+      // shape assuming:
       if (!assumedShape) {
-        // let this tensor assume the shape of the rhs result
-        lens = rhsOperation->getResult()->getLens();
-        assumedShape = true;
-        // otherwise check shape
-      } else if (rhsOperation->getResult()->getLens() != lens) {
-        std::stringstream lhsShape;
-        for (auto i: getLens()) { lhsShape << " " << i; }
-        std::stringstream rhsShape;
-        for (auto i: rhsOperation->getResult()->getLens()) { rhsShape << " " << i; }
-        throw new EXCEPTION(
-          "Shape of left-hand-side tensor " + getName() +
-          " (" + lhsShape.str() + ") "
-          " must match the shape of the result tensor " +
-          rhsOperation->getResult()->getName() +
-          " (" + rhsShape.str() + ")"
-        );
+        // lhs has not yet assumed shape
+        if (!rhsOperation->getResult()->assumedShape) {
+          // rhs has not yet assumed shape either
+          Assert(false,
+            "Neither left-hand-side tensor " + getName() +
+            " nor right-hand-side result " +
+            rhsOperation->getResult()->getName() +
+            " have known shape. "
+            "Try specifying left-hand-side tensor dimension manually."
+          );
+        } else {
+          // let this lhs tensor assume the shape of the rhs result
+          lens = rhsOperation->getResult()->getLens();
+          assumedShape = true;
+        }
+      } else {
+        if (!rhsOperation->getResult()->assumedShape) {
+          // let rhs tensor assume the shape of this lhs tensor
+          rhsOperation->getResult()->lens = getLens();
+          rhsOperation->getResult()->assumedShape = true;
+        } else {
+          // both have assumed shape: shapes must match
+          if (rhsOperation->getResult()->getLens() != lens) {
+            std::stringstream lhsShape;
+            for (auto i: getLens()) { lhsShape << " " << i; }
+            std::stringstream rhsShape;
+            for (auto i: rhsOperation->getResult()->getLens()) { rhsShape << " " << i; }
+            Assert(false,
+              "Shape of left-hand-side tensor " + getName() +
+              " (" + lhsShape.str() + ") "
+              " must match the shape of the result tensor " +
+              rhsOperation->getResult()->getName() +
+              " (" + rhsShape.str() + ")"
+            );
+          }
+        }
       }
+
       // make the rhs operation directly operate on this tensor
       rhsOperation->result = this->template toPtr<Tensor<F,TE>>();
       return rhsOperation;

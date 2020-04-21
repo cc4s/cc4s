@@ -28,7 +28,7 @@ namespace cc4s {
      * tensor expression. Indexed tensors are atomic types of tensor
      * expressions.
      **/
-    PTR(ESC(Indexing<F,TE>)) operator[](
+    PTR(ESC(Indexing<F,TE>)) operator [](
       const std::string &indices
     ) {
       return Indexing<F,TE>::create(
@@ -36,7 +36,7 @@ namespace cc4s {
       );
     }
 
-    PTR(ESC(Slice<F,TE>)) operator()(
+    PTR(ESC(Slice<F,TE>)) operator ()(
       std::initializer_list<size_t> min,
       std::initializer_list<size_t> max
     ) {
