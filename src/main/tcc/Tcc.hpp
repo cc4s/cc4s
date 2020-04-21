@@ -8,21 +8,18 @@
 #include <tcc/Map.hpp>
 #include <tcc/Sequence.hpp>
 #include <tcc/Slice.hpp>
-#include <tcc/PrecompiledTensorExpression.hpp>
+#include <tcc/TensorRecipe.hpp>
 #include <tcc/Tensor.hpp>
 
 #include <util/SharedPointer.hpp>
 #include <math/Real.hpp>
 
-// TODO: support slicing
-// TODO: expression definitions with local index renaming
 // TODO: binary function application
 // TODO: support hard memory limit for costs
 // TODO: looping over indices for memory reduction
-// TODO: common subexpression optimization
+// TODO: automatic common subexpression optimization
 // TODO: heuristics: limit number of simultaneously considered intermediates
 // TODO: fix max memory assessment
-// TODO: permutation and anti-permutation operator
 
 namespace cc4s {
   template <typename TensorEngine>

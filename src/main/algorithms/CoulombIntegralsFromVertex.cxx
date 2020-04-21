@@ -83,21 +83,21 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
     )->compileRecipe(GammaGph)
   );
   auto realGammaGph(Tcc<TE>::template tensor<Real<>>("realGammaGph"));
-  auto getRealGammaGai(
+  auto getRealGammaGph(
     (
       (*realGammaGph)["Gai"] <<= map(real<Complex<>>, (*getGammaGph)["Gai"])
     )->compileRecipe(realGammaGph)
   );
   auto imagGammaGph(Tcc<TE>::template tensor<Real<>>("imagGammaGph"));
-  auto getImagGammaGai(
+  auto getImagGammaGph(
     (
       (*imagGammaGph)["Gai"] <<= map(imag<Complex<>>, (*getGammaGph)["Gai"])
-    )->compileRecipe(realGammaGph)
+    )->compileRecipe(imagGammaGph)
   );
   auto Vabij( Tcc<TE>::template tensor<Real<>>("Vabij") );
   (
-    (*Vabij)["abij"] <<= (*getRealGammaGai)["Gai"] * (*getRealGammaGai)["Gbj"],
-    (*Vabij)["abij"] +=  (*getImagGammaGai)["Gai"] * (*getImagGammaGai)["Gbj"]
+    (*Vabij)["abij"] <<= (*getRealGammaGph)["Gai"] * (*getRealGammaGph)["Gbj"],
+    (*Vabij)["abij"] +=  (*getImagGammaGph)["Gai"] * (*getImagGammaGph)["Gbj"]
   )->compile()->execute();
 
   // construct result node
