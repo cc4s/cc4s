@@ -1,4 +1,4 @@
-/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_EXPRESSION_DEFINED
 #define TCC_EXPRESSION_DEFINED
 
@@ -7,6 +7,13 @@
 #include <tcc/Scope.hpp>
 
 namespace cc4s {
+  template <typename F, typename TE> class Tensor;
+  template <typename F, typename TE> class TensorRecipe;
+  template <typename F, typename TE>
+  Ptr<TensorRecipe<F,TE>> createTensorRecipe(
+    const Ptr<Tensor<F,TE>> &result, const Ptr<Operation<TE>> &recipe
+  );
+
   template <typename TE>
   class Expression: public Thisable<Expression<TE>> {
   public:
@@ -29,6 +36,11 @@ namespace cc4s {
     virtual PTR(Operation<TE>) compile() {
       Scope scope;
       return this->compile(scope);
+    }
+
+    template <typename F>
+    Ptr<TensorRecipe<F,TE>> compileRecipe(const Ptr<Tensor<F,TE>> &result) {
+      return createTensorRecipe(result, compile());
     }
 
     // TODO: should be protected

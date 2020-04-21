@@ -36,7 +36,7 @@ namespace cc4s {
       if (this->getResult() != source) {
         // move the data only if source and result tensors are different
         *this->getResult() = *source;
-        LOG(1,"TCC") << "move " << this->getResult()->getName() << " <<= " <<
+        LOG(2,"TCC") << "move " << this->getResult()->getName() << " <<= " <<
           source->getName() << std::endl;
       }
     }

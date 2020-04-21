@@ -75,25 +75,29 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
 
   // NOTE: tensors assume shape on first assignment
   // sliced particle-hole coulomb vertex
-  auto GammaGai(
-    PrecompiledTensorExpression<Complex<>,TE>::create(
-      "Gai", (*(*GammaGqr)({0,No,0},{NG,Np,No}))["Gai"], "GammaGph"
-    )
+
+  auto GammaGph(Tcc<TE>::template tensor<Complex<>>("GammaGph"));
+  auto getGammaGph(
+    (
+      (*GammaGph)["Gai"] <<= (*(*GammaGqr)({0,No,0},{NG,Np,No}))["Gai"]
+    )->compileRecipe(GammaGph)
   );
-  auto realGammaGai(
-    PrecompiledTensorExpression<Real<>,TE>::create(
-      "Gai", map(real<Complex<>>, (*GammaGai)["Gai"]), "realGammaGph"
-    )
+  auto realGammaGph(Tcc<TE>::template tensor<Real<>>("realGammaGph"));
+  auto getRealGammaGai(
+    (
+      (*realGammaGph)["Gai"] <<= map(real<Complex<>>, (*getGammaGph)["Gai"])
+    )->compileRecipe(realGammaGph)
   );
-  auto imagGammaGai(
-    PrecompiledTensorExpression<Real<>,TE>::create(
-      "Gai", map(imag<Complex<>>, (*GammaGai)["Gai"]), "imagGammaGph"
-    )
+  auto imagGammaGph(Tcc<TE>::template tensor<Real<>>("imagGammaGph"));
+  auto getImagGammaGai(
+    (
+      (*imagGammaGph)["Gai"] <<= map(imag<Complex<>>, (*getGammaGph)["Gai"])
+    )->compileRecipe(realGammaGph)
   );
   auto Vabij( Tcc<TE>::template tensor<Real<>>("Vabij") );
   (
-    (*Vabij)["abij"] <<= (*realGammaGai)["Gai"] * (*realGammaGai)["Gbj"],
-    (*Vabij)["abij"] +=  (*imagGammaGai)["Gai"] * (*imagGammaGai)["Gbj"]
+    (*Vabij)["abij"] <<= (*getRealGammaGai)["Gai"] * (*getRealGammaGai)["Gbj"],
+    (*Vabij)["abij"] +=  (*getImagGammaGai)["Gai"] * (*getImagGammaGai)["Gbj"]
   )->compile()->execute();
 
   // construct result node

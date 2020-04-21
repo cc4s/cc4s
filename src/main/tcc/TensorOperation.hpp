@@ -6,7 +6,6 @@
 
 #include <tcc/Costs.hpp>
 #include <util/SharedPointer.hpp>
-#include <string>
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;
@@ -34,7 +33,7 @@ namespace cc4s {
       // there is nothing more to do.
     }
 
-    virtual PTR(ESC(Tensor<F,TE>)) getResult() {
+    virtual PTR(ESC(Tensor<F,TE>)) getResult() const {
       return result;
     }
 

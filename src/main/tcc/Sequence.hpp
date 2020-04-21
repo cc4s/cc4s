@@ -117,9 +117,6 @@ namespace cc4s {
       );
     }
 
-    virtual ~Sequence() {
-    }
-
     virtual PTR(Operation<TE>) compile(Scope &) {
       std::vector<PTR(Operation<TE>)> operations(moves.size());
       for (size_t i(0); i < moves.size(); ++i) {
