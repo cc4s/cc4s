@@ -49,7 +49,7 @@ namespace cc4s {
       nullptr, Costs(0), typename Operation<TE>::ProtectedToken()
     ),
     source(
-      std::dynamic_pointer_cast<TensorOperation<F,TE>>(
+      dynamicPtrCast<TensorOperation<F,TE>>(
         ((*Tensor<F,TE>::create(""))[lhsIndices] <<= rhs)->compile()
       )
     ) {

@@ -31,6 +31,11 @@ namespace cc4s {
     return std::make_shared<T>(args...);
   }
 
+  template <typename B, typename A>
+  inline Ptr<B> dynamicPtrCast(const Ptr<A> &p) {
+    return std::dynamic_pointer_cast<B>(p);
+  }
+
   template <typename B>
   class Thisable: public std::enable_shared_from_this<B> {
   public:
@@ -39,6 +44,7 @@ namespace cc4s {
       return std::dynamic_pointer_cast<S>(this->shared_from_this());
     }
   };
+
 }
 
 // support dummy input to Ptr<> from streams
