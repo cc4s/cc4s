@@ -11,7 +11,7 @@ namespace cc4s {
     virtual ~Operation() {
     }
 
-    virtual void execute(const size_t targetVersion = 0) = 0;
+    virtual void execute() = 0;
 
     virtual operator std::string () const = 0;
 

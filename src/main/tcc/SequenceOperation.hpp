@@ -24,10 +24,10 @@ namespace cc4s {
       this->costs.elementsCount = 0;
     }
 
-    void execute(const size_t targetVersion) override {
+    void execute() override {
       // execute each operation in turn
       for (auto &operation: operations) {
-        operation->execute(targetVersion);
+        operation->execute();
       }
     }
 

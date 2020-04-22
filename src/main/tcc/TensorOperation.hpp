@@ -28,7 +28,7 @@ namespace cc4s {
     {
     }
 
-    void execute(const size_t targetVersion) override {
+    void execute() override {
       // a tensor operation occurring as an atomic operation is a fetch
       // operation of the operand tensor, which result points to.
       // there is nothing more to do.
@@ -36,6 +36,18 @@ namespace cc4s {
 
     virtual PTR(ESC(Tensor<F,TE>)) getResult() const {
       return result;
+    }
+
+    template <typename G>
+    bool isOlderThan(const Ptr<TensorOperation<G,TE>> &source) const {
+      // version is only relevant for replacing operations with beta==0
+      return
+        beta != F(0) ||
+        source->getResult()->getVersion() > result->getVersion();
+    }
+
+    void updated() {
+      result->updated();
     }
 
   protected:

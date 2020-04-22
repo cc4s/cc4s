@@ -19,7 +19,6 @@ namespace cc4s {
      * \brief Compiled operation to compute the result of this expression
      **/
     Ptr<Operation<TE>> recipe;
-    bool evaluated;
 
   public:
     TensorRecipe(
@@ -33,9 +32,6 @@ namespace cc4s {
     ),
     recipe(
       recipe_
-    ),
-    evaluated(
-      false
     ) {
     }
 
@@ -62,11 +58,8 @@ namespace cc4s {
       return this->getResult()->getName();
     }
 
-    void execute(const size_t targetVersion) override {
-      if (!evaluated) {
-        recipe->execute();
-        evaluated = true;
-      }
+    void execute() override {
+      recipe->execute();
     }
   };
 

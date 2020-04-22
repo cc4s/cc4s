@@ -45,16 +45,22 @@ namespace cc4s {
       this->costs += contractionCosts;
     }
 
-    void execute(const size_t targetVersion) override {
-      left->execute(targetVersion);
-      right->execute(targetVersion);
-      this->getResult()->getMachineTensor()->contract(
-        this->alpha,
-        left->getResult()->getMachineTensor(), left->getResultIndices(),
-        right->getResult()->getMachineTensor(), right->getResultIndices(),
-        this->beta,
-        this->getResultIndices()
-      );
+    void execute() override {
+      left->execute();
+      right->execute();
+      if (
+        this->template isOlderThan<F>(left) ||
+        this->template isOlderThan<F>(right)
+      ) {
+        this->getResult()->getMachineTensor()->contract(
+          this->alpha,
+          left->getResult()->getMachineTensor(), left->getResultIndices(),
+          right->getResult()->getMachineTensor(), right->getResultIndices(),
+          this->beta,
+          this->getResultIndices()
+        );
+        this->updated();
+      }
     }
 
     operator std::string () const override {

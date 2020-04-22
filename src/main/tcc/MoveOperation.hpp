@@ -5,6 +5,7 @@
 #include <tcc/IndexedTensorOperation.hpp>
 
 #include <util/SharedPointer.hpp>
+#include <util/Log.hpp>
 
 namespace cc4s {
   template <typename F, typename TE> class Contraction;
@@ -37,14 +38,20 @@ namespace cc4s {
       this->costs += moveCosts;
     }
 
-    void execute(const size_t targetVersion) override {
-      rhs->execute(targetVersion);
-      this->getResult()->getMachineTensor()->sum(
-        this->alpha,
-        rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
-        this->beta,
-        this->resultIndices
-      );
+    void execute() override {
+      rhs->execute();
+      if (this->template isOlderThan<F>(rhs)) {
+        this->getResult()->getMachineTensor()->sum(
+          this->alpha,
+          rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
+          this->beta,
+          this->resultIndices
+        );
+        this->updated();
+      } else {
+        LOG(2,"TCC") << this->getResult()->getName() << " up-to-date with " <<
+          rhs->getResult()->getName() << std::endl;
+      }
     }
 
     operator std::string () const override {

@@ -31,10 +31,7 @@ namespace cc4s {
     {
     }
 
-    virtual ~IndexedTensorOperation() {
-    }
-
-    virtual const std::string &getResultIndices() {
+    const std::string &getResultIndices() {
       return resultIndices;
     }
 

@@ -31,16 +31,19 @@ namespace cc4s {
       // TODO: assess map operation costs
     }
 
-    void execute(const size_t targetVersion) override {
-      source->execute(targetVersion);
-      // execute machine tensor's sum with custom map
-      this->getResult()->getMachineTensor()->sum(
-        Domain(1),
-        source->getResult()->getMachineTensor(), source->getResultIndices(),
-        Target(0),
-        this->getResultIndices(),
-        f
-      );
+    void execute() override {
+      source->execute();
+      if (this->template isOlderThan<Domain>(source)) {
+        // execute machine tensor's sum with custom map
+        this->getResult()->getMachineTensor()->sum(
+          Domain(1),
+          source->getResult()->getMachineTensor(), source->getResultIndices(),
+          Target(0),
+          this->getResultIndices(),
+          f
+        );
+        this->updated();
+      }
     }
 
     virtual operator std::string () const {

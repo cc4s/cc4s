@@ -28,17 +28,20 @@ namespace cc4s {
     {
     }
 
-    void execute(const size_t targetVersion) override {
-      source->execute(targetVersion);
-      this->getResult()->getMachineTensor()->slice(
-        F(1),
-        source->getResult()->getMachineTensor(),
-        begins, ends,
-        F(0),
-        // write into entire result tensor
-        std::vector<size_t>(this->getResult()->getLens().size()),
-        this->getResult()->getLens()
-      );
+    void execute() override {
+      source->execute();
+      if (this->template isOlderThan<F>(source)) {
+        this->getResult()->getMachineTensor()->slice(
+          F(1),
+          source->getResult()->getMachineTensor(),
+          begins, ends,
+          F(0),
+          // write into entire result tensor
+          std::vector<size_t>(this->getResult()->getLens().size()),
+          this->getResult()->getLens()
+        );
+        this->updated();
+      }
     }
 
     operator std::string () const override {

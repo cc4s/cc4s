@@ -31,8 +31,8 @@ namespace cc4s {
     {
     }
 
-    void execute(const size_t targetVersion) override {
-      source->execute(targetVersion);
+    void execute() override {
+      source->execute();
     }
 
     operator std::string () const override {

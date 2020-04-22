@@ -84,7 +84,10 @@ namespace cc4s {
       const std::vector<size_t> &lens_,
       const std::string &name_,
       const ProtectedToken &
-    ): lens(lens_), assumedShape(true), name(name_) {
+    ):
+      lens(lens_), assumedShape(true),
+      version(0), name(name_)
+    {
       // the machine tensor is not allocated initially
     }
 
@@ -93,7 +96,10 @@ namespace cc4s {
       const std::string &name_,
       const bool assumedShape_,
       const ProtectedToken &
-    ): lens(lens_), assumedShape(assumedShape_), name(name_) {
+    ):
+      lens(lens_), assumedShape(assumedShape_),
+      version(0), name(name_)
+    {
       // the machine tensor is not allocated initially
     }
 
@@ -104,7 +110,7 @@ namespace cc4s {
     Tensor(
       const typename MT::T &unadaptedTensor_,
       const ProtectedToken &
-    ): assumedShape(true) {
+    ): assumedShape(true), version(0) {
       auto mt(MT::create(unadaptedTensor_));
       lens = mt->getLens();
       name = mt->getName();
@@ -164,6 +170,14 @@ namespace cc4s {
       return machineTensor != nullptr;
     }
 
+    size_t getVersion() const {
+      return version;
+    }
+
+    void updated() {
+      version = getNextTensorVersion();
+    }
+
     // read tensor elements to buffer
     void read(
       const size_t elementsCount, const size_t *indexData, F *valueData
@@ -181,7 +195,7 @@ namespace cc4s {
       const size_t elementsCount, const size_t *indexData, const F *valueData
     ) {
       getMachineTensor()->write(elementsCount, indexData, valueData);
-      version = getNextTensorVersion();
+      updated();
     }
     void write(F value, size_t index = 0) {
       write(1, &index, &value);

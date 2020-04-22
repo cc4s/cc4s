@@ -29,12 +29,16 @@ namespace cc4s {
     {
     }
 
-    void execute(const size_t targetVersion) override {
-      if (this->getResult() != source) {
+    void execute() override {
+      if (
+        source != this->getResult() &&
+        source->getVersion() > this->getResult()->getVersion()
+      ) {
         // move the data only if source and result tensors are different
         *this->getResult() = *source;
         LOG(2,"TCC") << "move " << this->getResult()->getName() << " <<= " <<
           source->getName() << std::endl;
+        this->updated();
       }
     }
 
