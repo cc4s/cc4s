@@ -62,7 +62,7 @@ namespace cc4s {
       return this->getResult()->getName();
     }
 
-    void execute() override {
+    void execute(const size_t targetVersion) override {
       if (!evaluated) {
         recipe->execute();
         evaluated = true;

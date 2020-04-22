@@ -31,14 +31,11 @@ namespace cc4s {
     {
     }
 
-    virtual ~IndexingOperation() {
+    void execute(const size_t targetVersion) override {
+      source->execute(targetVersion);
     }
 
-    virtual void execute() {
-      source->execute();
-    }
-
-    virtual operator std::string () const {
+    operator std::string () const override {
       return std::string(*source) + "[" + this->resultIndices + "]";
     }
 

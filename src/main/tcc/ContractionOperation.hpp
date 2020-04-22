@@ -45,12 +45,9 @@ namespace cc4s {
       this->costs += contractionCosts;
     }
 
-    virtual ~ContractionOperation() {
-    }
-
-    virtual void execute() {
-      left->execute();
-      right->execute();
+    void execute(const size_t targetVersion) override {
+      left->execute(targetVersion);
+      right->execute(targetVersion);
       this->getResult()->getMachineTensor()->contract(
         this->alpha,
         left->getResult()->getMachineTensor(), left->getResultIndices(),
@@ -60,7 +57,7 @@ namespace cc4s {
       );
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       std::stringstream stream;
       stream << "Contraction( " << this->alpha << ", " <<
         std::string(*left) << ", " << std::string(*right) << ", " <<

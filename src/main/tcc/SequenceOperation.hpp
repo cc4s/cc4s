@@ -23,17 +23,15 @@ namespace cc4s {
       // no elements are required by the result of a sequence
       this->costs.elementsCount = 0;
     }
-    virtual ~SequenceOperation() {
-    }
 
-    virtual void execute() {
+    void execute(const size_t targetVersion) override {
       // execute each operation in turn
       for (auto &operation: operations) {
-        operation->execute();
+        operation->execute(targetVersion);
       }
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       std::stringstream stream;
       stream << "Sequence( ";
       std::string delimiter("");

@@ -37,11 +37,8 @@ namespace cc4s {
       this->costs += moveCosts;
     }
 
-    virtual ~MoveOperation() {
-    }
-
-    virtual void execute() {
-      rhs->execute();
+    void execute(const size_t targetVersion) override {
+      rhs->execute(targetVersion);
       this->getResult()->getMachineTensor()->sum(
         this->alpha,
         rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),
@@ -50,7 +47,7 @@ namespace cc4s {
       );
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       std::stringstream stream;
       stream << "Move( " << this->alpha << ", " <<
         std::string(*this->result) << ", " << std::string(*rhs) << ", " <<

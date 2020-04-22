@@ -29,10 +29,7 @@ namespace cc4s {
     {
     }
 
-    virtual ~TensorLoadOperation() {
-    }
-
-    virtual void execute() {
+    void execute(const size_t targetVersion) override {
       if (this->getResult() != source) {
         // move the data only if source and result tensors are different
         *this->getResult() = *source;
@@ -41,7 +38,7 @@ namespace cc4s {
       }
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       std::stringstream stream;
       stream << "Load( " <<
         std::string(*source) <<

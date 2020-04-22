@@ -28,11 +28,8 @@ namespace cc4s {
     {
     }
 
-    virtual ~SliceOperation() {
-    }
-
-    virtual void execute() {
-      source->execute();
+    void execute(const size_t targetVersion) override {
+      source->execute(targetVersion);
       this->getResult()->getMachineTensor()->slice(
         F(1),
         source->getResult()->getMachineTensor(),
@@ -44,7 +41,7 @@ namespace cc4s {
       );
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       return "Slice( " + std::string(*source) + ", " +
         SliceOperation<F,TE>::coordinateString(begins) + "-" +
         SliceOperation<F,TE>::coordinateString(ends) + " )";

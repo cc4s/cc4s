@@ -28,7 +28,7 @@ namespace cc4s {
     {
     }
 
-    void execute() override {
+    void execute(const size_t targetVersion) override {
       // a tensor operation occurring as an atomic operation is a fetch
       // operation of the operand tensor, which result points to.
       // there is nothing more to do.
