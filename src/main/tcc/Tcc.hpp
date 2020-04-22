@@ -24,6 +24,7 @@
 namespace cc4s {
   template <typename TensorEngine>
   class Tcc {
+
   protected:
     class ProtectedToken {
     };

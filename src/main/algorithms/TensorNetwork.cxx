@@ -49,7 +49,7 @@ Real<> TensorNetwork::getTrace(const Ptr<MapNode> &matrix) {
   getTrace->execute();
 
   // get smaller dimension:
-  auto m( std::min(matrixData->lens[0],matrixData->lens[1]) );
+  auto m( std::min(matrixData->getLens()[0],matrixData->getLens()[1]) );
   // set matrix:
   ((*(*matrixData)({0,0},{m,m}))["ii"] += (*scalar)[""])->compile()->execute();
 /*

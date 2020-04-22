@@ -3,6 +3,7 @@
 #define TCC_EXPRESSION_DEFINED
 
 #include <util/SharedPointer.hpp>
+#include <util/Exception.hpp>
 #include <tcc/Operation.hpp>
 #include <tcc/Scope.hpp>
 

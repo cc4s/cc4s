@@ -6,6 +6,7 @@
 
 #include <tcc/Costs.hpp>
 #include <util/SharedPointer.hpp>
+#include <util/Log.hpp>
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;

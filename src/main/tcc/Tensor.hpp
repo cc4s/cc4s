@@ -11,22 +11,58 @@
 #include <string>
 
 namespace cc4s {
+  size_t getNextTensorVersion();
+
   /**
    * \brief 
    **/
   template <typename F, typename TE>
   class Tensor: public ClosedTensorExpression<F,TE> {
+  public:
   protected:
     /**
      * \brief Dummy objects of that type are used to guarantee that
      * constructors are only called from within the class although they
-     * need to be declared public to work with make_shared.
+     * need to be declared public to work with make_shared aka New.
      **/
     class ProtectedToken {
     };
 
   public:
+    // TODO: should be protected
+    /**
+     * \brief Dimensions of the tensor if assumedShape is true, otherwise empty.
+     **/
+    std::vector<size_t> lens;
+
+    /**
+     * \brief Whether this tensor has already well defined dimensions.
+     * A tensor may be created without shape. Such a tensor assumes shape
+     * from the result of an assignment.
+     **/
+    bool assumedShape;
+
+  protected:
+    /**
+     * \brief The version of the data in this tensor. It is updated everytime
+     * the tensor is updated.
+     **/
+    size_t version;
+
+    /**
+     * \brief The tensor name for in verbose info and error messages.
+     **/
+    std::string name;
+
+    /**
+     * \brief Pointer to the machine tensor, wrapping the underlying
+     * tensor representation. The machine tensor is not allocated until
+     * requested during execution or by manually calling getMachineTensor().
+     **/
     typedef typename TE::template MachineTensor<F> MT;
+    PTR(MT) machineTensor;
+
+  public:
     /**
      * \brief Create a tcc tensor of yet unknown shape.
      * It must be first on the left-hand-side of an assignment.
@@ -35,7 +71,7 @@ namespace cc4s {
     Tensor(
       const std::string &name_,
       const ProtectedToken &
-    ): assumedShape(false), name(name_) {
+    ): assumedShape(false), version(0), name(name_) {
     }
 
     /**
@@ -145,6 +181,7 @@ namespace cc4s {
       const size_t elementsCount, const size_t *indexData, const F *valueData
     ) {
       getMachineTensor()->write(elementsCount, indexData, valueData);
+      version = getNextTensorVersion();
     }
     void write(F value, size_t index = 0) {
       write(1, &index, &value);
@@ -165,10 +202,7 @@ namespace cc4s {
       return elementsCount;
     }
 
-    std::vector<size_t> lens;
-    bool assumedShape;
-
-    virtual PTR(Operation<TE>) compile(Scope &) {
+    PTR(Operation<TE>) compile(Scope &) override {
       return TensorLoadOperation<F,TE>::create(
         this->template toPtr<Tensor<F,TE>>(),
         Costs(getElementsCount())
@@ -178,9 +212,9 @@ namespace cc4s {
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
+    PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
-    ) {
+    ) override {
       // shape assuming:
       if (!assumedShape) {
         // lhs has not yet assumed shape
@@ -228,17 +262,9 @@ namespace cc4s {
       return rhsOperation;
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       return getName();
     }
-
-  protected:
-    /**
-     * \brief The tensor name.
-     **/
-    std::string name;
-
-    PTR(MT) machineTensor;
   };
 }
 

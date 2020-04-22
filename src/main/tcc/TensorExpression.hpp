@@ -3,7 +3,9 @@
 #define TCC_TENSOR_EXPRESSION_DEFINED
 
 #include <tcc/Expression.hpp>
+
 #include <tcc/TensorOperation.hpp>
+#include <util/Exception.hpp>
 
 namespace cc4s {
   template <typename F, typename TE>

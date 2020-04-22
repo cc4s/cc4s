@@ -7,6 +7,7 @@
 #include <tcc/IndexingOperation.hpp>
 #include <tcc/MoveOperation.hpp>
 #include <util/SharedPointer.hpp>
+#include <algorithm>
 #include <string>
 
 namespace cc4s {
