@@ -11,9 +11,9 @@ ALGORITHM_REGISTRAR_DEFINITION(Mp2EnergyFromCoulombIntegrals);
 
 Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
+  auto orbitals(coulombIntegrals->getValue<std::string>("orbitals"));
   // multiplex calls to template methods
-  if (scalarType == "real64") {
+  if (orbitals == "real") {
     if (Cc4s::options->dryRun) {
       return calculateMp2Energy<Real<>,DryTensorEngine>(arguments);
     } else {
@@ -29,7 +29,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   } else {
 */
   } else {
-    Assert(false, "unsupported scalar type '" + scalarType + "'");
+    Assert(false, "unsupported orbitals type '" + orbitals + "'");
   }
 }
 
@@ -40,7 +40,8 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   typedef Tensor<F,TE> T;
   typedef Tensor<Real<>,TE> RT;
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto Vabij(coulombIntegrals->getValue<Ptr<T>>("data"));
+  auto slices(coulombIntegrals->getMap("slices"));
+  auto Vabij(slices->getValue<Ptr<TensorRecipe<F,TE>>>("abij"));
   Real<> spins(coulombIntegrals->getValue<size_t>("spins"));
 
   auto holeEnergies(arguments->getMap("holeEigenEnergies"));

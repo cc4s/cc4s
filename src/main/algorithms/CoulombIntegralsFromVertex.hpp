@@ -28,7 +28,6 @@ namespace cc4s {
     template <typename TE>
     Ptr<MapNode> calculateComplexIntegrals(const Ptr<MapNode> &arguments);
 
-    Ptr<MapNode> GammaGai, GammaGia;
 /*
     CTF::Tensor<complex> *GammaGab;
     CTF::Tensor<complex> *GammaGij;

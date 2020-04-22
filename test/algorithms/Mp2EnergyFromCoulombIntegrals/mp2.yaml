@@ -14,11 +14,17 @@
   out:
     tensor: ParticleEigenEnergies
 
-- name: CoulombIntegralsFromVertex
+- name: SliceCoulombVertex
   in:
     coulombVertex: CoulombVertex
     holeEigenEnergies: HoleEigenEnergies
     particleEigenEnergies: ParticleEigenEnergies
+  out:
+    slicedCoulombVertex: CoulombVertex
+
+- name: CoulombIntegralsFromVertex
+  in:
+    slicedCoulombVertex: CoulombVertex
   out:
     coulombIntegrals: CoulombIntegrals
 
