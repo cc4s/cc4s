@@ -1,0 +1,37 @@
+- name: TensorReader
+  in:
+    fileName: "../../../resources/systems/H2O/CoulombVertexComplex.yaml"
+  out:
+    tensor: CoulombVertex
+- name: TensorReader
+  in:
+    fileName: "../../../resources/systems/H2O/HoleEigenEnergiesComplex.yaml"
+  out:
+    tensor: HoleEigenEnergies
+- name: TensorReader
+  in:
+    fileName: "../../../resources/systems/H2O/ParticleEigenEnergiesComplex.yaml"
+  out:
+    tensor: ParticleEigenEnergies
+
+- name: SliceCoulombVertex
+  in:
+    coulombVertex: CoulombVertex
+    holeEigenEnergies: HoleEigenEnergies
+    particleEigenEnergies: ParticleEigenEnergies
+  out:
+    slicedCoulombVertex: CoulombVertex
+
+- name: CoulombIntegralsFromVertex
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: Mp2EnergyFromCoulombIntegrals
+  in:
+    coulombIntegrals: CoulombIntegrals
+    holeEigenEnergies: HoleEigenEnergies
+    particleEigenEnergies: ParticleEigenEnergies
+  out:
+    energy: Mp2Energy
