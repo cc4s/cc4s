@@ -28,7 +28,8 @@ namespace cc4s {
     ): ClosedTensorExpression<F,TE>(
     ),
     TensorOperation<F,TE>(
-      result_, Costs(0), typename Operation<TE>::ProtectedToken()
+      result_, Costs(0),
+      recipe_->file, recipe_->line, typename Operation<TE>::ProtectedToken()
     ),
     recipe(
       recipe_

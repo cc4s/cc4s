@@ -48,7 +48,7 @@ namespace cc4s {
           source->compile(scope)
         )
       );
-      return MapOperation<Target,Domain,TE>::create(f, sourceOperation);
+      return MapOperation<Target,Domain,TE>::create(f, sourceOperation, scope);
     }
 
     // keep other overloads visible

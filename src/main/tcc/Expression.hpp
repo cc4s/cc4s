@@ -6,6 +6,7 @@
 #include <util/Exception.hpp>
 #include <tcc/Operation.hpp>
 #include <tcc/Scope.hpp>
+#include <util/Log.hpp>
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;
@@ -34,14 +35,22 @@ namespace cc4s {
       throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
     }
 
-    virtual PTR(Operation<TE>) compile() {
-      Scope scope;
+    virtual PTR(Operation<TE>) compile(
+      const std::string &file, const size_t line
+    ) {
+      Scope scope(file, line);
+      LOG_FILE_LINE(2, file, line) <<
+        "compiling: " << static_cast<std::string>(*this) << std::endl;
       return this->compile(scope);
     }
 
     template <typename F>
-    Ptr<TensorRecipe<F,TE>> compileRecipe(const Ptr<Tensor<F,TE>> &result) {
-      return createTensorRecipe(result, compile());
+    Ptr<TensorRecipe<F,TE>> compileRecipe(
+      const Ptr<Tensor<F,TE>> &result,
+      const std::string &file,
+      const size_t line
+    ) {
+      return createTensorRecipe(result, compile(file, line));
     }
 
     // TODO: should be protected

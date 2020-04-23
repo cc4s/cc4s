@@ -19,10 +19,12 @@ namespace cc4s {
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const std::vector<size_t> begins_,
       const std::vector<size_t> ends_,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       TensorOperation<F,TE>(
-        result_, source_->costs, typename Operation<TE>::ProtectedToken()
+        result_, source_->costs,
+        file_, line_, typename Operation<TE>::ProtectedToken()
       ),
       source(source_), begins(begins_), ends(ends_)
     {
@@ -41,7 +43,7 @@ namespace cc4s {
         for (auto d: bBegins) { bBeginsStream << " " << d; }
         for (auto d: bEnds) { bEndsStream << " " << d; }
 
-        LOG(2, "TCC") << "slice " <<
+        LOG_FILE_LINE(2, this->file, this->line) << "executing: slice " <<
           this->getName() << "(" <<
             bBeginsStream.str() << "," << bEndsStream.str() <<
           ") <<= " << this->alpha << " * " << source->getName() << "(" <<
@@ -55,6 +57,9 @@ namespace cc4s {
           F(0), bBegins, bEnds
         );
         this->updated();
+      } else {
+        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
+          " up-to-date with " << source->getName() << std::endl;
       }
     }
 
@@ -84,10 +89,12 @@ namespace cc4s {
       const PTR(ESC(TensorOperation<F,TE>)) &source,
       const PTR(ESC(Tensor<F,TE>)) &result,
       const std::vector<size_t> begins,
-      const std::vector<size_t> ends
+      const std::vector<size_t> ends,
+      const Scope &scope
     ) {
       return NEW(ESC(SliceOperation<F,TE>),
-        source, result, begins, ends, typename Operation<TE>::ProtectedToken()
+        source, result, begins, ends,
+        scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 

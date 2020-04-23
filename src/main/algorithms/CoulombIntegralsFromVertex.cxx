@@ -53,10 +53,11 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
     auto result(Tcc<TE>::template tensor<Real<>>( \
       std::string(#PART) + "Gamma" + #SLICE) \
     ); \
-    PART##Gamma##SLICE = ( \
+    PART##Gamma##SLICE = COMPILE_RECIPE(result, (\
       (*result)[#SLICE] <<= \
         map<Real<>>(PART<Complex<>>, (*Gamma##SLICE)[#SLICE]) \
-    )->compileRecipe(result); \
+      ) \
+    ); \
   }
   // define intermediate recipes
   DEFINE_VERTEX_PART(real, Gab)
@@ -72,12 +73,13 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   { \
     auto result(Tcc<TE>::template tensor<Real<>>(std::string("V") + #SLICE)); \
     integralSlices->setValue<Ptr<TensorRecipe<Real<>,TE>>>(#SLICE, \
-      ( \
+      COMPILE_RECIPE(result, ( \
         (*result)[#SLICE] <<= \
           (*realGamma##LSLICE)[LIDX] * (*realGamma##RSLICE)[RIDX], \
         (*result)[#SLICE] += \
           (*imagGamma##LSLICE)[LIDX] * (*imagGamma##RSLICE)[RIDX] \
-      )->compileRecipe(result) \
+        ) \
+      ) \
     ); \
   }
   // define recipes for integral slices
@@ -116,10 +118,12 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
     auto result(Tcc<TE>::template tensor<Complex<>>( \
       std::string("conjTGamma") + #TSLICE) \
     ); \
-    conjTGamma##TSLICE = ( \
-      (*result)[#TSLICE] <<= \
-        map<Complex<>>(conj<Complex<>>, (*Gamma##SLICE)[IDX]) \
-    )->compileRecipe(result); \
+    conjTGamma##TSLICE = COMPILE_RECIPE(result, \
+      ( \
+        (*result)[#TSLICE] <<= \
+          map<Complex<>>(conj<Complex<>>, (*Gamma##SLICE)[IDX]) \
+      ) \
+    ); \
   }
   // define intermediate recipes
   DEFINE_VERTEX_CONJT(Gab, Gab, "Gba")
@@ -133,10 +137,11 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
       Tcc<TE>::template tensor<Complex<>>(std::string("V") + #SLICE) \
     ); \
     integralSlices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(#SLICE, \
-      ( \
+      COMPILE_RECIPE(result, (\
         (*result)[#SLICE] <<= \
           (*conjTGamma##LSLICE)[LIDX] * (*Gamma##RSLICE)[RIDX] \
-      )->compileRecipe(result) \
+        ) \
+      ) \
     ); \
   }
   // define recipes for integral slices

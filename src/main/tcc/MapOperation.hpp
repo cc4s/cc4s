@@ -16,6 +16,7 @@ namespace cc4s {
     MapOperation(
       const std::function<Target(Domain)> &f_,
       const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       IndexedTensorOperation<Target,TE>(
@@ -25,6 +26,7 @@ namespace cc4s {
         ),
         source_->getResultIndices().c_str(), // target has identical indices
         source_->costs,
+        file_, line_,
         typename Operation<TE>::ProtectedToken()
       ),
       f(f_), source(source_)
@@ -35,7 +37,8 @@ namespace cc4s {
     void execute() override {
       source->execute();
       if (this->template isOlderThan<Domain>(source)) {
-        LOG(2, "TCC") << "sum " << this->getName() << " <<= " <<
+        LOG_FILE_LINE(2, this->file, this->line) << "executing: unary map " <<
+          this->getName() << " <<= "<<
           "f(" << this->alpha << " * " << source->getName() << ") + " <<
           this->beta << " * " << this->getName() << std::endl;
 
@@ -47,6 +50,9 @@ namespace cc4s {
           f
         );
         this->updated();
+      } else {
+        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
+          " up-to-date with " << source->getName() << std::endl;
       }
     }
 
@@ -57,10 +63,12 @@ namespace cc4s {
  protected:
     static PTR(ESC(MapOperation<Target,Domain,TE>)) create(
       const std::function<Target(Domain)> &f_,
-      const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_
+      const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_,
+      const Scope &scope
     ) {
       return NEW(ESC(MapOperation<Target,Domain,TE>),
-        f_, source_, typename Operation<TE>::ProtectedToken()
+        f_, source_,
+        scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 

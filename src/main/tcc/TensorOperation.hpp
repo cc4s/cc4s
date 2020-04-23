@@ -20,9 +20,10 @@ namespace cc4s {
     TensorOperation(
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const Costs &costs_,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
-      Operation<TE>(costs_),
+      Operation<TE>(costs_, file_, line_),
       result(result_),
       alpha(F(1)), beta(F(0))
     {
@@ -40,10 +41,11 @@ namespace cc4s {
 
     template <typename G>
     bool isOlderThan(const Ptr<TensorOperation<G,TE>> &source) const {
-      // version is only relevant for replacing operations with beta==0
       return
+        // version is only relevant for replacing operations with beta==0
         beta != F(0) ||
-        source->getResult()->getVersion() > result->getVersion();
+        // equality means rhs & lhs tensor are the same, requiring update
+        source->getResult()->getVersion() >= result->getVersion();
     }
 
     void updated() {

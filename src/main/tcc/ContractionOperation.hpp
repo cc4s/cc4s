@@ -28,11 +28,12 @@ namespace cc4s {
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       Costs contractionCosts,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       IndexedTensorOperation<F,TE>(
         result_, resultIndices_, left_->costs + right_->costs,
-        typename Operation<TE>::ProtectedToken()
+        file_, line_, typename Operation<TE>::ProtectedToken()
       ),
       left(left_), right(right_)
     {
@@ -52,7 +53,8 @@ namespace cc4s {
         this->template isOlderThan<F>(left) ||
         this->template isOlderThan<F>(right)
       ) {
-        LOG(2, "TCC") << "contract " << this->getName() << " <<= " <<
+        LOG_FILE_LINE(2, this->file, this->line) << "executing: contraction " <<
+          this->getName() << " <<= " <<
           this->alpha << " * " <<
           left->getName() << " * " << right->getName() << " + " <<
           this->beta << " * " << this->getName() << std::endl;
@@ -65,6 +67,11 @@ namespace cc4s {
           this->getResultIndices()
         );
         this->updated();
+      } else {
+        LOG_FILE_LINE(3, this->file, this->line) <<
+          this->getResult()->getName() << " up-to-date with " <<
+          "(" << left->getName() << ", " << right->getName() << ")" <<
+          std::endl;
       }
     }
 
@@ -87,12 +94,14 @@ namespace cc4s {
       const PTR(ESC(IndexedTensorOperation<F,TE>)) &right_,
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
-      const Costs &contractionCosts
+      const Costs &contractionCosts,
+      const Scope &scope
     ) {
       return NEW(ESC(ContractionOperation<F,TE>),
         left_, right_,
         result_, resultIndices_,
         contractionCosts,
+        scope.file, scope.line,
         typename Operation<TE>::ProtectedToken()
       );
     }

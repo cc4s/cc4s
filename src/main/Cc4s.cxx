@@ -28,7 +28,7 @@ void Cc4s::run() {
   auto steps(parser.parse()->map());
   Assert(steps, "expecting map as input");
   job->get("steps") = steps;
-  LOG(0, "root") <<
+  LOG(0, "Cc4s") <<
     "execution plan read, steps=" << steps->size() << std::endl;
 
   size_t rootFlops, totalFlops;
@@ -40,7 +40,7 @@ void Cc4s::run() {
     for (unsigned int i(0); i < steps->size(); ++i) {
       auto step(steps->getMap(i));
       auto algorithmName(step->getSymbol("name"));
-      LOG(0, "root") << "step=" << (i+1) << ", " << algorithmName << std::endl;
+      LOG(0, "Cc4s") << "step=" << (i+1) << ", " << algorithmName << std::endl;
 
       // create algorithm
       auto algorithm(AlgorithmFactory::create(algorithmName));
@@ -69,7 +69,7 @@ void Cc4s::run() {
 
       std::stringstream realtime;
       realtime << time;
-      LOG(1, "root") << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
+      LOG(1, "Cc4s") << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
         << ", operations=" << flops / 1e9 << " GFLOPS/core"
         << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
       // TODO: enter data in node tree
@@ -89,10 +89,10 @@ void Cc4s::run() {
   OUT() << std::endl;
   std::stringstream totalRealtime;
   totalRealtime << totalTime;
-  LOG(0, "root") << "total realtime=" << totalRealtime.str() << " s" << std::endl;
-  LOG(0, "root") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
+  LOG(0, "Cc4s") << "total realtime=" << totalRealtime.str() << " s" << std::endl;
+  LOG(0, "Cc4s") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
     << " speed=" << rootFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
-  LOG(0, "root") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
+  LOG(0, "Cc4s") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
     << std::endl;
   // TODO: flops counter
 /*
@@ -155,11 +155,11 @@ void Cc4s::printBanner(const Ptr<MapNode> &job) {
         << "   / /__/ /__/__  __(__  ) " << std::endl
         << "   \\___/\\___/  /_/ /____/  " << std::endl
         << "  Coupled Cluster for Solids" << std::endl << std::endl;
-  LOG(0, "root") << "version=" << CC4S_VERSION <<
+  LOG(0, "Cc4s") << "version=" << CC4S_VERSION <<
     ", date=" << CC4S_DATE << std::endl;
-  LOG(0, "root") << "build date=" << buildDate.str() << std::endl;
-  LOG(0, "root") << "compiler=" << COMPILER_VERSION << std::endl;
-  LOG(0, "root") << "total processes=" << world->getProcesses() << std::endl;
+  LOG(0, "Cc4s") << "build date=" << buildDate.str() << std::endl;
+  LOG(0, "Cc4s") << "compiler=" << COMPILER_VERSION << std::endl;
+  LOG(0, "Cc4s") << "total processes=" << world->getProcesses() << std::endl;
   OUT() << std::endl;
 
   job->setValue<std::string>("version", CC4S_VERSION);
@@ -174,14 +174,14 @@ void Cc4s::printBanner(const Ptr<MapNode> &job) {
     << YAML::Key << "total-processes" << world->getProcesses();
 */
   if (options->dryRun) {
-    LOG(0, "root") <<
+    LOG(0, "Cc4s") <<
       "DRY RUN - nothing will be calculated" << std::endl;
   }
 }
 
 void Cc4s::printStatistics(const Ptr<MapNode> &job) {
   if (options->dryRun) {
-    LOG(0, "root")
+    LOG(0, "Cc4s")
       << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
       << " GB" << std::endl;
 /*
@@ -208,7 +208,7 @@ void Cc4s::printStatistics(const Ptr<MapNode> &job) {
     }
     statusStream.close();
     Real<> unitsPerGB(1024.0*1024.0);
-    LOG(0, "root") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
+    LOG(0, "Cc4s") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
       << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
 /*
     EMIT()
@@ -220,7 +220,7 @@ void Cc4s::printStatistics(const Ptr<MapNode> &job) {
     int64_t globalPeakVirtualSize, globalPeakPhysicalSize;
     world->reduce(peakPhysicalSize, globalPeakPhysicalSize);
     world->reduce(peakVirtualSize, globalPeakVirtualSize);
-    LOG(0, "root") << "overall peak physical memory="
+    LOG(0, "Cc4s") << "overall peak physical memory="
       << globalPeakPhysicalSize / unitsPerGB << " GB"
       << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
 /*
@@ -244,7 +244,7 @@ bool Cc4s::isDebugged() {
       std::stringstream pidStream(line.substr(position + pidField.length()));
       size_t pid; pidStream >> pid;
       if (pid > 0) {
-        LOG(0, "root") << "Debugger present" << std::endl;
+        LOG(0, "Cc4s") << "Debugger present" << std::endl;
       }
       return pid > 0;
     }

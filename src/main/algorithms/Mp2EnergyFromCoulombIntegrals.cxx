@@ -48,7 +48,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
     holeEnergies->getValue<Real<>>("unit") /
       particleEnergies->getValue<Real<>>("unit")
   );
-  ((*epsa)["a"] <<= toHoleUnits * (*epsa)["a"])->compile()->execute();
+  COMPILE((*epsa)["a"] <<= toHoleUnits * (*epsa)["a"])->execute();
 
   auto No(epsi->lens[0]);
   auto Nv(epsa->lens[0]);
@@ -59,7 +59,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   auto exchange( Tcc<TE>::template tensor<F>("X") );
   toHoleUnits = pow(holeEnergies->getValue<Real<>>("unit"),2.0) /
     pow(coulombIntegrals->getValue<Real<>>("unit"),2.0);
-  (
+  COMPILE(
     (*Dabij)["abij"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
     (*Dabij)["abij"] +=  map<F>([](Real<> eps) {return F(eps);}, (*epsa)["b"]),
     (*Dabij)["abij"] -=  map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"]),
@@ -71,7 +71,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
       toHoleUnits * -0.5*spins*spins * (*Vabij)["abij"] * (*Dabij)["abij"],
     (*exchange)[""] <<=
       toHoleUnits * +0.5*spins * (*Vabij)["abji"] * (*Dabij)["abij"]
-  )->compile()->execute();
+  )->execute();
 
   F D(direct->read()), X(exchange->read());
   LOG(1,getName()) << "direct=" << D << std::endl;

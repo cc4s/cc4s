@@ -16,7 +16,7 @@ namespace cc4s {
       std::streambuf *log_, std::streambuf *out_
     ): log(log_), out(out_) { }
   protected:
-    virtual int overflow(int c) {
+    int overflow(int c) override {
       if (c == EOF) {
         return !EOF;
       } else {
@@ -26,7 +26,7 @@ namespace cc4s {
       }
     }
 
-    virtual int sync() {
+    int sync() override {
       int const logSync(log->pubsync());
       int const outSync(out->pubsync());
       return logSync == 0 && outSync == 0 ? 0 : -1;
@@ -38,15 +38,15 @@ namespace cc4s {
   public:
     LogStream(
       std::string const &logFileName,
-      int const logLevel = 0,
+      const unsigned int logLevel = 0,
       std::string const &indent = "\t"
     );
 
     std::ostream &prepare(
-      int const rank,
-      std::string const &sourceFileName,
-      int const level,
-      std::string const &category = ""
+      const std::string &sourceFileName,
+      const size_t sourceFileLine,
+      const unsigned int level,
+      const std::string &category = ""
     );
   protected:
     std::ofstream logFile;
@@ -57,7 +57,7 @@ namespace cc4s {
      * A log message will only be
      * written if its log level is equal or below the current log level.
      */
-    int logLevel;
+    unsigned int logLevel;
     /**
      * \brief Indentation string used for each log level.
      * By default a tab character will be used.
@@ -77,15 +77,15 @@ namespace cc4s {
     static int getRank();
     static void setFileName(const std::string &fileName);
     static std::string getFileName();
-    static void setLogLevel(const int logLevel);
-    static int getLogLevel();
+    static void setLogLevel(const unsigned int logLevel);
+    static unsigned int getLogLevel();
 
     static LogStream &getLogStream();
 
   protected:
     static int rank;
     static std::string fileName;
-    static int logLevel;
+    static unsigned int logLevel;
     static LogStream *logStream;
   };
 }
@@ -109,9 +109,12 @@ namespace cc4s {
   } else std::ofstream(NAME, std::ofstream::app)
 #define LOG(...) \
   if (cc4s::Log::getRank() != 0) { \
-  } else cc4s::Log::getLogStream().prepare(0, __FILE__, __VA_ARGS__)
+  } else cc4s::Log::getLogStream().prepare(__FILE__, __LINE__,  __VA_ARGS__)
 #define LOG_RANK(...) \
-  cc4s::Log::getLogStream().prepare(cc4s::Log::getRank(), __FILE__, __VA_ARGS__)
+  cc4s::Log::getLogStream().prepare(__FILE__, __LINE__, __VA_ARGS__)
+#define LOG_FILE_LINE(LEVEL, FILE, LINE) \
+  if (cc4s::Log::getRank() != 0) { \
+  } else cc4s::Log::getLogStream().prepare(FILE, LINE, LEVEL)
 
 #endif
 

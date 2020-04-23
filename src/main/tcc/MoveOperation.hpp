@@ -26,11 +26,13 @@ namespace cc4s {
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       Costs moveCosts,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       IndexedTensorOperation<F,TE>(
         result_, resultIndices_,
         rhs_->costs,
+        file_, line_,
         typename Operation<TE>::ProtectedToken()
       ),
       rhs(rhs_)
@@ -41,7 +43,8 @@ namespace cc4s {
     void execute() override {
       rhs->execute();
       if (this->template isOlderThan<F>(rhs)) {
-        LOG(2, "TCC") << "sum " << this->getName() << " <<= " <<
+        LOG_FILE_LINE(2, this->file, this->line) << "executing: sum " <<
+          this->getName() << " <<= " <<
           this->alpha << " * " << rhs->getName() << " + " <<
           this->beta << " * " << this->getName() << std::endl;
 
@@ -53,8 +56,8 @@ namespace cc4s {
         );
         this->updated();
       } else {
-        LOG(2,"TCC") << this->getResult()->getName() << " up-to-date with " <<
-          rhs->getResult()->getName() << std::endl;
+        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
+          " up-to-date with " << rhs->getName() << std::endl;
       }
     }
 
@@ -71,12 +74,13 @@ namespace cc4s {
       const PTR(ESC(IndexedTensorOperation<F,TE>)) &rhs_,
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
-      const Costs &moveCosts
+      const Costs &moveCosts,
+      const Scope &scope
     ) {
       return NEW(ESC(MoveOperation<F,TE>),
         rhs_,
         result_, resultIndices_, moveCosts,
-        typename Operation<TE>::ProtectedToken()
+        scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 

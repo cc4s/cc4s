@@ -21,6 +21,10 @@
 // TODO: heuristics: limit number of simultaneously considered intermediates
 // TODO: fix max memory assessment
 
+#define COMPILE(...) ((__VA_ARGS__)->compile(__FILE__, __LINE__))
+#define COMPILE_RECIPE(RESULT, ...) \
+  ((__VA_ARGS__)->compileRecipe(RESULT, __FILE__, __LINE__))
+
 namespace cc4s {
   template <typename TensorEngine>
   class Tcc {

@@ -50,17 +50,17 @@ namespace cc4s {
       );
     }
 
-    virtual PTR(Operation<TE>) compile(Scope &scope) {
+    PTR(Operation<TE>) compile(Scope &scope) override {
+      Scope sourceScope(scope.file, scope.line);
       auto sourceOperation(
-        DYNAMIC_PTR_CAST(
-          ESC(TensorOperation<F,TE>), source->compile()
-        )
+        dynamicPtrCast<TensorOperation<F,TE>>(source->compile(sourceScope))
       );
       return IndexingOperation<F,TE>::create(
         sourceOperation,
         sourceOperation->getResult(), // indexing operates on the closed tensor
         indices.c_str(),
-        sourceOperation->costs
+        sourceOperation->costs,
+        scope
       );
     }
 

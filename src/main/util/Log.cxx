@@ -9,7 +9,7 @@ using namespace cc4s;
 
 LogStream::LogStream(
   std::string const &logFileName,
-  int const logLevel_,
+  const unsigned int logLevel_,
   std::string const &indent_
 ):
   std::ostream(&logBuffer),
@@ -22,17 +22,17 @@ LogStream::LogStream(
 }
 
 std::ostream &LogStream::prepare(
-  int const rank,
   std::string const &sourceFileName,
-  int const level,
-  std::string const &category
+  const size_t sourceFileLine,
+  const unsigned int level,
+  const std::string &category
 ) {
   Time time(Time::getCurrentRealTime());
   time -= startTime;
   logFile << time << " ";
   std::ostream *log(&logFile);
   if (logLevel >= level) {
-    for (int i(0); i < level; ++i) {
+    for (unsigned int i(0); i < level; ++i) {
       std::cout << indent.c_str();
     }
     std::stringstream fraction;
@@ -41,14 +41,17 @@ std::ostream &LogStream::prepare(
     // next puts should go to logFile and std::out, done by this->put
     log = this;
   }
-  if (category == "root") logFile << "root: ";
-  else (*log) << (category.length() > 0 ? category : sourceFileName) << ": ";
+  if (category.length() > 0) {
+    (*log) << category << ": ";
+  } else {
+    (*log) << sourceFileName.substr(9) << ':' << sourceFileLine << ": ";
+  }
   return *log;
 }
 
 int Log::rank(-1);
 std::string Log::fileName("cc4s.log");
-int Log::logLevel(0);
+unsigned int Log::logLevel(0);
 LogStream *Log::logStream(nullptr);
 
 void Log::setRank(int const rank_) {
@@ -67,11 +70,11 @@ std::string Log::getFileName() {
   return fileName;
 }
 
-void Log::setLogLevel(int const logLevel_) {
+void Log::setLogLevel(const unsigned int logLevel_) {
   logLevel = logLevel_;
 }
 
-int Log::getLogLevel() {
+unsigned int Log::getLogLevel() {
   return logLevel;
 }
 

@@ -15,8 +15,13 @@ namespace cc4s {
   public:
     SequenceOperation(
       const std::vector<PTR(Operation<TE>)> &operations_,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
-    ): Operation<TE>(operations_[0]->costs), operations(operations_) {
+    ): Operation<TE>(
+      operations_[0]->costs, file_, line_
+    ), operations(
+      operations_
+    ) {
       for (size_t i(1); i < operations_.size(); ++i) {
         this->costs += operations_[i]->costs;
       }
@@ -45,10 +50,12 @@ namespace cc4s {
 
   protected:
     static PTR(SequenceOperation<TE>) create(
-      const std::vector<PTR(Operation<TE>)> &operations_
+      const std::vector<PTR(Operation<TE>)> &operations_,
+      const Scope &scope
     ) {
       return NEW(SequenceOperation<TE>,
-        operations_, typename Operation<TE>::ProtectedToken()
+        operations_,
+        scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 

@@ -34,16 +34,18 @@ namespace cc4s {
       );
     }
 
-    PTR(Operation<TE>) compile(Scope &) override {
+    PTR(Operation<TE>) compile(Scope &scope) override {
+      Scope sourceScope(scope.file, scope.line);
       auto sourceOperation(
-        DYNAMIC_PTR_CAST(ESC(TensorOperation<F,TE>), source->compile())
+        dynamicPtrCast<TensorOperation<F,TE>>(source->compile(sourceScope))
       );
       return SliceOperation<F,TE>::create(
         sourceOperation,
         Tensor<F,TE>::create(
           getLens(), sourceOperation->getResult()->getName()+"$"
         ),
-        begins, ends
+        begins, ends,
+        scope
       );
     }
 
@@ -65,13 +67,13 @@ namespace cc4s {
           Tensor<F,TE>::create(resultLens, lhsTensor->getName() + "'")
         );
         rhsOperation->result = intermediateTensor;
-        LOG(0,"TCC") <<
+        LOG_FILE_LINE(0, rhsOperation->file, rhsOperation->line) <<
           "NOTE: updating parts of a slice on the left-hand-side "
           "currently requires the entire slice as intermediate tensor. "
           "This is less efficient than using write or read "
           "for the intended indices." << std::endl;
         if (rhsOperation->beta != F(1)) {
-          LOG(0,"TCC") <<
+          LOG_FILE_LINE(0, rhsOperation->file, rhsOperation->line) <<
             "WARNING: updating slice parts with operations other than += or -= "
             "may currently give wrong results as the entire slice is not "
             "read from the left-hand-side tensor before doing the update "
@@ -82,7 +84,8 @@ namespace cc4s {
         SliceIntoOperation<F,TE>::create(
           rhsOperation,
           lhsTensor,
-          begins, ends
+          begins, ends,
+          Scope(rhsOperation->file, rhsOperation->line)
         )
       );
       // transfer beta from inner to outer operation

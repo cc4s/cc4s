@@ -17,29 +17,31 @@ namespace cc4s {
     TensorLoadOperation(
       const PTR(ESC(Tensor<F,TE>)) &source_,
       const Costs &costs_,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       // the source tensor is also the result tensor, unless altered
       TensorOperation<F,TE>(
         source_,
         costs_,
-        typename Operation<TE>::ProtectedToken()
+        file_, line_, typename Operation<TE>::ProtectedToken()
       ),
       source(source_)
     {
     }
 
     void execute() override {
-      if (
-        source != this->getResult() &&
-        source->getVersion() > this->getResult()->getVersion()
-      ) {
+      if (source == this->getResult()) return;
+      if (source->getVersion() > this->getResult()->getVersion()) {
         // move the data only if source and result tensors are different
-        LOG(2,"TCC") << "move " << this->getName() << " <<= " <<
-          source->getName() << std::endl;
+        LOG_FILE_LINE(2, this->file, this->line) << "executing: move " <<
+          this->getName() << " <<= " << source->getName() << std::endl;
 
         *this->getResult() = *source;
         this->updated();
+      } else {
+        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
+          " up-to-date with " << source->getName() << std::endl;
       }
     }
 
@@ -57,10 +59,12 @@ namespace cc4s {
 
     static PTR(ESC(TensorOperation<F,TE>)) create(
       const PTR(ESC(Tensor<F,TE>)) &source,
-      const Costs &costs
+      const Costs &costs,
+      const Scope &scope
     ) {
       return NEW(ESC(TensorLoadOperation<F,TE>),
-        source, costs, typename Operation<TE>::ProtectedToken()
+        source, costs,
+        scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 

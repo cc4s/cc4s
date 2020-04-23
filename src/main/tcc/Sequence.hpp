@@ -117,16 +117,21 @@ namespace cc4s {
       );
     }
 
-    virtual PTR(Operation<TE>) compile(Scope &) {
+    PTR(Operation<TE>) compile(Scope &outerScope) override {
       std::vector<PTR(Operation<TE>)> operations(moves.size());
       for (size_t i(0); i < moves.size(); ++i) {
-        operations[i] = moves[i]->compile();
+        operations[i] = moves[i]->compile(outerScope);
       }
-      return SequenceOperation<TE>::create(operations);
+      return SequenceOperation<TE>::create(operations, outerScope);
     }
 
-    // keep other overloads visible
-    using Expression<TE>::compile;
+    PTR(Operation<TE>) compile(
+      const std::string &file, const size_t line
+    ) override {
+      Scope scope(file, line);
+      return this->compile(scope);
+    }
+
 
     virtual void countIndices(Scope &) {
       // the indidex of each subexpression are independet of each other

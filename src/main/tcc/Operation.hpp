@@ -20,8 +20,13 @@ namespace cc4s {
      **/
     Costs costs;
 
+    std::string file;
+    size_t line;
+
   protected:
-    Operation(const Costs &costs_): costs(costs_) {
+    Operation(
+      const Costs &costs_, const std::string &file_, const size_t line_
+    ): costs(costs_), file(file_), line(line_) {
     }
     class ProtectedToken {
     };

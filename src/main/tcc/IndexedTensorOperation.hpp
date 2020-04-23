@@ -22,10 +22,11 @@ namespace cc4s {
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       const Costs &costs_,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       TensorOperation<F,TE>(
-        result_, costs_, typename Operation<TE>::ProtectedToken()
+        result_, costs_, file_, line_, typename Operation<TE>::ProtectedToken()
       ),
       resultIndices(resultIndices_)
     {

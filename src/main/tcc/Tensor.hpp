@@ -175,7 +175,6 @@ namespace cc4s {
     }
 
     void updated() {
-      LOG_RANK(2,"TCC") << "updating " << getName() << std::endl;
       version = getNextTensorVersion();
     }
 
@@ -217,10 +216,11 @@ namespace cc4s {
       return elementsCount;
     }
 
-    PTR(Operation<TE>) compile(Scope &) override {
+    PTR(Operation<TE>) compile(Scope &scope) override {
       return TensorLoadOperation<F,TE>::create(
         this->template toPtr<Tensor<F,TE>>(),
-        Costs(getElementsCount())
+        Costs(getElementsCount()),
+        scope
       );
     }
 

@@ -21,11 +21,12 @@ namespace cc4s {
       const PTR(ESC(Tensor<F,TE>)) &result_,
       const char *resultIndices_,
       const Costs &costs_,
+      const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       IndexedTensorOperation<F,TE>(
         result_, resultIndices_, costs_,
-        typename Operation<TE>::ProtectedToken()
+        file_, line_, typename Operation<TE>::ProtectedToken()
       ),
       source(source_)
     {
@@ -46,11 +47,12 @@ namespace cc4s {
       const PTR(ESC(TensorOperation<F,TE>)) &source,
       const PTR(ESC(Tensor<F,TE>)) &result,
       const char *resultIndices,
-      const Costs &costs
+      const Costs &costs,
+      const Scope &scope
     ) {
       return NEW(ESC(IndexingOperation<F,TE>),
         source, result, resultIndices, costs,
-        typename Operation<TE>::ProtectedToken()
+        scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 

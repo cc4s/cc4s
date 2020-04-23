@@ -12,7 +12,9 @@ namespace cc4s {
    **/
   class Scope {
   public:
-    Scope(): triedPossibilitiesCount(0) {
+    Scope(
+      const std::string &file_ = "<anonymous>", const size_t line_ = 0
+    ): triedPossibilitiesCount(0), file(file_), line(line_) {
       for (unsigned int i(0); i < INDICES_COUNT; ++i) counts[i] = 0;
     }
 
@@ -37,6 +39,15 @@ namespace cc4s {
 
     // used during contraction compilation
     size_t triedPossibilitiesCount;
+
+    /**
+     * \brief Source file of this scope.
+     **/
+    std::string file;
+    /**
+     * \brief Source file linenumber of this scope.
+     **/
+    size_t line;
   };
 }
 

@@ -242,17 +242,20 @@ namespace cc4s {
               ) {
                 bestContractions = allContractions;
                 if (level == 0) { // do output only in topmost level
-                  LOG(2, "TCC") <<
+                  LOG_FILE_LINE(3, scope.file, scope.line) <<
                     "possibilites tried=" <<
                     scope.triedPossibilitiesCount <<
                     ", improved solution found: " <<
-                    "FLOPS=" << allContractions->costs.multiplicationsCount <<
+                    "multiplications=" <<
+                    allContractions->costs.multiplicationsCount <<
+                    ", additions=" <<
+                    allContractions->costs.additionsCount <<
                     ", maximum elements stored=" <<
                     allContractions->costs.maxElementsCount << std::endl;
                 }
               } else {
                 if (level == 0) {
-                  LOG(3, "TCC") <<
+                  LOG_FILE_LINE(3, scope.file, scope.line) <<
                     "possibilites tried=" <<
                     scope.triedPossibilitiesCount <<
                     ", discarding inferior solution" << std::endl;
@@ -362,7 +365,7 @@ namespace cc4s {
       return ContractionOperation<F,TE>::create(
         a, b,
         contractionResult, static_cast<const char *>(outerIndices),
-        contractionCosts
+        contractionCosts, scope
       );
     }
 
@@ -435,7 +438,7 @@ namespace cc4s {
       return MoveOperation<F,TE>::create(
         a,
         sumResult, static_cast<const char *>(outerIndices),
-        sumCosts
+        sumCosts, scope
       );
     }
 

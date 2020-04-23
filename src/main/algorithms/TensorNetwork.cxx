@@ -43,15 +43,13 @@ Real<> TensorNetwork::getTrace(const Ptr<MapNode> &matrix) {
   Assert(matrixData, "expecting matrix to be real");
   auto scalar( Tcc<TE>::template tensor<Real<>>(std::vector<size_t>({}), "s") );
   // get trace
-  auto getTrace(
-    ((*scalar)[""] <<= (*matrixData)["ij"])->compile()
-  );
+  auto getTrace( COMPILE((*scalar)[""] <<= (*matrixData)["ij"]) );
   getTrace->execute();
 
   // get smaller dimension:
   auto m( std::min(matrixData->getLens()[0],matrixData->getLens()[1]) );
   // set matrix:
-  ((*(*matrixData)({0,0},{m,m}))["ii"] += (*scalar)[""])->compile()->execute();
+  COMPILE((*(*matrixData)({0,0},{m,m}))["ii"] += (*scalar)[""])->execute();
 /*
   auto distribute(
     ((*matrixData)["ii"] <<= (*scalar)[""])->compile()

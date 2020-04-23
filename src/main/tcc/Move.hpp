@@ -5,7 +5,6 @@
 #include <tcc/IndexedTensorExpression.hpp>
 
 #include <tcc/Contraction.hpp>
-#include <tcc/MoveOperation.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 
@@ -90,10 +89,9 @@ namespace cc4s {
 
     // each move has its private index namespace so disregard the outer
     // scope
-    virtual PTR(Operation<TE>) compile(Scope &) {
-      LOG(2, "TCC") << "compiling move..." << std::endl;
+    virtual PTR(Operation<TE>) compile(Scope &outerScope) {
       // create a new namespace of indices
-      Scope scope;
+      Scope scope(outerScope.file, outerScope.line);
       // and determine how often each index is used
       countIndices(scope);
 
@@ -106,10 +104,10 @@ namespace cc4s {
         )
       );
 
-      LOG(2, "TCC") <<
+      LOG_FILE_LINE(2, outerScope.file, outerScope.line) <<
         "possibilites tried=" << scope.triedPossibilitiesCount <<
-        ", scalar multiplications=" << operation->costs.multiplicationsCount <<
-        ", scalar additions=" << operation->costs.additionsCount <<
+        ", multiplications=" << operation->costs.multiplicationsCount <<
+        ", additions=" << operation->costs.additionsCount <<
         ", maximum elements stored=" << operation->costs.maxElementsCount <<
         std::endl;
 

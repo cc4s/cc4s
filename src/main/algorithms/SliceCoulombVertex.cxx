@@ -50,9 +50,9 @@ Ptr<MapNode> SliceCoulombVertex::run(
     auto GammaGab(Tcc<TE>::template tensor<Complex<>>("GammaGab"));
     slices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(
       "Gab",
-      (
+      COMPILE_RECIPE(GammaGab,
         (*GammaGab)["Gab"] <<= (*(*GammaGqr)({0,No,No},{NG,Np,Np}))["Gab"]
-      )->compileRecipe(GammaGab)
+      )
     );
     // NOTE: result tensors, such as GammaGab, are kept inside recipes.
     // put in own scope { } to prevent accidental confusion with other recipes.
@@ -61,27 +61,27 @@ Ptr<MapNode> SliceCoulombVertex::run(
     auto GammaGai(Tcc<TE>::template tensor<Complex<>>("GammaGai"));
     slices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(
       "Gai",
-      (
+      COMPILE_RECIPE(GammaGai,
         (*GammaGai)["Gai"] <<= (*(*GammaGqr)({0,No,0},{NG,Np,No}))["Gai"]
-      )->compileRecipe(GammaGai)
+      )
     );
   }
   {
     auto GammaGia(Tcc<TE>::template tensor<Complex<>>("GammaGia"));
     slices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(
       "Gia",
-      (
+      COMPILE_RECIPE(GammaGia,
         (*GammaGia)["Gia"] <<= (*(*GammaGqr)({0,0,No},{NG,No,Np}))["Gia"]
-      )->compileRecipe(GammaGia)
+      )
     );
   }
   {
     auto GammaGij(Tcc<TE>::template tensor<Complex<>>("GammaGij"));
     slices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(
       "Gij",
-      (
+      COMPILE_RECIPE(GammaGij,
         (*GammaGij)["Gij"] <<= (*(*GammaGqr)({0,0,0},{NG,No,No}))["Gij"]
-      )->compileRecipe(GammaGij)
+      )
     );
   }
 
