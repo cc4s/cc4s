@@ -14,7 +14,6 @@ namespace cc4s {
   size_t getNextTensorVersion() {
     // all processes have to come together to ensure the same version is given
     // to each of them
-    LOG_RANK(2,"TCC") << "waiting for barrier" << std::endl;
     Cc4s::world->barrier();
     return ++nextTensorVersion;
   }

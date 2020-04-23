@@ -35,6 +35,10 @@ namespace cc4s {
       return resultIndices;
     }
 
+    std::string getName() const {
+      return TensorOperation<F,TE>::getName() + "[" + resultIndices + "]";
+    }
+
   protected:
     std::string resultIndices;
 

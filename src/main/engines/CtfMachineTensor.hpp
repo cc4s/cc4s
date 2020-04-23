@@ -54,10 +54,6 @@ namespace cc4s {
       F beta,
       const std::string &bIndices
     ) {
-      LOG(2, "TCC") << "sum " <<
-        getName() << "[" << bIndices << "] <<= " <<
-        alpha << " * " << A->getName() << "[" << aIndices << "] + " <<
-        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
       tensor.sum(
         alpha,
         A->tensor, aIndices.c_str(),
@@ -75,10 +71,6 @@ namespace cc4s {
       const std::string &bIndices,
       const std::function<F(const F)> &f
     ) {
-      LOG(2, "TCC") << "sum " <<
-        getName() << "[" << bIndices << "] <<= f(" <<
-        alpha << " * " << A->getName() << "[" << aIndices << "]) + " <<
-        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
       tensor.sum(
         alpha,
         A->tensor, aIndices.c_str(),
@@ -97,10 +89,6 @@ namespace cc4s {
       const std::string &bIndices,
       const std::function<F(const G)> &f
     ) {
-      LOG(2, "TCC") << "sum " <<
-        getName() << "[" << bIndices << "] <<= f(" <<
-        alpha << " * " << A->getName() << "[" << aIndices << "]) + " <<
-        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
       CTF::Transform<G,F>(
         std::function<void(const G, F &)>(
           [f,alpha,beta](const G x, F &y) { y = f(alpha*x) + beta*y; }
@@ -120,11 +108,6 @@ namespace cc4s {
       F beta,
       const std::string &cIndices
     ) {
-      LOG(2, "TCC") << "contract " <<
-        getName() << "[" << cIndices << "] <<= " <<
-        alpha << " * " << A->getName() << "[" << aIndices << "] * " <<
-        B->getName() << "[" << bIndices << "] + " <<
-        beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
       tensor.contract(
         alpha,
         A->tensor, aIndices.c_str(),
@@ -145,11 +128,6 @@ namespace cc4s {
       const std::string &cIndices,
       const std::function<F(const F, const F)> &g
     ) {
-      LOG(2, "TCC") << "contract " <<
-        getName() << "[" << cIndices << "] <<= g(" <<
-        alpha << " * " << A->getName() << "[" << aIndices << "], " <<
-        B->getName() << "[" << bIndices << "]) + " <<
-        beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
       tensor.contract(
         alpha,
         A->tensor, aIndices.c_str(),

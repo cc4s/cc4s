@@ -54,10 +54,7 @@ namespace cc4s {
       F beta,
       const std::string &bIndices
     ) {
-      LOG(1, "TCC") << "sum " <<
-        getName() << "[" << bIndices << "] <<= " <<
-        alpha << " * " << A->getName() << "[" << aIndices << "] + " <<
-        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
+      // TODO: allocate intermediates for memory estimation
     }
 
     // this[bIndices] = f(alpha * A[aIndices]) + beta * this[bIndices]
@@ -70,10 +67,7 @@ namespace cc4s {
       const std::string &bIndices,
       const std::function<F(const Domain)> &f
     ) {
-      LOG(1, "TCC") << "sum " <<
-        getName() << "[" << bIndices << "] <<= f(" <<
-        alpha << " * " << A->getName() << "[" << aIndices << "]) + " <<
-        beta << " * " << getName() << "[" << bIndices << "]" << std::endl;
+      // TODO: allocate intermediates for memory estimation
     }
 
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]
@@ -86,11 +80,7 @@ namespace cc4s {
       F beta,
       const std::string &cIndices
     ) {
-      LOG(1, "TCC") << "contract " <<
-        getName() << "[" << cIndices << "] <<= " <<
-        alpha << " * " << A->getName() << "[" << aIndices << "] * " <<
-        B->getName() << "[" << bIndices << "] + " <<
-        beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
+      // TODO: allocate intermediates for memory estimation
     }
 
     // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
@@ -104,11 +94,7 @@ namespace cc4s {
       const std::string &cIndices,
       const std::function<F(const F, const F)> &g
     ) {
-      LOG(1, "TCC") << "contract " <<
-        getName() << "[" << cIndices << "] <<= g(" <<
-        alpha << " * " << A->getName() << "[" << aIndices << "], " <<
-        B->getName() << "[" << bIndices << "]) + " <<
-        beta << " * " << getName() << "[" << cIndices << "]" << std::endl;
+      // TODO: allocate intermediates for memory estimation
     }
 
     void slice(
@@ -124,20 +110,6 @@ namespace cc4s {
       DryTensor<F> intermediateA(A->tensor, SOURCE_LOCATION);
       // allocate tensor for result assuming index reordering
       DryTensor<F> intermediateResult(this->tensor, SOURCE_LOCATION);
-
-      std::stringstream beginsStream, endsStream, aBeginsStream, aEndsStream;
-      for (auto d: begins) { beginsStream << " " << d; }
-      for (auto d: ends) { endsStream << " " << d; }
-      for (auto d: aBegins) { aBeginsStream << " " << d; }
-      for (auto d: aEnds) { aEndsStream << " " << d; }
-
-      LOG(1, "TCC") << "slice " <<
-        getName() << "(" << beginsStream.str() << "," << endsStream.str() <<
-        ") <<= " << alpha << " * " << A->getName() <<
-        "(" << aBeginsStream.str() << "," << aEndsStream.str() << ") + " <<
-        beta << " * " << getName() <<
-        "(" << beginsStream.str() << "," << endsStream.str() << ")" <<
-        std::endl;
     }
 
     // TODO: interfaces to be defined: permute, transform
@@ -146,14 +118,12 @@ namespace cc4s {
     void read(
       const size_t elementsCount, const size_t *indexData, F *valueData
     ) {
-      // silently do nothing
     }
 
     // write tensor elements to buffer
     void write(
       const size_t elementsCount, const size_t *indexData, const F *valueData
     ) {
-      // silently do nothing
     }
 
     std::vector<size_t> getLens() const {

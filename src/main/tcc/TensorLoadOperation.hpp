@@ -35,9 +35,10 @@ namespace cc4s {
         source->getVersion() > this->getResult()->getVersion()
       ) {
         // move the data only if source and result tensors are different
-        *this->getResult() = *source;
-        LOG(2,"TCC") << "move " << this->getResult()->getName() << " <<= " <<
+        LOG(2,"TCC") << "move " << this->getName() << " <<= " <<
           source->getName() << std::endl;
+
+        *this->getResult() = *source;
         this->updated();
       }
     }

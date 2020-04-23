@@ -31,14 +31,28 @@ namespace cc4s {
     void execute() override {
       source->execute();
       if (this->template isOlderThan<F>(source)) {
+        // write into entire result tensor
+        auto bEnds(this->getResult()->getLens());
+        auto bBegins(std::vector<size_t>(bEnds.size()));
+
+        std::stringstream beginsStream, endsStream, bBeginsStream, bEndsStream;
+        for (auto d: begins) { beginsStream << " " << d; }
+        for (auto d: ends) { endsStream << " " << d; }
+        for (auto d: bBegins) { bBeginsStream << " " << d; }
+        for (auto d: bEnds) { bEndsStream << " " << d; }
+
+        LOG(2, "TCC") << "slice " <<
+          this->getName() << "(" <<
+            bBeginsStream.str() << "," << bEndsStream.str() <<
+          ") <<= " << this->alpha << " * " << source->getName() << "(" <<
+            beginsStream.str() << "," << endsStream.str() << ") + " <<
+          this->beta << " * " << this->getName() << "(" <<
+            bBeginsStream.str() << "," << bEndsStream.str() <<
+          ")" << std::endl;
+
         this->getResult()->getMachineTensor()->slice(
-          F(1),
-          source->getResult()->getMachineTensor(),
-          begins, ends,
-          F(0),
-          // write into entire result tensor
-          std::vector<size_t>(this->getResult()->getLens().size()),
-          this->getResult()->getLens()
+          F(1), source->getResult()->getMachineTensor(), begins, ends,
+          F(0), bBegins, bEnds
         );
         this->updated();
       }

@@ -50,6 +50,10 @@ namespace cc4s {
       result->updated();
     }
 
+    std::string getName() const {
+      return result->getName();
+    }
+
   protected:
     PTR(ESC(Tensor<F,TE>)) result;
     F alpha, beta;

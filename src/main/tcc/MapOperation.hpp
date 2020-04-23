@@ -5,6 +5,7 @@
 #include <tcc/Operation.hpp>
 
 #include <util/SharedPointer.hpp>
+#include <functional>
 
 namespace cc4s {
   template <typename Target, typename Domain, typename TE> class Map;
@@ -13,7 +14,7 @@ namespace cc4s {
   class MapOperation: public IndexedTensorOperation<Target,TE> {
   public:
     MapOperation(
-      const std::function<Target(const Domain)> &f_,
+      const std::function<Target(Domain)> &f_,
       const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_,
       const typename Operation<TE>::ProtectedToken &
     ):
@@ -34,12 +35,15 @@ namespace cc4s {
     void execute() override {
       source->execute();
       if (this->template isOlderThan<Domain>(source)) {
+        LOG(2, "TCC") << "sum " << this->getName() << " <<= " <<
+          "f(" << this->alpha << " * " << source->getName() << ") + " <<
+          this->beta << " * " << this->getName() << std::endl;
+
         // execute machine tensor's sum with custom map
         this->getResult()->getMachineTensor()->sum(
           Domain(1),
           source->getResult()->getMachineTensor(), source->getResultIndices(),
-          Target(0),
-          this->getResultIndices(),
+          Target(0), this->getResultIndices(),
           f
         );
         this->updated();
@@ -52,7 +56,7 @@ namespace cc4s {
 
  protected:
     static PTR(ESC(MapOperation<Target,Domain,TE>)) create(
-      const std::function<Target(const Domain)> &f_,
+      const std::function<Target(Domain)> &f_,
       const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_
     ) {
       return NEW(ESC(MapOperation<Target,Domain,TE>),
@@ -60,7 +64,7 @@ namespace cc4s {
       );
     }
 
-    std::function<Target(const Domain)> f;
+    std::function<Target(Domain)> f;
     PTR(ESC(IndexedTensorOperation<Domain,TE>)) source;
 
     friend class Map<Target,Domain,TE>;

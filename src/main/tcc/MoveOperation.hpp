@@ -41,6 +41,10 @@ namespace cc4s {
     void execute() override {
       rhs->execute();
       if (this->template isOlderThan<F>(rhs)) {
+        LOG(2, "TCC") << "sum " << this->getName() << " <<= " <<
+          this->alpha << " * " << rhs->getName() << " + " <<
+          this->beta << " * " << this->getName() << std::endl;
+
         this->getResult()->getMachineTensor()->sum(
           this->alpha,
           rhs->getResult()->getMachineTensor(), rhs->getResultIndices(),

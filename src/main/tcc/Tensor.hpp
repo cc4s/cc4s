@@ -175,6 +175,7 @@ namespace cc4s {
     }
 
     void updated() {
+      LOG_RANK(2,"TCC") << "updating " << getName() << std::endl;
       version = getNextTensorVersion();
     }
 

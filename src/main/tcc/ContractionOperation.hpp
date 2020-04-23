@@ -52,6 +52,11 @@ namespace cc4s {
         this->template isOlderThan<F>(left) ||
         this->template isOlderThan<F>(right)
       ) {
+        LOG(2, "TCC") << "contract " << this->getName() << " <<= " <<
+          this->alpha << " * " <<
+          left->getName() << " * " << right->getName() << " + " <<
+          this->beta << " * " << this->getName() << std::endl;
+
         this->getResult()->getMachineTensor()->contract(
           this->alpha,
           left->getResult()->getMachineTensor(), left->getResultIndices(),
