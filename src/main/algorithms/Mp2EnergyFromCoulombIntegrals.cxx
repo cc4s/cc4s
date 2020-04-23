@@ -63,9 +63,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
     (*exchange)[""] <<= +0.5*spins * (*Vabij)["abji"] * (*Dabij)["abij"]
   )->compile()->execute();
 
-  F D, X;
-  D = direct->read();
-  X = exchange->read();
+  F D(direct->read()), X(exchange->read());
   LOG(1,getName()) << "direct=" << D << std::endl;
   LOG(1,getName()) << "exchange=" << X << std::endl;
   
