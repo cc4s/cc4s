@@ -19,15 +19,12 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
     } else {
       return calculateMp2Energy<Real<>,DefaultTensorEngine>(arguments);
     }
-/*
-  } else if (scalarType == "complex64") {
+  } else if (orbitals == "complex") {
     if (Cc4s::options->dryRun) {
       return calculateMp2Energy<Complex<>,DryTensorEngine>(arguments);
     } else {
       return calculateMp2Energy<Complex<>,DefaultTensorEngine>(arguments);
     }
-  } else {
-*/
   } else {
     Assert(false, "unsupported orbitals type '" + orbitals + "'");
   }
@@ -37,36 +34,31 @@ template <typename F, typename TE>
 Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   const Ptr<MapNode> &arguments
 ) {
-  typedef Tensor<F,TE> T;
-  typedef Tensor<Real<>,TE> RT;
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto slices(coulombIntegrals->getMap("slices"));
   auto Vabij(slices->getValue<Ptr<TensorRecipe<F,TE>>>("abij"));
   Real<> spins(coulombIntegrals->getValue<size_t>("spins"));
 
   auto holeEnergies(arguments->getMap("holeEigenEnergies"));
-  auto epsi(holeEnergies->getValue<Ptr<RT>>("data"));
+  auto epsi(holeEnergies->getValue<Ptr<Tensor<Real<>,TE>>>("data"));
   auto particleEnergies(arguments->getMap("particleEigenEnergies"));
-  auto epsa(particleEnergies->getValue<Ptr<RT>>("data"));
+  auto epsa(particleEnergies->getValue<Ptr<Tensor<Real<>,TE>>>("data"));
 
   auto No(epsi->lens[0]);
   auto Nv(epsa->lens[0]);
   auto Dabij(
-    Tcc<TE>::template tensor<Real<>>(std::vector<size_t>({Nv,Nv,No,No}),"Dabij")
+    Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Dabij")
   );
   auto direct( Tcc<TE>::template tensor<F>("D") );
   auto exchange( Tcc<TE>::template tensor<F>("X") );
   (
-    (*Dabij)["abij"] <<= (*epsa)["a"],
-    (*Dabij)["abij"] +=  (*epsa)["b"],
-    (*Dabij)["abij"] -=  (*epsi)["i"],
-    (*Dabij)["abij"] -=  (*epsi)["j"],
-    (*Dabij)["abij"] <<= map(conj<F>, (*Vabij)["abij"]) *
-      map(
-        // TODO: allow passing of lambdas to cc4s::map
-        std::function<Real<>(const Real<>)>([](const Real<> eps) { return 1/eps; }),
-        (*Dabij)["abij"]
-      ),
+    (*Dabij)["abij"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
+    (*Dabij)["abij"] +=  map<F>([](Real<> eps) {return F(eps);}, (*epsa)["b"]),
+    (*Dabij)["abij"] -=  map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"]),
+    (*Dabij)["abij"] -=  map<F>([](Real<> eps) {return F(eps);}, (*epsi)["j"]),
+    (*Dabij)["abij"] <<=
+      map<F>(conj<F>, (*Vabij)["abij"]) *
+      map<F>([](F delta) { return F(1)/delta; }, (*Dabij)["abij"]),
     (*direct)[""] <<= -0.5*spins*spins * (*Vabij)["abij"] * (*Dabij)["abij"],
     (*exchange)[""] <<= +0.5*spins * (*Vabij)["abji"] * (*Dabij)["abij"]
   )->compile()->execute();
@@ -78,9 +70,9 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   LOG(1,getName()) << "exchange=" << X << std::endl;
   
   auto energy(New<MapNode>());
-  energy->setValue<Real<>>("direct", D);
-  energy->setValue<Real<>>("exchange", X);
-  energy->setValue<Real<>>("value", D+X);
+  energy->setValue<Real<>>("direct", real<F>(D));
+  energy->setValue<Real<>>("exchange", real<F>(X));
+  energy->setValue<Real<>>("value", real<F>(D+X));
   energy->setValue<Real<>>("unit", holeEnergies->getValue<Real<>>("unit"));
   auto result(New<MapNode>());
   result->get("energy") = energy;

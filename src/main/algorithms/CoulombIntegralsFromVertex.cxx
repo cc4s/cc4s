@@ -67,7 +67,8 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
       std::string(#PART) + "Gamma" + #SLICE) \
     ); \
     PART##Gamma##SLICE = ( \
-      (*result)[#SLICE] <<= map(PART<Complex<>>, (*Gamma##SLICE)[#SLICE]) \
+      (*result)[#SLICE] <<= \
+        map<Real<>>(PART<Complex<>>, (*Gamma##SLICE)[#SLICE]) \
     )->compileRecipe(result); \
   }
   // define intermediate recipes
