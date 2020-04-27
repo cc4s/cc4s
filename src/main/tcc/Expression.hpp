@@ -39,8 +39,6 @@ namespace cc4s {
       const std::string &file, const size_t line
     ) {
       Scope scope(file, line);
-      LOG_FILE_LINE(2, file, line) <<
-        "compiling: " << static_cast<std::string>(*this) << std::endl;
       return this->compile(scope);
     }
 

@@ -90,6 +90,9 @@ namespace cc4s {
     // each move has its private index namespace so disregard the outer
     // scope
     virtual PTR(Operation<TE>) compile(Scope &outerScope) {
+      LOG_FILE_LINE(2, outerScope.file, outerScope.line) <<
+        "compiling: " << static_cast<std::string>(*this) << std::endl;
+
       // create a new namespace of indices
       Scope scope(outerScope.file, outerScope.line);
       // and determine how often each index is used
@@ -126,8 +129,8 @@ namespace cc4s {
 
     virtual operator std::string () const {
       std::stringstream stream;
-      stream << "Move( " <<
-        std::string(*lhs) << ", " << std::string(*rhs) << ", " << beta << " )";
+      stream << "Sum( " <<
+        std::string(*lhs) << ", " << std::string(*rhs) << ", beta=" << beta << " )";
       return stream.str();
     }
 

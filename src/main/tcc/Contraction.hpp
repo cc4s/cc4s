@@ -210,6 +210,8 @@ namespace cc4s {
           );
 
           if (contractionOperation) {
+            // this is a possibility to contract factors
+            ++scope.triedPossibilitiesCount;
             if (operations.size() == 2) {
               // we are done if there were only 2 factors to contract
               bestContractions = contractionOperation;
@@ -220,8 +222,10 @@ namespace cc4s {
               std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> subOperations(
                 operations.size() - 1
               );
+              // include intermediate result as first factor
               subOperations[0] = contractionOperation;
               int l(1);
+              // exclude factor a & b in remaining list of factors
               for (unsigned int k(0); k < operations.size(); ++k) {
                 if (k != i && k != j) subOperations[l++] = operations[k];
               }
@@ -261,7 +265,6 @@ namespace cc4s {
                     ", discarding inferior solution" << std::endl;
                 }
               }
-              ++scope.triedPossibilitiesCount;
             }
           }
 
