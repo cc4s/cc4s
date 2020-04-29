@@ -23,6 +23,12 @@ clean:
 # primary target
 all: build/${CONFIG}/bin/${TARGET}
 
+# fetch tutorials for tests
+TUTORIALS_REVISION=90d802a6dd8b6af2692b776c47aa559c456c472a
+tutorials/systems:
+	git clone git@gitlab.cc4s.org:cqc/cc4s-tutorials.git tutorials
+	cd tutorials; git reset --hard ${TUTORIALS_REVISION}
+
 .PHONY: test wiki
 test:
 	bash test/test.sh -c $(CONFIG)

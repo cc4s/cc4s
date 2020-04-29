@@ -1,6 +1,7 @@
 *~
 build/*
 docs/*
+tutorials
 
 # Some files we would not want to add in general
 *.pdf
