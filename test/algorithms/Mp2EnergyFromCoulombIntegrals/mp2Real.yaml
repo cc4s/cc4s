@@ -1,16 +1,16 @@
 - name: TensorReader
   in:
-    fileName: "../../../resources/systems/H2O/CoulombVertexReal.yaml"
+    fileName: "../../../tutorials/systems/H2O/CoulombVertexReal.yaml"
   out:
     tensor: CoulombVertex
 - name: TensorReader
   in:
-    fileName: "../../../resources/systems/H2O/HoleEigenEnergiesReal.yaml"
+    fileName: "../../../tutorials/systems/H2O/HoleEigenEnergiesReal.yaml"
   out:
     tensor: HoleEigenEnergies
 - name: TensorReader
   in:
-    fileName: "../../../resources/systems/H2O/ParticleEigenEnergiesReal.yaml"
+    fileName: "../../../tutorials/systems/H2O/ParticleEigenEnergiesReal.yaml"
   out:
     tensor: ParticleEigenEnergies
 

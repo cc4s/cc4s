@@ -1,16 +1,16 @@
 - name: TensorReader
   in:
-    fileName: "../../../resources/systems/H2O/CoulombVertexComplex.yaml"
+    fileName: "../../../tutorials/systems/H2O/CoulombVertexComplex.yaml"
   out:
     tensor: CoulombVertex
 - name: TensorReader
   in:
-    fileName: "../../../resources/systems/H2O/HoleEigenEnergiesComplex.yaml"
+    fileName: "../../../tutorials/systems/H2O/HoleEigenEnergiesComplex.yaml"
   out:
     tensor: HoleEigenEnergies
 - name: TensorReader
   in:
-    fileName: "../../../resources/systems/H2O/ParticleEigenEnergiesComplex.yaml"
+    fileName: "../../../tutorials/systems/H2O/ParticleEigenEnergiesComplex.yaml"
   out:
     tensor: ParticleEigenEnergies
 
