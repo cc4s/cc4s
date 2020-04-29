@@ -2,7 +2,7 @@
 	path = lib/src/ctf
 	url = https://github.com/cyclops-community/ctf.git
 [submodule "resources"]
-	path = resources
+	path = tutorials
 	url = hulldamage.org:/git/cc4s/resources.git
 [submodule "lib/src/yaml-cpp"]
 	path = lib/src/yaml-cpp
