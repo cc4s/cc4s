@@ -65,24 +65,16 @@ Ptr<Node> TensorReader::readText(
 ) {
   // multiplex calls to template methods depending on tensor engine and type
   if (Cc4s::options->dryRun) {
-    if (scalarType == "real") {
-      return readText<Real<>,DryTensorEngine>(fileName, lens);
-    } else if (scalarType == "real64") {
+    if (scalarType == "real64") {
       return readText<Real<64>,DryTensorEngine>(fileName, lens);
-    } else if (scalarType == "complex") {
-      return readText<Complex<>,DryTensorEngine>(fileName, lens);
     } else if (scalarType == "complex64") {
       return readText<Complex<64>,DryTensorEngine>(fileName, lens);
     } else {
       Assert(false, "scalar type '" + scalarType + "' not supported");
     }
   } else {
-    if (scalarType == "real") {
-      return readText<Real<>,DefaultTensorEngine>(fileName, lens);
-    } else if (scalarType == "real64") {
+    if (scalarType == "real64") {
       return readText<Real<64>,DefaultTensorEngine>(fileName, lens);
-    } else if (scalarType == "complex") {
-      return readText<Complex<>,DefaultTensorEngine>(fileName, lens);
     } else if (scalarType == "complex64") {
       return readText<Complex<64>,DefaultTensorEngine>(fileName, lens);
     } else {
