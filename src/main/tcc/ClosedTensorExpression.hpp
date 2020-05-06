@@ -45,6 +45,15 @@ namespace cc4s {
         min, max
       );
     }
+    PTR(ESC(Slice<F,TE>)) operator ()(
+      const std::vector<size_t> &min,
+      const std::vector<size_t> &max
+    ) {
+      return Slice<F,TE>::create(
+        THIS(ESC(ClosedTensorExpression<F,TE>)),
+        min, max
+      );
+    }
   };
 }
 
