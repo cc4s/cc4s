@@ -113,11 +113,11 @@ void Cc4s::run() {
 
 void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
   for (auto key: arguments->getKeys()) {
-    auto mapNode(arguments->get(key)->map());
-    if (mapNode) {
-      fetchSymbols(mapNode);
-      break;
-    }
+//    auto mapNode(arguments->get(key)->map());
+//    if (mapNode) {
+//      fetchSymbols(mapNode);
+//      break;
+//    }
     auto symbolNode(arguments->get(key)->symbol());
     if (symbolNode) {
       // search symbol in storage
