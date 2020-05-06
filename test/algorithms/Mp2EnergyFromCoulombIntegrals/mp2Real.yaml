@@ -1,24 +1,37 @@
 - name: TensorReader
   in:
+    fileName: "../../../tutorials/systems/H2O/EigenEnergiesReal.yaml"
+  out:
+    tensor: EigenEnergies
+
+- name: TensorReader
+  in:
+    fileName: "../../../tutorials/systems/H2O/Spins.yaml"
+  out:
+    tensor: Spins
+
+- name: TensorReader
+  in:
+    fileName: "../../../tutorials/systems/H2O/FockOperatorReal.yaml"
+  out:
+    tensor: CoulombVertex
+
+- name: TensorReader
+  in:
     fileName: "../../../tutorials/systems/H2O/CoulombVertexReal.yaml"
   out:
     tensor: CoulombVertex
-- name: TensorReader
+
+- name: DefineHolesAndParticles
   in:
-    fileName: "../../../tutorials/systems/H2O/HoleEigenEnergiesReal.yaml"
+    eigenEnergies: EigenEnergies
   out:
-    tensor: HoleEigenEnergies
-- name: TensorReader
-  in:
-    fileName: "../../../tutorials/systems/H2O/ParticleEigenEnergiesReal.yaml"
-  out:
-    tensor: ParticleEigenEnergies
+    slicedEigenEnergies: EigenEnergies
 
 - name: SliceCoulombVertex
   in:
+    slicedEigenEnergies: EigenEnergies
     coulombVertex: CoulombVertex
-    holeEigenEnergies: HoleEigenEnergies
-    particleEigenEnergies: ParticleEigenEnergies
   out:
     slicedCoulombVertex: CoulombVertex
 
@@ -30,8 +43,7 @@
 
 - name: Mp2EnergyFromCoulombIntegrals
   in:
+    slicedEigenEnergies: EigenEnergies
     coulombIntegrals: CoulombIntegrals
-    holeEigenEnergies: HoleEigenEnergies
-    particleEigenEnergies: ParticleEigenEnergies
   out:
     energy: Mp2Energy

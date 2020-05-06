@@ -9,6 +9,7 @@ build/${CONFIG}/obj/main/engines/DryTensor.o \
 build/${CONFIG}/obj/main/algorithms/Algorithm.o \
 build/${CONFIG}/obj/main/algorithms/TensorReader.o \
 build/${CONFIG}/obj/main/algorithms/TensorNetwork.o \
+build/${CONFIG}/obj/main/algorithms/DefineHolesAndParticles.o \
 build/${CONFIG}/obj/main/algorithms/SliceCoulombVertex.o \
 build/${CONFIG}/obj/main/algorithms/CoulombIntegralsFromVertex.o \
 build/${CONFIG}/obj/main/algorithms/Mp2EnergyFromCoulombIntegrals.o \

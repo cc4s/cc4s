@@ -35,29 +35,23 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   const Ptr<MapNode> &arguments
 ) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto slices(coulombIntegrals->getMap("slices"));
-  auto Vabij(slices->getValue<Ptr<TensorRecipe<F,TE>>>("abij"));
+  auto coulombSlices(coulombIntegrals->getMap("slices"));
+  auto Vabij(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pphh"));
   Real<> spins(coulombIntegrals->getValue<size_t>("spins"));
 
-  auto holeEnergies(arguments->getMap("holeEigenEnergies"));
-  auto epsi(holeEnergies->getValue<Ptr<Tensor<Real<>,TE>>>("data"));
-  auto particleEnergies(arguments->getMap("particleEigenEnergies"));
-  auto epsa(particleEnergies->getValue<Ptr<Tensor<Real<>,TE>>>("data"));
-  // convert particle energies to units of hole energies
-  auto toHoleUnits(
-    holeEnergies->getValue<Real<>>("unit") /
-      particleEnergies->getValue<Real<>>("unit")
-  );
-  COMPILE((*epsa)["a"] <<= toHoleUnits * (*epsa)["a"])->execute();
+  auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
+  auto energySlices(eigenEnergies->getMap("slices"));
+  auto epsi(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("h"));
+  auto epsa(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("p"));
 
-  auto No(epsi->lens[0]);
-  auto Nv(epsa->lens[0]);
+  auto No(epsi->getResult()->lens[0]);
+  auto Nv(epsa->getResult()->lens[0]);
   auto Dabij(
     Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Dabij")
   );
   auto direct( Tcc<TE>::template tensor<F>("D") );
   auto exchange( Tcc<TE>::template tensor<F>("X") );
-  toHoleUnits = pow(holeEnergies->getValue<Real<>>("unit"),2.0) /
+  auto toEigenUnits = pow(eigenEnergies->getValue<Real<>>("unit"),2.0) /
     pow(coulombIntegrals->getValue<Real<>>("unit"),2.0);
   COMPILE(
     (*Dabij)["abij"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
@@ -68,9 +62,9 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
       map<F>(conj<F>, (*Vabij)["abij"]) *
       map<F>([](F delta) { return F(1)/delta; }, (*Dabij)["abij"]),
     (*direct)[""] <<=
-      toHoleUnits * -0.5*spins*spins * (*Vabij)["abij"] * (*Dabij)["abij"],
+      toEigenUnits * -0.5*spins*spins * (*Vabij)["abij"] * (*Dabij)["abij"],
     (*exchange)[""] <<=
-      toHoleUnits * +0.5*spins * (*Vabij)["abji"] * (*Dabij)["abij"]
+      toEigenUnits * +0.5*spins * (*Vabij)["abji"] * (*Dabij)["abij"]
   )->execute();
 
   F D(direct->read()), X(exchange->read());
@@ -81,7 +75,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   energy->setValue<Real<>>("direct", real<F>(D));
   energy->setValue<Real<>>("exchange", real<F>(X));
   energy->setValue<Real<>>("value", real<F>(D+X));
-  energy->setValue<Real<>>("unit", holeEnergies->getValue<Real<>>("unit"));
+  energy->setValue<Real<>>("unit", eigenEnergies->getValue<Real<>>("unit"));
   auto result(New<MapNode>());
   result->get("energy") = energy;
   return result;

@@ -27,13 +27,12 @@ Ptr<MapNode> SliceCoulombVertex::run(
   typedef Tensor<Complex<>,TE> T;
   auto coulombVertex(arguments->getMap("coulombVertex"));
   auto GammaGqr(coulombVertex->getValue<Ptr<T>>("data"));
-  Assert(GammaGqr, "expecting coulombVertex to be complex");
+  Assert(GammaGqr, "expecting coulombVertex to be a complex tensor");
 
-  // read dimensions of hole and particle energies from meta data
-  auto holeEnergies(arguments->getMap("holeEigenEnergies"));
-  auto No(holeEnergies->getMap("dimensions")->getValue<size_t>(0));
-  auto particleEnergies(arguments->getMap("particleEigenEnergies"));
-  auto Nv(particleEnergies->getMap("dimensions")->getValue<size_t>(0));
+  // read dimensions from eigen energies meta data
+  auto slicedEigenEnergies(arguments->getMap("slicedEigenEnergies"));
+  auto No(slicedEigenEnergies->getValue<size_t>("holesCount"));
+  auto Nv(slicedEigenEnergies->getValue<size_t>("particlesCount"));
 
   auto NG(GammaGqr->lens[0]);
   auto Np(GammaGqr->lens[1]);
@@ -49,7 +48,7 @@ Ptr<MapNode> SliceCoulombVertex::run(
     // NOTE: all result tensors assume shape on first assignment
     auto GammaGab(Tcc<TE>::template tensor<Complex<>>("GammaGab"));
     slices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(
-      "Gab",
+      "pp",
       COMPILE_RECIPE(GammaGab,
         (*GammaGab)["Gab"] <<= (*(*GammaGqr)({0,No,No},{NG,Np,Np}))["Gab"]
       )
@@ -60,7 +59,7 @@ Ptr<MapNode> SliceCoulombVertex::run(
   {
     auto GammaGai(Tcc<TE>::template tensor<Complex<>>("GammaGai"));
     slices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(
-      "Gai",
+      "ph",
       COMPILE_RECIPE(GammaGai,
         (*GammaGai)["Gai"] <<= (*(*GammaGqr)({0,No,0},{NG,Np,No}))["Gai"]
       )
@@ -69,7 +68,7 @@ Ptr<MapNode> SliceCoulombVertex::run(
   {
     auto GammaGia(Tcc<TE>::template tensor<Complex<>>("GammaGia"));
     slices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(
-      "Gia",
+      "hp",
       COMPILE_RECIPE(GammaGia,
         (*GammaGia)["Gia"] <<= (*(*GammaGqr)({0,0,No},{NG,No,Np}))["Gia"]
       )
@@ -78,7 +77,7 @@ Ptr<MapNode> SliceCoulombVertex::run(
   {
     auto GammaGij(Tcc<TE>::template tensor<Complex<>>("GammaGij"));
     slices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(
-      "Gij",
+      "hh",
       COMPILE_RECIPE(GammaGij,
         (*GammaGij)["Gij"] <<= (*(*GammaGqr)({0,0,0},{NG,No,No}))["Gij"]
       )

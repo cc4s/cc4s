@@ -42,50 +42,53 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
   auto slices(coulombVertex->getMap("slices"));
   // get input recipes
-  auto GammaGab(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("Gab"));
-  auto GammaGai(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("Gai"));
-  auto GammaGia(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("Gia"));
-  auto GammaGij(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("Gij"));
+  auto GammaGpp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pp"));
+  auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
+  auto GammaGhp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hp"));
+  auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
 
 #define DEFINE_VERTEX_PART(PART, SLICE) \
-  Ptr<TensorRecipe<Real<>,TE>> PART##Gamma##SLICE; \
+  Ptr<TensorRecipe<Real<>,TE>> PART##GammaG##SLICE; \
   { \
     auto result(Tcc<TE>::template tensor<Real<>>( \
-      std::string(#PART) + "Gamma" + #SLICE) \
+      std::string(#PART) + "GammaG" + #SLICE) \
     ); \
-    PART##Gamma##SLICE = COMPILE_RECIPE(result, (\
-      (*result)[#SLICE] <<= \
-        map<Real<>>(PART<Complex<>>, (*Gamma##SLICE)[#SLICE]) \
+    PART##GammaG##SLICE = COMPILE_RECIPE(result, (\
+      (*result)["Gqr"] <<= \
+        map<Real<>>(PART<Complex<>>, (*GammaG##SLICE)["Gqr"]) \
       ) \
     ); \
   }
   // define intermediate recipes
-  DEFINE_VERTEX_PART(real, Gab)
-  DEFINE_VERTEX_PART(real, Gai)
-  DEFINE_VERTEX_PART(real, Gia)
-  DEFINE_VERTEX_PART(real, Gij)
-  DEFINE_VERTEX_PART(imag, Gab)
-  DEFINE_VERTEX_PART(imag, Gai)
-  DEFINE_VERTEX_PART(imag, Gia)
-  DEFINE_VERTEX_PART(imag, Gij)
+  DEFINE_VERTEX_PART(real, pp)
+  DEFINE_VERTEX_PART(real, ph)
+  DEFINE_VERTEX_PART(real, hp)
+  DEFINE_VERTEX_PART(real, hh)
+  DEFINE_VERTEX_PART(imag, pp)
+  DEFINE_VERTEX_PART(imag, ph)
+  DEFINE_VERTEX_PART(imag, hp)
+  DEFINE_VERTEX_PART(imag, hh)
 
-#define DEFINE_REAL_INTEGRALS_SLICE(SLICE, LSLICE, LIDX, RSLICE, RIDX) \
+#define DEFINE_REAL_INTEGRALS_SLICE(LO,RO,LI,RI) \
   { \
-    auto result(Tcc<TE>::template tensor<Real<>>(std::string("V") + #SLICE)); \
-    integralSlices->setValue<Ptr<TensorRecipe<Real<>,TE>>>(#SLICE, \
+    auto sliceName(std::string(#LO) + #RO + #LI + #RI); \
+    auto result( \
+      Tcc<TE>::template tensor<Real<>>(std::string("V") + sliceName) \
+    ); \
+    integralSlices->setValue(sliceName, \
       COMPILE_RECIPE(result, ( \
-        (*result)[#SLICE] <<= \
-          (*realGamma##LSLICE)[LIDX] * (*realGamma##RSLICE)[RIDX], \
-        (*result)[#SLICE] += \
-          (*imagGamma##LSLICE)[LIDX] * (*imagGamma##RSLICE)[RIDX] \
+        (*result)["pqsr"] <<= \
+          (*realGammaG##LO##LI)["Gps"] * (*realGammaG##RO##RI)["Gqr"], \
+        (*result)["pqsr"] += \
+          (*imagGammaG##LO##LI)["Gps"] * (*imagGammaG##RO##RI)["Gqr"] \
         ) \
       ) \
     ); \
   }
-  // define recipes for integral slices
+  // define recipes for basic integral slices
   auto integralSlices(New<MapNode>());
-  DEFINE_REAL_INTEGRALS_SLICE(aijk, Gai, "Gaj", Gij, "Gik");
-  DEFINE_REAL_INTEGRALS_SLICE(abij, Gai, "Gai", Gai, "Gbj");
+  DEFINE_REAL_INTEGRALS_SLICE(p,h,h,h);
+  DEFINE_REAL_INTEGRALS_SLICE(p,p,h,h);
 
   // create result
   auto coulombIntegrals(New<MapNode>());
