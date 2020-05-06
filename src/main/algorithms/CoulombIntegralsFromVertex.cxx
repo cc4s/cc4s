@@ -110,47 +110,48 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
   auto slices(coulombVertex->getMap("slices"));
   // get input recipes
-  auto GammaGab(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("Gab"));
-  auto GammaGai(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("Gai"));
-  auto GammaGia(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("Gia"));
-  auto GammaGij(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("Gij"));
+  auto GammaGpp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pp"));
+  auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
+  auto GammaGhp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hp"));
+  auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
 
-#define DEFINE_VERTEX_CONJT(TSLICE, SLICE, IDX) \
-  Ptr<TensorRecipe<Complex<>,TE>> conjTGamma##TSLICE; \
+#define DEFINE_VERTEX_CONJT(O,I) \
+  Ptr<TensorRecipe<Complex<>,TE>> conjTGammaG##O##I; \
   { \
     auto result(Tcc<TE>::template tensor<Complex<>>( \
-      std::string("conjTGamma") + #TSLICE) \
+      std::string("conjTGammaG") + #O + #I) \
     ); \
-    conjTGamma##TSLICE = COMPILE_RECIPE(result, \
+    conjTGammaG##O##I = COMPILE_RECIPE(result, \
       ( \
-        (*result)[#TSLICE] <<= \
-          map<Complex<>>(conj<Complex<>>, (*Gamma##SLICE)[IDX]) \
+        (*result)["Gqr"] <<= \
+          map<Complex<>>(conj<Complex<>>, (*GammaG##I##O)["Grq"]) \
       ) \
     ); \
   }
   // define intermediate recipes
-  DEFINE_VERTEX_CONJT(Gab, Gab, "Gba")
-  DEFINE_VERTEX_CONJT(Gai, Gia, "Gia")
-  DEFINE_VERTEX_CONJT(Gia, Gai, "Gai")
-  DEFINE_VERTEX_CONJT(Gij, Gij, "Gji")
+  DEFINE_VERTEX_CONJT(p,p)
+  DEFINE_VERTEX_CONJT(p,h)
+  DEFINE_VERTEX_CONJT(h,p)
+  DEFINE_VERTEX_CONJT(h,h)
 
-#define DEFINE_COMPLEX_INTEGRALS_SLICE(SLICE, LSLICE, LIDX, RSLICE, RIDX) \
+#define DEFINE_COMPLEX_INTEGRALS_SLICE(LO,RO,LI,RI) \
   { \
+    auto sliceName(std::string(#LO) + #RO + #LI + #RI); \
     auto result( \
-      Tcc<TE>::template tensor<Complex<>>(std::string("V") + #SLICE) \
+      Tcc<TE>::template tensor<Complex<>>(std::string("V") + sliceName) \
     ); \
-    integralSlices->setValue<Ptr<TensorRecipe<Complex<>,TE>>>(#SLICE, \
+    integralSlices->setValue(sliceName, \
       COMPILE_RECIPE(result, (\
-        (*result)[#SLICE] <<= \
-          (*conjTGamma##LSLICE)[LIDX] * (*Gamma##RSLICE)[RIDX] \
+        (*result)["pqsr"] <<= \
+          (*conjTGammaG##LO##LI)["Gps"] * (*GammaG##RO##RI)["Gqr"] \
         ) \
       ) \
     ); \
   }
   // define recipes for integral slices
   auto integralSlices(New<MapNode>());
-  DEFINE_COMPLEX_INTEGRALS_SLICE(aijk, Gai, "Gaj", Gij, "Gik");
-  DEFINE_COMPLEX_INTEGRALS_SLICE(abij, Gai, "Gai", Gai, "Gbj");
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,h,h);
 
   // create result
   auto coulombIntegrals(New<MapNode>());
