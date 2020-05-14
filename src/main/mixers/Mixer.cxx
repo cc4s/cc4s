@@ -1,12 +1,12 @@
 /*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 
 #include <mixers/Mixer.hpp>
-#include <Data.hpp>
+#include <algorithms/Algorithm.hpp>
 
 using namespace cc4s;
 
 template <typename F, typename TE>
-Mixer<F,TE>::Mixer(const Ptr<Algorithm> &algorithm_): algorithm(algorithm_) {
+Mixer<F,TE>::Mixer(const Ptr<MapNode> &) {
 }
 
 template <typename F, typename TE>

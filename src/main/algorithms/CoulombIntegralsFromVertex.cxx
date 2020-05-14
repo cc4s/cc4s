@@ -89,6 +89,8 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   auto integralSlices(New<MapNode>());
   DEFINE_REAL_INTEGRALS_SLICE(p,h,h,h);
   DEFINE_REAL_INTEGRALS_SLICE(p,p,h,h);
+  DEFINE_REAL_INTEGRALS_SLICE(p,h,h,p);
+  DEFINE_REAL_INTEGRALS_SLICE(h,h,p,p);
 
   // create result
   auto coulombIntegrals(New<MapNode>());
@@ -152,6 +154,9 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
   auto integralSlices(New<MapNode>());
   DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,h);
   DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,h,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,p);
+  // TODO: symmetry considerations
+  DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,p,p);
 
   // create result
   auto coulombIntegrals(New<MapNode>());

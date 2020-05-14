@@ -1,0 +1,52 @@
+- name: TensorReader
+  in:
+    fileName: "../../../tutorials/systems/H2O/EigenEnergiesComplex.yaml"
+  out:
+    tensor: EigenEnergies
+
+- name: TensorReader
+  in:
+    fileName: "../../../tutorials/systems/H2O/Spins.yaml"
+  out:
+    tensor: Spins
+
+- name: TensorReader
+  in:
+    fileName: "../../../tutorials/systems/H2O/FockOperatorComplex.yaml"
+  out:
+    tensor: CoulombVertex
+
+- name: TensorReader
+  in:
+    fileName: "../../../tutorials/systems/H2O/CoulombVertexComplex.yaml"
+  out:
+    tensor: CoulombVertex
+
+- name: DefineHolesAndParticles
+  in:
+    eigenEnergies: EigenEnergies
+  out:
+    slicedEigenEnergies: EigenEnergies
+
+- name: SliceCoulombVertex
+  in:
+    slicedEigenEnergies: EigenEnergies
+    coulombVertex: CoulombVertex
+  out:
+    slicedCoulombVertex: CoulombVertex
+
+- name: CoulombIntegralsFromVertex
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: DrccdEnergyFromCoulombIntegrals
+  in:
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    mixer:
+      type: LinearMixer
+      ratio: 1.0
+  out:
+    energy: Mp2Energy

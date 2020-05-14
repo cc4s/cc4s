@@ -2,7 +2,7 @@
 #ifndef MIXER_DEFINED
 #define MIXER_DEFINED
 
-#include <algorithms/Algorithm.hpp>
+#include <Data.hpp>
 #include <math/Complex.hpp>
 #include <math/FockVector.hpp>
 #include <util/SharedPointer.hpp>
@@ -13,7 +13,7 @@ namespace cc4s {
   template <typename F, typename TE>
   class Mixer {
   public:
-    Mixer(const Ptr<Algorithm> &algorithm);
+    Mixer(const Ptr<MapNode> &arguments);
     virtual ~Mixer();
 
     /**
@@ -50,7 +50,7 @@ namespace cc4s {
      **/
     virtual Ptr<const FockVector<F,TE>> getResiduum() = 0;
 
-    Ptr<Algorithm> algorithm;
+    Ptr<MapNode> arguments;
   };
 
   template <typename F, typename TE>
@@ -63,16 +63,16 @@ namespace cc4s {
      * MixerRegistrar class.
      */
     static Ptr<Mixer<F,TE>> create(
-      std::string const &name, const Ptr<Algorithm> algorithm
+      std::string const &name, const Ptr<MapNode> &arguments
     ) {
       auto iterator(getMixerMap()->find(name));
       return iterator != getMixerMap()->end() ?
-        iterator->second(algorithm) : Ptr<Mixer<F,TE>>();
+        iterator->second(arguments) : Ptr<Mixer<F,TE>>();
     }
   protected:
     typedef std::map<
       std::string,
-      std::function<Ptr<Mixer<F,TE>> (const Ptr<Algorithm> &algorithm)>
+      std::function<Ptr<Mixer<F,TE>> (const Ptr<MapNode> &arguments)>
     > MixerMap;
 
     static Ptr<MixerMap> getMixerMap() {
@@ -85,8 +85,8 @@ namespace cc4s {
    * \brief template function creating an instance of the given class.
    */
   template <typename F, typename TE, typename MixerType>
-  Ptr<Mixer<F,TE>> createMixer(const Ptr<Algorithm> &algorithm) {
-    return New<MixerType>(algorithm);
+  Ptr<Mixer<F,TE>> createMixer(const Ptr<MapNode> &arguments) {
+    return New<MixerType>(arguments);
   }
 
   /**

@@ -1,6 +1,7 @@
 #include <mixers/LinearMixer.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
+#include <algorithms/Algorithm.hpp>
 #include <Data.hpp>
 
 using namespace cc4s;
@@ -9,16 +10,12 @@ MIXER_REGISTRAR_DEFINITION(LinearMixer);
 
 template <typename F, typename TE>
 LinearMixer<F,TE>::LinearMixer(
-  const Ptr<Algorithm> &algorithm
+  const Ptr<MapNode> &arguments
 ):
-  Mixer<F,TE>(algorithm), last(nullptr), lastResiduum(nullptr)
+  Mixer<F,TE>(arguments), last(nullptr), lastResiduum(nullptr)
 {
-  ratio = (algorithm->getRealArgument("mixingRatio", 1.0));
-  LOG(1,"LinearMixer") << "ratio=" << std::real(ratio) << std::endl;
-}
-
-template <typename F, typename TE>
-LinearMixer<F,TE>::~LinearMixer() {
+  ratio = arguments->getValue<Real<>>("mixingRatio", 1.0);
+  LOG(1,"LinearMixer") << "ratio=" << real(ratio) << std::endl;
 }
 
 template <typename F, typename TE>
@@ -42,12 +39,12 @@ void LinearMixer<F,TE>::append(
 
 template <typename F, typename TE>
 Ptr<const FockVector<F,TE>> LinearMixer<F,TE>::get() {
-    return last;
+  return last;
 }
 
 template <typename F, typename TE>
 Ptr<const FockVector<F,TE>> LinearMixer<F,TE>::getResiduum() {
-    return lastResiduum;
+  return lastResiduum;
 }
 
 // instantiate

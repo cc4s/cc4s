@@ -12,13 +12,13 @@
 #include <ostream>
 
 namespace cc4s {
-  template <typename F, typename TE>
   /**
    * \brief Represents the direct sum of tensors and provides the
    * vector space operations of addition, scalar multiplication, inner product,
    * complex conjugation to get dual vectors and matrix multiplication
    * between vectors and duals, which yields a scalar.
    **/
+  template <typename F, typename TE>
   class FockVector {
   public:
     typedef F FieldType;
@@ -150,9 +150,9 @@ namespace cc4s {
       for (size_t i(0); i < componentTensors.size(); ++i) {
 //        const char *indices(componentIndices[i].c_str());
 //        get(i)->sum(+1.0, *a.get(i), indices, 1.0, indices);
-        (
+        COMPILE(
           (*get(i))[getIndices(i)] += (*a.get(i))[getIndices(i)]
-        )->compile()->execute();
+        )->execute();
       }
       return *this;
     }
@@ -166,9 +166,9 @@ namespace cc4s {
       for (size_t i(0); i < componentTensors.size(); ++i) {
 //        const char *indices(getIndices(i).c_str());
 //        get(i)->sum(-1.0, *a.get(i), indices, 1.0, indices);
-        (
+        COMPILE(
           (*get(i))[getIndices(i)] -= (*a.get(i))[getIndices(i)]
-        )->compile()->execute();
+        )->execute();
       }
       return *this;
     }
@@ -181,9 +181,9 @@ namespace cc4s {
       for (size_t i(0); i < componentTensors.size(); ++i) {
 //        const char *indices(getIndices(i).c_str());
 //        get(i)->sum(s, *get(i), indices, 0.0, indices);
-        (
+        COMPILE(
           (*get(i))[getIndices(i)] <<= s * (*get(i))[getIndices(i)]
-        )->compile()->execute();
+        )->execute();
       }
       return *this;
     }
@@ -206,21 +206,20 @@ namespace cc4s {
           transposedLens.begin() + 2*order
         );
         result.componentTensors.push_back(
-          New<Tensor<F,TE>>(
-            transposedLens.size(), transposedLens.data(),
-            get(i)->sym, *get(i)->wrld,
-            (std::string(get(i)->get_name()) + "*").c_str()
+          Tcc<TE>::template tensor<F>(
+            transposedLens,
+            std::string(get(i)->get_name()) + "*"
           )
         );
         result.componentIndices.push_back(
           getIndices(i).substr(order, 2*order) + getIndices(i).substr(0, order)
         );
-        (
-          (*result.get(i))[result.getIndices(i)] <<= map(
-            std::function<Real<>(const Real<>)>(cc4s::conj<Real<>>),
+        COMPILE(
+          (*result.get(i))[result.getIndices(i)] <<= map<F>(
+            cc4s::conj<F>,
             (*get(i))[getIndices(i)]
           )
-        )->compile()->execute();
+        )->execute();
       }
       return std::move(result);
     }
@@ -231,17 +230,15 @@ namespace cc4s {
      **/
     F braket(const FockVector &ket) const {
       checkDualCompatibility(ket);
-      auto result( New<Tensor<F,TE>>(std::vector<size_t>({})) );
+      auto result( Tcc<TE>::template tensor<F>("dot") );
       for (size_t i(0); i < componentTensors.size(); ++i) {
         // add to result
-        (
+        COMPILE(
           (*result)[""] +=
             (*get(i))[getIndices(i)] * (*ket.get(i))[ket.getIndices(i)]
-        )->compile()->execute();
+        )->execute();
       }
-      // FIXME: to be implemented in tcc:
-      // return result.get_val();
-      return F(0);
+      return result->read();
     }
 
     /**
@@ -252,17 +249,15 @@ namespace cc4s {
      **/
     F dot(const FockVector &a) const {
       checkCompatibilityTo(a);
-      auto result( New<Tensor<F,TE>>(std::vector<size_t>({})) );
+      auto result( Tcc<TE>::template tensor<F>("dot") );
       for (size_t i(0); i < componentTensors.size(); ++i) {
         // add to result
-        (
+        COMPILE(
           (*result)[""] += (*get(i))[getIndices(i)] *
-            map(cc4s::conj<F>, (*a.get(i))[getIndices(i)])
-        )->compile()->execute();
+            map<F>(cc4s::conj<F>, (*a.get(i))[getIndices(i)])
+        )->execute();
       }
-      // FIXME: to be implemented in tcc:
-      // return result.get_val();
-      return F(0);
+      return result->read();
     }
 
     /**
@@ -305,9 +300,7 @@ namespace cc4s {
         if (index < indexEnds[component]) break;
         base = indexEnds[component++];
       }
-      if (component >= indexEnds.size()) {
-        throw new EXCEPTION("Index out bounds");
-      }
+      Assert(component < indexEnds.size(), "Index out bounds");
       componentIndex = index - base;
     }
 
@@ -388,7 +381,7 @@ namespace cc4s {
       size_t indexBase(0);
       for (size_t i(0); i < componentTensors.size(); ++i) {
         size_t tensorIndexSize(1);
-        for (int d(0); d < get(i)->order; ++d) {
+        for (size_t d(0); d < get(i)->lens.size(); ++d) {
           tensorIndexSize *= get(i)->lens[d];
         }
         indexEnds[i] = indexBase += tensorIndexSize;
@@ -404,13 +397,13 @@ namespace cc4s {
       for (size_t i(0); i < components.size(); ++i) {
         // create tensor of identical shape, NOTE: no data is copied yet
         componentTensors[i] = Tcc<TE>::template tensor<F>(
-          *components[i], "unnamed"
+          components[i]->lens, "unnamed"
         );
         // copy data
-        (
+        COMPILE(
           (*componentTensors[i])[componentIndices[i]] <<=
             (*components[i])[componentIndices[i]]
-        )->compile()->execute();
+        )->execute();
       }
     }
 
