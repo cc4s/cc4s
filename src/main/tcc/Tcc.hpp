@@ -53,7 +53,7 @@ namespace cc4s {
       return Tensor<F,TensorEngine>::create(name);
     }
 
-    static Ptr<Sequence<TensorEngine>> nothing() {
+    static Ptr<Sequence<TensorEngine>> sequence() {
       return New<Sequence<TensorEngine>>();
     }
   };

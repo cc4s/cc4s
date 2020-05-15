@@ -87,10 +87,23 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   }
   // define recipes for basic integral slices
   auto integralSlices(New<MapNode>());
+  // TODO: symmetry considerations
+  DEFINE_REAL_INTEGRALS_SLICE(h,h,h,h);
   DEFINE_REAL_INTEGRALS_SLICE(p,h,h,h);
+  DEFINE_REAL_INTEGRALS_SLICE(h,p,h,h);
   DEFINE_REAL_INTEGRALS_SLICE(p,p,h,h);
+  DEFINE_REAL_INTEGRALS_SLICE(h,h,p,h);
+  DEFINE_REAL_INTEGRALS_SLICE(p,h,p,h);
+  DEFINE_REAL_INTEGRALS_SLICE(h,p,p,h);
+  DEFINE_REAL_INTEGRALS_SLICE(p,p,p,h);
+  DEFINE_REAL_INTEGRALS_SLICE(h,h,h,p);
   DEFINE_REAL_INTEGRALS_SLICE(p,h,h,p);
+  DEFINE_REAL_INTEGRALS_SLICE(h,p,h,p);
+  DEFINE_REAL_INTEGRALS_SLICE(p,p,h,p);
   DEFINE_REAL_INTEGRALS_SLICE(h,h,p,p);
+  DEFINE_REAL_INTEGRALS_SLICE(p,h,p,p);
+  DEFINE_REAL_INTEGRALS_SLICE(h,p,p,p);
+  DEFINE_REAL_INTEGRALS_SLICE(p,p,p,p);
 
   // create result
   auto coulombIntegrals(New<MapNode>());
@@ -152,11 +165,23 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
   }
   // define recipes for integral slices
   auto integralSlices(New<MapNode>());
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,h,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,p);
   // TODO: symmetry considerations
+  DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,h,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,h,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,h,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,p,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,p,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,p,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,p,h);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,h,p);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,p);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,h,p);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,h,p);
   DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,p,p);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,p,p);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,p,p);
+  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,p,p);
 
   // create result
   auto coulombIntegrals(New<MapNode>());

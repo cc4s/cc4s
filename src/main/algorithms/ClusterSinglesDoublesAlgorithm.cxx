@@ -108,11 +108,13 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     LOG(0, getCapitalizedAbbreviation()) <<
       "WARNING: energy or amplitudes convergence not reached." << std::endl;
   }
+  bool convergenceReached = i < maxIterationsCount;
 
   // TODO: implement
 //  storeAmplitudes(amplitudes, {"Singles", "Doubles"});
   auto result(New<MapNode>());
   result->get("energy") = energy;
+  result->setValue<bool>("convergenceReached", convergenceReached);
   return result;
 }
 

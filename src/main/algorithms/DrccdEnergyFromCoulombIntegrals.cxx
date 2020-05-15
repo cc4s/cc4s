@@ -61,40 +61,53 @@ Ptr<FockVector<F,TE>> DrccdEnergyFromCoulombIntegrals::getResiduum(
   *residuum *= F(0);
   auto Rpphh( residuum->get(1) );
 
-/*
-  int linearized(getIntegerArgument("linearized", 0));
+  bool linearized(arguments->getValue<bool>("linearized", false));
+  bool adjacentPairsExchange(
+    arguments->getValue<bool>("adjacentPairsExchange", false)
+  );
   if (linearized) {
     LOG(1, getCapitalizedAbbreviation()) <<
       "Solving linearized T2 Amplitude Equations" << std::endl;
   } else {
-*/
     LOG(1, getCapitalizedAbbreviation()) <<
       "Solving T2 Amplitude Equations" << std::endl;
-//  }
+  }
 
   // TODO: deal with starting amplitudes
   if (iteration > 0) { // || isArgumentGiven("startingDoublesAmplitudes")) {
+    auto Whhpp( Tcc<TE>::template tensor<F>("Whhpp") );
     // for the remaining iterations compute the drCCD residuum
     COMPILE(
       (*Rpphh)["abij"] += (*Vpphh)["abij"],
       (*Rpphh)["abij"] += spins * (*Vphhp)["akic"] * (*Tpphh)["cbkj"],
       (*Rpphh)["abij"] += spins * (*Vphhp)["bkjc"] * (*Tpphh)["acik"],
-      (*Rpphh)["abij"] +=
-        spins*spins * (*Vhhpp)["klcd"] * (*Tpphh)["acik"] * (*Tpphh)["dblj"]
+      (linearized) ? (
+        // linearized: nothing more to do
+        Tcc<TE>::sequence()
+      ) : (
+        // otherwise: do quadratic contribution
+        (*Whhpp)["ijab"] <<= spins * (*Vhhpp)["ijab"],
+        (adjacentPairsExchange) ? (
+          // adjacent pairs correction: also exchange holes in Whhpp
+          (*Whhpp)["ijab"] -= (*Vhhpp)["jiab"],
+          Tcc<TE>::sequence()
+        ) : (
+          // otherwise: do nothing else with Whhpp
+          Tcc<TE>::sequence()
+        ),
+        // compute quadratic contribution
+        (*Rpphh)["abij"] +=
+          spins * (*Whhpp)["klcd"] * (*Tpphh)["acik"] * (*Tpphh)["dblj"],
+        Tcc<TE>::sequence()
+      )
     )->execute();
-// TODO: linearized and adjacent pairs exchange
+// TODO: adjacent pairs exchange
 /*
-    if (!linearized) {
       Tensor<F> Wijab(false, *Vijab);
-      Wijab["ijab"] = spins * (*Vijab)["ijab"];
+      Wijab["ijab"] = ;
       if (getIntegerArgument("adjacentPairsExchange", 0)) {
         Wijab["ijab"] -= (*Vijab)["jiab"];
       }
-      // Construct intermediates
-      Tensor<F> Calid(false, *Vphhp);
-      Calid["alid"]  = spins * ;
-      (*Rpphh)["abij"] += spins * Whhpp["klcd"] * (*Tpphh)["acik"] * (*Tpphh)["dblj"];
-    }
 */
   } else {
     // no amplitudes given: start with MP2 amplitudes

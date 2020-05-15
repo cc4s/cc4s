@@ -14,7 +14,7 @@ LinearMixer<F,TE>::LinearMixer(
 ):
   Mixer<F,TE>(arguments), last(nullptr), lastResiduum(nullptr)
 {
-  ratio = arguments->getValue<Real<>>("mixingRatio", 1.0);
+  ratio = arguments->getValue<Real<>>("ratio", 1.0);
   LOG(1,"LinearMixer") << "ratio=" << real(ratio) << std::endl;
 }
 
