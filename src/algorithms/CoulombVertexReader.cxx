@@ -48,6 +48,13 @@ void CoulombVertexReader::run() {
   int No(header.No);
   int Nv(header.Nv);
   int Np(No + Nv);
+
+  if (isArgumentGiven("states")) {
+    // override with given number of states, fixing bug in vasp interface
+    Np = getIntegerArgument("states");
+    Nv = Np-No;
+  }
+
   
   // Print NG, No, Nv, Np
   LOG(1, "Reader") << "NG=" << NG << std::endl;
