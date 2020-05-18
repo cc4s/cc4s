@@ -16,12 +16,29 @@ CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   return getResiduum<Real<>, DryTensorEngine>(iteration, amplitudes);
 }
 
+Ptr<FockVector<Complex<>, DryTensorEngine>>
+CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+  const int iteration,
+  const Ptr<const FockVector<Complex<>, DryTensorEngine>> &amplitudes
+) {
+  return getResiduum<Complex<>, DryTensorEngine>(iteration, amplitudes);
+}
+
 Ptr<FockVector<Real<>, DefaultTensorEngine>>
 CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   const int iteration,
   const Ptr<const FockVector<Real<>, DefaultTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultTensorEngine>(iteration, amplitudes);
+}
+
+
+Ptr<FockVector<Complex<>, DefaultTensorEngine>>
+CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+  const int iteration,
+  const Ptr<const FockVector<Complex<>, DefaultTensorEngine>> &amplitudes
+) {
+  return getResiduum<Complex<>, DefaultTensorEngine>(iteration, amplitudes);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -55,10 +72,12 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
    //TODO
    // && !isArgumentGiven("initialDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes
-    LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
-    COMPILE(
-      (*Rpphh)["abij"] += (*Vpphh)["abij"]
-    )->execute();
+    // FIXME: if does nothing currently
   }
+
+  LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
+  COMPILE(
+    (*Rpphh)["abij"] += (*Vpphh)["abij"]
+  )->execute();
   return residuum;
 }

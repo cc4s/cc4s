@@ -35,9 +35,17 @@ namespace cc4s {
       const int iteration,
       const Ptr<const FockVector<Real<>, DryTensorEngine>> &amplitudes
     ) override;
+    Ptr<FockVector<Complex<>, DryTensorEngine>> getResiduum(
+      const int iteration,
+      const Ptr<const FockVector<Complex<>, DryTensorEngine>> &amplitudes
+    ) override;
     Ptr<FockVector<Real<>, DefaultTensorEngine>> getResiduum(
       const int iteration,
       const Ptr<const FockVector<Real<>, DefaultTensorEngine>> &amplitudes
+    ) override;
+    Ptr<FockVector<Complex<>, DefaultTensorEngine>> getResiduum(
+      const int iteration,
+      const Ptr<const FockVector<Complex<>, DefaultTensorEngine>> &amplitudes
     ) override;
 
     template <typename F, typename TE>
