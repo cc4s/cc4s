@@ -16,6 +16,7 @@ build/${CONFIG}/obj/main/algorithms/CoulombIntegralsFromVertex.o \
 build/${CONFIG}/obj/main/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/main/algorithms/ClusterSinglesDoublesAlgorithm.o \
 build/${CONFIG}/obj/main/algorithms/DrccdEnergyFromCoulombIntegrals.o \
+#build/${CONFIG}/obj/main/algorithms/CcsdEnergyFromCoulombIntegralsReference.o \
 build/${CONFIG}/obj/main/mixers/Mixer.o \
 build/${CONFIG}/obj/main/mixers/LinearMixer.o \
 #build/${CONFIG}/obj/main/algorithms/RealTensorReader.o \

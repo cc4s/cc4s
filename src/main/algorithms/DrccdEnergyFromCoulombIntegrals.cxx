@@ -111,7 +111,9 @@ Ptr<FockVector<F,TE>> DrccdEnergyFromCoulombIntegrals::getResiduum(
 */
   } else {
     // no amplitudes given: start with MP2 amplitudes
-    (*Rpphh)["abij"] += (*Vpphh)["abij"];
+    COMPILE(
+      (*Rpphh)["abij"] += (*Vpphh)["abij"]
+    )->execute();
   }
 
   return residuum;
