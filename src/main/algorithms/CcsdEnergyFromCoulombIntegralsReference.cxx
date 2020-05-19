@@ -50,10 +50,6 @@ template <typename F, typename TE>
 Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   const int iteration, const Ptr<const FockVector<F,TE>> &amplitudes
 ) {
-  // get singles and doubles part of the amplitudes
-  auto Tai( amplitudes->get(0) );
-  auto Tabij( amplitudes->get(1) );
-
   // get amplitude parts
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
@@ -76,7 +72,6 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
     //TODO
     // && !isArgumentGiven("initialDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes
-    // FIXME: if does nothing currently
     LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
     COMPILE(
       (*Rpphh)["abij"] += (*Vpphh)["abij"]
@@ -87,17 +82,17 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
         << "Calculate only PPL diagrams" << std::endl;
 
     auto Vpppp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pppp"));
-    auto Vppph(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("ppph"));
+    auto Vphpp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("phpp"));
+    auto Vhppp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hppp"));
     auto Xabcd( Tcc<TE>::template tensor<F>("Xabcd") );
 
     COMPILE(
       // Build Xabcd intermediate
       (*Xabcd)["abcd"] <<= (1.0) * (*Vpppp)["abcd"],
-      (*Xabcd)["abcd"] += (-1.0) * (*Vppph)["cdak"] * (*Tai)["bk"],
-      (*Xabcd)["abcd"] += (-1.0) * (*Vppph)["dcbk"] * (*Tai)["ak"],
-
-      (*Rpphh)["abij"] <<= (*Xabcd)["abcd"] * (*Tabij)["cdij"],
-      (*Rpphh)["abij"]  += (*Xabcd)["abcd"] * (*Tai)["ci"] * (*Tai)["dj"]
+      (*Xabcd)["abcd"] += (-1.0) * (*Vphpp)["akcd"] * (*Tph)["bk"],
+      (*Xabcd)["abcd"] += (-1.0) * (*Vhppp)["kbcd"] * (*Tph)["ak"],
+      (*Rpphh)["abij"] <<= (*Xabcd)["abcd"] * (*Tpphh)["cdij"],
+      (*Rpphh)["abij"]  += (*Xabcd)["abcd"] * (*Tph)["ci"] * (*Tph)["dj"]
     )->execute();
 
   } else {
@@ -130,58 +125,58 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
 
     COMPILE(
       // Build Kac
-      (*Kac)["ac"] <<= (-2.0) * (*Vhhpp)["klcd"] * (*Tabij)["adkl"],
-      (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Tabij)["adkl"],
-      (*Kac)["ac"] += (-2.0) * (*Vhhpp)["klcd"] * (*Tai)["ak"] * (*Tai)["dl"],
-      (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Tai)["ak"] * (*Tai)["dl"],
+      (*Kac)["ac"] <<= (-2.0) * (*Vhhpp)["klcd"] * (*Tpphh)["adkl"],
+      (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Tpphh)["adkl"],
+      (*Kac)["ac"] += (-2.0) * (*Vhhpp)["klcd"] * (*Tph)["ak"] * (*Tph)["dl"],
+      (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Tph)["ak"] * (*Tph)["dl"],
 
       // Build Lac
       (*Lac)["ac"] <<= (*Kac)["ac"],
-      (*Lac)["ac"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tai)["dk"],
-      (*Lac)["ac"] += (-1.0) * (*Vphpp)["akdc"] * (*Tai)["dk"],
+      (*Lac)["ac"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tph)["dk"],
+      (*Lac)["ac"] += (-1.0) * (*Vphpp)["akdc"] * (*Tph)["dk"],
 
       // Build Kki
-      (*Kki)["ki"] <<= (2.0) * (*Vhhpp)["klcd"] * (*Tabij)["cdil"],
-      (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Tabij)["cdil"],
-      (*Kki)["ki"] += ( 2.0) * (*Vhhpp)["klcd"] * (*Tai)["ci"] * (*Tai)["dl"],
-      (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Tai)["ci"] * (*Tai)["dl"],
+      (*Kki)["ki"] <<= (2.0) * (*Vhhpp)["klcd"] * (*Tpphh)["cdil"],
+      (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Tpphh)["cdil"],
+      (*Kki)["ki"] += ( 2.0) * (*Vhhpp)["klcd"] * (*Tph)["ci"] * (*Tph)["dl"],
+      (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Tph)["ci"] * (*Tph)["dl"],
 
       // Build Lki
       (*Lki)["ki"] <<= (*Kki)["ki"],
-      (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tai)["cl"],
-      (*Lki)["ki"] += (-1.0) * (*Vhhph)["klci"] * (*Tai)["cl"],
+      (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tph)["cl"],
+      (*Lki)["ki"] += (-1.0) * (*Vhhph)["klci"] * (*Tph)["cl"],
 
       // Contract Lac with T2 Amplitudes
-      (*Rpphh)["abij"] += ( 1.0) * (*Lac)["ac"] * (*Tabij)["cbij"],
+      (*Rpphh)["abij"] += ( 1.0) * (*Lac)["ac"] * (*Tpphh)["cbij"],
 
       // Contract Lki with T2 Amplitudes
-      (*Rpphh)["abij"] += (-1.0) * (*Lki)["ki"] * (*Tabij)["abkj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Lki)["ki"] * (*Tpphh)["abkj"],
 
       // Contract Coulomb integrals with T2 amplitudes
-      (*Rpphh)["abij"] += ( 1.0) * (*Vpphp)["abic"] * (*Tai)["cj"],
-      (*Rpphh)["abij"] += (-1.0) * (*Vhphp)["kbic"] * (*Tai)["ak"] * (*Tai)["cj"],
-      (*Rpphh)["abij"] += (-1.0) * (*Vphhh)["akij"] * (*Tai)["bk"],
-      (*Rpphh)["abij"] += (-1.0) * (*Vphhp)["akic"] * (*Tai)["cj"] * (*Tai)["bk"],
+      (*Rpphh)["abij"] += ( 1.0) * (*Vpphp)["abic"] * (*Tph)["cj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Vhphp)["kbic"] * (*Tph)["ak"] * (*Tph)["cj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Vphhh)["akij"] * (*Tph)["bk"],
+      (*Rpphh)["abij"] += (-1.0) * (*Vphhp)["akic"] * (*Tph)["cj"] * (*Tph)["bk"],
 
       // Build Xakic
       (*Xakic)["akic"] <<= (*Vphhp)["akic"],
-      (*Xakic)["akic"] += (-1.0) * (*Vhhhp)["lkic"] * (*Tai)["al"],
-      (*Xakic)["akic"] += ( 1.0) * (*Vphpp)["akdc"] * (*Tai)["di"],
-      (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkdc"] * (*Tabij)["dail"],
-      (*Xakic)["akic"] += (-1.0) * (*Vhhpp)["lkdc"] * (*Tai)["di"] * (*Tai)["al"],
-      (*Xakic)["akic"] += ( 1.0) * (*Vhhpp)["lkdc"] * (*Tabij)["adil"],
-      (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tabij)["adil"],
-      (*Rpphh)["abij"] += ( 2.0) * (*Xakic)["akic"] * (*Tabij)["cbkj"],
-      (*Rpphh)["abij"] += (-1.0) * (*Xakic)["akic"] * (*Tabij)["bckj"],
+      (*Xakic)["akic"] += (-1.0) * (*Vhhhp)["lkic"] * (*Tph)["al"],
+      (*Xakic)["akic"] += ( 1.0) * (*Vphpp)["akdc"] * (*Tph)["di"],
+      (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkdc"] * (*Tpphh)["dail"],
+      (*Xakic)["akic"] += (-1.0) * (*Vhhpp)["lkdc"] * (*Tph)["di"] * (*Tph)["al"],
+      (*Xakic)["akic"] += ( 1.0) * (*Vhhpp)["lkdc"] * (*Tpphh)["adil"],
+      (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["adil"],
+      (*Rpphh)["abij"] += ( 2.0) * (*Xakic)["akic"] * (*Tpphh)["cbkj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Xakic)["akic"] * (*Tpphh)["bckj"],
 
       // Build Xakci
       (*Xakci)["akci"] <<= (*Vphph)["akci"],
-      (*Xakci)["akci"] += (-1.0) * (*Vhhph)["lkci"] * (*Tai)["al"],
-      (*Xakci)["akci"] += ( 1.0) * (*Vphpp)["akcd"] * (*Tai)["di"],
-      (*Xakci)["akci"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tabij)["dail"],
-      (*Xakci)["akci"] += (-1.0) * (*Vhhpp)["lkcd"] * (*Tai)["di"] * (*Tai)["al"],
-      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["akci"] * (*Tabij)["cbkj"],
-      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tabij)["ackj"],
+      (*Xakci)["akci"] += (-1.0) * (*Vhhph)["lkci"] * (*Tph)["al"],
+      (*Xakci)["akci"] += ( 1.0) * (*Vphpp)["akcd"] * (*Tph)["di"],
+      (*Xakci)["akci"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["dail"],
+      (*Xakci)["akci"] += (-1.0) * (*Vhhpp)["lkcd"] * (*Tph)["di"] * (*Tph)["al"],
+      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["akci"] * (*Tpphh)["cbkj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"],
 
       // Symmetrize Rpphh by applying permutation operator
       (*Rpphh)["abij"] += (*Rpphh)["baji"],
@@ -196,25 +191,25 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
 
       // Build Xklij intermediate
       (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
-      (*Xklij)["klij"] += (*Vhhhp)["klic"] * (*Tai)["cj"],
-      (*Xklij)["klij"] += (*Vhhph)["klcj"] * (*Tai)["ci"],
-      (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tabij)["cdij"],
-      (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tai)["ci"] * (*Tai)["dj"],
+      (*Xklij)["klij"] += (*Vhhhp)["klic"] * (*Tph)["cj"],
+      (*Xklij)["klij"] += (*Vhhph)["klcj"] * (*Tph)["ci"],
+      (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tpphh)["cdij"],
+      (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tph)["ci"] * (*Tph)["dj"],
 
       // Contract Xklij with T2 Amplitudes
-      (*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tabij)["abkl"],
+      (*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tpphh)["abkl"],
 
       // Contract Xklij with T1 Amplitudes
-      (*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tai)["ak"] * (*Tai)["bl"],
+      (*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tph)["ak"] * (*Tph)["bl"],
 
       // Build Xabcd intermediate
       (*Xabcd)["abcd"] <<= (1.0) * (*Vpppp)["abcd"],
-      (*Xabcd)["abcd"] += (-1.0) * (*Vphpp)["akcd"] * (*Tai)["bk"],
-      (*Xabcd)["abcd"] += (-1.0) * (*Vhppp)["kbcd"] * (*Tai)["ak"],
+      (*Xabcd)["abcd"] += (-1.0) * (*Vphpp)["akcd"] * (*Tph)["bk"],
+      (*Xabcd)["abcd"] += (-1.0) * (*Vhppp)["kbcd"] * (*Tph)["ak"],
 
       // Contract Xabcd with T2 and T1 Amplitudes
-      (*Rpphh)["abij"] += (*Xabcd)["abcd"] * (*Tabij)["cdij"],
-      (*Rpphh)["abij"] += (*Xabcd)["abcd"] * (*Tai)["ci"] * (*Tai)["dj"]
+      (*Rpphh)["abij"] += (*Xabcd)["abcd"] * (*Tpphh)["cdij"],
+      (*Rpphh)["abij"] += (*Xabcd)["abcd"] * (*Tph)["ci"] * (*Tph)["dj"]
     )->execute();
 
     //********************************************************************************
@@ -224,27 +219,27 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
       "Solving T1 Amplitude Equations" << std::endl;
     COMPILE(
       // Contract Kac and Kki with T1 amplitudes
-      (*Rph)["ai"] += ( 1.0) * (*Kac)["ac"] * (*Tai)["ci"],
-      (*Rph)["ai"] += (-1.0) * (*Kki)["ki"] * (*Tai)["ak"],
+      (*Rph)["ai"] += ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
+      (*Rph)["ai"] += (-1.0) * (*Kki)["ki"] * (*Tph)["ak"],
 
       //Build Kck
-      (*Kck)["ck"] <<= ( 2.0) * (*Vhhpp)["klcd"] * (*Tai)["dl"],
-      (*Kck)["ck"]  += (-1.0) * (*Vhhpp)["kldc"] * (*Tai)["dl"],
+      (*Kck)["ck"] <<= ( 2.0) * (*Vhhpp)["klcd"] * (*Tph)["dl"],
+      (*Kck)["ck"]  += (-1.0) * (*Vhhpp)["kldc"] * (*Tph)["dl"],
 
       // Contract all the rest terms with T1 and T2 amplitudes
-      (*Rph)["ai"] += ( 2.0) * (*Kck)["ck"] * (*Tabij)["caki"],
-      (*Rph)["ai"] += (-1.0) * (*Kck)["ck"] * (*Tabij)["caik"],
-      (*Rph)["ai"] += ( 1.0) * (*Kck)["ck"] * (*Tai)["ci"] * (*Tai)["ak"],
-      (*Rph)["ai"] += ( 2.0) * (*Vphhp)["akic"] * (*Tai)["ck"],
-      (*Rph)["ai"] += (-1.0) * (*Vphph)["akci"] * (*Tai)["ck"],
-      (*Rph)["ai"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tabij)["cdik"],
-      (*Rph)["ai"] += (-1.0) * (*Vphpp)["akdc"] * (*Tabij)["cdik"],
-      (*Rph)["ai"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tai)["ci"] * (*Tai)["dk"],
-      (*Rph)["ai"] += (-1.0) * (*Vphpp)["akdc"] * (*Tai)["ci"] * (*Tai)["dk"],
-      (*Rph)["ai"] += (-2.0) * (*Vhhhp)["klic"] * (*Tabij)["ackl"],
-      (*Rph)["ai"] += ( 1.0) * (*Vhhph)["klci"] * (*Tabij)["ackl"],
-      (*Rph)["ai"] += (-2.0) * (*Vhhhp)["klic"] * (*Tai)["ak"] * (*Tai)["cl"],
-      (*Rph)["ai"] += ( 1.0) * (*Vhhph)["klci"] * (*Tai)["ak"] * (*Tai)["cl"]
+      (*Rph)["ai"] += ( 2.0) * (*Kck)["ck"] * (*Tpphh)["caki"],
+      (*Rph)["ai"] += (-1.0) * (*Kck)["ck"] * (*Tpphh)["caik"],
+      (*Rph)["ai"] += ( 1.0) * (*Kck)["ck"] * (*Tph)["ci"] * (*Tph)["ak"],
+      (*Rph)["ai"] += ( 2.0) * (*Vphhp)["akic"] * (*Tph)["ck"],
+      (*Rph)["ai"] += (-1.0) * (*Vphph)["akci"] * (*Tph)["ck"],
+      (*Rph)["ai"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tpphh)["cdik"],
+      (*Rph)["ai"] += (-1.0) * (*Vphpp)["akdc"] * (*Tpphh)["cdik"],
+      (*Rph)["ai"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tph)["ci"] * (*Tph)["dk"],
+      (*Rph)["ai"] += (-1.0) * (*Vphpp)["akdc"] * (*Tph)["ci"] * (*Tph)["dk"],
+      (*Rph)["ai"] += (-2.0) * (*Vhhhp)["klic"] * (*Tpphh)["ackl"],
+      (*Rph)["ai"] += ( 1.0) * (*Vhhph)["klci"] * (*Tpphh)["ackl"],
+      (*Rph)["ai"] += (-2.0) * (*Vhhhp)["klic"] * (*Tph)["ak"] * (*Tph)["cl"],
+      (*Rph)["ai"] += ( 1.0) * (*Vhhph)["klci"] * (*Tph)["ak"] * (*Tph)["cl"]
     )->execute();
 
   }
