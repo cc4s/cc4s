@@ -36,8 +36,14 @@ namespace cc4s {
      */
     Ptr<Node> parse() {
       LOG(1,"Parser") << "Parsing file " << fileName << std::endl;
-      YAML::Node yamlNode(YAML::LoadFile(fileName));
-      return parseNode(yamlNode);
+      try {
+        YAML::Node yamlNode(YAML::LoadFile(fileName));
+        return parseNode(yamlNode);
+      } catch (const YAML::Exception &cause) {
+        throw new EXCEPTION(
+          std::string("Failed to load file '") + fileName + "': " + cause.what()
+        );
+      }
     }
 
   protected:
