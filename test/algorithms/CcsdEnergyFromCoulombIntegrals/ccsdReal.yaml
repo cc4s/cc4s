@@ -1,6 +1,6 @@
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/EigenEnergiesComplex.yaml"
+    fileName: "../../../tutorials/systems/H2O/EigenEnergiesReal.yaml"
   out:
     tensor: EigenEnergies
 
@@ -12,13 +12,13 @@
 
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/FockOperatorComplex.yaml"
+    fileName: "../../../tutorials/systems/H2O/FockOperatorReal.yaml"
   out:
     tensor: CoulombVertex
 
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/CoulombVertexComplex.yaml"
+    fileName: "../../../tutorials/systems/H2O/CoulombVertexReal.yaml"
   out:
     tensor: CoulombVertex
 
@@ -28,12 +28,21 @@
   out:
     slicedEigenEnergies: EigenEnergies
 
-- name: SliceCoulombVertex
+#- name: SliceCoulombVertex
+#  in:
+#    slicedEigenEnergies: EigenEnergies
+#    coulombVertex: CoulombVertex
+#  out:
+#    slicedCoulombVertex: CoulombVertex
+- name: SliceOperator
   in:
     slicedEigenEnergies: EigenEnergies
-    coulombVertex: CoulombVertex
+    operator: CoulombVertex
+    dimensions:
+      - 1
+      - 2
   out:
-    slicedCoulombVertex: CoulombVertex
+    slicedOperator: CoulombVertex
 
 - name: CoulombIntegralsFromVertex
   in:
@@ -44,6 +53,7 @@
 - name: CcsdEnergyFromCoulombIntegrals
   in:
     slicedEigenEnergies: EigenEnergies
+    slicedCoulombVertex: CoulombVertex
     coulombIntegrals: CoulombIntegrals
     maxIterations: 64
     energyConvergence: 1.0E-8

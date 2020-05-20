@@ -13,42 +13,53 @@ CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int iteration,
   const Ptr<const FockVector<Real<>, DryTensorEngine>> &amplitudes
 ) {
-  return getResiduum<Real<>, DryTensorEngine>(iteration, amplitudes);
+  return getResiduum<DryTensorEngine>(iteration, amplitudes);
 }
-
+// TODO: overrides for Complex<> types. Currently the Reference methods are used
+/*
 Ptr<FockVector<Complex<>, DryTensorEngine>>
 CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int iteration,
   const Ptr<const FockVector<Complex<>, DryTensorEngine>> &amplitudes
 ) {
-  return getResiduum<Complex<>, DryTensorEngine>(iteration, amplitudes);
+  return CcsdEnergyFromCoulombIntegralsReference().getResiduum<
+    Complex<>, DryTensorEngine
+  >(
+    iteration, amplitudes
+  );
 }
+*/
 
 Ptr<FockVector<Real<>, DefaultTensorEngine>>
 CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int iteration,
   const Ptr<const FockVector<Real<>, DefaultTensorEngine>> &amplitudes
 ) {
-  return getResiduum<Real<>, DefaultTensorEngine>(iteration, amplitudes);
+  return getResiduum<DefaultTensorEngine>(iteration, amplitudes);
 }
 
-
+/*
 Ptr<FockVector<Complex<>, DefaultTensorEngine>>
 CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int iteration,
   const Ptr<const FockVector<Complex<>, DefaultTensorEngine>> &amplitudes
 ) {
-  return getResiduum<Complex<>, DefaultTensorEngine>(iteration, amplitudes);
+  return CcsdEnergyFromCoulombIntegralsReference().getResiduum<
+    Complex<>, DefaultTensorEngine
+  >(
+    iteration, amplitudes
+  );
 }
+*/
 
 //////////////////////////////////////////////////////////////////////
 // Hirata iteration routine for the CCSD amplitudes Tabij and Tai from
 // So Hirata, et. al. Chem. Phys. Letters, 345, 475 (2001)
 //////////////////////////////////////////////////////////////////////
 
-template <typename Real, typename TE>
-Ptr<FockVector<Real,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
-  const int iteration, const Ptr<const FockVector<Real,TE>> &amplitudes
+template <typename TE>
+Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
+  const int iteration, const Ptr<const FockVector<Real<>,TE>> &amplitudes
 ) {
 
   // get amplitude parts
@@ -56,14 +67,14 @@ Ptr<FockVector<Real,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto Tpphh( amplitudes->get(1) );
 
   // construct residuum
-  auto residuum( New<FockVector<Real,TE>>(*amplitudes) );
+  auto residuum( New<FockVector<Real<>,TE>>(*amplitudes) );
   *residuum *= 0.0;
   auto Rph( residuum->get(0) );
   auto Rpphh( residuum->get(1) );
 
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<Real,TE>>>("pphh"));
+  auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("pphh"));
 
   if (iteration == 0) {
     //TODO
@@ -83,51 +94,51 @@ Ptr<FockVector<Real,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
     auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
 
-    auto Vphph(coulombSlices->getValue<Ptr<TensorRecipe<Real,TE>>>("phph"));
-    auto Vhhhh(coulombSlices->getValue<Ptr<TensorRecipe<Real,TE>>>("hhhh"));
-    auto Vhhhp(coulombSlices->getValue<Ptr<TensorRecipe<Real,TE>>>("hhhp"));
+    auto Vphph(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("phph"));
+    auto Vhhhh(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("hhhh"));
+    auto Vhhhp(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("hhhp"));
     //intermediate integrals
-    auto Vphpp(coulombSlices->getValue<Ptr<TensorRecipe<Real,TE>>>("phpp"));
-    auto Vhppp(coulombSlices->getValue<Ptr<TensorRecipe<Real,TE>>>("hppp"));
-    auto Vpppp(coulombSlices->getValue<Ptr<TensorRecipe<Real,TE>>>("pppp"));
+    auto Vphpp(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("phpp"));
+    auto Vhppp(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("hppp"));
+    auto Vpppp(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("pppp"));
 
     //Gamma -> Real/Imag
-    auto realGammaGpp( Tcc<TE>::template tensor<Real>("realGammaGpp") );
-    auto imagGammaGpp( Tcc<TE>::template tensor<Real>("imagGammaGpp") );
-    auto realGammaGph( Tcc<TE>::template tensor<Real>("realGammaGph") );
-    auto imagGammaGph( Tcc<TE>::template tensor<Real>("imagGammaGph") );
-    auto realGammaGhh( Tcc<TE>::template tensor<Real>("realGammaGhh") );
-    auto imagGammaGhh( Tcc<TE>::template tensor<Real>("imagGammaGhh") );
+    auto realGammaGpp( Tcc<TE>::template tensor<Real<>>("realGammaGpp") );
+    auto imagGammaGpp( Tcc<TE>::template tensor<Real<>>("imagGammaGpp") );
+    auto realGammaGph( Tcc<TE>::template tensor<Real<>>("realGammaGph") );
+    auto imagGammaGph( Tcc<TE>::template tensor<Real<>>("imagGammaGph") );
+    auto realGammaGhh( Tcc<TE>::template tensor<Real<>>("realGammaGhh") );
+    auto imagGammaGhh( Tcc<TE>::template tensor<Real<>>("imagGammaGhh") );
 
     COMPILE(
-      (*realGammaGpp)["Gab"] <<= map<Real>(real<Complex<>>, (*GammaGpp)["Gab"] ),
-      (*imagGammaGpp)["Gab"] <<= map<Real>(imag<Complex<>>, (*GammaGpp)["Gab"] ),
-      (*realGammaGph)["Gai"] <<= map<Real>(real<Complex<>>, (*GammaGph)["Gai"] ),
-      (*imagGammaGph)["Gai"] <<= map<Real>(imag<Complex<>>, (*GammaGph)["Gai"] ),
-      (*realGammaGhh)["Gij"] <<= map<Real>(real<Complex<>>, (*GammaGhh)["Gij"] ),
-      (*imagGammaGhh)["Gij"] <<= map<Real>(imag<Complex<>>, (*GammaGhh)["Gij"] )
+      (*realGammaGpp)["Gab"] <<= map<Real<>>(real<Complex<>>, (*GammaGpp)["Gab"] ),
+      (*imagGammaGpp)["Gab"] <<= map<Real<>>(imag<Complex<>>, (*GammaGpp)["Gab"] ),
+      (*realGammaGph)["Gai"] <<= map<Real<>>(real<Complex<>>, (*GammaGph)["Gai"] ),
+      (*imagGammaGph)["Gai"] <<= map<Real<>>(imag<Complex<>>, (*GammaGph)["Gai"] ),
+      (*realGammaGhh)["Gij"] <<= map<Real<>>(real<Complex<>>, (*GammaGhh)["Gij"] ),
+      (*imagGammaGhh)["Gij"] <<= map<Real<>>(imag<Complex<>>, (*GammaGhh)["Gij"] )
     )->execute();
-    auto realDressedGammaGpp( Tcc<TE>::template tensor<Real>("realDressedGammaGpp") );
-    auto imagDressedGammaGpp( Tcc<TE>::template tensor<Real>("imagDressedGammaGpp") );
-    auto realDressedGammaGph( Tcc<TE>::template tensor<Real>("realDressedGammaGph") );
-    auto imagDressedGammaGph( Tcc<TE>::template tensor<Real>("imagDressedGammaGph") );
-    auto realDressedGammaGhh( Tcc<TE>::template tensor<Real>("realDressedGammaGhh") );
-    auto imagDressedGammaGhh( Tcc<TE>::template tensor<Real>("imagDressedGammaGhh") );
+    auto realDressedGammaGpp( Tcc<TE>::template tensor<Real<>>("realDressedGammaGpp") );
+    auto imagDressedGammaGpp( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGpp") );
+    auto realDressedGammaGph( Tcc<TE>::template tensor<Real<>>("realDressedGammaGph") );
+    auto imagDressedGammaGph( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGph") );
+    auto realDressedGammaGhh( Tcc<TE>::template tensor<Real<>>("realDressedGammaGhh") );
+    auto imagDressedGammaGhh( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGhh") );
 
     // define intermediates
-    auto Kac( Tcc<TE>::template tensor<Real>("Kac") ); //kappa_ac
-    auto Kki( Tcc<TE>::template tensor<Real>("Kki") ); //kappa_ki
-    auto Lac( Tcc<TE>::template tensor<Real>("Lac") ); //lambda_ac
-    auto Lki( Tcc<TE>::template tensor<Real>("Lki") ); //lambda_ki
-    auto Xabij( Tcc<TE>::template tensor<Real>("Xabij") ); // T2+T1*T1
-    auto Yabij( Tcc<TE>::template tensor<Real>("Yabij") ); // T2+2*T1*T1
-    auto Zabij( Tcc<TE>::template tensor<Real>("Zabij") );
-    auto Xakic( Tcc<TE>::template tensor<Real>("Xakic") );
-    auto Xakci( Tcc<TE>::template tensor<Real>("Xakci") );
-    auto Xklij( Tcc<TE>::template tensor<Real>("Xklij") );
-    auto Kck( Tcc<TE>::template tensor<Real>("Kck") );  // T1 intermediate
+    auto Kac( Tcc<TE>::template tensor<Real<>>("Kac") ); //kappa_ac
+    auto Kki( Tcc<TE>::template tensor<Real<>>("Kki") ); //kappa_ki
+    auto Lac( Tcc<TE>::template tensor<Real<>>("Lac") ); //lambda_ac
+    auto Lki( Tcc<TE>::template tensor<Real<>>("Lki") ); //lambda_ki
+    auto Xabij( Tcc<TE>::template tensor<Real<>>("Xabij") ); // T2+T1*T1
+    auto Yabij( Tcc<TE>::template tensor<Real<>>("Yabij") ); // T2+2*T1*T1
+    auto Zabij( Tcc<TE>::template tensor<Real<>>("Zabij") );
+    auto Xakic( Tcc<TE>::template tensor<Real<>>("Xakic") );
+    auto Xakci( Tcc<TE>::template tensor<Real<>>("Xakci") );
+    auto Xklij( Tcc<TE>::template tensor<Real<>>("Xklij") );
+    auto Kck( Tcc<TE>::template tensor<Real<>>("Kck") );  // T1 intermediate
     //intermediate intermediate
-    auto Xabcd( Tcc<TE>::template tensor<Real>("Xabcd") );
+    auto Xabcd( Tcc<TE>::template tensor<Real<>>("Xabcd") );
     COMPILE(
       (*Xabij)["abij"] <<= (*Tpphh)["abij"],
       (*Xabij)["abij"] += (*Tph)["ai"] * (*Tph)["bj"],
