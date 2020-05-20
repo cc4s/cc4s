@@ -124,7 +124,8 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     auto imagDressedGammaGph( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGph") );
     auto realDressedGammaGhh( Tcc<TE>::template tensor<Real<>>("realDressedGammaGhh") );
     auto imagDressedGammaGhh( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGhh") );
-
+    auto realDressedGammaGphTwo(Tcc<TE>::template tensor<Real<>>("realDressedGammaGhhTwo") );
+    auto imagDressedGammaGphTwo(Tcc<TE>::template tensor<Real<>>("imagDressedGammaGhhTwo") );
     // define intermediates
     auto Kac( Tcc<TE>::template tensor<Real<>>("Kac") ); //kappa_ac
     auto Kki( Tcc<TE>::template tensor<Real<>>("Kki") ); //kappa_ki
@@ -192,17 +193,17 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       ////////
       // Xakic
       ////////
-      (*realDressedGammaGph)["Gai"] <<= (*realGammaGph)["Gai"],
-      (*imagDressedGammaGph)["Gai"] <<= (*imagGammaGph)["Gai"],
-      (*realDressedGammaGph)["Gai"] += (-1.0) * (*realGammaGhh)["Gil"] * (*Tph)["al"],
-      (*imagDressedGammaGph)["Gai"] += (-1.0) * (*imagGammaGhh)["Gil"] * (*Tph)["al"],
-      (*realDressedGammaGph)["Gai"] += ( 1.0) * (*realGammaGpp)["Gad"] * (*Tph)["di"],
-      (*imagDressedGammaGph)["Gai"] += ( 1.0) * (*imagGammaGpp)["Gad"] * (*Tph)["di"],
+      (*realDressedGammaGphTwo)["Gai"] <<= (*realGammaGph)["Gai"],
+      (*imagDressedGammaGphTwo)["Gai"] <<= (*imagGammaGph)["Gai"],
+      (*realDressedGammaGphTwo)["Gai"] += (-1.0) * (*realGammaGhh)["Gil"] * (*Tph)["al"],
+      (*imagDressedGammaGphTwo)["Gai"] += (-1.0) * (*imagGammaGhh)["Gil"] * (*Tph)["al"],
+      (*realDressedGammaGphTwo)["Gai"] += ( 1.0) * (*realGammaGpp)["Gad"] * (*Tph)["di"],
+      (*imagDressedGammaGphTwo)["Gai"] += ( 1.0) * (*imagGammaGpp)["Gad"] * (*Tph)["di"],
       // FIXME: there is a better way for the contractions (see complex code)
       (*Xakic)["akic"] <<=
-        ( 1.0) * (*realDressedGammaGph)["Gai"] * (*realGammaGph)["Gck"],
+        ( 1.0) * (*realDressedGammaGphTwo)["Gai"] * (*realGammaGph)["Gck"],
       (*Xakic)["akic"] +=
-        ( 1.0) * (*imagDressedGammaGph)["Gai"] * (*imagGammaGph)["Gck"],
+        ( 1.0) * (*imagDressedGammaGphTwo)["Gai"] * (*imagGammaGph)["Gck"],
 
 
       (*Xakic)["akic"] += (-0.5) * (*Vpphh)["dclk"] * (*Yabij)["dail"],
