@@ -41,11 +41,12 @@ namespace cc4s {
 
     template <typename G>
     bool isOlderThan(const Ptr<TensorOperation<G,TE>> &source) const {
-      return
-        // version is only relevant for replacing operations with beta==0
-        beta != F(0) ||
-        // equality means rhs & lhs tensor are the same, requiring update
-        source->getResult()->getVersion() >= result->getVersion();
+      // FIXME: discard versioning based on isOlderThan
+      return true;
+    }
+
+    size_t getLatestSourceVersion() override {
+      return result->getVersion();
     }
 
     void updated() {

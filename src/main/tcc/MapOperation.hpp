@@ -56,6 +56,10 @@ namespace cc4s {
       }
     }
 
+    size_t getLatestSourceVersion() override {
+      return source->getLatestSourceVersion();
+    }
+
     virtual operator std::string () const {
       return "Map( f, " + std::string(*source) + " )";
     }

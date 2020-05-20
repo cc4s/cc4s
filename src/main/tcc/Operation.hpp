@@ -13,6 +13,8 @@ namespace cc4s {
 
     virtual void execute() = 0;
 
+    virtual size_t getLatestSourceVersion() = 0;
+
     virtual operator std::string () const = 0;
 
     /**

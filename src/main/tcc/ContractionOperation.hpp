@@ -75,6 +75,13 @@ namespace cc4s {
       }
     }
 
+    size_t getLatestSourceVersion() override {
+      return std::max(
+        left->getLatestSourceVersion(),
+        right->getLatestSourceVersion()
+      );
+    }
+
     operator std::string () const override {
       std::stringstream stream;
       stream << "Contraction( " << this->alpha << ", " <<

@@ -60,7 +60,17 @@ namespace cc4s {
     }
 
     void execute() override {
-      recipe->execute();
+      if (getLatestSourceVersion() >= this->result->getVersion()) {
+        recipe->execute();
+      } else {
+        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
+          " up-to-date with all sources." << std::endl;
+      }
+    }
+
+    // return latest version of any tensor of the recipe
+    size_t getLatestSourceVersion() override {
+      return recipe->getLatestSourceVersion();
     }
   };
 

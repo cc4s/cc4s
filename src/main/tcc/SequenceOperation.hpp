@@ -36,6 +36,17 @@ namespace cc4s {
       }
     }
 
+    size_t getLatestSourceVersion() override {
+      size_t latestVersion(0);
+      for (auto &operation: operations) {
+        latestVersion = std::max(
+          latestVersion,
+          operation->getLatestSourceVersion()
+        );
+      }
+      return latestVersion;
+    }
+
     operator std::string () const override {
       std::stringstream stream;
       stream << "Sequence( ";

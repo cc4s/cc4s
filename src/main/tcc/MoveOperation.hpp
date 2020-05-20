@@ -61,6 +61,10 @@ namespace cc4s {
       }
     }
 
+    size_t getLatestSourceVersion() override {
+      return rhs->getLatestSourceVersion();
+    }
+
     operator std::string () const override {
       std::stringstream stream;
       stream << "Move( " << this->alpha << ", " <<

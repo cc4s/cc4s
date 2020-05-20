@@ -64,6 +64,10 @@ namespace cc4s {
       }
     }
 
+    size_t getLatestSourceVersion() override {
+      return source->getLatestSourceVersion();
+    }
+
     operator std::string () const override {
       return "SliceInto( " + std::string(*source) + ", " +
         SliceOperation<F,TE>::coordinateString(begins) + "-" +
