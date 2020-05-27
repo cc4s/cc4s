@@ -75,6 +75,7 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("pphh"));
+  bool ppl(arguments->getValue<bool>("ppl", true));
 
   if (iteration == 0) {
     //TODO
@@ -124,8 +125,6 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     auto imagDressedGammaGph( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGph") );
     auto realDressedGammaGhh( Tcc<TE>::template tensor<Real<>>("realDressedGammaGhh") );
     auto imagDressedGammaGhh( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGhh") );
-    auto realDressedGammaGphTwo(Tcc<TE>::template tensor<Real<>>("realDressedGammaGhhTwo") );
-    auto imagDressedGammaGphTwo(Tcc<TE>::template tensor<Real<>>("imagDressedGammaGhhTwo") );
     // define intermediates
     auto Kac( Tcc<TE>::template tensor<Real<>>("Kac") ); //kappa_ac
     auto Kki( Tcc<TE>::template tensor<Real<>>("Kki") ); //kappa_ki
@@ -158,7 +157,6 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
         ( 2.0) * (*realGammaGpp)["Gca"] * (*realGammaGph)["Gdk"] * (*Tph)["dk"],
       (*Lac)["ac"] +=
         ( 2.0) * (*imagGammaGpp)["Gca"] * (*imagGammaGph)["Gdk"] * (*Tph)["dk"],
-      //TODO use an already introduced intermediate
       (*Lac)["ac"] +=
         (-1.0) * (*realGammaGph)["Gck"] * (*realGammaGpp)["Gda"] * (*Tph)["dk"],
       (*Lac)["ac"] +=
@@ -178,12 +176,10 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       ///////////////////////////////////////
       // T2 Terms without Hirata intermediate
       ///////////////////////////////////////
-      //TODO use an already introduced intermediate
       (*realDressedGammaGph)["Gai"] <<= (*realGammaGph)["Gai"],
       (*realDressedGammaGph)["Gai"] += (-1.0) * (*realGammaGhh)["Gki"] * (*Tph)["ak"],
       (*imagDressedGammaGph)["Gai"] <<= (*imagGammaGph)["Gai"],
       (*imagDressedGammaGph)["Gai"] += (-1.0) * (*imagGammaGhh)["Gki"] * (*Tph)["ak"],
-
       (*Rpphh)["abij"] +=
         ( 1.0) * (*realDressedGammaGph)["Gai"] * (*realGammaGpp)["Gbc"] * (*Tph)["cj"],
       (*Rpphh)["abij"] +=
@@ -193,19 +189,14 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       ////////
       // Xakic
       ////////
-      (*realDressedGammaGphTwo)["Gai"] <<= (*realGammaGph)["Gai"],
-      (*imagDressedGammaGphTwo)["Gai"] <<= (*imagGammaGph)["Gai"],
-      (*realDressedGammaGphTwo)["Gai"] += (-1.0) * (*realGammaGhh)["Gil"] * (*Tph)["al"],
-      (*imagDressedGammaGphTwo)["Gai"] += (-1.0) * (*imagGammaGhh)["Gil"] * (*Tph)["al"],
-      (*realDressedGammaGphTwo)["Gai"] += ( 1.0) * (*realGammaGpp)["Gad"] * (*Tph)["di"],
-      (*imagDressedGammaGphTwo)["Gai"] += ( 1.0) * (*imagGammaGpp)["Gad"] * (*Tph)["di"],
+      // Add further dressing to dressed Vertex
+      (*realDressedGammaGph)["Gai"] += ( 1.0) * (*realGammaGpp)["Gad"] * (*Tph)["di"],
+      (*imagDressedGammaGph)["Gai"] += ( 1.0) * (*imagGammaGpp)["Gad"] * (*Tph)["di"],
       // FIXME: there is a better way for the contractions (see complex code)
       (*Xakic)["akic"] <<=
-        ( 1.0) * (*realDressedGammaGphTwo)["Gai"] * (*realGammaGph)["Gck"],
+        ( 1.0) * (*realDressedGammaGph)["Gai"] * (*realGammaGph)["Gck"],
       (*Xakic)["akic"] +=
-        ( 1.0) * (*imagDressedGammaGphTwo)["Gai"] * (*imagGammaGph)["Gck"],
-
-
+        ( 1.0) * (*imagDressedGammaGph)["Gai"] * (*imagGammaGph)["Gck"],
       (*Xakic)["akic"] += (-0.5) * (*Vpphh)["dclk"] * (*Yabij)["dail"],
       (*Xakic)["akic"] += ( 1.0) * (*Vpphh)["dclk"] * (*Tpphh)["adil"],
       //TODO if (!distinguishable) {
@@ -214,8 +205,6 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*Zabij)["cbkj"] <<= ( 2.0) * (*Tpphh)["cbkj"],
       (*Zabij)["cbkj"] += (-1.0) * (*Tpphh)["bckj"],
       (*Rpphh)["abij"] += ( 1.0) * (*Xakic)["akic"] * (*Zabij)["cbkj"],
-
-
       ////////
       // Xakci
       ////////
@@ -252,21 +241,71 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       // Construct last term
       //TODO if (!distinguishable) {
       (*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Xabij)["cdij"],
-      // TODO ppl
-      (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Xabij)["abkl"],
+      (ppl) ? (
+        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]
+      ) : (
+        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Xabij)["abkl"]
+      )
+    )->execute();
 
-      // Build Xabcd intermediate
-      (*Xabcd)["abcd"] <<= (1.0) * (*Vpppp)["abcd"],
-      (*Xabcd)["abcd"] += (-1.0) * (*Vphpp)["akcd"] * (*Tph)["bk"],
-      (*Xabcd)["abcd"] += (-1.0) * (*Vhppp)["kbcd"] * (*Tph)["ak"],
+    if (ppl) {
+      LOG(1, getCapitalizedAbbreviation()) <<
+        "Adding Particle-particle contraction"  << std::endl;
+      size_t Nv(realDressedGammaGpp->lens[1]);
+      size_t NG(realDressedGammaGpp->lens[0]);
+      size_t No(Rpphh->lens[2]);
+      int64_t sliceSize(arguments->getValue<int64_t>("integralsSliceSize", No));
+      size_t numberSlices(size_t(ceil(double(Nv)/sliceSize)));
+      std::vector<Ptr<Tensor<Real<>, TE>>> realSlicedGammaGab;
+      std::vector<Ptr<Tensor<Real<>, TE>>> imagSlicedGammaGab;
+      //Slice GammaGab and store it in a vector
+      for (size_t v(0); v < numberSlices; v++){
+        size_t xStart = v*sliceSize;
+        size_t xEnd = std::min((v+1)*sliceSize,Nv);
+        auto dummyr( Tcc<TE>::template tensor<Real<>>("dummyr") );
+        auto dummyi( Tcc<TE>::template tensor<Real<>>("dummyi") );
+        COMPILE(
+          (*dummyr)["Gxb"] <<=
+            (*(*realDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"],
+          (*dummyi)["Gxb"] <<=
+            (*(*imagDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"]
+        )->execute();
+        realSlicedGammaGab.push_back(dummyr);
+        imagSlicedGammaGab.push_back(dummyi);
+      }
+      // loop over slices
+      for (size_t m(0); m < numberSlices; m++)
+      for (size_t n(m); n < numberSlices; n++){
+          auto Vxycd( Tcc<TE>::template tensor<Real<>>("Vxycd") );
+          auto Rxyij( Tcc<TE>::template tensor<Real<>>("Rxyij") );
+          auto Ryxji( Tcc<TE>::template tensor<Real<>>("Ryxji") );
+          size_t a(n*sliceSize); size_t b(m*sliceSize);
+          size_t Nx(realSlicedGammaGab[n]->lens[1]);
+          size_t Ny(realSlicedGammaGab[m]->lens[1]);
+          COMPILE(
+            (*Vxycd)["xycd"] <<=
+              (*realSlicedGammaGab[n])["Gxc"] * (*realSlicedGammaGab[m])["Gyd"],
+            (*Vxycd)["xycd"]  +=
+              (*imagSlicedGammaGab[n])["Gxc"] * (*imagSlicedGammaGab[m])["Gyd"],
+            (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Xabij)["cdij"],
+            (*(*Rpphh)({a, b, 0, 0},{a+Nx, b+Ny, No, No}))["xyij"] += (*Rxyij)["xyij"],
+            // if a>b: add the same slice at (b,a,j,i):
+            (a>b) ? (
+              (*Ryxji)["yxji"] <<= (*Rxyij)["xyij"],
+              (*(*Rpphh)({b, a, 0, 0},{b+Ny, a+Nx, No, No}))["xyij"] += (*Ryxji)["xyij"]
+            ) : (
+              Tcc<TE>::sequence()
+            )
+          )->execute();
+      }
+    }
 
-      // Contract Xabcd with T2 and T1 Amplitudes
-      (*Rpphh)["abij"] += (*Xabcd)["abcd"] * (*Tpphh)["cdij"],
-      (*Rpphh)["abij"] += (*Xabcd)["abcd"] * (*Tph)["ci"] * (*Tph)["dj"],
-      //*******************************************************************
-      //***********************  T1 amplitude equations  ******************
-      //*******************************************************************
-
+    //*******************************************************************
+    //***********************  T1 amplitude equations  ******************
+    //*******************************************************************
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "Solving T1 Amplitude Equations" << std::endl;
+    COMPILE(
       // Contract Kac and Kki with T1 amplitudes
       (*Rph)["ai"] <<= ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
       (*Rph)["ai"] += (-1.0) * (*Kki)["ki"] * (*Tph)["ak"],
@@ -280,7 +319,7 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*Rph)["ai"] += (-1.0) * (*Kck)["ck"] * (*Tpphh)["caik"],
       (*Rph)["ai"] += ( 1.0) * (*Tph)["ak"] * (*Kck)["ck"] * (*Tph)["ci"],
       (*Rph)["ai"] += ( 2.0) * (*Vpphh)["acik"] * (*Tph)["ck"],
-      //TODO replace Vphph
+      //TODO maybe replace Vphph
       (*Rph)["ai"] += (-1.0) * (*Vphph)["ciak"] * (*Tph)["ck"],
 
       (*Rph)["ai"] +=

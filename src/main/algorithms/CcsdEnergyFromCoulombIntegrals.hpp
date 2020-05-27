@@ -26,7 +26,6 @@ namespace cc4s {
      * \return abbreviation of the routine
      */
     std::string getAbbreviation() override { return "Ccsd"; }
-
   protected:
     /**
      * \brief Implements the iterate method with the CCSD iteration.
