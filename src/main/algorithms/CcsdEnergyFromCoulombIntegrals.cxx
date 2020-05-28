@@ -442,7 +442,7 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       //TODO: no changes here
 
       (*cTDressedGammaGph)["Gai"] <<= (*cTGammaGph)["Gai"],
-      (*cTDressedGammaGph)["Gai"] += (-1.0) * (*cTGammaGhh)["Gli"] * (*Tph)["Gal"],
+      (*cTDressedGammaGph)["Gai"] += (-1.0) * (*cTGammaGhh)["Gli"] * (*Tph)["al"],
 //      (*cTDressedGammaGph)["Gai"] += ( 1.0) * (*cTGammaGpp)["Gad"] * (*Tph)["Gdi"],
 //      (*cTDressedGammaGph)["Gai"] += (-0.5) * (*cTGammaGhp)["Gld"] * (*Yabij)["dail"],
 //      (*Xakic)["akic"] <<= (*cTDressedGammaGph)["Gai"] * (*GammaGhp)["Gkc"],

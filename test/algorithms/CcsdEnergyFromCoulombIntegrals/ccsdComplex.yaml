@@ -45,6 +45,7 @@
   in:
     slicedEigenEnergies: EigenEnergies
     coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
     maxIterations: 64
     energyConvergence: 1.0E-8
     mixer:
