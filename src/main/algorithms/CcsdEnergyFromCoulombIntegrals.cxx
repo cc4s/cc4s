@@ -86,10 +86,6 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     auto Vphph(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("phph"));
     auto Vhhhh(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("hhhh"));
     auto Vhhhp(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("hhhp"));
-    //intermediate integrals
-    auto Vphpp(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("phpp"));
-    auto Vhppp(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("hppp"));
-    auto Vpppp(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("pppp"));
 
     //Gamma -> Real/Imag
     auto realGammaGpp( Tcc<TE>::template tensor<Real<>>("realGammaGpp") );
@@ -98,7 +94,6 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     auto imagGammaGph( Tcc<TE>::template tensor<Real<>>("imagGammaGph") );
     auto realGammaGhh( Tcc<TE>::template tensor<Real<>>("realGammaGhh") );
     auto imagGammaGhh( Tcc<TE>::template tensor<Real<>>("imagGammaGhh") );
-
     COMPILE(
       (*realGammaGpp)["Gab"] <<= map<Real<>>(real<Complex<>>, (*GammaGpp)["Gab"] ),
       (*imagGammaGpp)["Gab"] <<= map<Real<>>(imag<Complex<>>, (*GammaGpp)["Gab"] ),
@@ -346,8 +341,9 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pphh"));
+  bool ppl(arguments->getValue<bool>("ppl", true));
 
-//  if (iteration == 0) {
+  if (iteration == 0) {
     //TODO
     // && !isArgumentGiven("initialDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes
@@ -355,8 +351,194 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     COMPILE(
       (*Rpphh)["abij"] += (*Vpphh)["abij"]
     )->execute();
-//  }
+  }
+  else {
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "Solving T2 Amplitude Equations" << std::endl;
+    auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
+    auto slices(slicedCoulombVertex->getMap("slices"));
+    auto orbitals(slicedCoulombVertex->getValue<std::string>("orbitals"));
+    auto GammaGpp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pp"));
+    auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
+    auto GammaGhp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hp"));
+    auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
+//we need all conjugate transposed.
+//strange labeling, though
+    auto cTGammaGph( Tcc<TE>::template tensor<Complex<>>("cTGammaGph"));
+    auto cTGammaGhp( Tcc<TE>::template tensor<Complex<>>("cTGammaGhp"));
+    auto cTGammaGpp( Tcc<TE>::template tensor<Complex<>>("cTGammaGpp"));
+    auto cTGammaGhh( Tcc<TE>::template tensor<Complex<>>("cTGammaGhh"));
+    COMPILE(
+      (*cTGammaGpp)["Gab"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGpp)["Gba"]),
+      (*cTGammaGhp)["Gia"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGph)["Gai"]),
+      (*cTGammaGph)["Gai"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGhp)["Gia"]),
+      (*cTGammaGhh)["Gij"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGhh)["Gji"])
+    )->execute();
+    auto cTDressedGammaGph( Tcc<TE>::template tensor<Complex<>>("cTDressedGammaGph"));
 
+    auto Vphhp(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("phhp"));
+    auto Vhhpp(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hhpp"));
+    auto Vphph(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("phph"));
+    auto Vhhhh(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hhhh"));
+    auto Vhhhp(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hhhp"));
+    auto Vphhh(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("phhh"));
+    //indermediate integrals
+    auto Vpppp(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pppp"));
+    auto Vppph(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ppph"));
+    auto Vpphp(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pphp"));
+    auto Vhphp(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hphp"));
+    auto Vphpp(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("phpp"));
+    auto Vhhph(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hhph"));
+    auto Vhppp(coulombSlices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hppp"));
+    // Hirata intermediates
+    auto Lac( Tcc<TE>::template tensor<Complex<>>("Lac") );
+    auto Kac( Tcc<TE>::template tensor<Complex<>>("Kac") );
+    auto Lki( Tcc<TE>::template tensor<Complex<>>("Lki") );
+    auto Kki( Tcc<TE>::template tensor<Complex<>>("Kki") );
+    auto Kck( Tcc<TE>::template tensor<Complex<>>("Kck") );
+    auto Xabij( Tcc<TE>::template tensor<Complex<>>("Xabij") ); // T2+T1*T1
+    auto Yabij( Tcc<TE>::template tensor<Complex<>>("Yabij") ); // T2+2*T1*T1
+    auto Zabij( Tcc<TE>::template tensor<Complex<>>("Zabij") );
+    auto Xklij( Tcc<TE>::template tensor<Complex<>>("Xklij") );
+    auto Xakci( Tcc<TE>::template tensor<Complex<>>("Xakci") );
+    auto Xakic( Tcc<TE>::template tensor<Complex<>>("Xakic") );
+    auto Xabcd( Tcc<TE>::template tensor<Complex<>>("Xabcd") );
 
+    COMPILE(
+      (*Xabij)["abij"] <<= (*Tpphh)["abij"],
+      (*Xabij)["abij"] += (*Tph)["ai"] * (*Tph)["bj"],
+      (*Yabij)["abij"] <<= (*Tpphh)["abij"],
+      (*Yabij)["abij"] += ( 2.0) * (*Tph)["ai"] * (*Tph)["bj"],
+      // Build Kac
+      (*Kac)["ac"] <<= (-2.0) * (*Vhhpp)["klcd"] * (*Xabij)["adkl"],
+      (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Xabij)["adkl"],
+      // Build Lac
+      (*Lac)["ac"] <<= (*Kac)["ac"],
+      (*Lac)["ac"] +=  (2.0) * (*cTGammaGpp)["Gac"] * (*GammaGhp)["Gkd"] * (*Tph)["dk"],
+      (*Lac)["ac"] += (-1.0) * (*cTGammaGpp)["Gad"] * (*GammaGhp)["Gkc"] * (*Tph)["dk"],
+      // Build Kki
+      (*Kki)["ki"] <<= (2.0) * (*Vhhpp)["klcd"] * (*Xabij)["cdil"],
+      (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Xabij)["cdil"],
+
+      // Build Lki
+      (*Lki)["ki"] <<= (*Kki)["ki"],
+      (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tph)["cl"],
+      (*Lki)["ki"] += (-1.0) * (*Vhhhp)["lkic"] * (*Tph)["cl"],
+
+      // Contract Lac with T2 Amplitudes
+      (*Rpphh)["abij"] += ( 1.0) * (*Lac)["ac"] * (*Tpphh)["cbij"],
+
+      // Contract Lki with T2 Amplitudes
+      (*Rpphh)["abij"] += (-1.0) * (*Lki)["ki"] * (*Tpphh)["abkj"],
+
+      // Contract Coulomb integrals with T1 amplitudes
+      (*cTDressedGammaGph)["Gai"] <<= (*cTGammaGph)["Gai"],
+      (*cTDressedGammaGph)["Gai"] += (-1.0) * (*cTGammaGhh)["Gki"] * (*Tph)["ak"],
+      (*Rpphh)["abij"] += (*cTDressedGammaGph)["Gai"] * (*GammaGpp)["Gbc"] * (*Tph)["cj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Vphhh)["akij"] * (*Tph)["bk"],
+      (*Rpphh)["abij"] += (-1.0) * (*Vphhp)["akic"] * (*Tph)["cj"] * (*Tph)["bk"],
+
+      // Build Xakic
+      //TODO: no changes here
+
+      (*cTDressedGammaGph)["Gai"] <<= (*cTGammaGph)["Gai"],
+      (*cTDressedGammaGph)["Gai"] += (-1.0) * (*cTGammaGhh)["Gli"] * (*Tph)["Gal"],
+//      (*cTDressedGammaGph)["Gai"] += ( 1.0) * (*cTGammaGpp)["Gad"] * (*Tph)["Gdi"],
+//      (*cTDressedGammaGph)["Gai"] += (-0.5) * (*cTGammaGhp)["Gld"] * (*Yabij)["dail"],
+//      (*Xakic)["akic"] <<= (*cTDressedGammaGph)["Gai"] * (*GammaGhp)["Gkc"],
+//      (*Yabij)["dclk"] <<= (1.0) * (*Vhhpp)["lkdc"],
+//      (*Yabij)["dclk"] += (-0.5) * (*Vhhpp)["lkcd"],
+//      (*Xakic)["akic"] += (*Yabij)["dclk"] * (*Tpphh)["adil"],
+//      (*Yabij)["cbkj"] <<= (2.0) * (*Tpphh)["cbkj"],
+//      (*Yabij)["cbkj"] += (-1.0) * (*Tpphh)["bckj"],
+//      (*Rpphh)["abij"] += (*Xakic)["akic"] * (*Yabij)["cbkj"],
+
+      (*Xakic)["akic"] <<= (*Vphhp)["akic"],
+      (*Xakic)["akic"] += (-1.0) * (*Vhhhp)["lkic"] * (*Tph)["al"],
+      (*Xakic)["akic"] += ( 1.0) * (*Vphpp)["akdc"] * (*Tph)["di"],
+      (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkdc"] * (*Tpphh)["dail"],
+      (*Xakic)["akic"] += (-1.0) * (*Vhhpp)["lkdc"] * (*Tph)["di"] * (*Tph)["al"],
+      (*Xakic)["akic"] += ( 1.0) * (*Vhhpp)["lkdc"] * (*Tpphh)["adil"],
+      (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["adil"],
+      (*Rpphh)["abij"] += ( 2.0) * (*Xakic)["akic"] * (*Tpphh)["cbkj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Xakic)["akic"] * (*Tpphh)["bckj"],
+
+      // Build Xakci
+      //TODO: no changes here
+      (*Xakci)["akci"] <<= (*Vphph)["akci"],
+      (*Xakci)["akci"] += (-1.0) * (*Vhhph)["lkci"] * (*Tph)["al"],
+      (*Xakci)["akci"] += ( 1.0) * (*Vphpp)["akcd"] * (*Tph)["di"],
+      (*Xakci)["akci"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["dail"],
+      (*Xakci)["akci"] += (-1.0) * (*Vhhpp)["lkcd"] * (*Tph)["di"] * (*Tph)["al"],
+      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["akci"] * (*Tpphh)["cbkj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"],
+
+      // Symmetrize Rpphh by applying permutation operator
+      (*Rpphh)["abij"] += (*Rpphh)["baji"],
+
+      //////////////////////////////////////////////////////////////////////
+      // Now add all terms to Rpphh that do not need to be symmetrized with
+      // the permutation operator
+      //////////////////////////////////////////////////////////////////////
+
+      (*Rpphh)["abij"] += (*Vpphh)["abij"],
+
+      // Build Xklij intermediate
+      (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
+      (*Xklij)["klij"]  += (*Vhhhp)["klic"] * (*Tph)["cj"],
+      (*Xklij)["klij"]  += (*Vhhhp)["lkjc"] * (*Tph)["ci"],
+      // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
+      (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
+      // Construct last term
+      //TODO if (!distinguishable) {
+      (*Xklij)["klij"] <<= (*Vhhpp)["klcd"] * (*Xabij)["cdij"],
+//      (ppl) ? (
+//        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]
+//      ) : (
+        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Xabij)["abkl"]
+//      )
+    )->execute();
+
+//todo put in the slicing...ole
+
+    COMPILE(
+      // Build Xabcd intermediate
+      (*Xabcd)["abcd"] <<= (1.0) * (*Vpppp)["abcd"],
+      (*Xabcd)["abcd"] += (-1.0) * (*Vphpp)["akcd"] * (*Tph)["bk"],
+      (*Xabcd)["abcd"] += (-1.0) * (*Vhppp)["kbcd"] * (*Tph)["ak"],
+
+      // Contract Xabcd with T2 and T1 Amplitudes
+      (*Rpphh)["abij"] += (*Xabcd)["abcd"] * (*Xabij)["cdij"]
+    )->execute();
+    //**************************************************************************
+    //***********************  T1 amplitude equations  *************************
+    //**************************************************************************
+    LOG(1, getCapitalizedAbbreviation()) <<
+      "Solving T1 Amplitude Equations" << std::endl;
+    COMPILE(
+      // Contract Kac and Kki with T1 amplitudes
+      (*Rph)["ai"] += ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
+      (*Rph)["ai"] += (-1.0) * (*Kki)["ki"] * (*Tph)["ak"],
+
+      //Build Kck
+      (*Kck)["ck"] <<= ( 2.0) * (*Vhhpp)["klcd"] * (*Tph)["dl"],
+      (*Kck)["ck"]  += (-1.0) * (*Vhhpp)["kldc"] * (*Tph)["dl"],
+
+      // Contract all the rest terms with T1 and T2 amplitudes
+      (*Rph)["ai"] += ( 2.0) * (*Kck)["ck"] * (*Tpphh)["caki"],
+      (*Rph)["ai"] += (-1.0) * (*Kck)["ck"] * (*Tpphh)["caik"],
+      (*Rph)["ai"] += ( 1.0) * (*Kck)["ck"] * (*Tph)["ci"] * (*Tph)["ak"],
+      (*Rph)["ai"] += ( 2.0) * (*Vphhp)["akic"] * (*Tph)["ck"],
+      (*Rph)["ai"] += (-1.0) * (*Vphph)["akci"] * (*Tph)["ck"],
+      //TODO: get rid of Vphpp
+      (*Rph)["ai"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tpphh)["cdik"],
+      (*Rph)["ai"] += (-1.0) * (*Vphpp)["akdc"] * (*Tpphh)["cdik"],
+      (*Rph)["ai"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tph)["ci"] * (*Tph)["dk"],
+      (*Rph)["ai"] += (-1.0) * (*Vphpp)["akdc"] * (*Tph)["ci"] * (*Tph)["dk"],
+      (*Rph)["ai"] += (-2.0) * (*Vhhhp)["klic"] * (*Xabij)["ackl"],
+      (*Rph)["ai"] += ( 1.0) * (*Vhhhp)["lkic"] * (*Xabij)["ackl"]
+    )->execute();
+
+  }
   return residuum;
 }
