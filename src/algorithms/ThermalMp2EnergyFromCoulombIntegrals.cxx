@@ -156,7 +156,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
     (*Dai)["ai"], Tai["ai"]
   );
   // no symmetry, one loop, one hole contracted: +1.0 * spins
-  energy[""] = (+1.0) * spins * Tai["ai"] * (*Pai)["ai"] * Nk["i"] * Nc["c"];
+  energy[""] = (+1.0) * spins * Tai["ai"] * (*Pai)["ai"] * Nk["i"] * Nc["a"];
   real ES2( -energy.get_val()/beta );
 
   // doubles:  
@@ -177,9 +177,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   real EX2( -energy.get_val()/beta );
 
   real Fc(ES2+ED2+EX2);
-  EMIT() << YAML::Key << "S2" << YAML::Value << ES2;
-  EMIT() << YAML::Key << "D2" << YAML::Value << ED2;
-  EMIT() << YAML::Key << "X2" << YAML::Value << EX2;
+  EMIT() << YAML::Key << "Omega2S" << YAML::Value << ES2;
+  EMIT() << YAML::Key << "Omega2D" << YAML::Value << ED2;
+  EMIT() << YAML::Key << "Omega2X" << YAML::Value << EX2;
   EMIT() << YAML::Key << "correlation-free-energy" << YAML::Value << Fc;
 
   setRealArgument("ThermalFreeEnergy", Fc);
