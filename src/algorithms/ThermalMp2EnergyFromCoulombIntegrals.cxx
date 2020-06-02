@@ -147,7 +147,8 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   // singles:
   // start with Pai
   auto Pai(getTensorArgument("ThermalPHPerturbation"));
-  Tensor<> Tai(*Pai);
+  Tensor<> Tai(false, *Pai);
+  Tai["ai"] = (*Pai)["ai"] * Nc["a"] * Nk["i"];
   // Tai *=
   // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
   Transform<real, real>(
@@ -156,7 +157,7 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
     (*Dai)["ai"], Tai["ai"]
   );
   // no symmetry, one loop, one hole contracted: +1.0 * spins
-  energy[""] = (+1.0) * spins * Tai["ai"] * (*Pai)["ai"] * Nk["i"] * Nc["a"];
+  energy[""] = (+1.0) * spins * Tai["ai"] * (*Pai)["ai"];
   real ES2( -energy.get_val()/beta );
 
   // doubles:  
@@ -180,9 +181,9 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   EMIT() << YAML::Key << "Omega2S" << YAML::Value << ES2;
   EMIT() << YAML::Key << "Omega2D" << YAML::Value << ED2;
   EMIT() << YAML::Key << "Omega2X" << YAML::Value << EX2;
-  EMIT() << YAML::Key << "correlation-free-energy" << YAML::Value << Fc;
+  EMIT() << YAML::Key << "Omega2" << YAML::Value << Fc;
 
-  setRealArgument("ThermalFreeEnergy", Fc);
+  setRealArgument("GrandPotential", Fc);
 }
 
 void ThermalMp2EnergyFromCoulombIntegrals::expandedChemicalPotential() {
