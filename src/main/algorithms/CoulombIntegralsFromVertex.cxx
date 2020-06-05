@@ -13,16 +13,20 @@ ALGORITHM_REGISTRAR_DEFINITION(CoulombIntegralsFromVertex);
 
 Ptr<MapNode> CoulombIntegralsFromVertex::run(const Ptr<MapNode> &arguments) {
   auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
-  auto orbitals(slicedCoulombVertex->getValue<std::string>("orbitals"));
+  auto momentumType(
+    slicedCoulombVertex->getMap(
+      "indices"
+    )->getMap("momentum")->getValue<std::string>("type")
+  );
 
   // multiplex calls to template methods
-  if (orbitals == "real") {
+  if (momentumType == "halfGrid") {
     if (Cc4s::options->dryRun) {
       return calculateRealIntegrals<DryTensorEngine>(arguments);
     } else {
       return calculateRealIntegrals<DefaultTensorEngine>(arguments);
     }
-  } else if (orbitals == "complex") {
+  } else if (momentumType == "fullGrid") {
     if (Cc4s::options->dryRun) {
       return calculateComplexIntegrals<DryTensorEngine>(arguments);
     } else {
@@ -30,7 +34,7 @@ Ptr<MapNode> CoulombIntegralsFromVertex::run(const Ptr<MapNode> &arguments) {
     }
   } else {
     Assert(
-      false, "'orbitals' must specify either 'real' or 'complex' orbitals"
+      false, "momentum 'type' must specify either 'halfGrid' or 'fullGrid'"
     );
   }
 }
@@ -108,11 +112,21 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   // create result
   auto coulombIntegrals(New<MapNode>());
   coulombIntegrals->get("slices") = integralSlices;
+  coulombIntegrals->setValue<std::string>("scalarType", "real64");
   coulombIntegrals->setValue<Real<>>(
     "unit", pow(coulombVertex->getValue<Real<>>("unit"),2.0)
   );
-  coulombIntegrals->get("spins") = coulombVertex->get("spins");
-  coulombIntegrals->get("orbitals") = coulombVertex->get("orbitals");
+  // create indices entry
+  auto indices(New<MapNode>());
+  indices->get("orbital") = coulombVertex->getMap("indices")->get("orbital");
+  coulombIntegrals->get("indices") = indices;
+  // create dimensions entry
+  auto dimensions(New<MapNode>());
+  dimensions->get(0) = coulombVertex->getMap("dimensions")->get(1);
+  dimensions->get(1) = coulombVertex->getMap("dimensions")->get(1);
+  dimensions->get(2) = coulombVertex->getMap("dimensions")->get(2);
+  dimensions->get(3) = coulombVertex->getMap("dimensions")->get(2);
+  coulombIntegrals->get("dimensions") = dimensions;
   auto result(New<MapNode>());
   result->get("coulombIntegrals") = coulombIntegrals;
   return result;
@@ -189,8 +203,18 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
   coulombIntegrals->setValue<Real<>>(
     "unit", pow(coulombVertex->getValue<Real<>>("unit"),2.0)
   );
-  coulombIntegrals->get("spins") = coulombVertex->get("spins");
-  coulombIntegrals->get("orbitals") = coulombVertex->get("orbitals");
+  coulombIntegrals->setValue<std::string>("scalarType", "complex64");
+  // create indices entry
+  auto indices(New<MapNode>());
+  indices->get("orbital") = coulombVertex->getMap("indices")->get("orbital");
+  coulombIntegrals->get("indices") = indices;
+  // create dimensions entry
+  auto dimensions(New<MapNode>());
+  dimensions->get(0) = coulombVertex->getMap("dimensions")->get(1);
+  dimensions->get(1) = coulombVertex->getMap("dimensions")->get(1);
+  dimensions->get(2) = coulombVertex->getMap("dimensions")->get(2);
+  dimensions->get(3) = coulombVertex->getMap("dimensions")->get(2);
+  coulombIntegrals->get("dimensions") = dimensions;
   auto result(New<MapNode>());
   result->get("coulombIntegrals") = coulombIntegrals;
   return result;

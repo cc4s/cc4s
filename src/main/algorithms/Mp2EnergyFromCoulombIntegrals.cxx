@@ -11,15 +11,15 @@ ALGORITHM_REGISTRAR_DEFINITION(Mp2EnergyFromCoulombIntegrals);
 
 Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto orbitals(coulombIntegrals->getValue<std::string>("orbitals"));
+  auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
-  if (orbitals == "real") {
+  if (orbitals == "real64") {
     if (Cc4s::options->dryRun) {
       return calculateMp2Energy<Real<>,DryTensorEngine>(arguments);
     } else {
       return calculateMp2Energy<Real<>,DefaultTensorEngine>(arguments);
     }
-  } else if (orbitals == "complex") {
+  } else if (orbitals == "complex64") {
     if (Cc4s::options->dryRun) {
       return calculateMp2Energy<Complex<>,DryTensorEngine>(arguments);
     } else {
@@ -37,7 +37,19 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vabij(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pphh"));
-  Real<> spins(coulombIntegrals->getValue<size_t>("spins"));
+  auto orbitalType(
+    coulombIntegrals->getMap(
+      "indices"
+    )->getMap("orbital")->getValue<std::string>("type")
+  );
+  Real<> spins;
+  if (orbitalType == "spatial") {
+    spins = 2;
+  } else if (orbitalType == "spin") {
+    spins = 1;
+  } else {
+    Assert(false, "unsupported orbital type '" + orbitalType + "'");
+  }
 
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));

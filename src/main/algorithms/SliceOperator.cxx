@@ -46,13 +46,15 @@ Ptr<MapNode> SliceOperator::run(
   No = slicedEigenEnergies->getValue<size_t>("holesCount");
   Nv = slicedEigenEnergies->getValue<size_t>("particlesCount");
 
-  auto dimensions(arguments->getMap("dimensions"));
-  Assert(
-    dimensions,
-    "Argument 'dimensions' expected, specifying the dimensions to slice."
-  );
+  auto dimensions(op->getMap("dimensions"));
+  size_t d(0);
   for (auto key: dimensions->getKeys()) {
-    dims.push_back(dimensions->getValue<size_t>(key));
+    auto dimension(dimensions->getMap(key));
+    if (dimension->getValue<std::string>("type") == "orbital") {
+      // only slice dimensions of type 'orbital'
+      dims.push_back(d);
+    }
+    ++d;
   }
 
   slices = New<MapNode>();
@@ -62,7 +64,7 @@ Ptr<MapNode> SliceOperator::run(
 
   // create result
   auto slicedOperator(New<MapNode>());
-  // copy meta data from original operator
+  // copy all meta data from original operator
   for (auto key: op->getKeys()) {
     if (key != "data") {
       slicedOperator->get(key) = op->get(key);

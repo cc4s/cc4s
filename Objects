@@ -11,7 +11,6 @@ build/${CONFIG}/obj/main/algorithms/TensorReader.o \
 build/${CONFIG}/obj/main/algorithms/TensorNetwork.o \
 build/${CONFIG}/obj/main/algorithms/DefineHolesAndParticles.o \
 build/${CONFIG}/obj/main/algorithms/SliceOperator.o \
-build/${CONFIG}/obj/main/algorithms/SliceCoulombVertex.o \
 build/${CONFIG}/obj/main/algorithms/CoulombIntegralsFromVertex.o \
 build/${CONFIG}/obj/main/algorithms/Mp2EnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/main/algorithms/ClusterSinglesDoublesAlgorithm.o \
