@@ -7,7 +7,7 @@
 namespace cc4s {
   struct Options {
 
-    std::string inFile, outFile, logFile;
+    std::string inFile, name;
     int logLevel;
     bool dryRun;
 
