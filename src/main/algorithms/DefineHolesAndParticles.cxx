@@ -71,8 +71,9 @@ Ptr<MapNode> DefineHolesAndParticles::run(
 
   // create result
   auto slicedEigenEnergies(New<MapNode>());
+  slicedEigenEnergies->get("indices") = eigenEnergies->get("indices");
+  slicedEigenEnergies->get("dimensions") = eigenEnergies->get("dimensions");
   slicedEigenEnergies->get("unit") = eigenEnergies->get("unit");
-  slicedEigenEnergies->get("spins") = eigenEnergies->get("spins");
   slicedEigenEnergies->setValue<size_t>("holesCount", No);
   slicedEigenEnergies->setValue<size_t>("particlesCount", Nv);
   slicedEigenEnergies->get("slices") = slices;

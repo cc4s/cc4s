@@ -24,7 +24,7 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   auto dimensions(tensor->getMap("dimensions"));
   std::vector<size_t> lens;
   for (auto key: dimensions->getKeys()) {
-    lens.push_back(dimensions->getValue<size_t>(key));
+    lens.push_back(dimensions->getMap(key)->getValue<size_t>("length"));
   }
 
   // if fileName contains '/' change directory

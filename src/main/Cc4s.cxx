@@ -107,7 +107,7 @@ void Cc4s::run() {
 */
 
   // emit job output
-  Emitter emitter(options->outFile);
+  Emitter emitter(options->name + ".yaml");
   emitter.emit(job);
 }
 
@@ -307,7 +307,7 @@ int main(int argumentCount, char **arguments) {
   Cc4s::world = New<MpiCommunicator>();
   Cc4s::options = New<Options>(argumentCount, arguments);
   Log::setRank(Cc4s::world->getRank());
-  Log::setFileName(Cc4s::options->logFile);
+  Log::setFileName(Cc4s::options->name + ".log");
   Log::setLogLevel(Cc4s::options->logLevel);
 
   Cc4s cc4s;

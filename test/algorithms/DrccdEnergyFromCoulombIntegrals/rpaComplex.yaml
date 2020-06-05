@@ -28,12 +28,12 @@
   out:
     slicedEigenEnergies: EigenEnergies
 
-- name: SliceCoulombVertex
+- name: SliceOperator
   in:
     slicedEigenEnergies: EigenEnergies
-    coulombVertex: CoulombVertex
+    operator: CoulombVertex
   out:
-    slicedCoulombVertex: CoulombVertex
+    slicedOperator: CoulombVertex
 
 - name: CoulombIntegralsFromVertex
   in:

@@ -28,19 +28,10 @@
   out:
     slicedEigenEnergies: EigenEnergies
 
-#- name: SliceCoulombVertex
-#  in:
-#    slicedEigenEnergies: EigenEnergies
-#    coulombVertex: CoulombVertex
-#  out:
-#    slicedCoulombVertex: CoulombVertex
 - name: SliceOperator
   in:
     slicedEigenEnergies: EigenEnergies
     operator: CoulombVertex
-    dimensions:
-      - 1
-      - 2
   out:
     slicedOperator: CoulombVertex
 

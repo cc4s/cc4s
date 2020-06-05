@@ -15,15 +15,15 @@ using namespace cc4s;
 Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run(const Ptr<MapNode> &arguments){
   this->arguments = arguments;
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto orbitals(coulombIntegrals->getValue<std::string>("orbitals"));
+  auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
-  if (orbitals == "real") {
+  if (orbitals == "real64") {
     if (Cc4s::options->dryRun) {
       return run<Real<>,DryTensorEngine>();
     } else {
       return run<Real<>,DefaultTensorEngine>();
     }
-  } else if (orbitals == "complex") {
+  } else if (orbitals == "complex64") {
     if (Cc4s::options->dryRun) {
       return run<Complex<>,DryTensorEngine>();
     } else {
@@ -127,7 +127,19 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vijab(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhpp"));
-  Real<> spins(coulombIntegrals->getValue<size_t>("spins"));
+  auto orbitalType(
+    coulombIntegrals->getMap(
+      "indices"
+    )->getMap("orbital")->getValue<std::string>("type")
+  );
+  Real<> spins;
+  if (orbitalType == "spatial") {
+    spins = 2;
+  } else if (orbitalType == "spin") {
+    spins = 1;
+  } else {
+    Assert(false, "unsupported orbital type '" + orbitalType + "'");
+  }
 
   // singles amplitudes are optional
   auto Tai( amplitudes->get(0) );

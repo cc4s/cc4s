@@ -78,7 +78,7 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       "Solving T2 Amplitude Equations" << std::endl;
     auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
     auto slices(slicedCoulombVertex->getMap("slices"));
-    auto orbitals(slicedCoulombVertex->getValue<std::string>("orbitals"));
+    auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
     auto GammaGpp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pp"));
     auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
     auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
@@ -358,7 +358,7 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       "Solving T2 Amplitude Equations" << std::endl;
     auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
     auto slices(slicedCoulombVertex->getMap("slices"));
-    auto orbitals(slicedCoulombVertex->getValue<std::string>("orbitals"));
+    auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
     auto GammaGpp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pp"));
     auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
     auto GammaGhp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hp"));
