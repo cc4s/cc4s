@@ -51,7 +51,19 @@ Ptr<FockVector<F,TE>> DrccdEnergyFromCoulombIntegrals::getResiduum(
   auto Vhhpp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhpp"));
 
   // get spins
-  Real<> spins(coulombIntegrals->getValue<size_t>("spins"));
+  auto orbitalType(
+    coulombIntegrals->getMap(
+      "indices"
+    )->getMap("orbital")->getValue<std::string>("type")
+  );
+  Real<> spins;
+  if (orbitalType == "spatial") {
+    spins = 2;
+  } else if (orbitalType == "spin") {
+    spins = 1;
+  } else {
+    Assert(false, "unsupported orbital type '" + orbitalType + "'");
+  }
 
   // get amplitude parts
   auto Tpphh( amplitudes->get(1) );
