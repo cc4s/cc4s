@@ -16,7 +16,10 @@
 #define ASSERT(condition, message) \
   if (!(condition)) THROW((message))
 #define ASSERT_LOCATION(condition, message, sourceLocation) \
-  if (!(condition)) THROW_LOCATION((message), (sourceLocation));
+  if (!(condition)) throw New<Exception>( \
+    (message), SourceLocation(__FILE__, __LINE__), \
+    New<Exception>("Request from here", (sourceLocation)) \
+  );
 
 namespace cc4s{
   class Exception: public std::exception {
