@@ -27,8 +27,14 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   typedef Tensor<Real<>,TE> T;
   auto eigenEnergies(arguments->getMap("eigenEnergies"));
   auto eps(eigenEnergies->getValue<Ptr<T>>("data"));
-  Assert(eps, "expecting eigenEnergies to be a real tensor");  
-  Assert(eps->lens.size()==1, "expecting eigenEnergies to be a rank 1 tensor");  
+  ASSERT_LOCATION(
+    eps, "expecting eigenEnergies to be a real tensor",
+    eigenEnergies->sourceLocation
+  );  
+  ASSERT_LOCATION(
+    eps->lens.size()==1, "expecting eigenEnergies to be a rank 1 tensor",
+    eigenEnergies->sourceLocation
+  );  
 
   // read values of eps on all ranks
   auto Np(eps->lens[0]);
@@ -41,15 +47,21 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   auto fermiEnergy(eigenEnergies->getValue<Real<>>("fermiEnergy"));
   size_t No(0);
   while (No < Np && epsilonValues[No] < fermiEnergy) { ++No; }
-  Assert( 0 < No, "Fermi energy below all eigen energies.");
-  Assert(No < Np, "Fermi energy above all eigen energies.");
+  ASSERT_LOCATION(
+    0 < No, "Fermi energy below all eigen energies.",
+    eigenEnergies->sourceLocation
+  );
+  ASSERT_LOCATION(
+    No < Np, "Fermi energy above all eigen energies.",
+    eigenEnergies->sourceLocation
+  );
 
   auto Nv(Np-No);
   LOG(1,getName()) << "No=" << No << std::endl;
   LOG(1,getName()) << "Nv=" << Nv << std::endl;
   LOG(1,getName()) << "Np=" << Np << std::endl;
 
-  auto slices(New<MapNode>());
+  auto slices(New<MapNode>(eigenEnergies->sourceLocation));
   {
     auto epsi(Tcc<TE>::template tensor<Real<>>("epsi"));
     slices->setValue(
@@ -70,14 +82,14 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   }
 
   // create result
-  auto slicedEigenEnergies(New<MapNode>());
+  auto slicedEigenEnergies(New<MapNode>(eigenEnergies->sourceLocation));
   slicedEigenEnergies->get("indices") = eigenEnergies->get("indices");
   slicedEigenEnergies->get("dimensions") = eigenEnergies->get("dimensions");
   slicedEigenEnergies->get("unit") = eigenEnergies->get("unit");
   slicedEigenEnergies->setValue<size_t>("holesCount", No);
   slicedEigenEnergies->setValue<size_t>("particlesCount", Nv);
   slicedEigenEnergies->get("slices") = slices;
-  auto result(New<MapNode>());
+  auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("slicedEigenEnergies") = slicedEigenEnergies;
   return result;
 }

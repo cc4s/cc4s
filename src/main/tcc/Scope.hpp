@@ -40,6 +40,7 @@ namespace cc4s {
     // used during contraction compilation
     size_t triedPossibilitiesCount;
 
+    // FIXME: user SourceLocation instead of (file,line) pair
     /**
      * \brief Source file of this scope.
      **/

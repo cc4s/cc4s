@@ -156,9 +156,10 @@ namespace cc4s {
 
     PTR(MT) getMachineTensor() {
       if (!machineTensor) {
-        Assert(assumedShape,
+        ASSERT_LOCATION(assumedShape,
           "Tried to execute operation on tensor " + name +
-          " before its shape has been assumed."
+          " before its shape has been assumed.",
+          SOURCE_LOCATION
         );
         // allocate the implementation specific machine tensor upon request
         machineTensor = MT::create(lens, name);
@@ -235,12 +236,13 @@ namespace cc4s {
         // lhs has not yet assumed shape
         if (!rhsOperation->getResult()->assumedShape) {
           // rhs has not yet assumed shape either
-          Assert(false,
+          ASSERT_LOCATION(false,
             "Neither left-hand-side tensor " + getName() +
             " nor right-hand-side result " +
             rhsOperation->getResult()->getName() +
             " have known shape. "
-            "Try specifying left-hand-side tensor dimension manually."
+            "Try specifying left-hand-side tensor dimension manually.",
+            SourceLocation(rhsOperation->file, rhsOperation->line)
           );
         } else {
           // let this lhs tensor assume the shape of the rhs result
@@ -261,12 +263,13 @@ namespace cc4s {
             for (auto i: getLens()) { lhsShape << " " << i; }
             std::stringstream rhsShape;
             for (auto i: rhsOperation->getResult()->getLens()) { rhsShape << " " << i; }
-            Assert(false,
+            ASSERT_LOCATION(false,
               "Shape of left-hand-side tensor " + getName() +
               " (" + lhsShape.str() + ") "
               " must match the shape of the result tensor " +
               rhsOperation->getResult()->getName() +
-              " (" + rhsShape.str() + ")"
+              " (" + rhsShape.str() + ")",
+              SourceLocation(rhsOperation->file, rhsOperation->line)
             );
           }
         }

@@ -31,7 +31,7 @@ Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
   LOG(1,"TensorNetwork") << "trace=" << trace << std::endl;
 
   // build result
-  auto result(New<MapNode>());
+  auto result(New<MapNode>(SOURCE_LOCATION));
   result->setValue<Real<>>("trace", trace);
   return result;
 }
@@ -40,7 +40,9 @@ template <typename TE>
 Real<> TensorNetwork::getTrace(const Ptr<MapNode> &matrix) {
   typedef Tensor<Real<>,TE> T;
   auto matrixData(matrix->getValue<Ptr<T>>("data"));
-  Assert(matrixData, "expecting matrix to be real");
+  ASSERT_LOCATION(
+    matrixData, "expecting matrix to be real", matrix->sourceLocation
+  );
   auto scalar( Tcc<TE>::template tensor<Real<>>(std::vector<size_t>({}), "s") );
   // get trace
   auto getTrace( COMPILE((*scalar)[""] <<= (*matrixData)["ij"]) );

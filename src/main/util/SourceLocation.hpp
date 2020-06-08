@@ -17,7 +17,7 @@ namespace cc4s {
     SourceLocation(SourceLocation const &l): file(l.file), line(l.line) {
     }
     SourceLocation(
-      std::string const &file_, int line_
+      std::string const &file_, size_t line_
     ): file(file_), line(line_) {
     }
     std::string getLocation() const {
@@ -28,12 +28,15 @@ namespace cc4s {
     std::string getFile() const {
       return file;
     }
-    int getLine() const {
+    size_t getLine() const {
       return line;
+    }
+    bool isValid() const {
+      return file != "<unknown>";
     }
   protected:
     std::string file;
-    int line;
+    size_t line;
   };
 
   inline std::ostream &operator <<(

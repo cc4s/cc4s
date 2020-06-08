@@ -16,17 +16,18 @@ using namespace cc4s;
 
 void Cc4s::run() {
   // TODO: truncate output.yaml or write it also in case of failure
-  auto job(New<MapNode>());
+  auto job(New<MapNode>(SOURCE_LOCATION));
   printBanner(job);
   listHosts(job);
 
   // start with empty storage
-  storage = New<MapNode>();
+  storage = New<MapNode>(SOURCE_LOCATION);
 
   // parse input
   Parser parser(options->inFile);
-  auto steps(parser.parse()->map());
-  Assert(steps, "expecting map as input");
+  auto input(parser.parse());
+  auto steps(input->map());
+  ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
   job->get("steps") = steps;
   LOG(0, "Cc4s") <<
     "execution plan read, steps=" << steps->size() << std::endl;
@@ -44,7 +45,10 @@ void Cc4s::run() {
 
       // create algorithm
       auto algorithm(AlgorithmFactory::create(algorithmName));
-      Assert(algorithm, "unknown algorithm: " + algorithmName);
+      ASSERT_LOCATION(
+        algorithm, "unknown algorithm: " + algorithmName,
+        step->get("name")->sourceLocation
+      );
 
       // get input arguments
       auto inputArguments(step->getMap("in"));
@@ -274,13 +278,13 @@ void Cc4s::listHosts(const Ptr<MapNode> &job) {
         // and enter remote name/rank into map
         ranksOfHosts[remoteName].push_back(remoteRank);
       }
-      auto hosts(New<MapNode>());
+      auto hosts(New<MapNode>(SOURCE_LOCATION));
       for (auto &ranksOfHost: ranksOfHosts) {
-        auto host(New<MapNode>());
+        auto host(New<MapNode>(SOURCE_LOCATION));
         host->setValue("host", ranksOfHost.first);
-        auto ranks(New<MapNode>());
+        auto ranks(New<MapNode>(SOURCE_LOCATION));
         for (auto &rank: ranksOfHost.second) {
-          ranks->push_back(New<AtomicNode<int64_t>>(rank));
+          ranks->push_back(New<AtomicNode<int64_t>>(rank, SOURCE_LOCATION));
         }
         host->get("ranks") = ranks;
         hosts->push_back(host);
@@ -315,11 +319,31 @@ int main(int argumentCount, char **arguments) {
     // run without try-catch in debugger to allow tracing throwing code
     cc4s.run();
   } else {
-    // without debugger: catch and write exception cause
+    // without debugger: catch and write list of causes
     try {  
       cc4s.run();
-    } catch (DetailedException *cause) {
-      LOG(0) << std::endl << cause->getMessage() << std::endl;
+    } catch (Ptr<Exception> cause) {
+      auto sourceLocation(cause->getSourceLocation());
+      if (!sourceLocation.isValid()) sourceLocation = SOURCE_LOCATION;
+      LOG_LOCATION(0, sourceLocation) <<
+        "Exception: " << cause->what() << std::endl;
+      cause = cause->getCause();
+      while (cause) {
+        if (cause->getSourceLocation().isValid()) {
+          sourceLocation = cause->getSourceLocation();
+        }
+        LOG_LOCATION(0, sourceLocation) <<
+          "Caused by: " << cause->what() << std::endl;
+        cause = cause->getCause();
+      }
+    } catch (std::exception &cause) {
+      LOG(0) << "unhandled exception encountered (std::exception):" << std::endl;
+      LOG(0) << cause.what() << std::endl;
+    } catch (const char *message) {
+      LOG(0) << "unhandled exception encountered (const char *):" << std::endl;
+      LOG(0) << message << std::endl;
+    } catch (...) {
+      LOG(0) << "unhandled exception encountered (...)." << std::endl;
     }
   }
 

@@ -30,7 +30,10 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run(const Ptr<MapNode> &arguments){
       return run<Complex<>,DefaultTensorEngine>();
     }
   } else {
-    Assert(false, "unsupported orbitals type '" + orbitals + "'");
+    ASSERT_LOCATION(
+      false, "unsupported orbitals type '" + orbitals + "'",
+      coulombIntegrals->get("scalarType")->sourceLocation
+    );
   }
 }
 
@@ -51,14 +54,17 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   );
 
   // TODO: conversion to eigen untis
-  energy = New<MapNode>();
+  energy = New<MapNode>(SOURCE_LOCATION);
   energy->setValue<Real<>>("unit", eigenEnergies->getValue<Real<>>("unit"));
 
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
   auto mixerType(mixerArguments->getValue<std::string>("type", "LinearMixer"));
   Ptr<Mixer<F,TE>> mixer(MixerFactory<F,TE>::create(mixerType, mixerArguments));
-  Assert(mixer, std::string("Unknown mixer type: '") + mixerType + "'");
+  ASSERT_LOCATION(
+    mixer, std::string("Unknown mixer type: '") + mixerType + "'",
+    mixerArguments->get("type")->sourceLocation
+  );
 
   // number of iterations for determining the amplitudes
   auto maxIterationsCount(
@@ -112,7 +118,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
 
   // TODO: implement
 //  storeAmplitudes(amplitudes, {"Singles", "Doubles"});
-  auto result(New<MapNode>());
+  auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   result->setValue<bool>("convergenceReached", convergenceReached);
   return result;
@@ -138,7 +144,12 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   } else if (orbitalType == "spin") {
     spins = 1;
   } else {
-    Assert(false, "unsupported orbital type '" + orbitalType + "'");
+    ASSERT_LOCATION(
+      false, "unsupported orbital type '" + orbitalType + "'",
+      coulombIntegrals->getMap(
+        "indices"
+      )->getMap("orbital")->get("type")->sourceLocation
+    );
   }
 
   // singles amplitudes are optional

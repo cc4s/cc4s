@@ -57,7 +57,10 @@ namespace cc4s {
     ) override {
       auto lhsTensor(DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), source));
       if (!lhsTensor) {
-        throw new EXCEPTION("Expecting tensor for slice operation on left-hand-side.");
+        throw New<Exception>(
+          "Expecting tensor for slice operation on left-hand-side.",
+          SourceLocation(rhsOperation->file, rhsOperation->line)
+        );
       }
       if (!rhsOperation->getResult()->assumedShape) {
         // create intermediate tensor as result tensor for rhsOperation

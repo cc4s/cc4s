@@ -42,7 +42,8 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
     readText(
       tensor->getValue<std::string>("data"),
       lens,
-      tensor->getValue<std::string>("scalarType")
+      tensor->getValue<std::string>("scalarType"),
+      tensor->sourceLocation
     )
   );
 
@@ -53,7 +54,7 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   tensor->get("data") = tensorData;
 
   // create result
-  auto result(New<MapNode>());
+  auto result(New<MapNode>(tensor->sourceLocation));
   result->get("tensor") = tensor;
   return result;
 }
@@ -61,24 +62,37 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
 Ptr<Node> TensorReader::readText(
   const std::string &fileName,
   const std::vector<size_t> &lens,
-  const std::string &scalarType
+  const std::string &scalarType,
+  const SourceLocation &sourceLocation
 ) {
   // multiplex calls to template methods depending on tensor engine and type
   if (Cc4s::options->dryRun) {
     if (scalarType == "real64") {
-      return readText<Real<64>,DryTensorEngine>(fileName, lens);
+      return readText<Real<64>,DryTensorEngine>(
+        fileName, lens, sourceLocation
+      );
     } else if (scalarType == "complex64") {
-      return readText<Complex<64>,DryTensorEngine>(fileName, lens);
+      return readText<Complex<64>,DryTensorEngine>(
+        fileName, lens, sourceLocation
+      );
     } else {
-      Assert(false, "scalar type '" + scalarType + "' not supported");
+      ASSERT_LOCATION(
+        false, "scalar type '" + scalarType + "' not supported", sourceLocation
+      );
     }
   } else {
     if (scalarType == "real64") {
-      return readText<Real<64>,DefaultTensorEngine>(fileName, lens);
+      return readText<Real<64>,DefaultTensorEngine>(
+        fileName, lens, sourceLocation
+      );
     } else if (scalarType == "complex64") {
-      return readText<Complex<64>,DefaultTensorEngine>(fileName, lens);
+      return readText<Complex<64>,DefaultTensorEngine>(
+        fileName, lens, sourceLocation
+      );
     } else {
-      Assert(false, "scalar type '" + scalarType + "' not supported");
+      ASSERT_LOCATION(
+        false, "scalar type '" + scalarType + "' not supported", sourceLocation
+      );
     }
   }
 }
@@ -86,14 +100,15 @@ Ptr<Node> TensorReader::readText(
 template <typename F, typename TE>
 Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
   const std::string &fileName,
-  const std::vector<size_t> &lens
+  const std::vector<size_t> &lens,
+  const SourceLocation &sourceLocation
 ) {
   constexpr size_t MAX_BUFFER_SIZE(128*1024*1024);
   std::ifstream stream(fileName.c_str());
   if (stream.fail()) {
     std::stringstream explanation;
     explanation << "Failed to open file \"" << fileName << "\"";
-    throw new EXCEPTION(explanation.str());
+    throw New<Exception>(explanation.str(), sourceLocation);
   }
   Scanner scanner(&stream);
 
@@ -123,7 +138,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
     index += elementsCount;
   }
 
-  return New<AtomicNode<Ptr<Tensor<F,TE>>>>(A);
+  return New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,0));
 }
 
 

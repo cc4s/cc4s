@@ -49,10 +49,15 @@ namespace cc4s {
       std::istream *stream_
     ):
       stream(stream_),
+      // FIXME: replace with vector<char>
       buffer(new char[BUFFER_SIZE]),
       pos(buffer+BUFFER_SIZE-1), end(pos),
       eof(false)
     {
+    }
+
+    ~Scanner() {
+      delete[] buffer;
     }
 
     std::string nextLine(char const delimiter = '\n') {

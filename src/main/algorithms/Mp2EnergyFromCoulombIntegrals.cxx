@@ -26,7 +26,10 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
       return calculateMp2Energy<Complex<>,DefaultTensorEngine>(arguments);
     }
   } else {
-    Assert(false, "unsupported orbitals type '" + orbitals + "'");
+    ASSERT_LOCATION(
+      false, "unsupported orbitals type '" + orbitals + "'",
+      coulombIntegrals->get("scalarType")->sourceLocation
+    );
   }
 }
 
@@ -48,7 +51,12 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   } else if (orbitalType == "spin") {
     spins = 1;
   } else {
-    Assert(false, "unsupported orbital type '" + orbitalType + "'");
+    ASSERT_LOCATION(
+      false, "unsupported orbital type '" + orbitalType + "'",
+      coulombIntegrals->getMap(
+        "indices"
+      )->getMap("orbital")->get("type")->sourceLocation
+    );
   }
 
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
@@ -83,12 +91,12 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   LOG(1,getName()) << "direct=" << D << std::endl;
   LOG(1,getName()) << "exchange=" << X << std::endl;
   
-  auto energy(New<MapNode>());
+  auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue<Real<>>("direct", real<F>(D));
   energy->setValue<Real<>>("exchange", real<F>(X));
   energy->setValue<Real<>>("value", real<F>(D+X));
   energy->setValue<Real<>>("unit", eigenEnergies->getValue<Real<>>("unit"));
-  auto result(New<MapNode>());
+  auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   return result;
 }

@@ -115,6 +115,9 @@ namespace cc4s {
 #define LOG_FILE_LINE(LEVEL, FILE, LINE) \
   if (cc4s::Log::getRank() != 0) { \
   } else cc4s::Log::getLogStream().prepare(FILE, LINE, LEVEL)
+#define LOG_LOCATION(LEVEL, LOCATION) \
+  if (cc4s::Log::getRank() != 0) { \
+  } else cc4s::Log::getLogStream().prepare((LOCATION).getFile(), (LOCATION).getLine(), LEVEL)
 
 #endif
 

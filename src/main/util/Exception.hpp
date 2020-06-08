@@ -2,47 +2,43 @@
 #ifndef EXCEPTION_DEFINED
 #define EXCEPTION_DEFINED
 
+#include <util/SourceLocation.hpp>
+#include <util/SharedPointer.hpp>
+
 #include <string>
 #include <sstream>
 #include <iostream>
 
-#define EXCEPTION(message) \
-  cc4s::DetailedException((message), __FILE__, __LINE__)
-#define Assert(condition, message) \
-  if (!(condition)) throw new EXCEPTION(message);
+#define THROW(message) \
+  throw New<cc4s::Exception>((message), SourceLocation(__FILE__, __LINE__))
+#define THROW_LOCATION(message, sourceLocation) \
+  throw New<cc4s::Exception>((message), (sourceLocation))
+#define ASSERT(condition, message) \
+  if (!(condition)) THROW((message))
+#define ASSERT_LOCATION(condition, message, sourceLocation) \
+  if (!(condition)) THROW_LOCATION((message), (sourceLocation));
 
 namespace cc4s{
-  class Exception {
+  class Exception: public std::exception {
   public:
-    virtual std::string getMessage() = 0;
-  };
-
-  class DetailedException {
-  public:
-    DetailedException(
-       std::string const &message_, std::string const &file_, int line_
-    ): message(message_), file(file_), line(line_), column(0) {
+    Exception(
+      std::string const &message_, const SourceLocation &sourceLocation_,
+      const Ptr<Exception> &cause_ = nullptr
+    ): message(message_), sourceLocation(sourceLocation_), cause(cause_) {
     }
-    DetailedException(
-       std::string const &message_, std::string const &file_,
-        int line_, int column_
-    ): message(message_), file(file_), line(line_), column(column_) {
+    const char *what() const noexcept override {
+      return message.c_str();
     }
-    DetailedException(
-       std::stringstream const &stream_, std::string const &file_, int line_
-    ): message(stream_.str()), file(file_), line(line_) {
+    SourceLocation getSourceLocation() const noexcept {
+      return sourceLocation;
     }
-    virtual ~DetailedException() {
-    }
-    virtual std::string getMessage() {
-      std::stringstream sStream;
-      sStream << message << std::endl << "\tat " << file << ":" << line;
-      if (column > 0) sStream << ":" << column;
-      return sStream.str();
+    Ptr<Exception> getCause() const noexcept {
+      return cause;
     }
   private:
-    std::string message, file;
-    int line, column;
+    std::string message;
+    SourceLocation sourceLocation;
+    Ptr<Exception> cause;
   };
 }
 

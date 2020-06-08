@@ -62,7 +62,12 @@ Ptr<FockVector<F,TE>> DrccdEnergyFromCoulombIntegrals::getResiduum(
   } else if (orbitalType == "spin") {
     spins = 1;
   } else {
-    Assert(false, "unsupported orbital type '" + orbitalType + "'");
+    ASSERT_LOCATION(
+      false, "unsupported orbital type '" + orbitalType + "'",
+      coulombIntegrals->getMap(
+        "indices"
+      )->getMap("orbital")->get("type")->sourceLocation
+    );
   }
 
   // get amplitude parts

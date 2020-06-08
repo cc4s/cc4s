@@ -28,7 +28,10 @@ Ptr<MapNode> SliceOperator::run(const Ptr<MapNode> &arguments) {
       return run<Complex<>,DefaultTensorEngine>(arguments);
     }
   } else {
-    Assert(false, "scalar type '" + scalarType + "' not supported");
+    ASSERT_LOCATION(
+      false, "scalar type '" + scalarType + "' not supported",
+      op->get("scalarType")->sourceLocation
+    );
   }
 }
 
@@ -39,7 +42,9 @@ Ptr<MapNode> SliceOperator::run(
   typedef Tensor<F,TE> T;
   auto op(arguments->getMap("operator"));
   auto data(op->getValue<Ptr<T>>("data"));
-  Assert(data, "expecting operator to be a tensor");
+  ASSERT_LOCATION(
+    data, "expecting operator to be a tensor", op->sourceLocation
+  );
 
   // read dimensions from eigen energies meta data
   auto slicedEigenEnergies(arguments->getMap("slicedEigenEnergies"));
@@ -57,13 +62,13 @@ Ptr<MapNode> SliceOperator::run(
     ++d;
   }
 
-  slices = New<MapNode>();
+  slices = New<MapNode>(op->sourceLocation);
   LOG(1,getName()) << "Slicing " << data->getName() <<
     " into holes and particles." << std::endl;
   slice(data, "");
 
   // create result
-  auto slicedOperator(New<MapNode>());
+  auto slicedOperator(New<MapNode>(op->sourceLocation));
   // copy all meta data from original operator
   for (auto key: op->getKeys()) {
     if (key != "data") {
@@ -72,7 +77,7 @@ Ptr<MapNode> SliceOperator::run(
   }
   // enter slices
   slicedOperator->get("slices") = slices;
-  auto result(New<MapNode>());
+  auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("slicedOperator") = slicedOperator;
   return result;
 }

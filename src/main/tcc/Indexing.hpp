@@ -73,9 +73,11 @@ namespace cc4s {
       auto indexedRhs(
         DYNAMIC_PTR_CAST(ESC(IndexedTensorOperation<F,TE>), rhsOperation)
       );
-      Assert (indexedRhs,
+      ASSERT_LOCATION(
+        indexedRhs,
         "Expecting indexed expression ([\"...\"]) on the right-hand-side of "
-        "an assignment, got " + static_cast<std::string>(*rhsOperation)
+        "an assignment, got " + static_cast<std::string>(*rhsOperation),
+        SourceLocation(rhsOperation->file, rhsOperation->line)
       );
 
       auto canonicalRhsIndices(indexedRhs->getResultIndices());

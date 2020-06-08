@@ -16,9 +16,10 @@ namespace cc4s {
     virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
       const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
     ) {
-      throw new EXCEPTION(
+      throw New<Exception>(
         "Writable expression expected on the "
-        "left-hand-side of " + rhsOperation->getResult()->getName()
+        "left-hand-side of " + rhsOperation->getResult()->getName(),
+        SourceLocation(rhsOperation->file, rhsOperation->line)
       );
     }
   };

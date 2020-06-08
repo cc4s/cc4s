@@ -24,7 +24,7 @@ Ptr<Tensor<F,TE>> TensorIo::readBinary(const std::string &fileName) {
   if (mpiError) {
     std::stringstream explanation;
     explanation << "Failed to open file \"" << fileName << "\"";
-    throw new EXCEPTION(explanation.str());
+    throw New<Exception>(explanation.str(), SOURCE_LOCATION);
   }
 
   size_t offset(0);
@@ -49,7 +49,7 @@ Ptr<Tensor<F,TE>> TensorIo::readText(
   if (stream.fail()) {
     std::stringstream explanation;
     explanation << "Failed to open file \"" << fileName << "\"";
-    throw new EXCEPTION(explanation.str());
+    throw New<Exception>(explanation.str(), SOURCE_LOCATION);
   }
   Scanner scanner(&stream);
   std::string name(scanner.nextLine(' '));
@@ -161,9 +161,9 @@ Ptr<Tensor<F,TE>> TensorIo::readBinaryHeader(
   MPI_File_read_at(file, offset, &header, sizeof(header), MPI_BYTE, &status);
   offset += sizeof(header);
   if (strncmp(header.magic, header.MAGIC, sizeof(header.magic)) != 0)
-    throw new EXCEPTION("Invalid file format");
+    throw New<Exception>("Invalid file format", SOURCE_LOCATION);
   if (header.version > header.VERSION)
-    throw new EXCEPTION("Incompatible file format version");
+    throw New<Exception>("Incompatible file format version", SOURCE_LOCATION);
 
   // read dimension headers
   std::vector<size_t> lens(header.order);

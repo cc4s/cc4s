@@ -43,8 +43,12 @@ std::ostream &LogStream::prepare(
   }
   if (category.length() > 0) {
     (*log) << category << ": ";
-  } else {
+  } else if (sourceFileName.compare(0, 9, "src/main/") == 0) {
+    // remove redundant part of source name
     (*log) << sourceFileName.substr(9) << ':' << sourceFileLine << ": ";
+  } else {
+    // name is not a c file, take full name
+    (*log) << sourceFileName << ':' << sourceFileLine << ": ";
   }
   return *log;
 }

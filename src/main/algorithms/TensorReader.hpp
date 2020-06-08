@@ -3,6 +3,7 @@
 #define TENSOR_READER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <util/SourceLocation.hpp>
 
 namespace cc4s {
   class TensorReader: public Algorithm {
@@ -13,12 +14,14 @@ namespace cc4s {
     Ptr<Node> readText(
       const std::string &fileName,
       const std::vector<size_t> &lens,
-      const std::string &scalarType
+      const std::string &scalarType,
+      const SourceLocation &sourceLocation
     );
     template <typename F, typename TE>
     Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> readText(
       const std::string &fileName,
-      const std::vector<size_t> &lens
+      const std::vector<size_t> &lens,
+      const SourceLocation &sourceLocation
     );
   };
 }

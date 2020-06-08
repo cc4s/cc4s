@@ -300,7 +300,7 @@ namespace cc4s {
         if (index < indexEnds[component]) break;
         base = indexEnds[component++];
       }
-      Assert(component < indexEnds.size(), "Index out bounds");
+      ASSERT(component < indexEnds.size(), "Index out bounds");
       componentIndex = index - base;
     }
 
@@ -419,10 +419,14 @@ namespace cc4s {
         for (size_t j(0); j < indexLens; j++) {
           size_t indexPos( get(i).find(a.getIndicies(i)[j]) );
           if (indexPos == std::string::npos) {
-            throw EXCEPTION("Indices of fock vectors do not match");
+            throw New<Exception>(
+              "Indices of fock vectors do not match", SOURCE_LOCATION
+            );
           }
           if (a.get(i)->lens[j] != get(i)->lens[indexPos]) {
-            throw EXCEPTION("Shapes of component tensors does not match");
+            throw New<Exception>(
+              "Shapes of component tensors does not match", SOURCE_LOCATION
+            );
           }
         }
       }
@@ -433,7 +437,9 @@ namespace cc4s {
         componentTensors.size() != a.componentTensors.size() ||
         componentIndices.size() != a.componentIndices.size()
       ) {
-        throw EXCEPTION("Number of component tensors does no match");
+        throw New<Exception>(
+          "Number of component tensors does no match", SOURCE_LOCATION
+        );
       }
       // TODO: check shapes.
     }

@@ -40,8 +40,10 @@ namespace cc4s {
         YAML::Node yamlNode(YAML::LoadFile(fileName));
         return parseNode(yamlNode);
       } catch (const YAML::Exception &cause) {
-        throw new EXCEPTION(
-          std::string("Failed to load file '") + fileName + "': " + cause.what()
+        throw New<Exception>(
+          std::string("Failed to load file ") + fileName,
+          SOURCE_LOCATION,
+          New<Exception>(cause.what(), SourceLocation())
         );
       }
     }
@@ -56,12 +58,15 @@ namespace cc4s {
       case YAML::NodeType::Scalar:
         return parseScalar(yamlNode);
       default:
-        Assert(false, "unknown node type: " + yamlNode.Type());
+        throw New<Exception>(
+          "unknown node type: " + yamlNode.Type(),
+          SourceLocation(fileName, yamlNode.Mark().line)
+        );
       }
     }
 
     Ptr<MapNode> parseMap(const YAML::Node &yamlNode) {
-      auto node(New<MapNode>());
+      auto node(New<MapNode>(SourceLocation(fileName, yamlNode.Mark().line)));
       for (auto iterator: yamlNode) {
         node->get(iterator.first.as<std::string>()) = parseNode(iterator.second);
       }
@@ -69,7 +74,7 @@ namespace cc4s {
     }
 
     Ptr<MapNode> parseSequence(const YAML::Node &yamlNode) {
-      auto node(New<MapNode>());
+      auto node(New<MapNode>(SourceLocation(fileName, yamlNode.Mark().line)));
       size_t index(0);
       for (auto subNode: yamlNode) {
         node->get(index++) = parseNode(subNode);
@@ -122,8 +127,9 @@ namespace cc4s {
         return parseImplicitTypeScalar(yamlNode);
       } else {
         auto value(yamlNode.Scalar());
-        Assert(
-          false, "unsupported type tag " + tag + " for value " + value
+        throw New<Exception>(
+          "unsupported type tag " + tag + " for value " + value,
+          SourceLocation(fileName, yamlNode.Mark().line)
         );
       }
     }
@@ -163,7 +169,9 @@ namespace cc4s {
         while ((isalpha(value[i]) || isdigit(value[i])) && i<value.size()) ++i;
         if (i == value.size()) {
           // then it's a symbol
-          return New<SymbolNode>(yamlNode.Scalar());
+          return New<SymbolNode>(
+            yamlNode.Scalar(), SourceLocation(fileName, yamlNode.Mark().line)
+          );
         }
       }
       // otherwise it's text
@@ -172,7 +180,10 @@ namespace cc4s {
 
     template <typename AtomicType>
     Ptr<AtomicNode<AtomicType>> parseAtom(const YAML::Node &yamlNode) {
-      return New<AtomicNode<AtomicType>>(yamlNode.as<AtomicType>());
+      return New<AtomicNode<AtomicType>>(
+        yamlNode.as<AtomicType>(),
+        SourceLocation(fileName, yamlNode.Mark().line)
+      );
     }
 
     std::string fileName;

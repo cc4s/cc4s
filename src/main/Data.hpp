@@ -5,6 +5,7 @@
 #include <util/Log.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>
+#include <util/SourceLocation.hpp>
 #include <util/Exception.hpp>
 #include <util/SharedPointer.hpp>
 
@@ -23,6 +24,11 @@ namespace cc4s {
 
   class Node: public Thisable<Node> {
   public:
+    Node(
+      const SourceLocation &sourceLocation_
+    ): sourceLocation(sourceLocation_) {
+    }
+
     virtual ~Node() {
     }
     virtual bool isAtomic() {
@@ -43,6 +49,7 @@ namespace cc4s {
       );
     }
     std::string comment;
+    SourceLocation sourceLocation;
   };
 
   class SymbolNode: public Node {
@@ -50,7 +57,9 @@ namespace cc4s {
     /**
      * \brief Constructor for symbol nodes.
      */
-    SymbolNode(const std::string &value_): value(value_) {
+    SymbolNode(
+      const std::string &value_, const SourceLocation &sourceLocation_
+    ): Node(sourceLocation_), value(value_) {
     }
     std::string toString() override {
       return value;
@@ -64,7 +73,9 @@ namespace cc4s {
     /**
      * \brief Constructor for atomic nodes.
      */
-    AtomicNode(const AtomicType &value_): value(value_) {
+    AtomicNode(
+      const AtomicType &value_, const SourceLocation &sourceLocation_
+    ): Node(sourceLocation_), value(value_) {
     }
     std::string toString() override {
       std::stringstream stream;
@@ -77,7 +88,7 @@ namespace cc4s {
 
   class MapNode: public Node {
   public:
-    MapNode() {
+    MapNode(const SourceLocation &sourceLocation_): Node(sourceLocation_) {
     }
     bool isAtomic() override {
       return false;
@@ -107,17 +118,24 @@ namespace cc4s {
 
     // convenience member access
     std::string getSymbol(const std::string &key) {
-      Assert(get(key), "expecting key '" + key + "'");
+      ASSERT_LOCATION(
+        get(key), "expecting key '" + key + "'", sourceLocation
+      );
       auto symbolNode(get(key)->symbol());
-      Assert(symbolNode, "expecting '" + key + "' to be a symbol");
+      ASSERT_LOCATION(
+        symbolNode, "expecting '" + key + "' to be a symbol", sourceLocation
+      );
       return symbolNode->value;
     }
-    void setSymbol(const std::string &key, const std::string &value) {
-      get(key) = New<SymbolNode>(value);
+    void setSymbol(
+      const std::string &key, const std::string &value,
+      const SourceLocation &sourceLocation = SOURCE_LOCATION
+    ) {
+      get(key) = New<SymbolNode>(value, sourceLocation);
     }
     template <typename Target>
     Target getValue(const std::string &key) {
-      Assert(get(key), "expecting key '" + key + "'");
+      ASSERT_LOCATION(get(key), "expecting key '" + key + "'", sourceLocation);
       // first, try to convert to expected type node
       auto targetAtomNode(get(key)->atom<Target>());
       if (targetAtomNode) {
@@ -142,7 +160,7 @@ namespace cc4s {
         }
 */
         // if successful replace previous node with converted one
-        get(key) = New<AtomicNode<Target>>(targetValue);
+        get(key) = New<AtomicNode<Target>>(targetValue, sourceLocation);
         return targetValue;
       }
     }
@@ -157,7 +175,7 @@ namespace cc4s {
         return getValue<Target>(element);
       } else {
         // otherwise, enter default value in map
-        get(element) = New<AtomicNode<Target>>(defaultValue);
+        get(element) = New<AtomicNode<Target>>(defaultValue, sourceLocation);
         return defaultValue;
       }
     }
@@ -166,18 +184,28 @@ namespace cc4s {
       return getValue<Target>(std::to_string(index), defaultValue);
     }
     template <typename Target>
-    void setValue(const std::string &key, const Target &value) {
-      get(key) = New<AtomicNode<Target>>(value);
+    void setValue(
+      const std::string &key, const Target &value,
+      const SourceLocation &sourceLocation = SOURCE_LOCATION
+    ) {
+      get(key) = New<AtomicNode<Target>>(value, sourceLocation);
     }
     template <typename Target>
-    void setValue(const size_t index, const Target &value) {
-      get(index) = New<AtomicNode<Target>>(value);
+    void setValue(
+      const size_t index, const Target &value,
+      const SourceLocation &sourceLocation = SOURCE_LOCATION
+    ) {
+      get(index) = New<AtomicNode<Target>>(value, sourceLocation);
     }
 
     Ptr<MapNode> getMap(const std::string &element) {
-      Assert(get(element), "expecting key '" + element + "'");
+      ASSERT_LOCATION(
+        get(element), "expecting key '" + element + "'", sourceLocation
+      );
       auto mapNode(get(element)->map());
-      Assert(mapNode, "expecting '" + element + "' to be a map");
+      ASSERT_LOCATION(
+        mapNode, "expecting '" + element + "' to be a map", sourceLocation
+      );
       return mapNode;
     }
     Ptr<MapNode> getMap(const size_t element) {

@@ -32,7 +32,10 @@ namespace cc4s {
      * the resulting operation.
      **/
     virtual PTR(Operation<TE>) compile(Scope &scope) {
-      throw new EXCEPTION("Sequence (,) of move operation (<<=, +=, -=) expected.");
+      throw New<Exception>(
+        "Sequence (,) of move operation (<<=, +=, -=) expected.",
+        SourceLocation(scope.file, scope.line)
+      );
     }
 
     virtual PTR(Operation<TE>) compile(
