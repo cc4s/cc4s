@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <mpi.h>
 
 namespace cc4s {
   size_t getNextTensorVersion();
@@ -200,6 +201,9 @@ namespace cc4s {
     }
     void write(F value, size_t index = 0) {
       write(1, &index, &value);
+    }
+    void writeFromFile(MPI_File &file, const size_t offset = 0) {
+      getMachineTensor()->writeFromFile(file, offset);
     }
 
     const std::vector<size_t> &getLens() const {

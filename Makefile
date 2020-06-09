@@ -24,7 +24,7 @@ clean:
 all: build/${CONFIG}/bin/${TARGET}
 
 # fetch tutorials for tests
-TUTORIALS_REVISION=d13d76f5dc526f4744924f107b2ff641935742e7
+TUTORIALS_REVISION=4df3690cfbd76c6d9902d6e3f1f2a8f428fdbe21
 tutorials/systems:
 	git clone git@gitlab.cc4s.org:cqc/cc4s-tutorials.git tutorials
 	cd tutorials; git reset --hard ${TUTORIALS_REVISION}

@@ -39,10 +39,11 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
 
   // read tensor data from file named by 'data' entry
   auto tensorData(
-    readText(
+    readData(
       tensor->getValue<std::string>("data"),
       lens,
       tensor->getValue<std::string>("scalarType"),
+      tensor->getValue<bool>("binary", false),
       tensor->sourceLocation
     )
   );
@@ -59,40 +60,73 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   return result;
 }
 
-Ptr<Node> TensorReader::readText(
+Ptr<Node> TensorReader::readData(
   const std::string &fileName,
   const std::vector<size_t> &lens,
   const std::string &scalarType,
+  const bool binary,
   const SourceLocation &sourceLocation
 ) {
   // multiplex calls to template methods depending on tensor engine and type
-  if (Cc4s::options->dryRun) {
-    if (scalarType == "real64") {
-      return readText<Real<64>,DryTensorEngine>(
-        fileName, lens, sourceLocation
-      );
-    } else if (scalarType == "complex64") {
-      return readText<Complex<64>,DryTensorEngine>(
-        fileName, lens, sourceLocation
-      );
+  if (binary) {
+    if (Cc4s::options->dryRun) {
+      if (scalarType == "real64") {
+        return readBinary<Real<64>,DryTensorEngine>(
+          fileName, lens, sourceLocation
+        );
+      } else if (scalarType == "complex64") {
+        return readBinary<Complex<64>,DryTensorEngine>(
+          fileName, lens, sourceLocation
+        );
+      } else {
+        ASSERT_LOCATION(
+          false, "scalar type '" + scalarType + "' not supported", sourceLocation
+        );
+      }
     } else {
-      ASSERT_LOCATION(
-        false, "scalar type '" + scalarType + "' not supported", sourceLocation
-      );
+      if (scalarType == "real64") {
+        return readBinary<Real<64>,DefaultTensorEngine>(
+          fileName, lens, sourceLocation
+        );
+      } else if (scalarType == "complex64") {
+        return readBinary<Complex<64>,DefaultTensorEngine>(
+          fileName, lens, sourceLocation
+        );
+      } else {
+        ASSERT_LOCATION(
+          false, "scalar type '" + scalarType + "' not supported", sourceLocation
+        );
+      }
     }
   } else {
-    if (scalarType == "real64") {
-      return readText<Real<64>,DefaultTensorEngine>(
-        fileName, lens, sourceLocation
-      );
-    } else if (scalarType == "complex64") {
-      return readText<Complex<64>,DefaultTensorEngine>(
-        fileName, lens, sourceLocation
-      );
+    if (Cc4s::options->dryRun) {
+      if (scalarType == "real64") {
+        return readText<Real<64>,DryTensorEngine>(
+          fileName, lens, sourceLocation
+        );
+      } else if (scalarType == "complex64") {
+        return readText<Complex<64>,DryTensorEngine>(
+          fileName, lens, sourceLocation
+        );
+      } else {
+        ASSERT_LOCATION(
+          false, "scalar type '" + scalarType + "' not supported", sourceLocation
+        );
+      }
     } else {
-      ASSERT_LOCATION(
-        false, "scalar type '" + scalarType + "' not supported", sourceLocation
-      );
+      if (scalarType == "real64") {
+        return readText<Real<64>,DefaultTensorEngine>(
+          fileName, lens, sourceLocation
+        );
+      } else if (scalarType == "complex64") {
+        return readText<Complex<64>,DefaultTensorEngine>(
+          fileName, lens, sourceLocation
+        );
+      } else {
+        ASSERT_LOCATION(
+          false, "scalar type '" + scalarType + "' not supported", sourceLocation
+        );
+      }
     }
   }
 }
@@ -138,7 +172,36 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
     index += elementsCount;
   }
 
-  return New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,0));
+  return New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1));
 }
 
+template <typename F, typename TE>
+Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
+  const std::string &fileName,
+  const std::vector<size_t> &lens,
+  const SourceLocation &sourceLocation
+) {
+  // open the file
+  MPI_File file;
+  int mpiError(
+    MPI_File_open(
+      Cc4s::world->getComm(), fileName.c_str(), MPI_MODE_RDONLY,
+      MPI_INFO_NULL, &file
+    )
+  );
+  ASSERT_LOCATION(
+    !mpiError, std::string("Failed to open file '") + fileName + "'",
+    sourceLocation
+  )
+
+  // create tensor
+  auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
+
+  // write tensor data with values from file
+  A->writeFromFile(file);
+
+  // done
+  MPI_File_close(&file);
+  return New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1));
+}
 

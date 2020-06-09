@@ -171,6 +171,10 @@ namespace cc4s {
       );
     }
 
+    void readToFile(MPI_File &file, const size_t offset = 0) {
+      tensor.write_dense_to_file(file, offset);
+    }
+
     // write tensor elements to buffer
     void write(
       const size_t elementsCount, const size_t *indexData, const F *valueData
@@ -180,6 +184,10 @@ namespace cc4s {
         reinterpret_cast<const int64_t *>(indexData),
         valueData
       );
+    }
+
+    void writeFromFile(MPI_File &file, const size_t offset = 0) {
+      tensor.read_dense_from_file(file, offset);
     }
 
     std::vector<size_t> getLens() const {

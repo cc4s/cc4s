@@ -7,6 +7,7 @@
 #include <util/Exception.hpp>
 #include <util/Log.hpp>
 #include <string>
+#include <mpi.h>
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;
@@ -120,10 +121,13 @@ namespace cc4s {
     ) {
     }
 
-    // write tensor elements to buffer
+    // write tensor elements from buffer
     void write(
       const size_t elementsCount, const size_t *indexData, const F *valueData
     ) {
+    }
+
+    void writeFromFile(MPI_File &file, const size_t offset = 0) {
     }
 
     std::vector<size_t> getLens() const {
