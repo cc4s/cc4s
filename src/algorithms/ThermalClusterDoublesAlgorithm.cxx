@@ -256,7 +256,7 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
     Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
       (*lambdaF)["F"], TF["F"]
     );
-    e[""] = 1.0 * spins * TF["F"] * (*VF)["F"];
+    e[""] = (-1.0) * spins * TF["F"] * (*VF)["F"];
     tdas = e.get_val();
   }
 
@@ -280,7 +280,8 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
       (*lambdaF)["F"], (*lambdaF)["G"], T1T1FG["FG"]
     );
     // add all contributions contracted with a two-body coulomb perturbation
-    T2FG["FG"] += T1T1FG["FG"];
+    // tau1<tau2<tau3 + tau2<tau1<tau3 cases
+    T2FG["FG"] += (2.0) * T1T1FG["FG"];
   }
 /*
   // project out null-space from Fock-space-doubling

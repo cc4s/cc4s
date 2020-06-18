@@ -28,6 +28,7 @@ void ThermalPerturbation::run() {
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
   Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
   Tensor<> *Vaibj(getTensorArgument("ThermalPHPHCoulombIntegrals"));
+  Tensor<> *Vaijb(getTensorArgument("ThermalPHHPCoulombIntegrals"));
   Tensor<> *Vaijk(getTensorArgument("ThermalPHHHCoulombIntegrals"));
   Tensor<> *Vijkl(getTensorArgument("ThermalHHHHCoulombIntegrals"));
   int No(epsi->lens[0]), Nv(epsa->lens[0]);
@@ -86,6 +87,8 @@ void ThermalPerturbation::run() {
   // zeroth order
   real Omega0(-getDLogZH0(0,0)/beta);
 
+  int fock(getIntegerArgument("fock", 1));
+
   // first order:
   // Hartree and exchange term, use shifted occupancies Nk
   // both terms have left/right symmetry
@@ -99,27 +102,47 @@ void ThermalPerturbation::run() {
   // use occupancies Nk with shifted mu for contraction i, using Veff
   energy[""] = (-1.0) * spins * spins * Nk["i"] * nk["k"] * (*Vijkl)["ikik"];
   real Omega1Deff( energy.get_val() );
-  energy[""] = (+1.0) * spins * Nk["i"] * nk["k"] * (*Vijkl)["ikki"];
-  real Omega1Xeff( energy.get_val() );
+
+  real Omega1Xeff(0.0);
+  if (fock) {
+    energy[""] = (+1.0) * spins * Nk["i"] * nk["k"] * (*Vijkl)["ikki"];
+    Omega1Xeff = energy.get_val();
+  }
 
   // one-body part of perturbation for higher orders:
-  // contraction weight = weight of perturation - weight of effective pot.
-  Nk["k"] += (-1.0) * nk["k"];
+  // eff. contraction weight = weight of perturation - weight of effective pot.
+  Tensor<> Neffk(Nk);
+  Neffk["k"] += (-1.0) * nk["k"];
   // hole-hole:
   Tensor<> *Vij(new Tensor<>(2, std::vector<int>({No,No}).data()));
   allocatedTensorArgument<>("ThermalHHPerturbation", Vij);
-  (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Nk["k"];
-  (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
+  (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Neffk["k"];
+  if (fock) {
+    (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Neffk["k"];
+  } else {
+    // no Fock exchange in reference: use normal contraction
+    (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
+  }
   // particle-hole:
   Tensor<> *Vai(new Tensor<>(2, std::vector<int>({Nv,No}).data()));
   allocatedTensorArgument<>("ThermalPHPerturbation", Vai);
-  (*Vai)["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * Nk["k"];
-  (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
+  (*Vai)["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * Neffk["k"];
+  if (fock) {
+    (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Neffk["k"];
+  } else {
+    // no Fock exchange in reference: use normal contraction
+    (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
+  }
   // particle-particle:
   Tensor<> *Vab(new Tensor<>(2, std::vector<int>({Nv,Nv}).data()));
   allocatedTensorArgument<>("ThermalPPPerturbation", Vab);
-  (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * Nk["k"];
-  (*Vab)["ab"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
+  (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * Neffk["k"];
+  if (fock) {
+    (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Neffk["k"];
+  } else {
+    // no Fock exchange in reference: use normal contraction
+    (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Nk["k"];
+  }
 
   real OmegaHf(Omega0+Omega1D+Omega1X+Omega1Deff+Omega1Xeff);
   EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;

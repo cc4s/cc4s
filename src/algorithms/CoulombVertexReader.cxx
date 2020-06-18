@@ -105,6 +105,7 @@ void CoulombVertexReader::run() {
       epsa->read_dense_from_file(file, offset+sizeof(chunk)+No*sizeof(double));
     }
     offset += chunk.size;
+    if (chunk.size < 0) offset += (1l << 32);
     LOG(1, "Reader") << "offset: " << offset << std::endl;
   }
   MPI_File_close(&file);
