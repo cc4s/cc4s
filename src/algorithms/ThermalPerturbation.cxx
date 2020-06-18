@@ -33,6 +33,16 @@ void ThermalPerturbation::run() {
   int No(epsi->lens[0]), Nv(epsa->lens[0]);
   beta = 1 / getRealArgument("Temperature");
   deltaMu = getRealArgument("chemicalPotentialShift", 0.0);
+  real deltaV( getRealArgument("potentialShift", 0.0) );
+
+  // shift interaction potential to counteract shift in chemical potential
+  if (deltaV != 0.0) {
+    EMIT() << YAML::Key << "deltaV" << YAML::Value << deltaV;
+    (*Vijkl)["ijij"] += deltaV;
+    // TODO: other contributions are harder to compute
+    // we need DeltaV^pq_sr = delta^p_s * delta^q_r * (-1/R)
+    // but we don't know here where the thermal particle and hole states overlap
+  }
 
   // compute contraction weights
   Tensor<> Nc(1, &Nv);
