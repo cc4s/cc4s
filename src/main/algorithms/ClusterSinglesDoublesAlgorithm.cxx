@@ -116,11 +116,15 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   }
   bool convergenceReached = i < maxIterationsCount;
 
-  // TODO: implement
+  // TODO: how should Fock-vectors be stored?
 //  storeAmplitudes(amplitudes, {"Singles", "Doubles"});
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   result->setValue<bool>("convergenceReached", convergenceReached);
+  auto amplitudesNode(New<MapNode>(SOURCE_LOCATION));
+  amplitudesNode->setValue<Ptr<Tensor<F,TE>>>("ph", amplitudes->get(0));
+  amplitudesNode->setValue<Ptr<Tensor<F,TE>>>("pphh", amplitudes->get(1));
+  result->get("amplitudes") = amplitudesNode;
   return result;
 }
 
