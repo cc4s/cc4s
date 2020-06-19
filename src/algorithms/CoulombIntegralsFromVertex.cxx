@@ -45,6 +45,12 @@ void CoulombIntegralsFromVertex::run() {
     << YAML::Key << "Nv" << YAML::Value << Nv
     << YAML::Key << "Np" << YAML::Value << Np;
 
+  if (No == Np && Nv == Np) { // hot-thermal limit: no difference between P&H
+    // FIXME: only real supported
+    calculateHotRealIntegrals();
+    return;
+  }
+
   std::vector<std::string> list;
   if (isArgumentGiven("PHPHCoulombIntegrals")) { list.push_back("PHPHCoulombIntegrals");}
   if (isArgumentGiven("PPHHCoulombIntegrals")) { list.push_back("PPHHCoulombIntegrals");}
@@ -180,6 +186,45 @@ void CoulombIntegralsFromVertex::dryRun() {
     dryCalculateRealIntegrals();
   } else {
     dryCalculateComplexIntegrals();
+  }
+}
+
+void CoulombIntegralsFromVertex::calculateHotRealIntegrals() {
+  // Read the Coulomb vertex GammaGqr
+  LOG(0, "CoulombIntegrals") << "Calculating hot-limit integrals"
+    << std::endl;
+  Tensor<complex> *GammaGqr( getTensorArgument<complex>("CoulombVertex") );
+  Tensor<> realGammaGqr(3, GammaGqr->lens, GammaGqr->sym,
+                        *GammaGqr->wrld, "RealGammaGqr");
+  Tensor<> imagGammaGqr(3, GammaGqr->lens, GammaGqr->sym,
+                        *GammaGqr->wrld, "ImagGammaGqr");
+  fromComplexTensor(*GammaGqr, realGammaGqr, imagGammaGqr);
+  int Np(GammaGqr->lens[1]);
+  int lens[] = { Np, Np, Np, Np };
+  int syms[] = { NS, NS, NS, NS };
+  auto Vpqsr( new Tensor<>(4, lens, syms, *Cc4s::world, "Vpqsr") );
+  (*Vpqsr)["pqsr"]  = realGammaGqr["Gps"] * realGammaGqr["Gqr"];
+  (*Vpqsr)["pqsr"] += imagGammaGqr["Gps"] * imagGammaGqr["Gqr"];
+  if (isArgumentGiven("HHHHCoulombIntegrals")) {
+    allocatedTensorArgument("HHHHCoulombIntegrals", Vpqsr);
+  }
+  if (isArgumentGiven("HHHPCoulombIntegrals")) {
+    allocatedTensorArgument("HHHPCoulombIntegrals", Vpqsr);
+  }
+  if (isArgumentGiven("PHHHCoulombIntegrals")) {
+    allocatedTensorArgument("PHHHCoulombIntegrals", Vpqsr);
+  }
+  if (isArgumentGiven("PHPHCoulombIntegrals")) {
+    allocatedTensorArgument("PHPHCoulombIntegrals", Vpqsr);
+  }
+  if (isArgumentGiven("PPHHCoulombIntegrals")) {
+    allocatedTensorArgument("PPHHCoulombIntegrals", Vpqsr);
+  }
+  if (isArgumentGiven("HHPPCoulombIntegrals")) {
+    allocatedTensorArgument("HHPPCoulombIntegrals", Vpqsr);
+  }
+  if (isArgumentGiven("PHHPCoulombIntegrals")) {
+    allocatedTensorArgument("PHHPCoulombIntegrals", Vpqsr);
   }
 }
 

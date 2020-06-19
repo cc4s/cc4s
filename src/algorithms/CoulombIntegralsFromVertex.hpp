@@ -37,6 +37,7 @@ namespace cc4s {
     virtual void dryRun();
   protected:
     void calculateRealIntegrals();
+    void calculateHotRealIntegrals();
     void calculateComplexIntegrals();
 
     void dryCalculateRealIntegrals();

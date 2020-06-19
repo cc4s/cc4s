@@ -114,14 +114,16 @@ void ThermalPerturbation::run() {
   Tensor<> Neffk(Nk);
   Neffk["k"] += (-1.0) * nk["k"];
   // hole-hole:
-  Tensor<> *Vij(new Tensor<>(2, std::vector<int>({No,No}).data()));
-  allocatedTensorArgument<>("ThermalHHPerturbation", Vij);
-  (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Neffk["k"];
-  if (fock) {
-    (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Neffk["k"];
-  } else {
-    // no Fock exchange in reference: use normal contraction
-    (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
+  if (isArgumentGiven("ThermalHHPerturbation")) {
+    Tensor<> *Vij(new Tensor<>(2, std::vector<int>({No,No}).data()));
+    allocatedTensorArgument<>("ThermalHHPerturbation", Vij);
+    (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Neffk["k"];
+    if (fock) {
+      (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Neffk["k"];
+    } else {
+      // no Fock exchange in reference: use normal contraction
+      (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
+    }
   }
   // particle-hole:
   Tensor<> *Vai(new Tensor<>(2, std::vector<int>({Nv,No}).data()));
@@ -134,14 +136,16 @@ void ThermalPerturbation::run() {
     (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
   }
   // particle-particle:
-  Tensor<> *Vab(new Tensor<>(2, std::vector<int>({Nv,Nv}).data()));
-  allocatedTensorArgument<>("ThermalPPPerturbation", Vab);
-  (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * Neffk["k"];
-  if (fock) {
-    (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Neffk["k"];
-  } else {
-    // no Fock exchange in reference: use normal contraction
-    (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Nk["k"];
+  if (isArgumentGiven("ThermalPPPerturbation")) {
+    Tensor<> *Vab(new Tensor<>(2, std::vector<int>({Nv,Nv}).data()));
+    allocatedTensorArgument<>("ThermalPPPerturbation", Vab);
+    (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * Neffk["k"];
+    if (fock) {
+      (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Neffk["k"];
+    } else {
+      // no Fock exchange in reference: use normal contraction
+      (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Nk["k"];
+    }
   }
 
   real OmegaHf(Omega0+Omega1D+Omega1X+Omega1Deff+Omega1Xeff);
