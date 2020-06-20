@@ -88,19 +88,24 @@ void ThermalPerturbation::run() {
   real Omega0(-getDLogZH0(0,0)/beta);
 
   int fock(getIntegerArgument("fock", 1));
+  int chargeFluctuations(getIntegerArgument("chargeFluctuations", 1));
+  // occupations for Hartree-like terms: normaly my dependent
+  Tensor<> NHk(Nk);
+  // except if charge fluctuations are forbidden: use mu_0 in that case
+  if (!chargeFluctuations) NHk["k"] = nk["k"];
 
   // first order:
   // Hartree and exchange term, use shifted occupancies Nk
   // both terms have left/right symmetry
   Scalar<> energy;
-  energy[""] = (+0.5) * spins * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijij"];
+  energy[""] = (+0.5) * spins * spins * NHk["i"] * NHk["j"] * (*Vijkl)["ijij"];
   real Omega1D( energy.get_val() );
   energy[""] = (-0.5) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
   real Omega1X( energy.get_val() );
   // minus effective potential,
-  // use Hartree--Fock occupancies nk for the contraction k, composing Veff
+  // use reference occupancies nk for the contraction k, composing Veff
   // use occupancies Nk with shifted mu for contraction i, using Veff
-  energy[""] = (-1.0) * spins * spins * Nk["i"] * nk["k"] * (*Vijkl)["ikik"];
+  energy[""] = (-1.0) * spins * spins * NHk["i"] * nk["k"] * (*Vijkl)["ikik"];
   real Omega1Deff( energy.get_val() );
 
   real Omega1Xeff(0.0);
@@ -117,7 +122,9 @@ void ThermalPerturbation::run() {
   if (isArgumentGiven("ThermalHHPerturbation")) {
     Tensor<> *Vij(new Tensor<>(2, std::vector<int>({No,No}).data()));
     allocatedTensorArgument<>("ThermalHHPerturbation", Vij);
-    (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Neffk["k"];
+    if (chargeFluctuations) {
+      (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Neffk["k"];
+    }
     if (fock) {
       (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Neffk["k"];
     } else {
@@ -128,7 +135,9 @@ void ThermalPerturbation::run() {
   // particle-hole:
   Tensor<> *Vai(new Tensor<>(2, std::vector<int>({Nv,No}).data()));
   allocatedTensorArgument<>("ThermalPHPerturbation", Vai);
-  (*Vai)["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * Neffk["k"];
+  if (chargeFluctuations) {
+    (*Vai)["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * Neffk["k"];
+  }
   if (fock) {
     (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Neffk["k"];
   } else {
@@ -139,7 +148,9 @@ void ThermalPerturbation::run() {
   if (isArgumentGiven("ThermalPPPerturbation")) {
     Tensor<> *Vab(new Tensor<>(2, std::vector<int>({Nv,Nv}).data()));
     allocatedTensorArgument<>("ThermalPPPerturbation", Vab);
-    (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * Neffk["k"];
+    if (chargeFluctuations) {
+      (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * Neffk["k"];
+    }
     if (fock) {
       (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Neffk["k"];
     } else {
