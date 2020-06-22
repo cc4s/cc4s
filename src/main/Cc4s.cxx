@@ -56,6 +56,8 @@ void Cc4s::run() {
 
       size_t flops;
       Ptr<MapNode> output;
+      // wait until all processes finished previous work
+      Cc4s::world->barrier();
       Time time;
       {
         // TODO: flops counter
