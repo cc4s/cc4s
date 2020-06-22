@@ -112,13 +112,15 @@ namespace cc4s {
       std::initializer_list<std::string> amplitudeIndices
     );
 
-/*
     template <typename F, typename TE>
-    void storeAmplitudes(
-      const Ptr<const FockVector<F>> &amplitudes,
-      std::initializer_list<std::string> names
+    Ptr<MapNode> storeAmplitudes(
+      const Ptr<MapNode> &arguments,
+      const Ptr<const FockVector<F,TE>> &amplitudes
     );
-*/
+    template <typename F, typename TE>
+    Ptr<MapNode> storeAmplitudesComponent(
+      const Ptr<Tensor<F,TE>> &component
+    );
 
     /**
      * \brief Calculates and returns one slice Xxycd of the Coulomb integrals \f$V_{cd}^{ab}\f$

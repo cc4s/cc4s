@@ -116,15 +116,10 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   }
   bool convergenceReached = i < maxIterationsCount;
 
-  // TODO: how should Fock-vectors be stored?
-//  storeAmplitudes(amplitudes, {"Singles", "Doubles"});
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   result->setValue<bool>("convergenceReached", convergenceReached);
-  auto amplitudesNode(New<MapNode>(SOURCE_LOCATION));
-  amplitudesNode->setValue<Ptr<Tensor<F,TE>>>("ph", amplitudes->get(0));
-  amplitudesNode->setValue<Ptr<Tensor<F,TE>>>("pphh", amplitudes->get(1));
-  result->get("amplitudes") = amplitudesNode;
+  result->get("amplitudes") = storeAmplitudes(arguments, amplitudes);
   return result;
 }
 
@@ -248,25 +243,41 @@ Ptr<FockVector<F,TE>> ClusterSinglesDoublesAlgorithm::createAmplitudes(
 }
 
 
-// TODO: implement
-/*
 template <typename F, typename TE>
-void ClusterSinglesDoublesAlgorithm::storeAmplitudes(
-  const Ptr<const FockVector<F,TE>> &amplitudes,
-  std::initializer_list<std::string> names
+Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudes(
+  const Ptr<MapNode> &arguments,
+  const Ptr<const FockVector<F,TE>> &amplitudes
 ) {
-  int component(0);
-  for (auto name: names) {
-    if (isArgumentGiven(getDataName(name, "Amplitudes"))) {
-      allocatedTensorArgument<F>(
-        getDataName(name, "Amplitudes"),
-        new Tensor<F>(*amplitudes->get(component))
-      );
-    }
-    ++component;
-  }
+  // TODO: how should Fock-vectors be stored?
+//  storeAmplitudes(amplitudes, {"Singles", "Doubles"});
+  auto result(New<MapNode>(SOURCE_LOCATION));
+  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
+  result->get("scalarType") = coulombIntegrals->get("scalarType");
+  result->setValue<Real<>>("unit", 1.0);
+  result->get("indices") = coulombIntegrals->get("indices");
+  auto components(New<MapNode>(SOURCE_LOCATION));
+  components->get(0) = storeAmplitudesComponent(amplitudes->get(0));
+  components->get(1) = storeAmplitudesComponent(amplitudes->get(1));
+  result->get("components") = components;
+  return result;
 }
-*/
+
+template <typename F, typename TE>
+Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudesComponent(
+  const Ptr<Tensor<F,TE>> &component
+) {
+  auto result(New<MapNode>(SOURCE_LOCATION));
+  auto dimensions(New<MapNode>(SOURCE_LOCATION));
+  for (size_t d(0); d < component->lens.size(); ++d) {
+    auto dimension(New<MapNode>(SOURCE_LOCATION));
+    dimension->setValue<size_t>("length", component->lens[d]);
+    dimension->setValue<std::string>("type", "orbital");
+    dimensions->get(d) = dimension;
+  }
+  result->get("dimensions") = dimensions;
+  result->setValue<Ptr<Tensor<F,TE>>>("data", component);
+  return result;
+}
 
 template <typename F, typename TE>
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
