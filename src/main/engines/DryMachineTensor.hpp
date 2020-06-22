@@ -121,6 +121,9 @@ namespace cc4s {
     ) {
     }
 
+    void readToFile(MPI_File &file, const size_t offset = 0) {
+    }
+
     // write tensor elements from buffer
     void write(
       const size_t elementsCount, const size_t *indexData, const F *valueData

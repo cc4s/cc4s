@@ -22,6 +22,12 @@
   out:
     tensor: CoulombVertex
 
+- name: TensorWriter
+  in:
+    tensor: EigenEnergies
+    fileName: EigenEnergies.yaml
+  out: {}
+
 - name: DefineHolesAndParticles
   in:
     eigenEnergies: EigenEnergies
@@ -50,6 +56,18 @@
     energyConvergence: 1.0E-8
     mixer:
       type: LinearMixer
-      ratio: 1.0
+      ratio: 1.2
   out:
     energy: CcsdEnergy
+    amplitudes: Amplitudes
+- name: TensorWriter
+  in:
+    tensor: Amplitudes
+    bla: EigenEnergies
+    fileName: Amplitudes.yaml
+  out: {}
+#- name: TensorWriter
+#  in:
+#    tensor: EigenEnergies
+#    fileName: EigenEnergies.yaml
+#  out: {}

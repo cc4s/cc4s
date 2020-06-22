@@ -3,23 +3,35 @@
 #define TENSOR_WRITER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <util/SourceLocation.hpp>
 
 namespace cc4s {
   class TensorWriter: public Algorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(TensorWriter);
-    TensorWriter(
-      std::vector<Argument> const &argumentList
-    );
-    virtual ~TensorWriter();
-    /**
-     * \brief Writes the real tensor data given as Data argument to a file.
-     */
-    virtual void run();
-
+    Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
-    template <typename F>
-    void write(const std::string &name);
+    void writeData(
+      const Ptr<MapNode> &tensor,
+      const std::string &fileName,
+      const std::string &scalarType,
+      const bool binary,
+      const SourceLocation &sourceLocation
+    );
+    template <typename F, typename TE>
+    void writeText(
+      const Ptr<MapNode> &tensor,
+      const Ptr<Tensor<F,TE>> &tensorData,
+      const std::string &fileName,
+      const SourceLocation &sourceLocation
+    );
+    template <typename F, typename TE>
+    void writeBinary(
+      const Ptr<MapNode> &tensor,
+      const Ptr<Tensor<F,TE>> &tensorData,
+      const std::string &fileName,
+      const SourceLocation &sourceLocation
+    );
   };
 }
 

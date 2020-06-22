@@ -191,6 +191,9 @@ namespace cc4s {
       read(1, &index, &value);
       return value;
     }
+    void readToFile(MPI_File &file, const size_t offset = 0) {
+      getMachineTensor()->readToFile(file, offset);
+    }
 
     // write tensor elements from buffer
     void write(
