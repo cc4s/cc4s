@@ -67,6 +67,7 @@ namespace cc4s {
           this->getResultIndices()
         );
         this->updated();
+        this->accountFlops();
       } else {
         LOG_FILE_LINE(3, this->file, this->line) <<
           this->getResult()->getName() << " up-to-date with " <<

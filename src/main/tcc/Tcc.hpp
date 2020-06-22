@@ -10,9 +10,7 @@
 #include <tcc/Slice.hpp>
 #include <tcc/TensorRecipe.hpp>
 #include <tcc/Tensor.hpp>
-
 #include <util/SharedPointer.hpp>
-#include <math/Real.hpp>
 
 // TODO: binary function application
 // TODO: support hard memory limit for costs
@@ -28,7 +26,6 @@
 namespace cc4s {
   template <typename TensorEngine>
   class Tcc {
-
   protected:
     class ProtectedToken {
     };

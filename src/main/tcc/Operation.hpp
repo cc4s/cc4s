@@ -8,6 +8,11 @@ namespace cc4s {
   template <typename TE>
   class Operation {
   public:
+    /**
+     * \brief Total executed floating point operations.
+     **/
+    static size_t flops;
+
     virtual ~Operation() {
     }
 
@@ -33,6 +38,9 @@ namespace cc4s {
     class ProtectedToken {
     };
   };
+
+  template<typename TE>
+  size_t cc4s::Operation<TE>::flops = 0;
 }
 
 #endif

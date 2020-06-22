@@ -8,11 +8,17 @@
 #include <util/MpiCommunicator.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
+#include <tcc/Tcc.hpp>
 #include <fstream>
 #include <string>
 #include <sstream>
 
 using namespace cc4s;
+
+size_t Cc4s::getFlops() {
+  return options->dryRun ?
+    Operation<DryTensorEngine>::flops : Operation<DefaultTensorEngine>::flops;
+}
 
 void Cc4s::run() {
   // TODO: truncate output.yaml or write it also in case of failure
@@ -32,7 +38,7 @@ void Cc4s::run() {
   LOG(0, "Cc4s") <<
     "execution plan read, steps=" << steps->size() << std::endl;
 
-  size_t rootFlops, totalFlops;
+  size_t totalFlops(-getFlops());
   Time totalTime;
   {
     // TODO: flops counter
@@ -54,15 +60,16 @@ void Cc4s::run() {
       auto inputArguments(step->getMap("in"));
       fetchSymbols(inputArguments);
 
-      size_t flops;
       Ptr<MapNode> output;
       // wait until all processes finished previous work
       Cc4s::world->barrier();
       Time time;
+      size_t flops(-getFlops());
       {
         // TODO: flops counter
         Timer timer(&time);
         output = algorithm->run(inputArguments);
+        flops += getFlops();
       }
 
       // get output variables, if given
@@ -76,41 +83,26 @@ void Cc4s::run() {
       std::stringstream realtime;
       realtime << time;
       LOG(1, "Cc4s") << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
-        << ", operations=" << flops / 1e9 << " GFLOPS/core"
-        << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
-      // TODO: enter data in node tree
-/*
-      EMIT() << YAML::Key << "realtime" << YAML::Value << realtime.str()
-        << YAML::Comment(" seconds")
-        << YAML::Key << "floating-point-operations" << YAML::Value << flops
-        << YAML::Comment("on root process")
-        << YAML::Key << "flops" << YAML::Value << flops / time.getFractionalSeconds();
-      EMIT() << YAML::EndMap;
-*/
-      printStatistics(job);
+        << ", operations=" << flops / 1e9 << " GFLOPS"
+        << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s" << std::endl;
+      step->setValue<std::string>("realtime", realtime.str());
+      step->setValue<size_t>("floatingPointOperations", flops);
+      step->setValue<Real<>>("flops", flops / time.getFractionalSeconds());
+      printStatistics(step);
       // resources which maybe held by the algorithm automatically released
     }
   }
+  totalFlops += getFlops();
 
   OUT() << std::endl;
   std::stringstream totalRealtime;
   totalRealtime << totalTime;
   LOG(0, "Cc4s") << "total realtime=" << totalRealtime.str() << " s" << std::endl;
-  LOG(0, "Cc4s") << "total operations=" << rootFlops / 1e9 << " GFLOPS/core"
-    << " speed=" << rootFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s/core" << std::endl;
-  LOG(0, "Cc4s") << "overall operations=" << totalFlops / 1.e9 << " GFLOPS"
-    << std::endl;
-  // TODO: flops counter
-/*
-  EMIT() << YAML::Key << "realtime" << YAML::Value << totalRealtime.str()
-    << YAML::Key << "floating-point-operations" << YAML::Value << rootFlops
-    << YAML::Comment("on root process")
-    << YAML::Key << "flops" << YAML::Value << rootFlops / totalTime.getFractionalSeconds()
-    << YAML::Key << "total-floating-point-operations" << totalFlops
-    << YAML::Comment("of all processes");
-
-  EMIT() << YAML::EndMap;
-*/
+  LOG(0, "Cc4s") << "total operations=" << totalFlops / 1e9 << " GFLOPS"
+    << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s" << std::endl;
+  job->setValue<std::string>("realtime", totalRealtime.str());
+  job->setValue<size_t>("floatingPointOperations", totalFlops);
+  job->setValue<Real<>>("flops", totalFlops/totalTime.getFractionalSeconds());
 
   // emit job output
   Emitter emitter(options->name + ".yaml");
@@ -190,15 +182,10 @@ void Cc4s::printStatistics(const Ptr<MapNode> &job) {
     LOG(0, "Cc4s")
       << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
       << " GB" << std::endl;
-/*
-    EMIT()
-      << YAML::Key << "estimated-total-memory"
-      << YAML::Value << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
-      << YAML::Comment("GB");
-*/
+    job->setValue<size_t>("estimatedTotalMemory", DryMemory::maxTotalSize);
   } else {
     std::string fieldName;
-    int64_t peakVirtualSize, peakPhysicalSize;
+    size_t peakVirtualSize, peakPhysicalSize;
     // assuming LINUX
     std::ifstream statusStream("/proc/self/status", std::ios_base::in);
     std::string line;
@@ -216,26 +203,16 @@ void Cc4s::printStatistics(const Ptr<MapNode> &job) {
     Real<> unitsPerGB(1024.0*1024.0);
     LOG(0, "Cc4s") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
       << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
-/*
-    EMIT()
-      << YAML::Key << "peak-physical-memory" << YAML::Value << peakPhysicalSize / unitsPerGB
-      << YAML::Comment("GB/core")
-      << YAML::Key << "peak-virtual-memory" << YAML::Value <<  peakVirtualSize / unitsPerGB
-      << YAML::Comment("GB/core");
-*/
-    int64_t globalPeakVirtualSize, globalPeakPhysicalSize;
+    job->setValue<size_t>("peakVirtualMemoryOnRoot", peakVirtualSize*1024);
+    job->setValue<size_t>("peakPhysicalMemoryOnRoot", peakPhysicalSize*1024);
+    size_t globalPeakVirtualSize, globalPeakPhysicalSize;
     world->reduce(peakPhysicalSize, globalPeakPhysicalSize);
     world->reduce(peakVirtualSize, globalPeakVirtualSize);
     LOG(0, "Cc4s") << "overall peak physical memory="
       << globalPeakPhysicalSize / unitsPerGB << " GB"
       << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
-/*
-    EMIT()
-      << YAML::Key << "total-peak-physical-memory" << YAML::Value << globalPeakPhysicalSize / unitsPerGB
-      << YAML::Comment("GB")
-      << YAML::Key << "peak-virtual-memory" << YAML::Value <<  globalPeakVirtualSize / unitsPerGB
-      << YAML::Comment("GB");
-*/
+    job->setValue<size_t>("peakVirtualMemory", globalPeakVirtualSize*1024);
+    job->setValue<size_t>("peakPhysicalMemory", globalPeakPhysicalSize*1024);
   }
 }
 

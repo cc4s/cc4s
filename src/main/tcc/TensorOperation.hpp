@@ -3,14 +3,16 @@
 #define TCC_TENSOR_OPERATION_DEFINED
 
 #include <tcc/Operation.hpp>
-
 #include <tcc/Costs.hpp>
+#include <math/Real.hpp>
+#include <math/Complex.hpp>
 #include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;
   template <typename F, typename TE> class Slice;
+  template <typename F> class TensorOperationTraits;
 
   template <typename F, typename TE>
   class TensorOperation: public Operation<TE> {
@@ -61,8 +63,28 @@ namespace cc4s {
     PTR(ESC(Tensor<F,TE>)) result;
     F alpha, beta;
 
+    void accountFlops() {
+      Operation<TE>::flops += this->costs.additionsCount *
+        TensorOperationTraits<F>::getFlopsPerAddition();
+      Operation<TE>::flops += this->costs.multiplicationsCount *
+        TensorOperationTraits<F>::getFlopsPerMultiplication();
+    }
+
     friend class Tensor<F,TE>;
     friend class Slice<F,TE>;
+  };
+
+  template <>
+  class TensorOperationTraits<Real<64>> {
+  public:
+    static size_t getFlopsPerAddition() { return 1; }
+    static size_t getFlopsPerMultiplication() { return 1; }
+  };
+  template <>
+  class TensorOperationTraits<Complex<64>> {
+  public:
+    static size_t getFlopsPerAddition() { return 2; }
+    static size_t getFlopsPerMultiplication() { return 6; }
   };
 }
 

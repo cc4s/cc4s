@@ -25,6 +25,7 @@ namespace cc4s {
     void printBanner(const Ptr<MapNode> &job);
     void printStatistics(const Ptr<MapNode> &job);
     void listHosts(const Ptr<MapNode> &job);
+    size_t getFlops();
 
     Ptr<MapNode> storage;
   };

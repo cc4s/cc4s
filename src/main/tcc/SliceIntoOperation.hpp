@@ -58,6 +58,7 @@ namespace cc4s {
           F(this->beta), begins, ends
         );
         this->updated();
+        this->accountFlops();
       } else {
         LOG_FILE_LINE(3,this->file, this->line) << this->getName() <<
           " up-to-date with " << source->getName() << std::endl;
