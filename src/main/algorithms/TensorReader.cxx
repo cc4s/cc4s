@@ -1,3 +1,4 @@
+/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <algorithms/TensorReader.hpp>
 
 #include <Cc4s.hpp>
@@ -20,12 +21,8 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   auto fileName(arguments->getValue<std::string>("fileName"));
   // get tensor meta data from given file
   auto tensor(Parser(fileName).parse()->map());
-  // get dimensions from meta data
-  auto dimensions(tensor->getMap("dimensions"));
-  std::vector<size_t> lens;
-  for (auto key: dimensions->getKeys()) {
-    lens.push_back(dimensions->getMap(key)->getValue<size_t>("length"));
-  }
+  auto scalarType(tensor->getValue<std::string>("scalarType"));
+  auto binary(tensor->getValue<bool>("binary", false));
 
   // if fileName contains '/' change directory
   char currentDirectory[PATH_MAX];
@@ -38,21 +35,17 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   }
 
   // read tensor data from file named by 'data' entry
-  auto tensorData(
-    readData(
-      tensor->getValue<std::string>("data"),
-      lens,
-      tensor->getValue<std::string>("scalarType"),
-      tensor->getValue<bool>("binary", false),
-      tensor->sourceLocation
-    )
-  );
+  if (tensor->get("components")) {
+    auto components(tensor->getMap("components"));
+    for (auto key: components->getKeys()) {
+      readData(components->getMap(key), scalarType, binary);
+    }
+  } else {
+    readData(tensor, scalarType, binary);
+  }
 
   // change back to current directory
   chdir(currentDirectory);
-
-  // replace data entry with actual tensor
-  tensor->get("data") = tensorData;
 
   // create result
   auto result(New<MapNode>(tensor->sourceLocation));
@@ -60,22 +53,30 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   return result;
 }
 
-Ptr<Node> TensorReader::readData(
-  const std::string &fileName,
-  const std::vector<size_t> &lens,
+void TensorReader::readData(
+  const Ptr<MapNode> &tensor,
   const std::string &scalarType,
-  const bool binary,
-  const SourceLocation &sourceLocation
+  const bool binary
 ) {
+  auto fileName(tensor->getValue<std::string>("data"));
+  auto sourceLocation(tensor->sourceLocation);
+  // get dimensions from meta data
+  auto dimensions(tensor->getMap("dimensions"));
+  std::vector<size_t> lens;
+  for (auto key: dimensions->getKeys()) {
+    lens.push_back(dimensions->getMap(key)->getValue<size_t>("length"));
+  }
+
+  Ptr<Node> tensorData;
   // multiplex calls to template methods depending on tensor engine and type
   if (binary) {
     if (Cc4s::options->dryRun) {
       if (scalarType == "real64") {
-        return readBinary<Real<64>,DryTensorEngine>(
+        tensorData = readBinary<Real<64>,DryTensorEngine>(
           fileName, lens, sourceLocation
         );
       } else if (scalarType == "complex64") {
-        return readBinary<Complex<64>,DryTensorEngine>(
+        tensorData = readBinary<Complex<64>,DryTensorEngine>(
           fileName, lens, sourceLocation
         );
       } else {
@@ -85,11 +86,11 @@ Ptr<Node> TensorReader::readData(
       }
     } else {
       if (scalarType == "real64") {
-        return readBinary<Real<64>,DefaultTensorEngine>(
+        tensorData = readBinary<Real<64>,DefaultTensorEngine>(
           fileName, lens, sourceLocation
         );
       } else if (scalarType == "complex64") {
-        return readBinary<Complex<64>,DefaultTensorEngine>(
+        tensorData = readBinary<Complex<64>,DefaultTensorEngine>(
           fileName, lens, sourceLocation
         );
       } else {
@@ -101,11 +102,11 @@ Ptr<Node> TensorReader::readData(
   } else {
     if (Cc4s::options->dryRun) {
       if (scalarType == "real64") {
-        return readText<Real<64>,DryTensorEngine>(
+        tensorData = readText<Real<64>,DryTensorEngine>(
           fileName, lens, sourceLocation
         );
       } else if (scalarType == "complex64") {
-        return readText<Complex<64>,DryTensorEngine>(
+        tensorData = readText<Complex<64>,DryTensorEngine>(
           fileName, lens, sourceLocation
         );
       } else {
@@ -115,11 +116,11 @@ Ptr<Node> TensorReader::readData(
       }
     } else {
       if (scalarType == "real64") {
-        return readText<Real<64>,DefaultTensorEngine>(
+        tensorData = readText<Real<64>,DefaultTensorEngine>(
           fileName, lens, sourceLocation
         );
       } else if (scalarType == "complex64") {
-        return readText<Complex<64>,DefaultTensorEngine>(
+        tensorData = readText<Complex<64>,DefaultTensorEngine>(
           fileName, lens, sourceLocation
         );
       } else {
@@ -129,6 +130,9 @@ Ptr<Node> TensorReader::readData(
       }
     }
   }
+
+  // replace data entry with actual tensor
+  tensor->get("data") = tensorData;
 }
 
 template <typename F, typename TE>

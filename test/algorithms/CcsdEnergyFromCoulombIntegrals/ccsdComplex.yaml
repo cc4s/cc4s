@@ -53,3 +53,15 @@
       ratio: 1.0
   out:
     energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+- name: TensorWriter
+  in:
+    tensor: Amplitudes
+    fileName: Amplitudes.yaml
+  out: {}
+- name: TensorReader
+  in:
+    fileName: Amplitudes.yaml
+  out:
+    tensor: ReadAmplitudes

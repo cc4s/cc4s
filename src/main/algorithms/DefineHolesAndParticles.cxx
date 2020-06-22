@@ -83,6 +83,7 @@ Ptr<MapNode> DefineHolesAndParticles::run(
 
   // create result
   auto slicedEigenEnergies(New<MapNode>(eigenEnergies->sourceLocation));
+  slicedEigenEnergies->get("scalarType") = eigenEnergies->get("scalarType");
   slicedEigenEnergies->get("indices") = eigenEnergies->get("indices");
   slicedEigenEnergies->get("dimensions") = eigenEnergies->get("dimensions");
   slicedEigenEnergies->get("unit") = eigenEnergies->get("unit");

@@ -60,14 +60,15 @@
   out:
     energy: CcsdEnergy
     amplitudes: Amplitudes
+
 - name: TensorWriter
   in:
     tensor: Amplitudes
-    bla: EigenEnergies
     fileName: Amplitudes.yaml
   out: {}
-#- name: TensorWriter
-#  in:
-#    tensor: EigenEnergies
-#    fileName: EigenEnergies.yaml
-#  out: {}
+
+- name: TensorReader
+  in:
+    fileName: Amplitudes.yaml
+  out:
+    tensor: ReadAmplitudes
