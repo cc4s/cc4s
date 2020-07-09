@@ -95,6 +95,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     // get mixer's best guess for amplitudes
     amplitudes = mixer->get();
     e = getEnergy(amplitudes);
+    LOG(1, getCapitalizedAbbreviation()) << "ΔE= " << e - previousE << std::endl;
     if (
       abs((e-previousE)/e) < energyConvergence &&
       abs(

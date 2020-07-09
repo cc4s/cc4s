@@ -2,7 +2,7 @@
 #ifndef LAPACK_DEFINED
 #define LAPACK_DEFINED
 
-#include <math/Float.hpp>
+#include <math/Real.hpp>
 #include <math/Complex.hpp>
 
 // TODO: use define for name mangling: underscore or not
@@ -12,15 +12,15 @@ extern "C" {
     const char *jobvLeft,
     const char *jobvRight,
     const int *n,
-    cc4s::Float64 *a,
+    double *a,
     const int *lda,
-    cc4s::Float64 *wReal,
-    cc4s::Float64 *wImag,
-    cc4s::Float64 *vLeft,
+    double *wReal,
+    double *wImag,
+    double *vLeft,
     const int *ldvLeft,
-    cc4s::Float64 *vRight,
+    double *vRight,
     const int *ldvRight,
-    cc4s::Float64 *work,
+    double *work,
     const int *workSize,
     int *info
   );
@@ -28,23 +28,35 @@ extern "C" {
     const char *jobvLeft,
     const char *jobvRight,
     const int *n,
-    const cc4s::Complex64 *a,
+    const complex<double> *a,
     const int *lda,
-    cc4s::Complex64 *w,
-    cc4s::Complex64 *vLeft,
+    complex<double> *w,
+    complex<double> *vLeft,
     const int *ldvLeft,
-    cc4s::Complex64 *vRight,
+    complex<double> *vRight,
     const int *ldvRight,
-    cc4s::Complex64 *work,
+    complex<double> *work,
     const int *workSize,
-    cc4s::Float64 *rwork,
+    complex<double> *rwork,
     int *info
   );
-
+  void dsysv_(
+    const char *uplo,
+    const int *n,
+    const int *m,
+    double *a,
+    const int *lda,
+    const int *ipiv,
+    double *b,
+    const int *ldb,
+    double *work,
+    const int *lwork,
+    const int *info
+  );
   void dgetrf_(
     const int *m,
     const int *n,
-    cc4s::Float64 *a,
+    double *a,
     const int *lda,
     const int *rowPermutation,
     int *info
@@ -52,26 +64,26 @@ extern "C" {
   void zgetrf_(
     const int *m,
     const int *n,
-    cc4s::Complex64 *a,
+    complex<double> *a,
     const int *lda,
     const int *rowPermutation,
     int *info
   );
   void dgetri_(
     const int *n,
-    cc4s::Float64 *a,
+    double *a,
     const int *lda,
     const int *rowPermutation,
-    cc4s::Float64 *work,
+    double *work,
     const int *workSize,
     int *info
   );
   void zgetri_(
     const int *n,
-    cc4s::Complex64 *a,
+    complex<double> *a,
     const int *lda,
     const int *rowPermutation,
-    cc4s::Complex64 *work,
+    complex<double> *work,
     const int *workSize,
     int *info
   );
