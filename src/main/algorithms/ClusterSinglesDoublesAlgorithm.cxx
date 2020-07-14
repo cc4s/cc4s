@@ -94,13 +94,13 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     mixer->append(estimatedAmplitudes, amplitudesChange);
     // get mixer's best guess for amplitudes
     amplitudes = mixer->get();
+    auto residuumNorm( mixer->getResiduumNorm());
     e = getEnergy(amplitudes);
     LOG(1, getCapitalizedAbbreviation()) << "ΔE= " << e - previousE << std::endl;
+    LOG(1, getCapitalizedAbbreviation()) << "ΔR= " << residuumNorm << std::endl;
     if (
-      abs((e-previousE)/e) < energyConvergence &&
-      abs(
-        amplitudesChange->dot(*amplitudesChange) / amplitudes->dot(*amplitudes)
-      ) < amplitudesConvergence * amplitudesConvergence
+      abs(e-previousE) < energyConvergence &&
+      residuumNorm < amplitudesConvergence
     ) {
       break;
     }

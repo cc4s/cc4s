@@ -68,12 +68,17 @@ void DiisMixer<F,TE>::append(
 
   next = New<FockVector<F,TE>>(*A);
   *next *= F(0);
+  nextResiduum = New<FockVector<F,TE>>(*R);
+  *nextResiduum *= F(0);
+
   for (int j(0); j < count; ++j) {
     int i( (nextIndex+N-j) % N );
     LOG(1, "DiisMixer") << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
     *next += column[i+1] * *amplitudes[i];
+    *nextResiduum += column[i+1] * *residua[i];
   }
   nextIndex = (nextIndex+1) % N;
+  residuumNorm = std::sqrt(std::real(nextResiduum->dot(*nextResiduum)));
 }
 
 template <typename F, typename TE>
@@ -82,8 +87,8 @@ Ptr<const FockVector<F,TE>> DiisMixer<F,TE>::get() {
 }
 
 template <typename F, typename TE>
-Ptr<const FockVector<F,TE>> DiisMixer<F,TE>::getResiduum() {
-  return nextResiduum;
+double DiisMixer<F,TE>::getResiduumNorm() {
+  return residuumNorm;
 }
 
 template <typename F, typename TE>

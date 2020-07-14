@@ -35,6 +35,7 @@ void LinearMixer<F,TE>::append(
   }
   last = next;
   lastResiduum = nextResiduum;
+  residuumNorm = std::sqrt(std::real(lastResiduum->dot(*lastResiduum)));
 }
 
 template <typename F, typename TE>
@@ -43,8 +44,8 @@ Ptr<const FockVector<F,TE>> LinearMixer<F,TE>::get() {
 }
 
 template <typename F, typename TE>
-Ptr<const FockVector<F,TE>> LinearMixer<F,TE>::getResiduum() {
-  return lastResiduum;
+double LinearMixer<F,TE>::getResiduumNorm() {
+  return residuumNorm;
 }
 
 // instantiate

@@ -17,12 +17,13 @@ namespace cc4s {
       const Ptr<FockVector<F,TE>> &A, const Ptr<FockVector<F,TE>> &R
     );
     virtual Ptr<const FockVector<F,TE>> get();
-    virtual Ptr<const FockVector<F,TE>> getResiduum();
+    virtual double getResiduumNorm();
 
     Ptr<FockVector<F,TE>> last;
     Ptr<FockVector<F,TE>> lastResiduum;
 
     F ratio;
+    double residuumNorm;
   };
 }
 
