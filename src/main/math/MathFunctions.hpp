@@ -88,10 +88,14 @@ namespace cc4s {
     return cargq(toComplex128(c));
   }
 
-  // complex conjugate, same if real
+  // complex conjugate, identity function if real type
   template <typename F>
   inline F conj(const F x) {
     return std::conj(x);
+  }
+  template <>
+  inline Real<64> conj(const Real<64> x) {
+    return x;
   }
   template <>
   inline Real<128> conj(const Real<128> x) {
