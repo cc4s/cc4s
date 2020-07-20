@@ -8,6 +8,7 @@
 #include <util/Log.hpp>
 #include <string>
 #include <mpi.h>
+#include <functional>
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;

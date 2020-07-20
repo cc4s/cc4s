@@ -7,6 +7,7 @@
 #include <tcc/Costs.hpp>
 #include <util/SharedPointer.hpp>
 #include <string>
+#include <vector>
 
 namespace cc4s {
   template <typename F, typename TE> class Slice;
