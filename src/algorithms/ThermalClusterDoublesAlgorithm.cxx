@@ -269,6 +269,7 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
     (*lambdaFG)["FG"], T2FG["FG"]
   );
+/*
   if (getIntegerArgument("singles", 0)) {
     // propagate two singles
     Tensor<real> T1T1FG(false,*VdFG);
@@ -283,6 +284,7 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
     // tau1<tau2<tau3 + tau2<tau1<tau3 cases
     T2FG["FG"] += (2.0) * T1T1FG["FG"];
   }
+*/
 /*
   // project out null-space from Fock-space-doubling
   Transform<real, real> projectOut(
