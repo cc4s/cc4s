@@ -129,7 +129,7 @@ void ThermalPerturbation::run() {
       (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Neffk["k"];
     } else {
       // no Fock exchange in reference: use normal contraction
-      (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
+//      (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
     }
   }
   // particle-hole:
@@ -142,7 +142,7 @@ void ThermalPerturbation::run() {
     (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Neffk["k"];
   } else {
     // no Fock exchange in reference: use normal contraction
-    (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
+//    (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
   }
   // particle-particle:
   if (isArgumentGiven("ThermalPPPerturbation")) {
@@ -155,7 +155,7 @@ void ThermalPerturbation::run() {
       (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Neffk["k"];
     } else {
       // no Fock exchange in reference: use normal contraction
-      (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Nk["k"];
+//      (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Nk["k"];
     }
   }
 
