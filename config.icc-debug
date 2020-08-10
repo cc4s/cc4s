@@ -2,7 +2,7 @@
 TARGET=Cc4s
 
 # compiler and linker
-CXX=mpiicc
+CXX=mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
 OPTIONS=-mkl -lpthread -lstdc++ -qopenmp -qoverride-limits -DINTEL_COMPILER -Qoption,cpp,--extended_float_types
@@ -11,12 +11,12 @@ OPTIONS=-mkl -lpthread -lstdc++ -qopenmp -qoverride-limits -DINTEL_COMPILER -Qop
 OPTIMIZE=-O0
 
 # Cyclops Tensor Framework libraray
-CTF_PATH=lib/build/${CONFIG}/ctf
+CTF_PATH=lib/build/icc/ctf
 CTF_LIB=-L${CTF_PATH}/lib -lctf
 CTF_INCLUDE=-I${CTF_PATH}/include
 
 # yaml-cpp library
-YAML_PATH=lib/build/${CONFIG}/yaml-cpp
+YAML_PATH=lib/build/icc/yaml-cpp
 YAML_LIB=-L${YAML_PATH} -lyaml-cpp
 YAML_INCLUDE=-I${YAML_PATH}/include
 
