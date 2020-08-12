@@ -2,7 +2,7 @@
 TARGET=Cc4s
 
 # compiler and linker
-CXX=mpiicc
+CXX=mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
 OPTIONS=-mkl -lpthread -lstdc++ -qopenmp -qoverride-limits -DINTEL_COMPILER -Qoption,cpp,--extended_float_types
