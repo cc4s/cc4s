@@ -6,6 +6,7 @@
 
 #include <tcc/TensorLoadOperation.hpp>
 #include <util/SharedPointer.hpp>
+#include <Cc4s.hpp>
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -181,15 +182,25 @@ namespace cc4s {
     }
 
     // read tensor elements to buffer
+    // each rank must specify its range of indices to read
+    // behavior is undefined if ranges overlap
     void read(
       const size_t elementsCount, const size_t *indexData, F *valueData
     ) {
       getMachineTensor()->read(elementsCount, indexData, valueData);
     }
-    F read(size_t index = 0) {
-      F value;
-      read(1, &index, &value);
-      return value;
+    F read(const size_t index = 0) {
+      std::vector<size_t> indices(1);
+      std::vector<F> values(1);
+      if (Cc4s::world->getRank() == 0) {
+        indices[0] = index;
+        read(1, indices.data(), values.data());
+      } else {
+        read(0, indices.data(), values.data());
+      }
+      // broadcast value read on root
+      Cc4s::world->broadcast(values);
+      return values[0];
     }
     void readToFile(MPI_File &file, const size_t offset = 0) {
       getMachineTensor()->readToFile(file, offset);
