@@ -55,8 +55,7 @@
     maxIterations: 64
     energyConvergence: 1.0E-8
     mixer:
-      type: LinearMixer
-      ratio: 1.2
+      type: DiisMixer
   out:
     energy: CcsdEnergy
     amplitudes: Amplitudes
