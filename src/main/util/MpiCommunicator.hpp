@@ -70,6 +70,18 @@ namespace cc4s {
       );
     }
 
+    template <typename F>
+    void broadcast(
+      std::vector<F> &dst, int rootRank = 0
+    ) {
+      MPI_Bcast(
+        dst.data(), dst.size() * MpiTypeTraits<F>::elementCount(),
+        MpiTypeTraits<F>::elementType(),
+        rootRank,
+        comm
+      );
+    }
+
     int getRank() const {
       return rank;
     }
