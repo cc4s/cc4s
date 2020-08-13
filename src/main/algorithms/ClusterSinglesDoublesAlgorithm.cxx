@@ -99,6 +99,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     LOG(1, getCapitalizedAbbreviation()) << "ΔE= " << e - previousE << std::endl;
     LOG(1, getCapitalizedAbbreviation()) << "ΔR= " << residuumNorm << std::endl;
     if (
+      !Cc4s::options->dryRun &&
       abs(e-previousE) < energyConvergence &&
       residuumNorm < amplitudesConvergence
     ) {
