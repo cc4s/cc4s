@@ -34,16 +34,6 @@ void ThermalPerturbation::run() {
   int No(epsi->lens[0]), Nv(epsa->lens[0]);
   beta = 1 / getRealArgument("Temperature");
   deltaMu = getRealArgument("chemicalPotentialShift", 0.0);
-  real deltaV( getRealArgument("potentialShift", 0.0) );
-
-  // shift interaction potential to counteract shift in chemical potential
-  if (deltaV != 0.0) {
-    EMIT() << YAML::Key << "deltaV" << YAML::Value << deltaV;
-    (*Vijkl)["ijij"] += deltaV;
-    // TODO: other contributions are harder to compute
-    // we need DeltaV^pq_sr = delta^p_s * delta^q_r * (-1/R)
-    // but we don't know here where the thermal particle and hole states overlap
-  }
 
   // compute contraction weights
   Tensor<> Nc(1, &Nv);
@@ -87,86 +77,87 @@ void ThermalPerturbation::run() {
   // zeroth order
   real Omega0(-getDLogZH0(0,0)/beta);
 
-  int fock(getIntegerArgument("fock", 1));
-  int chargeFluctuations(getIntegerArgument("chargeFluctuations", 1));
-  // occupations for Hartree-like terms: normaly my dependent
-  Tensor<> NHk(Nk);
-  // except if charge fluctuations are forbidden: use mu_0 in that case
-  if (!chargeFluctuations) NHk["k"] = nk["k"];
+  int hartreeInReference(getIntegerArgument("hartreeInReference", 1));
+  int fockInReference(getIntegerArgument("fockInReference", 1));
+  int hartreeInPerturbation(getIntegerArgument("hartreeInPerturbation", 1));
+  int fockInPerturbation(getIntegerArgument("fockInPerturbation", 1));
+  // occupations for Hartree-like terms: normaly mu dependent
 
   // first order:
   // Hartree and exchange term, use shifted occupancies Nk
   // both terms have left/right symmetry
   Scalar<> energy;
-  energy[""] = (+0.5) * spins * spins * NHk["i"] * NHk["j"] * (*Vijkl)["ijij"];
-  real Omega1D( energy.get_val() );
-  energy[""] = (-0.5) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
-  real Omega1X( energy.get_val() );
+  real Omega1D(0.0);
+  if (hartreeInPerturbation) {
+    energy[""] = (+0.5) * spins * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijij"];
+    Omega1D = energy.get_val();
+  }
+
+  real Omega1X(0.0);
+  if (fockInPerturbation) {
+    energy[""] = (-0.5) * spins * Nk["i"] * Nk["j"] * (*Vijkl)["ijji"];
+    Omega1X = energy.get_val();
+  }
+
   // minus effective potential,
   // use reference occupancies nk for the contraction k, composing Veff
   // use occupancies Nk with shifted mu for contraction i, using Veff
-  energy[""] = (-1.0) * spins * spins * NHk["i"] * nk["k"] * (*Vijkl)["ikik"];
-  real Omega1Deff( energy.get_val() );
+  real Omega1Deff(0.0);
+  if (hartreeInReference) {
+    energy[""] = (-1.0) * spins * spins * Nk["i"] * nk["k"] * (*Vijkl)["ikik"];
+    Omega1Deff = energy.get_val();
+  }
 
   real Omega1Xeff(0.0);
-  if (fock) {
+  if (fockInReference) {
     energy[""] = (+1.0) * spins * Nk["i"] * nk["k"] * (*Vijkl)["ikki"];
     Omega1Xeff = energy.get_val();
   }
 
   // one-body part of perturbation for higher orders:
   // eff. contraction weight = weight of perturation - weight of effective pot.
-  Tensor<> Neffk(Nk);
-  Neffk["k"] += (-1.0) * nk["k"];
+  Tensor<> NHeffk(false, Nk);
+  if (hartreeInPerturbation) {
+    NHeffk["k"] += (+1.0) * Nk["k"];
+  }
+  if (hartreeInReference) {
+    NHeffk["k"] += (-1.0) * nk["k"];
+  }
+  Tensor<> NFeffk(false, Nk);
+  if (fockInPerturbation) {
+    NFeffk["k"] += (+1.0) * Nk["k"];
+  }
+  if (fockInReference) {
+    NFeffk["k"] += (-1.0) * nk["k"];
+  }
+
   // hole-hole:
   if (isArgumentGiven("ThermalHHPerturbation")) {
     Tensor<> *Vij(new Tensor<>(2, std::vector<int>({No,No}).data()));
     allocatedTensorArgument<>("ThermalHHPerturbation", Vij);
-    if (chargeFluctuations) {
-      (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * Neffk["k"];
-    }
-    if (fock) {
-      (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Neffk["k"];
-    } else {
-      // no Fock exchange in reference: use normal contraction
-//      (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * Nk["k"];
-    }
+    (*Vij)["ij"] =  (+1.0) * spins * (*Vijkl)["ikjk"] * NHeffk["k"];
+    (*Vij)["ij"] += (-1.0) * (*Vijkl)["ikkj"] * NFeffk["k"];
   }
   // particle-hole:
   Tensor<> *Vai(new Tensor<>(2, std::vector<int>({Nv,No}).data()));
   allocatedTensorArgument<>("ThermalPHPerturbation", Vai);
-  if (chargeFluctuations) {
-    (*Vai)["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * Neffk["k"];
-  }
-  if (fock) {
-    (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Neffk["k"];
-  } else {
-    // no Fock exchange in reference: use normal contraction
-//    (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * Nk["k"];
-  }
+  (*Vai)["ai"] =  (+1.0) * spins * (*Vaijk)["akik"] * NHeffk["k"];
+  (*Vai)["ai"] += (-1.0) * (*Vaijk)["akki"] * NFeffk["k"];
   // particle-particle:
   if (isArgumentGiven("ThermalPPPerturbation")) {
     Tensor<> *Vab(new Tensor<>(2, std::vector<int>({Nv,Nv}).data()));
     allocatedTensorArgument<>("ThermalPPPerturbation", Vab);
-    if (chargeFluctuations) {
-      (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * Neffk["k"];
-    }
-    if (fock) {
-      (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Neffk["k"];
-    } else {
-      // no Fock exchange in reference: use normal contraction
-//      (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * Nk["k"];
-    }
+    (*Vab)["ab"] =  (+1.0) * spins * (*Vaibj)["akbk"] * NHeffk["k"];
+    (*Vab)["ab"] += (-1.0) * (*Vaijb)["akkb"] * NFeffk["k"];
   }
 
-  real OmegaHf(Omega0+Omega1D+Omega1X+Omega1Deff+Omega1Xeff);
+  real Omega01(Omega0+Omega1D+Omega1X+Omega1Deff+Omega1Xeff);
   EMIT() << YAML::Key << "Omega0" << YAML::Value << Omega0;
   EMIT() << YAML::Key << "Omega1D" << YAML::Value << Omega1D;
   EMIT() << YAML::Key << "Omega1X" << YAML::Value << Omega1X;
   EMIT() << YAML::Key << "Omega1Deff" << YAML::Value << Omega1Deff;
   EMIT() << YAML::Key << "Omega1Xeff" << YAML::Value << Omega1Xeff;
-  EMIT() << YAML::Key << "Hartree-Fock-grand-potential"
-    << YAML::Value << OmegaHf;
+  EMIT() << YAML::Key << "Omega01" << YAML::Value << Omega01; 
 }
 
 void ThermalPerturbation::dryRun() {
