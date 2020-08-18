@@ -109,46 +109,15 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
 
   Tensor<> *epsa(getTensorArgument("ThermalParticleEigenEnergies"));
   Tensor<> *epsi(getTensorArgument("ThermalHoleEigenEnergies"));
-  Tensor<> Nc(1, epsa->lens);
-  Tensor<> Nk(1, epsi->lens);
-  Tensor<> nk(1, epsi->lens);
-  // particles in perturbation: contraction with shifted chemical potential
-  Nc["c"] = 1.0;
-  // Nc *= f^c = 1/(1+exp(-(eps_c-deltaMu)*beta))
-  Transform<real, real>(
-    std::function<void(real, real &)>(
-      ThermalContraction<>(beta, deltaMu, true)
-    )
-  ) (
-    (*epsa)["c"], Nc["c"]
-  );
-  // holes in perturbation: contraction with shifted chemical potential
-  Nk["k"] = 1.0;
-  // Nk *= f_k = 1/(1+exp(+(eps_k-deltaMu)*beta))
-  Transform<real, real>(
-    std::function<void(real, real &)>(
-      ThermalContraction<>(beta, deltaMu, false)
-    )
-  ) (
-    (*epsi)["k"], Nk["k"]
-  );
-  // terms in effective potential: contraction with Hartree--Fock chemical pot.
-  nk["k"] = 1.0;
-  // nk *= f_k = 1/(1+exp(+(eps_k-0)*beta))
-  Transform<real, real>(
-    std::function<void(real, real &)>(
-      ThermalContraction<>(beta, 0.0, false)
-    )
-  ) (
-    (*epsi)["k"], nk["k"]
-  );
+  auto Nk( getTensorArgument<>("ThermalHoleOccupancies") );
+  auto Nc( getTensorArgument<>("ThermalParticleOccupancies") );
 
   // second order:
   // singles:
   // start with Pai
   auto Pai(getTensorArgument("ThermalPHPerturbation"));
   Tensor<> Tai(false, *Pai);
-  Tai["ai"] = (*Pai)["ai"] * Nc["a"] * Nk["i"];
+  Tai["ai"] = (*Pai)["ai"] * (*Nc)["a"] * (*Nk)["i"];
   // Tai *=
   // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
   Transform<real, real>(
@@ -164,7 +133,8 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   // start with Vabij
   Tensor<> *Vabij(getTensorArgument("ThermalPPHHCoulombIntegrals"));
   Tensor<> Tabij(false, *Vabij);
-  Tabij["abij"] = (*Vabij)["abij"] * Nc["a"] * Nc["b"] * Nk["i"] * Nk["j"];
+  Tabij["abij"] = (*Vabij)["abij"] *
+    (*Nc)["a"] * (*Nc)["b"] * (*Nk)["i"] * (*Nk)["j"];
   // Tabij *=
   // integrate(integrate(exp(-Delta*(tau2-tau1),tau2,tau1,beta),tau1,0,beta)
   Transform<real, real>(
@@ -172,6 +142,14 @@ void ThermalMp2EnergyFromCoulombIntegrals::shiftedChemicalPotential() {
   ) (
     (*Dabij)["abij"], Tabij["abij"]
   );
+/*
+  real normV(Vabij->norm2());
+  real normT(Tabij.norm2());
+  real normNi(Nk->norm1());
+  real normNa(Nc->norm1());
+  LOG(0, "debug") << "|V|=" << normV << ", |T|=" << normT <<
+    ", |Ni|=" << normNi << ", |Na|=" << normNa << std::endl;
+*/
   energy[""] = (+0.5) * spins * spins * Tabij["abij"] * (*Vabij)["abij"];
   real ED2( -energy.get_val()/beta );
   energy[""] = (-0.5) * spins * Tabij["abij"] * (*Vabij)["abji"];
