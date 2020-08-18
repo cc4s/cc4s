@@ -262,7 +262,7 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
 
   // propagate doubles
   lambdaFG = NEW(Tensor<real>, false, *VdFG);
-  (*lambdaFG)["FG"] =  (*lambdaF)["F"];
+  (*lambdaFG)["FG"] += (*lambdaF)["F"];
   (*lambdaFG)["FG"] += (*lambdaF)["G"];
   Tensor<real> T2FG(*VdFG);
   // propagation between two times tau_1<tau_2
@@ -309,6 +309,8 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   EMIT() << YAML::Key << "OmegaTdaS" << YAML::Value << tdas;
   EMIT() << YAML::Key << "OmegaTdaD" << YAML::Value << tdad;
   EMIT() << YAML::Key << "OmegaTdaX" << YAML::Value << tdax;
+  EMIT() << YAML::Key << "OmegaTda" << YAML::Value << tdas+tdad+tdax;
+
 
   if (isArgumentGiven("SinglesHamiltonianWeights")) {
     auto singlesWeights(new Tensor<real>(1, std::vector<int>({NF}).data()) );
@@ -316,7 +318,7 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
     allocatedTensorArgument<real>("SinglesHamiltonianWeights", singlesWeights);
   }
 
-  return tdad+tdax;
+  return tdas+tdad+tdax;
 }
 
 void ThermalClusterDoublesAlgorithm::computeEnergyContribution(
@@ -363,13 +365,15 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   int Nv(epsa->lens[0]); int No(epsi->lens[0]);
   int lens[] = { Nv,No, Nv,No };
   auto Hbjai(NEW(Tensor<>, 4, lens, Vbija->sym, *Vbija->wrld, "Hbjai"));
-  // bubble in/bubble out from two-body perturbation
-  (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
-  // half-close all contractions to two-body term on inserted perturbation
-  (*Hbjai)["bjai"] *= (*ga)["b"];
-  (*Hbjai)["bjai"] *= (*gi)["j"];
-  (*Hbjai)["bjai"] *= (*ga)["a"];
-  (*Hbjai)["bjai"] *= (*gi)["i"];
+  if (getIntegerArgument("resummedPairBubble", 1)) {
+    // bubble in/bubble out from two-body perturbation
+    (*Hbjai)["bjai"] = spins * (*Vbija)["bija"];
+    // half-close all contractions to two-body term on inserted perturbation
+    (*Hbjai)["bjai"] *= (*ga)["b"];
+    (*Hbjai)["bjai"] *= (*gi)["j"];
+    (*Hbjai)["bjai"] *= (*ga)["a"];
+    (*Hbjai)["bjai"] *= (*gi)["i"];
+  }
 
   if (getIntegerArgument("resummedSingles", 0)) {
     auto Vij(getTensorArgument<>("ThermalHHPerturbation"));
@@ -387,7 +391,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
 
   // negate hamiltonian: decaying modes (originally with positive eigenvalue)
   // will then come first in specturm
-  (*Hbjai)["bjai"] *= (-1.0);
+//  (*Hbjai)["bjai"] *= (-1.0);
 
   LOG(1, getCapitalizedAbbreviation())
     << "diagonalizing singles part of Hamiltonian..." << std::endl;
@@ -491,7 +495,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
   lambdaF = new Tensor<>(1, &NvNo, Vbija->sym, *Vbija->wrld, "Lambda");
   lambdaF->write(lambdaIndices.size(), lambdaIndices.data(), lambdas.data());
   // negate lambdas again to get eigenvalues of original effective Hamiltonian
-  (*lambdaF)["F"] *= (-1.0);
+//  (*lambdaF)["F"] *= (-1.0);
 
   allocatedTensorArgument<>("SinglesHamiltonianEigenvalues", lambdaF);
 
@@ -533,17 +537,27 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     (*VF)["F"] = (*UaiF)["ckF"] * (*ga)["c"] * (*gi)["k"] * (*Vai)["ck"];
   }
 
-  // Coulomb interaction in singles-mode space, half-closed
-  // two particle/hole pairs F&G
-  VdFG = NEW(Tensor<real>, 2, std::vector<int>({NF,NF}).data());
-  (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
-    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
-    (*Vabij)["cdkl"];
-  // exchange interaction
-  VxFG = NEW(Tensor<real>, false, *VdFG);
-  (*VxFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] *
-    (*ga)["c"] * (*ga)["d"] * (*gi)["k"] * (*gi)["l"] *
-    (*Vabij)["cdlk"];
+  {
+    // Coulomb interaction in singles-mode space, half-closed
+    // two particle/hole pairs F&G
+    VdFG = NEW(Tensor<real>, 2, std::vector<int>({NF,NF}).data());
+    Tensor<real> Vgabij(false, *Vabij);
+    Vgabij["abij"] = (*Vabij)["abij"] *
+      (*ga)["a"] * (*ga)["b"] * (*gi)["i"] * (*gi)["j"];
+    (*VdFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] * Vgabij["cdkl"];
+    // exchange interaction
+    VxFG = NEW(Tensor<real>, false, *VdFG);
+    (*VxFG)["FG"] = (*UaiF)["ckF"] * (*UaiF)["dlG"] * Vgabij["cdlk"];
+  }
+/*
+  real normV(VdFG->norm2());
+  real normU(UaiF->norm2());
+  real normgi(gi->norm2());
+  real normga(ga->norm2());
+  LOG(0, "debug") << "|U|=" << normU << ", |Vg|=" << normVg <<
+    ", |V|=" << normV <<
+    ", |gi|=" << normgi << ", |ga|=" << normga << std::endl;
+*/
 
   if (isArgumentGiven("singlesHamiltonianEigenmodes")) {
     allocatedTensorArgument<>(
