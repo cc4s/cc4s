@@ -1,1 +1,1 @@
-CTF_CONFIG='CXX=mpicxx AR=gcc-ar CXXFLAGS="-Ofast -march=native -flto" --no-dynamic'
+CTF_CONFIG='CXX=mpicxx AR=gcc-ar CXXFLAGS="-Ofast -march=native -fno-lto" --no-dynamic'

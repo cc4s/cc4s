@@ -1,2 +1,2 @@
 # This configuration is to enable some debug features of CTF
-CTF_CONFIG='CXX=mpicxx AR=gcc-ar CXXFLAGS="-Ofast -march=native -flto -fopenmp -DPROFILE" --no-dynamic'
+CTF_CONFIG='CXX=mpicxx AR=gcc-ar CXXFLAGS="-Ofast -march=native -fno-lto -fopenmp -DPROFILE" --no-dynamic'
