@@ -8,7 +8,7 @@ CXX=mpicxx
 OPTIONS=-fopenmp -DDEBUG
 
 # optimization options (only for compiling and linking)
-OPTIMIZE=-O0 -g
+OPTIMIZE=-O0 -g -fno-lto
 
 # Cyclops Tensor Framework libraray
 CTF_PATH=lib/build/${CONFIG}/ctf
