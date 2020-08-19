@@ -15,14 +15,13 @@ ADD_INC_PATH=-I
 ADD_LIB_PATH=-L
 ADD_LIB=-l
 
-LIBS_PROLOGUE=
+LIBS_PROLOGUE=-mkl
 LIBS_EPILOGUE=
 
 INCLUDES=
 LIBS=
 # libraries provided by the enviornment
-# BLAS and LAPACK library, expects mkl to be loadedt
-LIBS:=${ADD_LIB}mkl ${LIBS}
+# BLAS and LAPACK library contained in mkl
 # ScaLAPACK libarary, expects mkl and intelmpi to be loaded
 LIBS:=${ADD_LIB}mkl_scalapack_lp64 ${ADD_LIB}mkl_blacs_intelmpi_lp64 ${LIBS}
 

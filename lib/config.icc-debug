@@ -1,0 +1,1 @@
+CTF_CONFIG='CXX=mpicxx CXXFLAGS="-O0 -g" --no-dynamic'
