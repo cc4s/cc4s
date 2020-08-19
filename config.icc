@@ -5,33 +5,26 @@ TARGET=Cc4s
 CXX=mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS=-mkl -lpthread -lstdc++ -qopenmp -qoverride-limits -DINTEL_COMPILER -Qoption,cpp,--extended_float_types
+OPTIONS=-mkl -lpthread  -std=c++11 -Wall -fmax-errors=3 -qopenmp -qoverride-limits -DINTEL_COMPILER -Qoption,cpp,--extended_float_types
 
 # optimization options (only for compiling and linking)
 OPTIMIZE=-O3
 
-# Cyclops Tensor Framework libraray
-CTF_PATH=lib/build/${CONFIG}/ctf
-CTF_LIB=-L${CTF_PATH}/lib -lctf
-CTF_INCLUDE=-I${CTF_PATH}/include
+# compiler specifics for library definitions
+ADD_INC_PATH=-I
+ADD_LIB_PATH=-L
+ADD_LIB=-l
 
-# yaml-cpp library
-YAML_PATH=lib/build/${CONFIG}/yaml-cpp
-YAML_LIB=-L${YAML_PATH} -lyaml-cpp
-YAML_INCLUDE=-I${YAML_PATH}/include
+LIBS_PROLOGUE=
+LIBS_EPILOGUE=
 
-# BLAS and LAPACK library, expects BLAS_PATH to be set
-#BLAS_LIB= -L${BLAS_PATH}/lib -lopenblas
-#BLAS_INCLUDE=-I${BLAS_PATH}/include
-
-# ScaLAPACK libarary, expects SCALAPACK_PATH to be set
-#SCALAPACK_LIB=-L${SCALAPACK_PATH}/lib -lscalapack
-
-# additional include directories for header files
-INCLUDE=${CTF_INCLUDE} ${BLAS_INCLUDE} ${YAML_INCLUDE}
-
-# additional library paths and libraries to link to
-LIBS=-mkl -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 ${CTF_LIB} ${YAML_LIB}  
+INCLUDES=
+LIBS=
+# libraries provided by the enviornment
+# BLAS and LAPACK library, expects mkl to be loadedt
+LIBS:=${ADD_LIB}mkl ${LIBS}
+# ScaLAPACK libarary, expects mkl and intelmpi to be loaded
+LIBS:=${ADD_LIB}mkl_scalapack_lp64 ${ADD_LIB}mkl_blacs_intelmpi_lp64 ${LIBS}
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}

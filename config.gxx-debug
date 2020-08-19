@@ -5,33 +5,27 @@ TARGET=Cc4s
 CXX=mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS=-fopenmp -DDEBUG
+OPTIONS=-fopenmp -std=c++11 -Wall -fmax-errors=3 -DDEBUG
 
 # optimization options (only for compiling and linking)
 OPTIMIZE=-O0 -g -fno-lto
 
-# Cyclops Tensor Framework libraray
-CTF_PATH=lib/build/${CONFIG}/ctf
-CTF_LIB=-L${CTF_PATH}/lib -lctf
-CTF_INCLUDE=-I${CTF_PATH}/include
+# compiler specifics for library definitions
+ADD_INC_PATH=-I
+ADD_LIB_PATH=-L
+ADD_LIB=-l
 
-# yaml-cpp library
-YAML_PATH=lib/build/${CONFIG}/yaml-cpp
-YAML_LIB=-L${YAML_PATH} -lyaml-cpp
-YAML_INCLUDE=-I${YAML_PATH}/include
+LIBS_PROLOGUE=-Wl,-Bstatic
+LIBS_EPILOGUE=${ADD_LIB}gfortran ${ADD_LIB}quadmath -Wl,-Bdynamic
 
+INCLUDES=
+LIBS=
+# libraries provided by the enviornment
 # BLAS and LAPACK library, expects BLAS_PATH to be set
-BLAS_LIB= -L${BLAS_PATH}/lib -lopenblas
-BLAS_INCLUDE=-I${BLAS_PATH}/include
-
+INCLUDES:=${ADD_INC_PATH}${BLAS_PATH}/include ${INCLUDES}
+LIBS:=${ADD_LIB_PATH}${BLAS_PATH}/lib ${ADD_LIB}openblas ${LIBS}
 # ScaLAPACK libarary, expects SCALAPACK_PATH to be set
-SCALAPACK_LIB=-L${SCALAPACK_PATH}/lib -lscalapack
-
-# additional include directories for header files
-INCLUDE=${CTF_INCLUDE} ${BLAS_INCLUDE} ${YAML_INCLUDE}
-
-# additional library paths and libraries to link to
-LIBS=-Wl,-Bstatic ${CTF_LIB} ${SCALAPACK_LIB} ${BLAS_LIB} ${YAML_LIB} -lgfortran -lquadmath -Wl,-Bdynamic
+LIBS:=${ADD_LIB_PATH}${SCALAPACK_PATH}/lib ${ADD_LIB}scalapack ${LIBS}
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
