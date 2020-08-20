@@ -49,6 +49,9 @@ void ThermalDirectRingCoupledClusterDoubles::applyHamiltonian(
   Tensor<real> SFG(*VdFG);
   propagateAmplitudes(SFG, convolutionC);
   S1FG["FG"] += (-1.0) * SFG["FG"];
+  if (getIntegerArgument("antisymmetrized", 0)) {
+    SFG["FG"] += (-1.0) * (*VxFG)["FG"];
+  }
 
   if (getIntegerArgument("linearized", 0)) return;
 

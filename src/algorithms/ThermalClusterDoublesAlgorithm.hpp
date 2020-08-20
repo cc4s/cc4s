@@ -100,6 +100,9 @@ namespace cc4s {
       CTF::Tensor<real> &SFG,
       const std::function<void(real, real &)> &propagator
     );
+    void antisymmetrizeAmplitudes(
+      CTF::Tensor<real> &S1FG
+    );
     void diagonalizeDoublesAmplitudes(
       CTF::Tensor<real> &TFG
     );

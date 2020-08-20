@@ -74,32 +74,49 @@ std::string ThermalClusterDoublesAlgorithm::getAmplitudeIndices(Tensor<> &T) {
 }
 
 void ThermalClusterDoublesAlgorithm::setupImaginaryTimeGrid() {
-  // get imaginary time grids on all nodes
-  auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
-  std::vector<real> headTaus(tn->lens[0]);
-  tn->read_all(headTaus.data());
-  // truncate at beta/2
-  while (headTaus.back() > beta/2) headTaus.pop_back();
-  real q( getRealArgument("imaginaryTimeScale", 2.0) );
-  // fill up with a geometric sequence until beta/2
-  while (q*headTaus.back() < beta/2) headTaus.push_back(q*headTaus.back());
+  size_t regularImaginaryTimeGridPoints(
+    getIntegerArgument("regularImaginaryTimeGridPoints", 0)
+  );
+  if (regularImaginaryTimeGridPoints > 0) {
+    taus.resize(regularImaginaryTimeGridPoints);
+    for (size_t n(0); n < regularImaginaryTimeGridPoints; ++n) {
+      taus[n] = beta*(n+1)/regularImaginaryTimeGridPoints;
+    }
+    // FIXME: really inaccurate imaginary time integration
+/*
+    taus.resize(3);
+    taus[0] = beta*1e-4;
+    taus[1] = beta*(1-1e-4);
+    taus[2] = beta;
+*/
+  } else {
+    // get imaginary time grids on all nodes
+    auto tn( getTensorArgument<real>("ImaginaryTimePoints") );
+    std::vector<real> headTaus(tn->lens[0]);
+    tn->read_all(headTaus.data());
+    // truncate at beta/2
+    while (headTaus.back() > beta/2) headTaus.pop_back();
+    real q( getRealArgument("imaginaryTimeScale", 2.0) );
+    // fill up with a geometric sequence until beta/2
+    while (q*headTaus.back() < beta/2) headTaus.push_back(q*headTaus.back());
 
-  tn = getTensorArgument<real>("ImaginaryTimePointsTail");
-  std::vector<real> tailTaus(tn->lens[0]);
-  tn->read_all(tailTaus.data());
-  // truncate at beta/2
-  while (tailTaus.back() > beta/2) tailTaus.pop_back();
-  q = getRealArgument("imaginaryTimeScaleTail", 2.0);
-  // fill up with a geometric sequence until beta/2
-  while (q*tailTaus.back() < beta/2) tailTaus.push_back(q*tailTaus.back());
+    tn = getTensorArgument<real>("ImaginaryTimePointsTail");
+    std::vector<real> tailTaus(tn->lens[0]);
+    tn->read_all(tailTaus.data());
+    // truncate at beta/2
+    while (tailTaus.back() > beta/2) tailTaus.pop_back();
+    q = getRealArgument("imaginaryTimeScaleTail", 2.0);
+    // fill up with a geometric sequence until beta/2
+    while (q*tailTaus.back() < beta/2) tailTaus.push_back(q*tailTaus.back());
 
-  // combine head and tail
-  taus.resize(headTaus.size()+tailTaus.size());
-  for (size_t n(0); n < headTaus.size(); ++n) {
-    taus[n] = headTaus[n];
-  }
-  for (size_t n(0); n < tailTaus.size(); ++n) {
-    taus[taus.size()-1-n] = beta-tailTaus[n];
+    // combine head and tail
+    taus.resize(headTaus.size()+tailTaus.size());
+    for (size_t n(0); n < headTaus.size(); ++n) {
+      taus[n] = headTaus[n];
+    }
+    for (size_t n(0); n < tailTaus.size(); ++n) {
+      taus[taus.size()-1-n] = beta-tailTaus[n];
+    }
   }
 }
 
@@ -136,8 +153,8 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
     // add energy contribution from previous interval
     direct += 0.5*d*DTau; exchange += 0.5*x*DTau;
     LOG(1, getCapitalizedAbbreviation())
-      << "solving amplitudes at tau_" << (n+1) << "=" << taus[n]
-      << std::endl;
+      << "solving amplitudes at tau_" << (n+1) << "/" << taus.size()
+      << "=" << taus[n] << std::endl;
     real lastEnergy(0.0);
     // create a mixer, by default use the linear one
     std::string mixerName(getTextArgument("mixer", "LinearMixer"));
@@ -158,6 +175,7 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
       propagateAmplitudes(*S1FG, imaginaryTimePropagation);
       // apply hamiltonian between tau_n-1 and tau_n
       applyHamiltonian(T0FG, *T1FG, DTau, *S1FG);
+      antisymmetrizeAmplitudes(*S1FG);
       // compute amplitudes change and tell mixer
       auto amplitudesChange( NEW(FockVector<real>, *estimatedAmplitudes) );
       *amplitudesChange -= *amplitudes;
@@ -199,6 +217,9 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
 
   LOG(1, getCapitalizedAbbreviation()) << "F_d=" << direct/beta << std::endl;
   LOG(1, getCapitalizedAbbreviation()) << "F_x=" << exchange/beta << std::endl;
+  EMIT() << YAML::Key << "OmegaDrccdD" << YAML::Value << direct/beta;
+  EMIT() << YAML::Key << "OmegaDrccdX" << YAML::Value << exchange/beta;
+  EMIT() << YAML::Key << "OmegaDrccd" << YAML::Value << (direct+exchange)/beta;
 
   std::stringstream energyName;
   energyName << "Thermal" << getAbbreviation() << "Energy";
@@ -239,6 +260,20 @@ void ThermalClusterDoublesAlgorithm::iterateAmplitudeSamples() {
   diagonalizeDoublesAmplitudes(*amplitudes->get(0));
 }
 
+void ThermalClusterDoublesAlgorithm::antisymmetrizeAmplitudes(
+  CTF::Tensor<real> &S1FG
+) {
+  if (!getIntegerArgument("antisymmetrized", 0)) return;
+
+  LOG(1, getCapitalizedAbbreviation()) << "antisymmetrizing amplitudes..."
+    << std::endl;
+  Tensor<real> S1xFG(false, S1FG);
+  S1xFG["FG"] = (*UaiF)["ajF"] * (*UaiF)["biG"] *
+    (*UaiF)["aiH"] * (*UaiF)["bjI"] * S1FG["HI"];
+  S1FG["FG"] *= (+0.5);
+  S1FG["FG"] += (-0.5) * S1xFG["FG"];
+}
+
 cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   real spins( getIntegerArgument("unrestricted", 0) ? 1.0 : 2.0 );
 
@@ -269,8 +304,8 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
   Transform<real, real>(std::function<void(real,real&)>(secondOrderIntegral))(
     (*lambdaFG)["FG"], T2FG["FG"]
   );
-/*
-  if (getIntegerArgument("singles", 0)) {
+
+  if (getIntegerArgument("quadraticSingles", 0)) {
     // propagate two singles
     Tensor<real> T1T1FG(false,*VdFG);
     T1T1FG["FG"] = (*VF)["F"] * (*VF)["G"];
@@ -282,9 +317,10 @@ cc4s::real ThermalClusterDoublesAlgorithm::getTammDancoffEnergy() {
     );
     // add all contributions contracted with a two-body coulomb perturbation
     // tau1<tau2<tau3 + tau2<tau1<tau3 cases
-    T2FG["FG"] += (2.0) * T1T1FG["FG"];
+    // FIXME: really +2.0 ?
+    T2FG["FG"] += (+2.0) * T1T1FG["FG"];
   }
-*/
+
 /*
   // project out null-space from Fock-space-doubling
   Transform<real, real> projectOut(
@@ -375,7 +411,7 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
     (*Hbjai)["bjai"] *= (*gi)["i"];
   }
 
-  if (getIntegerArgument("resummedSingles", 0)) {
+  if (getIntegerArgument("resummedHartreeFock", 0)) {
     auto Vij(getTensorArgument<>("ThermalHHPerturbation"));
     auto Vab(getTensorArgument<>("ThermalPPPerturbation"));
     // one-body perturbation: half-close contracted indices
@@ -530,7 +566,10 @@ void ThermalClusterDoublesAlgorithm::diagonalizeSinglesHamiltonian() {
 */
 
   int NF(lambdaF->lens[0]);
-  if (getIntegerArgument("singles", 0)) {
+  if (
+    getIntegerArgument("singles", 0) ||
+    getIntegerArgument("quadraticSingles", 0)
+  ) {
     auto Vai(getTensorArgument<>("ThermalPHPerturbation"));
     // one-body perturbation in singles-mode space, half-closed
     VF = NEW(Tensor<real>, 1, std::vector<int>({NF}).data());
