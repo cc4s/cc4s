@@ -24,7 +24,7 @@ DiisMixer<F,TE>::DiisMixer(
   count = 0;
   int M(N+1);
   // set up overlap matrix
-  B.resize(M*M,0.0);
+  B.resize(M*M,0);
   for ( int i(1); i<M; i++){ B[i] = -1;}
   for ( int i(M); i<M*M; i=i+M){ B[i] = -1;}
 }
@@ -47,7 +47,7 @@ void DiisMixer<F,TE>::append(
   // write the overlap matrix for the new residua
   for (int i(0); i < N; ++i) {
     if (residua[i]) {
-      F overlap( 2.0*std::real(residua[i]->dot(*R)) );
+      F overlap( 2.0*residua[i]->dot(*R) );
       int j((i+1)*(N+1)+nextIndex+1);
       B[j] = overlap;
       j = (nextIndex+1)*(N+1)+i+1;
@@ -111,7 +111,14 @@ std::vector<complex<double>> DiisMixer<F,TE>::inverse(
   std::vector<complex<double>> matrix, int N
 ){
   std::vector<complex<double>> column(N,0);
-  //TODO
+  std::vector<int> ipiv(N);
+  std::vector<complex<double>> work(N);
+  int one(1); int info;
+  column[0] = -1.0;
+
+  zsysv_("U", &N, &one, matrix.data(), &N, ipiv.data(), column.data(), &N, work.data(), &N, &info);
+  if ( info != 0) throw "problem diagonalization\n";
+
   return column;
 }
 

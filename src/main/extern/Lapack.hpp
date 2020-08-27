@@ -53,6 +53,19 @@ extern "C" {
     const int *lwork,
     const int *info
   );
+  void zsysv_(
+    const char *uplo,
+    const int *n,
+    const int *m,
+    complex<double> *a,
+    const int *lda,
+    const int *ipiv,
+    complex<double> *b,
+    const int *ldb,
+    complex<double> *work,
+    const int *lwork,
+    const int *info
+  );
   void dgetrf_(
     const int *m,
     const int *n,
