@@ -11,12 +11,12 @@ Library dependencies
 - this should automatically fetch the submodules' source from the
   respective maintainers, configure the modules for the given configuration
   (See below) and build the modules for that configuration.
-- by default the configuration `icc` is used.
+- by default the configuration `gxx` is used.
 
 Building
 --------
 
--   check `gcc` version. Need at least `gcc 4.7.2` (As tested, gcc 4.6 does
+-   check `gxx` version. Need at least `gcc 4.7.2` (As tested, gcc 4.6 does
     not work).
 -   write or edit a `config.<config>` file for your build environment.
 -   the configuration files `config.gxx` and `config.icc` contain
@@ -24,13 +24,11 @@ Building
     using full optimization and without debugging info.
 -   for the gxx configuration the following additional libraries are
     required
-    - blacs-openmpi
-    - lapack-openmpi
-    - blacsCinit-openmpi
-    - scalapack-openmpi
-- make sure, ctf is built for your configuration
+    - OpenBLAS
+    - scalapack
+- make sure, the above library dependencies are built for your configuration
 - run `make -j 8 [CONFIG=<config]` to build for the desired environment, by
-  default for `icc`. The `-j` option issues a parallel make on 8 processes.
+  default for `gxx`. The `-j` option issues a parallel make on 8 processes.
 - run `make install [CONFIG=<config>]` to copy the executable to the specified
   target directory. The default is `~/bin/cc4s/<config>`.
 - the intermediate build files for each build environment can be found in the
@@ -39,9 +37,9 @@ Building
 Running
 -------
 
--   a `cc4s` operation file, e.g. `mp2.cc4s`, can be run with
+-   a `cc4s` operation file, e.g. `mp2.yaml`, can be run with
     ```
-    ~/bin/cc4s/icc/Cc4s -file mp2.cc4s
+    ~/bin/cc4s/gxx/Cc4s -i mp2.yaml
     ```
 
 Testing
