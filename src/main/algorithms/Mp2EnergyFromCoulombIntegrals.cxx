@@ -89,9 +89,9 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   )->execute();
 
   F D(direct->read()), X(exchange->read());
-  OUT() << "energy=" << D+X << std::endl;
-  OUT() << "direct=" << D << std::endl;
-  OUT() << "exchange=" << X << std::endl;
+  OUT() << "energy= " << D+X << std::endl;
+  OUT() << "\tdirect= " << D << std::endl;
+  OUT() << "\texchange= " << X << std::endl;
   
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue<Real<>>("direct", real<F>(D));

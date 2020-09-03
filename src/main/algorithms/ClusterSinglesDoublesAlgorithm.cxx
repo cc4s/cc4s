@@ -96,8 +96,8 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     amplitudes = mixer->get();
     auto residuumNorm( mixer->getResiduumNorm());
     e = getEnergy(amplitudes);
-    OUT() << "dE= " << e - previousE << std::endl;
-    OUT() << "dR= " << residuumNorm << std::endl;
+    OUT() << "\tdE= " << e - previousE << std::endl;
+    OUT() << "\tdR= " << residuumNorm << std::endl;
     if (
       !Cc4s::options->dryRun &&
       abs(e-previousE) < energyConvergence &&
@@ -187,10 +187,10 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     F S(0.25*D - 0.5*X);
     F T(0.75*D + 1.5*X);
     e = D+X;
-    OUT() << std::setprecision(10) << "direct= " << D << std::endl;
-    OUT() << std::setprecision(10) << "exchange= " << X << std::endl;
-    OUT() << std::setprecision(10) << "singlet= " << S << std::endl;
-    OUT() << std::setprecision(10) << "tripplet= " << T << std::endl;
+    OUT() << std::setprecision(10) << "\tdirect= " << D << std::endl;
+    OUT() << std::setprecision(10) << "\texchange= " << X << std::endl;
+    OUT() << std::setprecision(10) << "\tsinglet= " << S << std::endl;
+    OUT() << std::setprecision(10) << "\ttripplet= " << T << std::endl;
 
     energy->setValue<Real<>>("value", real<F>(e));
     energy->setValue<Real<>>("direct", real<F>(D));

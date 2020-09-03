@@ -10,7 +10,7 @@
 namespace cc4s {
   class Cc4s {
   public:
-    void run();
+    void run(const Ptr<MapNode> &report);
 
     static bool isDebugged();
 

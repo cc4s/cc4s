@@ -20,11 +20,9 @@ size_t Cc4s::getFlops() {
     Operation<DryTensorEngine>::flops : Operation<DefaultTensorEngine>::flops;
 }
 
-void Cc4s::run() {
-  // TODO: truncate output.yaml or write it also in case of failure
-  auto job(New<MapNode>(SOURCE_LOCATION));
-  printBanner(job);
-  listHosts(job);
+void Cc4s::run(const Ptr<MapNode> &report) {
+  printBanner(report);
+  listHosts(report);
 
   // start with empty storage
   storage = New<MapNode>(SOURCE_LOCATION);
@@ -34,7 +32,7 @@ void Cc4s::run() {
   auto input(parser.parse());
   auto steps(input->map());
   ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
-  job->get("steps") = steps;
+  report->get("steps") = steps;
   OUT() << "execution plan read, steps=" << steps->size() << std::endl;
 
   size_t totalFlops(-getFlops());
@@ -76,7 +74,7 @@ void Cc4s::run() {
         auto outputVariables(step->getMap("out"));
         storeSymbols(output, outputVariables);
       }
-      // store output in job data
+      // store output in report
       step->get("out") = output;
 
       std::stringstream realtime;
@@ -96,16 +94,15 @@ void Cc4s::run() {
   OUT() << std::endl;
   std::stringstream totalRealtime;
   totalRealtime << totalTime;
+  OUT() << "total realtime=" << totalRealtime.str() << " s" << std::endl;
+  OUT() << "total operations=" << totalFlops / 1e9 << " GFLOPS"
+    << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s" << std::endl;
   LOG() << "total realtime=" << totalRealtime.str() << " s" << std::endl;
   LOG() << "total operations=" << totalFlops / 1e9 << " GFLOPS"
     << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s" << std::endl;
-  job->setValue<std::string>("realtime", totalRealtime.str());
-  job->setValue<size_t>("floatingPointOperations", totalFlops);
-  job->setValue<Real<>>("flops", totalFlops/totalTime.getFractionalSeconds());
-
-  // emit job output
-  Emitter emitter(options->name + ".yaml");
-  emitter.emit(job);
+  report->setValue<std::string>("realtime", totalRealtime.str());
+  report->setValue<size_t>("floatingPointOperations", totalFlops);
+  report->setValue<Real<>>("flops", totalFlops/totalTime.getFractionalSeconds());
 }
 
 void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
@@ -142,7 +139,7 @@ void Cc4s::storeSymbols(const Ptr<MapNode> &result, const Ptr<MapNode> &variable
 }
 
 
-void Cc4s::printBanner(const Ptr<MapNode> &job) {
+void Cc4s::printBanner(const Ptr<MapNode> &report) {
   std::stringstream buildDate;
   buildDate << __DATE__ << " " << __TIME__;
 
@@ -159,10 +156,10 @@ void Cc4s::printBanner(const Ptr<MapNode> &job) {
   OUT() << "compiler= " << COMPILER_VERSION << std::endl;
   OUT() << "total processes= " << world->getProcesses() << std::endl << std::endl;
 
-  job->setValue<std::string>("version", CC4S_VERSION);
-  job->setValue("buildDate", buildDate.str());
-  job->setValue<std::string>("compiler", COMPILER_VERSION);
-  job->setValue("dryRun", options->dryRun);
+  report->setValue<std::string>("version", CC4S_VERSION);
+  report->setValue("buildDate", buildDate.str());
+  report->setValue<std::string>("compiler", COMPILER_VERSION);
+  report->setValue("dryRun", options->dryRun);
 /*
   EMIT()
     << YAML::Key << "version" << YAML::Value << CC4S_VERSION
@@ -175,12 +172,12 @@ void Cc4s::printBanner(const Ptr<MapNode> &job) {
   }
 }
 
-void Cc4s::printStatistics(const Ptr<MapNode> &job) {
+void Cc4s::printStatistics(const Ptr<MapNode> &report) {
   if (options->dryRun) {
     LOG()
       << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
       << " GB" << std::endl;
-    job->setValue<size_t>("estimatedTotalMemory", DryMemory::maxTotalSize);
+    report->setValue<size_t>("estimatedTotalMemory", DryMemory::maxTotalSize);
   } else {
     std::string fieldName;
     size_t peakVirtualSize, peakPhysicalSize;
@@ -201,16 +198,16 @@ void Cc4s::printStatistics(const Ptr<MapNode> &job) {
     Real<> unitsPerGB(1024.0*1024.0);
     LOG() << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
       << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
-    job->setValue<size_t>("peakVirtualMemoryOnRoot", peakVirtualSize*1024);
-    job->setValue<size_t>("peakPhysicalMemoryOnRoot", peakPhysicalSize*1024);
+    report->setValue<size_t>("peakVirtualMemoryOnRoot", peakVirtualSize*1024);
+    report->setValue<size_t>("peakPhysicalMemoryOnRoot", peakPhysicalSize*1024);
     size_t globalPeakVirtualSize, globalPeakPhysicalSize;
     world->reduce(peakPhysicalSize, globalPeakPhysicalSize);
     world->reduce(peakVirtualSize, globalPeakVirtualSize);
     LOG() << "overall peak physical memory="
       << globalPeakPhysicalSize / unitsPerGB << " GB"
       << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
-    job->setValue<size_t>("peakVirtualMemory", globalPeakVirtualSize*1024);
-    job->setValue<size_t>("peakPhysicalMemory", globalPeakPhysicalSize*1024);
+    report->setValue<size_t>("peakVirtualMemory", globalPeakVirtualSize*1024);
+    report->setValue<size_t>("peakPhysicalMemory", globalPeakPhysicalSize*1024);
   }
 }
 
@@ -233,7 +230,7 @@ bool Cc4s::isDebugged() {
   return false;
 }
 
-void Cc4s::listHosts(const Ptr<MapNode> &job) {
+void Cc4s::listHosts(const Ptr<MapNode> &report) {
   // TODO: list planned execution environment from options
   if (!options->dryRun) {
     char ownName[MPI_MAX_PROCESSOR_NAME];
@@ -266,7 +263,7 @@ void Cc4s::listHosts(const Ptr<MapNode> &job) {
         host->get("ranks") = ranks;
         hosts->push_back(host);
       }
-      job->get("hosts") = hosts;
+      report->get("hosts") = hosts;
     } else {
       // send own name 
       MPI_Send(
@@ -289,15 +286,28 @@ int main(int argumentCount, char **arguments) {
   Cc4s::options = New<Options>(argumentCount, arguments);
   Log::setFileName(Cc4s::options->name + ".log");
   Log::setRank(Cc4s::world->getRank());
+  Time startTime(Time::getCurrentRealTime());
+  Log::setLogHeaderFunction(
+    [startTime](const SourceLocation &location) {
+      std::stringstream header;
+      header << (Time::getCurrentRealTime() - startTime) << ":";
+      if (location.isValid()) {
+        header << location;
+      }
+      header << ":";
+      return header.str();
+    }
+  );
+  auto report(New<MapNode>(SOURCE_LOCATION));
 
   Cc4s cc4s;
   if (Cc4s::isDebugged()) {
     // run without try-catch in debugger to allow tracing throwing code
-    cc4s.run();
+    cc4s.run(report);
   } else {
     // without debugger: catch and write list of causes
     try {  
-      cc4s.run();
+      cc4s.run(report);
     } catch (Ptr<Exception> cause) {
       auto sourceLocation(cause->getSourceLocation());
       if (!sourceLocation.isValid()) sourceLocation = SOURCE_LOCATION;
@@ -322,6 +332,10 @@ int main(int argumentCount, char **arguments) {
       OUT() << "unhandled exception encountered (...)." << std::endl;
     }
   }
+
+  // emit report, also in case of error
+  Emitter emitter(Cc4s::options->name + ".out");
+  emitter.emit(report);
 
   MPI_Finalize();
   return 0;
