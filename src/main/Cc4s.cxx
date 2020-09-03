@@ -311,14 +311,13 @@ int main(int argumentCount, char **arguments) {
     } catch (Ptr<Exception> cause) {
       auto sourceLocation(cause->getSourceLocation());
       if (!sourceLocation.isValid()) sourceLocation = SOURCE_LOCATION;
-      OUT_LOCATION(sourceLocation) <<
-        "Exception: " << cause->what() << std::endl;
+      ERROR_LOCATION(sourceLocation) << cause->what() << std::endl;
       cause = cause->getCause();
       while (cause) {
         if (cause->getSourceLocation().isValid()) {
           sourceLocation = cause->getSourceLocation();
         }
-        OUT_LOCATION(sourceLocation) <<
+        ERROR_LOCATION(sourceLocation) <<
           "Caused by: " << cause->what() << std::endl;
         cause = cause->getCause();
       }

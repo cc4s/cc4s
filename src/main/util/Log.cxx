@@ -7,45 +7,18 @@
 
 using namespace cc4s;
 
-/*
-std::ostream &LogStream::prepare(
-  std::string const &sourceFileName,
-  const size_t sourceFileLine,
-  const unsigned int level,
-  const std::string &category
-) {
-  Time time(Time::getCurrentRealTime());
-  time -= startTime;
-  logFile << time << " ";
-  std::ostream *log(&logFile);
-  if (logLevel >= level) {
-    for (unsigned int i(0); i < level; ++i) {
-      std::cout << indent.c_str();
-    }
-    std::stringstream fraction;
-    fraction << std::fixed << 1.0*(time.getFractions()) / Time::FRACTIONS;
-    std::cout << time.getSeconds() << fraction.str().substr(1,4) << " ";
-    // next puts should go to logFile and std::out, done by this->put
-    log = this;
-  }
-  if (category.length() > 0) {
-    (*log) << category << ": ";
-  } else if (sourceFileName.compare(0, 9, "src/main/") == 0) {
-    // remove redundant part of source name
-    (*log) << sourceFileName.substr(9) << ':' << sourceFileLine << ": ";
-  } else {
-    // name is not a c file, take full name
-    (*log) << sourceFileName << ':' << sourceFileLine << ": ";
-  }
-  return *log;
-}
-*/
-
 int Log::rank(-1);
 std::string Log::fileName("cc4s.log");
 std::ofstream Log::stream;
 Log::HeaderFunction Log::outHeaderFunction(
   [](const SourceLocation &){ return ""; }
+);
+Log::HeaderFunction Log::errorHeaderFunction(
+  [](const SourceLocation &location){
+    std::stringstream header;
+    header << location << ": \033[0;31mERROR:\033[0m ";
+    return header.str();
+  }
 );
 Log::HeaderFunction Log::logHeaderFunction(
   [](const SourceLocation &){ return ""; }
