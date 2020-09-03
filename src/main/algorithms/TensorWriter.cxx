@@ -186,7 +186,7 @@ void TensorWriter::writeText(
     explanation << "Failed to open file \"" << fileName << "\"";
     throw New<Exception>(explanation.str(), sourceLocation);
   }
-  // TODO: user Stream Printer rather than <<
+  // TODO: use Stream Printer rather than <<
   stream << setprecision(17);
 
   // build dimensions meta data from tensor length if not already present
@@ -206,6 +206,11 @@ void TensorWriter::writeText(
   size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
   std::vector<size_t> indices(localBufferSize);
   std::vector<F> values(localBufferSize);
+
+  if (Cc4s::options->dryRun) {
+    stream << "# dry-run: no data written" << std::endl;
+    return;
+  }
 
   size_t index(0);
   LOG() << "indexCount=" << data->getElementsCount() << std::endl;
@@ -258,6 +263,8 @@ void TensorWriter::writeBinary(
     }
     tensor->get("dimensions") = dimensions;
   }
+
+  if (Cc4s::options->dryRun) return;
 
   // write tensor data with values from file
   data->readToFile(file);

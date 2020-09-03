@@ -152,6 +152,10 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
 
   // create tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
+  auto result(
+    New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
+  );
+  if (Cc4s::options->dryRun) return result;
 
   // read the values only on root, all others still pariticipate calling MPI
   const size_t bufferSize(std::min(A->getElementsCount(), MAX_BUFFER_SIZE));
@@ -176,7 +180,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
     index += elementsCount;
   }
 
-  return New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1));
+  return result;
 }
 
 template <typename F, typename TE>
@@ -200,12 +204,16 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
 
   // create tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
+  auto result(
+    New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
+  );
+  if (Cc4s::options->dryRun) return result;
 
   // write tensor data with values from file
   A->writeFromFile(file);
 
   // done
   MPI_File_close(&file);
-  return New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1));
+  return result;
 }
 
