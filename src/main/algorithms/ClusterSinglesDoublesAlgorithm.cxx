@@ -112,7 +112,8 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     OUT() << "computing energy from given amplitudes" << std::endl;
     e = getEnergy(amplitudes);
   } else if (i == maxIterationsCount) {
-    OUT() << "WARNING: energy or amplitudes convergence not reached." << std::endl;
+    WARNING_LOCATION(arguments->sourceLocation) <<
+      "energy or amplitudes convergence not reached." << std::endl;
   }
   bool convergenceReached = i < maxIterationsCount;
 

@@ -26,27 +26,19 @@ Ptr<MapNode> DefineHolesAndParticles::run(
 ) {
   typedef Tensor<Real<>,TE> T;
   auto eigenEnergies(arguments->getMap("eigenEnergies"));
+  auto energies(eigenEnergies->getMap("energies"));
   auto eps(eigenEnergies->getValue<Ptr<T>>("data"));
   ASSERT_LOCATION(
-    eps, "expecting eigenEnergies to be a real tensor",
-    eigenEnergies->sourceLocation
-  );  
-  ASSERT_LOCATION(
-    eps->lens.size()==1, "expecting eigenEnergies to be a rank 1 tensor",
+    eps, "expecting list of eigenEnergies",
     eigenEnergies->sourceLocation
   );  
 
-  // read values of eps on all ranks
-  auto Np(eps->lens[0]);
-  std::vector<Real<>> epsilonValues(Np);
-  std::vector<size_t> indices(Np);
-  for (size_t i(0); i < indices.size(); ++i) { indices[i] = i; }
-  eps->read(indices.size(), indices.data(), epsilonValues.data());
+  auto Np(energies->size());
 
   // find fermi energy to determine No and Nv
   auto fermiEnergy(eigenEnergies->getValue<Real<>>("fermiEnergy"));
   size_t No(0);
-  while (No < Np && epsilonValues[No] < fermiEnergy) { ++No; }
+  while (No < Np && energies->getValue<Real<>>(No) < fermiEnergy) { ++No; }
   ASSERT_LOCATION(
     0 < No, "Fermi energy below all eigen energies.",
     eigenEnergies->sourceLocation

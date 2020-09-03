@@ -132,7 +132,7 @@ void Cc4s::storeSymbols(const Ptr<MapNode> &result, const Ptr<MapNode> &variable
       auto symbolName(variables->getSymbol(key));
       storage->get(symbolName) = result->get(key);
     } else {
-      OUT() << "WARNING: Symbol '" << key
+      WARNING_LOCATION(variables->sourceLocation) << "Symbol '" << key
         << "' should be stored but is not present in output" << std::endl;
     }
   }

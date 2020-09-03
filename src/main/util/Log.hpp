@@ -38,6 +38,12 @@ namespace cc4s {
     static HeaderFunction getErrorHeaderFunction() {
       return errorHeaderFunction;
     }
+    static void setWarningHeaderFunction(const HeaderFunction &f) {
+      warningHeaderFunction = f;
+    }
+    static HeaderFunction getWarningHeaderFunction() {
+      return warningHeaderFunction;
+    }
     static void setLogHeaderFunction(const HeaderFunction &f) {
       logHeaderFunction = f;
     }
@@ -50,7 +56,8 @@ namespace cc4s {
     static std::string fileName;
     static std::ofstream stream;
     static HeaderFunction
-      outHeaderFunction, errorHeaderFunction, logHeaderFunction;
+      outHeaderFunction, errorHeaderFunction, warningHeaderFunction,
+      logHeaderFunction;
   };
 }
 
@@ -65,6 +72,10 @@ namespace cc4s {
   (std::cout << Log::getErrorHeaderFunction()(SOURCE_LOCATION))
 #define ERROR_LOCATION(LOCATION) \
   (std::cout << Log::getErrorHeaderFunction()(LOCATION))
+#define WARNING() \
+  (std::cout << Log::getWarningHeaderFunction()(SOURCE_LOCATION))
+#define WARNING_LOCATION(LOCATION) \
+  (std::cout << Log::getWarningHeaderFunction()(LOCATION))
 #define LOG() \
   (Log::getStream() << Log::getLogHeaderFunction()(SOURCE_LOCATION))
 #define LOG_LOCATION(LOCATION) \

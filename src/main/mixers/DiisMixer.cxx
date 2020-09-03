@@ -64,7 +64,9 @@ void DiisMixer<F,TE>::append(
   for ( size_t n(0); n < dim; n++)
     matrix[n+dim*m] = B[n+(N+1)*m];
 
-  column = inverse(matrix, dim);
+  if (!Cc4s::options->dryRun) {
+    column = inverse(matrix, dim);
+  }
 
   next = New<FockVector<F,TE>>(*A);
   *next *= F(0);

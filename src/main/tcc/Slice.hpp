@@ -70,14 +70,18 @@ namespace cc4s {
           Tensor<F,TE>::create(resultLens, lhsTensor->getName() + "'")
         );
         rhsOperation->result = intermediateTensor;
-        OUT_LOCATION(SourceLocation(rhsOperation->file, rhsOperation->line)) <<
-          "NOTE: updating parts of a slice on the left-hand-side "
+        WARNING_LOCATION(
+          SourceLocation(rhsOperation->file, rhsOperation->line)
+        ) <<
+          "updating parts of a slice on the left-hand-side "
           "currently requires the entire slice as intermediate tensor. "
           "This is less efficient than using write or read "
           "for the intended indices." << std::endl;
         if (rhsOperation->beta != F(1)) {
-          OUT_LOCATION(SourceLocation(rhsOperation->file, rhsOperation->line))<<
-            "WARNING: updating slice parts with operations other than += or -= "
+          WARNING_LOCATION(
+            SourceLocation(rhsOperation->file, rhsOperation->line)
+          ) <<
+            "updating slice parts with operations other than += or -= "
             "may currently give wrong results as the entire slice is not "
             "read from the left-hand-side tensor before doing the update "
             "with the right-hand-side." << std::endl;
