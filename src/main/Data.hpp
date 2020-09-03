@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 #include <sstream>
+#include <iomanip>
 
 namespace cc4s {
   class MapNode;
@@ -153,7 +154,7 @@ namespace cc4s {
            + TypeTraits<Target>::getName() + ", left: " + stream.str()
         );
         if (stream.str().size() > 0) {
-          LOG(0, "getValue")
+          LOG()
             << "WARNING: not all data used converting '"
             << get(key)->toString() << "' to "
             << TypeTraits<Target>::getName() << std::endl;

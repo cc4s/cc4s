@@ -35,8 +35,7 @@ void Cc4s::run() {
   auto steps(input->map());
   ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
   job->get("steps") = steps;
-  LOG(0, "Cc4s") <<
-    "execution plan read, steps=" << steps->size() << std::endl;
+  OUT() << "execution plan read, steps=" << steps->size() << std::endl;
 
   size_t totalFlops(-getFlops());
   Time totalTime;
@@ -47,7 +46,7 @@ void Cc4s::run() {
     for (unsigned int i(0); i < steps->size(); ++i) {
       auto step(steps->getMap(i));
       auto algorithmName(step->getSymbol("name"));
-      LOG(0, "Cc4s") << "step=" << (i+1) << ", " << algorithmName << std::endl;
+      OUT() << "step=" << (i+1) << ", " << algorithmName << std::endl;
 
       // create algorithm
       auto algorithm(AlgorithmFactory::create(algorithmName));
@@ -82,7 +81,7 @@ void Cc4s::run() {
 
       std::stringstream realtime;
       realtime << time;
-      LOG(1, "Cc4s") << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
+      LOG() << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
         << ", operations=" << flops / 1e9 << " GFLOPS"
         << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s" << std::endl;
       step->setValue<std::string>("realtime", realtime.str());
@@ -97,8 +96,8 @@ void Cc4s::run() {
   OUT() << std::endl;
   std::stringstream totalRealtime;
   totalRealtime << totalTime;
-  LOG(0, "Cc4s") << "total realtime=" << totalRealtime.str() << " s" << std::endl;
-  LOG(0, "Cc4s") << "total operations=" << totalFlops / 1e9 << " GFLOPS"
+  LOG() << "total realtime=" << totalRealtime.str() << " s" << std::endl;
+  LOG() << "total operations=" << totalFlops / 1e9 << " GFLOPS"
     << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s" << std::endl;
   job->setValue<std::string>("realtime", totalRealtime.str());
   job->setValue<size_t>("floatingPointOperations", totalFlops);
@@ -136,7 +135,7 @@ void Cc4s::storeSymbols(const Ptr<MapNode> &result, const Ptr<MapNode> &variable
       auto symbolName(variables->getSymbol(key));
       storage->get(symbolName) = result->get(key);
     } else {
-      LOG(0,"Storage") << "Symbol '" << key
+      OUT() << "WARNING: Symbol '" << key
         << "' should be stored but is not present in output" << std::endl;
     }
   }
@@ -147,18 +146,18 @@ void Cc4s::printBanner(const Ptr<MapNode> &job) {
   std::stringstream buildDate;
   buildDate << __DATE__ << " " << __TIME__;
 
-  OUT() << "                __ __      " << std::endl
+  OUT() << std::endl
+        << "                __ __      " << std::endl
         << "     __________/ // / _____" << std::endl
         << "    / ___/ ___/ // /_/ ___/" << std::endl
         << "   / /__/ /__/__  __(__  ) " << std::endl
         << "   \\___/\\___/  /_/ /____/  " << std::endl
         << "  Coupled Cluster for Solids" << std::endl << std::endl;
-  LOG(0, "Cc4s") << "version=" << CC4S_VERSION <<
+  OUT() << "version= " << CC4S_VERSION <<
     ", date=" << CC4S_DATE << std::endl;
-  LOG(0, "Cc4s") << "build date=" << buildDate.str() << std::endl;
-  LOG(0, "Cc4s") << "compiler=" << COMPILER_VERSION << std::endl;
-  LOG(0, "Cc4s") << "total processes=" << world->getProcesses() << std::endl;
-  OUT() << std::endl;
+  OUT() << "build date= " << buildDate.str() << std::endl;
+  OUT() << "compiler= " << COMPILER_VERSION << std::endl;
+  OUT() << "total processes= " << world->getProcesses() << std::endl << std::endl;
 
   job->setValue<std::string>("version", CC4S_VERSION);
   job->setValue("buildDate", buildDate.str());
@@ -172,14 +171,13 @@ void Cc4s::printBanner(const Ptr<MapNode> &job) {
     << YAML::Key << "total-processes" << world->getProcesses();
 */
   if (options->dryRun) {
-    LOG(0, "Cc4s") <<
-      "DRY RUN - nothing will be calculated" << std::endl;
+    OUT() << "DRY RUN - nothing will be calculated" << std::endl;
   }
 }
 
 void Cc4s::printStatistics(const Ptr<MapNode> &job) {
   if (options->dryRun) {
-    LOG(0, "Cc4s")
+    LOG()
       << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
       << " GB" << std::endl;
     job->setValue<size_t>("estimatedTotalMemory", DryMemory::maxTotalSize);
@@ -201,14 +199,14 @@ void Cc4s::printStatistics(const Ptr<MapNode> &job) {
     }
     statusStream.close();
     Real<> unitsPerGB(1024.0*1024.0);
-    LOG(0, "Cc4s") << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
+    LOG() << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
       << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
     job->setValue<size_t>("peakVirtualMemoryOnRoot", peakVirtualSize*1024);
     job->setValue<size_t>("peakPhysicalMemoryOnRoot", peakPhysicalSize*1024);
     size_t globalPeakVirtualSize, globalPeakPhysicalSize;
     world->reduce(peakPhysicalSize, globalPeakPhysicalSize);
     world->reduce(peakVirtualSize, globalPeakVirtualSize);
-    LOG(0, "Cc4s") << "overall peak physical memory="
+    LOG() << "overall peak physical memory="
       << globalPeakPhysicalSize / unitsPerGB << " GB"
       << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
     job->setValue<size_t>("peakVirtualMemory", globalPeakVirtualSize*1024);
@@ -227,7 +225,7 @@ bool Cc4s::isDebugged() {
       std::stringstream pidStream(line.substr(position + pidField.length()));
       size_t pid; pidStream >> pid;
       if (pid > 0) {
-        LOG(0, "Cc4s") << "Debugger present" << std::endl;
+        LOG() << "Debugger present" << std::endl;
       }
       return pid > 0;
     }
@@ -289,9 +287,8 @@ int main(int argumentCount, char **arguments) {
 
   Cc4s::world = New<MpiCommunicator>();
   Cc4s::options = New<Options>(argumentCount, arguments);
-  Log::setRank(Cc4s::world->getRank());
   Log::setFileName(Cc4s::options->name + ".log");
-  Log::setLogLevel(Cc4s::options->logLevel);
+  Log::setRank(Cc4s::world->getRank());
 
   Cc4s cc4s;
   if (Cc4s::isDebugged()) {
@@ -304,25 +301,25 @@ int main(int argumentCount, char **arguments) {
     } catch (Ptr<Exception> cause) {
       auto sourceLocation(cause->getSourceLocation());
       if (!sourceLocation.isValid()) sourceLocation = SOURCE_LOCATION;
-      LOG_LOCATION(0, sourceLocation) <<
+      OUT_LOCATION(sourceLocation) <<
         "Exception: " << cause->what() << std::endl;
       cause = cause->getCause();
       while (cause) {
         if (cause->getSourceLocation().isValid()) {
           sourceLocation = cause->getSourceLocation();
         }
-        LOG_LOCATION(0, sourceLocation) <<
+        OUT_LOCATION(sourceLocation) <<
           "Caused by: " << cause->what() << std::endl;
         cause = cause->getCause();
       }
     } catch (std::exception &cause) {
-      LOG(0) << "unhandled exception encountered (std::exception):" << std::endl;
-      LOG(0) << cause.what() << std::endl;
+      OUT() << "unhandled exception encountered (std::exception):" << std::endl;
+      OUT() << cause.what() << std::endl;
     } catch (const char *message) {
-      LOG(0) << "unhandled exception encountered (const char *):" << std::endl;
-      LOG(0) << message << std::endl;
+      OUT() << "unhandled exception encountered (const char *):" << std::endl;
+      OUT() << message << std::endl;
     } catch (...) {
-      LOG(0) << "unhandled exception encountered (...)." << std::endl;
+      OUT() << "unhandled exception encountered (...)." << std::endl;
     }
   }
 

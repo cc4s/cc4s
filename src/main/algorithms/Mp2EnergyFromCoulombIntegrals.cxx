@@ -73,6 +73,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   auto exchange( Tcc<TE>::template tensor<F>("X") );
   auto toEigenUnits = pow(eigenEnergies->getValue<Real<>>("unit"),2.0) /
     pow(coulombIntegrals->getValue<Real<>>("unit"),2.0);
+  OUT() << "Contracting MP2 energy..." << std::endl;
   COMPILE(
     (*Dabij)["abij"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
     (*Dabij)["abij"] +=  map<F>([](Real<> eps) {return F(eps);}, (*epsa)["b"]),
@@ -88,8 +89,9 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
   )->execute();
 
   F D(direct->read()), X(exchange->read());
-  LOG(1,getName()) << "direct=" << D << std::endl;
-  LOG(1,getName()) << "exchange=" << X << std::endl;
+  OUT() << "energy=" << D+X << std::endl;
+  OUT() << "direct=" << D << std::endl;
+  OUT() << "exchange=" << X << std::endl;
   
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue<Real<>>("direct", real<F>(D));

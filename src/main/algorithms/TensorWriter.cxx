@@ -208,15 +208,14 @@ void TensorWriter::writeText(
   std::vector<F> values(localBufferSize);
 
   size_t index(0);
-  LOG(1, "TensorWriter") << "indexCount=" << data->getElementsCount() << std::endl;
+  LOG() << "indexCount=" << data->getElementsCount() << std::endl;
   while (index < data->getElementsCount()) {
     size_t elementsCount(std::min(bufferSize, data->getElementsCount()-index));
     size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
     for (size_t i(0); i < localElementsCount; ++i) {
       indices[i] = index+i;
     }
-    LOG(2, "TensorWriter") << "reading " << elementsCount <<
-      " values from tensor..." << std::endl;
+    LOG() << "reading " << elementsCount << " values from tensor..." << std::endl;
     data->read(localElementsCount, indices.data(), values.data());
     for (size_t i(0); i < localElementsCount; ++i) {
       stream << values[i] << "\n";

@@ -90,7 +90,7 @@ namespace cc4s {
     // each move has its private index namespace so disregard the outer
     // scope
     virtual PTR(Operation<TE>) compile(Scope &outerScope) {
-      LOG_FILE_LINE(2, outerScope.file, outerScope.line) <<
+      LOG_LOCATION(SourceLocation(outerScope.file, outerScope.line)) <<
         "compiling: " << static_cast<std::string>(*this) << std::endl;
 
       // create a new namespace of indices
@@ -107,7 +107,7 @@ namespace cc4s {
         )
       );
 
-      LOG_FILE_LINE(2, outerScope.file, outerScope.line) <<
+      LOG_LOCATION(SourceLocation(outerScope.file, outerScope.line)) <<
         "possibilites tried=" << scope.triedPossibilitiesCount <<
         ", multiplications=" << operation->costs.multiplicationsCount <<
         ", additions=" << operation->costs.additionsCount <<

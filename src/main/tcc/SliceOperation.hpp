@@ -44,7 +44,8 @@ namespace cc4s {
         for (auto d: bBegins) { bBeginsStream << " " << d; }
         for (auto d: bEnds) { bEndsStream << " " << d; }
 
-        LOG_FILE_LINE(2, this->file, this->line) << "executing: slice " <<
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          "executing: slice " <<
           this->getName() << "(" <<
             bBeginsStream.str() << "," << bEndsStream.str() <<
           ") <<= " << this->alpha << " * " << source->getName() << "(" <<
@@ -60,7 +61,8 @@ namespace cc4s {
         this->updated();
         this->accountFlops();
       } else {
-        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          this->getName() <<
           " up-to-date with " << source->getName() << std::endl;
       }
     }

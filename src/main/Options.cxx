@@ -7,9 +7,8 @@
 using namespace cc4s;
 
 Options::Options(int argumentCount, char **arguments) {
-  inFile = "input.yaml";
   name = "cc4s";
-  logLevel = DEFAULT_LOG_LEVEL;
+  inFile = "";
   dryRun = false;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
@@ -18,12 +17,10 @@ Options::Options(int argumentCount, char **arguments) {
       inFile = arguments[++i];
     } else if (argument == "-n" || argument == "--name") {
       name = arguments[++i];
-    } else if (argument == "--log-level" || argument == "-logLevel") {
-      std::stringstream stream(arguments[++i]);
-      stream >> logLevel;
     } else if (argument == "--dry-run" || argument == "-dryRun") {
       dryRun = true;
     }
   }
+  if (inFile == "") inFile = name + ".in";
 }
 

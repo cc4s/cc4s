@@ -27,8 +27,8 @@ Ptr<MapNode> TensorNetwork::run(const Ptr<MapNode> &arguments) {
     trace = getTrace<DefaultTensorEngine>(matrix);
   }
 
-  LOG(1,"TensorNetwork") << "spins=" << spins << std::endl;
-  LOG(1,"TensorNetwork") << "trace=" << trace << std::endl;
+  OUT() << "spins=" << spins << std::endl;
+  OUT() << "trace=" << trace << std::endl;
 
   // build result
   auto result(New<MapNode>(SOURCE_LOCATION));

@@ -63,8 +63,8 @@ namespace cc4s {
       if (getLatestSourceVersion() >= this->result->getVersion()) {
         recipe->execute();
       } else {
-        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
-          " up-to-date with all sources." << std::endl;
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          this->getName() << " up-to-date with all sources." << std::endl;
       }
     }
 

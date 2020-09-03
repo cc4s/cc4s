@@ -2,6 +2,7 @@
 #ifndef DRY_TENSOR_DEFINED
 #define DRY_TENSOR_DEFINED
 
+#include <math/Real.hpp>
 #include <util/SourceLocation.hpp>
 #include <util/Log.hpp>
 #include <cstdint>
@@ -22,13 +23,10 @@ namespace cc4s {
         extendingResources.push_back(
           ExtendingResource(maxTotalSize, location)
         );
-/*
-        LOG(2, "DryMemory") << "extending size=" << size << " at "
-          << location << std::endl;
+        LOG_LOCATION(location) << "extending memory size to" << size << std::endl;
       } else {
-
-        LOG(2, "DryMemory") << "non-extending size=" << size << " at "
-          << location << std::endl;
+/*
+        LOG_LOCATION(location) << "memory size " << size << std::endl;
 */
       }
     }

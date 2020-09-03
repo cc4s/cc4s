@@ -37,7 +37,8 @@ namespace cc4s {
     void execute() override {
       source->execute();
       if (this->template isOlderThan<Domain>(source)) {
-        LOG_FILE_LINE(2, this->file, this->line) << "executing: unary map " <<
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          "executing: unary map " <<
           this->getName() << " <<= "<<
           "f(" << this->alpha << " * " << source->getName() << ") + " <<
           this->beta << " * " << this->getName() << std::endl;
@@ -52,7 +53,8 @@ namespace cc4s {
         this->updated();
         this->accountFlops();
       } else {
-        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          this->getName() <<
           " up-to-date with " << source->getName() << std::endl;
       }
     }

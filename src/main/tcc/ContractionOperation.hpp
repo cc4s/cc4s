@@ -53,7 +53,8 @@ namespace cc4s {
         this->template isOlderThan<F>(left) ||
         this->template isOlderThan<F>(right)
       ) {
-        LOG_FILE_LINE(2, this->file, this->line) << "executing: contraction " <<
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          "executing: contraction " <<
           this->getName() << " <<= " <<
           this->alpha << " * " <<
           left->getName() << " * " << right->getName() << " + " <<
@@ -69,7 +70,7 @@ namespace cc4s {
         this->updated();
         this->accountFlops();
       } else {
-        LOG_FILE_LINE(3, this->file, this->line) <<
+          LOG_LOCATION(SourceLocation(this->file, this->line)) <<
           this->getResult()->getName() << " up-to-date with " <<
           "(" << left->getName() << ", " << right->getName() << ")" <<
           std::endl;

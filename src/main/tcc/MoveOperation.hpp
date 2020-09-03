@@ -43,7 +43,8 @@ namespace cc4s {
     void execute() override {
       rhs->execute();
       if (this->template isOlderThan<F>(rhs)) {
-        LOG_FILE_LINE(2, this->file, this->line) << "executing: sum " <<
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          "executing: sum " <<
           this->getName() << " <<= " <<
           this->alpha << " * " << rhs->getName() << " + " <<
           this->beta << " * " << this->getName() << std::endl;
@@ -57,8 +58,8 @@ namespace cc4s {
         this->updated();
         this->accountFlops();
       } else {
-        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
-          " up-to-date with " << rhs->getName() << std::endl;
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          this->getName() << " up-to-date with " << rhs->getName() << std::endl;
       }
     }
 

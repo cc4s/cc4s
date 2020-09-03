@@ -32,7 +32,7 @@ namespace cc4s {
         int64_t size(buffer+BUFFER_SIZE-end);
         int64_t count(stream->read(end, size).gcount());
 #ifdef DEBUG
-        LOG(2, "Scanner") << count << " bytes fetched." << std::endl;
+        LOG() << count << " bytes fetched." << std::endl;
 #endif
         // account the read characters to the buffer
         end += count;

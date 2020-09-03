@@ -110,17 +110,13 @@ TEST_CASE( "EigenSystemDavidson", "[math]" ) {
     for (int i(0); i < eigenSystem.getRightEigenVectors().getRows(); ++i) {
       rowStream << "\t" << eigenSystem.getRightEigenVectors()(i,k);
     }
-    LOG(0, "LapackGeneralEigenSystem") <<
-      "EigenValue[" << k << "]=" <<
+    OUT() << "EigenValue[" << k << "]=" <<
       eigenSystem.getEigenValues()[k] << std::endl;
-    LOG(0, "LapackGeneralEigenSystem") <<
-      "EigenValueDavison[" << k << "]=" <<
+    OUT() << "EigenValueDavison[" << k << "]=" <<
       eigenSystemDavidson.getEigenValues()[k] << std::endl;
 /*
-    LOG(0, "LapackGeneralEigenSystem") <<
-      "EigenVector[" << k << "]=" << rowStream.str() << std::endl;
-    LOG(0, "LapackGeneralEigenSystem") <<
-      "EigenVectorDavidson[" << k << "]=" <<
+    OUT() << "EigenVector[" << k << "]=" << rowStream.str() << std::endl;
+    OUT() << "EigenVectorDavidson[" << k << "]=" <<
       eigenSystemDavidson.getRightEigenVectors()[k] << std::endl;
 */
   };

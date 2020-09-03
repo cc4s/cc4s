@@ -34,14 +34,16 @@ namespace cc4s {
       if (source == this->getResult()) return;
       if (source->getVersion() > this->getResult()->getVersion()) {
         // move the data only if source and result tensors are different
-        LOG_FILE_LINE(2, this->file, this->line) << "executing: move " <<
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          "executing: move " <<
           this->getName() << " <<= " << source->getName() << std::endl;
 
         *this->getResult() = *source;
         this->updated();
         this->accountFlops();
       } else {
-        LOG_FILE_LINE(3, this->file, this->line) << this->getName() <<
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          this->getName() <<
           " up-to-date with " << source->getName() << std::endl;
       }
     }

@@ -84,7 +84,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   F e(0), previousE(0);
   size_t i(0);
   for (; i < maxIterationsCount; ++i) {
-    LOG(0, getCapitalizedAbbreviation()) << "iteration: " << i+1 << std::endl;
+    OUT() << "iteration: " << i+1 << std::endl;
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
     auto estimatedAmplitudes( getResiduum(i, amplitudes) );
@@ -96,8 +96,8 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     amplitudes = mixer->get();
     auto residuumNorm( mixer->getResiduumNorm());
     e = getEnergy(amplitudes);
-    LOG(1, getCapitalizedAbbreviation()) << "ΔE= " << e - previousE << std::endl;
-    LOG(1, getCapitalizedAbbreviation()) << "ΔR= " << residuumNorm << std::endl;
+    OUT() << "dE= " << e - previousE << std::endl;
+    OUT() << "dR= " << residuumNorm << std::endl;
     if (
       !Cc4s::options->dryRun &&
       abs(e-previousE) < energyConvergence &&
@@ -109,12 +109,10 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   }
 
   if (maxIterationsCount == 0) {
-    LOG(0, getCapitalizedAbbreviation()) <<
-      "computing energy from given amplitudes" << std::endl;
+    OUT() << "computing energy from given amplitudes" << std::endl;
     e = getEnergy(amplitudes);
   } else if (i == maxIterationsCount) {
-    LOG(0, getCapitalizedAbbreviation()) <<
-      "WARNING: energy or amplitudes convergence not reached." << std::endl;
+    OUT() << "WARNING: energy or amplitudes convergence not reached." << std::endl;
   }
   bool convergenceReached = i < maxIterationsCount;
 
@@ -157,7 +155,7 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   auto Tai( amplitudes->get(0) );
   auto Tabij( amplitudes->get(1) );
   F e;
-  std::streamsize ss = std::cout.precision();
+  std::streamsize ss(std::cout.precision());
   // TODO: antisymmetrized
 /*
   if (antisymmetrized) {
@@ -189,24 +187,21 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     F S(0.25*D - 0.5*X);
     F T(0.75*D + 1.5*X);
     e = D+X;
-    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
-      "dir= " << D << std::endl;
-    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
-      "exc= " << X << std::endl;
-    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
-      "sing= " << S << std::endl;
-    LOG(1, getCapitalizedAbbreviation()) << std::setprecision(10) <<
-      "trip= " << T << std::endl;
+    OUT() << std::setprecision(10) << "direct= " << D << std::endl;
+    OUT() << std::setprecision(10) << "exchange= " << X << std::endl;
+    OUT() << std::setprecision(10) << "singlet= " << S << std::endl;
+    OUT() << std::setprecision(10) << "tripplet= " << T << std::endl;
 
     energy->setValue<Real<>>("value", real<F>(e));
     energy->setValue<Real<>>("direct", real<F>(D));
     energy->setValue<Real<>>("exchange", real<F>(X));
     energy->setValue<Real<>>("singlet", real<F>(S));
     energy->setValue<Real<>>("triplet", real<F>(T));
+    // TODO: energy units
   }
 
-  LOG(0, getCapitalizedAbbreviation()) << std::setprecision(10) <<
-    "energy= " << e << std::setprecision(ss) << std::endl;
+  OUT() << std::setprecision(10) << "energy= " << e << std::endl;
+  std::cout << std::setprecision(ss);
 
   return e;
 }

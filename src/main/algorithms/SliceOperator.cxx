@@ -63,8 +63,8 @@ Ptr<MapNode> SliceOperator::run(
   }
 
   slices = New<MapNode>(op->sourceLocation);
-  LOG(1,getName()) << "Slicing " << data->getName() <<
-    " into holes and particles." << std::endl;
+  OUT() <<
+    "Slicing " << data->getName() << " into holes and particles." << std::endl;
   slice(data, "");
 
   // create result

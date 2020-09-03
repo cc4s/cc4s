@@ -16,7 +16,7 @@ DiisMixer<F,TE>::DiisMixer(
   Mixer<F,TE>(arguments), next(nullptr), nextResiduum(nullptr)
 {
   N = arguments->getValue<size_t>("maxResidua", 4);
-  LOG(1,"DiisMixer") << "maxResidua=" << N << std::endl;
+  LOG() << "maxResidua=" << N << std::endl;
 
   amplitudes.resize(N);
   residua.resize(N);
@@ -73,7 +73,7 @@ void DiisMixer<F,TE>::append(
 
   for (size_t j(0); j < count; ++j) {
     size_t i( (nextIndex+N-j) % N );
-    LOG(1, "DiisMixer") << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
+    LOG() << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
     *next += column[i+1] * *amplitudes[i];
     *nextResiduum += column[i+1] * *residua[i];
   }

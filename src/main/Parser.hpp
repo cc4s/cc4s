@@ -35,7 +35,7 @@ namespace cc4s {
      * This method must be called with the same stream content on all processes.
      */
     Ptr<Node> parse() {
-      LOG(1,"Parser") << "Parsing file " << fileName << std::endl;
+      LOG() << "Parsing file " << fileName << std::endl;
       try {
         YAML::Node yamlNode(YAML::LoadFile(fileName));
         return parseNode(yamlNode);

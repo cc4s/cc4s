@@ -7,20 +7,7 @@
 
 using namespace cc4s;
 
-LogStream::LogStream(
-  std::string const &logFileName,
-  const unsigned int logLevel_,
-  std::string const &indent_
-):
-  std::ostream(&logBuffer),
-  logFile(logFileName.c_str(), std::ofstream::out | std::ofstream::trunc),
-  logBuffer(logFile.rdbuf(), std::cout.rdbuf()),
-  logLevel(logLevel_),
-  indent(indent_),
-  startTime(Time::getCurrentRealTime())
-{
-}
-
+/*
 std::ostream &LogStream::prepare(
   std::string const &sourceFileName,
   const size_t sourceFileLine,
@@ -52,14 +39,29 @@ std::ostream &LogStream::prepare(
   }
   return *log;
 }
+*/
 
 int Log::rank(-1);
 std::string Log::fileName("cc4s.log");
-unsigned int Log::logLevel(0);
-LogStream *Log::logStream(nullptr);
+std::ofstream Log::stream;
+Log::HeaderFunction Log::outHeaderFunction(
+  [](const SourceLocation &){ return ""; }
+);
+Log::HeaderFunction Log::logHeaderFunction(
+  [](const SourceLocation &){ return ""; }
+);
 
 void Log::setRank(int const rank_) {
   rank = rank_;
+  if (rank == 0) {
+    stream.open(
+      fileName.c_str(), std::ofstream::out | std::ofstream::trunc
+    );
+  } else {
+    // prevent writing to stdout and to log file
+    stream.setstate(std::ios_base::badbit);
+    std::cout.setstate(std::ios_base::badbit);
+  }
 }
 
 int Log::getRank() {
@@ -72,20 +74,5 @@ void Log::setFileName(const std::string &fileName_) {
 
 std::string Log::getFileName() {
   return fileName;
-}
-
-void Log::setLogLevel(const unsigned int logLevel_) {
-  logLevel = logLevel_;
-}
-
-unsigned int Log::getLogLevel() {
-  return logLevel;
-}
-
-LogStream &Log::getLogStream() {
-  if (!logStream) {
-    logStream = new LogStream(fileName, logLevel);
-  }
-  return *logStream;
 }
 

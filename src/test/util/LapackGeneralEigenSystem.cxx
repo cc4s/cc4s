@@ -35,7 +35,6 @@ TEST_CASE( "LapackGeneralEigenSystem", "[util]" ) {
     for (int i(0); i < eigenSystem.getRightEigenVectors().getRows(); ++i) {
       rowStream << "\t" << eigenSystem.getRightEigenVectors()(i,k);
     }
-    LOG(0, "LapackGeneralEigenSystem") <<
-      "EigenVector[" << k << "]=" << rowStream.str() << std::endl;
+    OUT() << "EigenVector[" << k << "]=" << rowStream.str() << std::endl;
   };
 }

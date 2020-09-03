@@ -72,14 +72,13 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
     //TODO
     // && !isArgumentGiven("initialDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes
-    LOG(1, getCapitalizedAbbreviation()) << "MP2 T2 Amplitudes" << std::endl;
+    OUT() << "MP2 T2 Amplitudes" << std::endl;
     COMPILE(
       (*Rpphh)["abij"] += (*Vpphh)["abij"]
     )->execute();
   } else if (onlyPpl == 1) {
 
-    LOG(1, getCapitalizedAbbreviation())
-        << "Calculate only PPL diagrams" << std::endl;
+    OUT() << "Calculate only PPL diagrams" << std::endl;
 
     auto Vpppp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pppp"));
     auto Vphpp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("phpp"));
@@ -120,8 +119,7 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
     auto Xakic( Tcc<TE>::template tensor<F>("Xakic") );
     auto Xabcd( Tcc<TE>::template tensor<F>("Xabcd") );
 
-    LOG(1, getCapitalizedAbbreviation()) <<
-      "Solving T2 Amplitude Equations" << std::endl;
+    OUT() << "Solving T2 Amplitude Equations" << std::endl;
 
     COMPILE(
       // Build Kac
@@ -215,8 +213,7 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
-    LOG(1, getCapitalizedAbbreviation()) <<
-      "Solving T1 Amplitude Equations" << std::endl;
+    OUT() << "Solving T1 Amplitude Equations" << std::endl;
     COMPILE(
       // Contract Kac and Kki with T1 amplitudes
       (*Rph)["ai"] += ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],

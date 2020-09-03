@@ -160,7 +160,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
   std::vector<F> values(localBufferSize);
 
   size_t index(0);
-  LOG(1, "TensorReader") << "indexCount=" << A->getElementsCount() << std::endl;
+  LOG() << "indexCount=" << A->getElementsCount() << std::endl;
   NumberScanner<F> numberScanner(&scanner);
   while (index < A->getElementsCount()) {
     size_t elementsCount(std::min(bufferSize, A->getElementsCount()-index));
@@ -171,7 +171,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
     }
     // wait until all processes finished reading this buffer into the tensor
     Cc4s::world->barrier();
-    LOG(2, "TensorReader") << "writing " << elementsCount << " values to tensor..." << std::endl;
+    LOG() << "writing " << elementsCount << " values to tensor..." << std::endl;
     A->write(localElementsCount, indices.data(), values.data());
     index += elementsCount;
   }
