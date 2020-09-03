@@ -36,7 +36,7 @@ std::ostream &LogStream::prepare(
       std::cout << indent.c_str();
     }
     std::stringstream fraction;
-    fraction << std::fixed << double(time.getFractions()) / Time::FRACTIONS;
+    fraction << std::fixed << 1.0*(time.getFractions()) / Time::FRACTIONS;
     std::cout << time.getSeconds() << fraction.str().substr(1,4) << " ";
     // next puts should go to logFile and std::out, done by this->put
     log = this;

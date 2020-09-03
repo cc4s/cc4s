@@ -45,14 +45,14 @@ namespace cc4s {
       // return unit vectors to lowest elemens in diagonal
       Vector<complex,D> d(diagonal);
       std::vector<Vector<complex,D>> basis(N);
-      double maxReal(std::real(d[0]));
-      for (int i(1); i < D; ++i) maxReal = std::max( std::real(d[i]), maxReal );
+      Real<> maxReal(real(d[0]));
+      for (int i(1); i < D; ++i) maxReal = std::max( real(d[i]), maxReal );
       for (int b(0); b < N; ++b) {
-        double minReal(std::real(d[0]));
+        Real<> minReal(real(d[0]));
         int minIndex(0);
         for (int i(1); i < D; ++i) {
-          if (std::real(d[i]) < minReal) {
-            minReal = std::real(d[i]);
+          if (real(d[i]) < minReal) {
+            minReal = real(d[i]);
             minIndex = i;
           }
         }
@@ -85,7 +85,7 @@ using namespace cc4s;
 TEST_CASE( "EigenSystemDavidson", "[math]" ) {
   constexpr int N(256);
   std::mt19937 random;
-  std::normal_distribution<double> normalDistribution(0.0, 1.0);
+  std::normal_distribution<Real<>> normalDistribution(0.0, 1.0);
   LinearMap<N> f;
   for (int i(0); i < N; ++i) {
     for (int j(0); j < N; ++j) {

@@ -13,7 +13,7 @@ Timer::Timer(Time *time_): time(time_), start(Time::getCurrentRealTime()) {
 
 /**
  * Destroys the timer object concluding the time measurement
- * and adding the elapsed time to the double specified upon
+ * and adding the elapsed time to the time specified upon
  * construction of the timer object.
  */
 Timer::~Timer() {

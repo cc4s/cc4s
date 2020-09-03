@@ -8,7 +8,7 @@ using namespace cc4s;
 
 BlacsWorld::BlacsWorld(int rank_, int processes, int processRows): rank(rank_) {
   lens[0] = processRows > 0 ?
-    processRows : static_cast<int>(std::sqrt(processes));
+    processRows : static_cast<int>(sqrt(processes));
   lens[1] = processes / lens[0];
   while (lens[0] * lens[1] != processes) {
     --lens[0];

@@ -12,15 +12,15 @@ extern "C" {
     const char *jobvLeft,
     const char *jobvRight,
     const int *n,
-    double *a,
+    cc4s::Real<64> *a,
     const int *lda,
-    double *wReal,
-    double *wImag,
-    double *vLeft,
+    cc4s::Real<64> *wReal,
+    cc4s::Real<64> *wImag,
+    cc4s::Real<64> *vLeft,
     const int *ldvLeft,
-    double *vRight,
+    cc4s::Real<64> *vRight,
     const int *ldvRight,
-    double *work,
+    cc4s::Real<64> *work,
     const int *workSize,
     int *info
   );
@@ -28,28 +28,28 @@ extern "C" {
     const char *jobvLeft,
     const char *jobvRight,
     const int *n,
-    const complex<double> *a,
+    const cc4s::Complex<64> *a,
     const int *lda,
-    complex<double> *w,
-    complex<double> *vLeft,
+    cc4s::Complex<64> *w,
+    cc4s::Complex<64> *vLeft,
     const int *ldvLeft,
-    complex<double> *vRight,
+    cc4s::Complex<64> *vRight,
     const int *ldvRight,
-    complex<double> *work,
+    cc4s::Complex<64> *work,
     const int *workSize,
-    complex<double> *rwork,
+    cc4s::Complex<64> *rwork,
     int *info
   );
   void dsysv_(
     const char *uplo,
     const int *n,
     const int *m,
-    double *a,
+    cc4s::Real<64> *a,
     const int *lda,
     const int *ipiv,
-    double *b,
+    cc4s::Real<64> *b,
     const int *ldb,
-    double *work,
+    cc4s::Real<64> *work,
     const int *lwork,
     const int *info
   );
@@ -57,19 +57,19 @@ extern "C" {
     const char *uplo,
     const int *n,
     const int *m,
-    complex<double> *a,
+    cc4s::Complex<64> *a,
     const int *lda,
     const int *ipiv,
-    complex<double> *b,
+    cc4s::Complex<64> *b,
     const int *ldb,
-    complex<double> *work,
+    cc4s::Complex<64> *work,
     const int *lwork,
     const int *info
   );
   void dgetrf_(
     const int *m,
     const int *n,
-    double *a,
+    cc4s::Real<64> *a,
     const int *lda,
     const int *rowPermutation,
     int *info
@@ -77,26 +77,26 @@ extern "C" {
   void zgetrf_(
     const int *m,
     const int *n,
-    complex<double> *a,
+    cc4s::Complex<64> *a,
     const int *lda,
     const int *rowPermutation,
     int *info
   );
   void dgetri_(
     const int *n,
-    double *a,
+    cc4s::Real<64> *a,
     const int *lda,
     const int *rowPermutation,
-    double *work,
+    cc4s::Real<64> *work,
     const int *workSize,
     int *info
   );
   void zgetri_(
     const int *n,
-    complex<double> *a,
+    cc4s::Complex<64> *a,
     const int *lda,
     const int *rowPermutation,
-    complex<double> *work,
+    cc4s::Complex<64> *work,
     const int *workSize,
     int *info
   );

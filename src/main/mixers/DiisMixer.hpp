@@ -18,7 +18,7 @@ namespace cc4s {
       const Ptr<FockVector<F,TE>> &A, const Ptr<FockVector<F,TE>> &R
     );
     virtual Ptr<const FockVector<F,TE>> get();
-    virtual double getResiduumNorm();
+    virtual Real<64> getResiduumNorm();
 
     Ptr<FockVector<F,TE>> next;
     Ptr<FockVector<F,TE>> nextResiduum; // AI: dont know what this is good for
@@ -41,12 +41,12 @@ namespace cc4s {
     std::vector<F> B;
 
 
-    int N;
-    int nextIndex;
-    int count;
-    double residuumNorm;
-    std::vector<double> inverse(std::vector<double> matrix, int N);
-    std::vector<complex<double>> inverse(std::vector<complex<double>> matrix, int N);
+    size_t N;
+    size_t nextIndex;
+    size_t count;
+    Real<64> residuumNorm;
+    std::vector<Real<64>> inverse(std::vector<Real<64>> matrix, size_t N);
+    std::vector<Complex<64>> inverse(std::vector<Complex<64>> matrix, size_t N);
 
   };
 }

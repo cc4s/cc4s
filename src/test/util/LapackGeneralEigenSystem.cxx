@@ -21,13 +21,13 @@ TEST_CASE( "LapackGeneralEigenSystem", "[util]" ) {
   LapackGeneralEigenSystem<complex> eigenSystem(A);
 
   REQUIRE(
-    std::abs(eigenSystem.getEigenValues()[0] - expectedEigenValues[0]) < 1E-14
+    abs(eigenSystem.getEigenValues()[0] - expectedEigenValues[0]) < 1E-14
   );
   REQUIRE(
-    std::abs(eigenSystem.getEigenValues()[1] - expectedEigenValues[1]) < 1E-14
+    abs(eigenSystem.getEigenValues()[1] - expectedEigenValues[1]) < 1E-14
   );
   REQUIRE(
-    std::abs(eigenSystem.getEigenValues()[2] - expectedEigenValues[2]) < 1E-14
+    abs(eigenSystem.getEigenValues()[2] - expectedEigenValues[2]) < 1E-14
   );
 
   for (int k(0); k < eigenSystem.getRightEigenVectors().getColumns(); ++k) {

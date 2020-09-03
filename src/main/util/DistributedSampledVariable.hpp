@@ -5,7 +5,7 @@
 #include <util/MpiCommunicator.hpp>
 
 namespace cc4s {
-  template <typename F=double>
+  template <typename F=Real<>>
   class DistributedSampledVariable: public SampledVariable<F> {
   public:
     DistributedSampledVariable(

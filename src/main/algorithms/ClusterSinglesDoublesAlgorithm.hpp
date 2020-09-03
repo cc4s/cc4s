@@ -33,10 +33,10 @@ namespace cc4s {
      * \brief Defines the default number of iterations (16).
      */
     static int constexpr DEFAULT_MAX_ITERATIONS = 16;
-    static double constexpr DEFAULT_ENERGY_CONVERGENCE = 1E-7;
-    static double constexpr DEFAULT_AMPLITUDES_CONVERGENCE = 1E-6;
+    static Real<64> constexpr DEFAULT_ENERGY_CONVERGENCE = 1E-7;
+    static Real<64> constexpr DEFAULT_AMPLITUDES_CONVERGENCE = 1E-6;
 
-    static double constexpr DEFAULT_LEVEL_SHIFT = 0.0;
+    static Real<64> constexpr DEFAULT_LEVEL_SHIFT = 0.0;
 
   protected:
     Ptr<MapNode> arguments, energy;

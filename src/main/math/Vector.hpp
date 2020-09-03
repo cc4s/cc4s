@@ -114,19 +114,19 @@ namespace cc4s {
     int approximately(Vector<F,D> const &v, const Real<> epsilon = 1e-10) const {
       Vector<F,D> u(*this);
       u -= v;
-      return std::real(u.dot(u)) < epsilon;
+      return real(u.dot(u)) < epsilon;
     }
 
     // TODO: improve name
     Real<> distance(Vector<F, D> const &v) const {
       Vector<F,D> u(*this);
       u -= v;
-      return std::real(u.dot(u));
+      return real(u.dot(u));
     }
 
     Real<> length() const {
       Vector<F,D> u(*this);
-      return std::sqrt(std::real(u.dot(u)));
+      return sqrt(real(u.dot(u)));
     }
 
     F operator [](int d) const {

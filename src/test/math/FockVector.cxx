@@ -16,28 +16,28 @@ TEST_CASE( "Basic FockVector testing", "[math]" ) {
   int symsSingles[] = {NS, NS};
   int symsDoubles[] = {NS, NS, NS, NS};
 
-  CTF::Tensor<double> Rai(2, vo, symsSingles, CTF::get_universe(), "Rai");
-  CTF::Tensor<double> Rabij(
+  CTF::Tensor<Real<>> Rai(2, vo, symsSingles, CTF::get_universe(), "Rai");
+  CTF::Tensor<Real<>> Rabij(
     4, vvoo, symsDoubles, CTF::get_universe(), "Rabij");
-  cc4s::FockVector<double> R(
-    std::vector<PTR(CTF::Tensor<double>)>(
-      { NEW(CTF::Tensor<double>,Rai), NEW(CTF::Tensor<double>, Rabij) }
+  cc4s::FockVector<Real<>> R(
+    std::vector<PTR(CTF::Tensor<Real<>>)>(
+      { NEW(CTF::Tensor<Real<>>,Rai), NEW(CTF::Tensor<Real<>>, Rabij) }
     ),
     std::vector<std::string>({"ai", "abij"})
   );
 
-  CTF::Tensor<double> Lia(2, ov, symsSingles, CTF::get_universe(), "Lia");
-  CTF::Tensor<double> Lijab(
+  CTF::Tensor<Real<>> Lia(2, ov, symsSingles, CTF::get_universe(), "Lia");
+  CTF::Tensor<Real<>> Lijab(
     4, oovv, symsDoubles, CTF::get_universe(), "Lijab");
-  cc4s::FockVector<double> L(
-    std::vector<PTR(CTF::Tensor<double>)>(
-      { NEW(CTF::Tensor<double>,Lia), NEW(CTF::Tensor<double>, Lijab) }
+  cc4s::FockVector<Real<>> L(
+    std::vector<PTR(CTF::Tensor<Real<>>)>(
+      { NEW(CTF::Tensor<Real<>>,Lia), NEW(CTF::Tensor<Real<>>, Lijab) }
     ),
     std::vector<std::string>({"ia", "ijab"})
   );
 
   // Test conjugateTranspose
-  cc4s::FockVector<double> Rvp(
+  cc4s::FockVector<Real<>> Rvp(
     R.conjugateTranspose()
   );
   for (unsigned int i(0) ; i < L.componentTensors.size() ; i++) {
@@ -50,9 +50,9 @@ TEST_CASE( "Basic FockVector testing", "[math]" ) {
   }
 
   // Test dot products
-  double lNorm(L.dot(L));
+  Real<> lNorm(L.dot(L));
   REQUIRE(lNorm == 0.0);
-  double rNorm(R.dot(R));
+  Real<> rNorm(R.dot(R));
   REQUIRE(rNorm == 0.0);
 
 }

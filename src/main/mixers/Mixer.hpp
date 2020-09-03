@@ -48,7 +48,7 @@ namespace cc4s {
      * Requires one or more previous calls to append.
      * The returned FockVectors must not be changed.
      **/
-    virtual double getResiduumNorm() = 0;
+    virtual Real<> getResiduumNorm() = 0;
 
     Ptr<MapNode> arguments;
   };

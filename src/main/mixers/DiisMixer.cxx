@@ -15,18 +15,18 @@ DiisMixer<F,TE>::DiisMixer(
 ):
   Mixer<F,TE>(arguments), next(nullptr), nextResiduum(nullptr)
 {
-  N = arguments->getValue<int>("maxResidua", 4);
+  N = arguments->getValue<size_t>("maxResidua", 4);
   LOG(1,"DiisMixer") << "maxResidua=" << N << std::endl;
 
   amplitudes.resize(N);
   residua.resize(N);
   nextIndex = 0;
   count = 0;
-  int M(N+1);
+  size_t M(N+1);
   // set up overlap matrix
   B.resize(M*M,0);
-  for ( int i(1); i<M; i++){ B[i] = -1;}
-  for ( int i(M); i<M*M; i=i+M){ B[i] = -1;}
+  for ( size_t i(1); i<M; i++){ B[i] = -1;}
+  for ( size_t i(M); i<M*M; i=i+M){ B[i] = -1;}
 }
 
 template <typename F, typename TE>
@@ -45,10 +45,10 @@ void DiisMixer<F,TE>::append(
   residua[nextIndex] = R;
 
   // write the overlap matrix for the new residua
-  for (int i(0); i < N; ++i) {
+  for (size_t i(0); i < N; ++i) {
     if (residua[i]) {
       F overlap( 2.0*residua[i]->dot(*R) );
-      int j((i+1)*(N+1)+nextIndex+1);
+      size_t j((i+1)*(N+1)+nextIndex+1);
       B[j] = overlap;
       j = (nextIndex+1)*(N+1)+i+1;
       B[j] = overlap;
@@ -57,11 +57,11 @@ void DiisMixer<F,TE>::append(
 
   // now, pseudo-invert upper left corner of B and read out its first column
   if (count < N) ++count;
-  int dim(count+1);
+  size_t dim(count+1);
   std::vector<F> column(count+1);
   std::vector<F> matrix(dim*dim);
-  for ( int m(0); m < dim; m++)
-  for ( int n(0); n < dim; n++)
+  for ( size_t m(0); m < dim; m++)
+  for ( size_t n(0); n < dim; n++)
     matrix[n+dim*m] = B[n+(N+1)*m];
 
   column = inverse(matrix, dim);
@@ -71,14 +71,14 @@ void DiisMixer<F,TE>::append(
   nextResiduum = New<FockVector<F,TE>>(*R);
   *nextResiduum *= F(0);
 
-  for (int j(0); j < count; ++j) {
-    int i( (nextIndex+N-j) % N );
+  for (size_t j(0); j < count; ++j) {
+    size_t i( (nextIndex+N-j) % N );
     LOG(1, "DiisMixer") << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
     *next += column[i+1] * *amplitudes[i];
     *nextResiduum += column[i+1] * *residua[i];
   }
   nextIndex = (nextIndex+1) % N;
-  residuumNorm = std::sqrt(std::real(nextResiduum->dot(*nextResiduum)));
+  residuumNorm = sqrt(real(nextResiduum->dot(*nextResiduum)));
 }
 
 template <typename F, typename TE>
@@ -87,37 +87,37 @@ Ptr<const FockVector<F,TE>> DiisMixer<F,TE>::get() {
 }
 
 template <typename F, typename TE>
-double DiisMixer<F,TE>::getResiduumNorm() {
+Real<> DiisMixer<F,TE>::getResiduumNorm() {
   return residuumNorm;
 }
 
 template <typename F, typename TE>
-std::vector<double> DiisMixer<F,TE>::inverse(
-  std::vector<double> matrix, int N
+std::vector<Real<>> DiisMixer<F,TE>::inverse(
+  std::vector<Real<>> matrix, size_t N
 ){
-  std::vector<double> column(N,0);
+  std::vector<Real<>> column(N,0);
   std::vector<int> ipiv(N);
-  std::vector<double> work(N);
+  std::vector<Real<>> work(N);
   column[0] = -1.0;
 
-  int one(1); int info;
-  dsysv_("U", &N, &one, matrix.data(), &N, ipiv.data(), column.data(), &N, work.data(), &N, &info);
-  if ( info != 0) throw "problem diagonalization\n";
+  int one(1); int info; int n(N);
+  dsysv_("U", &n, &one, matrix.data(), &n, ipiv.data(), column.data(), &n, work.data(), &n, &info);
+  if ( info != 0) THROW("Diagonalization failed");
   return column;
 }
 
 template <typename F, typename TE>
-std::vector<complex<double>> DiisMixer<F,TE>::inverse(
-  std::vector<complex<double>> matrix, int N
+std::vector<Complex<>> DiisMixer<F,TE>::inverse(
+  std::vector<Complex<>> matrix, size_t N
 ){
-  std::vector<complex<double>> column(N,0);
+  std::vector<Complex<>> column(N,0);
   std::vector<int> ipiv(N);
-  std::vector<complex<double>> work(N);
-  int one(1); int info;
+  std::vector<Complex<>> work(N);
+  int one(1); int info; int n(N);
   column[0] = -1.0;
 
-  zsysv_("U", &N, &one, matrix.data(), &N, ipiv.data(), column.data(), &N, work.data(), &N, &info);
-  if ( info != 0) throw "problem diagonalization\n";
+  zsysv_("U", &n, &one, matrix.data(), &n, ipiv.data(), column.data(), &n, work.data(), &n, &info);
+  if ( info != 0) THROW("Diagonalization failed");
 
   return column;
 }

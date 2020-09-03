@@ -12,7 +12,7 @@ TEST_CASE( "Basic antisymmetrize functionality", "[math]" ) {
   //t.print();
   cc4s::antiSymmetrize("abcd", "bacd", t);
   //t.print();
-  double norm(t.norm2());
+  Real<> norm(t.norm2());
   REQUIRE(norm == 0.0);
 }
 
@@ -34,7 +34,7 @@ TEST_CASE( "Antisymmetrize matrix", "[math]" ) {
   CTF::Tensor<> symmetric(t);
   symmetric["ij"]  = t["ij"];
   symmetric["ij"] += t["ji"];
-  double norm(symmetric.norm2());
+  Real<> norm(symmetric.norm2());
   REQUIRE(norm == 0.0);
 }
 

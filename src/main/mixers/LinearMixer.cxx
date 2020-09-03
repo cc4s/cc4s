@@ -35,7 +35,7 @@ void LinearMixer<F,TE>::append(
   }
   last = next;
   lastResiduum = nextResiduum;
-  residuumNorm = std::sqrt(std::real(lastResiduum->dot(*lastResiduum)));
+  residuumNorm = sqrt(real(lastResiduum->dot(*lastResiduum)));
 }
 
 template <typename F, typename TE>

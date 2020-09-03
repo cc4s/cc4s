@@ -39,7 +39,7 @@ namespace cc4s {
     static std::vector<ExtendingResource> extendingResources;
   };
 
-  template <typename F=double>
+  template <typename F=Real<>>
   class DryTensor {
   public:
     /**
@@ -105,7 +105,7 @@ namespace cc4s {
     size_t size;
   };
 
-  template <typename F=double>
+  template <typename F=Real<>>
   class DryMatrix: public DryTensor<F> {
   public:
     DryMatrix(
@@ -114,7 +114,7 @@ namespace cc4s {
     );
   };
 
-  template <typename F=double>
+  template <typename F=Real<>>
   class DryVector: public DryTensor<F> {
   public:
     DryVector(
@@ -122,7 +122,7 @@ namespace cc4s {
     );
   };
 
-  template <typename F=double>
+  template <typename F=Real<>>
   class DryScalar: public DryTensor<F> {
   public:
     DryScalar(SourceLocation const &location = SourceLocation());

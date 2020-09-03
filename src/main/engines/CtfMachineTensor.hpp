@@ -120,9 +120,9 @@ namespace cc4s {
     // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
     void contract(
       F alpha,
-      const std::shared_ptr<CtfMachineTensor<F>> &A,
+      const Ptr<CtfMachineTensor<F>> &A,
       const std::string &aIndices,
-      const std::shared_ptr<CtfMachineTensor<F>> &B,
+      const Ptr<CtfMachineTensor<F>> &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices,

@@ -8,6 +8,8 @@
 #include <sstream>
 #include <cmath>
 
+#include <math/Real.hpp>
+
 namespace cc4s {
   /**
    * The Time class manages time intervals and their manipulation in terms
@@ -36,8 +38,8 @@ namespace cc4s {
     int64_t getFractions() const {
       return tv_nsec;
     }
-    double getFractionalSeconds() const {
-      return tv_sec + static_cast<double>(tv_nsec) / FRACTIONS;
+    Real<> getFractionalSeconds() const {
+      return tv_sec + static_cast<Real<>>(tv_nsec) / FRACTIONS;
     }
 
     Time &operator += (Time const &t) {
@@ -81,9 +83,9 @@ namespace cc4s {
     return result;
   }
 
-  inline Time operator *(const Time &difference, const double factor) {
-    double d(difference.getFractionalSeconds() * factor);
-    return Time(std::floor(d), std::round((d-std::floor(d)) * Time::FRACTIONS));
+  inline Time operator *(const Time &difference, const Real<> factor) {
+    Real<> d(difference.getFractionalSeconds() * factor);
+    return Time(floor(d), round((d-floor(d)) * Time::FRACTIONS));
   }
 
   inline std::ostream &operator <<(std::ostream &stream, Time const &t) {

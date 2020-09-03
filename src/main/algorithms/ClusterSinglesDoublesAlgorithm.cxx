@@ -167,7 +167,7 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     // FIXME: imaginary part ignored
     EMIT() << YAML::Key << "energy" << YAML::Value
       << YAML::BeginMap
-      << YAML::Key << "value" << YAML::Value << std::real(e)
+      << YAML::Key << "value" << YAML::Value << real(e)
       << YAML::EndMap;
   } else
 */
@@ -904,7 +904,7 @@ std::string ClusterSinglesDoublesAlgorithm::getDataName(
   return dataName.str();
 }
 
-constexpr double ClusterSinglesDoublesAlgorithm::DEFAULT_ENERGY_CONVERGENCE;
-constexpr double ClusterSinglesDoublesAlgorithm::DEFAULT_AMPLITUDES_CONVERGENCE;
-constexpr double ClusterSinglesDoublesAlgorithm::DEFAULT_LEVEL_SHIFT;
+constexpr Real<64> ClusterSinglesDoublesAlgorithm::DEFAULT_ENERGY_CONVERGENCE;
+constexpr Real<64> ClusterSinglesDoublesAlgorithm::DEFAULT_AMPLITUDES_CONVERGENCE;
+constexpr Real<64> ClusterSinglesDoublesAlgorithm::DEFAULT_LEVEL_SHIFT;
 

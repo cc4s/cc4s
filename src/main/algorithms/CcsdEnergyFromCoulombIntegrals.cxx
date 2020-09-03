@@ -238,7 +238,7 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       size_t NG(realDressedGammaGpp->lens[0]);
       size_t No(Rpphh->lens[2]);
       int64_t sliceSize(arguments->getValue<int64_t>("integralsSliceSize", No));
-      size_t numberSlices(size_t(ceil(double(Nv)/sliceSize)));
+      size_t numberSlices(size_t(ceil(1.0*(Nv)/sliceSize)));
       std::vector<Ptr<Tensor<Real<>, TE>>> realSlicedGammaGpp;
       std::vector<Ptr<Tensor<Real<>, TE>>> imagSlicedGammaGpp;
       //Slice GammaGab and store it in a vector
@@ -489,7 +489,7 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       size_t Nv(Rpphh->lens[0]);
       size_t No(Rpphh->lens[2]);
       int64_t sliceSize(arguments->getValue<int64_t>("integralsSliceSize", No));
-      size_t numberSlices(size_t(ceil(double(Nv)/sliceSize)));
+      size_t numberSlices(size_t(ceil(1.0*(Nv)/sliceSize)));
       std::vector<Ptr<Tensor<Complex<>, TE>>> cTSlicedGammaGpp;
       std::vector<Ptr<Tensor<Complex<>, TE>>>   SlicedGammaGpp;
       COMPILE(

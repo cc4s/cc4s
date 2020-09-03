@@ -27,9 +27,9 @@ namespace cc4s {
         const std::pair<int, Real<64>> &b
       ) {
         Real<64> diff(b.second-a.second);
-        Real<64> magnitude( std::abs(a.second)+std::abs(b.second) );
-        if (std::real(diff) > +1E-13*magnitude) return true;
-        if (std::real(diff) < -1E-13*magnitude) return false;
+        Real<64> magnitude( abs(a.second)+abs(b.second) );
+        if (real(diff) > +1E-13*magnitude) return true;
+        if (real(diff) < -1E-13*magnitude) return false;
         return a.first < b.first;
       }
     };
@@ -85,7 +85,7 @@ namespace cc4s {
 
       for (int i(0); i < rows; ++i) {
         lambdas[i] = Complex<64>(lambdaReals[i], lambdaImags[i]);
-        if (std::abs(lambdaImags[i]) > 1e-8*std::abs(lambdaReals[i])) {
+        if (abs(lambdaImags[i]) > 1e-8*abs(lambdaReals[i])) {
           // TODO: decode eigenvectors to complex eigenvalues
         }
       }
@@ -154,7 +154,7 @@ namespace cc4s {
         &info
       );
       // TODO: check info
-      workCount = static_cast<int>(std::real(optimalWork)+0.5);
+      workCount = static_cast<int>(real(optimalWork)+0.5);
       std::vector<Complex<64>> work(workCount);
 
       zgeev_(
@@ -222,7 +222,7 @@ namespace cc4s {
             element += A(i,j) * (*R)(j,k);
           }
           element -= lambdas[k] * (*R)(i,k);
-          error += std::real(element*std::conj(element));
+          error += real(element*conj(element));
         }
       }
       return error;
@@ -233,10 +233,10 @@ namespace cc4s {
         for (int k(0); k < A.getRows(); ++k) {
           Complex<64> element(0);
           for (int i(0); i < A.getRows(); ++i) {
-            element += std::conj((*L)(i,k)) * A(i,j);
+            element += conj((*L)(i,k)) * A(i,j);
           }
-          element -= std::conj((*L)(j,k)) * lambdas[k];
-          error += std::real(element*std::conj(element));
+          element -= conj((*L)(j,k)) * lambdas[k];
+          error += real(element*conj(element));
         }
       }
       return error;
@@ -248,10 +248,10 @@ namespace cc4s {
         for (int j(0); j < R->getRows(); ++j) {
           Complex<64> element(0);
           for (int k(0); k < R->getRows(); ++k) {
-            element += std::conj((*R)(i,k)) * (*R)(j,k);
+            element += conj((*R)(i,k)) * (*R)(j,k);
           }
           element -= i == j ? 1.0 : 0.0;
-          error += i == j ? 0.0 : std::real(element*std::conj(element));
+          error += i == j ? 0.0 : real(element*conj(element));
         }
       }
       return error;
@@ -266,17 +266,17 @@ namespace cc4s {
         // FIXME: Move the inf code into particular implementations
         Real<64> inf = std::numeric_limits<Real<64>>::infinity();
         Complex<64> A(
-          std::abs(a.second) < 1E-4 ? *(new Complex<64>(inf,inf)) : a.second
+          abs(a.second) < 1E-4 ? *(new Complex<64>(inf,inf)) : a.second
         );
         Complex<64> B(
-          std::abs(b.second) < 1E-4 ? *(new Complex<64>(inf,inf)) : b.second
+          abs(b.second) < 1E-4 ? *(new Complex<64>(inf,inf)) : b.second
         );
         Complex<64> diff(B-A);
-        Real<64> magnitude( std::abs(a.second)+std::abs(b.second) );
-        if (std::real(diff) > +1E-13*magnitude) return true;
-        if (std::real(diff) < -1E-13*magnitude) return false;
-        if (std::imag(diff) > +1E-13*magnitude) return false;
-        if (std::imag(diff) < -1E-13*magnitude) return true;
+        Real<64> magnitude( abs(a.second)+abs(b.second) );
+        if (real(diff) > +1E-13*magnitude) return true;
+        if (real(diff) < -1E-13*magnitude) return false;
+        if (imag(diff) > +1E-13*magnitude) return false;
+        if (imag(diff) < -1E-13*magnitude) return true;
         return a.first < b.first;
       }
     };
