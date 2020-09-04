@@ -188,6 +188,7 @@ void TensorWriter::writeText(
   }
   // TODO: use Stream Printer rather than <<
   stream << setprecision(17);
+  OUT() << "Writing to text file " << fileName << std::endl;
 
   // build dimensions meta data from tensor length if not already present
   if (!tensor->get("dimensions")) {
@@ -251,6 +252,7 @@ void TensorWriter::writeBinary(
     !mpiError, std::string("Failed to open file '") + fileName + "'",
     sourceLocation
   )
+  OUT() << "Writing to binary file " << fileName << std::endl;
 
   if (!tensor->get("dimensions")) {
     // build dimensions meta data from tensor length

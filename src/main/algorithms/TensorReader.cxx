@@ -149,6 +149,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
     throw New<Exception>(explanation.str(), sourceLocation);
   }
   Scanner scanner(&stream);
+  OUT() << "Reading from text file " << fileName << std::endl;
 
   // create tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
@@ -201,6 +202,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
     !mpiError, std::string("Failed to open file '") + fileName + "'",
     sourceLocation
   )
+  OUT() << "Reading from binary file " << fileName << std::endl;
 
   // create tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
