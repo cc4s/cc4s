@@ -165,6 +165,8 @@ namespace cc4s {
         );
         // allocate the implementation specific machine tensor upon request
         machineTensor = MT::create(lens, name);
+        LOG() << "Allocated tensor with " <<
+          getElementsCount() << " elements" << std::endl;
       }
       return machineTensor;
     }

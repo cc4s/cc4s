@@ -149,13 +149,13 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
     throw New<Exception>(explanation.str(), sourceLocation);
   }
   Scanner scanner(&stream);
-  OUT() << "Reading from text file " << fileName << std::endl;
 
   // create tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
   auto result(
     New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
   );
+  OUT() << "Reading from text file " << fileName << std::endl;
   if (Cc4s::options->dryRun) return result;
 
   // read the values only on root, all others still pariticipate calling MPI
@@ -180,6 +180,8 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
     A->write(localElementsCount, indices.data(), values.data());
     index += elementsCount;
   }
+  LOG() << "Read " << A->getElementsCount() <<
+    " elements from text file " << fileName << std::endl;
 
   return result;
 }
@@ -202,17 +204,21 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
     !mpiError, std::string("Failed to open file '") + fileName + "'",
     sourceLocation
   )
-  OUT() << "Reading from binary file " << fileName << std::endl;
 
   // create tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
   auto result(
     New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
   );
-  if (Cc4s::options->dryRun) return result;
+  // wait until allocation is done on all processes
+  Cc4s::world->barrier();
 
+  OUT() << "Reading from binary file " << fileName << std::endl;
+  if (Cc4s::options->dryRun) return result;
   // write tensor data with values from file
   A->writeFromFile(file);
+  LOG() << "Read " << sizeof(F)*A->getElementsCount() <<
+    " bytes from binary file " << fileName << std::endl;
 
   // done
   MPI_File_close(&file);

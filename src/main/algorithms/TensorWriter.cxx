@@ -188,7 +188,6 @@ void TensorWriter::writeText(
   }
   // TODO: use Stream Printer rather than <<
   stream << setprecision(17);
-  OUT() << "Writing to text file " << fileName << std::endl;
 
   // build dimensions meta data from tensor length if not already present
   if (!tensor->get("dimensions")) {
@@ -208,6 +207,7 @@ void TensorWriter::writeText(
   std::vector<size_t> indices(localBufferSize);
   std::vector<F> values(localBufferSize);
 
+  OUT() << "Writing to text file " << fileName << std::endl;
   if (Cc4s::options->dryRun) {
     stream << "# dry-run: no data written" << std::endl;
     return;
@@ -230,6 +230,8 @@ void TensorWriter::writeText(
     Cc4s::world->barrier();
     index += elementsCount;
   }
+  LOG() << "Written " << data->getElementsCount() <<
+    " elements to text file " << fileName << std::endl;
 }
 
 template <typename F, typename TE>
@@ -252,7 +254,6 @@ void TensorWriter::writeBinary(
     !mpiError, std::string("Failed to open file '") + fileName + "'",
     sourceLocation
   )
-  OUT() << "Writing to binary file " << fileName << std::endl;
 
   if (!tensor->get("dimensions")) {
     // build dimensions meta data from tensor length
@@ -266,10 +267,13 @@ void TensorWriter::writeBinary(
     tensor->get("dimensions") = dimensions;
   }
 
+  OUT() << "Writing to binary file " << fileName << std::endl;
   if (Cc4s::options->dryRun) return;
 
   // write tensor data with values from file
   data->readToFile(file);
+  LOG() << "Written " << sizeof(F)*data->getElementsCount() <<
+    " bytes to binary file " << fileName << std::endl;
 
   // done
   MPI_File_close(&file);
