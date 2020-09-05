@@ -210,8 +210,6 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
   auto result(
     New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
   );
-  // wait until allocation is done on all processes
-  Cc4s::world->barrier();
 
   OUT() << "Reading from binary file " << fileName << std::endl;
   if (Cc4s::options->dryRun) return result;
