@@ -16,7 +16,7 @@ OPTIMIZE = -Ofast -march=native -fno-lto
 INSTALL=~/bin/cc4s/${CONFIG}
 
 LINK_LIBS = \
--lWl,-Bstatic \
+-Wl,-Bstatic \
 ${YAML_LIB} \
 ${CTF_LIB} \
 ${BLAS_LIB} \
