@@ -1,32 +1,32 @@
+include Libraries.mk
+
 # main target
-TARGET=Cc4s
+TARGET = Cc4s
 
 # compiler and linker
-CXX=mpicxx
+CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS=-fopenmp -std=c++11 -Wall -fmax-errors=3
+OPTIONS = -fopenmp -std=c++11 -Wall -fmax-errors=3
 
 # optimization options (only for compiling and linking)
-OPTIMIZE=-Ofast -march=native -fno-lto
-
-# compiler specifics for library definitions
-ADD_INC_PATH=-I
-ADD_LIB_PATH=-L
-ADD_LIB=-l
-
-LIBS_PROLOGUE=-Wl,-Bstatic
-LIBS_EPILOGUE=${ADD_LIB}gfortran ${ADD_LIB}quadmath -Wl,-Bdynamic
-
-INCLUDES=
-LIBS=
-# libraries provided by the enviornment
-# BLAS and LAPACK library, expects BLAS_PATH to be set
-INCLUDES:=${ADD_INC_PATH}${BLAS_PATH}/include ${INCLUDES}
-LIBS:=${ADD_LIB_PATH}${BLAS_PATH}/lib ${ADD_LIB}openblas ${LIBS}
-# ScaLAPACK libarary, expects SCALAPACK_PATH to be set
-LIBS:=${ADD_LIB_PATH}${SCALAPACK_PATH}/lib ${ADD_LIB}scalapack ${LIBS}
+OPTIMIZE = -Ofast -march=native -fno-lto
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
 
+LINK_LIBS = \
+-lWl,-Bstatic \
+${YAML_LIB} \
+${CTF_LIB} \
+${BLAS_LIB} \
+${SCALAPACK_LIB} \
+-lgfortran -lquadmath \
+-Wl,-Bdynamic
+
+INCLUDE_FLAGS = \
+${YAML_INCLUDE} \
+${BLAS_INCLUDE} \
+${CTF_INCLUDE}
+
+# vim: ft=make

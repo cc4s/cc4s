@@ -1,30 +1,35 @@
+include Libraries.mk
+
 # main target
-TARGET=Cc4s
+TARGET = Cc4s
 
 # compiler and linker
-CXX=mpicxx
+CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS=-mkl -lpthread  -std=c++11 -Wall -fmax-errors=3 -qopenmp -qoverride-limits -DINTEL_COMPILER -Qoption,cpp,--extended_float_types -DDEBUG
+OPTIONS = -mkl -lpthread  -std=c++11 -Wall -fmax-errors=3 -qopenmp \
+          -qoverride-limits -DINTEL_COMPILER \
+          -Qoption,cpp,--extended_float_types -DDEBUG
 
 # optimization options (only for compiling and linking)
-OPTIMIZE=-O0 -g
+OPTIMIZE = -O0 -g
 
-# compiler specifics for library definitions
-ADD_INC_PATH=-I
-ADD_LIB_PATH=-L
-ADD_LIB=-l
-
-LIBS_PROLOGUE=-mkl
-LIBS_EPILOGUE=
-
-INCLUDES=
-LIBS=
 # libraries provided by the enviornment
 # BLAS and LAPACK library contained in mkl
 # ScaLAPACK libarary, expects mkl and intelmpi to be loaded
-LIBS:=${ADD_LIB}mkl_scalapack_lp64 ${ADD_LIB}mkl_blacs_intelmpi_lp64 ${LIBS}
+MKL_LIB += -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
 
+LINK_LIBS = \
+-mkl \
+${MKL_LIB} \
+${YAML_LIB} \
+${CTF_LIB} \
+
+INCLUDE_FLAGS = \
+${YAML_INCLUDE} \
+${CTF_INCLUDE}
+
+# vim: ft=make
