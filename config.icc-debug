@@ -7,9 +7,12 @@ TARGET = Cc4s
 CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS = -mkl -lpthread  -std=c++11 -Wall -fmax-errors=3 -qopenmp \
+OPTIONS = -mkl -lpthread  -std=c++11 \
+          -Wall -pedantic -fmax-errors=3 \
+          -qopenmp \
           -qoverride-limits -DINTEL_COMPILER \
-          -Qoption,cpp,--extended_float_types -DDEBUG
+          -Qoption,cpp,--extended_float_types \
+          -DDEBUG
 
 # optimization options (only for compiling and linking)
 OPTIMIZE = -O0 -g
