@@ -85,7 +85,7 @@ void Cc4s::run(const Ptr<MapNode> &report) {
       step->setValue<std::string>("realtime", realtime.str());
       step->setValue<size_t>("floatingPointOperations", flops);
       step->setValue<Real<>>("flops", flops / time.getFractionalSeconds());
-      printStatistics(step);
+//      printStatistics(step);
       // resources which maybe held by the algorithm automatically released
     }
   }
@@ -103,6 +103,7 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   report->setValue<std::string>("realtime", totalRealtime.str());
   report->setValue<size_t>("floatingPointOperations", totalFlops);
   report->setValue<Real<>>("flops", totalFlops/totalTime.getFractionalSeconds());
+  printStatistics(report);
 }
 
 void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
@@ -177,6 +178,9 @@ void Cc4s::printStatistics(const Ptr<MapNode> &report) {
     LOG()
       << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
       << " GB" << std::endl;
+    OUT()
+      << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
+      << " GB" << std::endl;
     report->setValue<size_t>("estimatedTotalMemory", DryMemory::maxTotalSize);
   } else {
     std::string fieldName;
@@ -206,6 +210,10 @@ void Cc4s::printStatistics(const Ptr<MapNode> &report) {
     LOG() << "overall peak physical memory="
       << globalPeakPhysicalSize / unitsPerGB << " GB"
       << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
+    OUT() << "overall peak physical memory="
+      << globalPeakPhysicalSize / unitsPerGB << " GB"
+      << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
+
     report->setValue<size_t>("peakVirtualMemory", globalPeakVirtualSize*1024);
     report->setValue<size_t>("peakPhysicalMemory", globalPeakPhysicalSize*1024);
   }
@@ -265,7 +273,7 @@ void Cc4s::listHosts(const Ptr<MapNode> &report) {
       }
       report->get("hosts") = hosts;
     } else {
-      // send own name 
+      // send own name
       MPI_Send(
         ownName, MPI_MAX_PROCESSOR_NAME, MPI_BYTE,
         0, 0, MPI_COMM_WORLD
@@ -306,7 +314,7 @@ int main(int argumentCount, char **arguments) {
     cc4s.run(report);
   } else {
     // without debugger: catch and write list of causes
-    try {  
+    try {
       cc4s.run(report);
     } catch (Ptr<Exception> cause) {
       auto sourceLocation(cause->getSourceLocation());
