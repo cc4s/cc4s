@@ -65,7 +65,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     mixer, std::string("Unknown mixer type: '") + mixerType + "'",
     mixerArguments->get("type")->sourceLocation
   );
-
+  OUT() << "Using the " << mixerType << std::endl;
   // number of iterations for determining the amplitudes
   auto maxIterationsCount(
     arguments->getValue<size_t>("maxIterations", DEFAULT_MAX_ITERATIONS)

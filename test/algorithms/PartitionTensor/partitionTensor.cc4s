@@ -1,7 +1,0 @@
-GenerateRandomMatrix [(m 3) (n 2)] [(Result A)].
-TensorWriter [(Data A) (rowIndexOrder "i") (columnIndexOrder "j")] [].
-
-PartitionTensor [A (dimension 1) (prefix "A")] [A0 A1].
-
-TensorWriter [(Data A0)] [].
-TensorWriter [(Data A1)] [].
