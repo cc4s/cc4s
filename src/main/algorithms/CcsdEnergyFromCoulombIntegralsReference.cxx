@@ -67,7 +67,7 @@ Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   auto onlyPpl(arguments->getValue<size_t>("onlyPpl", 0) );
 
 
-  if ((iteration == 0) && (onlyPpl == 0)) {
+  if ( (iteration == 0) && !restart  && (onlyPpl == 0)) {
 
     //TODO
     // && !isArgumentGiven("initialDoublesAmplitudes"))  {

@@ -107,7 +107,7 @@ namespace cc4s {
 
     template <typename F, typename TE>
     Ptr<FockVector<F,TE>> createAmplitudes(
-      std::initializer_list<std::string> amplitudeNames,
+      std::initializer_list<std::string> amplitudeComponent,
       std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
       std::initializer_list<std::string> amplitudeIndices
     );
@@ -191,6 +191,8 @@ namespace cc4s {
     std::string getCapitalizedAbbreviation();
 
     std::string getDataName(const std::string &type, const std::string &data);
+
+    bool restart = false;
   };
 }
 

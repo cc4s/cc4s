@@ -51,7 +51,7 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   auto Nv(Np-No);
   OUT() << "number of holes     No= " << No << std::endl;
   OUT() << "number of particles Nv= " << Nv << std::endl;
-  OUT() << "number of status    Np= " << Np << std::endl;
+  OUT() << "number of states    Np= " << Np << std::endl;
 
   auto slices(New<MapNode>(eigenEnergies->sourceLocation));
   {

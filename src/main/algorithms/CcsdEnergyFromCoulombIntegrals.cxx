@@ -65,7 +65,7 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("pphh"));
   bool ppl(arguments->getValue<bool>("ppl", true));
 
-  if (iteration == 0) {
+  if (iteration == 0 && !restart ) {
     //TODO
     // && !isArgumentGiven("initialDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes

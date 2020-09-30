@@ -89,7 +89,7 @@ Ptr<FockVector<F,TE>> DrccdEnergyFromCoulombIntegrals::getResiduum(
   }
 
   // TODO: deal with starting amplitudes
-  if (iteration > 0) { // || isArgumentGiven("startingDoublesAmplitudes")) {
+  if (iteration > 0 || restart) { // || isArgumentGiven("startingDoublesAmplitudes")) {
     auto Whhpp( Tcc<TE>::template tensor<F>("Whhpp") );
     // for the remaining iterations compute the drCCD residuum
     COMPILE(

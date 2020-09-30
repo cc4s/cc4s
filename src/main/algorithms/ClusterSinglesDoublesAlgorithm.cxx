@@ -49,7 +49,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
 
   Ptr<const FockVector<F,TE>> amplitudes(
     createAmplitudes<F,TE>(
-      {"Singles", "Doubles"}, {{Nv,No}, {Nv,Nv,No,No}}, {"ai", "abij"}
+      {"0", "1"}, {{Nv,No}, {Nv,Nv,No,No}}, {"ai", "abij"}
     )
   );
 
@@ -242,30 +242,43 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
 
 template <typename F, typename TE>
 Ptr<FockVector<F,TE>> ClusterSinglesDoublesAlgorithm::createAmplitudes(
-  std::initializer_list<std::string> amplitudeNames,
+  std::initializer_list<std::string> amplitudeComponent,
   std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
   std::initializer_list<std::string> amplitudeIndices
 ) {
   std::vector<Ptr<Tensor<F,TE>>> amplitudeTensors;
   auto lensIterator( amplitudeLens.begin() );
-  for (auto name: amplitudeNames) {
-    std::stringstream initialDataName;
-    initialDataName << "initial" << name << "Amplitudes";
-// TODO: support initial amplitudes
-/*
-    if (isArgumentGiven(initialDataName.str())) {
-      // use given amplitudes as initial amplitudes
-      amplitudeTensors.push_back(
-        NEW(CTF::Tensor<F>, *getTensorArgument<F>( initialDataName.str() ))
-      );
-    } else
-*/
-    {
+  auto indexIterator( amplitudeIndices.begin() );
+  for (auto c: amplitudeComponent) {
+    if (arguments->isGiven("initialAmplitudes")) {
+      auto initialAmplitudes(arguments->getMap("initialAmplitudes"));
+      auto component(initialAmplitudes->getMap("components"));
+      auto list(component->getKeys());
+      // is the amplitude component in the initialAmplitudes?
+      auto it = std::find(list.begin(), list.end(), c);
+      if (it != list.end()){
+        auto data(component->getMap(*it)->getValue<Ptr<Tensor<F,TE>>>("data"));
+        std::vector<size_t> lens(*lensIterator);
+        ASSERT_LOCATION(
+          data, "expecting operator to be a tensor", component->getMap(*it)->sourceLocation
+        );
+        OUT() << "Using " << data->getName() << " as initial amplitudes\n";
+        amplitudeTensors.push_back(data);
+        restart = true;
+      }
+      else {
+        // otherwise, use zeros as initial amplitudes
+        std::vector<size_t> lens(*lensIterator);
+        amplitudeTensors.push_back(Tcc<TE>::template tensor<F>(lens, "T"));
+      }
+    }
+    else {
       // otherwise, use zeros as initial amplitudes
       std::vector<size_t> lens(*lensIterator);
       amplitudeTensors.push_back(Tcc<TE>::template tensor<F>(lens, "T"));
     }
     ++lensIterator;
+    ++indexIterator;
   }
   return New<FockVector<F,TE>>(
     amplitudeTensors.begin(), amplitudeTensors.end(),

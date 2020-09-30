@@ -212,6 +212,12 @@ namespace cc4s {
     Ptr<MapNode> getMap(const size_t element) {
       return getMap(std::to_string(element));
     }
+
+    bool isGiven(const std::string &element) {
+      if (get(element)) { return true; }
+      else { return false; }
+    }
+
     void push_back(const Ptr<Node> &node) {
       get(size()) = node;
     }
