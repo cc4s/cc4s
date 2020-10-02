@@ -123,37 +123,6 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   result->get("amplitudes") = storeAmplitudes(arguments, amplitudes);
   return result;
 }
-// Only temporary for debugging
-void printStatistics() {
-
-  std::string fieldName;
-  size_t peakVirtualSize, peakPhysicalSize;
-  // assuming LINUX
-  std::ifstream statusStream("/proc/self/status", std::ios_base::in);
-  std::string line;
-  while (std::getline(statusStream, line)) {
-    std::istringstream lineStream(line);
-    lineStream >> fieldName;
-    if (fieldName == "VmPeak:") {
-      lineStream >> peakVirtualSize;
-    } else if (fieldName == "VmHWM:") {
-      lineStream >> peakPhysicalSize;
-    }
-    // TODO: check memory unit, currently assumed to be kB
-  }
-  statusStream.close();
-  Real<> unitsPerGB(1024.0*1024.0);
-  size_t globalPeakVirtualSize, globalPeakPhysicalSize;
-  Cc4s::world->reduce(peakPhysicalSize, globalPeakPhysicalSize);
-  Cc4s::world->reduce(peakVirtualSize, globalPeakVirtualSize);
-  LOG() << "overall peak physical memory="
-    << globalPeakPhysicalSize / unitsPerGB << " GB"
-    << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
-  OUT() << "overall peak physical memory="
-    << globalPeakPhysicalSize / unitsPerGB << " GB"
-    << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
-
-}
 
 template <typename F, typename TE>
 F ClusterSinglesDoublesAlgorithm::getEnergy(
@@ -232,7 +201,6 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
   }
 
 
-  printStatistics();
 
   OUT() << std::setprecision(10) << "energy= " << e << std::endl;
   std::cout << std::setprecision(ss);

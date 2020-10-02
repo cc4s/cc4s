@@ -85,7 +85,6 @@ void Cc4s::run(const Ptr<MapNode> &report) {
       step->setValue<std::string>("realtime", realtime.str());
       step->setValue<size_t>("floatingPointOperations", flops);
       step->setValue<Real<>>("flops", flops / time.getFractionalSeconds());
-//      printStatistics(step);
       // resources which maybe held by the algorithm automatically released
     }
   }
@@ -103,7 +102,6 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   report->setValue<std::string>("realtime", totalRealtime.str());
   report->setValue<size_t>("floatingPointOperations", totalFlops);
   report->setValue<Real<>>("flops", totalFlops/totalTime.getFractionalSeconds());
-  printStatistics(report);
 }
 
 void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
@@ -170,52 +168,6 @@ void Cc4s::printBanner(const Ptr<MapNode> &report) {
 */
   if (options->dryRun) {
     OUT() << "DRY RUN - nothing will be calculated" << std::endl;
-  }
-}
-
-void Cc4s::printStatistics(const Ptr<MapNode> &report) {
-  if (options->dryRun) {
-    LOG()
-      << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
-      << " GB" << std::endl;
-    OUT()
-      << "estimated memory=" << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0)
-      << " GB" << std::endl;
-    report->setValue<size_t>("estimatedTotalMemory", DryMemory::maxTotalSize);
-  } else {
-    std::string fieldName;
-    size_t peakVirtualSize, peakPhysicalSize;
-    // assuming LINUX
-    std::ifstream statusStream("/proc/self/status", std::ios_base::in);
-    std::string line;
-    while (std::getline(statusStream, line)) {
-      std::istringstream lineStream(line);
-      lineStream >> fieldName;
-      if (fieldName == "VmPeak:") {
-        lineStream >> peakVirtualSize;
-      } else if (fieldName == "VmHWM:") {
-        lineStream >> peakPhysicalSize;
-      }
-      // TODO: check memory unit, currently assumed to be kB
-    }
-    statusStream.close();
-    Real<> unitsPerGB(1024.0*1024.0);
-    LOG() << "peak physical memory=" << peakPhysicalSize / unitsPerGB << " GB/core"
-      << ", peak virtual memory: " << peakVirtualSize / unitsPerGB << " GB/core" << std::endl;
-    report->setValue<size_t>("peakVirtualMemoryOnRoot", peakVirtualSize*1024);
-    report->setValue<size_t>("peakPhysicalMemoryOnRoot", peakPhysicalSize*1024);
-    size_t globalPeakVirtualSize, globalPeakPhysicalSize;
-    world->reduce(peakPhysicalSize, globalPeakPhysicalSize);
-    world->reduce(peakVirtualSize, globalPeakVirtualSize);
-    LOG() << "overall peak physical memory="
-      << globalPeakPhysicalSize / unitsPerGB << " GB"
-      << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
-    OUT() << "overall peak physical memory="
-      << globalPeakPhysicalSize / unitsPerGB << " GB"
-      << ", overall virtual memory=" << globalPeakVirtualSize / unitsPerGB << " GB" << std::endl;
-
-    report->setValue<size_t>("peakVirtualMemory", globalPeakVirtualSize*1024);
-    report->setValue<size_t>("peakPhysicalMemory", globalPeakPhysicalSize*1024);
   }
 }
 

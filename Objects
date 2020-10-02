@@ -21,8 +21,6 @@ build/${CONFIG}/obj/main/algorithms/CcsdEnergyFromCoulombIntegrals.o \
 build/${CONFIG}/obj/main/mixers/Mixer.o \
 build/${CONFIG}/obj/main/mixers/LinearMixer.o \
 build/${CONFIG}/obj/main/mixers/DiisMixer.o \
-#build/${CONFIG}/obj/main/algorithms/RealTensorReader.o \
-#build/${CONFIG}/obj/main/algorithms/ComplexTensorReader.o \
 
 TESTS_OBJECTS = \
 build/${CONFIG}/obj/test/math/Antisymmetrize.o \
