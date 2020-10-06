@@ -1,23 +1,23 @@
 PYTHON ?= python3
-ENV ?= env
-PYENV = $(ENV)/bin/python
-PIPENV = $(ENV)/bin/pip
-TESTIS = $(ENV)/bin/testis
+ENV_FOLDER ?= env
+PYENV = $(ENV_FOLDER)/bin/python
+PIPENV = $(ENV_FOLDER)/bin/pip
+TESTIS = $(ENV_FOLDER)/bin/testis
 CONFIG ?= gxx-debug
 CC4S_PATH ?= $(shell readlink -f ../build/$(CONFIG)/bin/Cc4s)
 export CC4S_PATH
 
 test: $(TESTIS)
-	. $(ENV)/bin/activate && $< *
+	. $(ENV_FOLDER)/bin/activate && $< *
 
-$(ENV)/.piped: $(ENV) requirements.txt
+$(ENV_FOLDER)/.piped: $(ENV_FOLDER) requirements.txt
 	$(PIPENV) install -r requirements.txt
 	touch $@
 
-$(ENV):
+$(ENV_FOLDER):
 	virtualenv -p $(PYTHON) env
 
-$(TESTIS): $(ENV)/.piped
+$(TESTIS): $(ENV_FOLDER)/.piped
 	$(PYENV) setup.py develop
 
 .PHONY: test
