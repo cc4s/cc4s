@@ -85,6 +85,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   size_t i(0);
   for (; i < maxIterationsCount; ++i) {
     OUT() << "iteration: " << i+1 << std::endl;
+    LOG() << "iteration: " << i+1 << std::endl;
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
     auto estimatedAmplitudes( getResiduum(i, amplitudes) );
