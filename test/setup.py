@@ -3,21 +3,25 @@
 import sys
 import glob
 from setuptools import setup, find_packages
-import testis
+
+__version__ = "0.0.1"
+__author__ = "Alejandro Gallo"
+__email__ = "aamsgallo@gmail.com"
+__license__ = "GPLv3"
 
 
 setup(
     name='testis',
-    version=testis.__version__,
+    version=__version__,
     maintainer='Alejandro Gallo',
     maintainer_email='aamsgallo@gmail.com',
-    author=testis.__author__,
-    author_email=testis.__email__,
-    license=testis.__license__,
+    author=__author__,
+    author_email=__email__,
+    license=__license__,
     url='https://github.com/testis/testis',
     install_requires=[
-        "PyYAML>=3.12",
-        "tqdm>=4.1",
+        "PyYAML",
+        "tqdm",
     ],
     python_requires='>=3.5',
     entry_points={

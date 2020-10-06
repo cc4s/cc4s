@@ -5,11 +5,11 @@ import os
 import sys
 import yaml
 import logging
-import tqdm
 from collections import namedtuple
 import subprocess as sp
 import shlex
 import urllib.request
+import tqdm
 
 
 __version__ = "0.0.1"

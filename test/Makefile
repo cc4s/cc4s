@@ -8,7 +8,7 @@ CC4S_PATH ?= $(shell readlink -f ../build/$(CONFIG)/bin/Cc4s)
 export CC4S_PATH
 
 test: $(TESTIS)
-	$< *
+	. $(ENV)/bin/activate && $< *
 
 $(ENV)/.piped: $(ENV) requirements.txt
 	$(PIPENV) install -r requirements.txt
@@ -18,6 +18,6 @@ $(ENV):
 	virtualenv -p $(PYTHON) env
 
 $(TESTIS): $(ENV)/.piped
-	$(PYENV) develop setup.py
+	$(PYENV) setup.py develop
 
 .PHONY: test
