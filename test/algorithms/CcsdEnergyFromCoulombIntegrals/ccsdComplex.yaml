@@ -1,24 +1,24 @@
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/EigenEnergiesComplex.yaml"
+    fileName: EigenEnergiesComplex.yaml
   out:
     tensor: EigenEnergies
 
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/Spins.yaml"
+    fileName: Spins.yaml
   out:
     tensor: Spins
 
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/FockOperatorComplex.yaml"
+    fileName: FockOperatorComplex.yaml
   out:
     tensor: CoulombVertex
 
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/CoulombVertexComplex.yaml"
+    fileName: CoulombVertexComplex.yaml
   out:
     tensor: CoulombVertex
 
