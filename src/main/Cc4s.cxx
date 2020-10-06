@@ -259,6 +259,7 @@ int main(int argumentCount, char **arguments) {
     }
   );
   auto report(New<MapNode>(SOURCE_LOCATION));
+  bool errorHappened(false);
 
   Cc4s cc4s;
   if (Cc4s::isDebugged()) {
@@ -269,6 +270,7 @@ int main(int argumentCount, char **arguments) {
     try {
       cc4s.run(report);
     } catch (Ptr<Exception> cause) {
+      errorHappened = true;
       auto sourceLocation(cause->getSourceLocation());
       if (!sourceLocation.isValid()) sourceLocation = SOURCE_LOCATION;
       ERROR_LOCATION(sourceLocation) << cause->what() << std::endl;
@@ -282,12 +284,15 @@ int main(int argumentCount, char **arguments) {
         cause = cause->getCause();
       }
     } catch (std::exception &cause) {
+      errorHappened = true;
       OUT() << "unhandled exception encountered (std::exception):" << std::endl;
       OUT() << cause.what() << std::endl;
     } catch (const char *message) {
+      errorHappened = true;
       OUT() << "unhandled exception encountered (const char *):" << std::endl;
       OUT() << message << std::endl;
     } catch (...) {
+      errorHappened = true;
       OUT() << "unhandled exception encountered (...)." << std::endl;
     }
   }
@@ -297,6 +302,6 @@ int main(int argumentCount, char **arguments) {
   emitter.emit(report);
 
   MPI_Finalize();
-  return 0;
+  return errorHappened ? 1 : 0;
 }
 
