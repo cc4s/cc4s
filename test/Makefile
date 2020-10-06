@@ -1,16 +1,23 @@
-run: job.sh
-	echo "#!/bin/bash" >launch.sh
-	echo "# Automatically generated from job.sh - do not edit." >>launch.sh
-	echo -n '# @ job_name=' >>launch.sh
-	basename ${PWD} >>launch.sh
-	cat job.sh >>launch.sh
-	llsubmit launch.sh
-status:
-	llq
-#	-u ${USER}
-clone: job.sh 
-	cp job.sh ../clone
-	cp Makefile ../clone
-clean:
-	rm -f *.[0-9]*.out
-	rm -f *.[0-9]*.err
+PYTHON ?= python3
+ENV ?= env
+PYENV = $(ENV)/bin/python
+PIPENV = $(ENV)/bin/pip
+TESTIS = $(ENV)/bin/testis
+CONFIG ?= gxx-debug
+CC4S_PATH ?= $(shell readlink -f ../build/$(CONFIG)/bin/Cc4s)
+export CC4S_PATH
+
+test: $(TESTIS)
+	$< *
+
+$(ENV)/.piped: $(ENV) requirements.txt
+	$(PIPENV) install -r requirements.txt
+	touch $@
+
+$(ENV):
+	virtualenv -p $(PYTHON) env
+
+$(TESTIS): $(ENV)/.piped
+	$(PYENV) develop setup.py
+
+.PHONY: test
