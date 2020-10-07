@@ -31,7 +31,7 @@ tutorials/systems:
 
 .PHONY: test wiki
 test:
-	bash test/test.sh -c $(CONFIG)
+	$(MAKE) -C $@
 
 unit-test: build/${CONFIG}/bin/Test
 
