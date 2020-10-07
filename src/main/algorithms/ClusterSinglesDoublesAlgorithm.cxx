@@ -143,7 +143,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
 template <typename F, typename TE>
 F ClusterSinglesDoublesAlgorithm::getEnergy(
   const Ptr<const FockVector<F,TE>> &amplitudes,
-  const bool finalReport = false
+  const bool finalReport
 ) {
   // get the Coulomb integrals to compute the energy
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));

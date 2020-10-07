@@ -80,7 +80,7 @@ namespace cc4s {
      **/
     template <typename F, typename TE>
     F getEnergy( const Ptr<const FockVector<F,TE>> &amplitdues
-               , const bool finalReport
+               , const bool finalReport = false
                );
 
     /**
