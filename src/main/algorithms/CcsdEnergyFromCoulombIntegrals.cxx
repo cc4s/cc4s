@@ -69,12 +69,12 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     //TODO
     // && !isArgumentGiven("initialDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes
-    OUT() << "\tMP2 T2 Amplitudes" << std::endl;
+//    OUT() << "\tMP2 T2 Amplitudes" << std::endl;
     COMPILE(
       (*Rpphh)["abij"] += (*Vpphh)["abij"]
     )->execute();
   } else {
-    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
+//    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
     auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
     auto slices(slicedCoulombVertex->getMap("slices"));
     auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
@@ -231,7 +231,7 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     )->execute();
 
     if (ppl) {
-      OUT() << "\tAdding Particle-particle contraction"  << std::endl;
+//      OUT() << "\tAdding Particle-particle contraction"  << std::endl;
       size_t Nv(realDressedGammaGpp->lens[1]);
       size_t NG(realDressedGammaGpp->lens[0]);
       size_t No(Rpphh->lens[2]);
@@ -284,7 +284,7 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     //*******************************************************************
     //***********************  T1 amplitude equations  ******************
     //*******************************************************************
-    OUT() << "\tSolving T1 Amplitude Equations" << std::endl;
+//    OUT() << "\tSolving T1 Amplitude Equations" << std::endl;
     COMPILE(
       // Contract Kac and Kki with T1 amplitudes
       (*Rph)["ai"] <<= ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
@@ -345,13 +345,13 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     //TODO
     // && !isArgumentGiven("initialDoublesAmplitudes"))  {
     // For first iteration compute only the MP2 amplitudes
-    OUT() << "\tMP2 T2 Amplitudes" << std::endl;
+//    OUT() << "\tMP2 T2 Amplitudes" << std::endl;
     COMPILE(
       (*Rpphh)["abij"] += (*Vpphh)["abij"]
     )->execute();
   }
   else {
-    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
+//    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
     auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
     auto slices(slicedCoulombVertex->getMap("slices"));
     auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
@@ -479,7 +479,7 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     )->execute();
 
     if (ppl) {
-      OUT() << "\tAdding Particle-particle contraction"  << std::endl;
+//      OUT() << "\tAdding Particle-particle contraction"  << std::endl;
       size_t NG(cTGammaGpp->lens[0]);
       size_t Nv(Rpphh->lens[0]);
       size_t No(Rpphh->lens[2]);
@@ -541,7 +541,7 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     //**************************************************************************
     //***********************  T1 amplitude equations  *************************
     //**************************************************************************
-    OUT() << "\tSolving T1 Amplitude Equations" << std::endl;
+//    OUT() << "\tSolving T1 Amplitude Equations" << std::endl;
     COMPILE(
       // Contract Kac and Kki with T1 amplitudes
       (*Rph)["ai"] += ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],

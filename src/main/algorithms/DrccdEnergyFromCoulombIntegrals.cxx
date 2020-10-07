@@ -83,9 +83,9 @@ Ptr<FockVector<F,TE>> DrccdEnergyFromCoulombIntegrals::getResiduum(
     arguments->getValue<bool>("adjacentPairsExchange", false)
   );
   if (linearized) {
-    OUT() << "Solving linearized T2 Amplitude Equations" << std::endl;
+//    OUT() << "Solving linearized T2 Amplitude Equations" << std::endl;
   } else {
-    OUT() << "Solving T2 Amplitude Equations" << std::endl;
+//    OUT() << "Solving T2 Amplitude Equations" << std::endl;
   }
 
   // TODO: deal with starting amplitudes

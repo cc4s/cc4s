@@ -6,6 +6,8 @@
 #include <util/Exception.hpp>
 #include <Options.hpp>
 #include <Cc4s.hpp>
+#include <util/Timer.hpp>
+
 
 #include <array>
 #include <initializer_list>
@@ -80,11 +82,18 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     arguments->getValue<Real<>>("energyConvergence", DEFAULT_ENERGY_CONVERGENCE)
   );
 
-
+  OUT() << "Maximum number of iterations: " << maxIterationsCount << std::endl;
+  OUT() << "Unless reaching energy convergence dE: " << energyConvergence << std::endl;
+  OUT() << "Or amplitudes convergence dR: " << amplitudesConvergence << std::endl;
   F e(0), previousE(0);
   size_t i(0);
+  char outstring[50];
+  sprintf(outstring,"%4s %16s %10s %10s %7s\n",
+          "Iter", "Energy  ", "dE   ", "dR    ", "time");
+  OUT() << outstring;
+
   for (; i < maxIterationsCount; ++i) {
-    OUT() << "iteration: " << i+1 << std::endl;
+    auto startTime(Time::getCurrentRealTime());
     LOG() << "iteration: " << i+1 << std::endl;
     // call the getResiduum of the actual algorithm,
     // which will be specified by inheriting classes
@@ -97,8 +106,13 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     amplitudes = mixer->get();
     auto residuumNorm( mixer->getResiduumNorm());
     e = getEnergy(amplitudes);
-    OUT() << "\tdE= " << e - previousE << std::endl;
-    OUT() << "\tdR= " << residuumNorm << std::endl;
+
+    auto iterTime(Time::getCurrentRealTime() - startTime);
+
+    sprintf(outstring,"%4ld %16.8f %10.4e %10.4e %8.1f\n",
+            i+1, real(e), real(e - previousE), real(residuumNorm),
+            iterTime.getFractionalSeconds());
+    OUT() << outstring;
     if (
       !Cc4s::options->dryRun &&
       abs(e-previousE) < energyConvergence &&
@@ -111,11 +125,12 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
 
   if (maxIterationsCount == 0) {
     OUT() << "computing energy from given amplitudes" << std::endl;
-    e = getEnergy(amplitudes);
   } else if (i == maxIterationsCount) {
     WARNING_LOCATION(arguments->sourceLocation) <<
       "energy or amplitudes convergence not reached." << std::endl;
   }
+
+  e = getEnergy(amplitudes, true);
   bool convergenceReached = i < maxIterationsCount;
 
   auto result(New<MapNode>(SOURCE_LOCATION));
@@ -127,7 +142,8 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
 
 template <typename F, typename TE>
 F ClusterSinglesDoublesAlgorithm::getEnergy(
-  const Ptr<const FockVector<F,TE>> &amplitudes
+  const Ptr<const FockVector<F,TE>> &amplitudes,
+  const bool finalReport = false
 ) {
   // get the Coulomb integrals to compute the energy
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
@@ -188,11 +204,14 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     F S(0.25*D - 0.5*X);
     F T(0.75*D + 1.5*X);
     e = D+X;
-    OUT() << std::setprecision(10) << "\tdirect= " << D << std::endl;
-    OUT() << std::setprecision(10) << "\texchange= " << X << std::endl;
-//    OUT() << std::setprecision(10) << "\tsinglet= " << S << std::endl;
-//    OUT() << std::setprecision(10) << "\ttripplet= " << T << std::endl;
-
+    if (finalReport){
+      OUT() << std::endl;
+      OUT() << "Total Energy: " << std::setprecision(10) << e << std::endl;
+      OUT() << "Direct: "       << std::setprecision(10) << D << std::endl;
+      OUT() << "Exchange: "     << std::setprecision(10) << X << std::endl;
+      OUT() << "Singlet: "      << std::setprecision(10) << S << std::endl;
+      OUT() << "Triplet: "      << std::setprecision(10) << T << std::endl;
+    }
     energy->setValue<Real<>>("value", real<F>(e));
     energy->setValue<Real<>>("direct", real<F>(D));
     energy->setValue<Real<>>("exchange", real<F>(X));
@@ -203,7 +222,6 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
 
 
 
-  OUT() << std::setprecision(10) << "energy= " << e << std::endl;
   std::cout << std::setprecision(ss);
 
   return e;
