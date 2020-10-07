@@ -1,3 +1,4 @@
+# vim:ft=yaml
 - name: TensorReader
   in:
     fileName: EigenEnergiesReal.yaml

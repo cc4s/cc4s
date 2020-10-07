@@ -1,9 +1,9 @@
 runner: ./run.py
+name: CCSD real
 
 tags: essential
 
 resources:
-# For real
 - url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesReal.yaml
   out: EigenEnergiesReal.yaml
 - url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesReal.dat
@@ -23,19 +23,3 @@ resources:
   out: CoulombVertexReal.yaml
 - url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexReal.bin
   out: CoulombVertexReal.bin
-
-# For complex
-- url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesComplex.yaml
-  out: EigenEnergiesComplex.yaml
-- url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesComplex.dat
-  out: EigenEnergiesComplex.dat
-# Fock operator
-- url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/FockOperatorComplex.yaml
-  out: FockOperatorComplex.yaml
-- url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/FockOperatorComplex.dat
-  out: FockOperatorComplex.dat
-# CoulombVertex
-- url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexComplex.yaml
-  out: CoulombVertexComplex.yaml
-- url: https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexComplex.bin
-  out: CoulombVertexComplex.bin
