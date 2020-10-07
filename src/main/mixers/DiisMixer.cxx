@@ -72,15 +72,15 @@ void DiisMixer<F,TE>::append(
   *next *= F(0);
   nextResiduum = New<FockVector<F,TE>>(*R);
   *nextResiduum *= F(0);
-  OUT() << "\tDiis: ";
+//  OUT() << "\tDiis: ";
   for (size_t j(0); j < count; ++j) {
     size_t i( (nextIndex+N-j) % N );
     LOG() << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
-    OUT() << "w^(-" << (j+1) << ")=" << column[i+1] << ", ";
+//    OUT() << "w^(-" << (j+1) << ")=" << column[i+1] << ", ";
     *next += column[i+1] * *amplitudes[i];
     *nextResiduum += column[i+1] * *residua[i];
   }
-  OUT() << std::endl;
+//  OUT() << std::endl;
   nextIndex = (nextIndex+1) % N;
   residuumNorm = sqrt(real(nextResiduum->dot(*nextResiduum)));
 }

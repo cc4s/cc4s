@@ -79,7 +79,9 @@ namespace cc4s {
      * \brief Computes and returns the energy of the given amplitudes.
      **/
     template <typename F, typename TE>
-    F getEnergy(const Ptr<const FockVector<F,TE>> &amplitdues);
+    F getEnergy( const Ptr<const FockVector<F,TE>> &amplitdues
+               , const bool finalReport
+               );
 
     /**
      * \brief Calculates an improved estimate of the amplitudes provided
