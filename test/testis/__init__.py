@@ -24,13 +24,9 @@ Resource = namedtuple("Resource", "url out hash")
 
 
 def get_tests_in_dir(folder):
-    result = []
-    for root, dirs, files in os.walk(folder):
-        for d in dirs:
-            p = pathlib.Path(root) / d
-            if (p / "info.yaml").exists():
-                result.append(p)
-    return result
+    return [pathlib.Path(p)
+            for p, _, _ in os.walk(folder)
+            if (pathlib.Path(p) / "info.yaml").exists()]
 
 
 def folder_to_test(folder):
@@ -104,8 +100,13 @@ def run_test(test):
 def call(cmd):
     assert isinstance(cmd, str)
     cmd = shlex.split(cmd.format(**os.environ))
-    with sp.Popen(cmd) as p:
+    with sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE) as p:
         p.wait()
+        ret = p.returncode
+        if p.returncode != 0:
+            out = p.stdout.read().decode()
+            err = p.stdout.read().decode()
+            raise Exception(out + "\n" + err)
 
 
 def tail(xs, n):
@@ -119,6 +120,11 @@ def main():
                         nargs="+")
     parser.add_argument("-d", help="Debug mode", action="store_true")
     parser.add_argument("--list-tags", help="List tags", action="store_true")
+    parser.add_argument(
+        "--tail",
+        help="How many lines to see from output when error occurs",
+        type=int,
+        default=10)
     args = parser.parse_args()
 
     STORE_FOLDER.mkdir(exist_ok=True)
@@ -135,7 +141,9 @@ def main():
     logging.info("Looking for tests in %s folders", len(args.folders))
 
     tests = []
-    for f in tqdm.tqdm(args.folders, "Finding tests"):
+    logging.info("Finding tests")
+    for f in args.folders:
+        logging.debug("in %s", f)
         tests.extend(map(folder_to_test, get_tests_in_dir(f)))
 
     logging.info("Found %s test folders", len(tests))
@@ -146,7 +154,8 @@ def main():
         return
 
     cwd = pathlib.Path.cwd()
-    for test in tqdm.tqdm(tests, "Running tests"):
+    logging.info("Running tests")
+    for test in tests:
         os.chdir(test.path)
         print("∷", test.name)
         result = run_test(test)
@@ -155,7 +164,7 @@ def main():
             for f in ["stdout", "stderr"]:
                 out = ["\t\x1b[31m» ({})\x1b[0m  {}".format(f, l)
                         for l in result[f].split("\n")]
-                print("\n".join(["\t...."] + tail(out, 4)))
+                print("\n".join(["\t...."] + tail(out, args.tail)))
         else:
             print("\x1b[32m\t[ok]\x1b[0m")
         os.chdir(cwd)

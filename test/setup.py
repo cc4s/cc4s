@@ -21,7 +21,6 @@ setup(
     url='https://github.com/testis/testis',
     install_requires=[
         "PyYAML",
-        "tqdm",
     ],
     python_requires='>=3.5',
     entry_points={
