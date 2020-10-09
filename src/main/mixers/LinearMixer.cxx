@@ -6,7 +6,7 @@
 
 using namespace cc4s;
 
-MIXER_REGISTRAR_DEFINITION(LinearMixer);
+MIXER_REGISTRAR_DEFINITION(LinearMixer)
 
 template <typename F, typename TE>
 LinearMixer<F,TE>::LinearMixer(
@@ -49,8 +49,8 @@ double LinearMixer<F,TE>::getResiduumNorm() {
 }
 
 // instantiate
-template class LinearMixer<Real<64>, DryTensorEngine>;
-template class LinearMixer<Complex<64>, DryTensorEngine>;
-template class LinearMixer<Real<64>, DefaultTensorEngine>;
-template class LinearMixer<Complex<64>, DefaultTensorEngine>;
+template class cc4s::LinearMixer<Real<64>, DryTensorEngine>;
+template class cc4s::LinearMixer<Complex<64>, DryTensorEngine>;
+template class cc4s::LinearMixer<Real<64>, DefaultTensorEngine>;
+template class cc4s::LinearMixer<Complex<64>, DefaultTensorEngine>;
 

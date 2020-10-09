@@ -10,7 +10,7 @@ namespace cc4s {
   template <typename F, typename TE>
   class LinearMixer: public Mixer<F,TE> {
   public:
-    MIXER_REGISTRAR_DECLARATION(LinearMixer);
+    MIXER_REGISTRAR_DECLARATION(LinearMixer)
     LinearMixer(const Ptr<MapNode> &arguments);
 
     virtual void append(

@@ -10,7 +10,7 @@ namespace cc4s {
   template <typename F, typename TE>
   class DiisMixer: public Mixer<F,TE> {
   public:
-    MIXER_REGISTRAR_DECLARATION(DiisMixer);
+    MIXER_REGISTRAR_DECLARATION(DiisMixer)
     DiisMixer(const Ptr<MapNode> &arguments);
     virtual ~DiisMixer();
 

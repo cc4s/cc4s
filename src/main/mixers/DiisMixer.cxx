@@ -7,7 +7,7 @@
 
 using namespace cc4s;
 
-MIXER_REGISTRAR_DEFINITION(DiisMixer);
+MIXER_REGISTRAR_DEFINITION(DiisMixer)
 
 template <typename F, typename TE>
 DiisMixer<F,TE>::DiisMixer(
@@ -131,8 +131,8 @@ std::vector<Complex<>> DiisMixer<F,TE>::inverse(
 
 
 // instantiate
-template class DiisMixer<Real<64>, DryTensorEngine>;
-template class DiisMixer<Complex<64>, DryTensorEngine>;
-template class DiisMixer<Real<64>, DefaultTensorEngine>;
-template class DiisMixer<Complex<64>, DefaultTensorEngine>;
+template class cc4s::DiisMixer<Real<64>, DryTensorEngine>;
+template class cc4s::DiisMixer<Complex<64>, DryTensorEngine>;
+template class cc4s::DiisMixer<Real<64>, DefaultTensorEngine>;
+template class cc4s::DiisMixer<Complex<64>, DefaultTensorEngine>;
 
