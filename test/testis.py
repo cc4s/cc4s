@@ -90,7 +90,7 @@ def link_resource(r, basedir):
     o = basedir / r.out
     if o.exists():
         return
-    logging.info("linking %s ⇒ %s", o, i)
+    logging.info("%s ⇐ %s", r.out, i)
     o.symlink_to(i)
 
 
