@@ -1,0 +1,39 @@
+{
+  "name": "CCSD complex",
+  "resources": [
+    {
+      "out": "Spins.yaml",
+      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/Spins.yaml"
+    },
+    {
+      "out": "Spins.dat",
+      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/Spins.dat"
+    },
+    {
+      "out": "EigenEnergiesComplex.yaml",
+      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesComplex.yaml"
+    },
+    {
+      "out": "EigenEnergiesComplex.dat",
+      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesComplex.dat"
+    },
+    {
+      "out": "FockOperatorComplex.yaml",
+      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/FockOperatorComplex.yaml"
+    },
+    {
+      "out": "FockOperatorComplex.dat",
+      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/FockOperatorComplex.dat"
+    },
+    {
+      "out": "CoulombVertexComplex.yaml",
+      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexComplex.yaml"
+    },
+    {
+      "out": "CoulombVertexComplex.bin",
+      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexComplex.bin"
+    }
+  ],
+  "runner": "./run.py",
+  "tags": "essential"
+}

@@ -1,23 +1,25 @@
 PYTHON ?= python3
-ENV_FOLDER ?= env
-PYENV = $(ENV_FOLDER)/bin/python
-PIPENV = $(ENV_FOLDER)/bin/pip
-TESTIS = $(ENV_FOLDER)/bin/testis
+TESTIS = ./testis.py
 CONFIG ?= gxx-debug
-CC4S_PATH ?= $(shell readlink -f ../build/$(CONFIG)/bin/Cc4s)
+
+include config.$(CONFIG)
+
+
+ifndef CC4S_PATH
+$(error DEAR USER: Please define the CC4S_PATH environment variable)
+else
 export CC4S_PATH
+endif
 
-test: $(TESTIS)
-	. $(ENV_FOLDER)/bin/activate && $< *
+$(info CC4S_PATH = $(CC4S_PATH))
 
-$(ENV_FOLDER)/.piped: $(ENV_FOLDER) requirements.txt
-	$(PIPENV) install -r requirements.txt
-	touch $@
+test:
+	$(PYTHON) $(TESTIS) -r . -n $(OUTPUT_NAME)
 
-$(ENV_FOLDER):
-	virtualenv -p $(PYTHON) env
+check:
+	$(PYTHON) $(TESTIS) -c . -n $(OUTPUT_NAME)
 
-$(TESTIS): $(ENV_FOLDER)/.piped
-	$(PYENV) setup.py develop
+all:
+	$(PYTHON) $(TESTIS) -rc . -n $(OUTPUT_NAME)
 
-.PHONY: test
+.PHONY: test check all
