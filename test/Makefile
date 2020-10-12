@@ -1,11 +1,13 @@
-PYTHON ?= python3
 TESTIS = ./testis.py
-CONFIG ?= gxx-debug
+PYTHON ?= python3
+CONFIG ?= gcc-debug
+CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
+OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum $(CC4S_PATH) | cut -d ' ' -f1)
 
-include config.$(CONFIG)
+-include config.$(CONFIG)
 
 
-ifndef CC4S_PATH
+ifeq ($(CC4S_PATH),)
 $(error DEAR USER: Please define the CC4S_PATH environment variable)
 else
 export CC4S_PATH
