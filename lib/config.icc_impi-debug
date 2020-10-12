@@ -1,4 +1,0 @@
-# Currently Loaded Modulefiles:
-# 1) intel/19.1.2   2) intel-mpi/2019.8   3) intel-mkl/2020.2 4) cmake/3.15.1-intel-19.1.1.217-nkzxutj 
-
-CTF_CONFIG='CXX=mpiicc CXXFLAGS="-O0 -g" --no-dynamic'

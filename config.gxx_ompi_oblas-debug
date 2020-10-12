@@ -4,6 +4,8 @@
 # 5) netlib-scalapack/2.1.0-gcc-9.1.0-ja5stbc
 
 include Libraries.mk
+include etc/make/ctf.mk
+include etc/make/yaml.mk
 
 # main target
 TARGET = Cc4s
@@ -20,6 +22,12 @@ OPTIMIZE = -O0 -g -march=native -fno-lto
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
+
+CTF_CONFIG_FLAGS = CXX=$(CXX) \
+                   AR=gcc-ar \
+                   CXXFLAGS="-Ofast -march=native -fno-lto -fopenmp -DPROFILE" \
+                   LIBS="-L$(BLAS_PATH)/lib" \
+                   --no-dynamic
 
 LINK_LIBS = \
 -Wl,-Bstatic \
