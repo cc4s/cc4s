@@ -14,12 +14,12 @@ endif
 $(info CC4S_PATH = $(CC4S_PATH))
 
 test:
-	$(PYTHON) $(TESTIS) -r . -n $(OUTPUT_NAME)
+	$(PYTHON) $(TESTIS) -cr . -n $(OUTPUT_NAME)
 
 check:
 	$(PYTHON) $(TESTIS) -c . -n $(OUTPUT_NAME)
 
-all:
-	$(PYTHON) $(TESTIS) -rc . -n $(OUTPUT_NAME)
+run:
+	$(PYTHON) $(TESTIS) -r . -n $(OUTPUT_NAME)
 
 .PHONY: test check all
