@@ -8,7 +8,7 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CoulombIntegralsFromVertex);
+ALGORITHM_REGISTRAR_DEFINITION(CoulombIntegralsFromVertex)
 
 Ptr<MapNode> CoulombIntegralsFromVertex::run(const Ptr<MapNode> &arguments) {
   auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));

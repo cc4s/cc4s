@@ -7,7 +7,7 @@
 namespace cc4s {
   class SliceOperator: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(SliceOperator);
+    ALGORITHM_REGISTRAR_DECLARATION(SliceOperator)
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
 
   protected:

@@ -8,7 +8,7 @@
 namespace cc4s {
   class TensorWriter: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(TensorWriter);
+    ALGORITHM_REGISTRAR_DECLARATION(TensorWriter)
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
     void writeData(

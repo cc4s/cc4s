@@ -8,7 +8,7 @@
 namespace cc4s {
   class TensorReader: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(TensorReader);
+    ALGORITHM_REGISTRAR_DECLARATION(TensorReader)
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
     void readData(

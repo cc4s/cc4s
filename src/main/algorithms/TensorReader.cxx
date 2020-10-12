@@ -12,7 +12,7 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(TensorReader);
+ALGORITHM_REGISTRAR_DEFINITION(TensorReader)
 
 /**
  * \brief Reader for tensor data.

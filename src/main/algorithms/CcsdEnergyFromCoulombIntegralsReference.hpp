@@ -19,7 +19,7 @@ namespace cc4s {
    */
   class CcsdEnergyFromCoulombIntegralsReference: public ClusterSinglesDoublesAlgorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CcsdEnergyFromCoulombIntegralsReference);
+    ALGORITHM_REGISTRAR_DECLARATION(CcsdEnergyFromCoulombIntegralsReference)
     /**
      * \brief Returns the abbreviation of the routine (CCSD).
      * \return abbreviation of the routine

@@ -7,7 +7,7 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(Mp2EnergyFromCoulombIntegrals);
+ALGORITHM_REGISTRAR_DEFINITION(Mp2EnergyFromCoulombIntegrals)
 
 Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));

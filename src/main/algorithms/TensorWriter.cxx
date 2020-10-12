@@ -10,7 +10,7 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(TensorWriter);
+ALGORITHM_REGISTRAR_DEFINITION(TensorWriter)
 
 /**
  * \brief Writer for tensor data.

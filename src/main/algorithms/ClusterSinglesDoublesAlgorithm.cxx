@@ -39,6 +39,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run(const Ptr<MapNode> &arguments){
   }
 }
 
+
 template <typename F, typename TE>
 Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));

@@ -14,7 +14,7 @@ namespace cc4s {
    */
   class CoulombIntegralsFromVertex: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CoulombIntegralsFromVertex);
+    ALGORITHM_REGISTRAR_DECLARATION(CoulombIntegralsFromVertex)
     /**
      * \brief Calculates Coulomb integrals Vabcd,Vabij,Vaibj,Vabci,Vijka,Vijkl
      * from GammaGai,GammaGab,GammaGij Coulomb Vertices.

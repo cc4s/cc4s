@@ -9,7 +9,7 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(DefineHolesAndParticles);
+ALGORITHM_REGISTRAR_DEFINITION(DefineHolesAndParticles)
 
 Ptr<MapNode> DefineHolesAndParticles::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods

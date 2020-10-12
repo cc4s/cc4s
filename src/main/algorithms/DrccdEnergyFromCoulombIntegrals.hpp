@@ -18,7 +18,7 @@ namespace cc4s {
    */
   class DrccdEnergyFromCoulombIntegrals: public ClusterSinglesDoublesAlgorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(DrccdEnergyFromCoulombIntegrals);
+    ALGORITHM_REGISTRAR_DECLARATION(DrccdEnergyFromCoulombIntegrals)
     /**
      * \brief Returns the abbreviation of the routine (DRCCD).
      * \return abbreviation of the routine

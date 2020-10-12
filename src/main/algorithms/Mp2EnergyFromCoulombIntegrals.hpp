@@ -10,7 +10,7 @@ namespace cc4s {
    */
   class Mp2EnergyFromCoulombIntegrals: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(Mp2EnergyFromCoulombIntegrals);
+    ALGORITHM_REGISTRAR_DECLARATION(Mp2EnergyFromCoulombIntegrals)
     /**
      * \brief Calculates MP2 energy from Coulomb integrals Vabij
      */

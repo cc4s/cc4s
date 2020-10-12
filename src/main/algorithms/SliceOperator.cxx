@@ -9,7 +9,7 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(SliceOperator);
+ALGORITHM_REGISTRAR_DEFINITION(SliceOperator)
 
 Ptr<MapNode> SliceOperator::run(const Ptr<MapNode> &arguments) {
   auto op(arguments->getMap("operator"));

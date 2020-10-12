@@ -6,7 +6,7 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(DrccdEnergyFromCoulombIntegrals);
+ALGORITHM_REGISTRAR_DEFINITION(DrccdEnergyFromCoulombIntegrals)
 
 Ptr<FockVector<Real<>, DryTensorEngine>>
 DrccdEnergyFromCoulombIntegrals::getResiduum(

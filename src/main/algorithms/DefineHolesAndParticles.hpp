@@ -7,7 +7,7 @@
 namespace cc4s {
   class DefineHolesAndParticles: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(DefineHolesAndParticles);
+    ALGORITHM_REGISTRAR_DECLARATION(DefineHolesAndParticles)
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
 
   protected:

@@ -9,7 +9,7 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork);
+ALGORITHM_REGISTRAR_DEFINITION(TensorNetwork)
 
 /**
  * \brief Testing environement

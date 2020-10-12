@@ -7,7 +7,7 @@
 namespace cc4s {
   class TensorNetwork: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(TensorNetwork);
+    ALGORITHM_REGISTRAR_DECLARATION(TensorNetwork)
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
     template <typename TE>
