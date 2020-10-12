@@ -1,3 +1,5 @@
+#THIS CONFIG SHOULD WORK ON CQC
+
 include Libraries.mk
 
 # main target

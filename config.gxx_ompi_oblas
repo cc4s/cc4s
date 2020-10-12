@@ -1,4 +1,8 @@
-#THIS CONFIG SHOULD WORK ON CQC
+#Currently Loaded Modulefiles:
+# 1) gcc/9.1.0-gcc-4.8.5-mj7s6dg        4) openmpi/4.0.3-gcc-9.1.0-it4lnqb           
+# 2) cmake/3.15.1-gcc-9.1.0-4pcxi7s     5) netlib-scalapack/2.1.0-gcc-9.1.0-ja5stbc  
+# 3) openblas/0.3.9-gcc-9.1.0-eqtjopu  
+
 
 include Libraries.mk
 
@@ -10,11 +14,10 @@ CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
 OPTIONS = -fopenmp -std=c++11 \
-          -Wall -pedantic --all-warnings -fmax-errors=3 \
-          -DDEBUG
+          -Wall -pedantic --all-warnings -fmax-errors=3
 
 # optimization options (only for compiling and linking)
-OPTIMIZE = -O0 -g -fno-lto
+OPTIMIZE = -Ofast -march=native -fno-lto
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
@@ -24,9 +27,11 @@ LINK_LIBS = \
 ${YAML_LIB} \
 ${CTF_LIB} \
 ${BLAS_LIB} \
-${SCALAPACK_LIB} \
 -lgfortran -lquadmath \
--Wl,-Bdynamic
+-Wl,-Bdynamic \
+${SCALAPACK_LIB} \
+
+
 
 INCLUDE_FLAGS = \
 ${YAML_INCLUDE} \
