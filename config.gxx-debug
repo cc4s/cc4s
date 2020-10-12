@@ -1,3 +1,5 @@
+#THIS CONFIG SHOULD WORK ON CQC
+
 include Libraries.mk
 include etc/make/ctf.mk
 include etc/make/yaml.mk
