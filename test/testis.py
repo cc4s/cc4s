@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-import pathlib
 import hashlib
 import os
+import os.path as op
 import sys
 import logging
 from collections import namedtuple
@@ -17,7 +17,7 @@ __version__ = "0.0.1"
 __author__ = "Alejandro Gallo"
 __email__ = "aamsgallo@gmail.com"
 __license__ = "GPLv3"
-STORE_FOLDER = pathlib.Path("~/.testis-store").expanduser()
+STORE_FOLDER = op.expanduser("~/.cache/cc4s-test-store")
 INFO_FILE_NAME = "test.json"
 DEFAULT_RUN_SCRIPT = "./run.py"
 DEFAULT_CHECK_SCRIPT = "./check.py"
@@ -32,21 +32,20 @@ Resource = namedtuple("Resource", "url out hash")
 
 
 def get_tests_in_dir(folder):
-    return [pathlib.Path(p)
-            for p, _, _ in os.walk(folder)
-            if (pathlib.Path(p) / INFO_FILE_NAME).exists()]
+    return [p for p, _, _ in os.walk(folder)
+              if op.exists(op.join(p, INFO_FILE_NAME))]
 
 
 def folder_to_test(folder, outname):
-    info = folder / INFO_FILE_NAME
+    info = op.join(folder, INFO_FILE_NAME)
 
     with open(info) as f:
         _data = json.load(f)
 
-    path = pathlib.Path(os.path.abspath(folder))
-    outpath = path / outname
+    path = op.abspath(folder)
+    outpath = op.join(path, outname)
 
-    return TestCase( name=_data.get("name") or folder.name
+    return TestCase( name=_data.get("name") or os.basename(folder)
                    , tags=_data.get("tags", "").split(" ")
                    , path=path
                    , outpath=outpath
@@ -74,10 +73,10 @@ def hash_string(r):
 
 def get_resource(r):
     assert isinstance(r, Resource)
-    out = STORE_FOLDER / r.hash / r.out
-    if not out.exists():
-        out.parent.mkdir(exist_ok=True)
-        logging.info("downloading %s ⇒ %s", r.out, out)
+    out = op.join(STORE_FOLDER, r.hash, r.out)
+    if not op.exists(out):
+        os.makedirs(op.dirname(out), exist_ok=True)
+        logging.info("%sdownlo.%s %s => %s", MAGENTA, CLEAR, r.out, out)
         data = urllib.request.urlopen(r.url).read()
         with open(out, 'wb+') as f:
             f.write(data)
@@ -85,13 +84,13 @@ def get_resource(r):
 
 def link_resource(r, basedir):
     assert isinstance(r, Resource)
-    assert isinstance(basedir, pathlib.Path)
-    i = (STORE_FOLDER / r.hash / r.out).resolve()
-    o = basedir / r.out
-    if o.exists():
+    assert isinstance(basedir, str)
+    i = op.abspath(op.join(STORE_FOLDER, r.hash, r.out))
+    o = op.join(basedir, r.out)
+    if op.exists(o):
         return
-    logging.info("%s ⇐ %s", r.out, i)
-    o.symlink_to(i)
+    logging.info("%ssymlink%s %s <= %s", MAGENTA, CLEAR, r.out, i)
+    os.symlink(i, o)
 
 
 def read_yaml(filepath):
@@ -115,13 +114,14 @@ def get_and_link_resources(test):
 
 def link_inputfiles_to_outputpath(test):
     assert isinstance(test, TestCase)
-    test.outpath.mkdir(exist_ok=True)
-    for f in test.path.iterdir():
-        if f.name == INFO_FILE_NAME:
+    os.makedirs(test.outpath, exist_ok=True)
+    for f in os.listdir(test.path):
+        if op.basename(f) == INFO_FILE_NAME:
             continue
-        out = test.outpath / f.name
-        if not out.exists():
-            out.symlink_to(f)
+        out = op.join(test.outpath, op.basename(f))
+        inf = op.join(test.path, op.basename(f))
+        if not op.exists(out):
+            os.symlink(inf, out)
 
 
 def run_in_test(test, script_file):
@@ -129,7 +129,7 @@ def run_in_test(test, script_file):
     assert isinstance(script_file, str)
     cmd = shlex.split(script_file)
     logging.debug("running: %s", cmd)
-    cwd = pathlib.Path.cwd()
+    cwd = os.getcwd()
 
     logging.debug("chdir: %s", test.outpath)
     os.chdir(test.outpath)
@@ -185,7 +185,7 @@ def main():
         default=10)
     args = parser.parse_args()
 
-    STORE_FOLDER.mkdir(exist_ok=True)
+    os.makedirs(STORE_FOLDER, exist_ok=True)
 
     if args.d:
         logging.basicConfig(
@@ -196,7 +196,7 @@ def main():
                             format="(%(relativeCreated)d) %(message)s")
 
     # get only folders
-    args.folders = [pathlib.Path(f) for f in args.folders if os.path.isdir(f)]
+    args.folders = [f for f in args.folders if os.path.isdir(f)]
 
     logging.info("Looking for tests in %s folder(s)", len(args.folders))
 
@@ -214,7 +214,7 @@ def main():
             print(t)
         return
 
-    cwd = pathlib.Path.cwd()
+    cwd = os.getcwd()
     logging.info("Running tests (in {}{}{})".format(MAGENTA, args.name, CLEAR))
     for test in tests:
         logging.info("{}∷{} {}".format(GREEN, CLEAR, test.name))
