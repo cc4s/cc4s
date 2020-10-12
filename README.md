@@ -10,24 +10,24 @@ Library dependencies
   make CONFIG=<config> deps
   ```
   where `<config>` is the name of the configuration used.
-- by default the configuration `gxx` is used.
+- by default the configuration `gcc` is used.
 
 Building
 --------
 
--   check `gxx` version. Need at least `gcc 4.7.2` (As tested, gcc 4.6 does
+-   check `gcc` version. Need at least `gcc 4.7.2` (As tested, gcc 4.6 does
     not work).
 -   write or edit a `config.<config>` file for your build environment.
--   the configuration files `config.gxx` and `config.icc` contain
-    predifined retail environments for `gxx` and `icc`, respectively,
+-   the configuration files given in etc/config/ contain
+    predifined retail environments for gnu- and intel-compiler, respectively,
     using full optimization and without debugging info.
--   for the gxx configuration the following additional libraries are
+-   for the gcc configuration the following additional libraries are
     required
     - OpenBLAS
     - scalapack
 - make sure, the above library dependencies are built for your configuration
 - run `make -j 8 [CONFIG=<config]` to build for the desired environment, by
-  default for `gxx`. The `-j` option issues a parallel make on 8 processes.
+  default for `gcc`. The `-j` option issues a parallel make on 8 processes.
 - run `make install [CONFIG=<config>]` to copy the executable to the specified
   target directory. The default is `~/bin/cc4s/<config>`.
 - the intermediate build files for each build environment can be found in the
@@ -38,7 +38,7 @@ Running
 
 -   a `cc4s` operation file, e.g. `mp2.yaml`, can be run with
     ```
-    ~/bin/cc4s/gxx/Cc4s -i mp2.yaml
+    ~/bin/cc4s/gcc/Cc4s -i mp2.yaml
     ```
 
 Testing
@@ -48,7 +48,7 @@ Testing
 
 - Run the main Makefile with
   ```
-  make test CONFIG=gxx
+  make test CONFIG=gcc
   ```
 - this issues all tests of the given type for local build binary of the given
   build environment.
