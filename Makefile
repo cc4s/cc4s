@@ -1,36 +1,72 @@
-# default configuration, override with
-#   make all CONFIG=(icc|gxx|icc-debug|icc-local|icc-debug-local)
-CONFIG ?= gxx
-
+CONFIG ?= gcc
 include etc/config/${CONFIG}.mk
 include Objects.mk
 
-ifneq ($(IS_CLEANING),TRUE)
-	# include created dependencies
-	# if the makefile is compiling
-	-include ${OBJECTS:.o=.d}
-	-include build/${CONFIG}/obj/main/${CC4S_TARGET}.d
-endif
-
 # goals:
 .DEFAULT_GOAL := all
+.PHONY: test wiki cc4s all clean deps
 
-deps: IS_CLEANING=TRUE
-deps: $(IN_PROJECT_DEPENDENCIES)
+BUILD_PATH        = build/$(CONFIG)
+OBJ_PATH          = $(BUILD_PATH)/obj
+BIN_PATH          = $(BUILD_PATH)/bin
+OBJ_FILES         = $(patsubst %.cxx,$(OBJ_PATH)/%.o,$(SRC_FILES))
+DEP_FILES         = $(patsubst %.cxx,$(OBJ_PATH)/%.d,$(SRC_FILES))
+TESTS_OBJECTS     = $(patsubst %.cxx,$(OBJ_PATH)/%.o,$(TEST_SRC_FILES))
+# retrieve build environment
+VERSION          := $(shell git describe --all --dirty --long)
+DATE             := $(shell git log -1 --format="%cd")
+COMPILER_VERSION := $(shell ${CXX} --version | head -n 1)
 
-clean: IS_CLEANING=TRUE
-clean:
-	rm -rf build/$(CONFIG)
+# add build environment specifics to INCLUDE_FLAGS and to CC4S_OPTIONS
+INCLUDE_FLAGS += -Isrc/main
+CC4S_OPTIONS  +=              \
+-D_POSIX_C_SOURCE=200112L     \
+-D__STDC_LIMIT_MACROS         \
+-DFTN_UNDERSCORE=1            \
+-DCC4S_VERSION=\"${VERSION}\" \
+"-DCC4S_DATE=\"${DATE}\""     \
+"-DCOMPILER_VERSION=\"${COMPILER_VERSION}\""
+
+
+# This is a trick just to make sure that the dependencies are built
+DEPS_DONE_FILE = $(BUILD_PATH)/deps-built
+$(DEPS_DONE_FILE): $(IN_PROJECT_DEPENDENCIES)
+	@mkdir -p $(@D)
+	@touch $@
+deps: $(DEPS_DONE_FILE)
+
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),clean-all)
+ifneq ($(MAKECMDGOALS),deps)
+ifneq ($(CREATE_DEPS),FALSE)
+ifneq ($(wildcard $(DEPS_DONE_FILE)), $(DEPS_DONE_FILE))
+$(warning You have not built the dependencies for $(CONFIG), please build them)
+$(warning with 'make deps CONFIG=$(CONFIG)')
+$(error exiting now...)
+endif
+# try to include dependency files in order to trigger their creation
+-include $(DEP_FILES)
+endif
+endif
+endif
+endif
+
 
 # primary target
 all: cc4s
-cc4s: build/${CONFIG}/bin/${CC4S_TARGET}
+cc4s: $(BIN_PATH)/${CC4S_TARGET}
 
-.PHONY: test wiki cc4s all clean deps
+clean:
+	rm -rf $(BUILD_PATH)
+
+clean-all: clean
+	@$(MAKE) CREATE_DEPS=FALSE $(patsubst %,%-clean,$(IN_PROJECT_DEPENDENCIES))
+
 test:
 	$(MAKE) -C $@
 
-unit-test: build/${CONFIG}/bin/Test
+unit-test: $(BIN_PATH)/Test
 
 # generate documentation
 doc:
@@ -40,49 +76,36 @@ wiki:
 	bash utils/extract.sh -R -d wiki/dist -b wiki/build -p src test.wiki
 
 # copy binary to installation directory
-install: build/${CONFIG}/bin/${CC4S_TARGET}
+install: $(BIN_PATH)/$(CC4S_TARGET)
 	mkdir -p ${CC4S_INSTALL}
-	cp build/${CONFIG}/bin/${CC4S_TARGET} ${CC4S_INSTALL}
+	cp $< ${CC4S_INSTALL}
 
 # build dependencies only
-depend: ${OBJECTS:.o=.d} build/${CONFIG}/obj/main/${CC4S_TARGET}.d
+depend: $(DEP_FILES)
 
-# retrieve build environment
-VERSION:=$(shell git describe --all --dirty --long)
-DATE:=$(shell git log -1 --format="%cd")
-COMPILER_VERSION:=$(shell ${CXX} --version | head -n 1)
-
-# add build environment specifics to INCLUDE_FLAGS and to CC4S_OPTIONS
-INCLUDE_FLAGS += -Isrc/main
-CC4S_OPTIONS += -D_POSIX_C_SOURCE=200112L \
--D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
-"-DCC4S_DATE=\"${DATE}\"" \
-"-DCOMPILER_VERSION=\"${COMPILER_VERSION}\""
-
+# keep intermediate files
+.PRECIOUS: ${OBJ_FILES} ${DEP_FILES}
 
 # create a dependency for object file
-build/${CONFIG}/obj/%.d: src/%.cxx
+$(OBJ_PATH)/%.d: src/%.cxx
+	$(info $@)
 	mkdir -p $(dir $@)
 	${CXX} -MM ${CC4S_OPTIONS} ${INCLUDE_FLAGS} -c src/$*.cxx | \
-	  sed 's#[^ :]*\.o[ :]*#build/${CONFIG}/obj/$*.o $@: #g' > $@
-
-# keep dependency files
-.PRECIOUS: build/${CONFIG}/obj/%.o ${OBJECTS}
+	  sed 's#[^ :]*\.o[ :]*#$(OBJ_PATH)/$*.o $@: #g' > $@
 
 # compile an object file
-build/${CONFIG}/obj/%.o: build/${CONFIG}/obj/%.d
+$(OBJ_PATH)/%.o: $(OBJ_PATH)/%.d
+	$(info $@)
 	mkdir -p $(dir $@)
 	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${INCLUDE_FLAGS} -c src/$*.cxx -o $@
 
-# keep object files
-.PRECIOUS: build/${CONFIG}/obj/%.o ${OBJECTS}
-
 # compile and link executable
-build/${CONFIG}/bin/%: build/${CONFIG}/obj/main/%.o ${OBJECTS}
+$(BIN_PATH)/${CC4S_TARGET}: ${OBJ_FILES}
+	$(info $@)
 	mkdir -p $(dir $@)
-	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJECTS} build/${CONFIG}/obj/main/${CC4S_TARGET}.o ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
+	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJ_FILES} ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
 
 # compile and link test executable
-build/${CONFIG}/bin/Test: ${OBJECTS} $(TESTS_OBJECTS)
+$(BIN_PATH)/Test: ${OBJ_FILES} $(TESTS_OBJECTS)
 	mkdir -p $(dir $@)
-	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJECTS} $(TESTS_OBJECTS) ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
+	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJ_FILES} $(TESTS_OBJECTS) ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@

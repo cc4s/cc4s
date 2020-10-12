@@ -10,7 +10,9 @@ CXX = mpicxx
 # general and language options (for preprocessing, compiling and linking)
 CC4S_OPTIONS = \
 -fopenmp -std=c++11 \
--Wall -pedantic --all-warnings -fmax-errors=3
+-Wall -pedantic --all-warnings -fmax-errors=3 \
+-Wno-vla \
+-Wno-int-in-bool-context
 
 # optimization options (only for compiling and linking)
 OPTIMIZE = -Ofast -march=native -fno-lto

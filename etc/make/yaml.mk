@@ -14,6 +14,7 @@ $(YAML_BUILD_PATH)/Makefile: $(YAML_CMAKE)
 	$(CMAKE) -DCMAKE_INSTALL_PREFIX=$(YAML_BUILD_PATH) $(YAML_SRC_PATH)
 
 $(YAML_STATIC_LIB): $(YAML_BUILD_PATH)/Makefile
+	$(info Compiling $@)
 	cd $(@D) && $(MAKE) install
 
 .PHONY: yaml yaml-clean

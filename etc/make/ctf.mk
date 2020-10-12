@@ -12,6 +12,7 @@ $(CTF_BUILD_PATH)/Makefile: $(CTF_SRC_PATH)/configure
 	cd $(CTF_BUILD_PATH) && $(CTF_SRC_PATH)/configure $(CTF_CONFIG_FLAGS)
 
 $(CTF_STATIC_LIB): $(CTF_BUILD_PATH)/Makefile
+	$(info Compiling $@)
 	cd $(CTF_BUILD_PATH) && $(MAKE)
 
 .PHONY: ctf ctf-clean
