@@ -2,14 +2,14 @@
 #   make all CONFIG=(icc|gxx|icc-debug|icc-local|icc-debug-local)
 CONFIG ?= gxx
 
-include config.${CONFIG}
-include Objects
+include etc/config/${CONFIG}.mk
+include Objects.mk
 
 ifneq ($(IS_CLEANING),TRUE)
 	# include created dependencies
 	# if the makefile is compiling
 	-include ${OBJECTS:.o=.d}
-	-include build/${CONFIG}/obj/main/${TARGET}.d
+	-include build/${CONFIG}/obj/main/${CC4S_TARGET}.d
 endif
 
 # goals:
@@ -24,7 +24,7 @@ clean:
 
 # primary target
 all: cc4s
-cc4s: build/${CONFIG}/bin/${TARGET}
+cc4s: build/${CONFIG}/bin/${CC4S_TARGET}
 
 .PHONY: test wiki cc4s all clean deps
 test:
@@ -40,22 +40,21 @@ wiki:
 	bash utils/extract.sh -R -d wiki/dist -b wiki/build -p src test.wiki
 
 # copy binary to installation directory
-install: build/${CONFIG}/bin/${TARGET}
-	mkdir -p ${INSTALL}
-	cp build/${CONFIG}/bin/${TARGET} ${INSTALL}
+install: build/${CONFIG}/bin/${CC4S_TARGET}
+	mkdir -p ${CC4S_INSTALL}
+	cp build/${CONFIG}/bin/${CC4S_TARGET} ${CC4S_INSTALL}
 
 # build dependencies only
-depend: ${OBJECTS:.o=.d} build/${CONFIG}/obj/main/${TARGET}.d
-
+depend: ${OBJECTS:.o=.d} build/${CONFIG}/obj/main/${CC4S_TARGET}.d
 
 # retrieve build environment
 VERSION:=$(shell git describe --all --dirty --long)
 DATE:=$(shell git log -1 --format="%cd")
 COMPILER_VERSION:=$(shell ${CXX} --version | head -n 1)
 
-# add build environment specifics to INCLUDE_FLAGS and to OPTIONS
+# add build environment specifics to INCLUDE_FLAGS and to CC4S_OPTIONS
 INCLUDE_FLAGS += -Isrc/main
-OPTIONS+= -D_POSIX_C_SOURCE=200112L \
+CC4S_OPTIONS += -D_POSIX_C_SOURCE=200112L \
 -D__STDC_LIMIT_MACROS -DFTN_UNDERSCORE=1 -DCC4S_VERSION=\"${VERSION}\" \
 "-DCC4S_DATE=\"${DATE}\"" \
 "-DCOMPILER_VERSION=\"${COMPILER_VERSION}\""
@@ -64,17 +63,16 @@ OPTIONS+= -D_POSIX_C_SOURCE=200112L \
 # create a dependency for object file
 build/${CONFIG}/obj/%.d: src/%.cxx
 	mkdir -p $(dir $@)
-	${CXX} -MM ${OPTIONS} ${INCLUDE_FLAGS} -c src/$*.cxx | \
+	${CXX} -MM ${CC4S_OPTIONS} ${INCLUDE_FLAGS} -c src/$*.cxx | \
 	  sed 's#[^ :]*\.o[ :]*#build/${CONFIG}/obj/$*.o $@: #g' > $@
 
 # keep dependency files
 .PRECIOUS: build/${CONFIG}/obj/%.o ${OBJECTS}
 
-
 # compile an object file
 build/${CONFIG}/obj/%.o: build/${CONFIG}/obj/%.d
 	mkdir -p $(dir $@)
-	${CXX} ${OPTIONS} ${OPTIMIZE} ${INCLUDE_FLAGS} -c src/$*.cxx -o $@
+	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${INCLUDE_FLAGS} -c src/$*.cxx -o $@
 
 # keep object files
 .PRECIOUS: build/${CONFIG}/obj/%.o ${OBJECTS}
@@ -82,9 +80,9 @@ build/${CONFIG}/obj/%.o: build/${CONFIG}/obj/%.d
 # compile and link executable
 build/${CONFIG}/bin/%: build/${CONFIG}/obj/main/%.o ${OBJECTS}
 	mkdir -p $(dir $@)
-	${CXX} ${OPTIONS} ${OPTIMIZE} ${OBJECTS} build/${CONFIG}/obj/main/${TARGET}.o ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
+	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJECTS} build/${CONFIG}/obj/main/${CC4S_TARGET}.o ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
 
 # compile and link test executable
 build/${CONFIG}/bin/Test: ${OBJECTS} $(TESTS_OBJECTS)
 	mkdir -p $(dir $@)
-	${CXX} ${OPTIONS} ${OPTIMIZE} ${OBJECTS} $(TESTS_OBJECTS) ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
+	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJECTS} $(TESTS_OBJECTS) ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@

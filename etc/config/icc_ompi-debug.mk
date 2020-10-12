@@ -2,23 +2,21 @@
 # 1) intel/19.1.1       3) openmpi/4.0.3-intel-19.1.1.217-vbnpf6h  
 # 2) intel-mkl/2020.1   4) cmake/3.15.1-intel-19.1.1.217-nkzxutj
 
-include Libraries.mk
+include Cc4s.mk
 include etc/make/ctf.mk
 include etc/make/yaml.mk
-
-# main target
-TARGET = Cc4s
 
 # compiler and linker
 CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-OPTIONS = -mkl -lpthread  -std=c++11 \
-          -Wall -pedantic -fmax-errors=3 \
-          -qopenmp \
-          -qoverride-limits -DINTEL_COMPILER \
-          -Qoption,cpp,--extended_float_types \
-          -DDEBUG
+CC4S_OPTIONS = \
+-mkl -lpthread  -std=c++11 \
+-Wall -pedantic -fmax-errors=3 \
+-qopenmp \
+-qoverride-limits -DINTEL_COMPILER \
+-Qoption,cpp,--extended_float_types \
+-DDEBUG
 
 # optimization options (only for compiling and linking)
 OPTIMIZE = -O0 -g
@@ -27,9 +25,6 @@ OPTIMIZE = -O0 -g
 # BLAS and LAPACK library contained in mkl
 # ScaLAPACK libarary, expects mkl and intelmpi to be loaded
 MKL_LIB += -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64
-
-# destination path for installation
-INSTALL=~/bin/cc4s/${CONFIG}
 
 CTF_CONFIG_FLAGS = CXX=mpicxx \
                    CXXFLAGS="-O0 -g" \
@@ -44,5 +39,3 @@ ${CTF_LIB} \
 INCLUDE_FLAGS = \
 ${YAML_INCLUDE} \
 ${CTF_INCLUDE}
-
-# vim: ft=make

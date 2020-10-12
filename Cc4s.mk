@@ -19,3 +19,9 @@ BLAS_LIB     ?= -L${BLAS_PATH}/lib -lopenblas
 
 # ScaLAPACK ===================================================================
 SCALAPACK_LIB ?= -L${SCALAPACK_PATH}/lib -lscalapack
+
+# General settings ============================================================
+# destination path for installation
+CC4S_INSTALL = ~/bin/cc4s/$(CONFIG)
+# main target
+CC4S_TARGET = Cc4s
