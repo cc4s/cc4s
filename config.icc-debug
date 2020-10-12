@@ -1,4 +1,6 @@
 include Libraries.mk
+include etc/make/ctf.mk
+include etc/make/yaml.mk
 
 # main target
 TARGET = Cc4s
@@ -24,6 +26,10 @@ MKL_LIB += -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64
 
 # destination path for installation
 INSTALL=~/bin/cc4s/${CONFIG}
+
+CTF_CONFIG_FLAGS = CXX=mpicxx \
+                   CXXFLAGS="-O0 -g" \
+                   --no-dynamic
 
 LINK_LIBS = \
 -mkl \

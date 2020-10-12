@@ -1,6 +1,6 @@
 # default configuration, override with
 #   make all CONFIG=(icc|gxx|icc-debug|icc-local|icc-debug-local)
-CONFIG?=gxx
+CONFIG ?= gxx
 
 include config.${CONFIG}
 include Objects
@@ -14,22 +14,19 @@ endif
 
 # goals:
 .DEFAULT_GOAL := all
-# define IS_CLEANING when clean triggered
+
+deps: IS_CLEANING=TRUE
+deps: $(IN_PROJECT_DEPENDENCIES)
+
 clean: IS_CLEANING=TRUE
 clean:
-	rm -rf build/$(CONFIG)/bin/
-	rm -rf build/${CONFIG}/obj/
+	rm -rf build/$(CONFIG)
 
 # primary target
-all: build/${CONFIG}/bin/${TARGET}
+all: cc4s
+cc4s: build/${CONFIG}/bin/${TARGET}
 
-# fetch tutorials for tests
-TUTORIALS_REVISION=962e7ec2f07e55cb08f927803d017125afc0c245
-tutorials/systems:
-	git clone git@gitlab.cc4s.org:cqc/cc4s-tutorials.git tutorials
-	cd tutorials; git reset --hard ${TUTORIALS_REVISION}
-
-.PHONY: test wiki
+.PHONY: test wiki cc4s all clean deps
 test:
 	$(MAKE) -C $@
 

@@ -4,13 +4,12 @@ Coupled Cluster for Solids
 Library dependencies
 --------------------
 
-- go to the lib subdirectory and execute:
+- The dependencies that are built together with `cc4s` for a given configuration
+  are built by issuing the command
   ```
-  make [CONFIG=<config>] [Options]
+  make CONFIG=<config> deps
   ```
-- this should automatically fetch the submodules' source from the
-  respective maintainers, configure the modules for the given configuration
-  (See below) and build the modules for that configuration.
+  where `<config>` is the name of the configuration used.
 - by default the configuration `gxx` is used.
 
 Building
@@ -47,83 +46,39 @@ Testing
 
 ### Running tests
 
-- run the test suite in the test directory:
+- Run the main Makefile with
   ```
-  ./test.sh [-c <config>] [-t <type>] [...]
+  make test CONFIG=gxx
   ```
-  You can run
-  ```
-  ./test.sh -h
-  ```
-  to see all the available options.
 - this issues all tests of the given type for local build binary of the given
   build environment.
-- by default the `essential` tests are conducted for the `icc` build
-  binary.
-- note that installed executables are not tested unless you explicitly specify
-  their location, e.g. by:
-  ```
-  ./test.sh -x ~/bin/cc4s/gxx/Cc4s
-  ```
 
 ### Writing tests
 
--   To write a test you need to write a bash script with the name
-    `doTest.sh`
-  it is in the folder `test`.
-- To define different groups of tests a CLASS attribute is provided.
-  All tests are by default in the class `all`, and all important tests should
-  be in the class `essential`. The class of the test is defined by writing
-  in the header of the test file the line:
-  ```
-  # @CLASS=essential,example_class1,....
-  ```
-- A convention to follow is that the essential corresponds to the test file
-  in the main parent directory of every test case. Subdirectories can
-  allways be created containing also test files, which should typically
-  marked as non-essential.
-- To every test script global variables are made available by the test suite
-  script `test.sh`. These are `RUN_COMMAN` and `CC4S_PATH`.  `RUN_COMMAND` is
-  meant to be either empty or a form of mpi runner (e.g. mpirun).  `CC4S_PATH`
-  is the path of the cc4s executable. You can run the test
-  calculation by writing for example in the test script:
-  ```
-  ${RUN_COMMAND} ${CC4S_PATH} -file test.cc4s
-  ```
-- The main task of the test script is to set a variable upon termination to communicate
-  if the test was succesful or not. This varible is `TEST_RESULT`. A value of 0 means
-  that the test was succesful. Otherwise the test suite will consider the
-  test as failed.    You can write other programs or scripts in order to
-  decide if the test was successful or not, but the result must be
-  communicated by setting these variables in the doTest.sh script.
-- In order to print debug information during the implementation of the test,
-  you can write to stderr since stdout is being overriden by the test suite
-  runner. You can do this like so
-  echo `Debug message` >&2
+TODO
 
-Update to newer module versions
--------------------------------
+Update dependencies
+-------------------
 
-If any of the submodules are updated by their respective maintainer, you
+If any of the dependencies are updated by their respective maintainer, you
 can incorporate the latest version into cc4s. Note that this may lead to
 incompatabilities and it must therefore be done with good care.
 
 - if you intent to update the master, create a branch from the master.
   In case anything goes wrong the damage is controlled
-- update the modules at the top level of the cc4s directory structure:
-  ```
-  git submodule foreach git pull origin master
-  ```
-- build the updated modules for all configurations supported as described above.
+- update the dependency at the top level of the cc4s directory structure:
+  by editing the `Libraries.mk` file and replacing the commit hash
+  by the new commit hash in the dependency's repository.
+- build the dependency for all configurations supported as described above.
 - build `cc4s` for all configurations supported
 - run the `cc4s` `essental` tests for all configurations supported
 - fix all bugs that emerged from advancing to the new version in `cc4s` or
   let them be fixed in the modules.
 
-If all tests pass, `cc4s` may be advanced to the new modules\' versions
+If all tests pass, `cc4s` may be advanced to the new dependency's  versions
 by
 ```
-git commit -m "Updated submodules to latest version"
+git commit -m "Update dependency to version {...}"
 ```
 
 - if you want to advance the master branch, merge your branch into it.

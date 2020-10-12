@@ -1,4 +1,6 @@
 include Libraries.mk
+include etc/make/ctf.mk
+include etc/make/yaml.mk
 
 # main target
 TARGET = Cc4s
@@ -17,7 +19,13 @@ OPTIONS = -fopenmp -std=c++11 \
 OPTIMIZE = -O0 -g -fno-lto
 
 # destination path for installation
-INSTALL=~/bin/cc4s/${CONFIG}
+INSTALL = ~/bin/cc4s/$(CONFIG)
+
+CTF_CONFIG_FLAGS = CXX=$(CXX) \
+                   AR=gcc-ar \
+                   CXXFLAGS="-Ofast -march=native -fno-lto -fopenmp -DPROFILE" \
+                   LIBS="-L$(BLAS_PATH)/lib" \
+                   --no-dynamic
 
 LINK_LIBS = \
 -Wl,-Bstatic \
