@@ -1,6 +1,0 @@
-[submodule "ctf"]
-	path = lib/src/ctf
-	url = https://github.com/cyclops-community/ctf.git
-[submodule "lib/src/yaml-cpp"]
-	path = lib/src/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
