@@ -13,11 +13,18 @@ import json
 import functools
 
 
+def get_store_folder():
+    f = __file__
+    while os.path.islink(f):
+        f = os.readlink(f)
+    return op.join(op.dirname(op.abspath(f)), "testis-store")
+
+
 __version__ = "0.0.1"
 __author__ = "Alejandro Gallo"
 __email__ = "aamsgallo@gmail.com"
 __license__ = "GPLv3"
-STORE_FOLDER = op.expanduser("~/.cache/cc4s-test-store")
+STORE_FOLDER = get_store_folder()
 INFO_FILE_NAME = "test.json"
 DEFAULT_RUN_SCRIPT = "./run.py"
 DEFAULT_CHECK_SCRIPT = "./check.py"
@@ -116,6 +123,8 @@ def link_inputfiles_to_outputpath(test):
     assert isinstance(test, TestCase)
     os.makedirs(test.outpath, exist_ok=True)
     for f in os.listdir(test.path):
+        # do not link the info file name so that it is not recognised
+        # as a test
         if op.basename(f) == INFO_FILE_NAME:
             continue
         out = op.join(test.outpath, op.basename(f))
