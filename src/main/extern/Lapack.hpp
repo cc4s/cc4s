@@ -100,7 +100,7 @@ extern "C" {
     const int *workSize,
     int *info
   );
-};
+}
 
 #endif
 

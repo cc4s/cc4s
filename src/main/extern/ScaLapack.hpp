@@ -111,7 +111,7 @@ extern "C" {
     const cc4s::Complex<64> *beta,
     cc4s::Complex<64> *C, const int *ic, const int *jc, const int *descc
   );
-};
+}
 
 #endif
 
