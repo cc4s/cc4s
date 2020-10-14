@@ -1,4 +1,5 @@
 CONFIG ?= gcc
+-include config.mk
 include etc/config/${CONFIG}.mk
 include Objects.mk
 
