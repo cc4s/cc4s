@@ -2,5 +2,4 @@
 
 from testis import call
 
-
-call("{CC4S_PATH} -i cc4s.in")
+call("{CC4S_RUN} -i cc4s.in")
