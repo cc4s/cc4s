@@ -59,7 +59,8 @@ all: cc4s
 cc4s: $(BIN_PATH)/${CC4S_TARGET}
 
 clean:
-	rm -rf $(BUILD_PATH)
+	rm -rf $(OBJ_PATH)
+	rm -rf $(BIN_PATH)
 
 clean-all: clean
 	@$(MAKE) CREATE_DEPS=FALSE $(patsubst %,%-clean,$(IN_PROJECT_DEPENDENCIES))
