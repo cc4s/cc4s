@@ -11,6 +11,7 @@ import shlex
 import urllib.request
 import json
 import functools
+import re
 
 
 def get_store_folder():
@@ -174,6 +175,20 @@ def tail(xs, n):
     return xs[-min(len(xs), n): -1]
 
 
+def filter_tags(tests, tags):
+    tags_code = tags
+    tags_code = re.sub(r".and.", r"&", tags_code)
+    tags_code = re.sub(r".or.", r"|", tags_code)
+    tags_code = re.sub(r"(\w+)", r"('\1' in __x_)", tags_code)
+    tags_code = re.sub(r"\&", r"and", tags_code)
+    tags_code = re.sub(r"\|", r"or", tags_code)
+    tags_code = re.sub(r"^", r"lambda __x_: ", tags_code)
+    tags_lambda = eval(tags_code)
+    logging.info("tags λ: %s", tags_code)
+
+    return [t for t in tests if tags_lambda(t.tags)]
+
+
 def main():
     parser = argparse.ArgumentParser("testis", "A minimal test run")
     parser.add_argument("folders",
@@ -181,8 +196,19 @@ def main():
                         nargs="+")
     parser.add_argument("-d", help="Debug mode", action="store_true")
     parser.add_argument("--list-tags", help="List tags", action="store_true")
-    parser.add_argument("-r", "--run", help="List tags", action="store_true")
-    parser.add_argument("-c", "--check", help="List tags", action="store_true")
+    parser.add_argument("-t", "--tags", default=None, type=str,
+                        help="Run only tags matching, for instance: "
+                             "--tags 'essential .and. (mem .or. ccsd)'")
+    parser.add_argument("--rx", type=str,
+                        help="Run tests matching regular expression",
+                        default=None)
+    parser.add_argument("-r", "--run",
+                        help="Just run the 'run' phase",
+                        action="store_true",
+                        default=None)
+    parser.add_argument("-c", "--check",
+                        help="Just run the 'check' phase",
+                        action="store_true")
     parser.add_argument("-n", "--name",
                         help="Name for the results folder of the test",
                         default="test-results",
@@ -217,11 +243,26 @@ def main():
                          get_tests_in_dir(f)))
 
     logging.info("Found %s test folders", len(tests))
+    all_tags = set(sum([t.tags for t in tests], []))
 
     if args.list_tags:
-        for t in set(sum([t.tags for t in tests], [])):
+        for t in all_tags:
             print(t)
         return
+
+    if args.rx:
+        rx = re.compile(args.rx)
+        tests = [t for t in tests if rx.match(t.name)]
+        logging.info("restrict to %s tests due to regex", len(tests))
+
+    if args.tags:
+        tests = filter_tags(tests, args.tags)
+        logging.info("restrict to %s tests due to tags", len(tests))
+
+    if args.run: logging.info("will run   %s test", len(tests))
+    if args.run: logging.info("will check %s test", len(tests))
+
+
 
     cwd = os.getcwd()
     logging.info("Running tests (in {}{}{})".format(MAGENTA, args.name, CLEAR))

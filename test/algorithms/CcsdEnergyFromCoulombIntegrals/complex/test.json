@@ -35,5 +35,5 @@
     }
   ],
   "runner": "./run.py",
-  "tags": "essential"
+  "tags": "essential complex"
 }
