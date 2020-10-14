@@ -176,13 +176,14 @@ namespace cc4s {
   }
 
   template <typename F=Real<>, int D=3>
-  inline std::ostream &operator << (std::ostream &stream, cc4s::Vector<F,D> const &v) {
+  inline std::ostream
+  &operator << (std::ostream &stream, cc4s::Vector<F,D> const &v) {
     for (int d(0); d<D-1; ++d) {
       stream << v.coordinate[d] << ",";
     }
     stream << v.coordinate[D-1];
     return stream;
-  };
+  }
 }
 
 #endif

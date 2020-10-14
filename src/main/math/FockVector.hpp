@@ -546,7 +546,7 @@ namespace cc4s {
   inline FockVector<F,TE> operator *(const F s, const FockVector<F,TE> &a) {
     FockVector<F,TE> result(a);
     result *= s;
-    return std::move(result);
+    return result;
   }
   /**
    * \brief Returns the scalar multiple of the FockVector a
