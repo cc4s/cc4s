@@ -14,18 +14,18 @@ Mixer<F,TE>::~Mixer() {
 }
 
 // instantiate
-template class Mixer<Real<64>,DryTensorEngine>;
-template class Mixer<Complex<64>,DryTensorEngine>;
-template class Mixer<Real<64>,DefaultTensorEngine>;
-template class Mixer<Complex<64>,DefaultTensorEngine>;
+template class cc4s::Mixer<Real<64>,DryTensorEngine>;
+template class cc4s::Mixer<Complex<64>,DryTensorEngine>;
+template class cc4s::Mixer<Real<64>,DefaultTensorEngine>;
+template class cc4s::Mixer<Complex<64>,DefaultTensorEngine>;
 
 
 template <typename F, typename TE>
 Ptr<typename MixerFactory<F,TE>::MixerMap> MixerFactory<F,TE>::mixerMap;
 
 // instantiate
-template class MixerFactory<Real<64>,DryTensorEngine>;
-template class MixerFactory<Complex<64>,DryTensorEngine>;
-template class MixerFactory<Real<64>,DefaultTensorEngine>;
-template class MixerFactory<Complex<64>,DefaultTensorEngine>;
+template class cc4s::MixerFactory<Real<64>,DryTensorEngine>;
+template class cc4s::MixerFactory<Complex<64>,DryTensorEngine>;
+template class cc4s::MixerFactory<Real<64>,DefaultTensorEngine>;
+template class cc4s::MixerFactory<Complex<64>,DefaultTensorEngine>;
 

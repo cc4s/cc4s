@@ -88,7 +88,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   OUT() << "Or amplitudes convergence dR: " << amplitudesConvergence << std::endl;
   F e(0), previousE(0);
   size_t i(0);
-  char outstring[50];
+  char outstring[80];
   sprintf(outstring,"%4s %16s %10s %10s %7s\n",
           "Iter", "Energy  ", "dE   ", "dR    ", "time");
   OUT() << outstring;
@@ -140,6 +140,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   result->get("amplitudes") = storeAmplitudes(arguments, amplitudes);
   return result;
 }
+
 
 template <typename F, typename TE>
 F ClusterSinglesDoublesAlgorithm::getEnergy(
