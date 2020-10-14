@@ -90,20 +90,20 @@ depend: $(DEP_FILES)
 
 # create a dependency for object file
 $(OBJ_PATH)/%.d: src/%.cxx
-	$(info $@)
+	$(info [DEP] $@)
 	mkdir -p $(dir $@)
 	${CXX} -MM ${CC4S_OPTIONS} ${INCLUDE_FLAGS} -c src/$*.cxx | \
 	  sed 's#[^ :]*\.o[ :]*#$(OBJ_PATH)/$*.o $@: #g' > $@
 
 # compile an object file
 $(OBJ_PATH)/%.o: $(OBJ_PATH)/%.d
-	$(info $@)
+	$(info [OBJ] $@)
 	mkdir -p $(dir $@)
 	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${INCLUDE_FLAGS} -c src/$*.cxx -o $@
 
 # compile and link executable
 $(BIN_PATH)/${CC4S_TARGET}: ${OBJ_FILES}
-	$(info $@)
+	$(info [BIN] $@)
 	mkdir -p $(dir $@)
 	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJ_FILES} ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
 
