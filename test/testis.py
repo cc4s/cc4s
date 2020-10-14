@@ -165,10 +165,13 @@ def call(cmd):
     with sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE) as p:
         p.wait()
         ret = p.returncode
+        out = p.stdout.read().decode()
+        err = p.stdout.read().decode()
         if p.returncode != 0:
-            out = p.stdout.read().decode()
-            err = p.stdout.read().decode()
             raise Exception(out + "\n" + err)
+        else:
+            sys.stdout.write(out)
+            sys.stderr.write(err)
 
 
 def tail(xs, n):
@@ -290,6 +293,13 @@ def main():
                     print("\n".join(["\t...."] + tail(out, args.tail)))
             else:
                 print("{}\t[ok]{} ({})".format(GREEN, CLEAR, script))
+
+            for content in ["stdout", "stderr"]:
+                fname = script + "." + content
+                logging.debug("writing %s", fname)
+                with open(fname, "w+") as f:
+                    f.write(result[content])
+
 
         os.chdir(cwd)
 
