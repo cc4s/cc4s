@@ -84,7 +84,8 @@ def get_resource(r):
     out = op.join(STORE_FOLDER, r.hash, r.out)
     if not op.exists(out):
         os.makedirs(op.dirname(out), exist_ok=True)
-        logging.info("%sdownlo.%s %s => %s", MAGENTA, CLEAR, r.out, out)
+        logging.info("%sdownlo.%s %s => %s",
+                     MAGENTA, CLEAR, r.out, op.relpath(out))
         data = urllib.request.urlopen(r.url).read()
         with open(out, 'wb+') as f:
             f.write(data)
@@ -97,7 +98,7 @@ def link_resource(r, basedir):
     o = op.join(basedir, r.out)
     if op.exists(o):
         return
-    logging.info("%ssymlink%s %s <= %s", MAGENTA, CLEAR, r.out, i)
+    logging.info("%ssymlink%s %s <= %s", MAGENTA, CLEAR, r.out, op.relpath(i))
     os.symlink(i, o)
 
 

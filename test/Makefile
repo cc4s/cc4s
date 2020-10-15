@@ -3,7 +3,7 @@ PYTHON ?= python3
 CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
 CC4S_RUN ?= $(CC4S_PATH)
-OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum $(CC4S_PATH) | cut -d ' ' -f1)
+OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum $(CC4S_PATH) | cut -d ' ' -f1).testis
 TAGS =
 TESTMATCH ?= .*
 
@@ -34,4 +34,11 @@ run:
 		--rx "$(TESTMATCH)" \
 		--tags "$(TAGS)"
 
-.PHONY: test check all
+clean:
+	-@find . -name '*.testis'   -type d -exec rm -vr {} \;
+	-@find . -name testis-store -type d -exec rm -vr {} \;
+	-@find . -name __pycache__  -type d -exec rm -vr {} \;
+
+gdb: CC4S_RUN="gdb $(CC4S_PATH)"
+
+.PHONY: test check all gdb clean
