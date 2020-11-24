@@ -89,8 +89,8 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   F e(0), previousE(0);
   size_t i(0);
   char outstring[80];
-  sprintf(outstring,"%4s %16s %10s %10s %7s\n",
-          "Iter", "Energy  ", "dE   ", "dR    ", "time");
+  sprintf(outstring,"%4s %16s %11s %15s %6s\n",
+          "Iter", "Energy  ", "dE   ", "dR      ", "time");
   OUT() << outstring;
 
   for (; i < maxIterationsCount; ++i) {
@@ -110,7 +110,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
 
     auto iterTime(Time::getCurrentRealTime() - startTime);
 
-    sprintf(outstring,"%4ld %16.8f %10.4e %10.4e %8.1f\n",
+    sprintf(outstring,"%4ld %16.8f %12.4e %12.4e %8.1f\n",
             i+1, real(e), real(e - previousE), real(residuumNorm),
             iterTime.getFractionalSeconds());
     OUT() << outstring;
