@@ -68,7 +68,15 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     mixer, std::string("Unknown mixer type: '") + mixerType + "'",
     mixerArguments->get("type")->sourceLocation
   );
-  OUT() << "Using the " << mixerType << std::endl;
+  std::string mixerOption;
+  if (mixerType.compare("DiisMixer") == 0 ){
+    auto maxResidua(mixerArguments->getValue<std::string>("maxResidua", "4"));
+    OUT() << "Using the " << mixerType << ", with maxResiua " << maxResidua << std::endl;
+  }
+  else if (mixerType.compare("LinearMixer") == 0){
+    auto ratio(mixerArguments->getValue<Real<>>("ratio", 1.0));
+    OUT() << "Using the " << mixerType << ", with ratio " << ratio << std::endl;
+  }
   // number of iterations for determining the amplitudes
   auto maxIterationsCount(
     arguments->getValue<size_t>("maxIterations", DEFAULT_MAX_ITERATIONS)
@@ -203,22 +211,16 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
     )->execute();
     F D(direct->read());
     F X(exchange->read());
-    F S(0.25*D - 0.5*X);
-    F T(0.75*D + 1.5*X);
     e = D+X;
     if (finalReport){
       OUT() << std::endl;
       OUT() << "Total Energy: " << std::setprecision(10) << e << std::endl;
       OUT() << "Direct: "       << std::setprecision(10) << D << std::endl;
       OUT() << "Exchange: "     << std::setprecision(10) << X << std::endl;
-      OUT() << "Singlet: "      << std::setprecision(10) << S << std::endl;
-      OUT() << "Triplet: "      << std::setprecision(10) << T << std::endl;
     }
     energy->setValue<Real<>>("value", real<F>(e));
     energy->setValue<Real<>>("direct", real<F>(D));
     energy->setValue<Real<>>("exchange", real<F>(X));
-    energy->setValue<Real<>>("singlet", real<F>(S));
-    energy->setValue<Real<>>("triplet", real<F>(T));
     // TODO: energy units
   }
 
@@ -281,16 +283,15 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudes(
   const Ptr<MapNode> &arguments,
   const Ptr<const FockVector<F,TE>> &amplitudes
 ) {
-  // TODO: how should Fock-vectors be stored?
-//  storeAmplitudes(amplitudes, {"Singles", "Doubles"});
   auto result(New<MapNode>(SOURCE_LOCATION));
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   result->get("scalarType") = coulombIntegrals->get("scalarType");
   result->setValue<Real<>>("unit", 1.0);
   result->get("indices") = coulombIntegrals->get("indices");
   auto components(New<MapNode>(SOURCE_LOCATION));
-  components->get(0) = storeAmplitudesComponent(amplitudes->get(0));
-  components->get(1) = storeAmplitudesComponent(amplitudes->get(1));
+  //TODO we have to use the "correct" name for the amplitudes
+  components->get(0) = storeAmplitudesComponent(amplitudes->get(0), "CcsdSinglesAmplitudes");
+  components->get(1) = storeAmplitudesComponent(amplitudes->get(1), "CcsdDoublesAmplitudes");
   result->get("components") = components;
   return result;
 }
@@ -298,7 +299,9 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudes(
 template <typename F, typename TE>
 Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudesComponent(
   const Ptr<Tensor<F,TE>> &component
+, const std::string name
 ) {
+  component->setName(name);
   auto result(New<MapNode>(SOURCE_LOCATION));
   auto dimensions(New<MapNode>(SOURCE_LOCATION));
   for (size_t d(0); d < component->lens.size(); ++d) {
