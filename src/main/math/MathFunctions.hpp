@@ -14,11 +14,11 @@ namespace cc4s {
   // inside class or function templates.
   // non-standard 128 bit reals are also wrapped where available.
 
-  inline __complex128 toComplex128(const Complex<128> c) {
+  inline __complex128 toComplex128(const Complex<128> &c) {
     return *reinterpret_cast<const __complex128 *>(&c);
   }
 
-  inline Complex<128> fromComplex128(const __complex128 c) {
+  inline Complex<128> fromComplex128(const __complex128 &c) {
     return *reinterpret_cast<const Complex<128> *>(&c);
   }
 
