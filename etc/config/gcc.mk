@@ -27,8 +27,8 @@ LINK_LIBS = \
 -Wl,-Bstatic \
 ${YAML_LIB} \
 ${CTF_LIB} \
-${BLAS_LIB} \
 ${SCALAPACK_LIB} \
+${BLAS_LIB} \
 -lgfortran -lquadmath \
 -Wl,-Bdynamic
 
