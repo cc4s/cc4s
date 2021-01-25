@@ -141,6 +141,8 @@ void Cc4s::storeSymbols(const Ptr<MapNode> &result, const Ptr<MapNode> &variable
 void Cc4s::printBanner(const Ptr<MapNode> &report) {
   std::stringstream buildDate;
   buildDate << __DATE__ << " " << __TIME__;
+  time_t rawtime;
+  time (&rawtime);
 
   OUT() << std::endl
         << "                __ __      " << std::endl
@@ -153,8 +155,8 @@ void Cc4s::printBanner(const Ptr<MapNode> &report) {
     ", date=" << CC4S_DATE << std::endl;
   OUT() << "build date= " << buildDate.str() << std::endl;
   OUT() << "compiler= " << COMPILER_VERSION << std::endl;
-  OUT() << "total processes= " << world->getProcesses() << std::endl << std::endl;
-
+  OUT() << "total processes= " << world->getProcesses() << std::endl;
+  OUT() << "calculation started on: " << ctime (&rawtime) << std::endl << std::endl;
   report->setValue<std::string>("version", CC4S_VERSION);
   report->setValue("buildDate", buildDate.str());
   report->setValue<std::string>("compiler", COMPILER_VERSION);

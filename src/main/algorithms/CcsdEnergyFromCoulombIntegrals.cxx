@@ -208,10 +208,17 @@ Ptr<FockVector<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"],
 
       // Symmetrize Rabij by applying permutation operator
-      (*Rpphh)["abij"] += (*Rpphh)["baji"],
+      (*Rpphh)["abij"] += (*Rpphh)["baji"]
+    )->execute();
 
       // Add Vabij to Rabij (MP2 term)
-      (*Rpphh)["abij"] += (*Vpphh)["abij"],
+      if (ppl) {
+        COMPILE(
+          (*Rpphh)["abij"] += (*Vpphh)["abij"]
+        )->execute();
+      }
+
+    COMPILE(
       ///////
       //Xklij
       ///////
@@ -453,15 +460,20 @@ Ptr<FockVector<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"],
 
       // Symmetrize Rpphh by applying permutation operator
-      (*Rpphh)["abij"] += (*Rpphh)["baji"],
+      (*Rpphh)["abij"] += (*Rpphh)["baji"]
 
-      //////////////////////////////////////////////////////////////////////
-      // Now add all terms to Rpphh that do not need to be symmetrized with
-      // the permutation operator
-      //////////////////////////////////////////////////////////////////////
+    )->execute();
 
-      (*Rpphh)["abij"] += (*Vpphh)["abij"],
-
+    //////////////////////////////////////////////////////////////////////
+    // Now add all terms to Rpphh that do not need to be symmetrized with
+    // the permutation operator
+    //////////////////////////////////////////////////////////////////////
+    if (ppl) {
+      COMPILE(
+        (*Rpphh)["abij"] += (*Vpphh)["abij"]
+      )->execute();
+    }
+    COMPILE(
       // Build Xklij intermediate
       (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
       (*Xklij)["klij"]  += (*Vhhhp)["klic"] * (*Tph)["cj"],

@@ -122,6 +122,7 @@ namespace cc4s {
     template <typename F, typename TE>
     Ptr<MapNode> storeAmplitudesComponent(
       const Ptr<Tensor<F,TE>> &component
+    , const std::string name
     );
 
     /**

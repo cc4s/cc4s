@@ -11,7 +11,6 @@ main/engines/DryTensor.cxx \
 main/algorithms/Algorithm.cxx \
 main/algorithms/TensorReader.cxx \
 main/algorithms/TensorWriter.cxx \
-main/algorithms/TensorNetwork.cxx \
 main/algorithms/DefineHolesAndParticles.cxx \
 main/algorithms/SliceOperator.cxx \
 main/algorithms/CoulombIntegralsFromVertex.cxx \
