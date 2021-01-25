@@ -27,13 +27,6 @@ namespace cc4s {
     Ptr<MapNode> calculateRealIntegrals(const Ptr<MapNode> &arguments);
     template <typename TE>
     Ptr<MapNode> calculateComplexIntegrals(const Ptr<MapNode> &arguments);
-
-/*
-    CTF::Tensor<complex> *GammaGab;
-    CTF::Tensor<complex> *GammaGij;
-    std::array<int,4> syms, vvvv, vovo, vvoo, voov, oovv, oooo, ooov, vooo,
-                            vvvo, ovoo, ovov, ovvv, vvov, ovvo, oovo, vovv;
-*/
   };
 }
 
