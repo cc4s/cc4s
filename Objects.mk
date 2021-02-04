@@ -9,6 +9,7 @@ main/util/BlacsWorld.cxx \
 main/tcc/Tcc.cxx \
 main/engines/DryTensor.cxx \
 main/algorithms/Algorithm.cxx \
+main/algorithms/Write.cxx \
 main/algorithms/TensorReader.cxx \
 main/algorithms/TensorWriter.cxx \
 main/algorithms/DefineHolesAndParticles.cxx \

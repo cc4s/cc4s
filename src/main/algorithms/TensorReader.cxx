@@ -20,7 +20,7 @@ ALGORITHM_REGISTRAR_DEFINITION(TensorReader)
 Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   auto fileName(arguments->getValue<std::string>("fileName"));
   // get tensor meta data from given file
-  auto tensor(Parser(fileName).parse()->map());
+  auto tensor(Parser(fileName).parse()->toMap());
   auto scalarType(tensor->getValue<std::string>("scalarType"));
   auto binary(tensor->getValue<bool>("binary", false));
 

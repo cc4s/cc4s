@@ -37,14 +37,14 @@ namespace cc4s {
     }
     virtual std::string toString() = 0;
     // provide convenience cast routines
-    Ptr<MapNode> map() {
+    Ptr<MapNode> toMap() {
       return std::dynamic_pointer_cast<MapNode>(this->toPtr<Node>());
     }
-    Ptr<SymbolNode> symbol() {
+    Ptr<SymbolNode> toSymbol() {
       return std::dynamic_pointer_cast<SymbolNode>(this->toPtr<Node>());
     }
     template <typename AtomicType>
-    Ptr<AtomicNode<AtomicType>> atom() {
+    Ptr<AtomicNode<AtomicType>> toAtom() {
       return std::dynamic_pointer_cast<AtomicNode<AtomicType>>(
         this->toPtr<Node>()
       );
@@ -122,7 +122,7 @@ namespace cc4s {
       ASSERT_LOCATION(
         get(key), "expecting key '" + key + "'", sourceLocation
       );
-      auto symbolNode(get(key)->symbol());
+      auto symbolNode(get(key)->toSymbol());
       ASSERT_LOCATION(
         symbolNode, "expecting '" + key + "' to be a symbol", sourceLocation
       );
@@ -138,7 +138,7 @@ namespace cc4s {
     Target getValue(const std::string &key) {
       ASSERT_LOCATION(get(key), "expecting key '" + key + "'", sourceLocation);
       // first, try to convert to expected type node
-      auto targetAtomNode(get(key)->atom<Target>());
+      auto targetAtomNode(get(key)->toAtom<Target>());
       if (targetAtomNode) {
         return targetAtomNode->value;
       } else {
@@ -203,7 +203,7 @@ namespace cc4s {
       ASSERT_LOCATION(
         get(element), "expecting key '" + element + "'", sourceLocation
       );
-      auto mapNode(get(element)->map());
+      auto mapNode(get(element)->toMap());
       ASSERT_LOCATION(
         mapNode, "expecting '" + element + "' to be a map", sourceLocation
       );

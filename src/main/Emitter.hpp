@@ -18,9 +18,9 @@ namespace cc4s {
       if (Cc4s::world->getRank() == 0) stream.open(fileName);
     }
     void emit(const Ptr<Node> &node) {
-      auto mapNode(node->map());
+      auto mapNode(node->toMap());
       if (mapNode) return emitMap(mapNode);
-      auto symbolNode(node->symbol());
+      auto symbolNode(node->toSymbol());
       if (symbolNode) {
         emitSymbol(symbolNode);
       } else {

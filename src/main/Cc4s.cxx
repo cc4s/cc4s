@@ -30,7 +30,7 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   // parse input
   Parser parser(options->inFile);
   auto input(parser.parse());
-  auto steps(input->map());
+  auto steps(input->toMap());
   ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
   report->get("steps") = steps;
   OUT() << "execution plan read, steps=" << steps->size() << std::endl;
@@ -106,12 +106,12 @@ void Cc4s::run(const Ptr<MapNode> &report) {
 
 void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
   for (auto key: arguments->getKeys()) {
-//    auto mapNode(arguments->get(key)->map());
+//    auto mapNode(arguments->get(key)->toMap());
 //    if (mapNode) {
 //      fetchSymbols(mapNode);
 //      break;
 //    }
-    auto symbolNode(arguments->get(key)->symbol());
+    auto symbolNode(arguments->get(key)->toSymbol());
     if (symbolNode) {
       // search symbol in storage
       auto storedNode(storage->get(symbolNode->value));
