@@ -6,6 +6,7 @@
 #include <Emitter.hpp>
 #include <Cc4s.hpp>
 #include <tcc/Tensor.hpp>
+#include <tcc/TensorRecipe.hpp>
 #include <util/SharedPointer.hpp>
 #include <string>
 
@@ -117,9 +118,18 @@ namespace cc4s {
       const Ptr<Node> &node,
       const std::string &nodePath
     ) {
+      Ptr<Tensor<F,TE>> tensor;
+      // check if node contains tensor or tensor recipe
       auto tensorNode(node->toAtom<Ptr<Tensor<F,TE>>>());
-      if (!tensorNode) return nullptr;
-      auto tensor(tensorNode->value);
+      if (tensorNode) {
+        tensor = tensorNode->value;
+      } else {
+        auto tensorRecipeNode(node->toAtom<Ptr<TensorRecipe<F,TE>>>());
+        if (!tensorRecipeNode) return nullptr;
+        auto tensorRecipe(tensorRecipeNode->value);
+        tensorRecipe->execute();
+        tensor = tensorRecipe->getResult();
+      }
       auto persistentTensor(New<MapNode>(SOURCE_LOCATION));
       persistentTensor->setSymbol("type", "tensor");
 
@@ -167,7 +177,7 @@ namespace cc4s {
       std::vector<size_t> indices(localBufferSize);
       std::vector<F> values(localBufferSize);
 
-      OUT() << "Writing to text file " << fileName << std::endl;
+      OUT() << "Writing to text file " << dataFileName << std::endl;
       if (Cc4s::options->dryRun) {
         stream << "# dry-run: no data written" << std::endl;
         return;
@@ -195,7 +205,7 @@ namespace cc4s {
         index += elementsCount;
       }
       LOG() << "Written " << tensor->getElementsCount() <<
-        " elements to text file " << fileName << std::endl;
+        " elements to text file " << dataFileName << std::endl;
     }
 
     template <typename F, typename TE>
@@ -217,7 +227,7 @@ namespace cc4s {
         SOURCE_LOCATION
       )
 
-      OUT() << "Writing to binary file " << fileName << std::endl;
+      OUT() << "Writing to binary file " << dataFileName << std::endl;
       if (Cc4s::options->dryRun) return;
 
       // write tensor data with values from file
