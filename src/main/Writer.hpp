@@ -94,20 +94,24 @@ namespace cc4s {
         if (persistentNode) return persistentNode;
         persistentNode = persistTensor<Complex<64>,TE>(node, nodePath);
         if (persistentNode) return persistentNode;
+/* // TODO: fully support 128 bit floats or remove
         persistentNode = persistTensor<Real<128>,TE>(node, nodePath);
         if (persistentNode) return persistentNode;
         persistentNode = persistTensor<Complex<128>,TE>(node, nodePath);
         if (persistentNode) return persistentNode;
+*/
       } else {
         using TE = DryTensorEngine;
         persistentNode = persistTensor<Real<64>,TE>(node, nodePath);
         if (persistentNode) return persistentNode;
         persistentNode = persistTensor<Complex<64>,TE>(node, nodePath);
         if (persistentNode) return persistentNode;
+/*
         persistentNode = persistTensor<Real<128>,TE>(node, nodePath);
         if (persistentNode) return persistentNode;
         persistentNode = persistTensor<Complex<128>,TE>(node, nodePath);
         if (persistentNode) return persistentNode;
+*/
       }
       // other types of atomic nodes can be serialized with to_string
       return node;
