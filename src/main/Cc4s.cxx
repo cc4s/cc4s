@@ -90,12 +90,21 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   }
   totalFlops += getFlops();
 
+  if (options->dryRun)
+    OUT() << "\nMemory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB\n";
+
   OUT() << std::endl;
   std::stringstream totalRealtime;
   totalRealtime << totalTime;
-  OUT() << "total realtime=" << totalRealtime.str() << " s" << std::endl;
-  OUT() << "total operations=" << totalFlops / 1e9 << " GFLOPS"
-    << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s" << std::endl;
+  if (options->dryRun){
+    OUT() << "total operations=" << totalFlops / 1e9 << " GFLOPS\n";
+  }
+  else {
+    OUT() << "total realtime=" << totalRealtime.str() << " s" << std::endl;
+    OUT() << "total operations=" << totalFlops / 1e9 << " GFLOPS"
+      << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() /  world->getProcesses()
+      << " GFLOPS/s/core" << std::endl;
+  }
   LOG() << "total realtime=" << totalRealtime.str() << " s" << std::endl;
   LOG() << "total operations=" << totalFlops / 1e9 << " GFLOPS"
     << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s" << std::endl;
