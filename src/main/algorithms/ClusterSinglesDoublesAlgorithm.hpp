@@ -3,7 +3,7 @@
 #define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <math/FockVector.hpp>
+#include <math/TensorUnion.hpp>
 #include <util/SharedPointer.hpp>
 
 #include <string>
@@ -47,41 +47,41 @@ namespace cc4s {
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<FockVector<Real<>, DefaultDryTensorEngine>>getResiduum(
+    virtual Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Real<>,DefaultDryTensorEngine>> &amplitudes
+      const Ptr<const TensorUnion<Real<>,DefaultDryTensorEngine>> &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<FockVector<Complex<>, DefaultDryTensorEngine>>getResiduum(
+    virtual Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Complex<>, DefaultDryTensorEngine>> &amplitudes
+      const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
     ) = 0;
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<FockVector<Real<>, DefaultTensorEngine>>
+    virtual Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
     getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Real<>, DefaultTensorEngine>> &amplitudes
+      const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<FockVector<Complex<>, DefaultTensorEngine>>
+    virtual Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
     getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Complex<>, DefaultTensorEngine>> &amplitudes
+      const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the energy of the given amplitudes.
      **/
     template <typename F, typename TE>
-    F getEnergy( const Ptr<const FockVector<F,TE>> &amplitdues
+    F getEnergy( const Ptr<const TensorUnion<F,TE>> &amplitdues
                , const bool finalReport = false
                );
 
@@ -97,8 +97,8 @@ namespace cc4s {
      **/
     template <typename F, typename TE>
     void estimateAmplitudesFromResiduum(
-      const Ptr<FockVector<F,TE>> &residuum,
-      const Ptr<const FockVector<F,TE>> &amplitudes
+      const Ptr<TensorUnion<F,TE>> &residuum,
+      const Ptr<const TensorUnion<F,TE>> &amplitudes
     );
 
     /**
@@ -110,7 +110,7 @@ namespace cc4s {
     );
 
     template <typename F, typename TE>
-    Ptr<FockVector<F,TE>> createAmplitudes(
+    Ptr<TensorUnion<F,TE>> createAmplitudes(
       std::initializer_list<std::string> amplitudeComponent,
       std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
       std::initializer_list<std::string> amplitudeIndices
@@ -119,76 +119,13 @@ namespace cc4s {
     template <typename F, typename TE>
     Ptr<MapNode> storeAmplitudes(
       const Ptr<MapNode> &arguments,
-      const Ptr<const FockVector<F,TE>> &amplitudes
+      const Ptr<const TensorUnion<F,TE>> &amplitudes
     );
     template <typename F, typename TE>
     Ptr<MapNode> storeAmplitudesComponent(
       const Ptr<Tensor<F,TE>> &component
     , const std::string name
     );
-
-    /**
-     * \brief Calculates and returns one slice Xxycd of the Coulomb integrals \f$V_{cd}^{ab}\f$
-     * coupled to the singles amplitudes.
-     * The indices x and y are restricted to the
-     * range {No+a, ..., No+a+No-1} and {No+b, ..., No+b+No-1}, respectively.
-     * The caller is responsible for deleting the dynamically allocated
-     * result tensor. 
-     * \param[in] a 1st sliced dimension (x).
-     * \param[in] b 2nd sliced dimension (y).
-     * \param[in] integralsSliceSize slicing rank.
-     * \param[out] Xxycd sliced coupled Coulomb integrals Xabcd
-     */
-/*
-    CTF::Tensor<double> *sliceCoupledCoulombIntegrals(
-      const Ptr<const FockVector<double>> &amplitudes,
-      int a, int b, int integralsSliceSize
-    );
-
-    CTF::Tensor<complex> *sliceCoupledCoulombIntegrals(
-      const Ptr<const FockVector<complex>> &amplitudes,
-      int a, int b, int integralsSliceSize
-    );
-*/
-
-
-    /**
-     * \brief Calculates and returns one slice Fabij of the residuum
-     * from the dressed Coulomb factors. The slice is computed from
-     * Rx and Ry and are restricted to the
-     * range {a, ..., factorsSliceSize+a-1} and {b, ..., factorsSliceSize+b-1}, respectively.
-     * The caller is responsible for deleting the dynamically allocated
-     * result tensor. 
-     * \param[in] a 1st sliced dimension (Rx).
-     * \param[in] b 2nd sliced dimension (Ry).
-     * \param[in] factorsSliceSize slicing rank of NR.
-     * \param[out] Fabij sliced Residuum
-     */
-/*
-    CTF::Tensor<double> *sliceAmplitudesFromCoupledCoulombFactors(
-      const Ptr<const FockVector<double>> &amplitudes,
-      int a, int b, int factorsSliceSize
-    );
-    CTF::Tensor<complex> *sliceAmplitudesFromCoupledCoulombFactors(
-      const Ptr<const FockVector<complex>> &amplitudes,
-      int a, int b, int factorsSliceSize
-    );
-*/
-
-    /**
-     * \brief Adds the given slice of the residuum tensor Rxyij to the
-     * entire residuum tensor Rabij at the respective index range.
-     * \param[in] a0 1st sliced dimension (x).
-     * \param[in] b0 2nd sliced dimension (y).
-     * \param[in] Rxyij sliced residuum
-     * \param[in] Rabij entire residuum.
-     */
-/*
-    template <typename F>
-    void sliceIntoResiduum(
-      CTF::Tensor<F> &Rxyij, int a0, int b0, CTF::Tensor<F> &Rabij
-    );
-*/
 
     /**
      * \brief The abbreviation of the algorithm in capital letters.

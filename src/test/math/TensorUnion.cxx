@@ -2,9 +2,9 @@
 #include <string>
 #include <ctf.hpp>
 #include <Cc4s.hpp>
-#include <math/FockVector.hpp>
+#include <math/TensorUnion.hpp>
 
-TEST_CASE( "Basic FockVector testing", "[math]" ) {
+TEST_CASE( "Basic TensorUnion testing", "[math]" ) {
 
   int No = 10;
   int Nv = 4;
@@ -19,7 +19,7 @@ TEST_CASE( "Basic FockVector testing", "[math]" ) {
   CTF::Tensor<Real<>> Rai(2, vo, symsSingles, CTF::get_universe(), "Rai");
   CTF::Tensor<Real<>> Rabij(
     4, vvoo, symsDoubles, CTF::get_universe(), "Rabij");
-  cc4s::FockVector<Real<>> R(
+  cc4s::TensorUnion<Real<>> R(
     std::vector<PTR(CTF::Tensor<Real<>>)>(
       { NEW(CTF::Tensor<Real<>>,Rai), NEW(CTF::Tensor<Real<>>, Rabij) }
     ),
@@ -29,7 +29,7 @@ TEST_CASE( "Basic FockVector testing", "[math]" ) {
   CTF::Tensor<Real<>> Lia(2, ov, symsSingles, CTF::get_universe(), "Lia");
   CTF::Tensor<Real<>> Lijab(
     4, oovv, symsDoubles, CTF::get_universe(), "Lijab");
-  cc4s::FockVector<Real<>> L(
+  cc4s::TensorUnion<Real<>> L(
     std::vector<PTR(CTF::Tensor<Real<>>)>(
       { NEW(CTF::Tensor<Real<>>,Lia), NEW(CTF::Tensor<Real<>>, Lijab) }
     ),
@@ -37,7 +37,7 @@ TEST_CASE( "Basic FockVector testing", "[math]" ) {
   );
 
   // Test conjugateTranspose
-  cc4s::FockVector<Real<>> Rvp(
+  cc4s::TensorUnion<Real<>> Rvp(
     R.conjugateTranspose()
   );
   for (unsigned int i(0) ; i < L.componentTensors.size() ; i++) {

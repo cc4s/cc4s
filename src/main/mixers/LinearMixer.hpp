@@ -14,13 +14,13 @@ namespace cc4s {
     LinearMixer(const Ptr<MapNode> &arguments);
 
     virtual void append(
-      const Ptr<FockVector<F,TE>> &A, const Ptr<FockVector<F,TE>> &R
+      const Ptr<TensorUnion<F,TE>> &A, const Ptr<TensorUnion<F,TE>> &R
     );
-    virtual Ptr<const FockVector<F,TE>> get();
+    virtual Ptr<const TensorUnion<F,TE>> get();
     virtual Real<> getResiduumNorm();
 
-    Ptr<FockVector<F,TE>> last;
-    Ptr<FockVector<F,TE>> lastResiduum;
+    Ptr<TensorUnion<F,TE>> last;
+    Ptr<TensorUnion<F,TE>> lastResiduum;
 
     F ratio;
     Real<> residuumNorm;

@@ -30,26 +30,26 @@ namespace cc4s {
      * \brief Implements the iterate method with the DRCCD iteration.
      * \param[in] i Iteration number
      */
-    Ptr<FockVector<Real<>, DefaultDryTensorEngine>> getResiduum(
+    Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Real<>, DefaultDryTensorEngine>> &amplitudes
+      const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
     ) override;
-    Ptr<FockVector<Complex<>, DefaultDryTensorEngine>> getResiduum(
+    Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Complex<>, DefaultDryTensorEngine>> &amplitudes
+      const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
     ) override;
-    Ptr<FockVector<Real<>, DefaultTensorEngine>> getResiduum(
+    Ptr<TensorUnion<Real<>, DefaultTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Real<>, DefaultTensorEngine>> &amplitudes
+      const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
     ) override;
-    Ptr<FockVector<Complex<>, DefaultTensorEngine>> getResiduum(
+    Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Complex<>, DefaultTensorEngine>> &amplitudes
+      const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
     ) override;
 
     template <typename F, typename TE>
-    Ptr<FockVector<F,TE>> getResiduum(
-      const int iteration, const Ptr<const FockVector<F,TE>> &amplitudes
+    Ptr<TensorUnion<F,TE>> getResiduum(
+      const int iteration, const Ptr<const TensorUnion<F,TE>> &amplitudes
     );
   };
 }

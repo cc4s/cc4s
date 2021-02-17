@@ -4,7 +4,7 @@
 
 #include <Data.hpp>
 #include <math/Complex.hpp>
-#include <math/FockVector.hpp>
+#include <math/TensorUnion.hpp>
 #include <util/SharedPointer.hpp>
 
 #include <string>
@@ -22,31 +22,31 @@ namespace cc4s {
     virtual std::string getName() = 0;
 
     /**
-     * \brief Appends the given pair (A,R) of FockVectors to the mixer,
+     * \brief Appends the given pair (A,R) of TensorUnions to the mixer,
      * where R is the residuum when using the amplitudes A.
      * The mixer may use the given amplitudes and residua to provide
      * an estimated amplitude with a lower expected residuum.
      * A and R are not expected to change upon return.
      **/
     virtual void append(
-      const Ptr<FockVector<F,TE>> &A,
-      const Ptr<FockVector<F,TE>> &R
+      const Ptr<TensorUnion<F,TE>> &A,
+      const Ptr<TensorUnion<F,TE>> &R
     ) = 0;
 
     /**
      * \brief Returns the current best estimate of the amplitudes
      * according to previously given pairs of amplitudes and residua.
      * Requires one or more previous calls to append.
-     * The returned FockVectors must not be changed.
+     * The returned TensorUnions must not be changed.
      **/
-    virtual Ptr<const FockVector<F,TE>> get() = 0;
+    virtual Ptr<const TensorUnion<F,TE>> get() = 0;
 
     /**
      * \brief Returns the estimated residuum of the current best estimate
      * of the amplitdues according to previously given pairs of amplitudes
      * and residua.
      * Requires one or more previous calls to append.
-     * The returned FockVectors must not be changed.
+     * The returned TensorUnions must not be changed.
      **/
     virtual Real<> getResiduumNorm() = 0;
 

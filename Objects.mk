@@ -28,7 +28,7 @@ TEST_SRC_FILES = \
 test/math/Antisymmetrize.cxx \
 test/math/Symmetrize.cxx \
 test/math/PermutaticxxnSign.cxx \
-test/math/FockVector.cxx \
+test/math/TensorUnion.cxx \
 test/util/LapackGeneralEigenSystem.cxx \
 test/Test.cxx  \
 test/algorithms/UccsdAmplitudesFromCoulombIntegrals.cxx  \

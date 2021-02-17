@@ -8,35 +8,35 @@ using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(CcsdEnergyFromCoulombIntegralsReference)
 
-Ptr<FockVector<Real<>, DefaultDryTensorEngine>>
+Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
 CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   const int iteration,
-  const Ptr<const FockVector<Real<>, DefaultDryTensorEngine>> &amplitudes
+  const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultDryTensorEngine>(iteration, amplitudes);
 }
 
-Ptr<FockVector<Complex<>, DefaultDryTensorEngine>>
+Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
 CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   const int iteration,
-  const Ptr<const FockVector<Complex<>, DefaultDryTensorEngine>> &amplitudes
+  const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
 ) {
   return getResiduum<Complex<>, DefaultDryTensorEngine>(iteration, amplitudes);
 }
 
-Ptr<FockVector<Real<>, DefaultTensorEngine>>
+Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
 CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   const int iteration,
-  const Ptr<const FockVector<Real<>, DefaultTensorEngine>> &amplitudes
+  const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultTensorEngine>(iteration, amplitudes);
 }
 
 
-Ptr<FockVector<Complex<>, DefaultTensorEngine>>
+Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
 CcsdEnergyFromCoulombIntegralsReference::getResiduum(
   const int iteration,
-  const Ptr<const FockVector<Complex<>, DefaultTensorEngine>> &amplitudes
+  const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
 ) {
   return getResiduum<Complex<>, DefaultTensorEngine>(iteration, amplitudes);
 }
@@ -47,15 +47,15 @@ CcsdEnergyFromCoulombIntegralsReference::getResiduum(
 //////////////////////////////////////////////////////////////////////
 
 template <typename F, typename TE>
-Ptr<FockVector<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
-  const int iteration, const Ptr<const FockVector<F,TE>> &amplitudes
+Ptr<TensorUnion<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+  const int iteration, const Ptr<const TensorUnion<F,TE>> &amplitudes
 ) {
   // get amplitude parts
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
 
   // construct residuum
-  auto residuum( New<FockVector<F,TE>>(*amplitudes) );
+  auto residuum( New<TensorUnion<F,TE>>(*amplitudes) );
   *residuum *= F(0);
   auto Rph( residuum->get(0) );
   auto Rpphh( residuum->get(1) );

@@ -1,5 +1,5 @@
-#ifndef FOCK_VECTOR_DEFINED
-#define FOCK_VECTOR_DEFINED
+#ifndef TENSOR_UNION_DEFINED
+#define TENSOR_UNION_DEFINED
 
 #include <math/MathFunctions.hpp>
 #include <util/SharedPointer.hpp>
@@ -13,13 +13,12 @@
 
 namespace cc4s {
   /**
-   * \brief Represents the direct sum of tensors and provides the
-   * vector space operations of addition, scalar multiplication, inner product,
-   * complex conjugation to get dual vectors and matrix multiplication
-   * between vectors and duals, which yields a scalar.
+   * \brief Represents the union of tensors and provides
+   * vector space operations: addition, scalar multiplication, inner product,
+   * and complex conjugation.
    **/
   template <typename F, typename TE>
-  class FockVector {
+  class TensorUnion {
   public:
     typedef F FieldType;
 
@@ -29,14 +28,14 @@ namespace cc4s {
     /**
      * \brief Default constructor for an empty Fock vector without elements.
      **/
-    FockVector() {
+    TensorUnion() {
     }
 
     /**
      * \brief Move constructor taking possession of the tensors owned by a.
      **/
-    FockVector(
-      FockVector &&a
+    TensorUnion(
+      TensorUnion &&a
     ):
       componentTensors(a.componentTensors),
       componentIndices(a.componentIndices),
@@ -48,8 +47,8 @@ namespace cc4s {
     /**
      * \brief Copy constructor copying the tensors owned by a.
      **/
-    FockVector(
-      const FockVector &a
+    TensorUnion(
+      const TensorUnion &a
     ):
       componentTensors(a.componentTensors.size()),
       componentIndices(a.componentIndices),
@@ -62,7 +61,7 @@ namespace cc4s {
     /**
      * \brief Move constructor taking possession of the tensors given.
      **/
-    FockVector(
+    TensorUnion(
       const std::vector<Ptr<Tensor<F,TE>>> &tensors,
       const std::vector<std::string> &indices
     ):
@@ -78,7 +77,7 @@ namespace cc4s {
      * by the iterators.
      **/
     template <typename TensorsIterator, typename IndicesIterator>
-    FockVector(
+    TensorUnion(
       TensorsIterator tensorsBegin, TensorsIterator tensorsEnd,
       IndicesIterator indicesBegin, IndicesIterator indicesEnd
     ):
@@ -124,7 +123,7 @@ namespace cc4s {
      * \brief Move assignment operator taking possession of the tensors
      * owned by a.
      **/
-    FockVector &operator =(const FockVector &&a) {
+    TensorUnion &operator =(const TensorUnion &&a) {
       componentTensors = a.componentTensors;
       componentIndices = a.componentIndices;
       buildIndexTranslation();
@@ -134,7 +133,7 @@ namespace cc4s {
     /**
      * \brief Copy assignment operator copying the tensors owned by a.
      **/
-    FockVector &operator =(const FockVector &a) {
+    TensorUnion &operator =(const TensorUnion &a) {
       componentIndices = a.componentIndices;
       copyComponents(a.componentTensors);
       buildIndexTranslation();
@@ -143,9 +142,9 @@ namespace cc4s {
 
     /**
      * \brief Add-to assignment operator adding each component of a
-     * to the respective component of this FockVector.
+     * to the respective component of this TensorUnion.
      **/
-    FockVector &operator += (const FockVector &a) {
+    TensorUnion &operator += (const TensorUnion &a) {
       checkCompatibilityTo(a);
       for (size_t i(0); i < componentTensors.size(); ++i) {
 //        const char *indices(componentIndices[i].c_str());
@@ -159,9 +158,9 @@ namespace cc4s {
 
     /**
      * \brief Subtract-from assignment operator subtracting each component of a
-     * from the respective component of this FockVector.
+     * from the respective component of this TensorUnion.
      **/
-    FockVector &operator -= (const FockVector &a) {
+    TensorUnion &operator -= (const TensorUnion &a) {
       checkCompatibilityTo(a);
       for (size_t i(0); i < componentTensors.size(); ++i) {
 //        const char *indices(getIndices(i).c_str());
@@ -175,9 +174,9 @@ namespace cc4s {
 
     /**
      * \brief Multiply-by assignment operator scalar multiplying each component
-     * each component of this FockVector by the given scalar.
+     * each component of this TensorUnion by the given scalar.
      **/
-    FockVector &operator *= (const F s) {
+    TensorUnion &operator *= (const F s) {
       for (size_t i(0); i < componentTensors.size(); ++i) {
 //        const char *indices(getIndices(i).c_str());
 //        get(i)->sum(s, *get(i), indices, 0.0, indices);
@@ -189,14 +188,14 @@ namespace cc4s {
     }
 
     /**
-     * \brief Creates and returns the conjugate transpose of this FockVector.
+     * \brief Creates and returns the conjugate transpose of this TensorUnion.
      * The first and the second half of the inidices in each component are
      * swapped for the transposition. For real types F the conjugation
      * does nothing.
      **/
     // TOOD: precompile operations
-    FockVector conjugateTranspose() const {
-      FockVector result;
+    TensorUnion conjugateTranspose() const {
+      TensorUnion result;
       for (size_t i(0); i < componentTensors.size(); ++i) {
         size_t order(getIndices(i).length() / 2);
         std::vector<int> transposedLens(get(i)->lens, get(i)->lens + 2*order);
@@ -225,10 +224,10 @@ namespace cc4s {
     }
 
     /**
-     * \brief Returns the matrix product of this bra-FockVector with the
-     * given dual ket-FockVector ket.
+     * \brief Returns the matrix product of this bra-TensorUnion with the
+     * given dual ket-TensorUnion ket.
      **/
-    F braket(const FockVector &ket) const {
+    F braket(const TensorUnion &ket) const {
       checkDualCompatibility(ket);
       auto result( Tcc<TE>::template tensor<F>("dot") );
       for (size_t i(0); i < componentTensors.size(); ++i) {
@@ -242,12 +241,12 @@ namespace cc4s {
     }
 
     /**
-     * \brief Returns the inner product of this ket-FockVector with the
-     * given ket-FockVector a. The elements of this FockVector are conjugated
+     * \brief Returns the inner product of this ket-TensorUnion with the
+     * given ket-TensorUnion a. The elements of this TensorUnion are conjugated
      * in the inner product, i.e. this->dot(a) yields the same results as
      * this->conjugateTranspose().braket(a).
      **/
-    F dot(const FockVector &a) const {
+    F dot(const TensorUnion &a) const {
       checkCompatibilityTo(a);
       auto result( Tcc<TE>::template tensor<F>("dot") );
       for (size_t i(0); i < componentTensors.size(); ++i) {
@@ -261,7 +260,7 @@ namespace cc4s {
     }
 
     /**
-     * \brief Get the number of component tensors of this FockVector.
+     * \brief Get the number of component tensors of this TensorUnion.
      */
     size_t getComponentsCount() const {
       return componentTensors.size();
@@ -269,7 +268,7 @@ namespace cc4s {
 
     /**
      * \brief Get the total number of degrees of freedom represented by this
-     * FockVector, i.e. the total number of field values contained in all
+     * TensorUnion, i.e. the total number of field values contained in all
      * component tensors. The indices used by read and write are between
      * 0 and getDimension()-1.
      */
@@ -323,7 +322,7 @@ namespace cc4s {
 
         elements.resize(elementsCount+componentValuesCount);
         for (size_t k(0); k < componentValuesCount; ++k) {
-          // translate index within component tensor to FockVector index
+          // translate index within component tensor to TensorUnion index
           elements[elementsCount+k].first = getIndex(i, componentIndices[k]);
           elements[elementsCount+k].second = componentValues[k];
         }
@@ -366,9 +365,9 @@ namespace cc4s {
 
   protected:
     /**
-     * \brief The end of the FockVector index range for each component.
+     * \brief The end of the TensorUnion index range for each component.
      * This vector is used for translating component number and indices
-     * into FockVector indicies.
+     * into TensorUnion indicies.
      **/
     std::vector<size_t> indexEnds;
 
@@ -389,7 +388,7 @@ namespace cc4s {
     }
 
     /**
-     * \brief Sets this FockVector's component tensors by copying the given
+     * \brief Sets this TensorUnion's component tensors by copying the given
      * component tensors. Called by copy constructors and copy assignments.
      **/
     void copyComponents(const std::vector<Ptr<Tensor<F,TE>>> &components) {
@@ -408,11 +407,11 @@ namespace cc4s {
     }
 
     /**
-     * \brief Check if two FockVectors are transpose of each other by swapping
+     * \brief Check if two TensorUnions are transpose of each other by swapping
      * the first and the second half of the component indices.
      **/
     // TODO: Improve speed?
-    void checkDualCompatibility(const FockVector &a) const {
+    void checkDualCompatibility(const TensorUnion &a) const {
       checkCompatibilityTo(a);
       for (size_t i(0); i < componentTensors.size() ; i++) {
         size_t indexLens(a.get(i)->order());
@@ -432,7 +431,7 @@ namespace cc4s {
       }
     }
 
-    void checkCompatibilityTo(const FockVector &a) const {
+    void checkCompatibilityTo(const TensorUnion &a) const {
       if (
         componentTensors.size() != a.componentTensors.size() ||
         componentIndices.size() != a.componentIndices.size()
@@ -446,70 +445,70 @@ namespace cc4s {
   };
 
   /**
-   * \brief Returns the sum of two FockVectors a and b, where
+   * \brief Returns the sum of two TensorUnions a and b, where
    * neither a nor b are modified.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> operator +(
-    const FockVector<F,TE> &a, const FockVector<F,TE> &b
+  inline TensorUnion<F,TE> operator +(
+    const TensorUnion<F,TE> &a, const TensorUnion<F,TE> &b
   ) {
-    FockVector<F,TE> result(a);
+    TensorUnion<F,TE> result(a);
     result += b;
     return std::move(result);
   }
   /**
-   * \brief Returns the sum of two FockVectors a and b, where
+   * \brief Returns the sum of two TensorUnions a and b, where
    * a is movable and will be used for the result.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> &&operator +(
-    FockVector<F,TE> &&a, const FockVector<F,TE> &b
+  inline TensorUnion<F,TE> &&operator +(
+    TensorUnion<F,TE> &&a, const TensorUnion<F,TE> &b
   ) {
     a += b;
     return std::move(a);
   }
   /**
-   * \brief Returns the sum of two FockVectors a and b, where
+   * \brief Returns the sum of two TensorUnions a and b, where
    * b is movable and will be used for the result.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> &&operator +(
-    FockVector<F,TE> &a, const FockVector<F,TE> &&b
+  inline TensorUnion<F,TE> &&operator +(
+    TensorUnion<F,TE> &a, const TensorUnion<F,TE> &&b
   ) {
     b += a;
     return std::move(b);
   }
 
   /**
-   * \brief Returns the difference between two FockVectors a and b, where
+   * \brief Returns the difference between two TensorUnions a and b, where
    * neither a nor b are modified.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> operator -(
-    const FockVector<F,TE> &a, const FockVector<F,TE> &b
+  inline TensorUnion<F,TE> operator -(
+    const TensorUnion<F,TE> &a, const TensorUnion<F,TE> &b
   ) {
-    FockVector<F,TE> result(a);
+    TensorUnion<F,TE> result(a);
     result -= b;
     return std::move(result);
   }
   /**
-   * \brief Returns the difference between two FockVectors a and b, where
+   * \brief Returns the difference between two TensorUnions a and b, where
    * a is movable and will be used for the result.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> &&operator -(
-    FockVector<F,TE> &&a, const FockVector<F,TE> &b
+  inline TensorUnion<F,TE> &&operator -(
+    TensorUnion<F,TE> &&a, const TensorUnion<F,TE> &b
   ) {
     a -= b;
     return std::move(a);
   }
   /**
-   * \brief Returns the difference between two FockVectors a and b, where
+   * \brief Returns the difference between two TensorUnions a and b, where
    * b is movable and will be used for the result.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> &&operator -(
-    const FockVector<F,TE> &a, FockVector<F,TE> &&b
+  inline TensorUnion<F,TE> &&operator -(
+    const TensorUnion<F,TE> &a, TensorUnion<F,TE> &&b
   ) {
     b -= a;
     // TODO: directly invoke sum to prevent extra multiplication by -1
@@ -518,54 +517,54 @@ namespace cc4s {
   }
 
   /**
-   * \brief Returns the scalar multiple of the FockVector a
+   * \brief Returns the scalar multiple of the TensorUnion a
    * right-multiplied with the scalar s, where a is not modified.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> operator *(const FockVector<F,TE> &a, const F s) {
-    FockVector<F,TE> result(a);
+  inline TensorUnion<F,TE> operator *(const TensorUnion<F,TE> &a, const F s) {
+    TensorUnion<F,TE> result(a);
     result *= s;
     return std::move(result);
   }
   /**
-   * \brief Returns the scalar multiple of the FockVector a
+   * \brief Returns the scalar multiple of the TensorUnion a
    * right-multiplied with the scalar s, where a movable and will be used
    * for the result.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> &&operator *(FockVector<F,TE> &&a, const F s) {
+  inline TensorUnion<F,TE> &&operator *(TensorUnion<F,TE> &&a, const F s) {
     a *= s;
     return std::move(a);
   }
 
   /**
-   * \brief Returns the scalar multiple of the FockVector a
+   * \brief Returns the scalar multiple of the TensorUnion a
    * left-multiplied with the scalar s, where a is not modified.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> operator *(const F s, const FockVector<F,TE> &a) {
-    FockVector<F,TE> result(a);
+  inline TensorUnion<F,TE> operator *(const F s, const TensorUnion<F,TE> &a) {
+    TensorUnion<F,TE> result(a);
     result *= s;
     return result;
   }
   /**
-   * \brief Returns the scalar multiple of the FockVector a
+   * \brief Returns the scalar multiple of the TensorUnion a
    * left-multiplied with the scalar s, where a movable and will be used
    * for the result.
    **/
   template <typename F, typename TE>
-  inline FockVector<F,TE> &&operator *(const F s, FockVector<F,TE> &&a) {
+  inline TensorUnion<F,TE> &&operator *(const F s, TensorUnion<F,TE> &&a) {
     a *= s;
     return std::move(a);
   }
 
   /**
-   * \brief Writes the FockVector a to the given stream and returns it
+   * \brief Writes the TensorUnion a to the given stream and returns it
    * for further stream operations.
    **/
   template <typename F, typename TE>
   inline std::ostream &operator <<(
-    std::ostream &stream, const FockVector<F,TE> &a
+    std::ostream &stream, const TensorUnion<F,TE> &a
   ) {
     stream << "( ";
     stream << a.get(0) << "[" << a.getIndices(0) << "]";

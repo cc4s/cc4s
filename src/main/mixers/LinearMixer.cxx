@@ -20,8 +20,8 @@ LinearMixer<F,TE>::LinearMixer(
 
 template <typename F, typename TE>
 void LinearMixer<F,TE>::append(
-  const Ptr<FockVector<F,TE>> &next,
-  const Ptr<FockVector<F,TE>> &nextResiduum
+  const Ptr<TensorUnion<F,TE>> &next,
+  const Ptr<TensorUnion<F,TE>> &nextResiduum
 ) {
   if (last) {
     // mix accordingly
@@ -39,7 +39,7 @@ void LinearMixer<F,TE>::append(
 }
 
 template <typename F, typename TE>
-Ptr<const FockVector<F,TE>> LinearMixer<F,TE>::get() {
+Ptr<const TensorUnion<F,TE>> LinearMixer<F,TE>::get() {
   return last;
 }
 
