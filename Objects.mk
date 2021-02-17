@@ -1,6 +1,7 @@
 SRC_FILES= \
 main/Cc4s.cxx \
 main/Options.cxx \
+main/Writer.cxx \
 main/Setting.cxx \
 main/util/Log.cxx \
 main/util/Timer.cxx \
