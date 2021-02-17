@@ -1,24 +1,24 @@
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/EigenEnergiesReal.yaml"
+    fileName: "../../../../cc4s-tutorials/systems/H2O/EigenEnergiesReal.yaml"
   out:
     tensor: EigenEnergies
 
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/Spins.yaml"
+    fileName: "../../../../cc4s-tutorials/systems/H2O/Spins.yaml"
   out:
     tensor: Spins
 
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/FockOperatorReal.yaml"
+    fileName: "../../../../cc4s-tutorials/systems/H2O/FockOperatorReal.yaml"
   out:
     tensor: CoulombVertex
 
 - name: TensorReader
   in:
-    fileName: "../../../tutorials/systems/H2O/CoulombVertexReal.yaml"
+    fileName: "../../../../cc4s-tutorials/systems/H2O/CoulombVertexReal.yaml"
   out:
     tensor: CoulombVertex
 
@@ -48,7 +48,6 @@
     maxIterations: 64
     energyConvergence: 1.0E-8
     mixer:
-      type: LinearMixer
-      ratio: 1.0
+      type: DiisMixer
   out:
     energy: DrccdEnergy
