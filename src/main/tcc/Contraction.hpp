@@ -243,7 +243,7 @@ namespace cc4s {
               if (
                 !bestContractions ||
                 TE::template compareCosts<F>(
-                  allContractions->costs,bestContractions->costs
+                  allContractions->costs, bestContractions->costs
                 ) < 0
               ) {
                 bestContractions = allContractions;

@@ -74,17 +74,6 @@ namespace cc4s {
     result += b;
     return result;
   }
-
-  // TODO: deprecated
-  // FIXME: maxElementsCount can't be right
-/*
-  inline bool operator <(Costs const &a, Costs const &b) {
-
-//    return a.maxElementsCount < b.maxElementsCount;
-    return (a.multiplicationsCount + a.additionsCount) <
-      (b.multiplicationsCount + b.additionsCount);
-  }
-*/
 }
 
 #endif
