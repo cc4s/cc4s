@@ -9,6 +9,7 @@
 #include <engines/CtfTensorEngine.hpp>
 namespace cc4s {
   typedef cc4s::CtfTensorEngine DefaultTensorEngine;
+  typedef cc4s::DryTensorEngine<DefaultTensorEngine> DefaultDryTensorEngine;
 }
 
 namespace cc4s {

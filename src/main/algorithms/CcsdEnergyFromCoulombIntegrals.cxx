@@ -8,20 +8,20 @@ using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(CcsdEnergyFromCoulombIntegrals)
 
-Ptr<FockVector<Real<>, DryTensorEngine>>
+Ptr<FockVector<Real<>, DefaultDryTensorEngine>>
 CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int iteration,
-  const Ptr<const FockVector<Real<>, DryTensorEngine>> &amplitudes
+  const Ptr<const FockVector<Real<>, DefaultDryTensorEngine>> &amplitudes
 ) {
-  return getResiduum<DryTensorEngine>(iteration, amplitudes);
+  return getResiduum<DefaultDryTensorEngine>(iteration, amplitudes);
 }
 
-Ptr<FockVector<Complex<>, DryTensorEngine>>
+Ptr<FockVector<Complex<>, DefaultDryTensorEngine>>
 CcsdEnergyFromCoulombIntegrals::getResiduum(
   const int iteration,
-  const Ptr<const FockVector<Complex<>, DryTensorEngine>> &amplitudes
+  const Ptr<const FockVector<Complex<>, DefaultDryTensorEngine>> &amplitudes
 ) {
-  return getResiduum<DryTensorEngine>(iteration, amplitudes);
+  return getResiduum<DefaultDryTensorEngine>(iteration, amplitudes);
 }
 
 Ptr<FockVector<Real<>, DefaultTensorEngine>>

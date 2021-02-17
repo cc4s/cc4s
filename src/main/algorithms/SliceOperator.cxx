@@ -15,24 +15,25 @@ Ptr<MapNode> SliceOperator::run(const Ptr<MapNode> &arguments) {
   auto op(arguments->getMap("operator"));
   auto scalarType(op->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
-  if (scalarType == "real64") {  
-    if (Cc4s::options->dryRun) {
-      return run<Real<>,DryTensorEngine>(arguments);
-    } else {
-      return run<Real<>,DefaultTensorEngine>(arguments);
-    }
-  } else if (scalarType == "complex64") {
-    if (Cc4s::options->dryRun) {
-      return run<Complex<>,DryTensorEngine>(arguments);
-    } else {
-      return run<Complex<>,DefaultTensorEngine>(arguments);
+  if (Cc4s::options->dryRun) {
+    using TE = DefaultDryTensorEngine;
+    if (scalarType == TypeTraits<Real<>>::getName()) {  
+      return run<Real<>,TE>(arguments);
+    } else if (scalarType == TypeTraits<Real<>>::getName()) {
+      return run<Complex<>,TE>(arguments);
     }
   } else {
-    ASSERT_LOCATION(
-      false, "scalar type '" + scalarType + "' not supported",
-      op->get("scalarType")->sourceLocation
-    );
+    using TE = DefaultTensorEngine;
+    if (scalarType == TypeTraits<Real<>>::getName()) {  
+      return run<Real<>,TE>(arguments);
+    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
+      return run<Complex<>,TE>(arguments);
+    }
   }
+  ASSERT_LOCATION(
+    false, "scalar type '" + scalarType + "' not supported",
+    op->get("scalarType")->sourceLocation
+  );
 }
 
 template <typename F, typename TE>

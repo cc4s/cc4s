@@ -17,7 +17,8 @@ using namespace cc4s;
 
 size_t Cc4s::getFlops() {
   return options->dryRun ?
-    Operation<DryTensorEngine>::flops : Operation<DefaultTensorEngine>::flops;
+    Operation<DefaultDryTensorEngine>::flops :
+    Operation<DefaultTensorEngine>::flops;
 }
 
 void Cc4s::run(const Ptr<MapNode> &report) {

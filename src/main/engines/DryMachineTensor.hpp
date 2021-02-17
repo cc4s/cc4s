@@ -12,12 +12,12 @@
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;
-  class DryTensorEngine;
+  template <typename EmulatedTensorEngine> class DryTensorEngine;
 
   /**
    * \brief MachineTensor adapter for a DryTensor
    **/
-  template <typename F>
+  template <typename F, typename EmulatedTensorEngine>
   class DryMachineTensor {
   protected:
     class ProtectedToken {
@@ -25,7 +25,8 @@ namespace cc4s {
 
   public:
     typedef DryTensor<F> T;
-    typedef DryTensorEngine TensorEngine;
+    typedef DryTensorEngine<EmulatedTensorEngine> TensorEngine;
+    using ETE = EmulatedTensorEngine;
 
     // constructors called by factory
     DryMachineTensor(
@@ -51,7 +52,7 @@ namespace cc4s {
     // this[bIndices] = alpha * A[aIndices] + beta*this[bIndices]
     void sum(
       F alpha,
-      const Ptr<DryMachineTensor<F>> &A,
+      const Ptr<DryMachineTensor<F,ETE>> &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices
@@ -63,7 +64,7 @@ namespace cc4s {
     template <typename Domain>
     void sum(
       Domain alpha,
-      const Ptr<DryMachineTensor<Domain>> &A,
+      const Ptr<DryMachineTensor<Domain,ETE>> &A,
       const std::string &aIndices,
       F beta,
       const std::string &bIndices,
@@ -75,9 +76,9 @@ namespace cc4s {
     // this[cIndices] = alpha * A[aIndices] * B[bIndices] + beta*this[cIndices]
     void contract(
       F alpha,
-      const Ptr<DryMachineTensor<F>> &A,
+      const Ptr<DryMachineTensor<F,ETE>> &A,
       const std::string &aIndices,
-      const Ptr<DryMachineTensor<F>> &B,
+      const Ptr<DryMachineTensor<F,ETE>> &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices
@@ -88,9 +89,9 @@ namespace cc4s {
     // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
     void contract(
       F alpha,
-      const Ptr<DryMachineTensor<F>> &A,
+      const Ptr<DryMachineTensor<F,ETE>> &A,
       const std::string &aIndices,
-      const Ptr<DryMachineTensor<F>> &B,
+      const Ptr<DryMachineTensor<F,ETE>> &B,
       const std::string &bIndices,
       F beta,
       const std::string &cIndices,
@@ -101,7 +102,7 @@ namespace cc4s {
 
     void slice(
       F alpha,
-      const Ptr<DryMachineTensor<F>> &A,
+      const Ptr<DryMachineTensor<F,ETE>> &A,
       const std::vector<size_t> aBegins,
       const std::vector<size_t> aEnds,
       F beta,
@@ -147,19 +148,19 @@ namespace cc4s {
 
     // TODO: protect
     // create adapater from given DryTensor
-    static Ptr<DryMachineTensor<F>> create(const T &t) {
-      return NEW(DryMachineTensor<F>, t, ProtectedToken());
+    static Ptr<DryMachineTensor<F,ETE>> create(const T &t) {
+      return New<DryMachineTensor<F,ETE>>(t, ProtectedToken());
     }
 
     // create adapter from shape and name
-    static Ptr<DryMachineTensor<F>> create(
+    static Ptr<DryMachineTensor<F,ETE>> create(
       const std::vector<size_t> &lens,
       const std::string &name
     ) {
-      return NEW(DryMachineTensor<F>, lens, name, ProtectedToken());
+      return New<DryMachineTensor<F,ETE>>(lens, name, ProtectedToken());
     }
   protected:
-    friend class Tensor<F,DryTensorEngine>;
+    friend class Tensor<F,TensorEngine>;
   };
 }
 

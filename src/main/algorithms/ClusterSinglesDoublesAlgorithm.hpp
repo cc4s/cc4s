@@ -47,22 +47,23 @@ namespace cc4s {
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<FockVector<Real<>, DryTensorEngine>> getResiduum(
+    virtual Ptr<FockVector<Real<>, DefaultDryTensorEngine>>getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Real<>, DryTensorEngine>> &amplitudes
+      const Ptr<const FockVector<Real<>,DefaultDryTensorEngine>> &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<FockVector<Complex<>, DryTensorEngine>> getResiduum(
+    virtual Ptr<FockVector<Complex<>, DefaultDryTensorEngine>>getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Complex<>, DryTensorEngine>> &amplitudes
+      const Ptr<const FockVector<Complex<>, DefaultDryTensorEngine>> &amplitudes
     ) = 0;
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<FockVector<Real<>, DefaultTensorEngine>> getResiduum(
+    virtual Ptr<FockVector<Real<>, DefaultTensorEngine>>
+    getResiduum(
       const int iteration,
       const Ptr<const FockVector<Real<>, DefaultTensorEngine>> &amplitudes
     ) = 0;
@@ -70,7 +71,8 @@ namespace cc4s {
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<FockVector<Complex<>, DefaultTensorEngine>> getResiduum(
+    virtual Ptr<FockVector<Complex<>, DefaultTensorEngine>>
+    getResiduum(
       const int iteration,
       const Ptr<const FockVector<Complex<>, DefaultTensorEngine>> &amplitudes
     ) = 0;

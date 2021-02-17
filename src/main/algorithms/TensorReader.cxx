@@ -71,12 +71,13 @@ void TensorReader::readData(
   // multiplex calls to template methods depending on tensor engine and type
   if (binary) {
     if (Cc4s::options->dryRun) {
+      using TE = DefaultDryTensorEngine;
       if (scalarType == "real64") {
-        tensorData = readBinary<Real<64>,DryTensorEngine>(
+        tensorData = readBinary<Real<64>,TE>(
           fileName, lens, sourceLocation
         );
       } else if (scalarType == "complex64") {
-        tensorData = readBinary<Complex<64>,DryTensorEngine>(
+        tensorData = readBinary<Complex<64>,TE>(
           fileName, lens, sourceLocation
         );
       } else {
@@ -85,12 +86,13 @@ void TensorReader::readData(
         );
       }
     } else {
+      using TE = DefaultTensorEngine;
       if (scalarType == "real64") {
-        tensorData = readBinary<Real<64>,DefaultTensorEngine>(
+        tensorData = readBinary<Real<64>,TE>(
           fileName, lens, sourceLocation
         );
       } else if (scalarType == "complex64") {
-        tensorData = readBinary<Complex<64>,DefaultTensorEngine>(
+        tensorData = readBinary<Complex<64>,TE>(
           fileName, lens, sourceLocation
         );
       } else {
@@ -101,12 +103,13 @@ void TensorReader::readData(
     }
   } else {
     if (Cc4s::options->dryRun) {
+      using TE = DefaultDryTensorEngine;
       if (scalarType == "real64") {
-        tensorData = readText<Real<64>,DryTensorEngine>(
+        tensorData = readText<Real<64>,TE>(
           fileName, lens, sourceLocation
         );
       } else if (scalarType == "complex64") {
-        tensorData = readText<Complex<64>,DryTensorEngine>(
+        tensorData = readText<Complex<64>,TE>(
           fileName, lens, sourceLocation
         );
       } else {
@@ -115,12 +118,13 @@ void TensorReader::readData(
         );
       }
     } else {
+      using TE = DefaultTensorEngine;
       if (scalarType == "real64") {
-        tensorData = readText<Real<64>,DefaultTensorEngine>(
+        tensorData = readText<Real<64>,TE>(
           fileName, lens, sourceLocation
         );
       } else if (scalarType == "complex64") {
-        tensorData = readText<Complex<64>,DefaultTensorEngine>(
+        tensorData = readText<Complex<64>,TE>(
           fileName, lens, sourceLocation
         );
       } else {

@@ -92,16 +92,17 @@ void TensorWriter::writeData(
   if (binary) {
     fileName = baseName + ".bin";
     if (Cc4s::options->dryRun) {
+      using TE = DefaultDryTensorEngine;
       if (scalarType == "real64") {
         writeBinary(
           tensor,
-          tensor->getValue<Ptr<Tensor<Real<64>,DryTensorEngine>>>("data"),
+          tensor->getValue<Ptr<Tensor<Real<64>,TE>>>("data"),
           fileName, sourceLocation
         );
       } else if (scalarType == "complex64") {
         writeBinary(
           tensor,
-          tensor->getValue<Ptr<Tensor<Complex<64>,DryTensorEngine>>>("data"),
+          tensor->getValue<Ptr<Tensor<Complex<64>,TE>>>("data"),
           fileName, sourceLocation
         );
       } else {
@@ -110,16 +111,17 @@ void TensorWriter::writeData(
         );
       }
     } else {
+      using TE = DefaultTensorEngine;
       if (scalarType == "real64") {
         writeBinary(
           tensor,
-          tensor->getValue<Ptr<Tensor<Real<64>,DefaultTensorEngine>>>("data"),
+          tensor->getValue<Ptr<Tensor<Real<64>,TE>>>("data"),
           fileName, sourceLocation
         );
       } else if (scalarType == "complex64") {
         writeBinary(
           tensor,
-          tensor->getValue<Ptr<Tensor<Complex<64>,DefaultTensorEngine>>>("data"),
+          tensor->getValue<Ptr<Tensor<Complex<64>,TE>>>("data"),
           fileName, sourceLocation
         );
       } else {
@@ -131,16 +133,17 @@ void TensorWriter::writeData(
   } else {
     fileName = baseName + ".dat";
     if (Cc4s::options->dryRun) {
+      using TE = DefaultDryTensorEngine;
       if (scalarType == "real64") {
         writeText(
           tensor,
-          tensor->getValue<Ptr<Tensor<Real<64>,DryTensorEngine>>>("data"),
+          tensor->getValue<Ptr<Tensor<Real<64>,TE>>>("data"),
           fileName, sourceLocation
         );
       } else if (scalarType == "complex64") {
         writeText(
           tensor,
-          tensor->getValue<Ptr<Tensor<Complex<64>,DryTensorEngine>>>("data"),
+          tensor->getValue<Ptr<Tensor<Complex<64>,TE>>>("data"),
           fileName, sourceLocation
         );
       } else {
@@ -149,16 +152,17 @@ void TensorWriter::writeData(
         );
       }
     } else {
+      using TE = DefaultTensorEngine;
       if (scalarType == "real64") {
         writeText(
           tensor,
-          tensor->getValue<Ptr<Tensor<Real<64>,DefaultTensorEngine>>>("data"),
+          tensor->getValue<Ptr<Tensor<Real<64>,TE>>>("data"),
           fileName, sourceLocation
         );
       } else if (scalarType == "complex64") {
         writeText(
           tensor,
-          tensor->getValue<Ptr<Tensor<Complex<64>,DefaultTensorEngine>>>("data"),
+          tensor->getValue<Ptr<Tensor<Complex<64>,TE>>>("data"),
           fileName, sourceLocation
         );
       } else {

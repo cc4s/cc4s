@@ -21,24 +21,27 @@ Ptr<MapNode> CoulombIntegralsFromVertex::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
   if (momentumType == "halfGrid") {
     if (Cc4s::options->dryRun) {
-      return calculateRealIntegrals<DryTensorEngine>(arguments);
+      using TE = DefaultDryTensorEngine;
+      return calculateRealIntegrals<TE>(arguments);
     } else {
-      return calculateRealIntegrals<DefaultTensorEngine>(arguments);
+      using TE = DefaultTensorEngine;
+      return calculateRealIntegrals<TE>(arguments);
     }
   } else if (momentumType == "fullGrid") {
     if (Cc4s::options->dryRun) {
-      return calculateComplexIntegrals<DryTensorEngine>(arguments);
+      using TE = DefaultDryTensorEngine;
+      return calculateComplexIntegrals<TE>(arguments);
     } else {
-      return calculateComplexIntegrals<DefaultTensorEngine>(arguments);
+      using TE = DefaultTensorEngine;
+      return calculateComplexIntegrals<TE>(arguments);
     }
-  } else {
-    ASSERT_LOCATION(
-      false, "momentum 'type' must specify either 'halfGrid' or 'fullGrid'",
-      slicedCoulombVertex->getMap(
-        "indices"
-      )->getMap("momentum")->get("type")->sourceLocation
-    );
   }
+  ASSERT_LOCATION(
+    false, "momentum 'type' must specify either 'halfGrid' or 'fullGrid'",
+    slicedCoulombVertex->getMap(
+      "indices"
+    )->getMap("momentum")->get("type")->sourceLocation
+  );
 }
 
 template <typename TE>

@@ -14,7 +14,7 @@ ALGORITHM_REGISTRAR_DEFINITION(DefineHolesAndParticles)
 Ptr<MapNode> DefineHolesAndParticles::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
   if (Cc4s::options->dryRun) {
-    return run<DryTensorEngine>(arguments);
+    return run<DefaultDryTensorEngine>(arguments);
   } else {
     return run<DefaultTensorEngine>(arguments);
   }

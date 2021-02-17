@@ -397,7 +397,7 @@ namespace cc4s {
       for (size_t i(0); i < components.size(); ++i) {
         // create tensor of identical shape, NOTE: no data is copied yet
         componentTensors[i] = Tcc<TE>::template tensor<F>(
-          components[i]->lens, "unnamed"
+          components[i]->lens, components[i]->getName()
         );
         // copy data
         COMPILE(

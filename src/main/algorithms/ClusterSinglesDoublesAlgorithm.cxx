@@ -17,26 +17,27 @@ using namespace cc4s;
 Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run(const Ptr<MapNode> &arguments){
   this->arguments = arguments;
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
+  auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
-  if (orbitals == "real64") {
-    if (Cc4s::options->dryRun) {
-      return run<Real<>,DryTensorEngine>();
-    } else {
-      return run<Real<>,DefaultTensorEngine>();
-    }
-  } else if (orbitals == "complex64") {
-    if (Cc4s::options->dryRun) {
-      return run<Complex<>,DryTensorEngine>();
-    } else {
-      return run<Complex<>,DefaultTensorEngine>();
+  if (Cc4s::options->dryRun) {
+    using TE = DefaultDryTensorEngine;
+    if (scalarType == TypeTraits<Real<>>::getName()) {
+      return run<Real<>,TE>();
+    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
+      return run<Complex<>,TE>();
     }
   } else {
-    ASSERT_LOCATION(
-      false, "unsupported orbitals type '" + orbitals + "'",
-      coulombIntegrals->get("scalarType")->sourceLocation
-    );
+    using TE = DefaultTensorEngine;
+    if (scalarType == TypeTraits<Real<>>::getName()) {
+      return run<Real<>,TE>();
+    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
+      return run<Complex<>,TE>();
+    }
   }
+  ASSERT_LOCATION(
+    false, "unsupported orbitals type '" + scalarType + "'",
+    coulombIntegrals->get("scalarType")->sourceLocation
+  );
 }
 
 
@@ -346,13 +347,13 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
 // instantiate
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
-  const Ptr<FockVector<Real<>, DryTensorEngine>> &residuum,
-  const Ptr<const FockVector<Real<>, DryTensorEngine>> &amplitudes
+  const Ptr<FockVector<Real<>, DefaultDryTensorEngine>> &residuum,
+  const Ptr<const FockVector<Real<>, DefaultDryTensorEngine>> &amplitudes
 );
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
-  const Ptr<FockVector<Complex<>, DryTensorEngine>> &residuum,
-  const Ptr<const FockVector<Complex<>, DryTensorEngine>> &amplitudes
+  const Ptr<FockVector<Complex<>, DefaultDryTensorEngine>> &residuum,
+  const Ptr<const FockVector<Complex<>, DefaultDryTensorEngine>> &amplitudes
 );
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
@@ -400,12 +401,12 @@ Ptr<Tensor<F,TE>> ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
 
 // instantiate
 template
-Ptr<Tensor<Real<>, DryTensorEngine>>
+Ptr<Tensor<Real<>, DefaultDryTensorEngine>>
 ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
   const std::vector<size_t> &lens, const std::string &indices
 );
 template
-Ptr<Tensor<Complex<>, DryTensorEngine>>
+Ptr<Tensor<Complex<>, DefaultDryTensorEngine>>
 ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
   const std::vector<size_t> &lens, const std::string &indices
 );

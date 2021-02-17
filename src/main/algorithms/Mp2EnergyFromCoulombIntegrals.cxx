@@ -11,26 +11,27 @@ ALGORITHM_REGISTRAR_DEFINITION(Mp2EnergyFromCoulombIntegrals)
 
 Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
+  auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
-  if (orbitals == "real64") {
-    if (Cc4s::options->dryRun) {
-      return calculateMp2Energy<Real<>,DryTensorEngine>(arguments);
-    } else {
-      return calculateMp2Energy<Real<>,DefaultTensorEngine>(arguments);
-    }
-  } else if (orbitals == "complex64") {
-    if (Cc4s::options->dryRun) {
-      return calculateMp2Energy<Complex<>,DryTensorEngine>(arguments);
-    } else {
-      return calculateMp2Energy<Complex<>,DefaultTensorEngine>(arguments);
+  if (Cc4s::options->dryRun) {
+    using TE = DefaultDryTensorEngine;
+    if (scalarType == TypeTraits<Real<>>::getName()) {
+      return calculateMp2Energy<Real<>,TE>(arguments);
+    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
+      return calculateMp2Energy<Complex<>,TE>(arguments);
     }
   } else {
-    ASSERT_LOCATION(
-      false, "unsupported orbitals type '" + orbitals + "'",
-      coulombIntegrals->get("scalarType")->sourceLocation
-    );
+    using TE = DefaultDryTensorEngine;
+    if (scalarType == TypeTraits<Real<>>::getName()) {
+      return calculateMp2Energy<Real<>,TE>(arguments);
+    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
+      return calculateMp2Energy<Complex<>,TE>(arguments);
+    }
   }
+  ASSERT_LOCATION(
+    false, "unsupported orbitals type '" + scalarType + "'",
+    coulombIntegrals->get("scalarType")->sourceLocation
+  );
 }
 
 template <typename F, typename TE>

@@ -30,13 +30,13 @@ namespace cc4s {
      * \brief Implements the iterate method with the DRCCD iteration.
      * \param[in] i Iteration number
      */
-    Ptr<FockVector<Real<>, DryTensorEngine>> getResiduum(
+    Ptr<FockVector<Real<>, DefaultDryTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Real<>, DryTensorEngine>> &amplitudes
+      const Ptr<const FockVector<Real<>, DefaultDryTensorEngine>> &amplitudes
     ) override;
-    Ptr<FockVector<Complex<>, DryTensorEngine>> getResiduum(
+    Ptr<FockVector<Complex<>, DefaultDryTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const FockVector<Complex<>, DryTensorEngine>> &amplitudes
+      const Ptr<const FockVector<Complex<>, DefaultDryTensorEngine>> &amplitudes
     ) override;
     Ptr<FockVector<Real<>, DefaultTensorEngine>> getResiduum(
       const int iteration,

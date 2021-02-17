@@ -242,7 +242,9 @@ namespace cc4s {
               // see if the entire contraction is currently best
               if (
                 !bestContractions ||
-                allContractions->costs < bestContractions->costs
+                TE::template compareCosts<F>(
+                  allContractions->costs,bestContractions->costs
+                ) < 0
               ) {
                 bestContractions = allContractions;
                 if (level == 0) { // do output only in topmost level

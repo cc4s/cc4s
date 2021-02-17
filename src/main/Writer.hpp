@@ -101,7 +101,7 @@ namespace cc4s {
         if (persistentNode) return persistentNode;
 */
       } else {
-        using TE = DryTensorEngine;
+        using TE = DefaultDryTensorEngine;
         persistentNode = persistTensor<Real<64>,TE>(node, nodePath);
         if (persistentNode) return persistentNode;
         persistentNode = persistTensor<Complex<64>,TE>(node, nodePath);

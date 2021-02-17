@@ -131,8 +131,8 @@ std::vector<Complex<>> DiisMixer<F,TE>::inverse(
 
 
 // instantiate
-template class cc4s::DiisMixer<Real<64>, DryTensorEngine>;
-template class cc4s::DiisMixer<Complex<64>, DryTensorEngine>;
+template class cc4s::DiisMixer<Real<64>, DefaultDryTensorEngine>;
+template class cc4s::DiisMixer<Complex<64>, DefaultDryTensorEngine>;
 template class cc4s::DiisMixer<Real<64>, DefaultTensorEngine>;
 template class cc4s::DiisMixer<Complex<64>, DefaultTensorEngine>;
 

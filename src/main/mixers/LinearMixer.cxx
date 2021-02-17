@@ -49,8 +49,8 @@ double LinearMixer<F,TE>::getResiduumNorm() {
 }
 
 // instantiate
-template class cc4s::LinearMixer<Real<64>, DryTensorEngine>;
-template class cc4s::LinearMixer<Complex<64>, DryTensorEngine>;
+template class cc4s::LinearMixer<Real<64>, DefaultDryTensorEngine>;
+template class cc4s::LinearMixer<Complex<64>, DefaultDryTensorEngine>;
 template class cc4s::LinearMixer<Real<64>, DefaultTensorEngine>;
 template class cc4s::LinearMixer<Complex<64>, DefaultTensorEngine>;
 
