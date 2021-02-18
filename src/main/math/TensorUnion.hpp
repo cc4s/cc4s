@@ -5,6 +5,8 @@
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
+//#include <Writer.hpp>
+#include <util/TensorIo.hpp>
 
 #include <vector>
 #include <string>
@@ -442,6 +444,62 @@ namespace cc4s {
       }
       // TODO: check shapes.
     }
+
+  public:
+    static Ptr<Node> write(
+      const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+    ) {
+      auto tensorUnionNode(node->toAtom<Ptr<const TensorUnion<F,TE>>>());
+      if (!tensorUnionNode) return nullptr;
+      auto t(tensorUnionNode->value);
+      auto writtenNode(New<MapNode>(SOURCE_LOCATION));
+      for (size_t i(0); i < t->componentTensors.size(); ++i) {
+        auto componentNode(New<MapNode>(SOURCE_LOCATION));
+        componentNode->setValue("indices", t->componentIndices[i]);
+        auto tensorNode(
+          New<AtomicNode<Ptr<Tensor<F,TE>>>>(
+            t->componentTensors[i], SOURCE_LOCATION
+          )
+        );
+        componentNode->get("tensor") = TensorIo::write(
+          tensorNode, nodePath + to_string(i), useBinary
+        );
+      }
+      return writtenNode;
+    }
+    class TensorUnionIo;
+    friend class TensorUnionIo;
+  };
+
+  class TensorUnionIo {
+  public:
+    static Ptr<Node> write(
+      const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+    ) {
+      // multiplex different tensor types
+      Ptr<Node> writtenNode;
+      if (!Cc4s::options->dryRun) {
+        using TE = DefaultTensorEngine;
+        writtenNode = TensorUnion<Real<64>,TE>::write(node, nodePath, useBinary);
+        if (writtenNode) return writtenNode;
+        writtenNode = TensorUnion<Complex<64>,TE>::write(node, nodePath, useBinary);
+        if (writtenNode) return writtenNode;
+      } else {
+        using TE = DefaultDryTensorEngine;
+        writtenNode = TensorUnion<Real<64>,TE>::write(node, nodePath, useBinary);
+        if (writtenNode) return writtenNode;
+        writtenNode = TensorUnion<Complex<64>,TE>::write(node, nodePath, useBinary);
+        if (writtenNode) return writtenNode;
+      }
+      return nullptr;
+    }
+    static Ptr<Node> read(
+      const Ptr<MapNode> &node, const std::string &nodePath
+    ) {
+      return nullptr;
+    }
+
+    static int WRITE_REGISTERED, READ_REGISTERED;
   };
 
   /**
@@ -573,6 +631,7 @@ namespace cc4s {
     }
     return stream << " )";
   }
+
 }
 
 #endif

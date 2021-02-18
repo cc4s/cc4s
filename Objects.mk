@@ -26,6 +26,7 @@ main/algorithms/CcsdEnergyFromCoulombIntegrals.cxx \
 main/mixers/Mixer.cxx \
 main/mixers/LinearMixer.cxx \
 main/mixers/DiisMixer.cxx \
+main/math/TensorUnion.cxx \
 
 TEST_SRC_FILES = \
 test/math/Antisymmetrize.cxx \
