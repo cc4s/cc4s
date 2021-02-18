@@ -88,10 +88,10 @@ namespace cc4s {
     ) {
       auto writtenMapNode(New<MapNode>(mapNode->sourceLocation));
       for (auto key: mapNode->getKeys()) {
-        auto valueNode(mapNode->get(key));
+        auto subNode(mapNode->get(key));
         // NOTE that there may be nullptr keys, if keys have been searched for
-        if (valueNode) {
-          writtenMapNode->get(key) = write(valueNode, nodePath + "." + key);
+        if (subNode) {
+          writtenMapNode->get(key) = write(subNode, nodePath + "." + key);
         }
       }
       return writtenMapNode;

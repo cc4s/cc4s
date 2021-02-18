@@ -1,9 +1,12 @@
-/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
+/*Copyright (c) 2021, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <util/TensorIo.hpp>
-#include <Writer.hpp>
+#include <Reader.hpp>
 
-using namespace cc4s;
+// using namespace cc4s;
 
-int TensorIo::WRITE_REGISTERED =
-  Writer::registerWriteFunction("tensor", TensorIo::write);
+int cc4s::TensorIo::WRITE_REGISTERED =
+  cc4s::Writer::registerWriteFunction("tensor", cc4s::TensorIo::write);
+
+int cc4s::TensorIo::READ_REGISTERED =
+  cc4s::Reader::registerReadFunction("tensor", cc4s::TensorIo::read);
 

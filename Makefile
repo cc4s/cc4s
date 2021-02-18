@@ -99,6 +99,7 @@ $(OBJ_PATH)/%.d: src/%.cxx
 $(OBJ_PATH)/%.o: $(OBJ_PATH)/%.d
 	$(info [OBJ] $@)
 	mkdir -p $(dir $@)
+
 	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${INCLUDE_FLAGS} -c src/$*.cxx -o $@
 
 # compile and link executable

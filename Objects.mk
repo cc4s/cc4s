@@ -2,6 +2,7 @@ SRC_FILES= \
 main/Cc4s.cxx \
 main/Options.cxx \
 main/Writer.cxx \
+main/Reader.cxx \
 main/Setting.cxx \
 main/util/Log.cxx \
 main/util/Timer.cxx \
@@ -11,6 +12,7 @@ main/tcc/Tcc.cxx \
 main/engines/DryTensor.cxx \
 main/algorithms/Algorithm.cxx \
 main/algorithms/Write.cxx \
+main/algorithms/Read.cxx \
 main/algorithms/TensorReader.cxx \
 main/algorithms/TensorWriter.cxx \
 main/algorithms/DefineHolesAndParticles.cxx \
