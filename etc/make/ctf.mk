@@ -1,10 +1,11 @@
 CTF_SRC_PATH = $(abspath lib/src/ctf/$(CTF_COMMIT))
 CTF_CONFIG_FLAGS =
 CTF_STATIC_LIB = $(CTF_BUILD_PATH)/lib/libctf.a
+CTF_GIT_REPOSITORY ?= https://github.com/cc4s/ctf
 
 $(CTF_SRC_PATH)/configure:
 	mkdir -p $(@D)
-	git clone https://github.com/cyclops-community/ctf $(@D)
+	git clone $(CTF_GIT_REPOSITORY) $(@D)
 	cd $(@D) && git checkout $(CTF_COMMIT)
 
 $(CTF_BUILD_PATH)/Makefile: $(CTF_SRC_PATH)/configure

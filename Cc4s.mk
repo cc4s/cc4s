@@ -2,7 +2,7 @@
 # do it in your configuration file before you include this file
 
 # Cyclops Tensor Framework ====================================================
-CTF_COMMIT     ?= 29885baf124a74e185073b29f4c021b2e9dc11ba
+CTF_COMMIT     ?= 594ecc8decdfd91f38094c9792a06e5806cf124a
 CTF_BUILD_PATH ?= $(abspath lib/build/${CONFIG}/ctf/$(CTF_COMMIT))
 CTF_LIB        ?= -L${CTF_BUILD_PATH}/lib -lctf
 CTF_INCLUDE    ?= -I${CTF_BUILD_PATH}/include
