@@ -13,6 +13,7 @@ ALGORITHM_REGISTRAR_DEFINITION(Write)
  */
 Ptr<MapNode> Write::run(const Ptr<MapNode> &arguments) {
   auto data(arguments->get("data"));
+  ASSERT_LOCATION(data, "expecting key 'data'", arguments->sourceLocation);
   auto fileName(arguments->getValue<std::string>("fileName"));
   auto useBinary(arguments->getValue<bool>("binary", false));
 

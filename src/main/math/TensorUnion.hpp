@@ -5,8 +5,8 @@
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
-//#include <Writer.hpp>
 #include <util/TensorIo.hpp>
+#include <util/Log.hpp>
 
 #include <vector>
 #include <string>
@@ -452,7 +452,8 @@ namespace cc4s {
       auto tensorUnionNode(node->toAtom<Ptr<const TensorUnion<F,TE>>>());
       if (!tensorUnionNode) return nullptr;
       auto t(tensorUnionNode->value);
-      auto writtenNode(New<MapNode>(SOURCE_LOCATION));
+      auto componentsNode(New<MapNode>(SOURCE_LOCATION));
+      auto componentsNodePath(nodePath + ".components");
       for (size_t i(0); i < t->componentTensors.size(); ++i) {
         auto componentNode(New<MapNode>(SOURCE_LOCATION));
         componentNode->setValue("indices", t->componentIndices[i]);
@@ -462,28 +463,43 @@ namespace cc4s {
           )
         );
         componentNode->get("tensor") = TensorIo::write(
-          tensorNode, nodePath + to_string(i), useBinary
+          tensorNode,
+          componentsNodePath + "." + to_string(i),
+          useBinary
         );
-        writtenNode->get(i) = componentNode;
+        componentsNode->get(i) = componentNode;
       }
+      auto writtenNode(New<MapNode>(SOURCE_LOCATION));
+      writtenNode->get("components") = componentsNode;
       return writtenNode;
     }
 
     static Ptr<Node> read(
       const Ptr<MapNode> &node, const std::string &nodePath
     ) {
+      auto componentsNode(node->getMap("components"));
+      auto componentsNodePath(nodePath + ".components");
       std::vector<Ptr<Tensor<F,TE>>> tensors;
       std::vector<std::string> indices;
-      size_t i(0);
-      while (node->get(i)) {
+      for (size_t i(0); componentsNode->get(i); ++i) {
         auto tensorNode(
-          TensorIo::read(node->getMap(i)->getMap("tensor"), nodePath)
+          TensorIo::read(
+            componentsNode->getMap(i)->getMap("tensor"),
+            componentsNodePath + "." + to_string(i)
+          )
         );
         tensors.push_back(tensorNode->toAtom<Ptr<Tensor<F,TE>>>()->value);
-        indices.push_back(node->getMap(i)->getValue<std::string>("indices"));
+        indices.push_back(
+          componentsNode->getMap(i)->getValue<std::string>("indices")
+        );
+        OUT() << i << " tensor=" << tensors.back() << endl;
+        OUT() << i << " indices=" << indices.back() << endl;
       }
       auto tensorUnion(New<TensorUnion<F,TE>>(tensors,indices));
-      return New<AtomicNode<Ptr<TensorUnion<F,TE>>>>(tensorUnion);
+      OUT() << "tensor union=" << tensorUnion << endl;
+      return New<AtomicNode<Ptr<const TensorUnion<F,TE>>>>(
+        tensorUnion, node->sourceLocation
+      );
     }
 
     class TensorUnionIo;
@@ -516,16 +532,31 @@ namespace cc4s {
     static Ptr<Node> read(
       const Ptr<MapNode> &node, const std::string &nodePath
     ) {
+      // assume at least one component
+      auto scalarType(
+        node->getMap("components")->getMap(0)->getMap(
+          "tensor"
+        )->getValue<std::string>("scalarType")
+      );
       // multiplex different tensor types
-/*
-      Ptr<Node> writtenNode;
       if (!Cc4s::options->dryRun) {
         using TE = DefaultTensorEngine;
+        if (scalarType == TypeTraits<Real<>>::getName()) {
+          return TensorUnion<Real<>,TE>::read(node, nodePath);
+        } else if (scalarType == TypeTraits<Complex<>>::getName()) {
+          return TensorUnion<Complex<>,TE>::read(node, nodePath);
+        }
       } else {
         using TE = DefaultDryTensorEngine;
+        if (scalarType == TypeTraits<Real<>>::getName()) {
+          return TensorUnion<Real<>,TE>::read(node, nodePath);
+        } else if (scalarType == TypeTraits<Complex<>>::getName()) {
+          return TensorUnion<Complex<>,TE>::read(node, nodePath);
+        }
       }
-*/
-      return nullptr;
+      std::stringstream explanation;
+      explanation << "Unsupported sclarType '" << scalarType << "'" << endl;
+      throw New<Exception>(explanation.str(), SOURCE_LOCATION);
     }
 
     static int WRITE_REGISTERED, READ_REGISTERED;

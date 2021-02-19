@@ -51,11 +51,19 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   auto No(epsi->getResult()->lens[0]);
   auto Nv(epsa->getResult()->lens[0]);
 
-  Ptr<const TensorUnion<F,TE>> amplitudes(
-    createAmplitudes<F,TE>(
-      {"0", "1"}, {{Nv,No}, {Nv,Nv,No,No}}, {"ai", "abij"}
-    )
-  );
+  size_t i(0);
+  Ptr<const TensorUnion<F,TE>> amplitudes;
+  if (arguments->get("initialAmplitudes")) {
+    amplitudes = arguments->getValue<Ptr<const TensorUnion<F,TE>>>(
+      "initialAmplitudes"
+    );
+    OUT() << "Using given initial amplitudes " << amplitudes << std::endl;
+    i = 1;
+  } else {
+    amplitudes = createAmplitudes<F,TE>(
+      {{Nv,No}, {Nv,Nv,No,No}}, {"ai", "abij"}
+    );
+  }
 
   // TODO: conversion to eigen untis
   energy = New<MapNode>(SOURCE_LOCATION);
@@ -96,7 +104,6 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   OUT() << "Unless reaching energy convergence dE: " << energyConvergence << std::endl;
   OUT() << "Or amplitudes convergence dR: " << amplitudesConvergence << std::endl;
   F e(0), previousE(0);
-  size_t i(0);
   char outstring[80];
   sprintf(outstring,"%4s %16s %11s %15s %6s\n",
           "Iter", "Energy  ", "dE   ", "dR      ", "time");
@@ -236,43 +243,12 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
 
 template <typename F, typename TE>
 Ptr<TensorUnion<F,TE>> ClusterSinglesDoublesAlgorithm::createAmplitudes(
-  std::initializer_list<std::string> amplitudeComponent,
   std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
   std::initializer_list<std::string> amplitudeIndices
 ) {
   std::vector<Ptr<Tensor<F,TE>>> amplitudeTensors;
-  auto lensIterator( amplitudeLens.begin() );
-  auto indexIterator( amplitudeIndices.begin() );
-  for (auto c: amplitudeComponent) {
-    if (arguments->isGiven("initialAmplitudes")) {
-      auto initialAmplitudes(arguments->getMap("initialAmplitudes"));
-      auto component(initialAmplitudes->getMap("components"));
-      auto list(component->getKeys());
-      // is the amplitude component in the initialAmplitudes?
-      auto it = std::find(list.begin(), list.end(), c);
-      if (it != list.end()){
-        auto data(component->getMap(*it)->getValue<Ptr<Tensor<F,TE>>>("data"));
-        std::vector<size_t> lens(*lensIterator);
-        ASSERT_LOCATION(
-          data, "expecting operator to be a tensor", component->getMap(*it)->sourceLocation
-        );
-        OUT() << "Using " << data->getName() << " as initial amplitudes\n";
-        amplitudeTensors.push_back(data);
-        restart = true;
-      }
-      else {
-        // otherwise, use zeros as initial amplitudes
-        std::vector<size_t> lens(*lensIterator);
-        amplitudeTensors.push_back(Tcc<TE>::template tensor<F>(lens, "T"));
-      }
-    }
-    else {
-      // otherwise, use zeros as initial amplitudes
-      std::vector<size_t> lens(*lensIterator);
-      amplitudeTensors.push_back(Tcc<TE>::template tensor<F>(lens, "T"));
-    }
-    ++lensIterator;
-    ++indexIterator;
+  for (auto lens: amplitudeLens) {
+    amplitudeTensors.push_back(Tcc<TE>::template tensor<F>(lens, "T"));
   }
   return New<TensorUnion<F,TE>>(
     amplitudeTensors.begin(), amplitudeTensors.end(),
