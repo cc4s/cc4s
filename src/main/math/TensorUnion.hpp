@@ -28,7 +28,7 @@ namespace cc4s {
     std::vector<std::string> componentIndices;
 
     /**
-     * \brief Default constructor for an empty Fock vector without elements.
+     * \brief Default constructor for an empty tensor union without elements.
      **/
     TensorUnion() {
     }
@@ -421,7 +421,7 @@ namespace cc4s {
           size_t indexPos( get(i).find(a.getIndicies(i)[j]) );
           if (indexPos == std::string::npos) {
             throw New<Exception>(
-              "Indices of fock vectors do not match", SOURCE_LOCATION
+              "Indices of tensor unions do not match", SOURCE_LOCATION
             );
           }
           if (a.get(i)->lens[j] != get(i)->lens[indexPos]) {
@@ -468,6 +468,24 @@ namespace cc4s {
       }
       return writtenNode;
     }
+
+    static Ptr<Node> read(
+      const Ptr<MapNode> &node, const std::string &nodePath
+    ) {
+      std::vector<Ptr<Tensor<F,TE>>> tensors;
+      std::vector<std::string> indices;
+      size_t i(0);
+      while (node->get(i)) {
+        auto tensorNode(
+          TensorIo::read(node->getMap(i)->getMap("tensor"), nodePath)
+        );
+        tensors.push_back(tensorNode->toAtom<Ptr<Tensor<F,TE>>>()->value);
+        indices.push_back(node->getMap(i)->getValue<std::string>("indices"));
+      }
+      auto tensorUnion(New<TensorUnion<F,TE>>(tensors,indices));
+      return New<AtomicNode<Ptr<TensorUnion<F,TE>>>>(tensorUnion);
+    }
+
     class TensorUnionIo;
     friend class TensorUnionIo;
   };
@@ -494,9 +512,19 @@ namespace cc4s {
       }
       return nullptr;
     }
+
     static Ptr<Node> read(
       const Ptr<MapNode> &node, const std::string &nodePath
     ) {
+      // multiplex different tensor types
+/*
+      Ptr<Node> writtenNode;
+      if (!Cc4s::options->dryRun) {
+        using TE = DefaultTensorEngine;
+      } else {
+        using TE = DefaultDryTensorEngine;
+      }
+*/
       return nullptr;
     }
 
