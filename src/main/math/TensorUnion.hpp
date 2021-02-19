@@ -464,6 +464,7 @@ namespace cc4s {
         componentNode->get("tensor") = TensorIo::write(
           tensorNode, nodePath + to_string(i), useBinary
         );
+        writtenNode->get(i) = componentNode;
       }
       return writtenNode;
     }

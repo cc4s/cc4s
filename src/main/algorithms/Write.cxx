@@ -12,7 +12,7 @@ ALGORITHM_REGISTRAR_DEFINITION(Write)
  * \brief Interface to Writer.
  */
 Ptr<MapNode> Write::run(const Ptr<MapNode> &arguments) {
-  auto data(arguments->getMap("data"));
+  auto data(arguments->get("data"));
   auto fileName(arguments->getValue<std::string>("fileName"));
   auto useBinary(arguments->getValue<bool>("binary", false));
 
