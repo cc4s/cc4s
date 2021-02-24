@@ -206,6 +206,22 @@ namespace cc4s {
       Cc4s::world->broadcast(values);
       return values[0];
     }
+    std::vector<F> readAll() {
+      std::vector<F> values(getElementsCount());
+      if (Cc4s::world->getRank() == 0) {
+        std::vector<size_t> indices(values.size());
+        for (size_t i(0); i < values.size(); ++i) {
+          indices[i] = i;
+        }
+        read(indices.size(), indices.data(), values.data());
+      } else {
+        std::vector<size_t> indices(0);
+        read(0, indices.data(), values.data());
+      }
+      // broadcast value read on root
+      Cc4s::world->broadcast(values);
+      return values;
+    }
     void readToFile(MPI_File &file, const size_t offset = 0) {
       getMachineTensor()->readToFile(file, offset);
     }
