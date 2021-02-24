@@ -38,12 +38,28 @@ namespace cc4s {
     return std::abs(x);
   }
   template <>
-  inline Real<128> abs(const Real<128> x) { 
+  inline Real<128> abs(const Real<128> x) {
     return fabsq(x);
   }
   template <>
   inline Real<128> abs(const Complex<128> c) {
     return cabsq(toComplex128(c));
+  }
+
+  //TODO: no backstop if x=0
+  template <typename F>
+  inline F inverseSqrt(const Real<> x) {
+    return F(1.0/std::sqrt(x));
+  }
+
+  template <typename F>
+  inline F inverse(const F x) {
+    return F(1.0/x);
+  }
+
+  template <typename F>
+  inline F fromReal(const Real<> x) {
+    return F(x);
   }
 
   // real part, same if real
