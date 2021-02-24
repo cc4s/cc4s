@@ -19,7 +19,7 @@ Ptr<MapNode> SliceOperator::run(const Ptr<MapNode> &arguments) {
     using TE = DefaultDryTensorEngine;
     if (scalarType == TypeTraits<Real<>>::getName()) {  
       return run<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Real<>>::getName()) {
+    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
       return run<Complex<>,TE>(arguments);
     }
   } else {
