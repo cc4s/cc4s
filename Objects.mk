@@ -23,6 +23,7 @@ main/algorithms/ClusterSinglesDoublesAlgorithm.cxx \
 main/algorithms/DrccdEnergyFromCoulombIntegrals.cxx \
 main/algorithms/CcsdEnergyFromCoulombIntegralsReference.cxx \
 main/algorithms/CcsdEnergyFromCoulombIntegrals.cxx \
+main/algorithms/PerturbativeTriplesReference.cxx \
 main/mixers/Mixer.cxx \
 main/mixers/LinearMixer.cxx \
 main/mixers/DiisMixer.cxx \
