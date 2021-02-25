@@ -21,7 +21,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
       return calculateMp2Energy<Complex<>,TE>(arguments);
     }
   } else {
-    using TE = DefaultDryTensorEngine;
+    using TE = DefaultTensorEngine;
     if (scalarType == TypeTraits<Real<>>::getName()) {
       return calculateMp2Energy<Real<>,TE>(arguments);
     } else if (scalarType == TypeTraits<Complex<>>::getName()) {
