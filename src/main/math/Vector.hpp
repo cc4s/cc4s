@@ -129,6 +129,11 @@ namespace cc4s {
       return sqrt(real(u.dot(u)));
     }
 
+    Real<> sqrLength() const {
+      Vector<F,D> u(*this);
+      return real(u.dot(u));
+    }
+
     F operator [](int d) const {
       return coordinate[d];
     }

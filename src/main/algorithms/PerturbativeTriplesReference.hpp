@@ -3,7 +3,6 @@
 #define PERTURBATIVE_TRIPLES_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <math/TensorUnion.hpp>
 
 namespace cc4s {
   /**

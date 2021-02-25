@@ -48,8 +48,8 @@ namespace cc4s {
 
   //TODO: no backstop if x=0
   template <typename F>
-  inline F inverseSqrt(const Real<> x) {
-    return F(1.0/std::sqrt(x));
+  inline F inverseSqrt(const F x) {
+    return F(1.0/std::sqrt(std::real(x)));
   }
 
   template <typename F>
@@ -61,6 +61,12 @@ namespace cc4s {
   inline F fromReal(const Real<> x) {
     return F(x);
   }
+
+  template <typename F>
+  Complex<> toComplex(const F x) {
+    return Complex<>(x);
+  }
+
 
   // real part, same if real
   template <typename F>

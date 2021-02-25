@@ -4,6 +4,8 @@
 #include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
+#include <math/TensorUnion.hpp>
+
 
 using namespace cc4s;
 

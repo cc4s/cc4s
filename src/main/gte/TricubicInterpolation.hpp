@@ -10,8 +10,7 @@
 
 // different assert routines in cc4s
 #include <util/Exception.hpp>
-
-
+#include <assert.h>
 // The interpolator is for uniformly spaced(x,y z)-values.  The input samples
 // must be stored in lexicographical order to represent f(x,y,z); that is,
 // F[c + xBound*(r + yBound*s)] corresponds to f(x,y,z), where c is the index
@@ -89,11 +88,19 @@ IntpTricubic3<Real>::IntpTricubic3(int xBound, int yBound, int zBound,
 {
     // At least a 4x4x4 block of data points are needed to construct the
     // tricubic interpolation.
-    Assert(mXBound >= 4 && mYBound >= 4 && mZBound >= 4 && mF,
-        "Invalid input Bound.");
-    Assert(mXSpacing > (Real)0 && mYSpacing > (Real)0 &&
-        mZSpacing > (Real)0, "Invalid input Spacing.");
+    assert(mXBound >= 4 && mYBound >= 4 && mZBound >= 4 && mF);
+    assert(mXSpacing > (Real)0 && mYSpacing > (Real)0 &&  mZSpacing > (Real)0);
 
+    /*
+    ASSERT_LOCATION( mXBound >= 4 && mYBound >= 4 && mZBound >= 4 && mF
+                   , "Invalid input Bound."
+                   , SOURCE_LOCATION
+                   );
+    ASSERT_LOCATION( mXSpacing > (Real)0 && mYSpacing > (Real)0 &&  mZSpacing > (Real)0
+                   , "Invalid input Spacing."
+                   , SOURCE_LOCATION
+                   );
+    */
     mXMax = mXMin + mXSpacing * static_cast<Real>(mXBound - 1);
     mInvXSpacing = ((Real)1) / mXSpacing;
     mYMax = mYMin + mYSpacing * static_cast<Real>(mYBound - 1);
