@@ -212,7 +212,7 @@ void StructureFactor::interpolation(
 
   // create trilinear or tricubic interpolator
   gte::IntpTricubic3<Real<>> interpolatedSofG(
-    int(boxDimensions[0]), int(boxDimensions[1]), int(boxDimensions[2]),
+    (int)boxDimensions[0], (int)boxDimensions[1], (int)boxDimensions[2],
     boxOrigin[0], 1.0, boxOrigin[1], 1.0, boxOrigin[2], 1.0,
     directSofG.data(),
     true
