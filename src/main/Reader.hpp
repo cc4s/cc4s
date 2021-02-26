@@ -16,28 +16,30 @@ namespace cc4s {
   class Reader {
   public:
     Reader(
-      const std::string &fileName_
-    ): fileName(fileName_) {
+      const std::string &pathFileName_
+    ): pathFileName(pathFileName_) {
     }
     Ptr<Node> read() {
-      // if fileName contains '/' change directory
-      char currentDirectory[PATH_MAX];
-      getcwd(currentDirectory, sizeof(currentDirectory));
-      // TODO: support other filesystems
-      auto slashPosition(fileName.rfind('/'));
-      if (slashPosition != std::string::npos) {
-        auto fileDirectory(fileName.substr(0, slashPosition));
-        chdir(fileDirectory.c_str());
-      }
-      auto dotPosition(fileName.rfind('.'));
+      auto dotPosition(pathFileName.rfind('.'));
       ASSERT(
         dotPosition != std::string::npos,
         "'fileName' must contain an extension e.g. '.yaml'"
       );
-      // base name needed for tensor data
-      auto baseName(
-        fileName.substr(slashPosition+1, dotPosition-slashPosition-1)
-      );
+      // if pathFileName contains '/' change directory
+      char currentDirectory[PATH_MAX];
+      getcwd(currentDirectory, sizeof(currentDirectory));
+      // TODO: support other filesystems
+      std::string fileName, baseName;
+      auto slashPosition(pathFileName.rfind('/'));
+      if (slashPosition != std::string::npos) {
+        auto fileDirectory(pathFileName.substr(0, slashPosition));
+        chdir(fileDirectory.c_str());
+        fileName = pathFileName.substr(slashPosition+1);
+        baseName = pathFileName.substr(slashPosition+1, dotPosition-slashPosition-1);
+      } else {
+        fileName = pathFileName;
+        baseName = pathFileName.substr(0, dotPosition);
+      }
 
       // read persistent tree from given file
       auto persistentNode(Parser(fileName).parse());
@@ -104,7 +106,7 @@ namespace cc4s {
       }
     }
 
-    std::string fileName;
+    std::string pathFileName;
   };
 }
 

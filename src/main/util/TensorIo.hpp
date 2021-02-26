@@ -79,6 +79,14 @@ namespace cc4s {
       throw New<Exception>(explanation.str(), SOURCE_LOCATION);
     }
 
+  protected:
+    /**
+     * \brief Serialization version. Only objects written by
+     * a matching serialization version can be read. Increase this version
+     * if the data written is no longer backward compatible.
+     **/
+    static constexpr auto VERSION = "v1.0";
+
     template <typename F, typename TE>
     static Ptr<MapNode> writeTensor(
       const Ptr<Node> &node,
@@ -109,6 +117,10 @@ namespace cc4s {
       }
       writtenTensor->get("dimensions") = dimensions;
       writtenTensor->setSymbol("scalarType", TypeTraits<F>::getName());
+      auto dataNode(New<MapNode>(SOURCE_LOCATION));
+      dataNode->setValue<std::string>("type", "externalFile");
+      dataNode->setValue<bool>("binary", useBinary);
+      writtenTensor->get("data") = dataNode;
 
       // write tensor data as side effect
       if (useBinary) {
@@ -125,8 +137,22 @@ namespace cc4s {
       const Ptr<MapNode> &node,
       const std::string &nodePath
     ) {
-      auto useBinary(node->getValue<bool>("binary", false));
-      auto fileName(nodePath + (useBinary ? ".bin" : ".dat"));
+      auto version(node->getValue<std::string>("version"));
+      ASSERT_LOCATION(
+        version == VERSION,
+        "Found and expected serialization versions mismatch. Found " +
+          version + ", expecting " + VERSION,
+        node->get("version")->sourceLocation
+      );
+      auto dataNode(node->getMap("data"));
+      auto dataType(dataNode->getValue<std::string>("type"));
+      ASSERT_LOCATION(
+        dataType == "externalFile",
+        "Only tensor data in external files are supported as 'data.type'",
+        dataNode->get("type")->sourceLocation
+      );
+      auto dataBinary(dataNode->getValue<bool>("binary", false));
+      auto fileName(nodePath + (dataBinary ? ".bin" : ".dat"));
       auto sourceLocation(node->sourceLocation);
       // get dimensions from meta data
       auto dimensions(node->getMap("dimensions"));
@@ -134,7 +160,7 @@ namespace cc4s {
       for (auto key: dimensions->getKeys()) {
         lens.push_back(dimensions->getMap(key)->getValue<size_t>("length"));
       }
-      if (useBinary) {
+      if (dataBinary) {
         return readTensorDataBinary<F,TE>(fileName, lens, sourceLocation);
       } else {
         return readTensorDataText<F,TE>(fileName, lens, sourceLocation);

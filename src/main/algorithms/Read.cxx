@@ -14,11 +14,18 @@ ALGORITHM_REGISTRAR_DEFINITION(Read)
 Ptr<MapNode> Read::run(const Ptr<MapNode> &arguments) {
   auto fileName(arguments->getValue<std::string>("fileName"));
 
-  auto data(Reader(fileName).read());
-
-  // create result
-  auto result(New<MapNode>(data->sourceLocation));
-  result->get("data") = data;
-  return result;
+  try {
+    auto data(Reader(fileName).read());
+    // create result
+    auto result(New<MapNode>(data->sourceLocation));
+    result->get("data") = data;
+    return result;
+  } catch (const Ptr<Exception> &cause) {
+    throw New<Exception>(
+      "Failed to read file '" + fileName + "'",
+      arguments->get("fileName")->sourceLocation,
+      cause
+    );
+  }
 }
 
