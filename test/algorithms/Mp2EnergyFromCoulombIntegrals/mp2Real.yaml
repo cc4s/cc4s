@@ -1,49 +1,49 @@
-- name: TensorReader
+- name: Read
   in:
-    fileName: "../../../tutorials/systems/H2O/EigenEnergiesReal.yaml"
+    fileName: "../../../../cc4s-tutorials/systems/H2O/EigenEnergiesReal.yaml"
   out:
-    tensor: EigenEnergies
+    data: EigenEnergies
 
-- name: TensorReader
+- name: Read
   in:
-    fileName: "../../../tutorials/systems/H2O/Spins.yaml"
+    fileName: "../../../../cc4s-tutorials/systems/H2O/StatePropertiesReal.yaml"
   out:
-    tensor: Spins
+    data: StateProperties
 
-- name: TensorReader
+- name: Read
   in:
-    fileName: "../../../tutorials/systems/H2O/FockOperatorReal.yaml"
+    fileName: "../../../../cc4s-tutorials/systems/H2O/CoulombVertexReal.yaml"
   out:
-    tensor: CoulombVertex
-
-- name: TensorReader
-  in:
-    fileName: "../../../tutorials/systems/H2O/CoulombVertexReal.yaml"
-  out:
-    tensor: CoulombVertex
+    data: CoulombVertex
 
 - name: DefineHolesAndParticles
   in:
     eigenEnergies: EigenEnergies
+    stateProperties: StateProperties
   out:
     slicedEigenEnergies: EigenEnergies
 
-- name: SliceOperator
+- name: Write
   in:
-    slicedEigenEnergies: EigenEnergies
-    operator: CoulombVertex
-  out:
-    slicedOperator: CoulombVertex
+    data: EigenEnergies
+    fileName: SlicedEigenEnergies.yaml
 
-- name: CoulombIntegralsFromVertex
-  in:
-    slicedCoulombVertex: CoulombVertex
-  out:
-    coulombIntegrals: CoulombIntegrals
-
-- name: Mp2EnergyFromCoulombIntegrals
-  in:
-    slicedEigenEnergies: EigenEnergies
-    coulombIntegrals: CoulombIntegrals
-  out:
-    energy: Mp2Energy
+#- name: SliceOperator
+#  in:
+#    slicedEigenEnergies: EigenEnergies
+#    operator: CoulombVertex
+#  out:
+#    slicedOperator: CoulombVertex
+#
+#- name: CoulombIntegralsFromVertex
+#  in:
+#    slicedCoulombVertex: CoulombVertex
+#  out:
+#    coulombIntegrals: CoulombIntegrals
+#
+#- name: Mp2EnergyFromCoulombIntegrals
+#  in:
+#    slicedEigenEnergies: EigenEnergies
+#    coulombIntegrals: CoulombIntegrals
+#  out:
+#    energy: Mp2Energy
