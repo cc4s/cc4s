@@ -11,49 +11,49 @@ ALGORITHM_REGISTRAR_DEFINITION(StructureFactor)
 
 Ptr<MapNode> StructureFactor::run(const Ptr<MapNode> &arguments) {
   auto result(New<MapNode>(SOURCE_LOCATION));
-  int success(0);
-  if (arguments->get("amplitudes")) {
-    // multiplex calls to template methods
-
-    if (Cc4s::options->dryRun) {
-      using TE = DefaultDryTensorEngine;
-      success = calculateStructureFactor<Real<>,TE>(arguments, result);
-      if (!success) success = calculateStructureFactor<Complex<>,TE>(arguments, result);
-    } else {
-      using TE = DefaultTensorEngine;
-      success = calculateStructureFactor<Real<>,TE>(arguments, result);
-      if (!success) success = calculateStructureFactor<Complex<>,TE>(arguments, result);
-    }
-    ASSERT(
-      success, "unsupported orbitals type in amplitudes");
+  // multiplex calls to template methods
+  bool success(false);
+  if (Cc4s::options->dryRun) {
+    using TE = DefaultDryTensorEngine;
+    success =
+      StructureFactorCalculator<Real<>,TE>::run(arguments, result) ||
+      StructureFactorCalculator<Complex<>,TE>::run(arguments, result);
+  } else {
+    using TE = DefaultTensorEngine;
+    success =
+      StructureFactorCalculator<Real<>,TE>::run(arguments, result) ||
+      StructureFactorCalculator<Complex<>,TE>::run(arguments, result);
   }
-
-  auto interpolate(arguments->getValue<bool>("interpolate", false));
-  if (interpolate) {
-    if (Cc4s::options->dryRun) {
-      using TE = DefaultDryTensorEngine;
-      interpolation<TE>(arguments, result);
-    }
-    else {
-      using TE = DefaultTensorEngine;
-      interpolation<TE>(arguments, result);
-    }
-  }
+  ASSERT(
+    success, "unsupported orbitals type in amplitudes"
+  );
   return result;
 }
 
 // code for real and hope that complex works
 template <typename F, typename TE>
-int StructureFactor::calculateStructureFactor(
-  const Ptr<MapNode> &arguments,
-  Ptr<MapNode> &result
+bool StructureFactorCalculator<F,TE>::run(
+  const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ){
+  auto amplitudesNode(
+    arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>()
+  );
+  // amplitudesNode is nullptr if the node was of different type
+  if (!amplitudesNode) return false;
+
+  // create calculator object
+  StructureFactorCalculator<F,TE> calculator(amplitudesNode->value);
+
+  calculator.calculate(arguments, result);
+  return true;
+}
+
+template <typename F, typename TE>
+void StructureFactorCalculator<F,TE>::calculate(
+  const Ptr<MapNode> &arguments, Ptr<MapNode> &result
+) {
   using TRc = TensorRecipe<Complex<>, TE>;
   using Tc = Tensor<Complex<>, TE>;
-  auto amplitudesNode(arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>());
-  //amplitudesNode is nullptr if the node was of different type
-  if (!amplitudesNode) return 0;
-  auto amplitudes(amplitudesNode->value);
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
   //Note: the field variable F is the SVD reduced version of the reciprocal grid G.
@@ -115,7 +115,6 @@ int StructureFactor::calculateStructureFactor(
 //  structureFactor->get("data") = StructureFactor;
 //  structureFactor->get("scalarType") = "Real64";
   result->get("structureFactor") = structureFactor;
-  return 1;
 }
 
 template <typename TE>
