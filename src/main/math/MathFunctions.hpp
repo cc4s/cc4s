@@ -48,8 +48,9 @@ namespace cc4s {
 
   //TODO: no backstop if x=0
   template <typename F>
-  inline F inverseSqrt(const F x) {
-    return F(1.0/std::sqrt(std::real(x)));
+  inline F inverseSqrt(const Real<> x) {
+    return F(1.0/std::sqrt(x));
+//    return F(1.0/x);
   }
 
   template <typename F>

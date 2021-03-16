@@ -50,6 +50,7 @@ int StructureFactor::calculateStructureFactor(
 ){
   using TRc = TensorRecipe<Complex<>, TE>;
   using Tc = Tensor<Complex<>, TE>;
+  using Tr = Tensor<Real<>, TE>;
   auto amplitudesNode(arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>());
   //amplitudesNode is nullptr if the node was of different type
   if (!amplitudesNode) return 0;
@@ -79,17 +80,18 @@ int StructureFactor::calculateStructureFactor(
   //out the reciprocal Coulomb kernel
   //Finally the StructureFactor reads: S(G)=Cai(G)*Cbj*(G)*Tabij
   auto CGph = ( Tcc<TE>::template tensor<Complex<>>("CGph"));
-  auto CGhp = ( Tcc<TE>::template tensor<Complex<>>("CGhp"));
+  auto cTCGhp = ( Tcc<TE>::template tensor<Complex<>>("CGhp"));
   auto CoulombPotential(arguments->getMap("coulombPotential"));
-  auto VofG(CoulombPotential->getValue<Ptr<Tc>>("data"));
+  auto VofG(CoulombPotential->getValue<Ptr<Tr>>("data"));
   auto invSqrtCoulombPotential( Tcc<TE>::template tensor<Complex<>>
     ("invSqrtCoulombPotential"));
 
   COMPILE(
     (*invSqrtCoulombPotential)["G"] <<=
       map<Complex<>>(inverseSqrt<Complex<>>, (*VofG)["G"]),
-    (*CGph)["Gai"] <<= (*GammaGph)["Gai"] * (*invSqrtCoulombPotential)["G"],
-    (*CGhp)["Gia"] <<= (*GammaGhp)["Gia"] * (*invSqrtCoulombPotential)["G"],
+    (*CGph)["Gai"]   <<= (*GammaGph)["Gai"] * (*invSqrtCoulombPotential)["G"],
+    (*cTCGhp)["Gia"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGph)["Gai"]),
+    (*cTCGhp)["Gia"] <<= (*cTCGhp)["Gia"] * (*invSqrtCoulombPotential)["G"],
     (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"]
   )->execute();
 
@@ -100,8 +102,8 @@ int StructureFactor::calculateStructureFactor(
 
   auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
   COMPILE(
-    (*SofG)["G"] <<= ( 2.0) * (*CGhp)["Gia"] * (*CGph)["Gbj"] * (*Tabij)["abij"],
-    (*SofG)["G"]  += (-1.0) * (*CGhp)["Gja"] * (*CGph)["Gbi"] * (*Tabij)["abij"]
+    (*SofG)["G"] <<= ( 2.0) * (*cTCGhp)["Gia"] * (*CGph)["Gbj"] * (*Tabij)["abij"],
+    (*SofG)["G"]  += (-1.0) * (*cTCGhp)["Gja"] * (*CGph)["Gbi"] * (*Tabij)["abij"]
   )->execute();
 
 
@@ -111,10 +113,7 @@ int StructureFactor::calculateStructureFactor(
   )->execute();
 
   auto structureFactor(New<MapNode>(SOURCE_LOCATION));
-  structureFactor->get("dimensions") = CoulombPotential->get("dimensions");
-//  structureFactor->get("data") = StructureFactor;
-//  structureFactor->get("scalarType") = "Real64";
-  result->get("structureFactor") = structureFactor;
+  result->setValue<Ptr<Tensor<Real<>,TE>>>("structureFactor", StructureFactor);
   return 1;
 }
 
@@ -125,7 +124,6 @@ void StructureFactor::interpolation(
 ) {
   using T = Tensor<Real<>, TE>;
 
-  OUT() << "here you can dieeee\n";
   double sum3D(0.0), inter3D(0.0);
   int64_t countNO(0), countNOg(0);
   // hard coded resolution of the fine grid
@@ -137,6 +135,7 @@ void StructureFactor::interpolation(
   auto volume(gridVectors->getValue<Real<>>("volume"));
 
   double factor(4.5835494674469/volume);
+  OUT() << factor << std::endl;
   // READ THE MOMENTUM GRID
   auto grid(gridVectors->getValue<Ptr<T>>("data"));
   ASSERT_LOCATION(
@@ -153,10 +152,25 @@ void StructureFactor::interpolation(
     cartesianGrid[i][1] = output[3*i+1];
     cartesianGrid[i][2] = output[3*i+2];
   }
-  OUT() << "here you can die\n";
+
+
   // READ THE RECIPROCAL CELL
-  std::vector<Vector<>> B;
-  //TODO
+  std::vector<Vector<>> B(3);
+  auto Gix(gridVectors->getValue<Real<>>("Gix"));
+  auto Giy(gridVectors->getValue<Real<>>("Giy"));
+  auto Giz(gridVectors->getValue<Real<>>("Giz"));
+  auto Gjx(gridVectors->getValue<Real<>>("Gjx"));
+  auto Gjy(gridVectors->getValue<Real<>>("Gjy"));
+  auto Gjz(gridVectors->getValue<Real<>>("Gjz"));
+  auto Gkx(gridVectors->getValue<Real<>>("Gkx"));
+  auto Gky(gridVectors->getValue<Real<>>("Gky"));
+  auto Gkz(gridVectors->getValue<Real<>>("Gkz"));
+
+
+  B[0][0] = Gix; B[0][1] = Giy; B[0][2] = Giz ;
+  B[1][0] = Gjx; B[1][1] = Gjy; B[1][2] = Gjz ;
+  B[2][0] = Gkx; B[2][1] = Gky; B[2][2] = Gkz ;
+  OUT() << "here you can die\n";
 
   // READ THE Structure Factor
   std::vector<Real<>> SofG;
@@ -168,6 +182,7 @@ void StructureFactor::interpolation(
   );
   SofG = sfactor->readAll();
 
+  OUT() << "here you can diee\n";
   // the tricubic interpolation requires a rectangular grid
   // ---> transformation
 
@@ -194,6 +209,7 @@ void StructureFactor::interpolation(
     boxSize *= boxDimensions[d] = std::floor(directMax[d] - directMin[d] + 1.5);
     boxOrigin[d] = std::floor(directMin[d] + 0.5);
   }
+  OUT() << "here you can dieee\n";
 
   // allocate and initialize direct-grid StructureFactor
   std::vector<Real<>> directSofG(boxSize, 0.0);
