@@ -1,25 +1,25 @@
 /*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
-#ifndef DELTA_INTEGRALS
-#define DELTA_INTEGRALS
+#ifndef BASIS_SET_CORRECTION
+#define BASIS_SET_CORRECTION
 
 #include <algorithms/Algorithm.hpp>
 #include <math/TensorUnion.hpp>
 
 namespace cc4s {
   /**
-   * \brief Caclulates Integral with the delta-Kernel
+   * \brief Caclulates basis set correction scheme called ps-ppl
    */
-  class StructureFactor: public Algorithm {
+  class BasisSetCorrection: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(StructureFactor)
+    ALGORITHM_REGISTRAR_DECLARATION(BasisSetCorrection)
     /**
-     * \brief run routine as always
+     * \brief run routine 
      */
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
 
   protected:
     template <typename F, typename TE>
-    Ptr<MapNode> calculateStructureFactor(const Ptr<MapNode> &arguments);
+    bool run(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
   
   };
 }

@@ -50,9 +50,9 @@ namespace cc4s {
   template <typename F>
   inline F inverseSqrt(const Real<> x) {
     return F(1.0/std::sqrt(x));
-//    return F(1.0/x);
   }
 
+  //TODO: no backstop if x=0
   template <typename F>
   inline F inverse(const F x) {
     return F(1.0/x);
@@ -68,6 +68,19 @@ namespace cc4s {
     return Complex<>(x);
   }
 
+  template <typename F>
+  F fromComplex(Complex<> &d);
+
+
+  template <typename F=Real<>>
+  Real<> fromComplex(Complex<> &d) {
+    return std::real(d);
+  }
+
+  template <typename F=Complex<>>
+  Complex<> fromComplex(Complex<> &d) {
+    return d;
+  }
 
   // real part, same if real
   template <typename F>
