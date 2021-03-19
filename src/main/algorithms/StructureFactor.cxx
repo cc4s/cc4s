@@ -2,9 +2,14 @@
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <math/TensorUnion.hpp>
-
+#include <math/MathFunctions.hpp>
 
 using namespace cc4s;
+
+template <typename F> inline
+F projectReal(Complex<> d) {
+  return F(std::real(d));
+}
 
 ALGORITHM_REGISTRAR_DEFINITION(StructureFactor)
 
@@ -97,9 +102,9 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
     (*cTCGph)["Gai"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGhp)["Gia"]),
     (*cTCGph)["Gai"]  <<= (*cTCGph)["Gai"] * (*invSqrtCoulombPotential)["G"],
     (*Dpphhc)["abij"] <<= (*cTCGph)["Gai"] * (*CGph)["Gbj"],
-//TODO: we have to bring in from complex in F 
-//    (*Dpphh)["abij"]  <<= map<F>(fromComplex<F>, (*Dpphhc)["abij"]), 
-    // HH 
+//TODO: we have to bring in from complex in F
+    (*Dpphh)["abij"]  <<= map<F>(projectReal<F>, (*Dpphhc)["abij"]),
+    // HH
     (*CGhh)["Gij"]   <<= (*GammaGhh)["Gij"] * (*invSqrtCoulombPotential)["G"],
     (*cTCGhh)["Gji"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGhh)["Gij"]),
     (*cTCGhh)["Gji"] <<= (*cTCGhh)["Gji"] * (*invSqrtCoulombPotential)["G"],
