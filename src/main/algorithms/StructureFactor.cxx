@@ -113,35 +113,36 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
     (*Nij)["ij"] <<= map<F>(projectReal<F>, (*Nijc)["ij"])
   )->execute();
 
+  auto StructureFactor( Tcc<TE>::template tensor<Real<>>("StructureFactor"));
   //prepare T amplitudes
+  
+
+  //THESE TWO LINES ARE SEGFAULTING  
   auto amplitudesNode(
     arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>()
   );
-  auto StructureFactor( Tcc<TE>::template tensor<Real<>>("StructureFactor"));
-  if (amplitudesNode) {
-    auto amplitudes(amplitudesNode->value);
-    auto Tph( amplitudes->get(0) );
-    auto Tpphh( amplitudes->get(1) );
-    auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
+  auto amplitudes(amplitudesNode->value);
 
-    COMPILE(
-      (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
-      (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"])
-    )->execute();
+  auto Tph( amplitudes->get(0) );
+  auto Tpphh( amplitudes->get(1) );
+  auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
 
-    auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
-    COMPILE(
-      (*SofG)["G"] <<= ( 2.0) * (*cTCGph)["Gai"] * (*CGph)["Gbj"] * (*Tabij)["abij"],
-      (*SofG)["G"]  += (-1.0) * (*cTCGph)["Gaj"] * (*CGph)["Gbi"] * (*Tabij)["abij"],
-      (*StructureFactor)["G"] <<= map<Real<>>(real<Complex<>>, (*SofG)["G"])
-    )->execute();
-  }
 
+  COMPILE(
+//    (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
+    (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"])
+  )->execute();
+
+  auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
+  COMPILE(
+    (*SofG)["G"] <<= ( 2.0) * (*cTCGph)["Gai"] * (*CGph)["Gbj"] * (*Tabij)["abij"],
+    (*SofG)["G"]  += (-1.0) * (*cTCGph)["Gaj"] * (*CGph)["Gbi"] * (*Tabij)["abij"],
+    (*StructureFactor)["G"] <<= map<Real<>>(real<Complex<>>, (*SofG)["G"])
+  )->execute();
 
   auto result(New<MapNode>(SOURCE_LOCATION));
-  if (amplitudesNode) {
-    result->setValue<Ptr<Tensor<Real<>, TE>>>("structureFactor", StructureFactor);
-  }
+
+  result->setValue<Ptr<Tensor<Real<>, TE>>>("structureFactor", StructureFactor);
   result->setValue<Ptr<Tensor<F, TE>>>("deltaIntegrals", Dpphh);
   result->setValue<Ptr<Tensor<F, TE>>>("nij", Nij);
   return result;
