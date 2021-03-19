@@ -77,6 +77,7 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   DEFINE_VERTEX_PART(imag, ph)
   DEFINE_VERTEX_PART(imag, hp)
   DEFINE_VERTEX_PART(imag, hh)
+#undef DEFINE_VERTEX_PART
 
 #define DEFINE_REAL_INTEGRALS_SLICE(LO,RO,LI,RI) \
   { \
@@ -113,6 +114,7 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   DEFINE_REAL_INTEGRALS_SLICE(p,h,p,p);
   DEFINE_REAL_INTEGRALS_SLICE(h,p,p,p);
   DEFINE_REAL_INTEGRALS_SLICE(p,p,p,p);
+#undef DEFINE_REAL_INTEGRALS_SLICE
 
   // create result
   auto coulombIntegrals(New<MapNode>(SOURCE_LOCATION));
