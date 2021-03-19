@@ -85,7 +85,7 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
   auto CGhh   = ( Tcc<TE>::template tensor<Complex<>>("CGhh"));
   auto cTCGhh = ( Tcc<TE>::template tensor<Complex<>>("cTCGhh"));
   auto Nijc   = ( Tcc<TE>::template tensor<Complex<>>("Nijc"));
-  auto Nij    = ( Tcc<TE>::template tensor<Real<>>("Nij"));
+  auto Nij    = ( Tcc<TE>::template tensor<F>("Nij"));
   auto Dpphhc = ( Tcc<TE>::template tensor<Complex<>>("Dpphhc"));
   auto Dpphh  = ( Tcc<TE>::template tensor<F>("Dpphh"));
 
@@ -102,16 +102,15 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
     (*cTCGph)["Gai"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGhp)["Gia"]),
     (*cTCGph)["Gai"]  <<= (*cTCGph)["Gai"] * (*invSqrtCoulombPotential)["G"],
     (*Dpphhc)["abij"] <<= (*cTCGph)["Gai"] * (*CGph)["Gbj"],
-//TODO: we have to bring in from complex in F
     (*Dpphh)["abij"]  <<= map<F>(projectReal<F>, (*Dpphhc)["abij"]),
     // HH
     (*CGhh)["Gij"]   <<= (*GammaGhh)["Gij"] * (*invSqrtCoulombPotential)["G"],
     (*cTCGhh)["Gji"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGhh)["Gij"]),
     (*cTCGhh)["Gji"] <<= (*cTCGhh)["Gji"] * (*invSqrtCoulombPotential)["G"],
     // Nij 
-    (*Nijc)["ij"] <<= (*cTCGhh)["Gii"] * (*CGhh)["Gjj"]
+    (*Nijc)["ij"] <<= (*cTCGhh)["Gii"] * (*CGhh)["Gjj"],
 //TODO: we have to bring it from complex in F
-//    (*Nij)["ij"] <<= map<F>(fromComplex<F>, (*Nijc)["ij"])
+    (*Nij)["ij"] <<= map<F>(projectReal<F>, (*Nijc)["ij"])
   )->execute();
 
   //prepare T amplitudes
@@ -143,7 +142,7 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
   if (amplitudesNode) {
     result->setValue<Ptr<Tensor<Real<>, TE>>>("structureFactor", StructureFactor);
   }
-//  result->setValue<Ptr<Tensor<F, TE>>>("deltaIntegrals", Dpphh);
-//  result->setValue<Ptr<Tensor<F, TE>>>("nij", Nij);
+  result->setValue<Ptr<Tensor<F, TE>>>("deltaIntegrals", Dpphh);
+  result->setValue<Ptr<Tensor<F, TE>>>("nij", Nij);
   return result;
 }
