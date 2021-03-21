@@ -30,14 +30,14 @@ Ptr<MapNode> StructureFactor::run(const Ptr<MapNode> &arguments) {
     using TE = DefaultDryTensorEngine;
     if (momentumType == "halfGrid") {
       return calculateStructureFactor<Real<>, TE>(arguments);
-    } else {
+    } else if (momentumType == "fullGrid") {
       return calculateStructureFactor<Complex<>,TE>(arguments);
     }
   } else {
     using TE = DefaultTensorEngine;
-    if (momentumType == "fullGrid") { 
+    if (momentumType == "halfGrid") {
       return calculateStructureFactor<Real<>,TE>(arguments);
-    } else {
+    } else if (momentumType == "fullgrid") {
       return calculateStructureFactor<Complex<>,TE>(arguments);
     }
   }
@@ -46,7 +46,7 @@ Ptr<MapNode> StructureFactor::run(const Ptr<MapNode> &arguments) {
   );
 }
 
-// This algorithm works as follows: 
+// This algorithm works as follows:
 // - undo the SVD of the CoulombVertex and bring it back to reciprocal mesh
 // - divide te CoulombVertex by the Coulomb potential to obtain the codensities
 
@@ -107,17 +107,16 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
     (*CGhh)["Gij"]   <<= (*GammaGhh)["Gij"] * (*invSqrtCoulombPotential)["G"],
     (*cTCGhh)["Gji"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGhh)["Gij"]),
     (*cTCGhh)["Gji"] <<= (*cTCGhh)["Gji"] * (*invSqrtCoulombPotential)["G"],
-    // Nij 
+    // Nij
     (*Nijc)["ij"] <<= (*cTCGhh)["Gii"] * (*CGhh)["Gjj"],
-//TODO: we have to bring it from complex in F
     (*Nij)["ij"] <<= map<F>(projectReal<F>, (*Nijc)["ij"])
   )->execute();
 
   auto StructureFactor( Tcc<TE>::template tensor<Real<>>("StructureFactor"));
   //prepare T amplitudes
-  
 
-  //THESE TWO LINES ARE SEGFAULTING  
+
+  //THESE TWO LINES ARE SEGFAULTING
   auto amplitudesNode(
     arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>()
   );
