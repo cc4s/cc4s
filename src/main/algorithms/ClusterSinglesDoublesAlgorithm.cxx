@@ -58,7 +58,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
       "initialAmplitudes"
     );
     OUT() << "Using given initial amplitudes " << amplitudes << std::endl;
-    i = 1;
+    restart = true;
   } else {
     amplitudes = createAmplitudes<F,TE>(
       {{Nv,No}, {Nv,Nv,No,No}}, {"ai", "abij"}

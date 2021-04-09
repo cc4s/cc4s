@@ -66,10 +66,6 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
   bool ppl(arguments->getValue<bool>("ppl", true));
 
   if (iteration == 0 && !restart ) {
-    //TODO
-    // && !isArgumentGiven("initialDoublesAmplitudes"))  {
-    // For first iteration compute only the MP2 amplitudes
-//    OUT() << "\tMP2 T2 Amplitudes" << std::endl;
     COMPILE(
       (*Rpphh)["abij"] += (*Vpphh)["abij"]
     )->execute();
