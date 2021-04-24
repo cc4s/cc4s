@@ -64,6 +64,7 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("pphh"));
   bool ppl(arguments->getValue<bool>("ppl", true));
+  bool cc2(arguments->getValue<bool>("cc2", false));
 
   if (iteration == 0 && !restart ) {
     COMPILE(
@@ -121,15 +122,50 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*Xabij)["abij"] <<= (*Tpphh)["abij"],
       (*Xabij)["abij"] += (*Tph)["ai"] * (*Tph)["bj"],
       (*Yabij)["abij"] <<= (*Tpphh)["abij"],
-      (*Yabij)["abij"] += ( 2.0) * (*Tph)["ai"] * (*Tph)["bj"],
-      /////////////////////////////////////
-      // Lac and Kac for doubles amplitudes
-      /////////////////////////////////////
-      // Build Kac
-      (*Kac)["ac"] <<= (-2.0) * (*Vpphh)["cdkl"] * (*Xabij)["adkl"],
-      (*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Xabij)["adkl"],
-      // Lac
-      (*Lac)["ac"] <<= (*Kac)["ac"],
+      (*Yabij)["abij"] += ( 2.0) * (*Tph)["ai"] * (*Tph)["bj"]
+    )->execute();
+
+
+    /////////////////////////////////////
+    // Lac and Kac for doubles amplitudes
+    /////////////////////////////////////
+    if(cc2) {
+ //     OUT() << "\tUsing the 2CC approximation"  << std::endl;
+      COMPILE(
+        // Build Kac with C-term removed (https://doi.org/10.1063/1.4979078, figure 1)
+        (*Kac)["ac"] <<= (-2.0) * (*Vpphh)["cdkl"] * (*Tph)["ak"] * (*Tph)["dl"],
+        (*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Tph)["ak"] * (*Tph)["dl"],
+        // Lac
+        (*Lac)["ac"] <<= (*Kac)["ac"],
+	//Add left-out term of Kac for T1-equation later
+        (*Kac)["ac"]  += (-2.0) * (*Vpphh)["cdkl"] * (*Tpphh)["adkl"],
+	(*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Tpphh)["adkl"],
+        //Xakic with D-term removed
+        (*Xakic)["akic"] <<= (-1.0) * (*Vpphh)["dclk"] * (*Tph)["di"] * (*Tph)["al"]
+      )->execute();
+    }
+    else{
+//      OUT() << "\tNOT using the 2CC approximation"  << std::endl;
+      COMPILE(
+        //Build Kac
+        (*Kac)["ac"] <<= (-2.0) * (*Vpphh)["cdkl"] * (*Xabij)["adkl"],
+	(*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Xabij)["adkl"],
+        // Lac
+        (*Lac)["ac"] <<= (*Kac)["ac"],
+        //Xakic
+        (*Xakic)["akic"] <<= (-0.5) * (*Vpphh)["dclk"] * (*Yabij)["dail"],
+        (*Xakic)["akic"] += ( 1.0) * (*Vpphh)["dclk"] * (*Tpphh)["adil"], //if 2CC: throw out (D^c term)
+        //TODO if (!distinguishable) {
+        (*Xakic)["akic"] += (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["adil"], //if 2CC: throw out (D^{ex} term)
+	//Xakci
+	//TODO  if (!distinguishable) {
+        (*Xakci)["akci"] <<= (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["dail"]
+      )->execute();
+    
+    }
+
+    COMPILE(
+
       // TODO distiguish
       (*Lac)["ac"] +=
         ( 2.0) * (*realGammaGpp)["Gca"] * (*realGammaGph)["Gdk"] * (*Tph)["dk"],
@@ -171,18 +207,15 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*realDressedGammaGph)["Gai"] += ( 1.0) * (*realGammaGpp)["Gad"] * (*Tph)["di"],
       (*imagDressedGammaGph)["Gai"] += ( 1.0) * (*imagGammaGpp)["Gad"] * (*Tph)["di"],
       // FIXME: there is a better way for the contractions (see complex code)
-      (*Xakic)["akic"] <<=
+      (*Xakic)["akic"] +=
         ( 1.0) * (*realDressedGammaGph)["Gai"] * (*realGammaGph)["Gck"],
       (*Xakic)["akic"] +=
         ( 1.0) * (*imagDressedGammaGph)["Gai"] * (*imagGammaGph)["Gck"],
-      (*Xakic)["akic"] += (-0.5) * (*Vpphh)["dclk"] * (*Yabij)["dail"],
-      (*Xakic)["akic"] += ( 1.0) * (*Vpphh)["dclk"] * (*Tpphh)["adil"],
-      //TODO if (!distinguishable) {
-      (*Xakic)["akic"] += (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["adil"],
+
       // Contract and Xakic intermediates with T2 amplitudes Tabij
       (*Zabij)["cbkj"] <<= ( 2.0) * (*Tpphh)["cbkj"],
       (*Zabij)["cbkj"] += (-1.0) * (*Tpphh)["bckj"],
-      (*Rpphh)["abij"] += ( 1.0) * (*Xakic)["akic"] * (*Zabij)["cbkj"],
+      (*Rpphh)["abij"] += ( 1.0) * (*Xakic)["akic"] * (*Zabij)["cbkj"], //affected by 2CC
       ////////
       // Xakci
       ////////
@@ -194,14 +227,13 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
       (*imagDressedGammaGhh)["Gij"] <<= (*imagGammaGhh)["Gij"],
       (*realDressedGammaGhh)["Gki"]  += ( 1.0) * (*realGammaGph)["Gdk"] * (*Tph)["di"],
       (*imagDressedGammaGhh)["Gki"]  += ( 1.0) * (*imagGammaGph)["Gdk"] * (*Tph)["di"],
-      (*Xakci)["akci"] <<= (*realDressedGammaGpp)["Gac"] * (*realDressedGammaGhh)["Gki"],
+      (*Xakci)["akci"] += (*realDressedGammaGpp)["Gac"] * (*realDressedGammaGhh)["Gki"],
       (*Xakci)["akci"] +=  (*imagDressedGammaGpp)["Gac"] * (*imagDressedGammaGhh)["Gki"],
-      //TODO  if (!distinguishable) {
-      (*Xakci)["akci"] += (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["dail"],
+
 
       // Contract and Xakci intermediates with T2 amplitudes Tabij
-      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["akci"] * (*Tpphh)["cbkj"],
-      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"],
+      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["akci"] * (*Tpphh)["cbkj"], //affected by 2CC
+      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"], //affected by 2CC
 
       // Symmetrize Rabij by applying permutation operator
       (*Rpphh)["abij"] += (*Rpphh)["baji"]
