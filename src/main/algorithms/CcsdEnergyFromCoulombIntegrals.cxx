@@ -65,6 +65,15 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("pphh"));
   bool ppl(arguments->getValue<bool>("ppl", true));
   bool cc2(arguments->getValue<bool>("cc2", false));
+  bool dcsd(arguments->getValue<bool>("dcsd", false));
+
+  ASSERT_LOCATION(
+    ((ppl && !(cc2 && dcsd)) || (!ppl && !cc2 && !dcsd)), 
+    "!ppl, cc2 and dscsd are all mutually exclusive.",
+    arguments->get("ppl")->sourceLocation
+//    "unsupported orbitals type '" + scalarType + "'",
+//    coulombIntegrals->get("scalarType")->sourceLocation
+  );
 
   if (iteration == 0 && !restart ) {
     COMPILE(
@@ -132,6 +141,11 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     if(cc2) {
  //     OUT() << "\tUsing the 2CC approximation"  << std::endl;
       COMPILE(
+        // Build Kki, leave A-term unchanged
+        (*Kki)["ki"] <<= ( 2.0) * (*Vpphh)["cdkl"] * (*Xabij)["cdil"],
+        (*Kki)["ki"] +=  (-1.0) * (*Vpphh)["dckl"] * (*Xabij)["cdil"],
+        // Build Lki
+        (*Lki)["ki"] <<= (*Kki)["ki"],
         // Build Kac with C-term removed (https://doi.org/10.1063/1.4979078, figure 1)
         (*Kac)["ac"] <<= (-2.0) * (*Vpphh)["cdkl"] * (*Tph)["ak"] * (*Tph)["dl"],
         (*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Tph)["ak"] * (*Tph)["dl"],
@@ -142,11 +156,42 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
 	(*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Tpphh)["adkl"],
         //Xakic with D-term removed
         (*Xakic)["akic"] <<= (-1.0) * (*Vpphh)["dclk"] * (*Tph)["di"] * (*Tph)["al"]
+	//Leave out D^{ex}-term from Xakci (i.e don't do anything at this point)
+      )->execute();
+    }
+    else if(dcsd){
+//      OUT() << "\tUsing the DCSD approximation"  << std::endl;
+      COMPILE(
+	// Build Kki, prefactor A-term by 0.5
+        (*Kki)["ki"] <<= ( 1.0) * (*Vpphh)["cdkl"] * (*Yabij)["cdil"],
+        (*Kki)["ki"] +=  (-0.5) * (*Vpphh)["dckl"] * (*Yabij)["cdil"],	     
+        // Build Lki
+        (*Lki)["ki"] <<= (*Kki)["ki"],
+	//Add left out term of Kki for T1-equation later
+	(*Kki)["ki"] += ( 1.0) * (*Vpphh)["cdkl"] * (*Tpphh)["cdil"],
+	(*Kki)["ki"] += (-0.5) * (*Vpphh)["dckl"] * (*Tpphh)["cdil"],
+	// Build Kac, prefactor C-term by 0.5
+	(*Kac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Yabij)["adkl"],
+	(*Kac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Yabij)["adkl"],
+	// Lac
+	(*Lac)["ac"] <<= (*Kac)["ac"],
+        //Add left-out term of Kac for T1-equation later
+	(*Kac)["ac"] += (-1.0) * (*Vpphh)["cdkl"] * (*Tpphh)["adkl"],
+	(*Kac)["ac"] += (0.5) * (*Vpphh)["dckl"] * (*Tpphh)["adkl"],
+	//Xakic with D^{ex}-term removed
+	(*Xakic)["akic"] <<= (-0.5) * (*Vpphh)["dclk"] * (*Yabij)["dail"],
+        (*Xakic)["akic"] += ( 1.0) * (*Vpphh)["dclk"] * (*Tpphh)["adil"]
+	//Leave out D^{ex}-term from Xakci (i.e dont't do anything at this point)
       )->execute();
     }
     else{
 //      OUT() << "\tNOT using the 2CC approximation"  << std::endl;
       COMPILE(
+        // Build Kki
+        (*Kki)["ki"] <<= ( 2.0) * (*Vpphh)["cdkl"] * (*Xabij)["cdil"],
+        (*Kki)["ki"] +=  (-1.0) * (*Vpphh)["dckl"] * (*Xabij)["cdil"],
+        // Build Lki
+        (*Lki)["ki"] <<= (*Kki)["ki"],
         //Build Kac
         (*Kac)["ac"] <<= (-2.0) * (*Vpphh)["cdkl"] * (*Xabij)["adkl"],
 	(*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Xabij)["adkl"],
@@ -175,11 +220,8 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
         (-1.0) * (*realGammaGph)["Gck"] * (*realGammaGpp)["Gda"] * (*Tph)["dk"],
       (*Lac)["ac"] +=
         (-1.0) * (*imagGammaGph)["Gck"] * (*imagGammaGpp)["Gda"] * (*Tph)["dk"],
-      // Build Kki
-      (*Kki)["ki"] <<= ( 2.0) * (*Vpphh)["cdkl"] * (*Xabij)["cdil"],
-      (*Kki)["ki"] +=  (-1.0) * (*Vpphh)["dckl"] * (*Xabij)["cdil"],
-      // Build Lki
-      (*Lki)["ki"] <<= (*Kki)["ki"],
+
+
       //TODO distinguish
       (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tph)["cl"],
       (*Lki)["ki"] += (-1.0) * (*Vhhhp)["lkic"] * (*Tph)["cl"],
@@ -245,25 +287,64 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
           (*Rpphh)["abij"] += (*Vpphh)["abij"]
         )->execute();
       }
+    if(dcsd && ppl){
+//      OUT() << "\tdcsd AND ppl are true"  << std::endl;
+      COMPILE(
+        ///////
+        //Xklij
+        ///////
+        (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
+        (*Xklij)["klij"]  += (*Vhhhp)["klic"] * (*Tph)["cj"],
+        (*Xklij)["klij"]  += (*Vhhhp)["lkjc"] * (*Tph)["ci"],
+        // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
+        (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
+        //Construct last term without B-term
+	(*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Tph)["ci"] * (*Tph)["dj"],
+	(*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tpphh)["abkl"]//,
+//	//Add left-out term for second Xklij-contribution
+//	(*Xklij)["klij"] += (*Vpphh)["cdkl"] * (*Tpphh)["cdij"],
+//	(*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tph)["ak"] * (*Tph)["bl"]
+      )->execute(); 
+    }
+    else{
+      COMPILE(
+        ///////
+        //Xklij
+        ///////
+        (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
+        (*Xklij)["klij"]  += (*Vhhhp)["klic"] * (*Tph)["cj"],
+        (*Xklij)["klij"]  += (*Vhhhp)["lkjc"] * (*Tph)["ci"],
+        // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
+        (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
+        // Construct last term
+        //TODO if (!distinguishable) {
+        (*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Xabij)["cdij"],
+        (ppl) ? (
+          (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]
+        ) : (
+          (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Xabij)["abkl"]
+        )
+   )->execute();   
+    }
 
-    COMPILE(
-      ///////
-      //Xklij
-      ///////
-      (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
-      (*Xklij)["klij"]  += (*Vhhhp)["klic"] * (*Tph)["cj"],
-      (*Xklij)["klij"]  += (*Vhhhp)["lkjc"] * (*Tph)["ci"],
-      // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
-      (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
-      // Construct last term
-      //TODO if (!distinguishable) {
-      (*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Xabij)["cdij"],
-      (ppl) ? (
-        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]
-      ) : (
-        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Xabij)["abkl"]
-      )
-    )->execute();
+//    COMPILE(
+//      ///////
+//      //Xklij
+//      ///////
+//      (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
+//      (*Xklij)["klij"]  += (*Vhhhp)["klic"] * (*Tph)["cj"],
+//      (*Xklij)["klij"]  += (*Vhhhp)["lkjc"] * (*Tph)["ci"],
+//      // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
+//      (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
+//      // Construct last term
+//      //TODO if (!distinguishable) {
+//      (*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Xabij)["cdij"],
+//      (ppl) ? (
+//        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]
+//      ) : (
+//        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Xabij)["abkl"]
+//      )
+//    )->execute();
 
     if (ppl) {
 //      OUT() << "\tAdding Particle-particle contraction"  << std::endl;
