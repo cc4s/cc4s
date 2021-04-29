@@ -64,12 +64,12 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("pphh"));
   bool ppl(arguments->getValue<bool>("ppl", true));
-  bool cc2(arguments->getValue<bool>("cc2", false));
+  bool twoCc(arguments->getValue<bool>("2cc", false));
   bool dcsd(arguments->getValue<bool>("dcsd", false));
 
   ASSERT_LOCATION(
-    ((ppl && !(cc2 && dcsd)) || (!ppl && !cc2 && !dcsd)), 
-    "!ppl, cc2 and dscsd are all mutually exclusive.",
+    ((ppl && !(twoCc && dcsd)) || (!ppl && !twoCc && !dcsd)), 
+    "!ppl, 2cc and dscsd are all mutually exclusive.",
     arguments->get("ppl")->sourceLocation
 //    "unsupported orbitals type '" + scalarType + "'",
 //    coulombIntegrals->get("scalarType")->sourceLocation
@@ -138,7 +138,7 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
     /////////////////////////////////////
     // Lac and Kac for doubles amplitudes
     /////////////////////////////////////
-    if(cc2) {
+    if(twoCc) {
  //     OUT() << "\tUsing the 2CC approximation"  << std::endl;
       COMPILE(
         // Build Kki, leave A-term unchanged
