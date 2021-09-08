@@ -7,7 +7,7 @@ Library dependencies
 - The dependencies that are built together with `cc4s` for a given configuration
   are built by issuing the command
   ```
-  make CONFIG=<config> deps
+  make CONFIG=<config> extern
   ```
   where `<config>` is the name of the configuration used.
 - by default the configuration `gcc` is used.
@@ -67,7 +67,7 @@ incompatabilities and it must therefore be done with good care.
 - if you intent to update the master, create a branch from the master.
   In case anything goes wrong the damage is controlled
 - update the dependency at the top level of the cc4s directory structure:
-  by editing the `Libraries.mk` file and replacing the commit hash
+  by editing the `Cc4s.mk` file and replacing the commit hash
   by the new commit hash in the dependency's repository.
 - build the dependency for all configurations supported as described above.
 - build `cc4s` for all configurations supported
