@@ -1,11 +1,18 @@
 CONFIG ?= gcc
 -include config.mk
-include etc/config/${CONFIG}.mk
-include Objects.mk
+CONFIG_PATH ?= etc/config/${CONFIG}.mk
+include ${CONFIG_PATH}
+include Sources.mk
+
+# Check that reqiured makefile variables are indeed defined
+define assert-vardefined
+$(if $(strip $($(1))),,$(error $(1) must be defined))
+endef
+$(foreach _a,$(REQUIRED_MAKEVARS),$(call assert-vardefined,$(_a)))
 
 # goals:
-.DEFAULT_GOAL := all
-.PHONY: test wiki cc4s all clean deps
+.DEFAULT_GOAL := cc4s
+.PHONY: test cc4s clean extern
 
 BUILD_PATH        = build/$(CONFIG)
 OBJ_PATH          = $(BUILD_PATH)/obj
@@ -18,32 +25,26 @@ VERSION          := $(shell git describe --all --dirty --long)
 DATE             := $(shell git log -1 --format="%cd")
 COMPILER_VERSION := $(shell ${CXX} --version | head -n 1)
 
-# add build environment specifics to INCLUDE_FLAGS and to CC4S_OPTIONS
-INCLUDE_FLAGS += -Isrc/main
-CC4S_OPTIONS  +=              \
--D_POSIX_C_SOURCE=200112L     \
--D__STDC_LIMIT_MACROS         \
--DFTN_UNDERSCORE=1            \
--DCC4S_VERSION=\"${VERSION}\" \
-"-DCC4S_DATE=\"${DATE}\""     \
-"-DCOMPILER_VERSION=\"${COMPILER_VERSION}\""
-
 
 # This is a trick just to make sure that the dependencies are built
-DEPS_DONE_FILE = $(BUILD_PATH)/deps-built
-$(DEPS_DONE_FILE): $(IN_PROJECT_DEPENDENCIES)
+EXTERN_DONE_FILE = $(BUILD_PATH)/extern-built
+$(EXTERN_DONE_FILE): $(EXTERNAL_DEPENDENCIES)
 	@mkdir -p $(@D)
 	@touch $@
-deps: $(DEPS_DONE_FILE)
+extern: $(EXTERN_DONE_FILE)
 
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),clean-all)
-ifneq ($(MAKECMDGOALS),deps)
-ifneq ($(CREATE_DEPS),FALSE)
-ifneq ($(wildcard $(DEPS_DONE_FILE)), $(DEPS_DONE_FILE))
-$(warning You have not built the dependencies for $(CONFIG), please build them)
-$(warning with 'make deps CONFIG=$(CONFIG)')
+ifneq ($(MAKECMDGOALS),extern)
+ifneq ($(CREATE_EXTERN),FALSE)
+ifneq ($(wildcard $(EXTERN_DONE_FILE)), $(EXTERN_DONE_FILE))
+$(info )
+$(info )
+$(info You have not built the dependencies for $(CONFIG), please build them)
+$(info with:     $(MAKE) extern CONFIG=$(CONFIG))
+$(info )
+$(info )
 $(error exiting now...)
 endif
 # try to include dependency files in order to trigger their creation
@@ -53,9 +54,6 @@ endif
 endif
 endif
 
-
-# primary target
-all: cc4s
 cc4s: $(BIN_PATH)/${CC4S_TARGET}
 
 clean:
@@ -63,7 +61,7 @@ clean:
 	rm -rf $(BIN_PATH)
 
 clean-all: clean
-	@$(MAKE) CREATE_DEPS=FALSE $(patsubst %,%-clean,$(IN_PROJECT_DEPENDENCIES))
+	@$(MAKE) CREATE_EXTERN=FALSE $(patsubst %,%-clean,$(EXTERNAL_DEPENDENCIES))
 
 test:
 	$(MAKE) -C $@
@@ -73,9 +71,6 @@ unit-test: $(BIN_PATH)/Test
 # generate documentation
 doc:
 	doxygen
-
-wiki:
-	bash utils/extract.sh -R -d wiki/dist -b wiki/build -p src test.wiki
 
 # copy binary to installation directory
 install: $(BIN_PATH)/$(CC4S_TARGET)
@@ -92,23 +87,22 @@ depend: $(DEP_FILES)
 $(OBJ_PATH)/%.d: src/%.cxx
 	$(info [DEP] $@)
 	mkdir -p $(dir $@)
-	${CXX} -MM ${CC4S_OPTIONS} ${INCLUDE_FLAGS} -c src/$*.cxx | \
+	${CXX} -MM ${CXXFLAGS} ${INCLUDE_FLAGS} -c src/$*.cxx | \
 	  sed 's#[^ :]*\.o[ :]*#$(OBJ_PATH)/$*.o $@: #g' > $@
 
 # compile an object file
 $(OBJ_PATH)/%.o: $(OBJ_PATH)/%.d
 	$(info [OBJ] $@)
 	mkdir -p $(dir $@)
-
-	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${INCLUDE_FLAGS} -c src/$*.cxx -o $@
+	${CXX} ${CXXFLAGS} ${INCLUDE_FLAGS} -c src/$*.cxx -o $@
 
 # compile and link executable
 $(BIN_PATH)/${CC4S_TARGET}: ${OBJ_FILES}
 	$(info [BIN] $@)
 	mkdir -p $(dir $@)
-	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJ_FILES} ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
+	${CXX} ${CXXFLAGS} ${OBJ_FILES} ${LDFLAGS} -o $@
 
 # compile and link test executable
 $(BIN_PATH)/Test: ${OBJ_FILES} $(TESTS_OBJECTS)
 	mkdir -p $(dir $@)
-	${CXX} ${CC4S_OPTIONS} ${OPTIMIZE} ${OBJ_FILES} $(TESTS_OBJECTS) ${INCLUDE_FLAGS} ${LINK_LIBS} -o $@
+	${CXX} ${CXXFLAGS} ${OBJ_FILES} $(TESTS_OBJECTS) ${LDFLAGS} -o $@
