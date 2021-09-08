@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef READER_DEFINED
 #define READER_DEFINED
 

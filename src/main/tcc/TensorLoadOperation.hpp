@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_TENSOR_LOAD_OPERATION_DEFINED
 #define TCC_TENSOR_LOAD_OPERATION_DEFINED
 

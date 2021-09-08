@@ -1,4 +1,3 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef COMPLEX_POLYNOMIAL_ROOT_FINDER_DEFINED
 #define COMPLEX_POLYNOMIAL_ROOT_FINDER_DEFINED
 

@@ -1,4 +1,3 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef LOG_DEFINED
 #define LOG_DEFINED
 

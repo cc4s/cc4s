@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef COULOMB_INTEGRALS_FROM_VERTEX_DEFINED
 #define COULOMB_INTEGRALS_FROM_VERTEX_DEFINED
 

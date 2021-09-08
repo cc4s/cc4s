@@ -1,4 +1,3 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef FINITE_SIZE_CORRECTION
 #define FINITE_SIZE_CORRECTION
 

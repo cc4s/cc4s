@@ -1,4 +1,3 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef BASIS_SET_CORRECTION
 #define BASIS_SET_CORRECTION
 

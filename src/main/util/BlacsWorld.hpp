@@ -1,4 +1,3 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef BLACS_WORLD_DEFINED
 #define BLACS_WORLD_DEFINED
 

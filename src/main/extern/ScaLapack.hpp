@@ -1,4 +1,3 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef SCA_LAPACK_DEFINED
 #define SCA_LAPACK_DEFINED
 

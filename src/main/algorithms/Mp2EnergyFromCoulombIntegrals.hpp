@@ -1,4 +1,3 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef MP2_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
 #define MP2_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
 

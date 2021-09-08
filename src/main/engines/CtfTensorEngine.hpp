@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CTF_TENSOR_ENGINE_DEFINED
 #define CTF_TENSOR_ENGINE_DEFINED
 

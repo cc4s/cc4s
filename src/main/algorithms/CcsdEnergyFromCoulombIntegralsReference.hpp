@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CCSD_ENERGY_FROM_COULOMB_INTEGRALS_REFERENCE_DEFINED
 #define CCSD_ENERGY_FROM_COULOMB_INTEGRALS_REFERENCE_DEFINED
 

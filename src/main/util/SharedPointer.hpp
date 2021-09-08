@@ -1,4 +1,3 @@
-/*Copyright (c) 2017, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef SHARED_POINTER_DEFINED
 #define SHARED_POINTER_DEFINED
 
