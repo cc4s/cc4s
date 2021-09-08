@@ -1,4 +1,4 @@
-SRC_FILES= \
+SRC_FILES = \
 main/Cc4s.cxx \
 main/Options.cxx \
 main/Writer.cxx \
@@ -31,6 +31,10 @@ main/mixers/Mixer.cxx \
 main/mixers/LinearMixer.cxx \
 main/mixers/DiisMixer.cxx \
 main/math/TensorUnion.cxx \
+
+ifeq ($(ATRIP), yes)
+SRC_FILES += main/algorithms/Atrip.cxx
+endif
 
 TEST_SRC_FILES = \
 test/math/Antisymmetrize.cxx \
