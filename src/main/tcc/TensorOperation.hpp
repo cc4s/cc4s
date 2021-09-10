@@ -58,10 +58,6 @@ namespace cc4s {
       return result->getName();
     }
 
-    PTR(ESC(Tensor<F,TE>)) getResult() {
-      return result;
-    }
-
 
   protected:
     PTR(ESC(Tensor<F,TE>)) result;
