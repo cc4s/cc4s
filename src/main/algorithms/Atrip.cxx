@@ -13,6 +13,7 @@ Ptr<MapNode> Atrip::run(const Ptr<MapNode> &arguments) {
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
+  OUT() << "Atrip init.. " << std::endl;
   atrip::Atrip::init();
   atrip::Atrip::Input in;
 
@@ -34,12 +35,13 @@ Ptr<MapNode> Atrip::run(const Ptr<MapNode> &arguments) {
    &(arguments                                             \
       ->getMap("slicedEigenEnergies")                      \
       ->getMap("slices")                                   \
-      ->getValue<Ptr<const TensorRecipe<Real<>,TE>>>(#_idx) \
+      ->getValue<Ptr<TensorRecipe<Real<>,TE>>>(#_idx) \
       ->getResult()                                        \
       ->getMachineTensor()                                 \
       ->tensor)
 
-
+  // this is a hack so that a CTF::World gets created for sure
+  CTF::World _w(MPI_COMM_WORLD);
   in
     // setup tensors
     .with_epsilon_i(__eps__(h))

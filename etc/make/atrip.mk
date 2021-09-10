@@ -1,14 +1,18 @@
 ATRIP_GIT_REPOSITORY ?= https://github.com/alejandrogallo/atrip
 ATRIP_MAKEFILE = $(ATRIP_SRC_PATH)/Makefile
-ATRIP_SOURCES = $(ATRIP_SRC_PATH)/Sources.mk
+ATRIP_SOURCES_FILE = $(ATRIP_SRC_PATH)/Sources.mk
 ATRIP_STATIC_LIB = $(ATRIP_BUILD_PATH)/lib/libatrip.a
 ATRIP_CONFIG = lib
 
-$(ATRIP_MAKEFILE):
-	mkdir -p $(@D)
-	git clone -b $(ATRIP_COMMIT) $(ATRIP_GIT_REPOSITORY) $(@D)
+-include $(ATRIP_SOURCES_FILE)
 
-$(ATRIP_STATIC_LIB): $(ATRIP_MAKEFILE)
+
+$(ATRIP_SOURCES_FILE):
+	mkdir -p $(@D)
+	git clone $(ATRIP_GIT_REPOSITORY) $(@D)
+	cd $(@D) && git checkout $(ATRIP_COMMIT)
+
+$(ATRIP_STATIC_LIB): $(ATRIP_SOURCES_FILE)
 	cd $(ATRIP_SRC_PATH) && \
 		$(MAKE) CONFIG=$(ATRIP_CONFIG) \
 						LDFLAGS="$(filter-out -latrip,$(LDFLAGS))" \
@@ -21,6 +25,7 @@ $(ATRIP_STATIC_LIB): $(ATRIP_MAKEFILE)
 
 .PHONY: atrip
 
+$(ATRIP_STATIC_LIB): $(patsubst %,$(ATRIP_SRC_PATH)/%,$(ATRIP_SOURCES))
 atrip: $(ATRIP_STATIC_LIB)
 
 EXTERNAL_DEPENDENCIES += atrip
