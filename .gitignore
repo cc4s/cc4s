@@ -1,4 +1,9 @@
 /config.mk
+/extern
+lib
+.taritz
+TAGS
+tags
 *~
 build/*
 docs/*

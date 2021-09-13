@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef EMITTER_DEFINED
 #define EMITTER_DEFINED
 

@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED 
 #define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
 

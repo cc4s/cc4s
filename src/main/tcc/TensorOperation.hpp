@@ -1,4 +1,3 @@
-/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_TENSOR_OPERATION_DEFINED
 #define TCC_TENSOR_OPERATION_DEFINED
 
@@ -58,6 +57,7 @@ namespace cc4s {
     std::string getName() const {
       return result->getName();
     }
+
 
   protected:
     PTR(ESC(Tensor<F,TE>)) result;

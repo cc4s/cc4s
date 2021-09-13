@@ -1,4 +1,3 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef SCANNER_DEFINED
 #define SCANNER_DEFINED
 

@@ -1,4 +1,3 @@
-/* Copyright 1988 Perico de los palotes */
 #ifndef SETTINGS_HEADER_DEFINED
 #define SETTINGS_HEADER_DEFINED
 

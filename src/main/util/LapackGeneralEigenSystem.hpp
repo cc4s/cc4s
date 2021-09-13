@@ -1,4 +1,3 @@
-/*Copyright (c) 2018, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef LAPACK_GENERAL_EIGEN_SYSTEM_DEFINED
 #define LAPACK_GENERAL_EIGEN_SYSTEM_DEFINED
 

@@ -1,14 +1,13 @@
-#THIS CONFIG SHOULD WORK ON CQC
-
 include Cc4s.mk
-include etc/make/ctf.mk
-include etc/make/yaml.mk
+include Extern.mk
+include etc/make/scalapack.mk
+include etc/make/blas.mk
 
 # compiler and linker
 CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-CC4S_OPTIONS = \
+CXXFLAGS += \
 -fopenmp -std=c++11 \
 -Wall -pedantic --all-warnings -fmax-errors=1 \
 -Wno-vla \
@@ -16,7 +15,7 @@ CC4S_OPTIONS = \
 -DDEBUG
 
 # optimization options (only for compiling and linking)
-OPTIMIZE = -O0 -g -fno-lto
+CXXFLAGS += -O0 -g -fno-lto
 
 CTF_CONFIG_FLAGS = CXX=$(CXX) \
                    AR=gcc-ar \
@@ -24,16 +23,9 @@ CTF_CONFIG_FLAGS = CXX=$(CXX) \
                    LIBS="-L$(BLAS_PATH)/lib" \
                    --no-dynamic
 
-LINK_LIBS = \
+LDFLAGS += \
 -Wl,-Bstatic \
-${YAML_LIB} \
-${CTF_LIB} \
-${SCALAPACK_LIB} \
-${BLAS_LIB} \
+${STATIC_LIBS} \
 -lgfortran -lquadmath \
--Wl,-Bdynamic
-
-INCLUDE_FLAGS = \
-${YAML_INCLUDE} \
-${BLAS_INCLUDE} \
-${CTF_INCLUDE}
+-Wl,-Bdynamic \
+${DYNAMIC_LIBS} \

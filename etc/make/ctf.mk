@@ -1,7 +1,7 @@
-CTF_SRC_PATH = $(abspath lib/src/ctf/$(CTF_COMMIT))
 CTF_CONFIG_FLAGS =
 CTF_STATIC_LIB = $(CTF_BUILD_PATH)/lib/libctf.a
-CTF_GIT_REPOSITORY ?= https://github.com/cc4s/ctf
+CTF_SHARED_LIB = $(CTF_BUILD_PATH)/lib/libctf.so
+CTF_GIT_REPOSITORY ?= https://github.com/cyclops-community/ctf
 
 $(CTF_SRC_PATH)/configure:
 	mkdir -p $(@D)
@@ -22,4 +22,7 @@ ctf: $(CTF_STATIC_LIB)
 ctf-clean:
 	rm -rf $(CTF_BUILD_PATH)
 
-IN_PROJECT_DEPENDENCIES += ctf
+EXTERNAL_DEPENDENCIES += ctf
+STATIC_LIBS += $(CTF_LDFLAGS)
+INCLUDE_FLAGS += $(CTF_INCLUDE)
+REQUIRED_MAKEVARS += CTF_COMMIT CTF_BUILD_PATH CTF_GIT_REPOSITORY CTF_SRC_PATH

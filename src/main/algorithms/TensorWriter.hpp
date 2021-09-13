@@ -1,4 +1,3 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TENSOR_WRITER_DEFINED 
 #define TENSOR_WRITER_DEFINED
 

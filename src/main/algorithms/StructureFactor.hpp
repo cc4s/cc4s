@@ -1,4 +1,3 @@
-/*Copyright (c) 2015, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DELTA_INTEGRALS
 #define DELTA_INTEGRALS
 

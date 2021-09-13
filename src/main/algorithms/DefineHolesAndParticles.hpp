@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DEFINE_HOLES_AND_PARTICLES_DEFINED
 #define DEFINE_HOLES_AND_PARTICLES_DEFINED
 

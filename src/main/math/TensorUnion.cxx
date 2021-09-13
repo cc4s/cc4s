@@ -1,4 +1,3 @@
-/*Copyright (c) 2021, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <math/TensorUnion.hpp>
 #include <Writer.hpp>
 

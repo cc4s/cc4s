@@ -1,4 +1,3 @@
-/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_MOVE_DEFINED
 #define TCC_MOVE_DEFINED
 

@@ -1,4 +1,3 @@
-/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_INDEXING_OPERATION_DEFINED
 #define TCC_INDEXING_OPERATION_DEFINED
 

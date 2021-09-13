@@ -1,16 +1,11 @@
-#Currently Loaded Modulefiles:
-# 1) intel/19.1.1       3) openmpi/4.0.3-intel-19.1.1.217-vbnpf6h  
-# 2) intel-mkl/2020.1   4) cmake/3.15.1-intel-19.1.1.217-nkzxutj
-
 include Cc4s.mk
-include etc/make/ctf.mk
-include etc/make/yaml.mk
+include Extern.mk
 
 # compiler and linker
 CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
-CC4S_OPTIONS = \
+CXXFLAGS += \
 -mkl -lpthread  -std=c++11 \
 -Wall -pedantic -fmax-errors=3 \
 -qopenmp \
@@ -18,7 +13,7 @@ CC4S_OPTIONS = \
 -Qoption,cpp,--extended_float_types
 
 # optimization options (only for compiling and linking)
-OPTIMIZE = -O3
+CXXFLAGS += -O3
 
 # libraries provided by the enviornment
 # BLAS and LAPACK library contained in mkl
@@ -29,12 +24,8 @@ CTF_CONFIG_FLAGS = CXX=mpicxx \
                    CXXFLAGS="-O3" \
                    --no-dynamic
 
-LINK_LIBS = \
+LDFLAGS += \
+-lpthread -qopenmp \
 -mkl \
 ${MKL_LIB} \
-${YAML_LIB} \
-${CTF_LIB} \
-
-INCLUDE_FLAGS = \
-${YAML_INCLUDE} \
-${CTF_INCLUDE}
+${STATIC_LIBS} \

@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef WRITE_DEFINED 
 #define WRITE_DEFINED
 

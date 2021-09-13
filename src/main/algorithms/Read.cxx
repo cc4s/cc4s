@@ -1,4 +1,3 @@
-/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #include <algorithms/Read.hpp>
 
 #include <Cc4s.hpp>

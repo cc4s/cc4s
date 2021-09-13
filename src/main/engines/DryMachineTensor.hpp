@@ -1,4 +1,3 @@
-/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef DRY_MACHINE_TENSOR_DEFINED
 #define DRY_MACHINE_TENSOR_DEFINED
 

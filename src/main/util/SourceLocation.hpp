@@ -1,4 +1,3 @@
-/*Copyright (c) 2016, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef SOURCE_LOCATION_DEFINED
 #define SOURCE_LOCATION_DEFINED
 
