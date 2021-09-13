@@ -116,7 +116,7 @@ bool BasisSetCorrection::run(
   // final multiplicative factor for the cbsEigenEnergies
     (*geff)["ij"] <<= map<Real<>>(real<F>, (*gijccd)["ij"]),
     (*geff)["ij"]  += map<Real<>>(real<F>, (*gijmp2)["ij"]),
-    (*geff)["ij"]  += map<Real<>>(real<F>, (*gijccd)["ij"])
+    (*geff)["ij"]  += map<Real<>>(real<F>, (*gijmp2)["ij"])
                     * map<Real<>>(real<F>, (*gijccd)["ij"]),
 
   // construct ΔEmp2 and scale with geff
