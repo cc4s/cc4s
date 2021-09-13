@@ -12,6 +12,40 @@ Library dependencies
   where `<config>` is the name of the configuration used.
 - by default the configuration `gcc` is used.
 
+Features
+--------
+
+Different features of the code can be controlled by the `config.mk`
+file in the root directory.
+
+For instance, if you want the library `atrip` to be built,
+using the `icc_impi` configuration,
+you can write in your `config.mk` file the following
+
+```make
+ATRIP = yes
+CONFIG = icc_impi
+```
+
+and you can simply build by doing
+
+```sh
+make extern -j4
+make cc4s -j4
+```
+
+Note that you can use the silent mode of the Makefile by issuing
+the make commands with the silent flag `-s`, i.e.,
+```sh
+make -s cc4s -j 4
+```
+or if you want to activate always the silent mode you can write in your
+`config.mk` file
+
+```make
+.SILENT: cc4s
+```
+
 Building
 --------
 
