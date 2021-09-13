@@ -1,4 +1,4 @@
-SRC_FILES = \
+SRC_FILES += \
 main/Cc4s.cxx \
 main/Options.cxx \
 main/Writer.cxx \
