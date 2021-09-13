@@ -43,10 +43,7 @@ SCALAPACK_LDFLAGS ?= -L${SCALAPACK_PATH}/lib -lscalapack
 
 # ATRIP =======================================================================
 ATRIP_COMMIT         ?= 3e9f8bb
-ATRIP_BUILD_PATH     ?= $(CC4S_EXTERN_BUILD)/atrip/$(ATRIP_COMMIT)
-ATRIP_SRC_PATH       ?= $(CC4S_EXTERN_SRC)/atrip/$(CONFIG)/$(ATRIP_COMMIT)
-ATRIP_LDFLAGS        ?= -L${ATRIP_BUILD_PATH}/lib -latrip
-ATRIP_INCLUDE        ?= -I${ATRIP_BUILD_PATH}/include
+ATRIP_SRC_PATH       ?= $(CC4S_INTERN_SRC)/atrip/$(ATRIP_COMMIT)
 ATRIP_GIT_REPOSITORY ?= git@gitlab.cc4s.org:gallo/atrip
 
 # General settings ============================================================
