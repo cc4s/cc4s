@@ -42,7 +42,7 @@ BLAS_LDFLAGS ?= -L${BLAS_PATH}/lib -lopenblas
 SCALAPACK_LDFLAGS ?= -L${SCALAPACK_PATH}/lib -lscalapack
 
 # ATRIP =======================================================================
-ATRIP_COMMIT         ?= 3e9f8bb
+ATRIP_COMMIT         ?= aa2d88e
 ATRIP_SRC_PATH       ?= $(CC4S_INTERN_SRC)/atrip/$(ATRIP_COMMIT)
 ATRIP_GIT_REPOSITORY ?= git@gitlab.cc4s.org:gallo/atrip
 
