@@ -54,6 +54,7 @@ endif
 endif
 endif
 
+$(DEP_FILES): $(INTERNAL_DEPENDENCIES)
 cc4s: $(BIN_PATH)/${CC4S_TARGET}
 
 clean:
