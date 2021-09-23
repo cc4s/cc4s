@@ -48,8 +48,15 @@ bool BasisSetCorrection::run(
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
 
-  auto nij(arguments->getValue<Ptr<T>>("nij"));
-  auto Dabij(arguments->getValue<Ptr<T>>("deltaIntegrals"));
+//  auto nij(arguments->getValue<Ptr<T>>("nij"));
+//  auto nij(arguments->getMap("Nij"));
+//  auto Dabij(arguments->getValue<Ptr<T>>("deltaIntegrals"));
+//
+  auto DabijNode(arguments->getMap("deltaIntegrals"));
+  auto Dabij(DabijNode->getValue<Ptr<Tr>>("data"));
+  auto nijNode(arguments->getMap("nij"));
+  auto nij(nijNode->getValue<Ptr<Tr>>("data"));
+
   // these should be the cbs estimates for the mp2 pair energies
   auto mp2PairEnergiesNode(arguments->getMap("mp2PairEnergies"));
   auto mp2PairEnergiesCbs(mp2PairEnergiesNode->getValue<Ptr<Tr>>("data"));
@@ -60,7 +67,6 @@ bool BasisSetCorrection::run(
   auto eMp2Cbs( Tcc<TE>:: template tensor<Real<>>("Emp2Cbs"));
 
   auto eCcsd( Tcc<TE>::template tensor<F>("Eccsd"));
-
 
   auto Tabij( Tcc<TE>::template tensor<F>("Tabij"));
 
@@ -107,8 +113,8 @@ bool BasisSetCorrection::run(
     (*eCcsd)[""] <<= ( 2.0) * (*Tabij)["abij"] * (*Vabij)["abij"],
     (*eCcsd)[""]  += (-1.0) * (*Tabij)["abij"] * (*Vabij)["abji"],
   // evaluate nominator
-    (*gijccd)["ij"] <<= (*Dabij)["abij"] * (*Tabij)["abij"],
-    (*gijmp2)["ij"] <<= (*Dabij)["abij"] * (*Mabij)["abij"],
+    (*gijccd)["ij"] <<= map<F>(fromReal<F>, (*Dabij)["abij"]) * (*Tabij)["abij"],
+    (*gijmp2)["ij"] <<= map<F>(fromReal<F>, (*Dabij)["abij"]) * (*Mabij)["abij"],
   // divide by <ij|δ|ij>
     (*gijccd)["ij"] <<= (*gijccd)["ij"] * map<F>(inverse<F>, (*nij)["ij"]),
     (*gijmp2)["ij"] <<= (*gijmp2)["ij"] * map<F>(inverse<F>, (*nij)["ij"]),
