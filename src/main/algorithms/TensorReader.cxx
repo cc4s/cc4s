@@ -11,6 +11,9 @@
 
 using namespace cc4s;
 
+// TODO: table of tensor dimension information, belongs in tcc
+std::map<std::string, Ptr<TensorDimension>> tensorDimensions;
+
 ALGORITHM_REGISTRAR_DEFINITION(TensorReader)
 
 /**
@@ -52,6 +55,39 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   return result;
 }
 
+// TODO: belongs in tcc
+Ptr<TensorDimension> getDimension(const std::string &name) {
+  // check if name is entetered in map
+  auto iterator(tensorDimensions.find(name));
+  if (iterator != tensorDimensions.end()) return iterator->second;
+  // otherwise: create new tensor dimension entry
+  auto tensorDimension(New<TensorDimension>());
+  tensorDimension->name = name;
+  // check if file exists specifying dimension properties
+  try {
+    auto propertiesMap(Parser(name + ".properties.yaml").parse()->toMap());
+    for (auto key: propertiesMap->getKeys()) {
+      auto propertyMap(propertiesMap->getMap(key));
+      auto property(New<TensorDimensionProperty>());
+      property->name = key;
+      for (auto indexKey: propertyMap->getKeys()) {
+        auto index(std::stol(indexKey));
+        auto propertyValue(propertyMap->getValue<Natural>(indexKey));
+        // enter index -> property map
+        property->propertyOfIndex[index] = propertyValue;
+        // build reverse lookup map of sets as well
+        property->indicesOfProperty[propertyValue].insert(index);
+      }
+      LOG() << "entering property " << property->name << " of dimension " << name << std::endl;
+      tensorDimension->properties[property->name] = property;
+    }
+  } catch (Ptr<Exception> &cause) {
+    throw cause;
+    // no properties file could be loaded: dimension without properties
+  }
+  return tensorDimensions[name] = tensorDimension;
+}
+
 void TensorReader::readData(
   const Ptr<MapNode> &tensor,
   const std::string &scalarType,
@@ -60,10 +96,48 @@ void TensorReader::readData(
   auto fileName(tensor->getValue<std::string>("data"));
   auto sourceLocation(tensor->sourceLocation);
   // get dimensions from meta data
-  auto dimensions(tensor->getMap("dimensions"));
+  auto dimensionsMap(tensor->getMap("dimensions"));
   std::vector<size_t> lens;
-  for (auto key: dimensions->getKeys()) {
-    lens.push_back(dimensions->getMap(key)->getValue<size_t>("length"));
+  std::vector<Ptr<TensorDimension>> dimensions;
+  for (auto key: dimensionsMap->getKeys()) {
+    lens.push_back(dimensionsMap->getMap(key)->getValue<size_t>("length"));
+    // get dimension properties, if given
+    dimensions.push_back(
+      getDimension(dimensionsMap->getMap(key)->getValue<std::string>("type"))
+    );
+  }
+
+  // check if tensor is given in block sparse format
+  auto nonZeroConditions(New<TensorNonZeroConditions>());
+  auto nonZeroConditionsNode(tensor->get("nonZeroCondition"));
+  if (nonZeroConditionsNode) {
+    // currently only "all" is supported as non-zero conditions
+    auto allMap(nonZeroConditionsNode->toMap()->getMap("all"));
+    for (auto key: allMap->getKeys()) {
+      auto nonZeroCondition(New<TensorNonZeroCondition>());
+      auto propertiesMap(allMap->getMap(key)->getMap("properties"));
+      Natural D(0);
+      for (auto propertyKey: propertiesMap->getKeys()) {
+        auto propertyMap(propertiesMap->getMap(propertyKey));
+        TensorDimensionPropertyReference dimensionProperty;
+        dimensionProperty.dimension = propertyMap->getValue<Natural>("dimension");
+        auto dimension(dimensions[dimensionProperty.dimension]);
+        dimensionProperty.property = dimension->properties[
+          propertyMap->getValue<std::string>("property")
+        ];
+        nonZeroCondition->dimensionPropertyReferences.push_back(dimensionProperty);
+        ++D;
+      }
+      auto tuplesMap(allMap->getMap(key)->getMap("nonZeros"));
+      for (Natural i(0); i < tuplesMap->size(); ++i) {
+        std::vector<Natural> tuple(D);
+        for (Natural d(0); d < D; ++d) {
+          tuple[d] = tuplesMap->getMap(i)->getValue<Natural>(d);
+        }
+        nonZeroCondition->tuples.push_back(tuple);
+      }
+      nonZeroConditions->all.push_back(nonZeroCondition);
+    }
   }
 
   Ptr<Node> tensorData;
@@ -73,11 +147,11 @@ void TensorReader::readData(
       using TE = DefaultDryTensorEngine;
       if (scalarType == "real64") {
         tensorData = readBinary<Real<64>,TE>(
-          fileName, lens, sourceLocation
+          fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
       } else if (scalarType == "complex64") {
         tensorData = readBinary<Complex<64>,TE>(
-          fileName, lens, sourceLocation
+          fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
       } else {
         ASSERT_LOCATION(
@@ -88,11 +162,11 @@ void TensorReader::readData(
       using TE = DefaultTensorEngine;
       if (scalarType == "real64") {
         tensorData = readBinary<Real<64>,TE>(
-          fileName, lens, sourceLocation
+          fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
       } else if (scalarType == "complex64") {
         tensorData = readBinary<Complex<64>,TE>(
-          fileName, lens, sourceLocation
+          fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
       } else {
         ASSERT_LOCATION(
@@ -105,11 +179,11 @@ void TensorReader::readData(
       using TE = DefaultDryTensorEngine;
       if (scalarType == "real64") {
         tensorData = readText<Real<64>,TE>(
-          fileName, lens, sourceLocation
+          fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
       } else if (scalarType == "complex64") {
         tensorData = readText<Complex<64>,TE>(
-          fileName, lens, sourceLocation
+          fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
       } else {
         ASSERT_LOCATION(
@@ -120,11 +194,11 @@ void TensorReader::readData(
       using TE = DefaultTensorEngine;
       if (scalarType == "real64") {
         tensorData = readText<Real<64>,TE>(
-          fileName, lens, sourceLocation
+          fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
       } else if (scalarType == "complex64") {
         tensorData = readText<Complex<64>,TE>(
-          fileName, lens, sourceLocation
+          fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
       } else {
         ASSERT_LOCATION(
@@ -142,6 +216,8 @@ template <typename F, typename TE>
 Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
   const std::string &fileName,
   const std::vector<size_t> &lens,
+  const std::vector<Ptr<TensorDimension>> &dimensions,
+  const Ptr<TensorNonZeroConditions> &nonZeroConditions,
   const SourceLocation &sourceLocation
 ) {
   constexpr size_t MAX_BUFFER_SIZE(128*1024*1024);
@@ -153,7 +229,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
   }
   Scanner scanner(&stream);
 
-  // create tensor
+  // create dense result tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
   auto result(
     New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
@@ -161,30 +237,41 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
   OUT() << "Reading from text file " << fileName << std::endl;
   if (Cc4s::options->dryRun) return result;
 
-  // read the values only on root, all others still pariticipate calling MPI
-  const size_t bufferSize(std::min(A->getElementsCount(), MAX_BUFFER_SIZE));
-  size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
-  std::vector<size_t> indices(localBufferSize);
-  std::vector<F> values(localBufferSize);
+  LOG() << "#non-zero conditions: " << nonZeroConditions->all.size() << std::endl;
+  TensorNonZeroBlockIterator blockIterator(nonZeroConditions);
+  while (!blockIterator.atEnd()) {
+    auto elementIterator(blockIterator.getElementIterator(lens));
+    auto blockElementsCount(elementIterator.getCount());
+    LOG() << "reading block:" << blockIterator.print() <<
+      " with " << blockElementsCount << " elements" << std::endl;
 
-  size_t index(0);
-  LOG() << "indexCount=" << A->getElementsCount() << std::endl;
-  NumberScanner<F> numberScanner(&scanner);
-  while (index < A->getElementsCount()) {
-    size_t elementsCount(std::min(bufferSize, A->getElementsCount()-index));
-    size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
-    for (size_t i(0); i < localElementsCount; ++i) {
-      indices[i] = index+i;
-      values[i] = numberScanner.nextNumber();
+    // read the values only on root, all others still pariticipate calling MPI
+    const size_t bufferSize(std::min(blockElementsCount, MAX_BUFFER_SIZE));
+    size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
+    std::vector<size_t> indices(localBufferSize);
+    std::vector<F> values(localBufferSize);
+
+    size_t readElementsCount(0);
+    NumberScanner<F> numberScanner(&scanner);
+    while (readElementsCount < blockElementsCount) {
+      size_t elementsCount(
+        std::min(bufferSize, blockElementsCount - readElementsCount)
+      );
+      size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
+      for (size_t i(0); i < localElementsCount; ++i) {
+        indices[i] = elementIterator.getGlobalIndex();
+        values[i] = numberScanner.nextNumber();
+        ++elementIterator;
+      }
+      // wait until all processes finished reading this buffer into the tensor
+      Cc4s::world->barrier();
+      LOG() << "writing " << elementsCount << " values to tensor..." << std::endl;
+      A->write(localElementsCount, indices.data(), values.data());
+      readElementsCount += elementsCount;
     }
-    // wait until all processes finished reading this buffer into the tensor
-    Cc4s::world->barrier();
-    LOG() << "writing " << elementsCount << " values to tensor..." << std::endl;
-    A->write(localElementsCount, indices.data(), values.data());
-    index += elementsCount;
+
+    ++blockIterator;
   }
-  LOG() << "Read " << A->getElementsCount() <<
-    " elements from text file " << fileName << std::endl;
 
   return result;
 }
@@ -193,6 +280,8 @@ template <typename F, typename TE>
 Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
   const std::string &fileName,
   const std::vector<size_t> &lens,
+  const std::vector<Ptr<TensorDimension>> &dimensions,
+  const Ptr<TensorNonZeroConditions> &nonZeroConditions,
   const SourceLocation &sourceLocation
 ) {
   // open the file
