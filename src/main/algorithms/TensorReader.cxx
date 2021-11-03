@@ -111,6 +111,7 @@ void TensorReader::readData(
   auto nonZeroConditions(New<TensorNonZeroConditions>());
   auto nonZeroConditionsNode(tensor->get("nonZeroCondition"));
   if (nonZeroConditionsNode) {
+    OUT() << "Unpacking block-sparse tensor" << std::endl;
     // currently only "all" is supported as non-zero conditions
     auto allMap(nonZeroConditionsNode->toMap()->getMap("all"));
     for (auto key: allMap->getKeys()) {
