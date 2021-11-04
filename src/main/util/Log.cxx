@@ -8,7 +8,7 @@ using namespace cc4s;
 
 int Log::rank(-1);
 std::string Log::fileName("cc4s.log");
-std::ofstream Log::stream;
+std::ofstream Log::logStream;
 Log::HeaderFunction Log::outHeaderFunction(
   [](const SourceLocation &){ return ""; }
 );
@@ -33,13 +33,12 @@ Log::HeaderFunction Log::logHeaderFunction(
 void Log::setRank(int const rank_) {
   rank = rank_;
   if (rank == 0) {
-    stream.open(
+    logStream.open(
       fileName.c_str(), std::ofstream::out | std::ofstream::trunc
     );
   } else {
-    // prevent writing to stdout and to log file
-    stream.setstate(std::ios_base::badbit);
-    std::cout.setstate(std::ios_base::badbit);
+    // prevent writing and use this null stream for both: OUT() and LOG()
+    logStream.setstate(std::ios_base::badbit);
   }
 }
 

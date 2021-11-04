@@ -20,10 +20,14 @@ namespace cc4s {
 
     static void setRank(const int rank);
     static int getRank();
+    static std::ostream &getOutStream() {
+      if (rank == 0) return std::cout;
+      else return logStream;
+    }
     static void setFileName(const std::string &fileName);
     static std::string getFileName();
-    static std::ofstream &getStream() {
-      return stream;
+    static std::ofstream &getLogStream() {
+      return logStream;
     }
     static void setOutHeaderFunction(const HeaderFunction &f) {
       outHeaderFunction = f;
@@ -53,7 +57,7 @@ namespace cc4s {
   protected:
     static int rank;
     static std::string fileName;
-    static std::ofstream stream;
+    static std::ofstream logStream;
     static HeaderFunction
       outHeaderFunction, errorHeaderFunction, warningHeaderFunction,
       logHeaderFunction;
@@ -61,24 +65,25 @@ namespace cc4s {
 }
 
 /**
- * \brief Provides an output stream for writing a log message.
+ * \brief Provides output streams for writing various types of messages
+ * to the console and for writing to the log file.
  */
 #define OUT() \
-  (std::cout << Log::getOutHeaderFunction()(SOURCE_LOCATION))
+  (Log::getOutStream() << Log::getOutHeaderFunction()(SOURCE_LOCATION))
 #define OUT_LOCATION(LOCATION) \
-  (std::cout << Log::getOutHeaderFunction()(LOCATION))
+  (Log::getOutStream() << Log::getOutHeaderFunction()(LOCATION))
 #define ERROR() \
-  (std::cout << Log::getErrorHeaderFunction()(SOURCE_LOCATION))
+  (Log::getOutStream() << Log::getErrorHeaderFunction()(SOURCE_LOCATION))
 #define ERROR_LOCATION(LOCATION) \
-  (std::cout << Log::getErrorHeaderFunction()(LOCATION))
+  (Log::getOutStream() << Log::getErrorHeaderFunction()(LOCATION))
 #define WARNING() \
-  (std::cout << Log::getWarningHeaderFunction()(SOURCE_LOCATION))
+  (Log::getOutStream() << Log::getWarningHeaderFunction()(SOURCE_LOCATION))
 #define WARNING_LOCATION(LOCATION) \
-  (std::cout << Log::getWarningHeaderFunction()(LOCATION))
+  (Log::getOutStream() << Log::getWarningHeaderFunction()(LOCATION))
 #define LOG() \
-  (Log::getStream() << Log::getLogHeaderFunction()(SOURCE_LOCATION))
+  (Log::getLogStream() << Log::getLogHeaderFunction()(SOURCE_LOCATION))
 #define LOG_LOCATION(LOCATION) \
-  (Log::getStream() << Log::getLogHeaderFunction()(LOCATION))
+  (Log::getLogStream() << Log::getLogHeaderFunction()(LOCATION))
 
 #endif
 
