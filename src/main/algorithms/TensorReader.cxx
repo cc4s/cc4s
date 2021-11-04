@@ -11,9 +11,6 @@
 
 using namespace cc4s;
 
-// TODO: table of tensor dimension information, belongs in tcc
-std::map<std::string, Ptr<TensorDimension>> tensorDimensions;
-
 ALGORITHM_REGISTRAR_DEFINITION(TensorReader)
 
 /**
@@ -55,11 +52,10 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   return result;
 }
 
-// TODO: belongs in tcc
 Ptr<TensorDimension> getDimension(const std::string &name) {
   // check if name is entetered in map
-  auto iterator(tensorDimensions.find(name));
-  if (iterator != tensorDimensions.end()) return iterator->second;
+  auto iterator(TensorDimension::dimensions.find(name));
+  if (iterator != TensorDimension::dimensions.end()) return iterator->second;
   // otherwise: create new tensor dimension entry
   auto tensorDimension(New<TensorDimension>());
   tensorDimension->name = name;
@@ -72,7 +68,7 @@ Ptr<TensorDimension> getDimension(const std::string &name) {
       property->name = key;
       for (auto indexKey: propertyMap->getKeys()) {
         auto index(std::stol(indexKey));
-        auto propertyValue(propertyMap->getValue<Natural>(indexKey));
+        auto propertyValue(propertyMap->getValue<Natural<>>(indexKey));
         // enter index -> property map
         property->propertyOfIndex[index] = propertyValue;
         // build reverse lookup map of sets as well
@@ -85,7 +81,7 @@ Ptr<TensorDimension> getDimension(const std::string &name) {
     throw cause;
     // no properties file could be loaded: dimension without properties
   }
-  return tensorDimensions[name] = tensorDimension;
+  return TensorDimension::dimensions[name] = tensorDimension;
 }
 
 void TensorReader::readData(
@@ -116,12 +112,13 @@ void TensorReader::readData(
     auto allMap(nonZeroConditionsNode->toMap()->getMap("all"));
     for (auto key: allMap->getKeys()) {
       auto nonZeroCondition(New<TensorNonZeroCondition>());
+      nonZeroCondition->name = allMap->getMap(key)->getValue<std::string>("name");
       auto propertiesMap(allMap->getMap(key)->getMap("properties"));
-      Natural D(0);
+      Natural<> D(0);
       for (auto propertyKey: propertiesMap->getKeys()) {
         auto propertyMap(propertiesMap->getMap(propertyKey));
         TensorDimensionPropertyReference dimensionProperty;
-        dimensionProperty.dimension = propertyMap->getValue<Natural>("dimension");
+        dimensionProperty.dimension = propertyMap->getValue<Natural<>>("dimension");
         auto dimension(dimensions[dimensionProperty.dimension]);
         dimensionProperty.property = dimension->properties[
           propertyMap->getValue<std::string>("property")
@@ -130,10 +127,10 @@ void TensorReader::readData(
         ++D;
       }
       auto tuplesMap(allMap->getMap(key)->getMap("nonZeros"));
-      for (Natural i(0); i < tuplesMap->size(); ++i) {
-        std::vector<Natural> tuple(D);
-        for (Natural d(0); d < D; ++d) {
-          tuple[d] = tuplesMap->getMap(i)->getValue<Natural>(d);
+      for (Natural<> i(0); i < tuplesMap->size(); ++i) {
+        std::vector<Natural<>> tuple(D);
+        for (Natural<> d(0); d < D; ++d) {
+          tuple[d] = tuplesMap->getMap(i)->getValue<Natural<>>(d);
         }
         nonZeroCondition->tuples.push_back(tuple);
       }
@@ -232,6 +229,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
 
   // create dense result tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
+  A->nonZeroConditions = nonZeroConditions;
   auto result(
     New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
   );
@@ -300,6 +298,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
 
   // create tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
+  A->nonZeroConditions = nonZeroConditions;
   auto result(
     New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
   );

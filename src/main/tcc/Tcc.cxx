@@ -16,4 +16,6 @@ namespace cc4s {
     Cc4s::world->barrier();
     return ++nextTensorVersion;
   }
+
+  std::map<std::string, Ptr<TensorDimension>> TensorDimension::dimensions;
 }
