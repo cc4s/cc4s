@@ -52,6 +52,7 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   return result;
 }
 
+// TODO: use local tensor data to hold weak dimension info
 Ptr<TensorDimension> getDimension(const std::string &name) {
   // check if name is entetered in map
   auto iterator(TensorDimension::dimensions.find(name));
@@ -99,7 +100,9 @@ void TensorReader::readData(
     lens.push_back(dimensionsMap->getMap(key)->getValue<size_t>("length"));
     // get dimension properties, if given
     dimensions.push_back(
-      getDimension(dimensionsMap->getMap(key)->getValue<std::string>("type"))
+      getDimension(
+        dimensionsMap->getMap(key)->getValue<std::string>("type")
+      )
     );
   }
 

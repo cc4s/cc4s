@@ -17,6 +17,7 @@ main/algorithms/TensorReader.cxx \
 main/algorithms/TensorWriter.cxx \
 main/algorithms/DefineHolesAndParticles.cxx \
 main/algorithms/SliceOperator.cxx \
+main/algorithms/NonZeroCondition.cxx \
 main/algorithms/CoulombIntegralsFromVertex.cxx \
 main/algorithms/Mp2EnergyFromCoulombIntegrals.cxx \
 main/algorithms/ClusterSinglesDoublesAlgorithm.cxx \
