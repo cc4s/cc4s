@@ -91,6 +91,9 @@ Ptr<MapNode> DimensionProperty::run(
   std::vector<Natural<>> lens(
     {data->lens[dimensionIndex], property->indicesOfProperty.size()}
   );
+  std::vector<std::string> types(
+    {data->dimensions[dimensionIndex]->name, propertyName}
+  );
   auto P( Tcc<TE>::template tensor<F>(lens, propertyName) );
 
   // enter one at the respective positions
@@ -114,6 +117,7 @@ Ptr<MapNode> DimensionProperty::run(
   for (Natural<> d(0); d < lens.size(); ++d) {
     auto dimensionNode( New<MapNode>(SOURCE_LOCATION) );
     dimensionNode->setValue<>("length", lens[d]);
+    dimensionNode->setValue<>("type", types[d]);
     // NOTE: no type written
     dimensionsNode->get(d) = dimensionNode;
   }
