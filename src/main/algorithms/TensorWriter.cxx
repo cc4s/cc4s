@@ -197,9 +197,9 @@ void TensorWriter::writeText(
     auto dimensions(New<MapNode>(SOURCE_LOCATION));
     for (size_t d(0); d < data->lens.size(); ++d) {
       auto dimension(New<MapNode>(SOURCE_LOCATION));
-      dimension->setValue<size_t>("length", data->lens[d]);
+      dimension->setValue<>("length", data->lens[d]);
+      dimension->setValue<>("length", data->dimensions[d]->name);
       dimensions->get(d) = dimension;
-      // TODO: how to determine dimension type?
     }
     tensor->get("dimensions") = dimensions;
   }
