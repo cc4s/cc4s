@@ -63,8 +63,12 @@ namespace cc4s {
       }
       if (!rhsOperation->getResult()->assumedShape) {
         // create intermediate tensor as result tensor for rhsOperation
-        auto resultLens(ends);
-        for (size_t i(0); i < resultLens.size(); ++i) resultLens[i] -= begins[i];
+        std::vector<size_t> resultLens(begins.size());
+        for (size_t i(0); i < resultLens.size(); ++i) {
+          if (ends[i] > lhsTensor->getLens()[i])
+            ends[i] = lhsTensor->getLens()[i];
+          resultLens[i] = ends[i] - begins[i];
+        }
         auto intermediateTensor(
           Tensor<F,TE>::create(resultLens, lhsTensor->getName() + "'")
         );
