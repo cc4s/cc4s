@@ -269,6 +269,7 @@ namespace cc4s {
      **/
     bool assumedShape;
 
+    std::vector<Ptr<TensorDimension>> dimensions;
     Ptr<TensorNonZeroConditions> nonZeroConditions;
 
   protected:

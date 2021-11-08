@@ -232,6 +232,8 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
 
   // create dense result tensor
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
+  // TODO: API for accessing tensor dimension info
+  A->dimensions = dimensions;
   A->nonZeroConditions = nonZeroConditions;
   auto result(
     New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
