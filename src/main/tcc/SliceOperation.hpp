@@ -15,8 +15,8 @@ namespace cc4s {
   class SliceOperation: public TensorOperation<F,TE> {
   public:
     SliceOperation(
-      const PTR(ESC(TensorOperation<F,TE>)) &source_,
-      const PTR(ESC(Tensor<F,TE>)) &result_,
+      const Ptr<TensorOperation<F,TE>> &source_,
+      const Ptr<Tensor<F,TE>> &result_,
       const std::vector<size_t> begins_,
       const std::vector<size_t> ends_,
       const std::string &file_, const size_t line_,
@@ -89,17 +89,17 @@ namespace cc4s {
     }
 
   protected:
-    PTR(ESC(TensorOperation<F,TE>)) source;
+    Ptr<TensorOperation<F,TE>> source;
     std::vector<size_t> begins, ends;
 
-    static PTR(ESC(SliceOperation<F,TE>)) create(
-      const PTR(ESC(TensorOperation<F,TE>)) &source,
-      const PTR(ESC(Tensor<F,TE>)) &result,
+    static Ptr<SliceOperation<F,TE>> create(
+      const Ptr<TensorOperation<F,TE>> &source,
+      const Ptr<Tensor<F,TE>> &result,
       const std::vector<size_t> begins,
       const std::vector<size_t> ends,
       const Scope &scope
     ) {
-      return NEW(ESC(SliceOperation<F,TE>),
+      return New<SliceOperation<F,TE>>(
         source, result, begins, ends,
         scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );

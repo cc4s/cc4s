@@ -20,8 +20,8 @@ namespace cc4s {
      * expressions A and B.
      **/
     template <typename LHS, typename RHS>
-    static PTR(Sequence<typename LHS::TensorEngine>) create(
-      const PTR(LHS) &A, const PTR(RHS) &B
+    static Ptr<Sequence<typename LHS::TensorEngine>> create(
+      const Ptr<LHS> &A, const Ptr<RHS> &B
     ) {
       static_assert(
         TypeRelations<
@@ -29,7 +29,7 @@ namespace cc4s {
         >::EQUALS,
         "All expressions within a sequence must have the same tensor engine."
       );
-      return NEW(Sequence<typename LHS::TensorEngine>,
+      return New<Sequence<typename LHS::TensorEngine>>(
         A, B,
         typename Expression<typename LHS::TensorEngine>::ProtectedToken()
       );
@@ -49,8 +49,8 @@ namespace cc4s {
      * using the static create method.
      **/
     Sequence(
-      const PTR(Sequence<TE>) &lhs,
-      const PTR(Sequence<TE>) &rhs,
+      const Ptr<Sequence<TE>> &lhs,
+      const Ptr<Sequence<TE>> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): moves(lhs->moves) {
       moves.insert(moves.end(), rhs->moves.begin(), rhs->moves.end());
@@ -63,8 +63,8 @@ namespace cc4s {
      **/
     template <typename F>
     Sequence(
-      const PTR(Sequence<TE>) &lhs,
-      const PTR(ESC(Move<F,TE>)) &rhs,
+      const Ptr<Sequence<TE>> &lhs,
+      const Ptr<Move<F,TE>> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): moves(lhs->moves) {
       moves.push_back(rhs);
@@ -77,8 +77,8 @@ namespace cc4s {
      **/
     template <typename F>
     Sequence(
-      const PTR(ESC(Move<F,TE>)) &lhs,
-      const PTR(Sequence<TE>) &rhs,
+      const Ptr<Move<F,TE>> &lhs,
+      const Ptr<Sequence<TE>> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ) {
       moves.push_back(lhs);
@@ -91,8 +91,8 @@ namespace cc4s {
      **/
     template <typename F, typename G>
     Sequence(
-      const PTR(ESC(Move<F,TE>)) &lhs,
-      const PTR(ESC(Move<G,TE>)) &rhs,
+      const Ptr<Move<F,TE>> &lhs,
+      const Ptr<Move<G,TE>> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ) {
       moves.push_back(lhs);
@@ -106,8 +106,8 @@ namespace cc4s {
      **/
     template <typename LHS, typename RHS>
     Sequence(
-      const PTR(LHS) &lhs,
-      const PTR(RHS) &rhs,
+      const Ptr<LHS> &lhs,
+      const Ptr<RHS> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ) {
       static_assert(
@@ -116,15 +116,18 @@ namespace cc4s {
       );
     }
 
-    PTR(Operation<TE>) compile(Scope &outerScope) override {
-      std::vector<PTR(Operation<TE>)> operations(moves.size());
+    virtual ~Sequence() {
+    }
+
+    Ptr<Operation<TE>> compile(Scope &outerScope) override {
+      std::vector<Ptr<Operation<TE>>> operations(moves.size());
       for (size_t i(0); i < moves.size(); ++i) {
         operations[i] = moves[i]->compile(outerScope);
       }
       return SequenceOperation<TE>::create(operations, outerScope);
     }
 
-    PTR(Operation<TE>) compile(
+    Ptr<Operation<TE>> compile(
       const std::string &file, const size_t line
     ) override {
       Scope scope(file, line);
@@ -132,13 +135,13 @@ namespace cc4s {
     }
 
 
-    virtual void countIndices(Scope &) {
+    void countIndices(Scope &) override {
       // the indidex of each subexpression are independet of each other
       // so nothing will be counted.
       // counting will be done on the level of moves and contractions
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       std::stringstream stream;
       stream << "Sequence( ";
       std::string delimiter("");
@@ -151,7 +154,7 @@ namespace cc4s {
     }
 
   protected:
-    std::vector<PTR(Expression<TE>)> moves;
+    std::vector<Ptr<Expression<TE>>> moves;
   };
 
   /**
@@ -159,8 +162,8 @@ namespace cc4s {
    * expressions A and B using the comma operator.
    **/
   template <typename LHS, typename RHS>
-  inline PTR(Sequence<typename RHS::TensorEngine>) operator ,(
-    const PTR(LHS) &A, const PTR(RHS) &B
+  inline Ptr<Sequence<typename RHS::TensorEngine>> operator ,(
+    const Ptr<LHS> &A, const Ptr<RHS> &B
   ) {
     return Sequence<typename RHS::TensorEngine>::create(A, B);
   }

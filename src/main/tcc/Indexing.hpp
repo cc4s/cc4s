@@ -10,7 +10,7 @@
 #include <string>
 
 namespace cc4s {
-  template <typename F, typename TE> class ClosedTensorExpression;
+  template <typename F, typename TE> class TensorExpression;
 
   template <typename F, typename TE>
   class Indexing: public IndexedTensorExpression<F,TE> {
@@ -19,10 +19,10 @@ namespace cc4s {
      * \brief Creates an expression with named indices from the closed tensor
      * source expression for further operations such as sums or contractions.
      * Not for direct invocation. Use the operator [] on
-     * ClosedTensorExpression<F,TE> objects instead.
+     * TensorExpression<F,TE> objects instead.
      **/
     Indexing(
-      const PTR(ESC(ClosedTensorExpression<F,TE>)) &source_,
+      const Ptr<TensorExpression<F,TE>> &source_,
       const std::string &indices_,
       const typename Expression<TE>::ProtectedToken &
     ): source(source_), indices(indices_), canonicalIndices(indices_) {
@@ -40,16 +40,16 @@ namespace cc4s {
      * specifies the index name of the respective dimension index in the
      * source expression.
      **/
-    static PTR(ESC(Indexing<F,TE>)) create(
-      const PTR(ESC(ClosedTensorExpression<F,TE>)) &source,
+    static Ptr<Indexing<F,TE>> create(
+      const Ptr<TensorExpression<F,TE>> &source,
       const std::string &indices
     ) {
-      return NEW(ESC(Indexing<F,TE>),
+      return New<Indexing<F,TE>>(
         source, indices, typename Expression<TE>::ProtectedToken()
       );
     }
 
-    PTR(Operation<TE>) compile(Scope &scope) override {
+    Ptr<Operation<TE>> compile(Scope &scope) override {
       Scope sourceScope(scope.file, scope.line);
       auto sourceOperation(
         dynamicPtrCast<TensorOperation<F,TE>>(source->compile(sourceScope))
@@ -66,11 +66,11 @@ namespace cc4s {
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    virtual PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
-      const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
-    )  {
+    Ptr<TensorOperation<F,TE>> lhsCompile(
+      const Ptr<TensorOperation<F,TE>> &rhsOperation
+    ) override {
       auto indexedRhs(
-        DYNAMIC_PTR_CAST(ESC(IndexedTensorOperation<F,TE>), rhsOperation)
+        dynamicPtrCast<IndexedTensorOperation<F,TE>>(rhsOperation)
       );
       ASSERT_LOCATION(
         indexedRhs,
@@ -118,15 +118,15 @@ namespace cc4s {
       return source->lhsCompile(indexedRhs);
     }
 
-    virtual void countIndices(Scope &scope) {
+    void countIndices(Scope &scope) override {
       scope.add(indices);
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       return std::string(*source) + "[" + indices + "]";
     }
 
-    PTR(ESC(ClosedTensorExpression<F,TE>)) source;
+    Ptr<TensorExpression<F,TE>> source;
     std::string indices, canonicalIndices;
 
   protected:

@@ -1,3 +1,4 @@
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_CONTRACTION_DEFINED
 #define TCC_CONTRACTION_DEFINED
 
@@ -21,9 +22,9 @@ namespace cc4s {
      **/
     template <typename LHS, typename RHS>
     static
-    PTR(ESC(Contraction<typename RHS::FieldType, typename RHS::TensorEngine>))
+    Ptr<Contraction<typename RHS::FieldType, typename RHS::TensorEngine>>
     create(
-      const PTR(LHS) &A, const PTR(RHS) &B
+      const Ptr<LHS> &A, const Ptr<RHS> &B
     ) {
       static_assert(
         TypeRelations<
@@ -31,8 +32,9 @@ namespace cc4s {
         >::EQUALS,
         "Only tensors of the same type can be contracted."
       );
-      return NEW(
-        ESC(Contraction<typename RHS::FieldType, typename RHS::TensorEngine>),
+      return New<
+        Contraction<typename RHS::FieldType, typename RHS::TensorEngine>
+      >(
         A, B,
         typename Expression<typename RHS::TensorEngine>::ProtectedToken()
       );
@@ -44,16 +46,17 @@ namespace cc4s {
      **/
     template <typename S, typename LHS>
     static
-    PTR(ESC(Contraction<typename LHS::FieldType, typename LHS::TensorEngine>))
+    Ptr<Contraction<typename LHS::FieldType, typename LHS::TensorEngine>>
     create(
-      const S alpha, const PTR(LHS) &A
+      const S alpha, const Ptr<LHS> &A
     ) {
       static_assert(
         TypeRelations<S, typename LHS::FieldType>::CASTABLE_TO,
         "The type of the scalar must be convertible to the tensor type."
       );
-      return NEW(
-        ESC(Contraction<typename LHS::FieldType, typename LHS::TensorEngine>),
+      return New<
+        Contraction<typename LHS::FieldType, typename LHS::TensorEngine>
+      >(
         alpha, A,
         typename Expression<typename LHS::TensorEngine>::ProtectedToken()
       );
@@ -66,8 +69,8 @@ namespace cc4s {
      * using the static create method.
      **/
     Contraction(
-      const PTR(ESC(Contraction<F,TE>)) &lhs,
-      const PTR(ESC(Contraction<F,TE>)) &rhs,
+      const Ptr<Contraction<F,TE>> &lhs,
+      const Ptr<Contraction<F,TE>> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(lhs->alpha * rhs->alpha), factors(lhs->factors) {
       factors.insert(factors.end(), rhs->factors.begin(), rhs->factors.end());
@@ -79,8 +82,8 @@ namespace cc4s {
      * using the static create method.
      **/
     Contraction(
-      const PTR(ESC(Contraction<F,TE>)) &lhs,
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &rhs,
+      const Ptr<Contraction<F,TE>> &lhs,
+      const Ptr<IndexedTensorExpression<F,TE>> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(lhs->alpha), factors(lhs->factors) {
       factors.push_back(rhs);
@@ -92,8 +95,8 @@ namespace cc4s {
      * using the static create method.
      **/
     Contraction(
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &lhs,
-      const PTR(ESC(Contraction<F,TE>)) &rhs,
+      const Ptr<IndexedTensorExpression<F,TE>> &lhs,
+      const Ptr<Contraction<F,TE>> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(rhs->alpha), factors(rhs->factors) {
       factors.push_back(lhs);
@@ -104,8 +107,8 @@ namespace cc4s {
      * using the static create method.
      **/
     Contraction(
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &lhs,
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &rhs,
+      const Ptr<IndexedTensorExpression<F,TE>> &lhs,
+      const Ptr<IndexedTensorExpression<F,TE>> &rhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(F(1)) {
       factors.push_back(lhs);
@@ -118,7 +121,7 @@ namespace cc4s {
      **/
     Contraction(
       const F alpha_,
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &lhs,
+      const Ptr<IndexedTensorExpression<F,TE>> &lhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(alpha_) {
       factors.push_back(lhs);
@@ -130,7 +133,7 @@ namespace cc4s {
      **/
     Contraction(
       const F alpha_,
-      const PTR(ESC(Contraction<F,TE>)) &lhs,
+      const Ptr<Contraction<F,TE>> &lhs,
       const typename Expression<TE>::ProtectedToken &
     ): alpha(lhs->alpha * alpha_), factors(lhs->factors) {
     }
@@ -138,17 +141,17 @@ namespace cc4s {
     virtual ~Contraction() {
     }
 
-    virtual PTR(Operation<TE>) compile(Scope &scope) {
-      std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> factorOperations(
+    Ptr<Operation<TE>> compile(Scope &scope) override {
+      std::vector<Ptr<IndexedTensorOperation<F,TE>>> factorOperations(
         factors.size()
       );
       for (size_t i(0); i < factors.size(); ++i) {
-        factorOperations[i] = DYNAMIC_PTR_CAST(
-          ESC(IndexedTensorOperation<F,TE>), factors[i]->compile(scope)
+        factorOperations[i] = dynamicPtrCast<IndexedTensorOperation<F,TE>>(
+          factors[i]->compile(scope)
         );
       }
 
-      PTR(ESC(IndexedTensorOperation<F,TE>)) operation;
+      Ptr<IndexedTensorOperation<F,TE>> operation;
       if (factorOperations.size() < 2) {
         // only one operand in contraction
         operation = createSumOperation(factorOperations[0], scope);
@@ -165,13 +168,13 @@ namespace cc4s {
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    virtual void countIndices(Scope &scope) {
+    void countIndices(Scope &scope) override {
       for (auto &factor: factors) {
         factor->countIndices(scope);
       }
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       std::stringstream stream;
       stream << "Contraction( " << alpha;
       for (auto const &factor: factors) {
@@ -187,13 +190,13 @@ namespace cc4s {
      * find the best order of contractions. The scope is modified
      * during evaluation.
      **/
-    PTR(ESC(ContractionOperation<F,TE>)) compileContractions(
-      const std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> &operations,
+    Ptr<ContractionOperation<F,TE>> compileContractions(
+      const std::vector<Ptr<IndexedTensorOperation<F,TE>>> &operations,
       Scope &scope,
       const unsigned int level = 0
     ) {
       // no best contraction known at first
-      PTR(ESC(ContractionOperation<F,TE>)) bestContractions;
+      Ptr<ContractionOperation<F,TE>> bestContractions;
       for (unsigned int i(0); i < operations.size()-1; ++i) {
         auto a(operations[i]);
         // take out the indices of factor a
@@ -218,7 +221,7 @@ namespace cc4s {
               // otherwise, add indices of the result for further consideration
               scope.add(contractionOperation->getResultIndices());
               // build new list of factors
-              std::vector<PTR(ESC(IndexedTensorOperation<F,TE>))> subOperations(
+              std::vector<Ptr<IndexedTensorOperation<F,TE>>> subOperations(
                 operations.size() - 1
               );
               // include intermediate result as first factor
@@ -230,7 +233,7 @@ namespace cc4s {
               }
 
               // now do a recursive compilation of all the remaining factors
-              PTR(ESC(ContractionOperation<F,TE>)) allContractions(
+              Ptr<ContractionOperation<F,TE>> allContractions(
                 compileContractions(subOperations, scope, level+1)
               );
 
@@ -282,9 +285,9 @@ namespace cc4s {
      * \brief Creates a ContractionOperation contracting two previously
      * compiled operations and assessing its costs.
      **/
-    PTR(ESC(ContractionOperation<F,TE>)) createContractionOperation(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &a,
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &b,
+    Ptr<ContractionOperation<F,TE>> createContractionOperation(
+      const Ptr<IndexedTensorOperation<F,TE>> &a,
+      const Ptr<IndexedTensorOperation<F,TE>> &b,
       Scope &scope
     ) {
       size_t contractedIndexDimensions[
@@ -377,8 +380,8 @@ namespace cc4s {
      * \brief Creates a SumOperation summing
      * a compiled operation and assessing its costs.
      **/
-    PTR(ESC(MoveOperation<F,TE>)) createSumOperation(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &a,
+    Ptr<MoveOperation<F,TE>> createSumOperation(
+      const Ptr<IndexedTensorOperation<F,TE>> &a,
       Scope &scope
     ) {
       size_t summedIndexDimensions[a->getResultIndices().length() + 1];
@@ -447,7 +450,7 @@ namespace cc4s {
     }
 
     F alpha;
-    std::vector<PTR(ESC(IndexedTensorExpression<F,TE>))> factors;
+    std::vector<Ptr<IndexedTensorExpression<F,TE>>> factors;
   };
 
   /**
@@ -456,9 +459,9 @@ namespace cc4s {
    **/
   template <typename LHS, typename RHS>
   inline
-  PTR(ESC(Contraction<typename RHS::FieldType, typename RHS::TensorEngine>))
+  Ptr<Contraction<typename RHS::FieldType, typename RHS::TensorEngine>>
   operator *(
-    const PTR(LHS) &A, const PTR(RHS) &B
+    const Ptr<LHS> &A, const Ptr<RHS> &B
   ) {
     return
     Contraction<typename RHS::FieldType, typename RHS::TensorEngine>::create(
@@ -472,9 +475,9 @@ namespace cc4s {
    **/
   template <typename LHS, typename S>
   inline
-  PTR(ESC(Contraction<typename LHS::FieldType, typename LHS::TensorEngine>))
+  Ptr<Contraction<typename LHS::FieldType, typename LHS::TensorEngine>>
   operator *(
-    const PTR(LHS) &A, const S alpha
+    const Ptr<LHS> &A, const S alpha
   ) {
     return
     Contraction<typename LHS::FieldType, typename LHS::TensorEngine>::create(
@@ -488,9 +491,9 @@ namespace cc4s {
    **/
   template <typename S, typename RHS>
   inline
-  PTR(ESC(Contraction<typename RHS::FieldType, typename RHS::TensorEngine>))
+  Ptr<Contraction<typename RHS::FieldType, typename RHS::TensorEngine>>
   operator *(
-    const S alpha, const PTR(RHS) &A
+    const S alpha, const Ptr<RHS> &A
   ) {
     return
     Contraction<typename RHS::FieldType, typename RHS::TensorEngine>::create(

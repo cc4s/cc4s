@@ -14,7 +14,7 @@ namespace cc4s {
   public:
     MapOperation(
       const std::function<Target(Domain)> &f_,
-      const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_,
+      const Ptr<IndexedTensorOperation<Domain,TE>> &source_,
       const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
@@ -31,6 +31,9 @@ namespace cc4s {
       f(f_), source(source_)
     {
       // TODO: assess map operation costs
+    }
+
+    virtual ~MapOperation() {
     }
 
     void execute() override {
@@ -62,24 +65,24 @@ namespace cc4s {
       return source->getLatestSourceVersion();
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       return "Map( f, " + std::string(*source) + " )";
     }
 
  protected:
-    static PTR(ESC(MapOperation<Target,Domain,TE>)) create(
+    static Ptr<MapOperation<Target,Domain,TE>> create(
       const std::function<Target(Domain)> &f_,
-      const PTR(ESC(IndexedTensorOperation<Domain,TE>)) &source_,
+      const Ptr<IndexedTensorOperation<Domain,TE>> &source_,
       const Scope &scope
     ) {
-      return NEW(ESC(MapOperation<Target,Domain,TE>),
+      return New<MapOperation<Target,Domain,TE>>(
         f_, source_,
         scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 
     std::function<Target(Domain)> f;
-    PTR(ESC(IndexedTensorOperation<Domain,TE>)) source;
+    Ptr<IndexedTensorOperation<Domain,TE>> source;
 
     friend class Map<Target,Domain,TE>;
   };

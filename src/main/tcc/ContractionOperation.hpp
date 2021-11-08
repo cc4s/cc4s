@@ -22,9 +22,9 @@ namespace cc4s {
      * generate operations.
      **/
     ContractionOperation(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &left_,
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &right_,
-      const PTR(ESC(Tensor<F,TE>)) &result_,
+      const Ptr<IndexedTensorOperation<F,TE>> &left_,
+      const Ptr<IndexedTensorOperation<F,TE>> &right_,
+      const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
       Costs contractionCosts,
       const std::string &file_, const size_t line_,
@@ -97,15 +97,15 @@ namespace cc4s {
      * the left and the right sub-operations where the result is to be
      * stored in the specified result tensor.
      **/
-    static PTR(ESC(ContractionOperation<F,TE>)) create(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &left_,
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &right_,
-      const PTR(ESC(Tensor<F,TE>)) &result_,
+    static Ptr<ContractionOperation<F,TE>> create(
+      const Ptr<IndexedTensorOperation<F,TE>> &left_,
+      const Ptr<IndexedTensorOperation<F,TE>> &right_,
+      const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
       const Costs &contractionCosts,
       const Scope &scope
     ) {
-      return NEW(ESC(ContractionOperation<F,TE>),
+      return New<ContractionOperation<F,TE>>(
         left_, right_,
         result_, resultIndices_,
         contractionCosts,
@@ -114,8 +114,8 @@ namespace cc4s {
       );
     }
 
-    PTR(ESC(IndexedTensorOperation<F,TE>)) left;
-    PTR(ESC(IndexedTensorOperation<F,TE>)) right;
+    Ptr<IndexedTensorOperation<F,TE>> left;
+    Ptr<IndexedTensorOperation<F,TE>> right;
 
     friend class Contraction<F,TE>;
   };

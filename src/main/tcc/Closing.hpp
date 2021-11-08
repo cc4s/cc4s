@@ -1,7 +1,8 @@
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_CLOSING_DEFINED
 #define TCC_CLOSING_DEFINED
 
-#include <tcc/ClosedTensorExpression.hpp>
+#include <tcc/TensorExpression.hpp>
 
 #include <tcc/IndexedTensorExpression.hpp>
 #include <util/SharedPointer.hpp>
@@ -9,7 +10,7 @@
 
 namespace cc4s {
   template <typename F, typename TE>
-  class Closing: public ClosedTensorExpression<F,TE> {
+  class Closing: public TensorExpression<F,TE> {
   public:
     /**
      * \brief Creates an expression with ordered indices from the indexed tensor
@@ -18,7 +19,7 @@ namespace cc4s {
      * Not for direct invocation. Use close on IndexedTensorExpressions instead.
      **/
     Closing(
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &source_,
+      const Ptr<IndexedTensorExpression<F,TE>> &source_,
       const std::string &indices_,
       const typename Expression<TE>::ProtectedToken &
     ): source(source_), indices(indices_) {
@@ -35,49 +36,49 @@ namespace cc4s {
      * \param[in] indices The index character string where each character
      * specifies the index name in the source expression.
      **/
-    static PTR(ESC(Closing<F,TE>)) create(
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &source,
+    static Ptr<Closing<F,TE>> create(
+      const Ptr<IndexedTensorExpression<F,TE>> &source,
       const std::string &indices
     ) {
-      return NEW(ESC(Closing<F,TE>),
+      return New<Closing<F,TE>>(
         source, indices, typename Expression<TE>::ProtectedToken()
       );
     }
 
-    static PTR(ESC(Closing<F,TE>)) create(
-      const PTR(ESC(Expression<F,TE>)) &source,
+    static Ptr<Closing<F,TE>> create(
+      const Ptr<Expression<F,TE>> &source,
       const std::string &indices
     ) {
       static_assert(
         StaticAssert<RHS>::FALSE,
         "Only indexed tensor expressions can be closed."
       );
-      return NEW(ESC(Closing<F,TE>),
+      return New<Closing<F,TE>>(
         nullptr, "", typename Expression<TE>::ProtectedToken()
       );
     }
 
-    virtual PTR(Operation<TE>) compile(Scope &scope) {
+    Ptr<Operation<TE>> compile(Scope &scope) override {
 //      return ClosingOperation<F,TE>::create(result, resultIndices);
     }
 
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    virtual void countIndices(Scope &scope) {
+    void countIndices(Scope &scope) override {
       // the closing indices are free indices and therefore must be counted
       scope.add(indices);
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       return std::string(*source) + "^" + indices;
     }
 
   protected:
 // TODO: to be done in operation
 /*
-    PTR(ESC(Tensor<F,TE>)) closedTensor(
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &source,
+    Ptr<Tensor<F,TE>> closedTensor(
+      const Ptr<IndexedTensorExpression<F,TE>> &source,
       const std::string &indices
     ) {
       if (indices.length() != source->getResultIndices().length()) {
@@ -109,16 +110,16 @@ namespace cc4s {
       } else if (lhs->tensor->getLens() != lens) {
     }
 */
-    PTR(ESC(IndexedTensorExpression<F,TE>)) source;
+    Ptr<IndexedTensorExpression<F,TE>> source;
     std::string indices;
   };
 
 
   template <typename LHS>
   inline
-  PTR(ESC(Closing<typename LHS::FieldType, typename LHS::TensorEngine>))
+  Ptr<Closing<typename LHS::FieldType, typename LHS::TensorEngine>>
   operator ^(
-    const PTR(LHS) &source, const std::string &indices
+    const Ptr<LHS> &source, const std::string &indices
   ) {
     return Closing<typename LHS::FieldType, typename LHS::TensorEngine>::create(
       source, indices

@@ -21,8 +21,8 @@ namespace cc4s {
      * to generate operations.
      **/
     MoveOperation(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &rhs_,
-      const PTR(ESC(Tensor<F,TE>)) &result_,
+      const Ptr<IndexedTensorOperation<F,TE>> &rhs_,
+      const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
       Costs moveCosts,
       const std::string &file_, const size_t line_,
@@ -75,21 +75,21 @@ namespace cc4s {
     }
 
   protected:
-    static PTR(ESC(MoveOperation<F,TE>)) create(
-      const PTR(ESC(IndexedTensorOperation<F,TE>)) &rhs_,
-      const PTR(ESC(Tensor<F,TE>)) &result_,
+    static Ptr<MoveOperation<F,TE>> create(
+      const Ptr<IndexedTensorOperation<F,TE>> &rhs_,
+      const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
       const Costs &moveCosts,
       const Scope &scope
     ) {
-      return NEW(ESC(MoveOperation<F,TE>),
+      return New<MoveOperation<F,TE>>(
         rhs_,
         result_, resultIndices_, moveCosts,
         scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 
-    PTR(ESC(IndexedTensorOperation<F,TE>)) rhs;
+    Ptr<IndexedTensorOperation<F,TE>> rhs;
 //    F alpha, beta;
 
     friend class Contraction<F,TE>;

@@ -18,7 +18,7 @@ namespace cc4s {
     typedef F FieldType;
 
     IndexedTensorOperation(
-      const PTR(ESC(Tensor<F,TE>)) &result_,
+      const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
       const Costs &costs_,
       const std::string &file_, const size_t line_,

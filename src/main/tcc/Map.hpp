@@ -15,11 +15,11 @@ namespace cc4s {
      * \brief Creates a map expression of a unary map f and one tensor
      * expressions source.
      **/
-    static PTR(ESC(Map<Target,Domain,TE>)) create(
+    static Ptr<Map<Target,Domain,TE>> create(
       const std::function<Target(const Domain)> &f,
-      const PTR(ESC(IndexedTensorExpression<Domain,TE>)) &source
+      const Ptr<IndexedTensorExpression<Domain,TE>> &source
     ) {
-      return NEW(ESC(Map<Target,Domain,TE>),
+      return New<Map<Target,Domain,TE>>(
         f, source,
         typename Expression<TE>::ProtectedToken()
       );
@@ -32,7 +32,7 @@ namespace cc4s {
      **/
     Map(
       const std::function<Target(const Domain)> &f_,
-      const PTR(ESC(IndexedTensorExpression<Domain,TE>)) &source_,
+      const Ptr<IndexedTensorExpression<Domain,TE>> &source_,
       const typename Expression<TE>::ProtectedToken &
     ): f(f_), source(source_) {
     }
@@ -40,10 +40,9 @@ namespace cc4s {
     virtual ~Map() {
     }
 
-    virtual PTR(Operation<TE>) compile(Scope &scope) {
+    Ptr<Operation<TE>> compile(Scope &scope) override {
       auto sourceOperation(
-        DYNAMIC_PTR_CAST(
-          ESC(IndexedTensorOperation<Domain,TE>),
+        dynamicPtrCast<IndexedTensorOperation<Domain,TE>>(
           source->compile(scope)
         )
       );
@@ -53,11 +52,11 @@ namespace cc4s {
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    virtual void countIndices(Scope &scope) {
+    void countIndices(Scope &scope) override {
       source->countIndices(scope);
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       std::stringstream stream;
       stream << "Map( " << "f" << ", " << std::string(*source) << " )";
       return stream.str();
@@ -65,7 +64,7 @@ namespace cc4s {
 
   protected:
     std::function<Target(const Domain)> f;
-    PTR(ESC(IndexedTensorExpression<Domain,TE>)) source;
+    Ptr<IndexedTensorExpression<Domain,TE>> source;
   };
 
   /**
@@ -76,9 +75,9 @@ namespace cc4s {
     typename Target, typename RHS
   >
   inline
-  PTR(ESC(Map<Target,typename RHS::FieldType,typename RHS::TensorEngine>)) map(
+  Ptr<Map<Target,typename RHS::FieldType,typename RHS::TensorEngine>> map(
     const std::function<Target(typename RHS::FieldType)> &f,
-    const PTR(RHS) &A
+    const Ptr<RHS> &A
   ) {
     return
     Map<Target,typename RHS::FieldType,typename RHS::TensorEngine>::create(

@@ -30,14 +30,14 @@ namespace cc4s {
      * \brief Compiles this expression and its subexpressions and returns
      * the resulting operation.
      **/
-    virtual PTR(Operation<TE>) compile(Scope &scope) {
+    virtual Ptr<Operation<TE>> compile(Scope &scope) {
       throw New<Exception>(
         "Sequence (,) of move operation (<<=, +=, -=) expected.",
         SourceLocation(scope.file, scope.line)
       );
     }
 
-    virtual PTR(Operation<TE>) compile(
+    virtual Ptr<Operation<TE>> compile(
       const std::string &file, const size_t line
     ) {
       Scope scope(file, line);

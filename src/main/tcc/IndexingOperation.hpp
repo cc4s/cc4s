@@ -16,8 +16,8 @@ namespace cc4s {
     typedef F FieldType;
 
     IndexingOperation(
-      const PTR(ESC(TensorOperation<F,TE>)) &source_,
-      const PTR(ESC(Tensor<F,TE>)) &result_,
+      const Ptr<TensorOperation<F,TE>> &source_,
+      const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
       const Costs &costs_,
       const std::string &file_, const size_t line_,
@@ -40,16 +40,16 @@ namespace cc4s {
     }
 
   protected:
-    PTR(ESC(TensorOperation<F,TE>)) source;
+    Ptr<TensorOperation<F,TE>> source;
 
-    static PTR(ESC(IndexingOperation<F,TE>)) create(
-      const PTR(ESC(TensorOperation<F,TE>)) &source,
-      const PTR(ESC(Tensor<F,TE>)) &result,
+    static Ptr<IndexingOperation<F,TE>> create(
+      const Ptr<TensorOperation<F,TE>> &source,
+      const Ptr<Tensor<F,TE>> &result,
       const char *resultIndices,
       const Costs &costs,
       const Scope &scope
     ) {
-      return NEW(ESC(IndexingOperation<F,TE>),
+      return New<IndexingOperation<F,TE>>(
         source, result, resultIndices, costs,
         scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );

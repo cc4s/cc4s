@@ -1,7 +1,8 @@
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_TENSOR_DEFINED
 #define TCC_TENSOR_DEFINED
 
-#include <tcc/ClosedTensorExpression.hpp>
+#include <tcc/TensorExpression.hpp>
 
 #include <tcc/TensorLoadOperation.hpp>
 #include <util/SharedPointer.hpp>
@@ -244,7 +245,7 @@ namespace cc4s {
    * \brief 
    **/
   template <typename F, typename TE>
-  class Tensor: public ClosedTensorExpression<F,TE> {
+  class Tensor: public TensorExpression<F,TE> {
   public:
   protected:
     /**
@@ -290,7 +291,7 @@ namespace cc4s {
      * requested during execution or by manually calling getMachineTensor().
      **/
     typedef typename TE::template MachineTensor<F> MT;
-    PTR(MT) machineTensor;
+    Ptr<MT> machineTensor;
 
   public:
     /**
@@ -347,34 +348,34 @@ namespace cc4s {
       machineTensor = mt;
     }
 
-    static PTR(ESC(Tensor<F,TE>)) create(const std::string &name) {
-      return NEW(ESC(Tensor<F,TE>), name, ProtectedToken());
+    static Ptr<Tensor<F,TE>> create(const std::string &name) {
+      return New<Tensor<F,TE>>(name, ProtectedToken());
     }
 
-    static PTR(ESC(Tensor<F,TE>)) create(
+    static Ptr<Tensor<F,TE>> create(
       const std::vector<size_t> &lens,
       const std::string &name
     ) {
-      return NEW(ESC(Tensor<F,TE>), lens, name, ProtectedToken());
+      return New<Tensor<F,TE>>(lens, name, ProtectedToken());
     }
 
     /**
      * \brief Create an empty tensor of identical shape as the given tensor.
      * The name, however, should differ.
      **/
-    static PTR(ESC(Tensor<F,TE>)) create(
-      const PTR(ESC(Tensor<F,TE>)) &tensor,
+    static Ptr<Tensor<F,TE>> create(
+      const Ptr<Tensor<F,TE>> &tensor,
       const std::string &name
     ) {
-      return NEW(ESC(Tensor<F,TE>),
+      return New<Tensor<F,TE>>(
         tensor->lens, name, tensor->assumedShape, ProtectedToken()
       );
     }
 
-    static PTR(ESC(Tensor<F,TE>)) create(
+    static Ptr<Tensor<F,TE>> create(
       const typename MT::T &unadaptedTensor
     ) {
-      return NEW(ESC(Tensor<F,TE>), unadaptedTensor, ProtectedToken());
+      return New<Tensor<F,TE>>(unadaptedTensor, ProtectedToken());
     }
 
     void setName(const std::string &name_) {
@@ -384,7 +385,7 @@ namespace cc4s {
       return name;
     }
 
-    PTR(MT) getMachineTensor() {
+    Ptr<MT> getMachineTensor() {
       if (!machineTensor) {
         ASSERT_LOCATION(assumedShape,
           "Tried to execute operation on tensor " + name +
@@ -483,7 +484,7 @@ namespace cc4s {
       return elementsCount;
     }
 
-    PTR(Operation<TE>) compile(Scope &scope) override {
+    Ptr<Operation<TE>> compile(Scope &scope) override {
       return TensorLoadOperation<F,TE>::create(
         this->template toPtr<Tensor<F,TE>>(),
         Costs(getElementsCount()),
@@ -494,8 +495,8 @@ namespace cc4s {
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
-      const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
+    Ptr<TensorOperation<F,TE>> lhsCompile(
+      const Ptr<TensorOperation<F,TE>> &rhsOperation
     ) override {
       // shape assuming:
       if (!assumedShape) {

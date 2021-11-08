@@ -1,7 +1,8 @@
+/*Copyright (c) 2020, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TENSOR_RECIPE_DEFINED
 #define TENSOR_RECIPE_DEFINED
 
-#include <tcc/ClosedTensorExpression.hpp>
+#include <tcc/TensorExpression.hpp>
 #include <tcc/TensorOperation.hpp>
 
 namespace cc4s {
@@ -10,7 +11,7 @@ namespace cc4s {
    **/
   template <typename F, typename TE>
   class TensorRecipe:
-    public ClosedTensorExpression<F,TE>,
+    public TensorExpression<F,TE>,
     public TensorOperation<F,TE>
   {
   protected:
@@ -24,7 +25,7 @@ namespace cc4s {
       const Ptr<Tensor<F,TE>> &result_,
       const Ptr<Operation<TE>> &recipe_,
       const typename Expression<TE>::ProtectedToken &
-    ): ClosedTensorExpression<F,TE>(
+    ): TensorExpression<F,TE>(
     ),
     TensorOperation<F,TE>(
       result_, recipe_->costs,
@@ -42,6 +43,14 @@ namespace cc4s {
       return New<TensorRecipe<F,TE>>(
         result, recipe, typename Expression<TE>::ProtectedToken()
       );
+    }
+
+    Ptr<Tensor<F,TE>> inspect() override {
+      return this->getResult();
+    }
+    Ptr<Tensor<F,TE>> evaluate() override {
+      execute();
+      return this->getResult();
     }
 
     Ptr<Operation<TE>> compile(Scope &) override {

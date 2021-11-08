@@ -19,7 +19,7 @@ namespace cc4s {
     typedef F FieldType;
 
     TensorOperation(
-      const PTR(ESC(Tensor<F,TE>)) &result_,
+      const Ptr<Tensor<F,TE>> &result_,
       const Costs &costs_,
       const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
@@ -36,7 +36,7 @@ namespace cc4s {
       // there is nothing more to do.
     }
 
-    virtual PTR(ESC(Tensor<F,TE>)) getResult() const {
+    virtual Ptr<Tensor<F,TE>> getResult() const {
       return result;
     }
 
@@ -58,9 +58,8 @@ namespace cc4s {
       return result->getName();
     }
 
-
   protected:
-    PTR(ESC(Tensor<F,TE>)) result;
+    Ptr<Tensor<F,TE>> result;
     F alpha, beta;
 
     void accountFlops() {

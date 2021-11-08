@@ -1,7 +1,8 @@
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_INDEXED_TENSOR_EXPRESSION_DEFINED
 #define TCC_INDEXED_TENSOR_EXPRESSION_DEFINED
 
-#include <tcc/TensorExpression.hpp>
+#include <tcc/AbstractTensorExpression.hpp>
 
 namespace cc4s {
   /**
@@ -14,7 +15,7 @@ namespace cc4s {
    * for instance done by: (*A)["ij"]^"ji"
    **/
   template <typename F, typename TE>
-  class IndexedTensorExpression: public TensorExpression<F,TE> {
+  class IndexedTensorExpression: public AbstractTensorExpression<F,TE> {
   public:
   };
 }

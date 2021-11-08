@@ -14,7 +14,7 @@ namespace cc4s {
   class TensorLoadOperation: public TensorOperation<F,TE> {
   public:
     TensorLoadOperation(
-      const PTR(ESC(Tensor<F,TE>)) &source_,
+      const Ptr<Tensor<F,TE>> &source_,
       const Costs &costs_,
       const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
@@ -57,14 +57,14 @@ namespace cc4s {
     }
 
   protected:
-    PTR(ESC(Tensor<F,TE>)) source;
+    Ptr<Tensor<F,TE>> source;
 
-    static PTR(ESC(TensorOperation<F,TE>)) create(
-      const PTR(ESC(Tensor<F,TE>)) &source,
+    static Ptr<TensorOperation<F,TE>> create(
+      const Ptr<Tensor<F,TE>> &source,
       const Costs &costs,
       const Scope &scope
     ) {
-      return NEW(ESC(TensorLoadOperation<F,TE>),
+      return New<TensorLoadOperation<F,TE>>(
         source, costs,
         scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );

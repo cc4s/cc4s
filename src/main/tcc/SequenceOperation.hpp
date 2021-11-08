@@ -13,7 +13,7 @@ namespace cc4s {
   class SequenceOperation: public Operation<TE> {
   public:
     SequenceOperation(
-      const std::vector<PTR(Operation<TE>)> &operations_,
+      const std::vector<Ptr<Operation<TE>>> &operations_,
       const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ): Operation<TE>(
@@ -59,17 +59,17 @@ namespace cc4s {
     }
 
   protected:
-    static PTR(SequenceOperation<TE>) create(
-      const std::vector<PTR(Operation<TE>)> &operations_,
+    static Ptr<SequenceOperation<TE>> create(
+      const std::vector<Ptr<Operation<TE>>> &operations_,
       const Scope &scope
     ) {
-      return NEW(SequenceOperation<TE>,
+      return New<SequenceOperation<TE>>(
         operations_,
         scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }
 
-    std::vector<PTR(Operation<TE>)> operations;
+    std::vector<Ptr<Operation<TE>>> operations;
 
     friend class Sequence<TE>;
   };

@@ -1,7 +1,8 @@
+/*Copyright (c) 2019, Andreas Grueneis and Felix Hummel, all rights reserved.*/
 #ifndef TCC_SLICE_DEFINED
 #define TCC_SLICE_DEFINED
 
-#include <tcc/ClosedTensorExpression.hpp>
+#include <tcc/TensorExpression.hpp>
 
 #include <tcc/SliceOperation.hpp>
 #include <tcc/SliceIntoOperation.hpp>
@@ -13,27 +14,27 @@ namespace cc4s {
    * \brief 
    **/
   template <typename F, typename TE>
-  class Slice: public ClosedTensorExpression<F,TE> {
+  class Slice: public TensorExpression<F,TE> {
   public:
     Slice(
-      const PTR(ESC(ClosedTensorExpression<F,TE>)) &source_,
+      const Ptr<TensorExpression<F,TE>> &source_,
       const std::vector<size_t> &begins_,
       const std::vector<size_t> &ends_,
       const typename Expression<TE>::ProtectedToken &
     ): source(source_), begins(begins_), ends(ends_) {
     }
 
-    static PTR(ESC(Slice<F,TE>)) create(
-      const PTR(ESC(ClosedTensorExpression<F,TE>)) &source,
+    static Ptr<Slice<F,TE>> create(
+      const Ptr<TensorExpression<F,TE>> &source,
       const std::vector<size_t> &begins,
       const std::vector<size_t> &ends
     ) {
-      return NEW(ESC(Slice<F,TE>),
+      return New<Slice<F,TE>>(
         source, begins, ends, typename Expression<TE>::ProtectedToken()
       );
     }
 
-    PTR(Operation<TE>) compile(Scope &scope) override {
+    Ptr<Operation<TE>> compile(Scope &scope) override {
       Scope sourceScope(scope.file, scope.line);
       auto sourceOperation(
         dynamicPtrCast<TensorOperation<F,TE>>(source->compile(sourceScope))
@@ -51,10 +52,10 @@ namespace cc4s {
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    PTR(ESC(TensorOperation<F,TE>)) lhsCompile(
-      const PTR(ESC(TensorOperation<F,TE>)) &rhsOperation
+    Ptr<TensorOperation<F,TE>> lhsCompile(
+      const Ptr<TensorOperation<F,TE>> &rhsOperation
     ) override {
-      auto lhsTensor(DYNAMIC_PTR_CAST(ESC(Tensor<F,TE>), source));
+      auto lhsTensor(dynamicPtrCast<Tensor<F,TE>>(source));
       if (!lhsTensor) {
         throw New<Exception>(
           "Expecting tensor for slice operation on left-hand-side.",
@@ -63,12 +64,8 @@ namespace cc4s {
       }
       if (!rhsOperation->getResult()->assumedShape) {
         // create intermediate tensor as result tensor for rhsOperation
-        std::vector<size_t> resultLens(begins.size());
-        for (size_t i(0); i < resultLens.size(); ++i) {
-          if (ends[i] > lhsTensor->getLens()[i])
-            ends[i] = lhsTensor->getLens()[i];
-          resultLens[i] = ends[i] - begins[i];
-        }
+        auto resultLens(ends);
+        for (size_t i(0); i < resultLens.size(); ++i) resultLens[i] -= begins[i];
         auto intermediateTensor(
           Tensor<F,TE>::create(resultLens, lhsTensor->getName() + "'")
         );
@@ -120,7 +117,7 @@ namespace cc4s {
       return lens;
     }
 
-    Ptr<ClosedTensorExpression<F,TE>> source;
+    Ptr<TensorExpression<F,TE>> source;
     std::vector<size_t> begins, ends;
   };
 }

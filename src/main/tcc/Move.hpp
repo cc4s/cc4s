@@ -21,16 +21,16 @@ namespace cc4s {
      **/
     template <typename LHS, typename RHS, typename S>
     static inline
-    PTR(ESC(Move<typename LHS::FieldType, typename LHS::TensorEngine>)) create(
-      const PTR(LHS) &lhs,
-      const PTR(RHS) &rhs,
+    Ptr<Move<typename LHS::FieldType, typename LHS::TensorEngine>> create(
+      const Ptr<LHS> &lhs,
+      const Ptr<RHS> &rhs,
       const S beta
     ) {
       static_assert(
         TypeRelations<S, typename LHS::FieldType>::CASTABLE_TO,
         "The type of the scalar must be convertible to the tensor type."
       );
-      return NEW(ESC(Move<typename LHS::FieldType,TE>),
+      return New<Move<typename LHS::FieldType,TE>>(
         lhs, rhs, beta,
         typename Expression<TE>::ProtectedToken()
       );
@@ -44,8 +44,8 @@ namespace cc4s {
 /*
     FIXME: find exclusion
     Move(
-      const PTR(ESC(IndexedTensor<F,TE>)) &lhs_,
-      const PTR(Expression<TE>) &rhs_,
+      const Ptr<IndexedTensor<F,TE>> &lhs_,
+      const Ptr<Expression<TE>> &rhs_,
       const F beta_,
       const typename Expression<TE>::ProtectedToken &
     ) {
@@ -64,8 +64,8 @@ namespace cc4s {
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const PTR(ESC(Indexing<F,TE>)) &lhs_,
-      const PTR(ESC(IndexedTensorExpression<F,TE>)) &rhs_,
+      const Ptr<Indexing<F,TE>> &lhs_,
+      const Ptr<IndexedTensorExpression<F,TE>> &rhs_,
       const F beta_,
       const typename Expression<TE>::ProtectedToken &
     ): lhs(lhs_), rhs(Contraction<F,TE>::create(1, rhs_)), beta(beta_) {
@@ -77,8 +77,8 @@ namespace cc4s {
      * Not indended for direct invocation. Use Move::create instead
      **/
     Move(
-      const PTR(ESC(Indexing<F,TE>)) &lhs_,
-      const PTR(ESC(Contraction<F,TE>)) &rhs_,
+      const Ptr<Indexing<F,TE>> &lhs_,
+      const Ptr<Contraction<F,TE>> &rhs_,
       const F beta_,
       const typename Expression<TE>::ProtectedToken &
     ): lhs(lhs_), rhs(rhs_), beta(beta_) {
@@ -88,7 +88,7 @@ namespace cc4s {
 
     // each move has its private index namespace so disregard the outer
     // scope
-    virtual PTR(Operation<TE>) compile(Scope &outerScope) {
+    Ptr<Operation<TE>> compile(Scope &outerScope) override {
       LOG_LOCATION(SourceLocation(outerScope.file, outerScope.line)) <<
         "compiling: " << static_cast<std::string>(*this) << std::endl;
 
@@ -101,9 +101,7 @@ namespace cc4s {
       scope.triedPossibilitiesCount = 0;
       auto operation(
         // compile right-hand-side in the namespace of this move
-        DYNAMIC_PTR_CAST(
-          ESC(IndexedTensorOperation<F,TE>), rhs->compile(scope)
-        )
+        dynamicPtrCast<IndexedTensorOperation<F,TE>>(rhs->compile(scope))
       );
 
       LOG_LOCATION(SourceLocation(outerScope.file, outerScope.line)) <<
@@ -121,12 +119,12 @@ namespace cc4s {
     // keep other overloads visible
     using Expression<TE>::compile;
 
-    virtual void countIndices(Scope &scope) {
+    void countIndices(Scope &scope) override {
       lhs->countIndices(scope);
       rhs->countIndices(scope);
     }
 
-    virtual operator std::string () const {
+    operator std::string () const override {
       std::stringstream stream;
       stream << "Sum( " <<
         std::string(*lhs) << ", " << std::string(*rhs) << ", beta=" << beta << " )";
@@ -134,8 +132,8 @@ namespace cc4s {
     }
 
   protected:
-    PTR(ESC(IndexedTensorExpression<F,TE>)) lhs;
-    PTR(ESC(Contraction<F,TE>)) rhs;
+    Ptr<IndexedTensorExpression<F,TE>> lhs;
+    Ptr<Contraction<F,TE>> rhs;
     F beta;
   };
 
@@ -144,13 +142,13 @@ namespace cc4s {
    **/
   template <typename RHS>
   inline
-  PTR(ESC(Move<typename RHS::FieldType,typename RHS::TensorEngine>))
+  Ptr<Move<typename RHS::FieldType,typename RHS::TensorEngine>>
   operator +=(
     const
-    PTR(
-      ESC(Indexing<typename RHS::FieldType,typename RHS::TensorEngine>)
-    ) &lhs,
-    const PTR(RHS) &rhs
+    Ptr<
+      Indexing<typename RHS::FieldType,typename RHS::TensorEngine>
+    > &lhs,
+    const Ptr<RHS> &rhs
   ) {
     return Move<typename RHS::FieldType,typename RHS::TensorEngine>::create(
       lhs, rhs, typename RHS::FieldType(1)
@@ -161,13 +159,13 @@ namespace cc4s {
    **/
   template <typename RHS>
   inline
-  PTR(ESC(Move<typename RHS::FieldType,typename RHS::TensorEngine>))
+  Ptr<Move<typename RHS::FieldType,typename RHS::TensorEngine>>
   operator -=(
     const
-    PTR(
-      ESC(Indexing<typename RHS::FieldType,typename RHS::TensorEngine>)
-    ) &lhs,
-    const PTR(RHS) &rhs
+    Ptr<
+      Indexing<typename RHS::FieldType,typename RHS::TensorEngine>
+    > &lhs,
+    const Ptr<RHS> &rhs
   ) {
     return Move<typename RHS::FieldType,typename RHS::TensorEngine>::create(
       lhs,
@@ -187,13 +185,13 @@ namespace cc4s {
    **/
   template <typename RHS>
   inline
-  PTR(ESC(Move<typename RHS::FieldType, typename RHS::TensorEngine>))
+  Ptr<Move<typename RHS::FieldType, typename RHS::TensorEngine>>
   operator <<=(
     const
-    PTR(
-      ESC(Indexing<typename RHS::FieldType,typename RHS::TensorEngine>)
-    ) &lhs,
-    const PTR(RHS) &rhs
+    Ptr<
+      Indexing<typename RHS::FieldType,typename RHS::TensorEngine>
+    > &lhs,
+    const Ptr<RHS> &rhs
   ) {
     return Move<typename RHS::FieldType, typename RHS::TensorEngine>::create(
       lhs, rhs, typename RHS::FieldType(0)
@@ -202,9 +200,9 @@ namespace cc4s {
 
   template <typename LHS, typename RHS>
   inline
-  PTR(ESC(Move<typename RHS::FieldType, typename RHS::TensorEngine>))
+  Ptr<Move<typename RHS::FieldType, typename RHS::TensorEngine>>
   operator <<=(
-    const PTR(LHS) &, const PTR(RHS) &rhs
+    const Ptr<LHS> &, const Ptr<RHS> &rhs
   ) {
     static_assert(
       TypeRelations<
@@ -216,7 +214,7 @@ namespace cc4s {
       StaticAssert<RHS>::FALSE,
       "Only indexed tensors may be used as the left hand side of a move operation."
     );
-    return PTR(ESC(Move<typename RHS::FieldType,typename RHS::TensorEngine>))();
+    return Ptr<Move<typename RHS::FieldType,typename RHS::TensorEngine>>();
   }
 
   template <typename F, typename TE>
