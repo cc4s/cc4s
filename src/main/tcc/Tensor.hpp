@@ -330,7 +330,7 @@ namespace cc4s {
       const std::string &name_,
       const ProtectedToken &
     ):
-      lens(lens_), assumedShape(true),
+      lens(lens_), assumedShape(true), dimensions(lens_.size()),
       version(0), name(name_)
     {
       // the machine tensor is not allocated initially
@@ -342,7 +342,7 @@ namespace cc4s {
       const bool assumedShape_,
       const ProtectedToken &
     ):
-      lens(lens_), assumedShape(assumedShape_),
+      lens(lens_), assumedShape(assumedShape_), dimensions(lens_.size()),
       version(0), name(name_)
     {
       // the machine tensor is not allocated initially
@@ -359,6 +359,7 @@ namespace cc4s {
       auto mt(MT::create(unadaptedTensor_));
       lens = mt->getLens();
       name = mt->getName();
+      dimensions.resize(lens.size());
       machineTensor = mt;
     }
 

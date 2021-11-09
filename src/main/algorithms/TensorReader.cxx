@@ -18,6 +18,7 @@
 #include <Cc4s.hpp>
 #include <Parser.hpp>
 #include <util/Scanner.hpp>
+#include <util/TensorIo.hpp>
 #include <tcc/Tcc.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>
@@ -67,39 +68,6 @@ Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   return result;
 }
 
-// TODO: use local tensor data to hold weak dimension info
-Ptr<TensorDimension> getDimension(const std::string &name) {
-  // check if name is entetered in map
-  auto iterator(TensorDimension::dimensions.find(name));
-  if (iterator != TensorDimension::dimensions.end()) return iterator->second;
-  // otherwise: create new tensor dimension entry
-  auto tensorDimension(New<TensorDimension>());
-  tensorDimension->name = name;
-  // check if file exists specifying dimension properties
-  try {
-    auto propertiesMap(Parser(name + ".properties.yaml").parse()->toMap());
-    for (auto key: propertiesMap->getKeys()) {
-      auto propertyMap(propertiesMap->getMap(key));
-      auto property(New<TensorDimensionProperty>());
-      property->name = key;
-      for (auto indexKey: propertyMap->getKeys()) {
-        auto index(std::stol(indexKey));
-        auto propertyValue(propertyMap->getValue<Natural<>>(indexKey));
-        // enter index -> property map
-        property->propertyOfIndex[index] = propertyValue;
-        // build reverse lookup map of sets as well
-        property->indicesOfProperty[propertyValue].insert(index);
-      }
-      LOG() << "entering property " << property->name << " of dimension " << name << std::endl;
-      tensorDimension->properties[property->name] = property;
-    }
-  } catch (Ptr<Exception> &cause) {
-    throw cause;
-    // no properties file could be loaded: dimension without properties
-  }
-  return TensorDimension::dimensions[name] = tensorDimension;
-}
-
 void TensorReader::readData(
   const Ptr<MapNode> &tensor,
   const std::string &scalarType,
@@ -115,7 +83,7 @@ void TensorReader::readData(
     lens.push_back(dimensionsMap->getMap(key)->getValue<size_t>("length"));
     // get dimension properties, if given
     dimensions.push_back(
-      getDimension(
+      TensorIo::getDimension(
         dimensionsMap->getMap(key)->getValue<std::string>("type")
       )
     );

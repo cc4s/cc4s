@@ -25,6 +25,40 @@
 namespace cc4s {
   class TensorIo {
   public:
+    // TODO: use context to hold dimension info
+    static Ptr<TensorDimension> getDimension(const std::string &name) {
+      // check if name is entetered in map
+      auto iterator(TensorDimension::dimensions.find(name));
+      if (iterator != TensorDimension::dimensions.end()) return iterator->second;
+      // otherwise: create new tensor dimension entry
+      auto tensorDimension(New<TensorDimension>());
+      tensorDimension->name = name;
+      TensorDimension::dimensions[name] = tensorDimension;
+
+      // check if file exists specifying dimension properties
+      auto propertiesFileName(name + ".properties.yaml");
+      if (std::ifstream(propertiesFileName).good()) {
+        auto propertiesMap(Parser(propertiesFileName).parse()->toMap());
+        for (auto key: propertiesMap->getKeys()) {
+          auto propertyMap(propertiesMap->getMap(key));
+          auto property(New<TensorDimensionProperty>());
+          property->name = key;
+          for (auto indexKey: propertyMap->getKeys()) {
+            auto index(std::stol(indexKey));
+            auto propertyValue(propertyMap->getValue<Natural<>>(indexKey));
+            // enter index -> property map
+            property->propertyOfIndex[index] = propertyValue;
+            // build reverse lookup map of sets as well
+            property->indicesOfProperty[propertyValue].insert(index);
+          }
+          LOG() << "entering property "
+            << property->name << " of dimension " << name << std::endl;
+          tensorDimension->properties[property->name] = property;
+        }
+      }
+      return tensorDimension;
+    }
+
     /**
      * \brief Static handler routine for writing nodes of the type
      * AtomicNode<Ptr<Tensor<F,TE>>>. If the given node is of such a type
@@ -126,12 +160,15 @@ namespace cc4s {
       auto dimensions(New<MapNode>(SOURCE_LOCATION));
       for (size_t d(0); d < tensor->lens.size(); ++d) {
         auto dimension(New<MapNode>(SOURCE_LOCATION));
-        dimension->setValue<size_t>("length", tensor->lens[d]);
+        dimension->setValue<>("length", tensor->lens[d]);
+        if (tensor->dimensions[d]) {
+          dimension->setValue<>("dimension", tensor->dimensions[d]->name);
+        }
         dimensions->get(d) = dimension;
-        // TODO: how to determine dimension type?
       }
       writtenTensor->get("dimensions") = dimensions;
       writtenTensor->setSymbol("scalarType", TypeTraits<F>::getName());
+      writtenTensor->setValue<std::string>("version", VERSION);
       auto dataNode(New<MapNode>(SOURCE_LOCATION));
       dataNode->setValue<std::string>("type", "externalFile");
       dataNode->setValue<bool>("binary", useBinary);

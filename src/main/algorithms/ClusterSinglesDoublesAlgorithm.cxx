@@ -168,9 +168,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   result->setValue<bool>("convergenceReached", convergenceReached);
-  result->get("amplitudes") = New<AtomicNode<Ptr<const TensorUnion<F,TE>>>>(
-    amplitudes, SOURCE_LOCATION
-  );
+  result->setValue<>("amplitudes", amplitudes);
   return result;
 }
 
