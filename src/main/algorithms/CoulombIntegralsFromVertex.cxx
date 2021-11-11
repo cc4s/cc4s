@@ -71,6 +71,9 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
   auto GammaGhp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hp"));
   auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
 
+  auto NF(GammaGhh->inspect()->lens[0]);
+  OUT() << "number of field variables NF= " << NF << std::endl;
+
 #define DEFINE_VERTEX_PART(PART, SLICE) \
   Ptr<TensorRecipe<Real<>,TE>> PART##GammaG##SLICE; \
   { \
@@ -165,6 +168,9 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
   auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
   auto GammaGhp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hp"));
   auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
+
+  auto NF(GammaGhh->inspect()->lens[0]);
+  OUT() << "number of field variables NF= " << NF << std::endl;
 
 #define DEFINE_VERTEX_CONJT(O,I) \
   Ptr<TensorRecipe<Complex<>,TE>> conjTGammaG##O##I; \
