@@ -125,6 +125,10 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   report->setValue<std::string>("realtime", totalRealtime.str());
   report->setValue<size_t>("floatingPointOperations", totalFlops);
   report->setValue<Real<>>("flops", totalFlops/totalTime.getFractionalSeconds());
+
+  // emit report, overwrite from previous step
+  Emitter emitter(Cc4s::options->name + ".out");
+  emitter.emit(report);
 }
 
 void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
@@ -321,10 +325,6 @@ int main(int argumentCount, char **arguments) {
       OUT() << "unhandled exception encountered (...)." << std::endl;
     }
   }
-
-  // emit report, also in case of error
-  Emitter emitter(Cc4s::options->name + ".out");
-  emitter.emit(report);
 
   MPI_Finalize();
   return errorHappened ? 1 : 0;
