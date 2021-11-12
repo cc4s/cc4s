@@ -23,9 +23,9 @@ namespace cc4s {
   /**
    * \brief Caclulates different Finite Size corrections
    */
-  class FiniteSizeCorrection: public Algorithm {
+  class StructureFactorFiniteSizeCorrection: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(FiniteSizeCorrection)
+    ALGORITHM_REGISTRAR_DECLARATION(StructureFactorFiniteSizeCorrection)
     /**
      * \brief runs main routine
      */
@@ -34,6 +34,10 @@ namespace cc4s {
   protected:
     template <typename TE>
     void interpolation(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
+  protected:
+    template <typename F, typename TE>
+    void calculateStructureFactor(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
+
   };
 
 }

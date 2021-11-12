@@ -27,7 +27,7 @@ main/algorithms/CcsdEnergyFromCoulombIntegralsReference.cxx \
 main/algorithms/CcsdEnergyFromCoulombIntegrals.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/StructureFactor.cxx \
-main/algorithms/FiniteSizeCorrection.cxx \
+main/algorithms/StructureFactorFiniteSizeCorrection.cxx \
 main/algorithms/BasisSetCorrection.cxx \
 main/mixers/Mixer.cxx \
 main/mixers/LinearMixer.cxx \
