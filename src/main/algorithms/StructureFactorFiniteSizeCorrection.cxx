@@ -27,7 +27,6 @@ ALGORITHM_REGISTRAR_DEFINITION(StructureFactorFiniteSizeCorrection)
 Ptr<MapNode> StructureFactorFiniteSizeCorrection::run(
   const Ptr<MapNode> &arguments
 ) {
-FiniteSizeCorrection.cxx
   auto result(New<MapNode>(SOURCE_LOCATION));
 
   auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
