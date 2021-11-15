@@ -27,19 +27,128 @@ ALGORITHM_REGISTRAR_DEFINITION(StructureFactorFiniteSizeCorrection)
 Ptr<MapNode> StructureFactorFiniteSizeCorrection::run(
   const Ptr<MapNode> &arguments
 ) {
+FiniteSizeCorrection.cxx
   auto result(New<MapNode>(SOURCE_LOCATION));
+
+  auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
+  auto momentumType(
+    slicedCoulombVertex->getMap(
+      "indices"
+    )->getMap("momentum")->getValue<std::string>("type")
+  );
+
 
   if (Cc4s::options->dryRun) {
     using TE = DefaultDryTensorEngine;
+    if (momentumType == "halfGrid") {
+//   i   return calculateStructureFactor<Real<>, TE>(arguments);
+      calculateStructureFactor<Real<>, TE>(arguments, result);
+    } else if (momentumType == "fullGrid") {
+//      return calculateStructureFactor<Complex<>,TE>(arguments);
+      calculateStructureFactor<Complex<>, TE>(arguments, result);
+    }
     interpolation<TE>(arguments, result);
   }
   else {
     using TE = DefaultTensorEngine;
+    if (momentumType == "halfGrid") {
+//   i   return calculateStructureFactor<Real<>, TE>(arguments);
+      calculateStructureFactor<Real<>, TE>(arguments, result);
+    } else if (momentumType == "fullGrid") {
+//      return calculateStructureFactor<Complex<>,TE>(arguments);
+      calculateStructureFactor<Complex<>, TE>(arguments, result);
+    }
+
     interpolation<TE>(arguments, result);
   } 
   return result;
 }
 
+// This algorithm works as follows:
+// - undo the SVD of the CoulombVertex and bring it back to reciprocal mesh
+// - divide te CoulombVertex by the Coulomb potential to obtain the codensities
+
+template <typename F, typename TE>
+void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
+  const Ptr<MapNode> &arguments, Ptr<MapNode> &result
+) {
+  using TRc = TensorRecipe<Complex<>, TE>;
+  using Tc = Tensor<Complex<>, TE>;
+  using Tr = Tensor<Real<>, TE>;
+
+  // READ input to compute structure factors
+
+  auto coulombVertexSingularVectors = arguments->getMap("coulombVertexSingularVectors");
+  auto singularVectors(coulombVertexSingularVectors->getValue<Ptr<Tc>>("data"));
+
+  auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
+  auto slices(coulombVertex->getMap("slices"));
+  // get input recipes
+  auto GammaFph(slices->getValue<Ptr<TRc>>("ph"));
+  auto GammaFhp(slices->getValue<Ptr<TRc>>("hp"));
+  auto GammaFhh(slices->getValue<Ptr<TRc>>("hh"));
+  auto GammaGph( Tcc<TE>::template tensor<Complex<>>("Gph"));
+  auto GammaGhp( Tcc<TE>::template tensor<Complex<>>("Ghp"));
+  auto GammaGhh( Tcc<TE>::template tensor<Complex<>>("Ghh"));
+  COMPILE(
+    (*GammaGph)["Gai"] <<= (*GammaFph)["Fai"] * (*singularVectors)["GF"],
+    (*GammaGhp)["Gia"] <<= (*GammaFhp)["Fia"] * (*singularVectors)["GF"],
+    (*GammaGhh)["Gij"] <<= (*GammaFhh)["Fij"] * (*singularVectors)["GF"]
+  )->execute();
+
+
+  //We have to take out calculate the overlap coefficients Cpq(G) from Γpq(G) by taking
+  //out the reciprocal Coulomb kernel
+  //Finally the StructureFactor reads: S(G)=Cai(G)*Cbj*(G)*Tabij
+  auto CGph   = ( Tcc<TE>::template tensor<Complex<>>("CGph"));
+  auto cTCGph = ( Tcc<TE>::template tensor<Complex<>>("cTCGph"));
+
+  auto CoulombPotential(arguments->getMap("coulombPotential"));
+  auto VofG(CoulombPotential->getValue<Ptr<Tr>>("data"));
+  auto invSqrtCoulombPotential( Tcc<TE>::template tensor<Complex<>>
+    ("invSqrtCoulombPotential"));
+
+  COMPILE(
+    (*invSqrtCoulombPotential)["G"] <<=
+      map<Complex<>>(inverseSqrt<Complex<>>, (*VofG)["G"]),
+    // PH codensities
+    (*CGph)["Gai"]    <<= (*GammaGph)["Gai"] * (*invSqrtCoulombPotential)["G"],
+    (*cTCGph)["Gai"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGhp)["Gia"]),
+    (*cTCGph)["Gai"]  <<= (*cTCGph)["Gai"] * (*invSqrtCoulombPotential)["G"]
+  )->execute();
+
+  auto StructureFactor( Tcc<TE>::template tensor<Real<>>("StructureFactor"));
+  //prepare T amplitudes
+
+
+  //THESE TWO LINES ARE SEGFAULTING
+  auto amplitudesNode(
+    arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>()
+  );
+  auto amplitudes(amplitudesNode->value);
+
+  auto Tph( amplitudes->get(0) );
+  auto Tpphh( amplitudes->get(1) );
+  auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
+
+
+  COMPILE(
+//    (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
+    (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"])
+  )->execute();
+
+  auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
+  COMPILE(
+    (*SofG)["G"] <<= ( 2.0) * (*cTCGph)["Gai"] * (*CGph)["Gbj"] * (*Tabij)["abij"],
+    (*SofG)["G"]  += (-1.0) * (*cTCGph)["Gaj"] * (*CGph)["Gbi"] * (*Tabij)["abij"],
+    (*StructureFactor)["G"] <<= map<Real<>>(real<Complex<>>, (*SofG)["G"])
+  )->execute();
+
+//  auto result(New<MapNode>(SOURCE_LOCATION));
+
+  result->setValue<Ptr<Tensor<Real<>, TE>>>("structureFactor", StructureFactor);
+//  return result;
+}
 
 template <typename TE>
 void StructureFactorFiniteSizeCorrection::interpolation(
@@ -81,6 +190,24 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
   // READ THE RECIPROCAL CELL
   std::vector<Vector<>> B(3);
+
+  auto Gi(gridVectors->getMap("Gi"));
+  auto Gj(gridVectors->getMap("Gj"));
+  auto Gk(gridVectors->getMap("Gk"));
+
+  auto Gix(Gi->getValue<Real<>>(0));
+  auto Giy(Gi->getValue<Real<>>(1));
+  auto Giz(Gi->getValue<Real<>>(2));
+
+  auto Gjx(Gj->getValue<Real<>>(0));
+  auto Gjy(Gj->getValue<Real<>>(1));
+  auto Gjz(Gj->getValue<Real<>>(2));
+
+  auto Gkx(Gk->getValue<Real<>>(0));
+  auto Gky(Gk->getValue<Real<>>(1));
+  auto Gkz(Gk->getValue<Real<>>(2));
+
+/*
   auto Gix(gridVectors->getValue<Real<>>("Gix"));
   auto Giy(gridVectors->getValue<Real<>>("Giy"));
   auto Giz(gridVectors->getValue<Real<>>("Giz"));
@@ -90,15 +217,16 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   auto Gkx(gridVectors->getValue<Real<>>("Gkx"));
   auto Gky(gridVectors->getValue<Real<>>("Gky"));
   auto Gkz(gridVectors->getValue<Real<>>("Gkz"));
-
+*/
 
   B[0][0] = Gix; B[0][1] = Giy; B[0][2] = Giz ;
   B[1][0] = Gjx; B[1][1] = Gjy; B[1][2] = Gjz ;
   B[2][0] = Gkx; B[2][1] = Gky; B[2][2] = Gkz ;
 
+
   // READ THE Structure Factor
   std::vector<Real<>> SofG;
-  auto structureFactor(arguments->getValue<Ptr<T>>("structureFactor"));
+  auto structureFactor(result->getValue<Ptr<T>>("structureFactor"));
 //  ASSERT_LOCATION(
 //    structureFactor, "expecting the structureFactor",
 //    structureFactor->sourceLocation
@@ -135,7 +263,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   // allocate and initialize direct-grid StructureFactor
   std::vector<Real<>> directSofG(boxSize, 0.0);
 
-  OUT() << boxSize << std::endl;
+//  OUT() << boxSize << std::endl;
   // enter known SG values
   for (int g(0); g < NG; ++g) {
     int64_t index(0);
@@ -192,8 +320,8 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   communicator.allReduce(inter3D, totalInter3D);
 
 
-  OUT() << "uncorrected: " << sum3D << "\n";
-  OUT() << "corrected:   " << totalInter3D/N/N/N << "\n";
+  OUT() << "Uncorrected correlation energy: " << sum3D << "\n";
+  OUT() << "Basis-set energy correction:   " << totalInter3D/N/N/N-sum3D << "\n";
 
 
   auto energy(New<MapNode>(SOURCE_LOCATION));

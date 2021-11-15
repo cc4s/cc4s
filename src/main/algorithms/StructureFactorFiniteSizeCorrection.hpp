@@ -34,6 +34,10 @@ namespace cc4s {
   protected:
     template <typename TE>
     void interpolation(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
+  protected:
+    template <typename F, typename TE>
+    void calculateStructureFactor(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
+
   };
 
 }
