@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef COULOMB_INTEGRALS_FROM_VERTEX_DEFINED
-#define COULOMB_INTEGRALS_FROM_VERTEX_DEFINED
+#ifndef VERTEX_COULOMB_INTEGRALS_DEFINED
+#define VERTEX_COULOMB_INTEGRALS_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 
@@ -26,9 +26,9 @@ namespace cc4s {
    * Vaibj, Vijkl, Vabcd, Vijka, and Vabci respectively. The arguments of the
    * integrals are PPPP, PPHH, HHHH, PHPH, HHHP, and PPPHCoulombIntegrals.
    */
-  class CoulombIntegralsFromVertex: public Algorithm {
+  class VertexCoulombIntegrals: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CoulombIntegralsFromVertex)
+    ALGORITHM_REGISTRAR_DECLARATION(VertexCoulombIntegrals)
     /**
      * \brief Calculates Coulomb integrals Vabcd,Vabij,Vaibj,Vabci,Vijka,Vijkl
      * from GammaGai,GammaGab,GammaGij Coulomb Vertices.

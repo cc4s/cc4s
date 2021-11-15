@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/Atrip.hpp>
+#include <algorithms/PerturbativeTriples.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <math/TensorUnion.hpp>
@@ -21,12 +21,12 @@
 #include <atrip.hpp>
 
 using namespace cc4s;
-ALGORITHM_REGISTRAR_DEFINITION(Atrip)
+ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 
 #define Q(...) #__VA_ARGS__
 #define QUOTE(...) Q(__VA_ARGS__)
 
-Ptr<MapNode> Atrip::run(const Ptr<MapNode> &arguments) {
+Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
   using TE = DefaultTensorEngine;
 
   auto result(New<MapNode>(SOURCE_LOCATION));

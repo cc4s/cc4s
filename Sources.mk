@@ -19,23 +19,23 @@ main/algorithms/DefineHolesAndParticles.cxx \
 main/algorithms/SliceOperator.cxx \
 main/algorithms/DimensionProperty.cxx \
 main/algorithms/NonZeroCondition.cxx \
-main/algorithms/CoulombIntegralsFromVertex.cxx \
-main/algorithms/Mp2EnergyFromCoulombIntegrals.cxx \
+main/algorithms/VertexCoulombIntegrals.cxx \
+main/algorithms/SecondOrderPerturbationTheory.cxx \
 main/algorithms/ClusterSinglesDoublesAlgorithm.cxx \
-main/algorithms/DrccdEnergyFromCoulombIntegrals.cxx \
-main/algorithms/CcsdEnergyFromCoulombIntegralsReference.cxx \
-main/algorithms/CcsdEnergyFromCoulombIntegrals.cxx \
+main/algorithms/DirectRingCoupledClusterDoubles.cxx \
+main/algorithms/CoupledClusterSinglesDoublesReference.cxx \
+main/algorithms/CoupledClusterSinglesDoubles.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/StructureFactor.cxx \
-main/algorithms/FiniteSizeCorrection.cxx \
-main/algorithms/BasisSetCorrection.cxx \
+main/algorithms/StructureFactorFiniteSizeCorrection.cxx \
+main/algorithms/CcsdFocalPointBasisSetCorrection.cxx \
 main/mixers/Mixer.cxx \
 main/mixers/LinearMixer.cxx \
 main/mixers/DiisMixer.cxx \
 main/math/TensorUnion.cxx \
 
 ifeq ($(ATRIP), yes)
-SRC_FILES += main/algorithms/Atrip.cxx
+SRC_FILES += main/algorithms/PerturbativeTriples.cxx
 endif
 
 TEST_SRC_FILES = \

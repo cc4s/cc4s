@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/CcsdEnergyFromCoulombIntegrals.hpp>
+#include <algorithms/CoupledClusterSinglesDoubles.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -21,10 +21,10 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CcsdEnergyFromCoulombIntegrals)
+ALGORITHM_REGISTRAR_DEFINITION(CoupledClusterSinglesDoubles)
 
 Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
-CcsdEnergyFromCoulombIntegrals::getResiduum(
+CoupledClusterSinglesDoubles::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
 ) {
@@ -32,7 +32,7 @@ CcsdEnergyFromCoulombIntegrals::getResiduum(
 }
 
 Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
-CcsdEnergyFromCoulombIntegrals::getResiduum(
+CoupledClusterSinglesDoubles::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
 ) {
@@ -40,7 +40,7 @@ CcsdEnergyFromCoulombIntegrals::getResiduum(
 }
 
 Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
-CcsdEnergyFromCoulombIntegrals::getResiduum(
+CoupledClusterSinglesDoubles::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
 ) {
@@ -48,7 +48,7 @@ CcsdEnergyFromCoulombIntegrals::getResiduum(
 }
 
 Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
-CcsdEnergyFromCoulombIntegrals::getResiduum(
+CoupledClusterSinglesDoubles::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
 ) {
@@ -61,7 +61,7 @@ CcsdEnergyFromCoulombIntegrals::getResiduum(
 //////////////////////////////////////////////////////////////////////
 
 template <typename TE>
-Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
+Ptr<TensorUnion<Real<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
   const int iteration, const Ptr<const TensorUnion<Real<>,TE>> &amplitudes
 ) {
 
@@ -452,7 +452,7 @@ Ptr<TensorUnion<Real<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
 
 
 template <typename TE>
-Ptr<TensorUnion<Complex<>,TE>> CcsdEnergyFromCoulombIntegrals::getResiduum(
+Ptr<TensorUnion<Complex<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
   const int iteration, const Ptr<const TensorUnion<Complex<>,TE>> &amplitudes
 ) {
 

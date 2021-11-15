@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef BASIS_SET_CORRECTION
-#define BASIS_SET_CORRECTION
+#ifndef CCSD_FOCAL_POINT_BASIS_SET_CORRECTION
+#define CCSD_FOCAL_POINT_BASIS_SET_CORRECTION
 
 #include <algorithms/Algorithm.hpp>
 #include <math/TensorUnion.hpp>
@@ -23,9 +23,9 @@ namespace cc4s {
   /**
    * \brief Caclulates basis set correction scheme called ps-ppl
    */
-  class BasisSetCorrection: public Algorithm {
+  class CcsdFocalPointBasisSetCorrection: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(BasisSetCorrection)
+    ALGORITHM_REGISTRAR_DECLARATION(CcsdFocalPointBasisSetCorrection)
     /**
      * \brief run routine 
      */

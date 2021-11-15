@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/CcsdEnergyFromCoulombIntegralsReference.hpp>
+#include <algorithms/CoupledClusterSinglesDoublesReference.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -21,10 +21,10 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CcsdEnergyFromCoulombIntegralsReference)
+ALGORITHM_REGISTRAR_DEFINITION(CoupledClusterSinglesDoublesReference)
 
 Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
-CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
 ) {
@@ -32,7 +32,7 @@ CcsdEnergyFromCoulombIntegralsReference::getResiduum(
 }
 
 Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
-CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
 ) {
@@ -40,7 +40,7 @@ CcsdEnergyFromCoulombIntegralsReference::getResiduum(
 }
 
 Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
-CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
 ) {
@@ -49,7 +49,7 @@ CcsdEnergyFromCoulombIntegralsReference::getResiduum(
 
 
 Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
-CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
 ) {
@@ -62,7 +62,7 @@ CcsdEnergyFromCoulombIntegralsReference::getResiduum(
 //////////////////////////////////////////////////////////////////////
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> CcsdEnergyFromCoulombIntegralsReference::getResiduum(
+Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration, const Ptr<const TensorUnion<F,TE>> &amplitudes
 ) {
   // get amplitude parts

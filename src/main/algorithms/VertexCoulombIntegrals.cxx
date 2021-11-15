@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/CoulombIntegralsFromVertex.hpp>
+#include <algorithms/VertexCoulombIntegrals.hpp>
 
 #include <math/Complex.hpp>
 #include <math/MathFunctions.hpp>
@@ -23,9 +23,9 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CoulombIntegralsFromVertex)
+ALGORITHM_REGISTRAR_DEFINITION(VertexCoulombIntegrals)
 
-Ptr<MapNode> CoulombIntegralsFromVertex::run(const Ptr<MapNode> &arguments) {
+Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
   auto momentumType(
     slicedCoulombVertex->getMap(
@@ -60,7 +60,7 @@ Ptr<MapNode> CoulombIntegralsFromVertex::run(const Ptr<MapNode> &arguments) {
 }
 
 template <typename TE>
-Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
+Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
   const Ptr<MapNode> &arguments
 ) {
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
@@ -158,7 +158,7 @@ Ptr<MapNode> CoulombIntegralsFromVertex::calculateRealIntegrals(
 }
 
 template <typename TE>
-Ptr<MapNode> CoulombIntegralsFromVertex::calculateComplexIntegrals(
+Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
   const Ptr<MapNode> &arguments
 ) {
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));

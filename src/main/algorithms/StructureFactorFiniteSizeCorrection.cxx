@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/FiniteSizeCorrection.hpp>
+#include <algorithms/StructureFactorFiniteSizeCorrection.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <math/TensorUnion.hpp>
@@ -22,9 +22,11 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(FiniteSizeCorrection)
+ALGORITHM_REGISTRAR_DEFINITION(StructureFactorFiniteSizeCorrection)
 
-Ptr<MapNode> FiniteSizeCorrection::run(const Ptr<MapNode> &arguments) {
+Ptr<MapNode> StructureFactorFiniteSizeCorrection::run(
+  const Ptr<MapNode> &arguments
+) {
   auto result(New<MapNode>(SOURCE_LOCATION));
 
   if (Cc4s::options->dryRun) {
@@ -40,7 +42,7 @@ Ptr<MapNode> FiniteSizeCorrection::run(const Ptr<MapNode> &arguments) {
 
 
 template <typename TE>
-void FiniteSizeCorrection::interpolation(
+void StructureFactorFiniteSizeCorrection::interpolation(
   const Ptr<MapNode> &arguments,
   Ptr<MapNode> &result
 ) {

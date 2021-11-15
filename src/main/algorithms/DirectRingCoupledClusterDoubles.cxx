@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/DrccdEnergyFromCoulombIntegrals.hpp>
+#include <algorithms/DirectRingCoupledClusterDoubles.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -21,17 +21,17 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(DrccdEnergyFromCoulombIntegrals)
+ALGORITHM_REGISTRAR_DEFINITION(DirectRingCoupledClusterDoubles)
 
 Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
-DrccdEnergyFromCoulombIntegrals::getResiduum(
+DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultDryTensorEngine>(iteration, amplitudes);
 }
 Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
-DrccdEnergyFromCoulombIntegrals::getResiduum(
+DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
 ) {
@@ -39,14 +39,14 @@ DrccdEnergyFromCoulombIntegrals::getResiduum(
 }
 
 Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
-DrccdEnergyFromCoulombIntegrals::getResiduum(
+DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultTensorEngine>(iteration, amplitudes);
 }
 Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
-DrccdEnergyFromCoulombIntegrals::getResiduum(
+DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration,
   const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
 ) {
@@ -55,7 +55,7 @@ DrccdEnergyFromCoulombIntegrals::getResiduum(
 
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> DrccdEnergyFromCoulombIntegrals::getResiduum(
+Ptr<TensorUnion<F,TE>> DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration, const Ptr<const TensorUnion<F,TE>> &amplitudes
 ) {
   // read all required integrals

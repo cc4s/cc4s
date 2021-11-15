@@ -13,19 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef _ATRIP_HEADER_FILE
-#define _ATRIP_HEADER_FILE
+#ifndef SECOND_ORDER_PERTURBATION_THEORY_DEFINED 
+#define SECOND_ORDER_PERTURBATION_THEORY_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <math/TensorUnion.hpp>
 
 namespace cc4s {
-  struct Atrip: public Algorithm {
-    ALGORITHM_REGISTRAR_DECLARATION(Atrip)
+  /**
+   * \brief Caclulates MP2 energy from the Coulomb Integrals \f$V_{ij}^{ab}.
+   */
+  class SecondOrderPerturbationTheory: public Algorithm {
+  public:
+    ALGORITHM_REGISTRAR_DECLARATION(SecondOrderPerturbationTheory)
     /**
-     * \brief run routine as always
+     * \brief Calculates MP2 energy from Coulomb integrals Vabij
      */
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
+  protected:
+    template <typename F, typename TE>
+    Ptr<MapNode> calculateMp2Energy(const Ptr<MapNode> &arguments);
   };
 }
 

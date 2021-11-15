@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/Mp2EnergyFromCoulombIntegrals.hpp>
+#include <algorithms/SecondOrderPerturbationTheory.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/Exception.hpp>
@@ -22,9 +22,9 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(Mp2EnergyFromCoulombIntegrals)
+ALGORITHM_REGISTRAR_DEFINITION(SecondOrderPerturbationTheory)
 
-Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
+Ptr<MapNode> SecondOrderPerturbationTheory::run(const Ptr<MapNode> &arguments) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
@@ -50,7 +50,7 @@ Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
 }
 
 template <typename F, typename TE>
-Ptr<MapNode> Mp2EnergyFromCoulombIntegrals::calculateMp2Energy(
+Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
   const Ptr<MapNode> &arguments
 ) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));

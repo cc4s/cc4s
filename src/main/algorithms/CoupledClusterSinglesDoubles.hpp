@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef CCSD_ENERGY_FROM_COULOMB_INTEGRALS_REFERENCE_DEFINED
-#define CCSD_ENERGY_FROM_COULOMB_INTEGRALS_REFERENCE_DEFINED
+#ifndef COUPLED_CLUSTER_SINGLES_DOUBLES_DEFINED
+#define COUPLED_CLUSTER_SINGLES_DOUBLES_DEFINED
 
 
-#include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
+#include <algorithms/CoupledClusterSinglesDoublesReference.hpp>
 
 #include <util/SharedPointer.hpp>
 
@@ -31,15 +31,15 @@ namespace cc4s {
    * amplitudes \f$T_{ab}^{ij}\f$ from the Coulomb Integrals \f$V_{ij}^{ab}\f$
    * in a \f$ \mathcal{O}(N^{6}) \f$ implementation.
    */
-  class CcsdEnergyFromCoulombIntegralsReference: public ClusterSinglesDoublesAlgorithm {
+  class CoupledClusterSinglesDoubles:
+    public CoupledClusterSinglesDoublesReference {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CcsdEnergyFromCoulombIntegralsReference)
+    ALGORITHM_REGISTRAR_DECLARATION(CoupledClusterSinglesDoubles)
     /**
      * \brief Returns the abbreviation of the routine (CCSD).
      * \return abbreviation of the routine
      */
     std::string getAbbreviation() override { return "Ccsd"; }
-
   protected:
     /**
      * \brief Implements the iterate method with the CCSD iteration.
@@ -62,9 +62,13 @@ namespace cc4s {
       const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
     ) override;
 
-    template <typename F, typename TE>
-    Ptr<TensorUnion<F,TE>> getResiduum(
-      const int iteration, const Ptr<const TensorUnion<F,TE>> &amplitudes
+    template <typename TE>
+    Ptr<TensorUnion<Real<>,TE>> getResiduum(
+      const int iteration, const Ptr<const TensorUnion<Real<>,TE>> &amplitudes
+    );
+    template <typename TE>
+    Ptr<TensorUnion<Complex<>,TE>> getResiduum(
+      const int iteration, const Ptr<const TensorUnion<Complex<>,TE>> &amplitudes
     );
   };
 }

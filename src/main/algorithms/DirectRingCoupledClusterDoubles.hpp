@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef DRCCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
-#define DRCCD_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
+#ifndef DIRECT_RING_COUPLED_CLUSTER_DOUBLES_DEFINED 
+#define DIRECT_RING_COUPLED_CLUSTER_DOUBLES_DEFINED
 
 #include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
 
@@ -30,9 +30,9 @@ namespace cc4s {
    * amplitudes \f$T_{ab}^{ij}\f$ from the Coulomb Integrals \f$V_{ij}^{ab}\f$
    * in a \f$ \mathcal{O}(N^{6}) \f$ implementation.
    */
-  class DrccdEnergyFromCoulombIntegrals: public ClusterSinglesDoublesAlgorithm {
+  class DirectRingCoupledClusterDoubles: public ClusterSinglesDoublesAlgorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(DrccdEnergyFromCoulombIntegrals)
+    ALGORITHM_REGISTRAR_DECLARATION(DirectRingCoupledClusterDoubles)
     /**
      * \brief Returns the abbreviation of the routine (DRCCD).
      * \return abbreviation of the routine

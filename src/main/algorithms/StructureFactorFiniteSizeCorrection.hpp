@@ -13,26 +13,29 @@
  * limitations under the License.
  */
 
-#ifndef MP2_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED 
-#define MP2_ENERGY_FROM_COULOMB_INTEGRALS_DEFINED
+#ifndef STRUCTURE_FACTOR_FINITE_SIZE_CORRECTION_DEFINED
+#define STRUCTURE_FACTOR_FINITE_SIZE_CORRECTION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <math/TensorUnion.hpp>
 
 namespace cc4s {
   /**
-   * \brief Caclulates MP2 energy from the Coulomb Integrals \f$V_{ij}^{ab}.
+   * \brief Caclulates different Finite Size corrections
    */
-  class Mp2EnergyFromCoulombIntegrals: public Algorithm {
+  class StructureFactorFiniteSizeCorrection: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(Mp2EnergyFromCoulombIntegrals)
+    ALGORITHM_REGISTRAR_DECLARATION(StructureFactorFiniteSizeCorrection)
     /**
-     * \brief Calculates MP2 energy from Coulomb integrals Vabij
+     * \brief runs main routine
      */
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
+
   protected:
-    template <typename F, typename TE>
-    Ptr<MapNode> calculateMp2Energy(const Ptr<MapNode> &arguments);
+    template <typename TE>
+    void interpolation(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
   };
+
 }
 
 #endif

@@ -13,29 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef FINITE_SIZE_CORRECTION
-#define FINITE_SIZE_CORRECTION
+#ifndef _PERTURBATIVE_TRIPLES_HEADER_FILE
+#define _PERTURBATIVE_TRIPLES_HEADER_FILE
 
 #include <algorithms/Algorithm.hpp>
 #include <math/TensorUnion.hpp>
 
 namespace cc4s {
-  /**
-   * \brief Caclulates different Finite Size corrections
-   */
-  class FiniteSizeCorrection: public Algorithm {
-  public:
-    ALGORITHM_REGISTRAR_DECLARATION(FiniteSizeCorrection)
+  struct PerturbativeTriples: public Algorithm {
+    ALGORITHM_REGISTRAR_DECLARATION(PerturbativeTriples)
     /**
-     * \brief runs main routine
+     * \brief run routine as always
      */
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
-
-  protected:
-    template <typename TE>
-    void interpolation(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
   };
-
 }
 
 #endif
