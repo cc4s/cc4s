@@ -18,6 +18,7 @@
 
 #include <util/SharedPointer.hpp>
 #include <util/MpiCommunicator.hpp>
+#include <math/Integer.hpp>
 #include <Options.hpp>
 #include <Data.hpp>
 
@@ -32,16 +33,31 @@ namespace cc4s {
     static Ptr<MpiCommunicator> world;
     static Ptr<Options> options;
 
+    static Natural<128> getFloatingPointOperations();
+    static void addFloatingPointOperations(const Natural<128> ops);
+
   protected:
+    void runStep(const Natural<> i, const Ptr<MapNode> &step);
     void fetchSymbols(const Ptr<MapNode> &arguments);
     void storeSymbols(const Ptr<MapNode> &result,const Ptr<MapNode> &variables);
 
     void printBanner(const Ptr<MapNode> &job);
     void printStatistics(const Ptr<MapNode> &job);
     void listHosts(const Ptr<MapNode> &job);
-    size_t getFlops();
 
     Ptr<MapNode> storage;
+  };
+
+  class OperationsCounter {
+  public:
+    OperationsCounter(Natural<128> *_counter): counter(_counter) {
+      *counter = -Cc4s::getFloatingPointOperations();
+    }
+    ~OperationsCounter() {
+      *counter += Cc4s::getFloatingPointOperations();
+    }
+  protected:
+    Natural<128> *counter;
   };
 }
 

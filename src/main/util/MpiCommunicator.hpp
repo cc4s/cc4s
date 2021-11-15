@@ -17,6 +17,7 @@
 #define MPI_COMMUNICATOR_DEFINED
 
 #include "mpi.h"
+#include <math/Integer.hpp>
 #include <math/Complex.hpp>
 #include <math/Vector.hpp>
 
@@ -30,12 +31,12 @@ namespace cc4s {
   public:
     MpiCommunicator(
       MPI_Comm comm_ = MPI_COMM_WORLD
-    ): comm(comm_) {
-      MPI_Comm_rank(comm, &rank);
-      MPI_Comm_size(comm, &processes);
+    ): rank(0), processes(0), comm(comm_) {
+      MPI_Comm_rank(comm, reinterpret_cast<int *>(&rank));
+      MPI_Comm_size(comm, reinterpret_cast<int *>(&processes));
     }
     MpiCommunicator(
-      int rank_, int processes_, MPI_Comm comm_ = MPI_COMM_WORLD
+      Natural<> rank_, Natural<> processes_, MPI_Comm comm_ = MPI_COMM_WORLD
     ): rank(rank_), processes(processes_), comm(comm_) {
     }
     ~MpiCommunicator() {
@@ -46,7 +47,7 @@ namespace cc4s {
     }
 
     template <typename F>
-    void reduce(const F &src, F &dst, int rootRank = 0) {
+    void reduce(const F &src, F &dst, Natural<> rootRank = 0) {
       MPI_Reduce(
         &src, &dst,
         MpiTypeTraits<F>::elementCount(), MpiTypeTraits<F>::elementType(),
@@ -69,7 +70,7 @@ namespace cc4s {
      **/
     template <typename F>
     void gather(
-      const std::vector<F> &src, std::vector<F> &dst, int rootRank = 0
+      const std::vector<F> &src, std::vector<F> &dst, Natural<> rootRank = 0
     ) {
       if (rank == rootRank) {
         dst.resize(src.size() * processes);
@@ -87,7 +88,7 @@ namespace cc4s {
 
     template <typename F>
     void broadcast(
-      std::vector<F> &dst, int rootRank = 0
+      std::vector<F> &dst, Natural<> rootRank = 0
     ) {
       MPI_Bcast(
         dst.data(), dst.size() * MpiTypeTraits<F>::elementCount(),
@@ -97,10 +98,10 @@ namespace cc4s {
       );
     }
 
-    int getRank() const {
+    Natural<> getRank() const {
       return rank;
     }
-    int getProcesses() const {
+    Natural<> getProcesses() const {
       return processes;
     }
     MPI_Comm getComm() const {
@@ -108,53 +109,53 @@ namespace cc4s {
     }
 
   protected:
-    int rank, processes;
+    Natural<> rank, processes;
     MPI_Comm comm;
   };
 
 
   template <>
-  class MpiTypeTraits<int> {
+  class MpiTypeTraits<Integer<32>> {
   public:
     static MPI_Datatype elementType() { return MPI_INT; }
-    static int elementCount()  { return 1; }
+    static Natural<> elementCount()  { return 1; }
   };
 
   template <>
-  class MpiTypeTraits<int64_t> {
+  class MpiTypeTraits<Integer<64>> {
   public:
     static MPI_Datatype elementType() { return MPI_INTEGER8; }
-    static int elementCount() { return 1; }
+    static Natural<> elementCount() { return 1; }
   };
 
   template <>
-  class MpiTypeTraits<uint64_t> {
+  class MpiTypeTraits<Natural<>> {
   public:
     static MPI_Datatype elementType() { return MPI_INTEGER8; }
-    static int elementCount() { return 1; }
+    static Natural<> elementCount() { return 1; }
   };
 
   template <>
   class MpiTypeTraits<Real<64>> {
   public:
     static MPI_Datatype elementType() { return MPI_REAL8; }
-    static int elementCount() { return 1; }
+    static Natural<> elementCount() { return 1; }
   };
 
   template <>
   class MpiTypeTraits<Complex<64>> {
   public:
     static MPI_Datatype elementType() { return MPI_DOUBLE_COMPLEX; }
-    static int elementCount() { return 1; }
+    static Natural<> elementCount() { return 1; }
   };
 
-  template <typename F, int D>
+  template <typename F, Natural<> D>
   class MpiTypeTraits<Vector<F, D>> {
   public:
     static MPI_Datatype elementType() {
       return MpiTypeTraits<F>::elementType();
     }
-    static int elementCount() { return D; }
+    static Natural<> elementCount() { return D; }
   };
 
   // TODO: 128 bit reals and floats

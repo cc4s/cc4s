@@ -26,22 +26,53 @@ namespace cc4s {
   template <>
   class IntegerTypes<32> {
   public:
-    typedef int32_t signedType;
-    typedef uint32_t unsignedType;
+    typedef int32_t SignedType;
+    typedef uint32_t UnsignedType;
   };
 
   template <>
   class IntegerTypes<64> {
   public:
-    typedef int64_t signedType;
-    typedef uint64_t unsignedType;
+    typedef int64_t SignedType;
+    typedef uint64_t UnsignedType;
+  };
+
+
+  template <>
+  class IntegerTypes<128> {
+  public:
+    __extension__ typedef __int128 SignedType;
+    __extension__ typedef unsigned __int128 UnsignedType;
   };
 
   template <int IntegerSize=DEFAULT_INTEGER_BIT_SIZE>
-  using Integer = typename IntegerTypes<IntegerSize>::signedType;
+  using Integer = typename IntegerTypes<IntegerSize>::SignedType;
 
   template <int IntegerSize=DEFAULT_INTEGER_BIT_SIZE>
-  using Natural = typename IntegerTypes<IntegerSize>::unsignedType;
+  using Natural = typename IntegerTypes<IntegerSize>::UnsignedType;
+
+
+  // TODO: writing of signed 128-bit numbers
+
+  // define stream output for 128-bit numbers
+  inline std::basic_ostream<char> &operator <<(
+    std::basic_ostream<char> &stream, Natural<128> value
+  ) {
+    if (stream) {
+      char buffer[128];
+      char *c = std::end(buffer);
+      do {
+        --c;
+        *c = "0123456789"[value % 10];
+        value /= 10;
+      } while (value != 0);
+      int len(std::end(buffer) - c);
+      if (stream.rdbuf()->sputn(c, len) != len) {
+        stream.setstate( std::ios_base::badbit );
+      }
+    }
+    return stream;
+  }
 }
 
 #endif

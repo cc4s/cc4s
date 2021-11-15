@@ -28,10 +28,63 @@
 
 using namespace cc4s;
 
-size_t Cc4s::getFlops() {
+Natural<128> Cc4s::getFloatingPointOperations() {
   return options->dryRun ?
-    Operation<DefaultDryTensorEngine>::flops :
-    Operation<DefaultTensorEngine>::flops;
+    Operation<DefaultDryTensorEngine>::getFloatingPointOperations() :
+    Operation<DefaultTensorEngine>::getFloatingPointOperations();
+}
+
+void Cc4s::addFloatingPointOperations(const Natural<128> ops) {
+  return options->dryRun ?
+    Operation<DefaultDryTensorEngine>::addFloatingPointOperations(ops) :
+    Operation<DefaultTensorEngine>::addFloatingPointOperations(ops);
+}
+
+void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
+  auto algorithmName(step->getSymbol("name"));
+  OUT() << "step=" << (i+1) << ", " << algorithmName << std::endl;
+
+  // create algorithm
+  auto algorithm(AlgorithmFactory::create(algorithmName));
+  ASSERT_LOCATION(
+    algorithm, "unknown algorithm: " + algorithmName,
+    step->get("name")->sourceLocation
+  );
+
+  // get input arguments
+  auto inputArguments(step->getMap("in"));
+  fetchSymbols(inputArguments);
+
+  Ptr<MapNode> output;
+  // wait until all processes finished previous work
+  Cc4s::world->barrier();
+  Natural<128> operations;
+  Time time;
+  {
+    OperationsCounter operationsCounter(&operations);
+    Timer timer(&time);
+    output = algorithm->run(inputArguments);
+  }
+
+  // get output variables, if given
+  if (step->get("out")) {
+    auto outputVariables(step->getMap("out"));
+    storeSymbols(output, outputVariables);
+  }
+  // store output in report
+  step->get("out") = output;
+
+  std::stringstream realtime;
+  realtime << time;
+  OUT() << "realtime " << realtime.str() << " s" << std::endl;
+  OUT() << "--" << std::endl;
+  LOG() << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
+    << ", operations=" << operations / 1e9 << " GFLOP"
+    << ", speed=" << operations / 1e9 / time.getFractionalSeconds() << " GFLOP/s" << std::endl;
+  step->setValue<std::string>("realtime", realtime.str());
+  step->setValue<size_t>("floatingPointOperations", operations);
+  step->setValue<Real<>>("flops", operations / time.getFractionalSeconds());
+  // resources which maybe held by the algorithm automatically released
 }
 
 void Cc4s::run(const Ptr<MapNode> &report) {
@@ -47,88 +100,42 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   auto steps(input->toMap());
   ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
   report->get("steps") = steps;
-  OUT() << "execution plan read, steps=" << steps->size() << std::endl;
+  OUT() << "execution plan read, steps=" << steps->size() << std::endl << std::endl;
 
-  size_t totalFlops(-getFlops());
+  Natural<128> totalOperations;
   Time totalTime;
   {
-    // TODO: flops counter
+    OperationsCounter totalOperationsCounter(&totalOperations);
     Timer totalTimer(&totalTime);
 
-    for (unsigned int i(0); i < steps->size(); ++i) {
-      auto step(steps->getMap(i));
-      auto algorithmName(step->getSymbol("name"));
-      OUT() << "step=" << (i+1) << ", " << algorithmName << std::endl;
-
-      // create algorithm
-      auto algorithm(AlgorithmFactory::create(algorithmName));
-      ASSERT_LOCATION(
-        algorithm, "unknown algorithm: " + algorithmName,
-        step->get("name")->sourceLocation
-      );
-
-      // get input arguments
-      auto inputArguments(step->getMap("in"));
-      fetchSymbols(inputArguments);
-
-      Ptr<MapNode> output;
-      // wait until all processes finished previous work
-      Cc4s::world->barrier();
-      Time time;
-      size_t flops(-getFlops());
-      {
-        // TODO: flops counter
-        Timer timer(&time);
-        output = algorithm->run(inputArguments);
-        flops += getFlops();
-      }
-
-      // get output variables, if given
-      if (step->get("out")) {
-        auto outputVariables(step->getMap("out"));
-        storeSymbols(output, outputVariables);
-      }
-      // store output in report
-      step->get("out") = output;
-
-      std::stringstream realtime;
-      realtime << time;
-      LOG() << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
-        << ", operations=" << flops / 1e9 << " GFLOPS"
-        << ", speed=" << flops / 1e9 / time.getFractionalSeconds() << " GFLOPS/s" << std::endl;
-      step->setValue<std::string>("realtime", realtime.str());
-      step->setValue<size_t>("floatingPointOperations", flops);
-      step->setValue<Real<>>("flops", flops / time.getFractionalSeconds());
-      // resources which maybe held by the algorithm automatically released
+    for (Natural<> i(0); i < steps->size(); ++i) {
+      runStep(i, steps->getMap(i));
+      // emit report, overwrite from previous step
+      Emitter emitter(Cc4s::options->name + ".out");
+      emitter.emit(report);
     }
   }
-  totalFlops += getFlops();
 
   if (options->dryRun)
     OUT() << "\nMemory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB\n";
 
-  OUT() << std::endl;
   std::stringstream totalRealtime;
   totalRealtime << totalTime;
   if (options->dryRun){
-    OUT() << "total operations=" << totalFlops / 1e9 << " GFLOPS\n";
+    OUT() << "total operations=" << totalOperations / 1e9 << " GFLOP\n";
   }
   else {
     OUT() << "total realtime=" << totalRealtime.str() << " s" << std::endl;
-    OUT() << "total operations=" << totalFlops / 1e9 << " GFLOPS"
-      << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() /  world->getProcesses()
+    OUT() << "total operations=" << totalOperations / 1e9 << " GFLOPS"
+      << " speed=" << totalOperations/1e9 / totalTime.getFractionalSeconds() /  world->getProcesses()
       << " GFLOPS/s/core" << std::endl;
   }
   LOG() << "total realtime=" << totalRealtime.str() << " s" << std::endl;
-  LOG() << "total operations=" << totalFlops / 1e9 << " GFLOPS"
-    << " speed=" << totalFlops/1e9 / totalTime.getFractionalSeconds() << " GFLOPS/s" << std::endl;
+  LOG() << "total operations=" << totalOperations / 1e9 << " GFLOPS"
+    << " speed=" << totalOperations/1e9 / totalTime.getFractionalSeconds() << " GFLOP/s" << std::endl;
   report->setValue<std::string>("realtime", totalRealtime.str());
-  report->setValue<size_t>("floatingPointOperations", totalFlops);
-  report->setValue<Real<>>("flops", totalFlops/totalTime.getFractionalSeconds());
-
-  // emit report, overwrite from previous step
-  Emitter emitter(Cc4s::options->name + ".out");
-  emitter.emit(report);
+  report->setValue<>("floatingPointOperations", totalOperations);
+  report->setValue<>("flops", totalOperations/totalTime.getFractionalSeconds());
 }
 
 void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
@@ -188,13 +195,6 @@ void Cc4s::printBanner(const Ptr<MapNode> &report) {
   report->setValue("buildDate", buildDate.str());
   report->setValue<std::string>("compiler", COMPILER_VERSION);
   report->setValue("dryRun", options->dryRun);
-/*
-  EMIT()
-    << YAML::Key << "version" << YAML::Value << CC4S_VERSION
-    << YAML::Key << "build-date" << YAML::Value << buildDate.str()
-    << YAML::Key << "compiler" << YAML::Value << COMPILER_VERSION
-    << YAML::Key << "total-processes" << world->getProcesses();
-*/
   if (options->dryRun) {
     OUT() << "DRY RUN - nothing will be calculated" << std::endl;
   }
@@ -232,7 +232,11 @@ void Cc4s::listHosts(const Ptr<MapNode> &report) {
       // enter hostname/rank
       ranksOfHosts[ownName].push_back(0);
       // receive all names but own name from remote ranks
-      for (int remoteRank(1); remoteRank < world->getProcesses(); ++remoteRank) {
+      for (
+        Natural<> remoteRank(1);
+        remoteRank < world->getProcesses();
+        ++remoteRank
+      ) {
         char remoteName[MPI_MAX_PROCESSOR_NAME];
         MPI_Recv(
           remoteName, MPI_MAX_PROCESSOR_NAME, MPI_BYTE,
@@ -247,7 +251,7 @@ void Cc4s::listHosts(const Ptr<MapNode> &report) {
         host->setValue("host", ranksOfHost.first);
         auto ranks(New<MapNode>(SOURCE_LOCATION));
         for (auto &rank: ranksOfHost.second) {
-          ranks->push_back(New<AtomicNode<int64_t>>(rank, SOURCE_LOCATION));
+          ranks->push_back(New<AtomicNode<Natural<>>>(rank, SOURCE_LOCATION));
         }
         host->get("ranks") = ranks;
         hosts->push_back(host);

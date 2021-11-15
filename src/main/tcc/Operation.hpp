@@ -17,15 +17,18 @@
 #define TCC_OPERATION_DEFINED
 
 #include <tcc/Costs.hpp>
+#include <math/Integer.hpp>
 
 namespace cc4s {
   template <typename TE>
   class Operation {
   public:
-    /**
-     * \brief Total executed floating point operations.
-     **/
-    static size_t flops;
+    static Natural<128> getFloatingPointOperations() {
+      return floatingPointOperations;
+    }
+    static void addFloatingPointOperations(const Natural<128> ops) {
+      floatingPointOperations += ops;
+    }
 
     virtual ~Operation() {
     }
@@ -45,6 +48,11 @@ namespace cc4s {
     size_t line;
 
   protected:
+    /**
+     * \brief Total executed floating point operations.
+     **/
+    static Natural<128> floatingPointOperations;
+
     Operation(
       const Costs &costs_, const std::string &file_, const size_t line_
     ): costs(costs_), file(file_), line(line_) {
@@ -54,7 +62,7 @@ namespace cc4s {
   };
 
   template<typename TE>
-  size_t cc4s::Operation<TE>::flops = 0;
+  Natural<128> cc4s::Operation<TE>::floatingPointOperations = 0;
 }
 
 #endif

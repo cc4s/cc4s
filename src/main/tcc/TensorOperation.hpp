@@ -78,10 +78,14 @@ namespace cc4s {
     F alpha, beta;
 
     void accountFlops() {
-      Operation<TE>::flops += this->costs.additionsCount *
-        TensorOperationTraits<F>::getFlopsPerAddition();
-      Operation<TE>::flops += this->costs.multiplicationsCount *
-        TensorOperationTraits<F>::getFlopsPerMultiplication();
+      Operation<TE>::addFloatingPointOperations(
+        this->costs.additionsCount *
+        TensorOperationTraits<F>::getFlopsPerAddition()
+      );
+      Operation<TE>::addFloatingPointOperations(
+        this->costs.multiplicationsCount *
+        TensorOperationTraits<F>::getFlopsPerMultiplication()
+      );
     }
 
     friend class Tensor<F,TE>;
