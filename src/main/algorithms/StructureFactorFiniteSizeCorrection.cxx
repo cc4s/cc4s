@@ -156,10 +156,10 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 ) {
   using T = Tensor<Real<>, TE>;
 
-  double sum3D(0.0), inter3D(0.0);
-  int64_t countNO(0), countNOg(0);
+  Real<> sum3D(0.0), inter3D(0.0);
+  Natural<> countNO(0), countNOg(0);
   // hard coded resolution of the fine grid
-  int N(20);
+  Natural<> N(20);
   // this is hard coded for vasp:
   // the coulomb Energy in eV using the lattice dimensions of vasp
 
@@ -167,8 +167,8 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   auto volume(gridVectors->getValue<Real<>>("volume"));
 
 // constant factor is still unclear to me
-//  double factor(4.5835494674469/volume);
-  double factor(0.00020880076563/volume);
+//  Real<> factor(4.5835494674469/volume);
+  Real<> factor(0.00020880076563/volume);
   // READ THE MOMENTUM GRID
   auto grid(gridVectors->getValue<Ptr<T>>("data"));
   ASSERT_LOCATION(
@@ -176,11 +176,11 @@ void StructureFactorFiniteSizeCorrection::interpolation(
     gridVectors->sourceLocation
   );
 
-  int64_t NG(grid->lens[1]);
+  Natural<> NG(grid->lens[1]);
   std::vector<Vector<>> cartesianGrid(NG);
   std::vector<Real<>> output(NG*3);
   output = grid->readAll();
-  for (int64_t i(0); i < NG; i++){
+  for (Natural<> i(0); i < NG; i++){
     cartesianGrid[i][0] = output[3*i+0];
     cartesianGrid[i][1] = output[3*i+1];
     cartesianGrid[i][2] = output[3*i+2];
@@ -237,7 +237,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
   //construct the transformation matrix, which is the real cell
   std::vector<Vector<>> A(3);
-  double Omega((B[0].cross(B[1])).dot(B[2]));
+  Real<> Omega((B[0].cross(B[1])).dot(B[2]));
   A[0] = B[1].cross(B[2])/Omega;
   A[1] = B[2].cross(B[0])/Omega;
   A[2] = B[0].cross(B[1])/Omega;
@@ -245,16 +245,16 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
   // determine bounding box in direct coordinates (in reciprocal space)
   Vector<> directMin, directMax;
-  for (int g(0); g < NG; ++g)
-  for (int d(0); d < 3; ++d) {
-    double directComponent(A[d].dot(cartesianGrid[g]));
+  for (Natural<> g(0); g < NG; ++g)
+  for (Natural<> d(0); d < 3; ++d) {
+    Real<> directComponent(A[d].dot(cartesianGrid[g]));
     directMin[d] = std::min(directMin[d], directComponent);
     directMax[d] = std::max(directMax[d], directComponent);
   }
   // build grid for the entire bounding box
   Vector<> boxDimensions, boxOrigin;
-  int64_t boxSize(1);
-  for (int d(0); d < 3; ++d) {
+  Natural<> boxSize(1);
+  for (Natural<> d(0); d < 3; ++d) {
     boxSize *= boxDimensions[d] = std::floor(directMax[d] - directMin[d] + 1.5);
     boxOrigin[d] = std::floor(directMin[d] + 0.5);
   }
@@ -264,10 +264,10 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
 //  OUT() << boxSize << std::endl;
   // enter known SG values
-  for (int g(0); g < NG; ++g) {
-    int64_t index(0);
+  for (Natural<> g(0); g < NG; ++g) {
+    Natural<> index(0);
     Vector<> directG;
-    for (int d(2); d >= 0; --d) {
+    for (Natural<> d(2); d-- > 0; ) {
       directG[d] = A[d].dot(cartesianGrid[g]);
       index *= boxDimensions[d];
       index += std::floor(directG[d] + 0.5) - boxOrigin[d];
@@ -283,8 +283,8 @@ void StructureFactorFiniteSizeCorrection::interpolation(
     true
   );
 
-  // double check: calculate the structure Factor on the regular grid
-  for (int64_t i(0); i < NG; ++i) {
+  // Real<> check: calculate the structure Factor on the regular grid
+  for (Natural<> i(0); i < NG; ++i) {
     if (cartesianGrid[i].length() < 1e-8) continue;
     sum3D += factor/cartesianGrid[i].sqrLength()*SofG[i];
   }
@@ -294,28 +294,28 @@ void StructureFactorFiniteSizeCorrection::interpolation(
     Cc4s::world->getRank(), Cc4s::world->getProcesses(), Cc4s::world->getComm()
   );
   communicator.barrier();
-  for (int a(0); a < N; ++a)
-  for (int b(0); b < N; ++b)
-  for (int c(0); c < N; ++c) {
-    if ((std::abs(a+b+c)) % Cc4s::world->getProcesses() != Cc4s::world->getRank()) continue;
-    Vector<double> ga(((B[0]/double(N))*double(a)));
-    Vector<double> gb(((B[1]/double(N))*double(b)));
-    Vector<double> gc(((B[2]/double(N))*double(c)));
-    Vector<double> g(ga+gb+gc);
+  for (Natural<> a(0); a < N; ++a)
+  for (Natural<> b(0); b < N; ++b)
+  for (Natural<> c(0); c < N; ++c) {
+    if ((a+b+c) % Cc4s::world->getProcesses() != Cc4s::world->getRank()) continue;
+    Vector<Real<>> ga(((B[0]/Real<>(N))*Real<>(a)));
+    Vector<Real<>> gb(((B[1]/Real<>(N))*Real<>(b)));
+    Vector<Real<>> gc(((B[2]/Real<>(N))*Real<>(c)));
+    Vector<Real<>> g(ga+gb+gc);
     countNOg++;
     // loop over coarse grid. i.e. shift fine grid onto every coarse grid-point
-    for ( size_t i(0); i < NG; i++){
+    for (Natural<> i(0); i < NG; i++){
       g  = ga+gb+gc;
       g += cartesianGrid[i];
-      Vector<double> directG;
-      for (size_t d(0); d < 3; d++) directG[d] = A[d].dot(g);
+      Vector<Real<>> directG;
+      for (Natural<> d(0); d < 3; d++) directG[d] = A[d].dot(g);
       countNO++;
       if (g.length() < 1e-8) continue;
-      double interpol(interpolatedSofG(directG[0], directG[1], directG[2]));
+      Real<> interpol(interpolatedSofG(directG[0], directG[1], directG[2]));
       inter3D += interpol * factor/g.sqrLength();
     }
   }
-  double totalInter3D(0.0);
+  Real<> totalInter3D(0.0);
   communicator.allReduce(inter3D, totalInter3D);
 
 

@@ -52,10 +52,7 @@ template <typename F, typename TE>
 bool CcsdFocalPointBasisSetCorrection::run(
   const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ) {
-  using TRc = TensorRecipe<Complex<>, TE>;
-  using Tc = Tensor<Complex<>, TE>;
   using Tr = Tensor<Real<>, TE>;
-  using T  = Tensor<F, TE>;
   auto amplitudesNode(
     arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>()
   );
