@@ -124,7 +124,7 @@ Ptr<MapNode> NonZeroCondition::run(
         dimensionsNode->get(d) = dimensionNode;
       }
       nonZeroConditionNode->get("dimensions") = dimensionsNode;
-      nonZeroConditionNode->setValue("data", Delta);
+      nonZeroConditionNode->setPtr<TensorExpression<F,TE>>("data", Delta);
 
       auto result(New<MapNode>(SOURCE_LOCATION));
       result->get("nonZeroCondition") = nonZeroConditionNode;
