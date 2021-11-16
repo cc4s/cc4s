@@ -20,7 +20,7 @@
 #include <util/MpiCommunicator.hpp>
 #include <math/Integer.hpp>
 #include <Options.hpp>
-#include <Data.hpp>
+#include <Node.hpp>
 
 namespace cc4s {
   class Cc4s {

@@ -26,14 +26,14 @@ ALGORITHM_REGISTRAR_DEFINITION(DirectRingCoupledClusterDoubles)
 Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
 DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration,
-  const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultDryTensorEngine>(iteration, amplitudes);
 }
 Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
 DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration,
-  const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
 ) {
   return getResiduum<Complex<>, DefaultDryTensorEngine>(iteration, amplitudes);
 }
@@ -41,14 +41,14 @@ DirectRingCoupledClusterDoubles::getResiduum(
 Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
 DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration,
-  const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultTensorEngine>(iteration, amplitudes);
 }
 Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
 DirectRingCoupledClusterDoubles::getResiduum(
   const int iteration,
-  const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
 ) {
   return getResiduum<Complex<>, DefaultTensorEngine>(iteration, amplitudes);
 }
@@ -56,14 +56,14 @@ DirectRingCoupledClusterDoubles::getResiduum(
 
 template <typename F, typename TE>
 Ptr<TensorUnion<F,TE>> DirectRingCoupledClusterDoubles::getResiduum(
-  const int iteration, const Ptr<const TensorUnion<F,TE>> &amplitudes
+  const int iteration, const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
   // read all required integrals
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pphh"));
-  auto Vphhp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("phhp"));
-  auto Vhhpp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhpp"));
+  auto Vpphh(coulombSlices->getPtr<TensorExpression<F,TE>>("pphh"));
+  auto Vphhp(coulombSlices->getPtr<TensorExpression<F,TE>>("phhp"));
+  auto Vhhpp(coulombSlices->getPtr<TensorExpression<F,TE>>("hhpp"));
 
   // get spins
   auto orbitalType(

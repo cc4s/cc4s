@@ -16,7 +16,7 @@
 #ifndef MIXER_DEFINED
 #define MIXER_DEFINED
 
-#include <Data.hpp>
+#include <Node.hpp>
 #include <math/Complex.hpp>
 #include <math/TensorUnion.hpp>
 #include <util/SharedPointer.hpp>
@@ -53,7 +53,7 @@ namespace cc4s {
      * Requires one or more previous calls to append.
      * The returned TensorUnions must not be changed.
      **/
-    virtual Ptr<const TensorUnion<F,TE>> get() = 0;
+    virtual Ptr<TensorUnion<F,TE>> get() = 0;
 
     /**
      * \brief Returns the estimated residuum of the current best estimate

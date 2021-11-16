@@ -42,29 +42,30 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
       COMPILE(arguments                                     \
         ->getMap("coulombIntegrals")                        \
         ->getMap("slices")                                  \
-        ->getValue<Ptr<TensorRecipe<Real<>,TE>>>(#_idx)     \
+        ->getPtr<TensorExpression<Real<>,TE>>(#_idx)        \
         )->execute();                                       \
       return                                                \
           &(arguments                                       \
             ->getMap("coulombIntegrals")                    \
             ->getMap("slices")                              \
-            ->getValue<Ptr<TensorRecipe<Real<>,TE>>>(#_idx) \
-            ->getResult()                                   \
+            ->getPtr<TensorExpression<Real<>,TE>>(#_idx)    \
+            ->evaluate()                                    \
             ->getMachineTensor()                            \
             ->tensor);                                      \
     })()
 #define __T__(_idx) \
    &(arguments                                                    \
-      ->getValue<Ptr<const TensorUnion<Real<>,TE>>>("amplitudes") \
+      ->getPtr<TensorUnion<Real<>,TE>>("amplitudes")              \
       ->get(_idx)                                                 \
+      ->evaluate()                                                \
       ->getMachineTensor()                                        \
       ->tensor)
 #define __eps__(_idx)                                      \
    &(arguments                                             \
       ->getMap("slicedEigenEnergies")                      \
       ->getMap("slices")                                   \
-      ->getValue<Ptr<TensorRecipe<Real<>,TE>>>(#_idx) \
-      ->getResult()                                        \
+      ->getPtr<TensorExpression<Real<>,TE>>(#_idx)         \
+      ->evaluate()                                         \
       ->getMachineTensor()                                 \
       ->tensor)
 

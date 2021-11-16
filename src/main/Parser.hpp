@@ -16,7 +16,8 @@
 #ifndef PARSER_DEFINED
 #define PARSER_DEFINED
 
-#include <Data.hpp>
+#include <Node.hpp>
+#include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
 #include <yaml-cpp/yaml.h>
 #include <string>

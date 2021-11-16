@@ -15,11 +15,13 @@
 
 #include <algorithms/TensorReader.hpp>
 
+#include <Node.hpp>
 #include <Cc4s.hpp>
 #include <Parser.hpp>
+#include <util/SharedPointer.hpp>
 #include <util/Scanner.hpp>
 #include <util/TensorIo.hpp>
-#include <tcc/Tcc.hpp>
+#include <tcc/TensorExpression.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>
 #include <math/MathFunctions.hpp>
@@ -35,7 +37,7 @@ ALGORITHM_REGISTRAR_DEFINITION(TensorReader)
 Ptr<MapNode> TensorReader::run(const Ptr<MapNode> &arguments) {
   auto fileName(arguments->getValue<std::string>("fileName"));
   // get tensor meta data from given file
-  auto tensor(Parser(fileName).parse()->toMap());
+  auto tensor(Parser(fileName).parse()->toPtr<MapNode>());
   auto scalarType(tensor->getValue<std::string>("scalarType"));
   auto binary(tensor->getValue<bool>("binary", false));
 
@@ -80,7 +82,7 @@ void TensorReader::readData(
   std::vector<size_t> lens;
   std::vector<Ptr<TensorDimension>> dimensions;
   for (auto key: dimensionsMap->getKeys()) {
-    lens.push_back(dimensionsMap->getMap(key)->getValue<size_t>("length"));
+    lens.push_back(dimensionsMap->getMap(key)->getValue<Natural<>>("length"));
     // get dimension properties, if given
     dimensions.push_back(
       TensorIo::getDimension(
@@ -95,7 +97,7 @@ void TensorReader::readData(
   if (nonZeroConditionsNode) {
     OUT() << "Unpacking block-sparse tensor" << std::endl;
     // currently only "all" is supported as non-zero conditions
-    auto allMap(nonZeroConditionsNode->toMap()->getMap("all"));
+    auto allMap(nonZeroConditionsNode->toPtr<MapNode>()->getMap("all"));
     for (auto key: allMap->getKeys()) {
       auto nonZeroCondition(New<TensorNonZeroCondition>());
       nonZeroCondition->name = allMap->getMap(key)->getValue<std::string>("name");
@@ -197,7 +199,7 @@ void TensorReader::readData(
 }
 
 template <typename F, typename TE>
-Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
+Ptr<Node> TensorReader::readText(
   const std::string &fileName,
   const std::vector<size_t> &lens,
   const std::vector<Ptr<TensorDimension>> &dimensions,
@@ -219,7 +221,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
   A->dimensions = dimensions;
   A->nonZeroConditions = nonZeroConditions;
   auto result(
-    New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
+    New<PointerNode<TensorExpression<F,TE>>>(A, SourceLocation(fileName,1))
   );
   OUT() << "Reading from text file " << fileName << std::endl;
   if (Cc4s::options->dryRun) return result;
@@ -264,7 +266,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readText(
 }
 
 template <typename F, typename TE>
-Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
+Ptr<Node> TensorReader::readBinary(
   const std::string &fileName,
   const std::vector<size_t> &lens,
   const std::vector<Ptr<TensorDimension>> &dimensions,
@@ -288,7 +290,7 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorReader::readBinary(
   auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
   A->nonZeroConditions = nonZeroConditions;
   auto result(
-    New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
+    New<PointerNode<TensorExpression<F,TE>>>(A, SourceLocation(fileName,1))
   );
 
   OUT() << "Reading from binary file " << fileName << std::endl;

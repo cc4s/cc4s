@@ -56,20 +56,20 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
   const Ptr<MapNode> &arguments
 ) {
 
-  auto amplitudes = arguments->getValue<Ptr<const TensorUnion<F,TE>>>("amplitudes");
+  auto amplitudes = arguments->getPtr<TensorUnion<F,TE>>("amplitudes");
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
 
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pphh"));
-  auto Vppph(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("ppph"));
-  auto Vhhhp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhhp"));
+  auto Vpphh(coulombSlices->getPtr<TensorExpression<F,TE>>("pphh"));
+  auto Vppph(coulombSlices->getPtr<TensorExpression<F,TE>>("ppph"));
+  auto Vhhhp(coulombSlices->getPtr<TensorExpression<F,TE>>("hhhp"));
 
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("h"));
-  auto epsa(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("p"));
+  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
+  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
 
 
   auto Z( Tcc<TE>::template tensor<F>("Z"));

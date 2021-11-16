@@ -17,6 +17,7 @@
 #define TENSOR_WRITER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <tcc/TensorExpression.hpp>
 #include <util/SourceLocation.hpp>
 
 namespace cc4s {
@@ -26,7 +27,7 @@ namespace cc4s {
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
     void writeData(
-      const Ptr<MapNode> &tensor,
+      const Ptr<MapNode> &tensorNode,
       const std::string &fileName,
       const std::string &scalarType,
       const bool binary,
@@ -34,15 +35,15 @@ namespace cc4s {
     );
     template <typename F, typename TE>
     void writeText(
-      const Ptr<MapNode> &tensor,
-      const Ptr<Tensor<F,TE>> &tensorData,
+      const Ptr<MapNode> &tensorNode,
+      const Ptr<TensorExpression<F,TE>> &tensorExpression,
       const std::string &fileName,
       const SourceLocation &sourceLocation
     );
     template <typename F, typename TE>
     void writeBinary(
-      const Ptr<MapNode> &tensor,
-      const Ptr<Tensor<F,TE>> &tensorData,
+      const Ptr<MapNode> &tensorNode,
+      const Ptr<TensorExpression<F,TE>> &tensorExpression,
       const std::string &fileName,
       const SourceLocation &sourceLocation
     );

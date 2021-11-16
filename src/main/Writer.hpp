@@ -16,7 +16,7 @@
 #ifndef WRITER_DEFINED
 #define WRITER_DEFINED
 
-#include <Data.hpp>
+#include <Node.hpp>
 #include <Emitter.hpp>
 #include <Cc4s.hpp>
 #include <util/SharedPointer.hpp>
@@ -85,9 +85,9 @@ namespace cc4s {
 
     // translate into persistent node tree
     Ptr<Node> write(const Ptr<Node> &node, const std::string &nodePath) {
-      auto mapNode(node->toMap());
+      auto mapNode(node->toPtr<MapNode>());
       if (mapNode) return writeMap(mapNode, nodePath);
-      auto symbolNode(node->toSymbol());
+      auto symbolNode(node->toPtr<SymbolNode>());
       if (symbolNode) {
         // symbols are already in persistent form
         return symbolNode;
@@ -119,7 +119,7 @@ namespace cc4s {
         auto writtenNode(writeFunction.second(node, nodePath, useBinary));
         if (writtenNode) {
           // if successful, enter respective type
-          auto writtenNodeMap(writtenNode->toMap());
+          auto writtenNodeMap(writtenNode->toPtr<MapNode>());
           writtenNodeMap->setSymbol("type", writeFunction.first);
           return writtenNode;
         }

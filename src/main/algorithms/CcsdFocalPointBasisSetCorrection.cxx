@@ -52,28 +52,20 @@ template <typename F, typename TE>
 bool CcsdFocalPointBasisSetCorrection::run(
   const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ) {
-  using Tr = Tensor<Real<>, TE>;
-  auto amplitudesNode(
-    arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>()
-  );
-  //amplitudesNode is nullptr if the node was of different type
-  if (!amplitudesNode) return false;
-  auto amplitudes(amplitudesNode->value);
+  using Tr = TensorExpression<Real<>, TE>;
+  using T = TensorExpression<F, TE>;
+  auto amplitudes( arguments->getPtr<TensorUnion<F,TE>>("amplitudes") );
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
 
-//  auto nij(arguments->getValue<Ptr<T>>("nij"));
-//  auto nij(arguments->getMap("Nij"));
-//  auto Dabij(arguments->getValue<Ptr<T>>("deltaIntegrals"));
-//
   auto DabijNode(arguments->getMap("deltaIntegrals"));
-  auto Dabij(DabijNode->getValue<Ptr<Tr>>("data"));
+  auto Dabij(DabijNode->getPtr<Tr>("data"));
   auto nijNode(arguments->getMap("nij"));
-  auto nij(nijNode->getValue<Ptr<Tr>>("data"));
+  auto nij(nijNode->getPtr<Tr>("data"));
 
   // these should be the cbs estimates for the mp2 pair energies
   auto mp2PairEnergiesNode(arguments->getMap("mp2PairEnergies"));
-  auto mp2PairEnergiesCbs(mp2PairEnergiesNode->getValue<Ptr<Tr>>("data"));
+  auto mp2PairEnergiesCbs(mp2PairEnergiesNode->getPtr<Tr>("data"));
 
   // these are the mp2 pair energies in the fno/finite/cc4s basis
   auto mp2PairEnergiesFno( Tcc<TE>::template tensor<F>("mp2PairEnergiesFno"));
@@ -91,15 +83,15 @@ bool CcsdFocalPointBasisSetCorrection::run(
   //mp2 amplitudes
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vabij(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pphh"));
+  auto Vabij(coulombSlices->getPtr<T>("pphh"));
 
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("h"));
-  auto epsa(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("p"));
+  auto epsi(energySlices->getPtr<Tr>("h"));
+  auto epsa(energySlices->getPtr<Tr>("p"));
 
-  auto No(epsi->getResult()->lens[0]);
-  auto Nv(epsa->getResult()->lens[0]);
+  auto No(epsi->inspect()->getLen(0));
+  auto Nv(epsa->inspect()->getLen(0));
   auto Mabij(
     Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Mabij")
   );
@@ -157,9 +149,9 @@ bool CcsdFocalPointBasisSetCorrection::run(
   OUT() << "ps-ppl:           " << deltaPsPpl << "\n";
   OUT() << "corrected Energy: " << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << std::endl;
 
-//  result->setValue<Ptr<Tr>>("geff", geff);
-//  result->setValue<Ptr<T>>("gijccd", nij);
-//  result->setValue<Ptr<Tr>>("mp2p", mp2PairEnergies);
+//  result->setPtr<Tr>("geff", geff);
+//  result->setPtr<T>("gijccd", nij);
+//  result->setPtr<Tr>("mp2p", mp2PairEnergies);
 
   return true;
 }

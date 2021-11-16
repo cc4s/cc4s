@@ -68,32 +68,33 @@ template <typename F, typename TE>
 Ptr<MapNode> DimensionProperty::run(
   const Ptr<MapNode> &arguments
 ) {
-  typedef Tensor<F,TE> T;
   auto op(arguments->getMap("operator"));
-  auto data(op->getValue<Ptr<T>>("data"));
+  auto tensorExpression(op->getPtr<TensorExpression<F,TE>>("data"));
   ASSERT_LOCATION(
-    data, "expecting operator to be a tensor", op->sourceLocation
+    tensorExpression,
+    "expecting operator to be a tensor expression", op->sourceLocation
   );
 
+  auto tensor(tensorExpression->inspect());
   auto dimensionIndex(arguments->getValue<Natural<>>("dimension"));
   auto propertyName(arguments->getValue<std::string>("property"));
 
   ASSERT_LOCATION(
-    dimensionIndex < data->getLens().size(),
+    dimensionIndex < tensor->getLens().size(),
     "Tensor "
-      + data->getName()
+      + tensor->getName()
       + " has no dimension #"
       + std::to_string(dimensionIndex),
     op->sourceLocation
   );
 
   auto propertyIt(
-    data->dimensions[dimensionIndex]->properties.find(propertyName)
+    tensor->dimensions[dimensionIndex]->properties.find(propertyName)
   );
   ASSERT_LOCATION(
-    propertyIt != data->dimensions[dimensionIndex]->properties.end(),
+    propertyIt != tensor->dimensions[dimensionIndex]->properties.end(),
     "Tensor "
-      + data->getName()
+      + tensor->getName()
       + " dimension "
       + std::to_string(dimensionIndex)
       + " does not have a property "
@@ -104,10 +105,10 @@ Ptr<MapNode> DimensionProperty::run(
 
   // create property matrix
   std::vector<Natural<>> lens(
-    {data->lens[dimensionIndex], property->indicesOfProperty.size()}
+    {tensor->getLens()[dimensionIndex], property->indicesOfProperty.size()}
   );
   std::vector<std::string> types(
-    {data->dimensions[dimensionIndex]->name, propertyName}
+    {tensor->dimensions[dimensionIndex]->name, propertyName}
   );
   auto P( Tcc<TE>::template tensor<F>(lens, propertyName) );
 
@@ -137,7 +138,7 @@ Ptr<MapNode> DimensionProperty::run(
     dimensionsNode->get(d) = dimensionNode;
   }
   DimensionPropertyNode->get("dimensions") = dimensionsNode;
-  DimensionPropertyNode->setValue("data", P);
+  DimensionPropertyNode->setPtr<TensorExpression<F,TE>>("data", P);
 
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("dimensionProperty") = DimensionPropertyNode;

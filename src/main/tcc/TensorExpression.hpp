@@ -21,6 +21,7 @@
 #include <tcc/Indexing.hpp>
 #include <tcc/Slice.hpp>
 #include <util/SharedPointer.hpp>
+#include <util/TypeTraits.hpp>
 #include <initializer_list>
 
 namespace cc4s {
@@ -105,6 +106,15 @@ namespace cc4s {
         this->template toPtr<TensorExpression<F,TE>>(),
         min, max
       );
+    }
+  };
+
+  // specialize type traits for tensor expressions
+  template <typename F, typename TE>
+  class TypeTraits<TensorExpression<F,TE>> {
+  public:
+    static std::string getName() {
+      return "tensor expression of " + TypeTraits<F>::getName();
     }
   };
 }

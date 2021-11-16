@@ -39,7 +39,7 @@ namespace cc4s {
   public:
     typedef F FieldType;
 
-    std::vector<Ptr<Tensor<F,TE>>> componentTensors;
+    std::vector<Ptr<TensorExpression<F,TE>>> componentTensors;
     std::vector<std::string> componentIndices;
 
     /**
@@ -79,7 +79,7 @@ namespace cc4s {
      * \brief Move constructor taking possession of the tensors given.
      **/
     TensorUnion(
-      const std::vector<Ptr<Tensor<F,TE>>> &tensors,
+      const std::vector<Ptr<TensorExpression<F,TE>>> &tensors,
       const std::vector<std::string> &indices
     ):
       componentTensors(tensors),
@@ -110,15 +110,14 @@ namespace cc4s {
      * the Tensor is not const since rearrangement may be
      * required also in non-modifying tensor operations.
      **/
-    // TODO: work out constnes of tensors
-    const Ptr<Tensor<F,TE>> &get(const size_t i) const {
+    const Ptr<TensorExpression<F,TE>> &get(const size_t i) const {
       return componentTensors[i];
     }
 
     /**
      * \brief Retrieves the i-th component tensor.
      **/
-    Ptr<Tensor<F,TE>> &get(const size_t i) {
+    Ptr<TensorExpression<F,TE>> &get(const size_t i) {
       return componentTensors[i];
     }
 
@@ -372,7 +371,7 @@ namespace cc4s {
       for (size_t i(0); i < componentTensors.size(); ++i) {
         tensorIndices[i].reserve(tensorIndices[i].size()+1);
         tensorValues[i].reserve(tensorIndices[i].size()+1);
-        get(i)->write(
+        get(i)->evaluate()->write(
           tensorIndices[i].size(),
           reinterpret_cast<int64_t *>(tensorIndices[i].data()),
           tensorValues[i].data()
@@ -397,8 +396,9 @@ namespace cc4s {
       size_t indexBase(0);
       for (size_t i(0); i < componentTensors.size(); ++i) {
         size_t tensorIndexSize(1);
-        for (size_t d(0); d < get(i)->lens.size(); ++d) {
-          tensorIndexSize *= get(i)->lens[d];
+        auto componentTensor(get(i)->inspect());
+        for (size_t d(0); d < componentTensor->getLens().size(); ++d) {
+          tensorIndexSize *= componentTensor->getLen(d);
         }
         indexEnds[i] = indexBase += tensorIndexSize;
       }
@@ -408,12 +408,15 @@ namespace cc4s {
      * \brief Sets this TensorUnion's component tensors by copying the given
      * component tensors. Called by copy constructors and copy assignments.
      **/
-    void copyComponents(const std::vector<Ptr<Tensor<F,TE>>> &components) {
+    void copyComponents(
+      const std::vector<Ptr<TensorExpression<F,TE>>> &components
+    ) {
       componentTensors.resize(components.size());
       for (size_t i(0); i < components.size(); ++i) {
+        auto componentTensor(components[i]->inspect());
         // create tensor of identical shape, NOTE: no data is copied yet
         componentTensors[i] = Tcc<TE>::template tensor<F>(
-          components[i]->lens, components[i]->getName()
+          componentTensor->getLens(), componentTensor->getName()
         );
         // copy data
         COMPILE(
@@ -464,16 +467,17 @@ namespace cc4s {
     static Ptr<Node> write(
       const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
     ) {
-      auto tensorUnionNode(node->toAtom<Ptr<const TensorUnion<F,TE>>>());
-      if (!tensorUnionNode) return nullptr;
-      auto t(tensorUnionNode->value);
+      auto pointerNode(node->toPtr<AtomicNode<Ptr<Object>>>());
+      if (!pointerNode) return nullptr;
+      auto t( dynamicPtrCast<TensorUnion<F,TE>>(pointerNode->value) );
+      if (!t) return nullptr;
       auto componentsNode(New<MapNode>(SOURCE_LOCATION));
       auto componentsNodePath(nodePath + ".components");
       for (size_t i(0); i < t->componentTensors.size(); ++i) {
         auto componentNode(New<MapNode>(SOURCE_LOCATION));
         componentNode->setValue("indices", t->componentIndices[i]);
         auto tensorNode(
-          New<AtomicNode<Ptr<Tensor<F,TE>>>>(
+          New<PointerNode<TensorExpression<F,TE>>>(
             t->componentTensors[i], SOURCE_LOCATION
           )
         );
@@ -494,7 +498,7 @@ namespace cc4s {
     ) {
       auto componentsNode(node->getMap("components"));
       auto componentsNodePath(nodePath + ".components");
-      std::vector<Ptr<Tensor<F,TE>>> tensors;
+      std::vector<Ptr<TensorExpression<F,TE>>> tensors;
       std::vector<std::string> indices;
       for (size_t i(0); componentsNode->get(i); ++i) {
         auto tensorNode(
@@ -503,7 +507,10 @@ namespace cc4s {
             componentsNodePath + "." + to_string(i)
           )
         );
-        tensors.push_back(tensorNode->toAtom<Ptr<Tensor<F,TE>>>()->value);
+        auto pointerNode(tensorNode->toPtr<AtomicNode<Ptr<Object>>>());
+        tensors.push_back(
+          dynamicPtrCast<TensorExpression<F,TE>>(pointerNode->value)
+        );
         indices.push_back(
           componentsNode->getMap(i)->getValue<std::string>("indices")
         );

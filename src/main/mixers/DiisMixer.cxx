@@ -17,7 +17,7 @@
 #include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 #include <algorithms/Algorithm.hpp>
-#include <Data.hpp>
+#include <Node.hpp>
 #include <extern/Lapack.hpp>
 
 using namespace cc4s;
@@ -101,7 +101,7 @@ void DiisMixer<F,TE>::append(
 }
 
 template <typename F, typename TE>
-Ptr<const TensorUnion<F,TE>> DiisMixer<F,TE>::get() {
+Ptr<TensorUnion<F,TE>> DiisMixer<F,TE>::get() {
   return next;
 }
 

@@ -26,7 +26,7 @@ ALGORITHM_REGISTRAR_DEFINITION(CoupledClusterSinglesDoublesReference)
 Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
 CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration,
-  const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultDryTensorEngine>(iteration, amplitudes);
 }
@@ -34,7 +34,7 @@ CoupledClusterSinglesDoublesReference::getResiduum(
 Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
 CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration,
-  const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
 ) {
   return getResiduum<Complex<>, DefaultDryTensorEngine>(iteration, amplitudes);
 }
@@ -42,7 +42,7 @@ CoupledClusterSinglesDoublesReference::getResiduum(
 Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
 CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration,
-  const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
 ) {
   return getResiduum<Real<>, DefaultTensorEngine>(iteration, amplitudes);
 }
@@ -51,7 +51,7 @@ CoupledClusterSinglesDoublesReference::getResiduum(
 Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
 CoupledClusterSinglesDoublesReference::getResiduum(
   const int iteration,
-  const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
 ) {
   return getResiduum<Complex<>, DefaultTensorEngine>(iteration, amplitudes);
 }
@@ -63,7 +63,7 @@ CoupledClusterSinglesDoublesReference::getResiduum(
 
 template <typename F, typename TE>
 Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
-  const int iteration, const Ptr<const TensorUnion<F,TE>> &amplitudes
+  const int iteration, const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
   // get amplitude parts
   auto Tph( amplitudes->get(0) );
@@ -77,7 +77,7 @@ Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
 
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pphh"));
+  auto Vpphh(coulombSlices->getPtr<TensorRecipe<F,TE>>("pphh"));
 
   auto onlyPpl(arguments->getValue<size_t>("onlyPpl", 0) );
 
@@ -95,9 +95,9 @@ Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
 
 //    OUT() << "Calculate only PPL diagrams" << std::endl;
 
-    auto Vpppp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pppp"));
-    auto Vphpp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("phpp"));
-    auto Vhppp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hppp"));
+    auto Vpppp(coulombSlices->getPtr<TensorRecipe<F,TE>>("pppp"));
+    auto Vphpp(coulombSlices->getPtr<TensorRecipe<F,TE>>("phpp"));
+    auto Vhppp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hppp"));
     auto Xabcd( Tcc<TE>::template tensor<F>("Xabcd") );
 
     COMPILE(
@@ -110,19 +110,19 @@ Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
     )->execute();
 
   } else {
-    auto Vpppp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pppp"));
-    auto Vphph(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("phph"));
-    auto Vhhhh(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhhh"));
-    auto Vhhhp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhhp"));
-    auto Vppph(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("ppph"));
-    auto Vhhpp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhpp"));
-    auto Vpphp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pphp"));
-    auto Vphhh(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("phhh"));
-    auto Vhphp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hphp"));
-    auto Vphhp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("phhp"));
-    auto Vphpp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("phpp"));
-    auto Vhhph(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhph"));
-    auto Vhppp(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hppp"));
+    auto Vpppp(coulombSlices->getPtr<TensorRecipe<F,TE>>("pppp"));
+    auto Vphph(coulombSlices->getPtr<TensorRecipe<F,TE>>("phph"));
+    auto Vhhhh(coulombSlices->getPtr<TensorRecipe<F,TE>>("hhhh"));
+    auto Vhhhp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hhhp"));
+    auto Vppph(coulombSlices->getPtr<TensorRecipe<F,TE>>("ppph"));
+    auto Vhhpp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hhpp"));
+    auto Vpphp(coulombSlices->getPtr<TensorRecipe<F,TE>>("pphp"));
+    auto Vphhh(coulombSlices->getPtr<TensorRecipe<F,TE>>("phhh"));
+    auto Vhphp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hphp"));
+    auto Vphhp(coulombSlices->getPtr<TensorRecipe<F,TE>>("phhp"));
+    auto Vphpp(coulombSlices->getPtr<TensorRecipe<F,TE>>("phpp"));
+    auto Vhhph(coulombSlices->getPtr<TensorRecipe<F,TE>>("hhph"));
+    auto Vhppp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hppp"));
     // Hirata intermediates
     auto Lac( Tcc<TE>::template tensor<F>("Lac") );
     auto Kac( Tcc<TE>::template tensor<F>("Kac") );

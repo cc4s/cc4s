@@ -16,7 +16,7 @@
 #ifndef EMITTER_DEFINED
 #define EMITTER_DEFINED
 
-#include <Data.hpp>
+#include <Node.hpp>
 #include <Cc4s.hpp>
 #include <util/SharedPointer.hpp>
 #include <string>
@@ -32,9 +32,9 @@ namespace cc4s {
       if (Cc4s::world->getRank() == 0) stream.open(fileName);
     }
     void emit(const Ptr<Node> &node) {
-      auto mapNode(node->toMap());
+      auto mapNode(node->toPtr<MapNode>());
       if (mapNode) return emitMap(mapNode);
-      auto symbolNode(node->toSymbol());
+      auto symbolNode(node->toPtr<SymbolNode>());
       if (symbolNode) {
         emitSymbol(symbolNode);
       } else {

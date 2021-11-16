@@ -46,24 +46,24 @@ namespace cc4s {
      */
     Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
+      const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
     ) override;
     Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
+      const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
     ) override;
     Ptr<TensorUnion<Real<>, DefaultTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
+      const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
     ) override;
     Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> getResiduum(
       const int iteration,
-      const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
+      const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
     ) override;
 
     template <typename F, typename TE>
     Ptr<TensorUnion<F,TE>> getResiduum(
-      const int iteration, const Ptr<const TensorUnion<F,TE>> &amplitudes
+      const int iteration, const Ptr<TensorUnion<F,TE>> &amplitudes
     );
   };
 }

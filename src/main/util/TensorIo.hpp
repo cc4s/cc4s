@@ -38,7 +38,9 @@ namespace cc4s {
       // check if file exists specifying dimension properties
       auto propertiesFileName(name + ".properties.yaml");
       if (std::ifstream(propertiesFileName).good()) {
-        auto propertiesMap(Parser(propertiesFileName).parse()->toMap());
+        auto propertiesMap(
+          Parser(propertiesFileName).parse()->toPtr<MapNode>()
+        );
         for (auto key: propertiesMap->getKeys()) {
           auto propertyMap(propertiesMap->getMap(key));
           auto property(New<TensorDimensionProperty>());
@@ -142,18 +144,12 @@ namespace cc4s {
       const std::string &nodePath,
       const bool useBinary
     ) {
-      Ptr<Tensor<F,TE>> tensor;
-      // check if node contains tensor or tensor recipe
-      auto tensorNode(node->toAtom<Ptr<Tensor<F,TE>>>());
-      if (tensorNode) {
-        tensor = tensorNode->value;
-      } else {
-        auto tensorRecipeNode(node->toAtom<Ptr<TensorRecipe<F,TE>>>());
-        if (!tensorRecipeNode) return nullptr;
-        auto tensorRecipe(tensorRecipeNode->value);
-        tensorRecipe->execute();
-        tensor = tensorRecipe->getResult();
-      }
+      auto pointerNode(node->toPtr<AtomicNode<Ptr<Object>>>());
+      auto tensorExpression(
+        dynamicPtrCast<TensorExpression<F,TE>>(pointerNode->value)
+      );
+      if (!tensorExpression) return nullptr;
+      auto tensor(tensorExpression->evaluate());
       auto writtenTensor(New<MapNode>(SOURCE_LOCATION));
 
       // build dimensions from tensor length

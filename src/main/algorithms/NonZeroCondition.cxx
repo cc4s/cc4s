@@ -69,15 +69,16 @@ template <typename F, typename TE>
 Ptr<MapNode> NonZeroCondition::run(
   const Ptr<MapNode> &arguments
 ) {
-  typedef Tensor<F,TE> T;
+  typedef TensorExpression<F,TE> T;
   auto op(arguments->getMap("operator"));
-  auto data(op->getValue<Ptr<T>>("data"));
+  auto tensorExpression(op->getPtr<T>("data"));
   ASSERT_LOCATION(
-    data, "expecting operator to be a tensor", op->sourceLocation
+    tensorExpression, "expecting operator to be a tensor", op->sourceLocation
   );
+  auto tensor(tensorExpression->inspect());
 
   auto conditionName(arguments->getValue<std::string>("conditionName"));
-  for (auto condition: data->nonZeroConditions->all) {
+  for (auto condition: tensor->nonZeroConditions->all) {
     if (condition->name == conditionName) {
       // find dimensions of Delta tensor
       std::vector<Natural<>> conditionLens;
@@ -89,7 +90,7 @@ Ptr<MapNode> NonZeroCondition::run(
       // create Delta tensor for non-zero condition
       auto Delta(
         Tcc<TE>::template tensor<F>(
-          conditionLens, data->getName() + "." + conditionName
+          conditionLens, tensor->getName() + "." + conditionName
         )
       );
 
@@ -133,7 +134,7 @@ Ptr<MapNode> NonZeroCondition::run(
 
   THROW_LOCATION(
     "Tensor "
-      + data->getName()
+      + tensor->getName()
       + " does not have a non-zero condition named "
       + conditionName,
     op->sourceLocation

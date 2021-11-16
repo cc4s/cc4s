@@ -60,16 +60,16 @@ template <typename F, typename TE>
 Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("h"));
-  auto epsa(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("p"));
+  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
+  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
 
-  auto No(epsi->getResult()->lens[0]);
-  auto Nv(epsa->getResult()->lens[0]);
+  auto No(epsi->inspect()->getLen(0));
+  auto Nv(epsa->inspect()->getLen(0));
 
   size_t i(0);
-  Ptr<const TensorUnion<F,TE>> amplitudes;
+  Ptr<TensorUnion<F,TE>> amplitudes;
   if (arguments->get("initialAmplitudes")) {
-    amplitudes = arguments->getValue<Ptr<const TensorUnion<F,TE>>>(
+    amplitudes = arguments->getPtr<TensorUnion<F,TE>>(
       "initialAmplitudes"
     );
     OUT() << "Using given initial amplitudes " << amplitudes << std::endl;
@@ -175,13 +175,13 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
 
 template <typename F, typename TE>
 F ClusterSinglesDoublesAlgorithm::getEnergy(
-  const Ptr<const TensorUnion<F,TE>> &amplitudes,
+  const Ptr<TensorUnion<F,TE>> &amplitudes,
   const bool finalReport
 ) {
   // get the Coulomb integrals to compute the energy
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vijab(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("hhpp"));
+  auto Vijab(coulombSlices->getPtr<TensorExpression<F,TE>>("hhpp"));
   auto orbitalType(
     coulombIntegrals->getMap(
       "indices"
@@ -273,7 +273,7 @@ Ptr<TensorUnion<F,TE>> ClusterSinglesDoublesAlgorithm::createAmplitudes(
 template <typename F, typename TE>
 Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudes(
   const Ptr<MapNode> &arguments,
-  const Ptr<const TensorUnion<F,TE>> &amplitudes
+  const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
@@ -303,14 +303,14 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudesComponent(
     dimensions->get(d) = dimension;
   }
   result->get("dimensions") = dimensions;
-  result->setValue<Ptr<Tensor<F,TE>>>("data", component);
+  result->setPtr<TensorExpression<F,TE>>("data", component);
   return result;
 }
 
 template <typename F, typename TE>
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<F,TE>> &residuum,
-  const Ptr<const TensorUnion<F,TE>> &amplitudes
+  const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
   auto levelShift(
     arguments->getValue<Real<>>("levelShift", DEFAULT_LEVEL_SHIFT)
@@ -322,7 +322,7 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
   for (unsigned int i(0); i < residuum->componentTensors.size(); ++i) {
     auto R( residuum->get(i) );
     auto indices( residuum->getIndices(i) );
-    auto D( calculateExcitationEnergies<F,TE>(R->lens, indices) );
+    auto D( calculateExcitationEnergies<F,TE>(R->inspect()->getLens(),indices) );
 
     // divide by -Delta to get new estimate for T
     COMPILE(
@@ -339,22 +339,22 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &residuum,
-  const Ptr<const TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
 );
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &residuum,
-  const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
 );
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &residuum,
-  const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
 );
 template
 void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &residuum,
-  const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
+  const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
 );
 
 
@@ -364,10 +364,10 @@ Ptr<Tensor<F,TE>> ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
 ) {
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("h"));
-  auto epsa(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("p"));
-  auto Fepsi(Tcc<TE>::template tensor<F>(epsi->getResult()->lens, "Fepsi"));
-  auto Fepsa(Tcc<TE>::template tensor<F>(epsa->getResult()->lens, "Fepsa"));
+  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
+  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
+  auto Fepsi(Tcc<TE>::template tensor<F>(epsi->inspect()->getLens(), "Fepsi"));
+  auto Fepsa(Tcc<TE>::template tensor<F>(epsa->inspect()->getLens(), "Fepsa"));
   // convert to type F (either complex or double)
   COMPILE(
     (*Fepsa)["a"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),

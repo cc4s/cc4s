@@ -32,7 +32,7 @@ namespace cc4s {
       const bool binary
     );
     template <typename F, typename TE>
-    Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> readText(
+    Ptr<Node> readText(
       const std::string &fileName,
       const std::vector<size_t> &lens,
       const std::vector<Ptr<TensorDimension>> &dimensions,
@@ -40,7 +40,7 @@ namespace cc4s {
       const SourceLocation &sourceLocation
     );
     template <typename F, typename TE>
-    Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> readBinary(
+    Ptr<Node> readBinary(
       const std::string &fileName,
       const std::vector<size_t> &lens,
       const std::vector<Ptr<TensorDimension>> &dimensions,

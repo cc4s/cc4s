@@ -484,9 +484,13 @@ namespace cc4s {
       getMachineTensor()->writeFromFile(file, offset);
     }
 
-    const std::vector<size_t> &getLens() const {
+    const std::vector<Natural<>> &getLens() const {
       return lens;
     }
+    Natural<> getLen(Natural<> d) const {
+      return lens[d];
+    }
+
 
     /**
      * \brief Returns the number of elements contained in this tensor.
@@ -497,6 +501,14 @@ namespace cc4s {
         elementsCount *= len;
       }
       return elementsCount;
+    }
+
+    Ptr<Tensor<F,TE>> inspect() override {
+      return this->template toPtr<Tensor<F,TE>>();
+    }
+
+    Ptr<Tensor<F,TE>> evaluate() override {
+      return this->template toPtr<Tensor<F,TE>>();
     }
 
     Ptr<Operation<TE>> compile(Scope &scope) override {

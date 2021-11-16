@@ -13,17 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef DATA_DEFINED
-#define DATA_DEFINED
+#ifndef NODE_DEFINED
+#define NODE_DEFINED
 
 #include <Object.hpp>
-#include <util/Log.hpp>
 #include <math/Integer.hpp>
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
 #include <util/SourceLocation.hpp>
 #include <util/Exception.hpp>
 #include <util/SharedPointer.hpp>
+#include <util/TypeTraits.hpp>
 
 #include <string>
 #include <map>
@@ -32,13 +30,11 @@
 #include <iomanip>
 
 namespace cc4s {
+  // forward declarations
   class MapNode;
   class SymbolNode;
   template <typename AtomicType> class AtomicNode;
   template <typename PointedType> class PointerNode;
-
-  template <typename F>
-  class TypeTraits;
 
   class Node: public Thisable<Node> {
   public:
@@ -53,17 +49,7 @@ namespace cc4s {
       return true;
     }
     virtual std::string toString() = 0;
-    // provide convenience cast routines
-    Ptr<MapNode> toMap() {
-      return this->toPtr<MapNode>();
-    }
-    Ptr<SymbolNode> toSymbol() {
-      return this->toPtr<SymbolNode>();
-    }
-    template <typename AtomicType>
-    Ptr<AtomicNode<AtomicType>> toAtom() {
-      return this->toPtr<AtomicNode<AtomicType>>();
-    }
+
     std::string comment;
     SourceLocation sourceLocation;
   };
@@ -125,7 +111,7 @@ namespace cc4s {
     Ptr<Node> &get(const std::string &key) {
       return elements[key];
     }
-    Ptr<Node> &get(const size_t key) {
+    Ptr<Node> &get(const Natural<> key) {
       return elements[std::to_string(key)];
     }
     // TODO: proper key iterators
@@ -137,7 +123,7 @@ namespace cc4s {
       }
       return keys;
     }
-    size_t size() const {
+    Natural<> size() const {
       return elements.size();
     }
 
@@ -146,7 +132,7 @@ namespace cc4s {
       ASSERT_LOCATION(
         get(key), "expecting key '" + key + "'", sourceLocation
       );
-      auto symbolNode(get(key)->toSymbol());
+      auto symbolNode(get(key)->toPtr<SymbolNode>());
       ASSERT_LOCATION(
         symbolNode, "expecting '" + key + "' to be a symbol", sourceLocation
       );
@@ -162,7 +148,7 @@ namespace cc4s {
     Target getValue(const std::string &key) {
       ASSERT_LOCATION(get(key), "expecting key '" + key + "'", sourceLocation);
       // first, try to convert to expected type node
-      auto targetAtomNode(get(key)->toAtom<Target>());
+      auto targetAtomNode(get(key)->toPtr<AtomicNode<Target>>());
       if (targetAtomNode) {
         return targetAtomNode->value;
       } else {
@@ -170,20 +156,12 @@ namespace cc4s {
         std::stringstream stream(get(key)->toString());
         Target targetValue;
         stream >> targetValue;
-        // FIXME: properly throw exception when nothing meaningful is done
-/*
-        Assert(
-          stream.str().size() < get(key)->toString().size(),
+        ASSERT(
+          stream.str().size() - stream.tellg() != 0,
            "failed to convert '" + get(key)->toString() + "' to "
-           + TypeTraits<Target>::getName() + ", left: " + stream.str()
+           + TypeTraits<Target>::getName() + ", unconverted: "
+           + stream.str().substr(stream.tellg())
         );
-        if (stream.str().size() > 0) {
-          LOG()
-            << "WARNING: not all data used converting '"
-            << get(key)->toString() << "' to "
-            << TypeTraits<Target>::getName() << std::endl;
-        }
-*/
         // if successful replace previous node with converted one
         get(key) = New<AtomicNode<Target>>(targetValue, sourceLocation);
         return targetValue;
@@ -193,30 +171,31 @@ namespace cc4s {
     Ptr<PointedTarget> getPtr(const std::string &key) {
       ASSERT_LOCATION(get(key), "expecting key '" + key + "'", sourceLocation);
       // first, try to convert to void pointer node
-      Ptr<AtomicNode<Ptr<Object>>> ptrAtom(get(key)->toAtom<Ptr<Object>>);
+      Ptr<Node> node(get(key));
+      Ptr<AtomicNode<Ptr<Object>>> ptrAtom(
+        node->toPtr<AtomicNode<Ptr<Object>>>()
+      );
       ASSERT_LOCATION(
         ptrAtom,
-        "expecting pointer value for key '" + key + "'", sourceLocation
+        "expecting object for key '" + key + "'", sourceLocation
       );
       // then, try to convert pointer to target type
-      auto pointer(
-        std::dynamic_pointer_cast<Ptr<PointedTarget>>(ptrAtom->value)
-      );
+      auto pointer(dynamicPtrCast<PointedTarget>(ptrAtom->value));
       ASSERT_LOCATION(
         pointer,
-        std::string("expecting pointer to ")
-          + typeid(PointedTarget).name() + " as value of key '"
+        std::string("expecting object ")
+          + TypeTraits<PointedTarget>::getName() + " as value of key '"
           + key + "'",
         sourceLocation
       );
       return pointer;
     }
     template <typename Target>
-    Target getValue(const size_t index) {
+    Target getValue(const Natural<> index) {
       return getValue<Target>(std::to_string(index));
     }
     template <typename PointedTarget>
-    PointedTarget getPtr(const size_t index) {
+    PointedTarget getPtr(const Natural<> index) {
       return getPtr<PointedTarget>(std::to_string(index));
     }
     template <typename Target>
@@ -231,7 +210,7 @@ namespace cc4s {
       }
     }
     template <typename Target>
-    Target getValue(const size_t index, const Target &defaultValue) {
+    Target getValue(const Natural<> index, const Target &defaultValue) {
       return getValue<Target>(std::to_string(index), defaultValue);
     }
     template <typename Target>
@@ -243,7 +222,7 @@ namespace cc4s {
     }
     template <typename Target>
     void setValue(
-      const size_t index, const Target &value,
+      const Natural<> index, const Target &value,
       const SourceLocation &sourceLocation = SOURCE_LOCATION
     ) {
       get(index) = New<AtomicNode<Target>>(value, sourceLocation);
@@ -267,19 +246,18 @@ namespace cc4s {
       ASSERT_LOCATION(
         get(element), "expecting key '" + element + "'", sourceLocation
       );
-      auto mapNode(get(element)->toMap());
+      auto mapNode(get(element)->toPtr<MapNode>());
       ASSERT_LOCATION(
         mapNode, "expecting '" + element + "' to be a map", sourceLocation
       );
       return mapNode;
     }
-    Ptr<MapNode> getMap(const size_t element) {
+    Ptr<MapNode> getMap(const Natural<> element) {
       return getMap(std::to_string(element));
     }
 
     bool isGiven(const std::string &element) {
-      if (get(element)) { return true; }
-      else { return false; }
+      return elements.find(element) != elements.end();
     }
 
     void push_back(const Ptr<Node> &node) {
@@ -288,59 +266,6 @@ namespace cc4s {
   protected:
     std::map<std::string,Ptr<Node>> elements;
   };
-
-  /**
-   * Traits class for tensor element types used in cc4s.
-   * It provides type specific information such as type name to
-   * be displayed to the user.
-   */
-  template <typename F>
-  class TypeTraits;
-
-  template <>
-  class TypeTraits<std::string> {
-  public:
-    static std::string getName() { return "text"; }
-  };
-  template <>
-  class TypeTraits<bool> {
-  public:
-    static std::string getName() { return "boolean"; }
-  };
-  template <>
-  class TypeTraits<int64_t> {
-  public:
-    static std::string getName() { return "integer"; }
-  };
-  template <>
-  class TypeTraits<Real<64>> {
-  public:
-    static std::string getName() { return "real64"; }
-  };
-  template <>
-  class TypeTraits<Complex<64>> {
-  public:
-    static std::string getName() { return "complex64"; }
-  };
-  template <>
-  class TypeTraits<Real<128>> {
-  public:
-    static std::string getName() { return "real128"; }
-  };
-  template <>
-  class TypeTraits<Complex<128>> {
-  public:
-    static std::string getName() { return "complex128"; }
-  };
-/*
-  template <F,TE>
-  class TypeTraits<Tensor<F,TE>> {
-  public:
-    static std::string getName() {
-      return "tensor of " + TypeTraits<F>::getName();
-    }
-  };
-*/
 }
 
 #endif

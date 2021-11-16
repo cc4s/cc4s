@@ -14,7 +14,7 @@
  */
 
 #include <algorithms/Algorithm.hpp>
-#include <Data.hpp>
+#include <Node.hpp>
 #include <tcc/Tcc.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>

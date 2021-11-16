@@ -71,21 +71,22 @@ template <typename F, typename TE>
 void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
   const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ) {
-  using TRc = TensorRecipe<Complex<>, TE>;
-  using Tc = Tensor<Complex<>, TE>;
-  using Tr = Tensor<Real<>, TE>;
+  using Tc = TensorExpression<Complex<>, TE>;
+  using Tr = TensorExpression<Real<>, TE>;
 
   // READ input to compute structure factors
 
-  auto coulombVertexSingularVectors = arguments->getMap("coulombVertexSingularVectors");
-  auto singularVectors(coulombVertexSingularVectors->getValue<Ptr<Tc>>("data"));
+  auto coulombVertexSingularVectors(
+    arguments->getMap("coulombVertexSingularVectors")
+  );
+  auto singularVectors(coulombVertexSingularVectors->getPtr<Tc>("data"));
 
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
   auto slices(coulombVertex->getMap("slices"));
-  // get input recipes
-  auto GammaFph(slices->getValue<Ptr<TRc>>("ph"));
-  auto GammaFhp(slices->getValue<Ptr<TRc>>("hp"));
-  auto GammaFhh(slices->getValue<Ptr<TRc>>("hh"));
+  // get input tensor expression
+  auto GammaFph(slices->getPtr<Tc>("ph"));
+  auto GammaFhp(slices->getPtr<Tc>("hp"));
+  auto GammaFhh(slices->getPtr<Tc>("hh"));
   auto GammaGph( Tcc<TE>::template tensor<Complex<>>("Gph"));
   auto GammaGhp( Tcc<TE>::template tensor<Complex<>>("Ghp"));
   auto GammaGhh( Tcc<TE>::template tensor<Complex<>>("Ghh"));
@@ -103,9 +104,10 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
   auto cTCGph = ( Tcc<TE>::template tensor<Complex<>>("cTCGph"));
 
   auto CoulombPotential(arguments->getMap("coulombPotential"));
-  auto VofG(CoulombPotential->getValue<Ptr<Tr>>("data"));
-  auto invSqrtCoulombPotential( Tcc<TE>::template tensor<Complex<>>
-    ("invSqrtCoulombPotential"));
+  auto VofG(CoulombPotential->getPtr<Tr>("data"));
+  auto invSqrtCoulombPotential(
+    Tcc<TE>::template tensor<Complex<>>("invSqrtCoulombPotential")
+  );
 
   COMPILE(
     (*invSqrtCoulombPotential)["G"] <<=
@@ -121,10 +123,7 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
 
 
   //THESE TWO LINES ARE SEGFAULTING
-  auto amplitudesNode(
-    arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>()
-  );
-  auto amplitudes(amplitudesNode->value);
+  auto amplitudes(arguments->getPtr<TensorUnion<F,TE>>("amplitudes"));
 
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
@@ -145,7 +144,9 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
 
 //  auto result(New<MapNode>(SOURCE_LOCATION));
 
-  result->setValue<Ptr<Tensor<Real<>, TE>>>("structureFactor", StructureFactor);
+  result->setPtr<TensorExpression<Real<>, TE>>(
+    "structureFactor", StructureFactor
+  );
 //  return result;
 }
 
@@ -154,7 +155,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   const Ptr<MapNode> &arguments,
   Ptr<MapNode> &result
 ) {
-  using T = Tensor<Real<>, TE>;
+  using T = TensorExpression<Real<>, TE>;
 
   Real<> sum3D(0.0), inter3D(0.0);
   Natural<> countNO(0), countNOg(0);
@@ -168,9 +169,10 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
 // constant factor is still unclear to me
 //  Real<> factor(4.5835494674469/volume);
+  // FIXME: unit conversion
   Real<> factor(0.00020880076563/volume);
   // READ THE MOMENTUM GRID
-  auto grid(gridVectors->getValue<Ptr<T>>("data"));
+  auto grid(gridVectors->getPtr<T>("data")->evaluate());
   ASSERT_LOCATION(
     grid, "expecting the reciprocal Grid",
     gridVectors->sourceLocation
@@ -225,7 +227,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
   // READ THE Structure Factor
   std::vector<Real<>> SofG;
-  auto structureFactor(result->getValue<Ptr<T>>("structureFactor"));
+  auto structureFactor(result->getPtr<T>("structureFactor")->evaluate());
 //  ASSERT_LOCATION(
 //    structureFactor, "expecting the structureFactor",
 //    structureFactor->sourceLocation

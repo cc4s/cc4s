@@ -69,19 +69,18 @@ template <typename F, typename TE>
 Ptr<MapNode> StructureFactor::calculateStructureFactor(
   const Ptr<MapNode> &arguments
 ) {
-  using TRc = TensorRecipe<Complex<>, TE>;
-  using Tc = Tensor<Complex<>, TE>;
-  using Tr = Tensor<Real<>, TE>;
+  using Tc = TensorExpression<Complex<>, TE>;
+  using Tr = TensorExpression<Real<>, TE>;
 
   auto coulombVertexSingularVectors = arguments->getMap("coulombVertexSingularVectors");
-  auto singularVectors(coulombVertexSingularVectors->getValue<Ptr<Tc>>("data"));
+  auto singularVectors(coulombVertexSingularVectors->getPtr<Tc>("data"));
 
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
   auto slices(coulombVertex->getMap("slices"));
   // get input recipes
-  auto GammaFph(slices->getValue<Ptr<TRc>>("ph"));
-  auto GammaFhp(slices->getValue<Ptr<TRc>>("hp"));
-  auto GammaFhh(slices->getValue<Ptr<TRc>>("hh"));
+  auto GammaFph(slices->getPtr<Tc>("ph"));
+  auto GammaFhp(slices->getPtr<Tc>("hp"));
+  auto GammaFhh(slices->getPtr<Tc>("hh"));
   auto GammaGph( Tcc<TE>::template tensor<Complex<>>("Gph"));
   auto GammaGhp( Tcc<TE>::template tensor<Complex<>>("Ghp"));
   auto GammaGhh( Tcc<TE>::template tensor<Complex<>>("Ghh"));
@@ -105,7 +104,7 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
   auto Dpphh  = ( Tcc<TE>::template tensor<F>("Dpphh"));
 
   auto CoulombPotential(arguments->getMap("coulombPotential"));
-  auto VofG(CoulombPotential->getValue<Ptr<Tr>>("data"));
+  auto VofG(CoulombPotential->getPtr<Tr>("data"));
   auto invSqrtCoulombPotential( Tcc<TE>::template tensor<Complex<>>
     ("invSqrtCoulombPotential"));
 
@@ -132,10 +131,7 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
 
 
   //THESE TWO LINES ARE SEGFAULTING
-  auto amplitudesNode(
-    arguments->get("amplitudes")->toAtom<Ptr<const TensorUnion<F,TE>>>()
-  );
-  auto amplitudes(amplitudesNode->value);
+  auto amplitudes(arguments->getPtr<TensorUnion<F,TE>>("amplitudes"));
 
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
@@ -156,8 +152,8 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
-  result->setValue<Ptr<Tensor<Real<>, TE>>>("structureFactor", StructureFactor);
-  result->setValue<Ptr<Tensor<F, TE>>>("deltaIntegrals", Dpphh);
-  result->setValue<Ptr<Tensor<F, TE>>>("nij", Nij);
+  result->setPtr<TensorExpression<Real<>, TE>>("structureFactor", StructureFactor);
+  result->setPtr<TensorExpression<F, TE>>("deltaIntegrals", Dpphh);
+  result->setPtr<TensorExpression<F, TE>>("nij", Nij);
   return result;
 }

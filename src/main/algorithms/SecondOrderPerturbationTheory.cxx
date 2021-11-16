@@ -55,7 +55,7 @@ Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
 ) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vabij(coulombSlices->getValue<Ptr<TensorRecipe<F,TE>>>("pphh"));
+  auto Vabij(coulombSlices->getPtr<TensorExpression<F,TE>>("pphh"));
   auto orbitalType(
     coulombIntegrals->getMap(
       "indices"
@@ -77,11 +77,11 @@ Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
 
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("h"));
-  auto epsa(energySlices->getValue<Ptr<TensorRecipe<Real<>,TE>>>("p"));
+  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
+  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
 
-  auto No(epsi->getResult()->lens[0]);
-  auto Nv(epsa->getResult()->lens[0]);
+  auto No(epsi->inspect()->getLens()[0]);
+  auto Nv(epsa->inspect()->getLens()[0]);
   auto Dabij(
     Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Dabij")
   );

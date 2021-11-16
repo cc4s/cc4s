@@ -16,7 +16,7 @@
 #ifndef ALGORITHM_DEFINED
 #define ALGORITHM_DEFINED
 
-#include <Data.hpp>
+#include <Node.hpp>
 
 // tensor engine selection
 #include <engines/DryTensorEngine.hpp>

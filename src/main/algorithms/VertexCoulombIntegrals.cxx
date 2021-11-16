@@ -66,10 +66,10 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
   auto slices(coulombVertex->getMap("slices"));
   // get input recipes
-  auto GammaGpp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pp"));
-  auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
-  auto GammaGhp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hp"));
-  auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
+  auto GammaGpp(slices->getPtr<TensorExpression<Complex<>,TE>>("pp"));
+  auto GammaGph(slices->getPtr<TensorExpression<Complex<>,TE>>("ph"));
+  auto GammaGhp(slices->getPtr<TensorExpression<Complex<>,TE>>("hp"));
+  auto GammaGhh(slices->getPtr<TensorExpression<Complex<>,TE>>("hh"));
 
   auto NF(GammaGhh->inspect()->lens[0]);
   OUT() << "number of field variables NF= " << NF << std::endl;
@@ -103,7 +103,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
     auto result( \
       Tcc<TE>::template tensor<Real<>>(std::string("V") + sliceName) \
     ); \
-    integralSlices->setValue(sliceName, \
+    integralSlices->setPtr<TensorExpression<Real<>,TE>>(sliceName, \
       COMPILE_RECIPE(result, ( \
         (*result)["pqsr"] <<= \
           (*realGammaG##LO##LI)["Gps"] * (*realGammaG##RO##RI)["Gqr"], \
@@ -164,10 +164,10 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
   auto slices(coulombVertex->getMap("slices"));
   // get input recipes
-  auto GammaGpp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("pp"));
-  auto GammaGph(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("ph"));
-  auto GammaGhp(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hp"));
-  auto GammaGhh(slices->getValue<Ptr<TensorRecipe<Complex<>,TE>>>("hh"));
+  auto GammaGpp(slices->getPtr<TensorExpression<Complex<>,TE>>("pp"));
+  auto GammaGph(slices->getPtr<TensorExpression<Complex<>,TE>>("ph"));
+  auto GammaGhp(slices->getPtr<TensorExpression<Complex<>,TE>>("hp"));
+  auto GammaGhh(slices->getPtr<TensorExpression<Complex<>,TE>>("hh"));
 
   auto NF(GammaGhh->inspect()->lens[0]);
   OUT() << "number of field variables NF= " << NF << std::endl;
@@ -197,7 +197,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
     auto result( \
       Tcc<TE>::template tensor<Complex<>>(std::string("V") + sliceName) \
     ); \
-    integralSlices->setValue(sliceName, \
+    integralSlices->setPtr<TensorExpression<Complex<>,TE>>(sliceName, \
       COMPILE_RECIPE(result, (\
         (*result)["pqsr"] <<= \
           (*conjTGammaG##LO##LI)["Gps"] * (*GammaG##RO##RI)["Gqr"] \

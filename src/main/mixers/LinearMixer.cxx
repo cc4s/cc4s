@@ -17,7 +17,7 @@
 #include <util/SharedPointer.hpp>
 #include <util/Log.hpp>
 #include <algorithms/Algorithm.hpp>
-#include <Data.hpp>
+#include <Node.hpp>
 
 using namespace cc4s;
 
@@ -54,7 +54,7 @@ void LinearMixer<F,TE>::append(
 }
 
 template <typename F, typename TE>
-Ptr<const TensorUnion<F,TE>> LinearMixer<F,TE>::get() {
+Ptr<TensorUnion<F,TE>> LinearMixer<F,TE>::get() {
   return last;
 }
 

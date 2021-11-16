@@ -16,6 +16,8 @@
 #ifndef INTEGER_DEFINED
 #define INTEGER_DEFINED
 
+#include <ostream>
+
 // TODO: use configuration for setting default float type sizes in bits
 #define DEFAULT_INTEGER_BIT_SIZE 64
 

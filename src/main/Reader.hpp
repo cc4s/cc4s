@@ -16,7 +16,7 @@
 #ifndef READER_DEFINED
 #define READER_DEFINED
 
-#include <Data.hpp>
+#include <Node.hpp>
 #include <Parser.hpp>
 #include <Cc4s.hpp>
 #include <util/SharedPointer.hpp>
@@ -84,7 +84,7 @@ namespace cc4s {
 
     // translate into working node tree
     Ptr<Node> read(const Ptr<Node> &node, const std::string &nodePath) {
-      auto mapNode(node->toMap());
+      auto mapNode(node->toPtr<MapNode>());
       if (mapNode) return readMap(mapNode, nodePath);
       // other nodes are already in working form
       return node;

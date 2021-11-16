@@ -30,7 +30,7 @@ namespace cc4s {
     virtual void append(
       const Ptr<TensorUnion<F,TE>> &A, const Ptr<TensorUnion<F,TE>> &R
     );
-    virtual Ptr<const TensorUnion<F,TE>> get();
+    virtual Ptr<TensorUnion<F,TE>> get();
     virtual Real<> getResiduumNorm();
 
     Ptr<TensorUnion<F,TE>> last;

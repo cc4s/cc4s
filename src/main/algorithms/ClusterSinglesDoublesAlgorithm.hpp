@@ -63,7 +63,7 @@ namespace cc4s {
      **/
     virtual Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>getResiduum(
       const int iteration,
-      const Ptr<const TensorUnion<Real<>,DefaultDryTensorEngine>> &amplitudes
+      const Ptr<TensorUnion<Real<>,DefaultDryTensorEngine>> &amplitudes
     ) = 0;
 
     /**
@@ -71,7 +71,7 @@ namespace cc4s {
      **/
     virtual Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>getResiduum(
       const int iteration,
-      const Ptr<const TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
+      const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
     ) = 0;
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
@@ -79,7 +79,7 @@ namespace cc4s {
     virtual Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
     getResiduum(
       const int iteration,
-      const Ptr<const TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
+      const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
     ) = 0;
 
     /**
@@ -88,14 +88,14 @@ namespace cc4s {
     virtual Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
     getResiduum(
       const int iteration,
-      const Ptr<const TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
+      const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
     ) = 0;
 
     /**
      * \brief Computes and returns the energy of the given amplitudes.
      **/
     template <typename F, typename TE>
-    F getEnergy( const Ptr<const TensorUnion<F,TE>> &amplitdues
+    F getEnergy( const Ptr<TensorUnion<F,TE>> &amplitdues
                , const bool finalReport = false
                );
 
@@ -112,7 +112,7 @@ namespace cc4s {
     template <typename F, typename TE>
     void estimateAmplitudesFromResiduum(
       const Ptr<TensorUnion<F,TE>> &residuum,
-      const Ptr<const TensorUnion<F,TE>> &amplitudes
+      const Ptr<TensorUnion<F,TE>> &amplitudes
     );
 
     /**
@@ -132,7 +132,7 @@ namespace cc4s {
     template <typename F, typename TE>
     Ptr<MapNode> storeAmplitudes(
       const Ptr<MapNode> &arguments,
-      const Ptr<const TensorUnion<F,TE>> &amplitudes
+      const Ptr<TensorUnion<F,TE>> &amplitudes
     );
     template <typename F, typename TE>
     Ptr<MapNode> storeAmplitudesComponent(

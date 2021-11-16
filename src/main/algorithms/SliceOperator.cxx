@@ -55,11 +55,12 @@ template <typename F, typename TE>
 Ptr<MapNode> SliceOperator::run(
   const Ptr<MapNode> &arguments
 ) {
-  typedef Tensor<F,TE> T;
+  typedef TensorExpression<F,TE> T;
   auto op(arguments->getMap("operator"));
-  auto data(op->getValue<Ptr<T>>("data"));
+  auto tensorExpression(op->getPtr<T>("data"));
   ASSERT_LOCATION(
-    data, "expecting operator to be a tensor", op->sourceLocation
+    tensorExpression,
+    "expecting operator to be a tensor expression", op->sourceLocation
   );
 
   // read dimensions from eigen energies meta data
@@ -80,12 +81,13 @@ Ptr<MapNode> SliceOperator::run(
 
   slices = New<MapNode>(op->sourceLocation);
   OUT() <<
-    "Slicing " << data->getName() << " into holes and particles." << std::endl;
-  slice(data, "");
+    "Slicing " << tensorExpression->inspect()->getName() <<
+    " into holes and particles." << std::endl;
+  slice(tensorExpression, "");
 
   // create result
   auto slicedOperator(New<MapNode>(op->sourceLocation));
-  // copy all meta data from original operator
+  // copy all meta tensorExpression from original operator
   for (auto key: op->getKeys()) {
     if (key != "data") {
       slicedOperator->get(key) = op->get(key);
@@ -100,30 +102,31 @@ Ptr<MapNode> SliceOperator::run(
 
 template <typename F, typename TE>
 void SliceOperator::slice(
-  const Ptr<Tensor<F,TE>> &data, const std::string &parts
+  const Ptr<TensorExpression<F,TE>> &tensorExpression, const std::string &parts
 ) {
   if (parts.length() < dims.size()) {
-    slice(data, parts + "h");
-    slice(data, parts + "p");
+    slice(tensorExpression, parts + "h");
+    slice(tensorExpression, parts + "p");
   } else {
-    std::vector<size_t> begins(data->lens.size());
-    std::vector<size_t> ends(data->lens);
+    auto tensor(tensorExpression->inspect());
+    std::vector<size_t> begins(tensor->getLens().size());
+    std::vector<size_t> ends(tensor->getLens());
     std::string index("");
-    for (unsigned int i(0); i < data->lens.size(); ++i) {
+    for (unsigned int i(0); i < tensor->getLens().size(); ++i) {
       index += ('a' + i);
     }
     for (unsigned int i(0); i < dims.size(); ++i) {
       if (parts[i] == 'h') {
         ends[dims[i]] = No;
       } else {
-        begins[dims[i]] = data->lens[dims[i]] - Nv;
+        begins[dims[i]] = tensor->getLens()[dims[i]] - Nv;
       }
     }
-    auto result(Tcc<TE>::template tensor<F>(data->getName() + parts ));
-    slices->setValue(
+    auto result(Tcc<TE>::template tensor<F>(tensor->getName() + parts ));
+    slices->setPtr<TensorExpression<F,TE>>(
       parts,
       COMPILE_RECIPE(result,
-        (*result)[index] <<= (*(*data)(begins,ends))[index]
+        (*result)[index] <<= (*(*tensorExpression)(begins,ends))[index]
       )
     );
   }

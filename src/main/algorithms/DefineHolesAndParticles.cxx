@@ -39,10 +39,9 @@ template <typename TE>
 Ptr<MapNode> DefineHolesAndParticles::run(
   const Ptr<MapNode> &arguments
 ) {
-  typedef Tensor<Real<>,TE> T;
   auto eigenEnergies(arguments->getMap("eigenEnergies"));
   auto energies(eigenEnergies->getMap("energies"));
-  auto eps(eigenEnergies->getValue<Ptr<T>>("data"));
+  auto eps(eigenEnergies->getPtr<TensorExpression<Real<>,TE>>("data"));
   ASSERT_LOCATION(
     eps, "expecting list of eigenEnergies",
     eigenEnergies->sourceLocation
@@ -71,7 +70,7 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   auto slices(New<MapNode>(eigenEnergies->sourceLocation));
   {
     auto epsi(Tcc<TE>::template tensor<Real<>>("epsi"));
-    slices->setValue(
+    slices->setPtr(
       "h",
       COMPILE_RECIPE(epsi,
         (*epsi)["i"] <<= (*(*eps)({0},{No}))["i"]
@@ -80,7 +79,7 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   }
   {
     auto epsa(Tcc<TE>::template tensor<Real<>>("epsa"));
-    slices->setValue(
+    slices->setPtr(
       "p",
       COMPILE_RECIPE(epsa,
         (*epsa)["a"] <<= (*(*eps)({No},{Np}))["a"]
@@ -94,8 +93,8 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   slicedEigenEnergies->get("indices") = eigenEnergies->get("indices");
   slicedEigenEnergies->get("dimensions") = eigenEnergies->get("dimensions");
   slicedEigenEnergies->get("unit") = eigenEnergies->get("unit");
-  slicedEigenEnergies->setValue<size_t>("holesCount", No);
-  slicedEigenEnergies->setValue<size_t>("particlesCount", Nv);
+  slicedEigenEnergies->setValue<Natural<>>("holesCount", No);
+  slicedEigenEnergies->setValue<Natural<>>("particlesCount", Nv);
   slicedEigenEnergies->get("slices") = slices;
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("slicedEigenEnergies") = slicedEigenEnergies;

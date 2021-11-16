@@ -17,6 +17,7 @@
 #define SLICE_OPERATOR_DEFINED
 
 #include <algorithms/Algorithm.hpp>
+#include <tcc/TensorExpression.hpp>
 
 namespace cc4s {
   class SliceOperator: public Algorithm {
@@ -28,7 +29,9 @@ namespace cc4s {
     template <typename F, typename TE>
     Ptr<MapNode> run(const Ptr<MapNode> &arguments);
     template <typename F, typename TE>
-    void slice(const Ptr<Tensor<F,TE>> &tensor, const std::string &parts);
+    void slice(
+      const Ptr<TensorExpression<F,TE>> &tensor, const std::string &parts
+    );
 
     Ptr<MapNode> slices;
     std::vector<size_t> dims;

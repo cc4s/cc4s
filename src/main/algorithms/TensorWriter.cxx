@@ -17,6 +17,7 @@
 
 #include <Cc4s.hpp>
 #include <tcc/Tcc.hpp>
+#include <tcc/TensorExpression.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>
 #include <Emitter.hpp>
@@ -95,7 +96,7 @@ Ptr<MapNode> TensorWriter::run(const Ptr<MapNode> &arguments) {
 }
 
 void TensorWriter::writeData(
-  const Ptr<MapNode> &tensor,
+  const Ptr<MapNode> &tensorNode,
   const std::string &baseName,
   const std::string &scalarType,
   const bool binary,
@@ -109,14 +110,14 @@ void TensorWriter::writeData(
       using TE = DefaultDryTensorEngine;
       if (scalarType == "real64") {
         writeBinary(
-          tensor,
-          tensor->getValue<Ptr<Tensor<Real<64>,TE>>>("data"),
+          tensorNode,
+          tensorNode->getPtr<TensorExpression<Real<64>,TE>>("data"),
           fileName, sourceLocation
         );
       } else if (scalarType == "complex64") {
         writeBinary(
-          tensor,
-          tensor->getValue<Ptr<Tensor<Complex<64>,TE>>>("data"),
+          tensorNode,
+          tensorNode->getPtr<TensorExpression<Complex<64>,TE>>("data"),
           fileName, sourceLocation
         );
       } else {
@@ -128,14 +129,14 @@ void TensorWriter::writeData(
       using TE = DefaultTensorEngine;
       if (scalarType == "real64") {
         writeBinary(
-          tensor,
-          tensor->getValue<Ptr<Tensor<Real<64>,TE>>>("data"),
+          tensorNode,
+          tensorNode->getPtr<TensorExpression<Real<64>,TE>>("data"),
           fileName, sourceLocation
         );
       } else if (scalarType == "complex64") {
         writeBinary(
-          tensor,
-          tensor->getValue<Ptr<Tensor<Complex<64>,TE>>>("data"),
+          tensorNode,
+          tensorNode->getPtr<TensorExpression<Complex<64>,TE>>("data"),
           fileName, sourceLocation
         );
       } else {
@@ -150,14 +151,14 @@ void TensorWriter::writeData(
       using TE = DefaultDryTensorEngine;
       if (scalarType == "real64") {
         writeText(
-          tensor,
-          tensor->getValue<Ptr<Tensor<Real<64>,TE>>>("data"),
+          tensorNode,
+          tensorNode->getPtr<TensorExpression<Real<64>,TE>>("data"),
           fileName, sourceLocation
         );
       } else if (scalarType == "complex64") {
         writeText(
-          tensor,
-          tensor->getValue<Ptr<Tensor<Complex<64>,TE>>>("data"),
+          tensorNode,
+          tensorNode->getPtr<TensorExpression<Complex<64>,TE>>("data"),
           fileName, sourceLocation
         );
       } else {
@@ -169,14 +170,14 @@ void TensorWriter::writeData(
       using TE = DefaultTensorEngine;
       if (scalarType == "real64") {
         writeText(
-          tensor,
-          tensor->getValue<Ptr<Tensor<Real<64>,TE>>>("data"),
+          tensorNode,
+          tensorNode->getPtr<TensorExpression<Real<64>,TE>>("data"),
           fileName, sourceLocation
         );
       } else if (scalarType == "complex64") {
         writeText(
-          tensor,
-          tensor->getValue<Ptr<Tensor<Complex<64>,TE>>>("data"),
+          tensorNode,
+          tensorNode->getPtr<TensorExpression<Complex<64>,TE>>("data"),
           fileName, sourceLocation
         );
       } else {
@@ -187,13 +188,13 @@ void TensorWriter::writeData(
     }
   }
 
-  tensor->setValue<std::string>("data", fileName);
+  tensorNode->setValue<std::string>("data", fileName);
 }
 
 template <typename F, typename TE>
 void TensorWriter::writeText(
-  const Ptr<MapNode> &tensor,
-  const Ptr<Tensor<F,TE>> &data,
+  const Ptr<MapNode> &tensorNode,
+  const Ptr<TensorExpression<F,TE>> &tensorExpression,
   const std::string &fileName,
   const SourceLocation &sourceLocation
 ) {
@@ -207,20 +208,21 @@ void TensorWriter::writeText(
   // TODO: use Stream Printer rather than <<
   stream << setprecision(17);
 
+  auto tensor(tensorExpression->evaluate());
   // build dimensions meta data from tensor length if not already present
-  if (!tensor->get("dimensions")) {
+  if (!tensorNode->get("dimensions")) {
     auto dimensions(New<MapNode>(SOURCE_LOCATION));
-    for (size_t d(0); d < data->lens.size(); ++d) {
+    for (size_t d(0); d < tensor->lens.size(); ++d) {
       auto dimension(New<MapNode>(SOURCE_LOCATION));
-      dimension->setValue<>("length", data->lens[d]);
-      dimension->setValue<>("length", data->dimensions[d]->name);
+      dimension->setValue<>("length", tensor->lens[d]);
+      dimension->setValue<>("length", tensor->dimensions[d]->name);
       dimensions->get(d) = dimension;
     }
-    tensor->get("dimensions") = dimensions;
+    tensorNode->get("dimensions") = dimensions;
   }
 
   // write the values only on root, all others still pariticipate calling MPI
-  const size_t bufferSize(std::min(data->getElementsCount(), MAX_BUFFER_SIZE));
+  const size_t bufferSize(std::min(tensor->getElementsCount(), MAX_BUFFER_SIZE));
   size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
   std::vector<size_t> indices(localBufferSize);
   std::vector<F> values(localBufferSize);
@@ -232,15 +234,15 @@ void TensorWriter::writeText(
   }
 
   size_t index(0);
-  LOG() << "indexCount=" << data->getElementsCount() << std::endl;
-  while (index < data->getElementsCount()) {
-    size_t elementsCount(std::min(bufferSize, data->getElementsCount()-index));
+  LOG() << "indexCount=" << tensor->getElementsCount() << std::endl;
+  while (index < tensor->getElementsCount()) {
+    size_t elementsCount(std::min(bufferSize, tensor->getElementsCount()-index));
     size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
     for (size_t i(0); i < localElementsCount; ++i) {
       indices[i] = index+i;
     }
     LOG() << "reading " << elementsCount << " values from tensor..." << std::endl;
-    data->read(localElementsCount, indices.data(), values.data());
+    tensor->read(localElementsCount, indices.data(), values.data());
     for (size_t i(0); i < localElementsCount; ++i) {
       stream << values[i] << "\n";
     }
@@ -248,14 +250,14 @@ void TensorWriter::writeText(
     Cc4s::world->barrier();
     index += elementsCount;
   }
-  LOG() << "Written " << data->getElementsCount() <<
+  LOG() << "Written " << tensor->getElementsCount() <<
     " elements to text file " << fileName << std::endl;
 }
 
 template <typename F, typename TE>
 void TensorWriter::writeBinary(
-  const Ptr<MapNode> &tensor,
-  const Ptr<Tensor<F,TE>> &data,
+  const Ptr<MapNode> &tensorNode,
+  const Ptr<TensorExpression<F,TE>> &tensorExpression,
   const std::string &fileName,
   const SourceLocation &sourceLocation
 ) {
@@ -273,24 +275,25 @@ void TensorWriter::writeBinary(
     sourceLocation
   )
 
-  if (!tensor->get("dimensions")) {
+  auto tensor(tensorExpression->evaluate());
+  if (!tensorNode->get("dimensions")) {
     // build dimensions meta data from tensor length
     auto dimensions(New<MapNode>(SOURCE_LOCATION));
-    for (size_t d(0); d < data->lens.size(); ++d) {
+    for (size_t d(0); d < tensor->lens.size(); ++d) {
       auto dimension(New<MapNode>(SOURCE_LOCATION));
-      dimension->setValue<size_t>("length", data->lens[d]);
+      dimension->setValue<size_t>("length", tensor->lens[d]);
       dimensions->get(d) = dimension;
       // TODO: how to determine dimension type?
     }
-    tensor->get("dimensions") = dimensions;
+    tensorNode->get("dimensions") = dimensions;
   }
 
   OUT() << "Writing to binary file " << fileName << std::endl;
   if (Cc4s::options->dryRun) return;
 
   // write tensor data with values from file
-  data->readToFile(file);
-  LOG() << "Written " << sizeof(F)*data->getElementsCount() <<
+  tensor->readToFile(file);
+  LOG() << "Written " << sizeof(F)*tensor->getElementsCount() <<
     " bytes to binary file " << fileName << std::endl;
 
   // done
