@@ -16,7 +16,9 @@
 #ifndef DATA_DEFINED
 #define DATA_DEFINED
 
+#include <Object.hpp>
 #include <util/Log.hpp>
+#include <math/Integer.hpp>
 #include <math/Real.hpp>
 #include <math/Complex.hpp>
 #include <util/SourceLocation.hpp>
@@ -33,6 +35,7 @@ namespace cc4s {
   class MapNode;
   class SymbolNode;
   template <typename AtomicType> class AtomicNode;
+  template <typename PointedType> class PointerNode;
 
   template <typename F>
   class TypeTraits;
@@ -52,16 +55,14 @@ namespace cc4s {
     virtual std::string toString() = 0;
     // provide convenience cast routines
     Ptr<MapNode> toMap() {
-      return std::dynamic_pointer_cast<MapNode>(this->toPtr<Node>());
+      return this->toPtr<MapNode>();
     }
     Ptr<SymbolNode> toSymbol() {
-      return std::dynamic_pointer_cast<SymbolNode>(this->toPtr<Node>());
+      return this->toPtr<SymbolNode>();
     }
     template <typename AtomicType>
     Ptr<AtomicNode<AtomicType>> toAtom() {
-      return std::dynamic_pointer_cast<AtomicNode<AtomicType>>(
-        this->toPtr<Node>()
-      );
+      return this->toPtr<AtomicNode<AtomicType>>();
     }
     std::string comment;
     SourceLocation sourceLocation;
@@ -99,6 +100,15 @@ namespace cc4s {
       return stream.str();
     }
     AtomicType value;
+  };
+
+  template <typename PointedType>
+  class PointerNode: public AtomicNode<Ptr<Object>> {
+  public:
+    PointerNode(
+      const Ptr<PointedType> &value_, const SourceLocation &sourceLocation_
+    ): AtomicNode(value_, sourceLocation_) {
+    }
   };
 
   class MapNode: public Node {
@@ -179,9 +189,35 @@ namespace cc4s {
         return targetValue;
       }
     }
+    template <typename PointedTarget>
+    Ptr<PointedTarget> getPtr(const std::string &key) {
+      ASSERT_LOCATION(get(key), "expecting key '" + key + "'", sourceLocation);
+      // first, try to convert to void pointer node
+      Ptr<AtomicNode<Ptr<Object>>> ptrAtom(get(key)->toAtom<Ptr<Object>>);
+      ASSERT_LOCATION(
+        ptrAtom,
+        "expecting pointer value for key '" + key + "'", sourceLocation
+      );
+      // then, try to convert pointer to target type
+      auto pointer(
+        std::dynamic_pointer_cast<Ptr<PointedTarget>>(ptrAtom->value)
+      );
+      ASSERT_LOCATION(
+        pointer,
+        std::string("expecting pointer to ")
+          + typeid(PointedTarget).name() + " as value of key '"
+          + key + "'",
+        sourceLocation
+      );
+      return pointer;
+    }
     template <typename Target>
     Target getValue(const size_t index) {
       return getValue<Target>(std::to_string(index));
+    }
+    template <typename PointedTarget>
+    PointedTarget getPtr(const size_t index) {
+      return getPtr<PointedTarget>(std::to_string(index));
     }
     template <typename Target>
     Target getValue(const std::string &element, const Target &defaultValue) {
@@ -211,6 +247,20 @@ namespace cc4s {
       const SourceLocation &sourceLocation = SOURCE_LOCATION
     ) {
       get(index) = New<AtomicNode<Target>>(value, sourceLocation);
+    }
+    template <typename PointedTarget>
+    void setPtr(
+      const std::string &key, const Ptr<PointedTarget> &value,
+      const SourceLocation &sourceLocation = SOURCE_LOCATION
+    ) {
+      get(key) = New<PointerNode<PointedTarget>>(value, sourceLocation);
+    }
+    template <typename PointedTarget>
+    void setPtr(
+      const Natural<> index, const Ptr<PointedTarget> &value,
+      const SourceLocation &sourceLocation = SOURCE_LOCATION
+    ) {
+      get(index) = New<PointerNode<PointedTarget>>(value, sourceLocation);
     }
 
     Ptr<MapNode> getMap(const std::string &element) {

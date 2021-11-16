@@ -16,6 +16,8 @@
 #ifndef TCC_EXPRESSION_DEFINED
 #define TCC_EXPRESSION_DEFINED
 
+#include <Object.hpp>
+
 #include <util/SharedPointer.hpp>
 #include <util/Exception.hpp>
 #include <tcc/Operation.hpp>
@@ -31,7 +33,7 @@ namespace cc4s {
   );
 
   template <typename TE>
-  class Expression: public Thisable<Expression<TE>> {
+  class Expression: public Object {
   public:
     /**
      * \brief Allow inferring the tensor engine TE given any expression types.

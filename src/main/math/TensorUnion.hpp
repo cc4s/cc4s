@@ -35,7 +35,7 @@ namespace cc4s {
    * and complex conjugation.
    **/
   template <typename F, typename TE>
-  class TensorUnion {
+  class TensorUnion: public Object {
   public:
     typedef F FieldType;
 
