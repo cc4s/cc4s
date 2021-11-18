@@ -129,17 +129,6 @@ namespace cc4s {
       std::initializer_list<std::string> amplitudeIndices
     );
 
-    template <typename F, typename TE>
-    Ptr<MapNode> storeAmplitudes(
-      const Ptr<MapNode> &arguments,
-      const Ptr<TensorUnion<F,TE>> &amplitudes
-    );
-    template <typename F, typename TE>
-    Ptr<MapNode> storeAmplitudesComponent(
-      const Ptr<Tensor<F,TE>> &component
-    , const std::string name
-    );
-
     /**
      * \brief The abbreviation of the algorithm in capital letters.
      **/

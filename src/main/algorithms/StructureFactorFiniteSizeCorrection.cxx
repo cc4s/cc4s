@@ -325,8 +325,6 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   OUT() << "Basis-set energy correction:   " << totalInter3D/N/N/N-sum3D << "\n";
 
 
-  auto energy(New<MapNode>(SOURCE_LOCATION));
-  energy->setValue<Real<>>("corrected", inter3D);
-  energy->setValue<Real<>>("uncorrected", sum3D);
-  result->get("energy") = energy;
+  result->setValue("corrected", inter3D);
+  result->setValue("uncorrected", sum3D);
 }

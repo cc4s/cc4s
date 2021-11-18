@@ -168,7 +168,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   result->setValue<bool>("convergenceReached", convergenceReached);
-  result->setValue<>("amplitudes", amplitudes);
+  result->setPtr("amplitudes", amplitudes);
   return result;
 }
 
@@ -267,44 +267,6 @@ Ptr<TensorUnion<F,TE>> ClusterSinglesDoublesAlgorithm::createAmplitudes(
     amplitudeTensors.begin(), amplitudeTensors.end(),
     amplitudeIndices.begin(), amplitudeIndices.end()
   );
-}
-
-
-template <typename F, typename TE>
-Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudes(
-  const Ptr<MapNode> &arguments,
-  const Ptr<TensorUnion<F,TE>> &amplitudes
-) {
-  auto result(New<MapNode>(SOURCE_LOCATION));
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  result->get("scalarType") = coulombIntegrals->get("scalarType");
-  result->setValue<Real<>>("unit", 1.0);
-  result->get("indices") = coulombIntegrals->get("indices");
-  auto components(New<MapNode>(SOURCE_LOCATION));
-  //TODO we have to use the "correct" name for the amplitudes
-  components->get(0) = storeAmplitudesComponent(amplitudes->get(0), "CcsdSinglesAmplitudes");
-  components->get(1) = storeAmplitudesComponent(amplitudes->get(1), "CcsdDoublesAmplitudes");
-  result->get("components") = components;
-  return result;
-}
-
-template <typename F, typename TE>
-Ptr<MapNode> ClusterSinglesDoublesAlgorithm::storeAmplitudesComponent(
-  const Ptr<Tensor<F,TE>> &component
-, const std::string name
-) {
-  component->setName(name);
-  auto result(New<MapNode>(SOURCE_LOCATION));
-  auto dimensions(New<MapNode>(SOURCE_LOCATION));
-  for (size_t d(0); d < component->lens.size(); ++d) {
-    auto dimension(New<MapNode>(SOURCE_LOCATION));
-    dimension->setValue<size_t>("length", component->lens[d]);
-    dimension->setValue<std::string>("type", "orbital");
-    dimensions->get(d) = dimension;
-  }
-  result->get("dimensions") = dimensions;
-  result->setPtr<TensorExpression<F,TE>>("data", component);
-  return result;
 }
 
 template <typename F, typename TE>
