@@ -23,6 +23,7 @@
 #include <util/SharedPointer.hpp>
 #include <util/StaticAssert.hpp>
 #include <vector>
+#include <limits>
 
 namespace cc4s {
   template <typename F, typename TE> class Indexing;
@@ -358,8 +359,23 @@ namespace cc4s {
         if (scope[index] > 0) {
           // index occurs outside
           outerIndices[o] = index;
+          size_t previousOuterElementsCount(outerElementsCount);
           outerElementsCount *=
             outerIndexDimensions[o] = uniqueIndexDimensions[i];
+          if (outerElementsCount < previousOuterElementsCount) {
+            // overflow: result is definitely too big to be stored
+            Costs contractionCosts(
+              std::numeric_limits<size_t>::max(),
+              0,
+              std::numeric_limits<size_t>::max(),
+              std::numeric_limits<size_t>::max()
+            );
+            return ContractionOperation<F,TE>::create(
+              a, b,
+              nullptr, static_cast<const char *>(outerIndices),
+              contractionCosts, scope
+            );
+          }
           ++o;
         } else {
           contractedElementsCount *=

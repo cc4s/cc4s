@@ -16,13 +16,14 @@
 #ifndef TCC_COSTS_DEFINED
 #define TCC_COSTS_DEFINED
 
+#include <math/Integer.hpp>
 #include <limits>
 
 namespace cc4s {
   class Costs {
   public:
     Costs(
-      int64_t const elementsCount_
+      Natural<128> const elementsCount_
     ):
       maxElementsCount(elementsCount_),
       elementsCount(elementsCount_),
@@ -32,10 +33,10 @@ namespace cc4s {
     }
 
     Costs(
-      int64_t const maxElementsCount_,
-      int64_t const elementsCount_,
-      int64_t const multiplicationsCount_,
-      int64_t const additionsCount_
+      Natural<128> const maxElementsCount_,
+      Natural<128> const elementsCount_,
+      Natural<128> const multiplicationsCount_,
+      Natural<128> const additionsCount_
     ):
       maxElementsCount(maxElementsCount_),
       elementsCount(elementsCount_),
@@ -66,21 +67,21 @@ namespace cc4s {
      * \brief Maximum number of tensor elements of storage required
      * during the evaluation .
      **/
-    int64_t maxElementsCount;
+    Natural<128> maxElementsCount;
     /**
      * \brief Number of tensor elements of storage required by a result.
      **/
-    int64_t elementsCount;
+    Natural<128> elementsCount;
     /**
      * \brief Number of tensor element multiplication required for
      * the evaluation of this operation.
      **/
-    int64_t multiplicationsCount;
+    Natural<128> multiplicationsCount;
     /**
      * \brief Number of tensor elements additions required for
      * the evaluation of this operation.
      **/
-    int64_t additionsCount;
+    Natural<128> additionsCount;
   };
 
   inline Costs operator +(Costs const &a, Costs const &b) {
