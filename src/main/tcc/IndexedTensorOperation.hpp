@@ -35,15 +35,26 @@ namespace cc4s {
     IndexedTensorOperation(
       const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
-      const Costs &costs_,
+      const Costs &operationCosts_,
+      const Costs &operandsCosts_,
       const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       TensorOperation<F,TE>(
-        result_, costs_, file_, line_, typename Operation<TE>::ProtectedToken()
+        result_, operandsCosts_, file_, line_,
+        typename Operation<TE>::ProtectedToken()
       ),
       resultIndices(resultIndices_)
     {
+      // costs field constructed with costs of evaluating all operands
+      // account for additional costs of this operation:
+      this->costs.maxStorageCount = std::max(
+        operationCosts_.maxStorageCount,  // more storage needed by result
+        this->costs.maxStorageCount       // more storage needed by operands
+      );
+      this->costs.accessCount += operationCosts_.accessCount;
+      this->costs.multiplicationsCount += operationCosts_.multiplicationsCount;
+      this->costs.additionsCount += operationCosts_.additionsCount;
     }
 
     const std::string &getResultIndices() {

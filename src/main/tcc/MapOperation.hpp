@@ -30,6 +30,7 @@ namespace cc4s {
     MapOperation(
       const std::function<Target(Domain)> &f_,
       const Ptr<IndexedTensorOperation<Domain,TE>> &source_,
+      const Costs &mapCosts_,
       const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
@@ -39,7 +40,7 @@ namespace cc4s {
           "f(" + source_->getResult()->getName() + ")"
         ),
         source_->getResultIndices().c_str(), // target has identical indices
-        source_->costs,
+        mapCosts_, source_->costs,
         file_, line_,
         typename Operation<TE>::ProtectedToken()
       ),
@@ -81,7 +82,7 @@ namespace cc4s {
     }
 
     operator std::string () const override {
-      return "Map( f, " + std::string(*source) + " )";
+      return "map( f, " + std::string(*source) + " )";
     }
 
  protected:
@@ -90,8 +91,15 @@ namespace cc4s {
       const Ptr<IndexedTensorOperation<Domain,TE>> &source_,
       const Scope &scope
     ) {
+      auto elementsCount(source_->getResult()->getElementsCount());
       return New<MapOperation<Target,Domain,TE>>(
         f_, source_,
+        // FIXME: costs of map assumed 10 times costs of addition
+        // but depends on actual map
+        Costs(
+          elementsCount, elementsCount,
+          0, 10*elementsCount
+        ),
         scope.file, scope.line, typename Operation<TE>::ProtectedToken()
       );
     }

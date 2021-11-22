@@ -37,7 +37,7 @@ namespace cc4s {
         extendingResources.push_back(
           ExtendingResource(maxTotalSize, location)
         );
-        LOG_LOCATION(location) << "extending memory size to" << size << std::endl;
+        LOG_LOCATION(location) << "extending memory size to " << size << std::endl;
       } else {
 /*
         LOG_LOCATION(location) << "memory size " << size << std::endl;

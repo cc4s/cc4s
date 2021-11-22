@@ -119,12 +119,11 @@ namespace cc4s {
         dynamicPtrCast<IndexedTensorOperation<F,TE>>(rhs->compile(scope))
       );
 
-      LOG_LOCATION(SourceLocation(outerScope.file, outerScope.line)) <<
-        "possibilites tried=" << scope.triedPossibilitiesCount <<
-        ", multiplications=" << operation->costs.multiplicationsCount <<
-        ", additions=" << operation->costs.additionsCount <<
-        ", maximum elements stored=" << operation->costs.maxElementsCount <<
-        std::endl;
+      LOG_LOCATION(SourceLocation(outerScope.file, outerScope.line))
+        << "possibilites tried=" << scope.triedPossibilitiesCount
+        << ", best has " << std::string(operation->costs)
+        << ": " << std::string(*operation)
+        << std::endl;
 
       operation->beta = beta;
       // compile writing the result to the left-hand-side

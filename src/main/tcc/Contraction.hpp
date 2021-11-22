@@ -265,23 +265,25 @@ namespace cc4s {
               ) {
                 bestContractions = allContractions;
                 if (level == 0) { // do output only in topmost level
-                  LOG_LOCATION(SourceLocation(scope.file, scope.line)) <<
-                    "possibilites tried=" <<
-                    scope.triedPossibilitiesCount <<
-                    ", improved solution found: " <<
-                    "multiplications=" <<
-                    allContractions->costs.multiplicationsCount <<
-                    ", additions=" <<
-                    allContractions->costs.additionsCount <<
-                    ", maximum elements stored=" <<
-                    allContractions->costs.maxElementsCount << std::endl;
+                  LOG_LOCATION(SourceLocation(scope.file, scope.line))
+                    << "possibilites tried="
+                    << scope.triedPossibilitiesCount
+                    << ", improved solution found with "
+                    << std::string(allContractions->costs)
+                    << ": "
+                    << std::string(*allContractions)
+                    << std::endl;
                 }
               } else {
                 if (level == 0) {
-                  LOG_LOCATION(SourceLocation(scope.file, scope.line)) <<
-                    "possibilites tried=" <<
-                    scope.triedPossibilitiesCount <<
-                    ", discarding inferior solution" << std::endl;
+                  LOG_LOCATION(SourceLocation(scope.file, scope.line))
+                    << "possibilites tried="
+                    << scope.triedPossibilitiesCount
+                    << ", discarding inferior solution with "
+                    << std::string(allContractions->costs)
+                    << ": "
+                    << std::string(*allContractions)
+                    << std::endl;
                 }
               }
             }
@@ -352,30 +354,15 @@ namespace cc4s {
       }
       uniqueIndices[u] = 0;
 
-      size_t outerElementsCount(1), contractedElementsCount(1);
+      Natural<128> outerElementsCount(1), contractedElementsCount(1);
       for (unsigned int i(0); i < u; ++i) {
         const char index(uniqueIndices[i]);
         // go through unique indices
         if (scope[index] > 0) {
           // index occurs outside
           outerIndices[o] = index;
-          size_t previousOuterElementsCount(outerElementsCount);
           outerElementsCount *=
             outerIndexDimensions[o] = uniqueIndexDimensions[i];
-          if (outerElementsCount < previousOuterElementsCount) {
-            // overflow: result is definitely too big to be stored
-            Costs contractionCosts(
-              std::numeric_limits<size_t>::max(),
-              0,
-              std::numeric_limits<size_t>::max(),
-              std::numeric_limits<size_t>::max()
-            );
-            return ContractionOperation<F,TE>::create(
-              a, b,
-              nullptr, static_cast<const char *>(outerIndices),
-              contractionCosts, scope
-            );
-          }
           ++o;
         } else {
           contractedElementsCount *=
@@ -384,6 +371,15 @@ namespace cc4s {
         }
       }
       outerIndices[o] = 0;
+
+      if (outerElementsCount > std::numeric_limits<Natural<64>>::max()) {
+        // overflow: result is definitely too big to be stored
+        return ContractionOperation<F,TE>::create(
+          a, b,
+          nullptr, static_cast<const char *>(outerIndices),
+          Costs::createMax(), scope
+        );
+      }
 
       // allocate intermedate result
       auto contractionResult(
@@ -394,10 +390,10 @@ namespace cc4s {
       );
       // assess costs
       Costs contractionCosts(
-        contractionResult->getElementsCount(),
-        0,
-        outerElementsCount * contractedElementsCount,
-        outerElementsCount * contractedElementsCount - outerElementsCount
+        outerElementsCount,                              // # maxStorage
+        outerElementsCount,                              // # accesses
+        outerElementsCount * contractedElementsCount,    // # multiplications
+        outerElementsCount * (contractedElementsCount-1) // # addttions
       );
       return ContractionOperation<F,TE>::create(
         a, b,
@@ -466,10 +462,10 @@ namespace cc4s {
       );
       // assess costs
       Costs sumCosts(
-        sumResult->getElementsCount(),
-        0,
-        0, // no multiplications
-        outerElementsCount * (summedElementsCount - 1)
+        sumResult->getElementsCount(),                  // # maxStorage
+        sumResult->getElementsCount(),                  // # accesses
+        0,                                              // no multiplications
+        outerElementsCount * (summedElementsCount - 1)  // # additions
       );
       ++scope.triedPossibilitiesCount;
       return MoveOperation<F,TE>::create(

@@ -24,22 +24,33 @@
 // such as MPI communicators
 namespace cc4s {
   /**
-   * \brief Traits for inferring the respective DryMachineTensor types
-   * from the respective tensor field types.
-   * Tcc is given these traits upon compiling and execution.
+   * \brief Tensor engine using the Cyclops tensor framework.
    **/
   class CtfTensorEngine {
   public:
     template <typename FieldType>
     using MachineTensor = CtfMachineTensor<FieldType>;
 
+    /**
+     * \brief Returns -1,0, or +1 depending on whether the given costs
+     * satisfy l<r, l=r, or l>r, respectively.
+     * The comparison depends on the tensor engine's estimate.
+     **/
     template <typename F>
-    static int64_t compareCosts(const Costs &l, const Costs &r) {
-      return 10 * (l.elementsCount - r.elementsCount) +
-        sizeof(F)/sizeof(real<F>(F(0))) * (
-          l.multiplicationsCount - r.multiplicationsCount
-        ) +
-        1 * (l.additionsCount - r.additionsCount);
+    static int compareCosts(const Costs &l, const Costs &r) {
+      Natural<128> lTotal(
+        1000 * l.maxStorageCount +
+        10 * l.accessCount +
+        sizeof(F) / sizeof(real<F>(F(0))) * l.multiplicationsCount +
+        l.additionsCount
+      );
+      Natural<128> rTotal(
+        1000 * l.maxStorageCount +
+        10 * l.accessCount +
+        sizeof(F) / sizeof(real<F>(F(0))) * r.multiplicationsCount +
+        r.additionsCount
+      );
+      return (rTotal < lTotal) - (lTotal < rTotal);
     }
   };
 }

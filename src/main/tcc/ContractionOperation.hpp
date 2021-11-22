@@ -46,18 +46,12 @@ namespace cc4s {
       const typename Operation<TE>::ProtectedToken &
     ):
       IndexedTensorOperation<F,TE>(
-        result_, resultIndices_, left_->costs + right_->costs,
+        result_, resultIndices_,
+        contractionCosts, left_->costs + right_->costs,
         file_, line_, typename Operation<TE>::ProtectedToken()
       ),
       left(left_), right(right_)
     {
-      // so far, costs contains costs involved to get left and right factors
-      // during contraction all elements of left,right and result are present
-      contractionCosts.maxElementsCount =
-        contractionCosts.elementsCount + this->costs.elementsCount;
-      // the intermediate results are, however, no longer needed afterwards
-      this->costs.elementsCount = 0;
-      this->costs += contractionCosts;
     }
 
     void execute() override {
@@ -100,7 +94,7 @@ namespace cc4s {
 
     operator std::string () const override {
       std::stringstream stream;
-      stream << "Contraction( " << this->alpha << ", " <<
+      stream << "contraction( " << this->alpha << ", " <<
         std::string(*left) << ", " << std::string(*right) << ", " <<
         this->beta << " )";
       return stream.str();

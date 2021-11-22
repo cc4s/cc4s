@@ -39,19 +39,18 @@ namespace cc4s {
       const Ptr<IndexedTensorOperation<F,TE>> &rhs_,
       const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
-      Costs moveCosts,
+      Costs moveCosts_,
       const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       IndexedTensorOperation<F,TE>(
         result_, resultIndices_,
-        rhs_->costs,
+        moveCosts_, rhs_->costs,
         file_, line_,
         typename Operation<TE>::ProtectedToken()
       ),
       rhs(rhs_)
     {
-      this->costs += moveCosts;
     }
 
     void execute() override {
@@ -83,7 +82,7 @@ namespace cc4s {
 
     operator std::string () const override {
       std::stringstream stream;
-      stream << "Move( " << this->alpha << ", " <<
+      stream << "move( " << this->alpha << ", " <<
         std::string(*this->result) << ", " << std::string(*rhs) << ", " <<
         this->beta << " )";
       return stream.str();

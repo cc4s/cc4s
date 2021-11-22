@@ -63,8 +63,9 @@ namespace cc4s {
     }
 
     operator std::string () const override {
+      if (source == this->getResult()) return std::string(*source);
       std::stringstream stream;
-      stream << "Load( " <<
+      stream << "load( " <<
         std::string(*source) <<
         " from " << source.get() <<
         " into " << this->result.get() << " )";

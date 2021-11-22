@@ -86,7 +86,7 @@ namespace cc4s {
     }
 
     operator std::string () const override {
-      return "Slice( " + std::string(*source) + ", " +
+      return "slice( " + std::string(*source) + ", " +
         SliceOperation<F,TE>::coordinateString(begins) + "-" +
         SliceOperation<F,TE>::coordinateString(ends) + " )";
     }

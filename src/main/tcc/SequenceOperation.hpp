@@ -39,8 +39,6 @@ namespace cc4s {
       for (size_t i(1); i < operations_.size(); ++i) {
         this->costs += operations_[i]->costs;
       }
-      // no elements are required by the result of a sequence
-      this->costs.elementsCount = 0;
     }
 
     void execute() override {
@@ -63,7 +61,7 @@ namespace cc4s {
 
     operator std::string () const override {
       std::stringstream stream;
-      stream << "Sequence( ";
+      stream << "sequence( ";
       std::string delimiter("");
       for (auto const &operation: operations) {
         stream << delimiter << std::string(*operation);

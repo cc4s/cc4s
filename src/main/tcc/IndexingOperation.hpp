@@ -39,7 +39,8 @@ namespace cc4s {
       const typename Operation<TE>::ProtectedToken &
     ):
       IndexedTensorOperation<F,TE>(
-        result_, resultIndices_, costs_,
+        result_, resultIndices_,
+        Costs(0), costs_,
         file_, line_, typename Operation<TE>::ProtectedToken()
       ),
       source(source_)

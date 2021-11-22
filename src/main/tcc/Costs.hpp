@@ -17,29 +17,31 @@
 #define TCC_COSTS_DEFINED
 
 #include <math/Integer.hpp>
+#include <string>
+#include <sstream>
 #include <limits>
 
 namespace cc4s {
   class Costs {
   public:
     Costs(
-      Natural<128> const elementsCount_
+      Natural<128> const accessCount_
     ):
-      maxElementsCount(elementsCount_),
-      elementsCount(elementsCount_),
+      maxStorageCount(accessCount_),
+      accessCount(accessCount_),
       multiplicationsCount(0),
       additionsCount(0)
     {
     }
 
     Costs(
-      Natural<128> const maxElementsCount_,
-      Natural<128> const elementsCount_,
+      Natural<128> const maxStorageCount_,
+      Natural<128> const accessCount_,
       Natural<128> const multiplicationsCount_,
       Natural<128> const additionsCount_
     ):
-      maxElementsCount(maxElementsCount_),
-      elementsCount(elementsCount_),
+      maxStorageCount(maxStorageCount_),
+      accessCount(accessCount_),
       multiplicationsCount(multiplicationsCount_),
       additionsCount(additionsCount_)
     {
@@ -48,16 +50,25 @@ namespace cc4s {
     Costs(
       Costs const &a
     ):
-      maxElementsCount(a.maxElementsCount),
-      elementsCount(a.elementsCount),
+      maxStorageCount(a.maxStorageCount),
+      accessCount(a.accessCount),
       multiplicationsCount(a.multiplicationsCount),
       additionsCount(a.additionsCount)
     {
     }
 
+    static Costs createMax() {
+      return Costs(
+        std::numeric_limits<Natural<128>>::max(),
+        std::numeric_limits<Natural<128>>::max(),
+        std::numeric_limits<Natural<128>>::max(),
+        std::numeric_limits<Natural<128>>::max()
+      );
+    }
+
     Costs &operator +=(Costs const &a) {
-      maxElementsCount = std::max(maxElementsCount, a.maxElementsCount);
-      elementsCount += a.elementsCount;
+      maxStorageCount += a.maxStorageCount;
+      accessCount += a.accessCount;
       multiplicationsCount += a.multiplicationsCount;
       additionsCount += a.additionsCount;
       return *this;
@@ -67,11 +78,11 @@ namespace cc4s {
      * \brief Maximum number of tensor elements of storage required
      * during the evaluation .
      **/
-    Natural<128> maxElementsCount;
+    Natural<128> maxStorageCount;
     /**
-     * \brief Number of tensor elements of storage required by a result.
+     * \brief Access count on tensor elements during evaluation.
      **/
-    Natural<128> elementsCount;
+    Natural<128> accessCount;
     /**
      * \brief Number of tensor element multiplication required for
      * the evaluation of this operation.
@@ -82,6 +93,17 @@ namespace cc4s {
      * the evaluation of this operation.
      **/
     Natural<128> additionsCount;
+
+    operator std::string () const {
+      std::stringstream stream;
+      stream << "Costs("
+        << "maxStorage=" << maxStorageCount
+        << ", accesses=" << accessCount
+        << ", multiplications=" << multiplicationsCount
+        << ", additions=" << additionsCount
+        << ")";
+      return stream.str();
+    }
   };
 
   inline Costs operator +(Costs const &a, Costs const &b) {
