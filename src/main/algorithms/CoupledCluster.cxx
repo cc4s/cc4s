@@ -99,6 +99,7 @@ Ptr<MapNode> CoupledCluster::run() {
     method, std::string("Unknown method type: '") + methodType + "'",
     methodArguments->get("type")->sourceLocation
   );
+  OUT() << "Using method " << methodType << std::endl;
 
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
@@ -108,13 +109,14 @@ Ptr<MapNode> CoupledCluster::run() {
     mixer, std::string("Unknown mixer type: '") + mixerType + "'",
     mixerArguments->get("type")->sourceLocation
   );
+  // TODO: mixer should give state info
   if (mixerType.compare("DiisMixer") == 0 ){
     auto maxResidua(mixerArguments->getValue<std::string>("maxResidua", "4"));
-    OUT() << "Using the " << mixerType << ", with maxResiua " << maxResidua << std::endl;
+    OUT() << "Using mixer " << mixerType << ", with maxResiua " << maxResidua << std::endl;
   }
   else if (mixerType.compare("LinearMixer") == 0){
     auto ratio(mixerArguments->getValue<Real<>>("ratio", 1.0));
-    OUT() << "Using the " << mixerType << ", with ratio " << ratio << std::endl;
+    OUT() << "Using mixer " << mixerType << ", with ratio " << ratio << std::endl;
   }
   // number of iterations for determining the amplitudes
   auto maxIterationsCount(
@@ -297,7 +299,7 @@ void CoupledCluster::estimateAmplitudesFromResiduum(
   for (unsigned int i(0); i < residuum->componentTensors.size(); ++i) {
     auto R( residuum->get(i) );
     auto indices( residuum->getIndices(i) );
-    auto D( calculateExcitationEnergies<F,TE>(R->inspect()->getLens(),indices) );
+    auto D( calculateEnergyDifferences<F,TE>(R->inspect()->getLens(),indices) );
 
     // divide by -Delta to get new estimate for T
     COMPILE(
@@ -334,7 +336,7 @@ void CoupledCluster::estimateAmplitudesFromResiduum(
 
 
 template <typename F, typename TE>
-Ptr<Tensor<F,TE>> CoupledCluster::calculateExcitationEnergies(
+Ptr<Tensor<F,TE>> CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 ) {
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
@@ -353,7 +355,7 @@ Ptr<Tensor<F,TE>> CoupledCluster::calculateExcitationEnergies(
     Tcc<TE>::template tensor<F>(lens, std::string("D") + indices)
   );
 
-  // create excitation energy tensor
+  // create energy difference tensor
   int excitationLevel(indices.length()/2);
   for (int p(0); p < excitationLevel; ++p) {
     COMPILE(
@@ -368,43 +370,25 @@ Ptr<Tensor<F,TE>> CoupledCluster::calculateExcitationEnergies(
 // instantiate
 template
 Ptr<Tensor<Real<>, DefaultDryTensorEngine>>
-CoupledCluster::calculateExcitationEnergies(
+CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 );
 template
 Ptr<Tensor<Complex<>, DefaultDryTensorEngine>>
-CoupledCluster::calculateExcitationEnergies(
+CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 );
 template
 Ptr<Tensor<Real<>, DefaultTensorEngine>>
-CoupledCluster::calculateExcitationEnergies(
+CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 );
 template
 Ptr<Tensor<Complex<>, DefaultTensorEngine>>
-CoupledCluster::calculateExcitationEnergies(
+CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 );
 
-
-std::string CoupledCluster::getCapitalizedAbbreviation() {
-  std::string capitalizedAbbreviation(getAbbreviation());
-  std::transform(
-    capitalizedAbbreviation.begin(), capitalizedAbbreviation.end(),
-    capitalizedAbbreviation.begin(), ::toupper
-  );
-  return capitalizedAbbreviation;
-}
-
-
-std::string CoupledCluster::getDataName(
-  const std::string &type, const std::string &data
-) {
-  std::stringstream dataName;
-  dataName << getAbbreviation() << type << data;
-  return dataName.str();
-}
 
 constexpr Real<64> CoupledCluster::DEFAULT_ENERGY_CONVERGENCE;
 constexpr Real<64> CoupledCluster::DEFAULT_AMPLITUDES_CONVERGENCE;

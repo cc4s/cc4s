@@ -40,16 +40,9 @@ namespace cc4s {
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
 
     /**
-     * \brief Returns the abbreviation of the concrete algorithm, e.g. "Ccd",
-     * "Dcd".
-     */
-    // FIXME:
-    virtual std::string getAbbreviation() { return "cc"; }
-
-    /**
      * \brief Defines the default number of iterations (16).
      */
-    static int constexpr DEFAULT_MAX_ITERATIONS = 16;
+    static Natural<32> constexpr DEFAULT_MAX_ITERATIONS = 16;
     static Real<64> constexpr DEFAULT_ENERGY_CONVERGENCE = 1E-7;
     static Real<64> constexpr DEFAULT_AMPLITUDES_CONVERGENCE = 1E-6;
 
@@ -90,7 +83,7 @@ namespace cc4s {
      * \brief Calculates eps_a+eps_b+...-eps_i-eps_j-... into D^ab..._ij...
      **/
     template <typename F, typename TE>
-    Ptr<Tensor<F,TE>> calculateExcitationEnergies(
+    Ptr<Tensor<F,TE>> calculateEnergyDifferences(
       const std::vector<size_t> &lens, const std::string &indices
     );
 
@@ -99,13 +92,6 @@ namespace cc4s {
       std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
       std::initializer_list<std::string> amplitudeIndices
     );
-
-    /**
-     * \brief The abbreviation of the algorithm in capital letters.
-     **/
-    std::string getCapitalizedAbbreviation();
-
-    std::string getDataName(const std::string &type, const std::string &data);
   };
 }
 

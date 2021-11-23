@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/coupledcluster/SinglesDoubles.hpp>
+#include <algorithms/coupledcluster/Ccsd.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -23,12 +23,12 @@ using namespace cc4s;
 
 template <typename TE>
 CoupledClusterMethodRegistrar<
-  Real<>,TE,SinglesDoubles<Real<>,TE>
-> SinglesDoubles<Real<>,TE>::registrar_("SinglesDoubles");
+  Real<>,TE,Ccsd<Real<>,TE>
+> Ccsd<Real<>,TE>::registrar_("Ccsd");
 template <typename TE>
 CoupledClusterMethodRegistrar<
-  Complex<>,TE,SinglesDoubles<Complex<>,TE>
-> SinglesDoubles<Complex<>,TE>::registrar_("SinglesDoubles");
+  Complex<>,TE,Ccsd<Complex<>,TE>
+> Ccsd<Complex<>,TE>::registrar_("Ccsd");
 
 
 //////////////////////////////////////////////////////////////////////
@@ -37,7 +37,7 @@ CoupledClusterMethodRegistrar<
 //////////////////////////////////////////////////////////////////////
 
 template <typename TE>
-Ptr<TensorUnion<Real<>,TE>> SinglesDoubles<Real<>,TE>::getResiduum(
+Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
   const int iteration,
   const bool restart,
   const Ptr<TensorUnion<Real<>,TE>> &amplitudes
@@ -434,7 +434,7 @@ Ptr<TensorUnion<Real<>,TE>> SinglesDoubles<Real<>,TE>::getResiduum(
 
 
 template <typename TE>
-Ptr<TensorUnion<Complex<>,TE>> SinglesDoubles<Complex<>,TE>::getResiduum(
+Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
   const int iteration,
   const bool restart,
   const Ptr<TensorUnion<Complex<>,TE>> &amplitudes
@@ -694,8 +694,8 @@ Ptr<TensorUnion<Complex<>,TE>> SinglesDoubles<Complex<>,TE>::getResiduum(
 }
 
 // instantiate
-template class cc4s::SinglesDoubles<Real<64>, DefaultDryTensorEngine>;
-template class cc4s::SinglesDoubles<Complex<64>, DefaultDryTensorEngine>;
-template class cc4s::SinglesDoubles<Real<64>, DefaultTensorEngine>;
-template class cc4s::SinglesDoubles<Complex<64>, DefaultTensorEngine>;
+template class cc4s::Ccsd<Real<64>, DefaultDryTensorEngine>;
+template class cc4s::Ccsd<Complex<64>, DefaultDryTensorEngine>;
+template class cc4s::Ccsd<Real<64>, DefaultTensorEngine>;
+template class cc4s::Ccsd<Complex<64>, DefaultTensorEngine>;
 

@@ -23,7 +23,9 @@ main/algorithms/VertexCoulombIntegrals.cxx \
 main/algorithms/SecondOrderPerturbationTheory.cxx \
 main/algorithms/CoupledCluster.cxx \
 main/algorithms/coupledcluster/CoupledClusterMethod.cxx \
-main/algorithms/coupledcluster/SinglesDoubles.cxx \
+main/algorithms/coupledcluster/Ccsd.cxx \
+main/algorithms/coupledcluster/CcsdReference.cxx \
+main/algorithms/coupledcluster/Drccd.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/StructureFactor.cxx \
 main/algorithms/StructureFactorFiniteSizeCorrection.cxx \
@@ -32,8 +34,6 @@ main/mixers/Mixer.cxx \
 main/mixers/LinearMixer.cxx \
 main/mixers/DiisMixer.cxx \
 main/math/TensorUnion.cxx \
-#main/algorithms/DirectRingCoupledClusterDoubles.cxx \
-#main/algorithms/CoupledClusterSinglesDoublesReference.cxx \
 
 ifeq ($(ATRIP), yes)
 SRC_FILES += main/algorithms/PerturbativeTriples.cxx

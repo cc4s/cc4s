@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef SINGLES_DOUBLES_DEFINED
-#define SINGLES_DOUBLES_DEFINED
-
+#ifndef CCSD_DEFINED
+#define CCSD_DEFINED
 
 #include <algorithms/coupledcluster/CoupledClusterMethod.hpp>
 
@@ -28,18 +27,18 @@ namespace cc4s {
    * in a \f$ \mathcal{O}(N^{6}) \f$ implementation.
    */
   template <typename F, typename TE>
-  class SinglesDoubles {};
+  class Ccsd {};
 
   template <typename TE>
-  class SinglesDoubles<Real<>,TE>: public CoupledClusterMethod<Real<>,TE> {
+  class Ccsd<Real<>,TE>: public CoupledClusterMethod<Real<>,TE> {
   public:
-    SinglesDoubles(
+    Ccsd(
       const Ptr<MapNode> &arguments
     ): CoupledClusterMethod<Real<>,TE>(arguments) {
     }
-    std::string getName() override { return "SinglesDoubles"; } \
+    std::string getName() override { return "Ccsd"; } \
     static CoupledClusterMethodRegistrar<
-      Real<>,TE,SinglesDoubles<Real<>,TE>
+      Real<>,TE,Ccsd<Real<>,TE>
     > registrar_;
 
     /**
@@ -53,15 +52,15 @@ namespace cc4s {
   };
 
   template <typename TE>
-  class SinglesDoubles<Complex<>,TE>: public CoupledClusterMethod<Complex<>,TE> {
+  class Ccsd<Complex<>,TE>: public CoupledClusterMethod<Complex<>,TE> {
   public:
-    SinglesDoubles(
+    Ccsd(
       const Ptr<MapNode> &arguments
     ): CoupledClusterMethod<Complex<>,TE>(arguments) {
     }
-    std::string getName() override { return "SinglesDoubles"; } \
+    std::string getName() override { return "Ccsd"; } \
     static CoupledClusterMethodRegistrar<
-      Complex<>,TE,SinglesDoubles<Complex<>,TE>
+      Complex<>,TE,Ccsd<Complex<>,TE>
     > registrar_;
 
     /**
@@ -73,14 +72,6 @@ namespace cc4s {
       const Ptr<TensorUnion<Complex<>,TE>> &amplitudes
     ) override;
   };
-
-/*
-  template <typename TE>
-  Ptr<TensorUnion<Real<>,TE>> SinglesDoubles<Real<>,TE>::getResiduum(
-    const int iteration, const bool restart,
-    const Ptr<TensorUnion<Real<>,TE>> &amplitudes
-  );
-*/
 }
 
 #endif
