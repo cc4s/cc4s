@@ -212,18 +212,6 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   auto Gky(Gk->getValue<Real<>>(1));
   auto Gkz(Gk->getValue<Real<>>(2));
 
-/*
-  auto Gix(gridVectors->getValue<Real<>>("Gix"));
-  auto Giy(gridVectors->getValue<Real<>>("Giy"));
-  auto Giz(gridVectors->getValue<Real<>>("Giz"));
-  auto Gjx(gridVectors->getValue<Real<>>("Gjx"));
-  auto Gjy(gridVectors->getValue<Real<>>("Gjy"));
-  auto Gjz(gridVectors->getValue<Real<>>("Gjz"));
-  auto Gkx(gridVectors->getValue<Real<>>("Gkx"));
-  auto Gky(gridVectors->getValue<Real<>>("Gky"));
-  auto Gkz(gridVectors->getValue<Real<>>("Gkz"));
-*/
-
   B[0][0] = Gix; B[0][1] = Giy; B[0][2] = Giz ;
   B[1][0] = Gjx; B[1][1] = Gjy; B[1][2] = Gjz ;
   B[2][0] = Gkx; B[2][1] = Gky; B[2][2] = Gkz ;
@@ -247,10 +235,6 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   A[0] = B[1].cross(B[2])/Omega;
   A[1] = B[2].cross(B[0])/Omega;
   A[2] = B[0].cross(B[1])/Omega;
-
-  OUT() << A[0] << std::endl;
-  OUT() << A[1] << std::endl;
-  OUT() << A[2] << std::endl;
 
   // determine bounding box in direct coordinates (in reciprocal space)
   Vector<> directMin, directMax;
@@ -278,7 +262,6 @@ void StructureFactorFiniteSizeCorrection::interpolation(
     Vector<> directG;
     for (Natural<> d(0); d < 3; ++d) {
       directG[d] = A[d].dot(cartesianGrid[g]);
-//      OUT() << g << " " << d << " " << directG[d] << std::endl;
       index *= boxDimensions[d];
       index += std::floor(directG[d] + 0.5) - boxOrigin[d];
     }
