@@ -128,11 +128,14 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
   auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
+  auto Tai( Tcc<TE>::template tensor<Complex<>>("Tai"));
 
 
   COMPILE(
 //    (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
-    (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"])
+    (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"]),
+    (*Tai)["ai"] <<= map<Complex<>>(toComplex<F>, (*Tph)["ai"]),
+    (*Tabij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"] 
   )->execute();
 
   auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
@@ -244,6 +247,9 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   A[1] = B[2].cross(B[0])/Omega;
   A[2] = B[0].cross(B[1])/Omega;
 
+  OUT() << A[0] << std::endl;
+  OUT() << A[1] << std::endl;
+  OUT() << A[2] << std::endl;
 
   // determine bounding box in direct coordinates (in reciprocal space)
   Vector<> directMin, directMax;
@@ -269,8 +275,9 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   for (Natural<> g(0); g < NG; ++g) {
     Natural<> index(0);
     Vector<> directG;
-    for (Natural<> d(2); d-- > 0; ) {
+    for (Natural<> d(0); d < 3; ++d) {
       directG[d] = A[d].dot(cartesianGrid[g]);
+//      OUT() << g << " " << d << " " << directG[d] << std::endl;
       index *= boxDimensions[d];
       index += std::floor(directG[d] + 0.5) - boxOrigin[d];
     }
@@ -322,7 +329,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
 
   OUT() << "Uncorrected correlation energy: " << sum3D << "\n";
-  OUT() << "Basis-set energy correction:   " << totalInter3D/N/N/N-sum3D << "\n";
+  OUT() << "Finite-size energy correction:   " << totalInter3D/N/N/N-sum3D << "\n";
 
 
   result->setValue("corrected", inter3D);
