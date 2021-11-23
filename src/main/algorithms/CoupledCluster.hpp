@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED 
-#define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
+#ifndef COUPLED_CLUSTER_DEFINED 
+#define COUPLED_CLUSTER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 #include <math/TensorUnion.hpp>
@@ -30,8 +30,10 @@ namespace cc4s {
    * \f$T_{a}^{i}\f$ and \f$T_{ab}^{ij}\f$ and the Coulomb integrals \f$V_{ij}^{ab}\f$. For
    * calculating the amplitudes it calls the iteration routine of the actual algorithm.
    **/
-  class ClusterSinglesDoublesAlgorithm: public Algorithm {
+  class CoupledCluster: public Algorithm {
   public:
+    ALGORITHM_REGISTRAR_DECLARATION(CoupledCluster)
+
     /**
      * \brief Calculates the energy of a ClusterSinglesDoubles algorithm
      */
@@ -41,7 +43,8 @@ namespace cc4s {
      * \brief Returns the abbreviation of the concrete algorithm, e.g. "Ccd",
      * "Dcd".
      */
-    virtual std::string getAbbreviation() = 0;
+    // FIXME:
+    virtual std::string getAbbreviation() { return "cc"; }
 
     /**
      * \brief Defines the default number of iterations (16).
@@ -59,45 +62,13 @@ namespace cc4s {
     Ptr<MapNode> run();
 
     /**
-     * \brief Computes and returns the residuum of the given amplitudes.
-     **/
-    virtual Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>getResiduum(
-      const int iteration,
-      const Ptr<TensorUnion<Real<>,DefaultDryTensorEngine>> &amplitudes
-    ) = 0;
-
-    /**
-     * \brief Computes and returns the residuum of the given amplitudes.
-     **/
-    virtual Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>getResiduum(
-      const int iteration,
-      const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
-    ) = 0;
-    /**
-     * \brief Computes and returns the residuum of the given amplitudes.
-     **/
-    virtual Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
-    getResiduum(
-      const int iteration,
-      const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
-    ) = 0;
-
-    /**
-     * \brief Computes and returns the residuum of the given amplitudes.
-     **/
-    virtual Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
-    getResiduum(
-      const int iteration,
-      const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
-    ) = 0;
-
-    /**
      * \brief Computes and returns the energy of the given amplitudes.
      **/
     template <typename F, typename TE>
-    F getEnergy( const Ptr<TensorUnion<F,TE>> &amplitdues
-               , const bool finalReport = false
-               );
+    F getEnergy(
+      const Ptr<TensorUnion<F,TE>> &amplitdues,
+      const bool finalReport = false
+    );
 
     /**
      * \brief Calculates an improved estimate of the amplitudes provided
@@ -135,8 +106,6 @@ namespace cc4s {
     std::string getCapitalizedAbbreviation();
 
     std::string getDataName(const std::string &type, const std::string &data);
-
-    bool restart = false;
   };
 }
 
