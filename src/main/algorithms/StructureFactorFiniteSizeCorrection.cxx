@@ -173,7 +173,8 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 // constant factor is still unclear to me
 //  Real<> factor(4.5835494674469/volume);
   // FIXME: unit conversion
-  Real<> factor(0.00020880076563/volume);
+  // 4.583594607547605 = 4*PI*2*RYTOEV*AUTOA/4/pi**2 =EDEPS/4/pi**2
+  Real<> factor(4.583594607547605/volume);
   // READ THE MOMENTUM GRID
   auto grid(gridVectors->getPtr<T>("data")->evaluate());
   ASSERT_LOCATION(
