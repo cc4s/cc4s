@@ -128,11 +128,14 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
   auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
+  auto Tai( Tcc<TE>::template tensor<Complex<>>("Tai"));
 
 
   COMPILE(
 //    (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
-    (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"])
+    (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"]),
+    (*Tai)["ai"] <<= map<Complex<>>(toComplex<F>, (*Tph)["ai"]),
+    (*Tabij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"] 
   )->execute();
 
   auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
@@ -170,7 +173,8 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 // constant factor is still unclear to me
 //  Real<> factor(4.5835494674469/volume);
   // FIXME: unit conversion
-  Real<> factor(0.00020880076563/volume);
+  // 4.583594607547605 = 4*PI*2*RYTOEV*AUTOA/4/pi**2 =EDEPS/4/pi**2
+  Real<> factor(4.583594607547605/volume);
   // READ THE MOMENTUM GRID
   auto grid(gridVectors->getPtr<T>("data")->evaluate());
   ASSERT_LOCATION(
@@ -208,18 +212,6 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   auto Gky(Gk->getValue<Real<>>(1));
   auto Gkz(Gk->getValue<Real<>>(2));
 
-/*
-  auto Gix(gridVectors->getValue<Real<>>("Gix"));
-  auto Giy(gridVectors->getValue<Real<>>("Giy"));
-  auto Giz(gridVectors->getValue<Real<>>("Giz"));
-  auto Gjx(gridVectors->getValue<Real<>>("Gjx"));
-  auto Gjy(gridVectors->getValue<Real<>>("Gjy"));
-  auto Gjz(gridVectors->getValue<Real<>>("Gjz"));
-  auto Gkx(gridVectors->getValue<Real<>>("Gkx"));
-  auto Gky(gridVectors->getValue<Real<>>("Gky"));
-  auto Gkz(gridVectors->getValue<Real<>>("Gkz"));
-*/
-
   B[0][0] = Gix; B[0][1] = Giy; B[0][2] = Giz ;
   B[1][0] = Gjx; B[1][1] = Gjy; B[1][2] = Gjz ;
   B[2][0] = Gkx; B[2][1] = Gky; B[2][2] = Gkz ;
@@ -243,7 +235,6 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   A[0] = B[1].cross(B[2])/Omega;
   A[1] = B[2].cross(B[0])/Omega;
   A[2] = B[0].cross(B[1])/Omega;
-
 
   // determine bounding box in direct coordinates (in reciprocal space)
   Vector<> directMin, directMax;
@@ -269,7 +260,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   for (Natural<> g(0); g < NG; ++g) {
     Natural<> index(0);
     Vector<> directG;
-    for (Natural<> d(2); d-- > 0; ) {
+    for (Natural<> d(0); d < 3; ++d) {
       directG[d] = A[d].dot(cartesianGrid[g]);
       index *= boxDimensions[d];
       index += std::floor(directG[d] + 0.5) - boxOrigin[d];
@@ -322,7 +313,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
 
   OUT() << "Uncorrected correlation energy: " << sum3D << "\n";
-  OUT() << "Basis-set energy correction:   " << totalInter3D/N/N/N-sum3D << "\n";
+  OUT() << "Finite-size energy correction:   " << totalInter3D/N/N/N-sum3D << "\n";
 
 
   result->setValue("corrected", inter3D);
