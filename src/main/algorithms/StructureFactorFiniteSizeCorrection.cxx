@@ -312,8 +312,8 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   communicator.allReduce(inter3D, totalInter3D);
 
 
-  OUT() << "Uncorrected correlation energy: " << sum3D << "\n";
-  OUT() << "Finite-size energy correction:   " << totalInter3D/N/N/N-sum3D << "\n";
+  OUT() << "Uncorrected correlation energy: " << std::setprecision(10) << sum3D << "\n";
+  OUT() << "Finite-size energy correction:   " << std::setprecision(10) << totalInter3D/N/N/N-sum3D << "\n";
 
 
   result->setValue("corrected", inter3D);
