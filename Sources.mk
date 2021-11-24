@@ -21,10 +21,11 @@ main/algorithms/DimensionProperty.cxx \
 main/algorithms/NonZeroCondition.cxx \
 main/algorithms/VertexCoulombIntegrals.cxx \
 main/algorithms/SecondOrderPerturbationTheory.cxx \
-main/algorithms/ClusterSinglesDoublesAlgorithm.cxx \
-main/algorithms/DirectRingCoupledClusterDoubles.cxx \
-main/algorithms/CoupledClusterSinglesDoublesReference.cxx \
-main/algorithms/CoupledClusterSinglesDoubles.cxx \
+main/algorithms/CoupledCluster.cxx \
+main/algorithms/coupledcluster/CoupledClusterMethod.cxx \
+main/algorithms/coupledcluster/Ccsd.cxx \
+main/algorithms/coupledcluster/CcsdReference.cxx \
+main/algorithms/coupledcluster/Drccd.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/StructureFactor.cxx \
 main/algorithms/StructureFactorFiniteSizeCorrection.cxx \

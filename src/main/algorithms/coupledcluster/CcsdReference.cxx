@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/CoupledClusterSinglesDoublesReference.hpp>
+#include <algorithms/coupledcluster/CcsdReference.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -21,40 +21,11 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CoupledClusterSinglesDoublesReference)
+template <typename F, typename TE>
+CoupledClusterMethodRegistrar<
+  F,TE,CcsdReference<F,TE>
+> CcsdReference<F,TE>::registrar_("CcsdReference");
 
-Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
-CoupledClusterSinglesDoublesReference::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
-) {
-  return getResiduum<Real<>, DefaultDryTensorEngine>(iteration, amplitudes);
-}
-
-Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
-CoupledClusterSinglesDoublesReference::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
-) {
-  return getResiduum<Complex<>, DefaultDryTensorEngine>(iteration, amplitudes);
-}
-
-Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
-CoupledClusterSinglesDoublesReference::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
-) {
-  return getResiduum<Real<>, DefaultTensorEngine>(iteration, amplitudes);
-}
-
-
-Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
-CoupledClusterSinglesDoublesReference::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
-) {
-  return getResiduum<Complex<>, DefaultTensorEngine>(iteration, amplitudes);
-}
 
 //////////////////////////////////////////////////////////////////////
 // Hirata iteration routine for the CCSD amplitudes Tabij and Tai from
@@ -62,8 +33,10 @@ CoupledClusterSinglesDoublesReference::getResiduum(
 //////////////////////////////////////////////////////////////////////
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
-  const int iteration, const Ptr<TensorUnion<F,TE>> &amplitudes
+Ptr<TensorUnion<F,TE>> CcsdReference<F,TE>::getResiduum(
+  const int iteration,
+  const bool restart,
+  const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
   // get amplitude parts
   auto Tph( amplitudes->get(0) );
@@ -75,11 +48,12 @@ Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
   auto Rph( residuum->get(0) );
   auto Rpphh( residuum->get(1) );
 
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
+  auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getPtr<TensorRecipe<F,TE>>("pphh"));
+  auto Vpphh(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pphh"));
 
-  auto onlyPpl(arguments->getValue<size_t>("onlyPpl", 0) );
+  auto methodArguments(this->arguments->getMap("method"));
+  auto onlyPpl(this->arguments->template getValue<size_t>("onlyPpl", 0) );
 
 
   if ( (iteration == 0) && !restart  && (onlyPpl == 0)) {
@@ -95,9 +69,9 @@ Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
 
 //    OUT() << "Calculate only PPL diagrams" << std::endl;
 
-    auto Vpppp(coulombSlices->getPtr<TensorRecipe<F,TE>>("pppp"));
-    auto Vphpp(coulombSlices->getPtr<TensorRecipe<F,TE>>("phpp"));
-    auto Vhppp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hppp"));
+    auto Vpppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pppp"));
+    auto Vphpp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phpp"));
+    auto Vhppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hppp"));
     auto Xabcd( Tcc<TE>::template tensor<F>("Xabcd") );
 
     COMPILE(
@@ -110,19 +84,19 @@ Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
     )->execute();
 
   } else {
-    auto Vpppp(coulombSlices->getPtr<TensorRecipe<F,TE>>("pppp"));
-    auto Vphph(coulombSlices->getPtr<TensorRecipe<F,TE>>("phph"));
-    auto Vhhhh(coulombSlices->getPtr<TensorRecipe<F,TE>>("hhhh"));
-    auto Vhhhp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hhhp"));
-    auto Vppph(coulombSlices->getPtr<TensorRecipe<F,TE>>("ppph"));
-    auto Vhhpp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hhpp"));
-    auto Vpphp(coulombSlices->getPtr<TensorRecipe<F,TE>>("pphp"));
-    auto Vphhh(coulombSlices->getPtr<TensorRecipe<F,TE>>("phhh"));
-    auto Vhphp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hphp"));
-    auto Vphhp(coulombSlices->getPtr<TensorRecipe<F,TE>>("phhp"));
-    auto Vphpp(coulombSlices->getPtr<TensorRecipe<F,TE>>("phpp"));
-    auto Vhhph(coulombSlices->getPtr<TensorRecipe<F,TE>>("hhph"));
-    auto Vhppp(coulombSlices->getPtr<TensorRecipe<F,TE>>("hppp"));
+    auto Vpppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pppp"));
+    auto Vphph(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phph"));
+    auto Vhhhh(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhhh"));
+    auto Vhhhp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhhp"));
+    auto Vppph(coulombSlices->template getPtr<TensorRecipe<F,TE>>("ppph"));
+    auto Vhhpp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhpp"));
+    auto Vpphp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pphp"));
+    auto Vphhh(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phhh"));
+    auto Vhphp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hphp"));
+    auto Vphhp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phhp"));
+    auto Vphpp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phpp"));
+    auto Vhhph(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhph"));
+    auto Vhppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hppp"));
     // Hirata intermediates
     auto Lac( Tcc<TE>::template tensor<F>("Lac") );
     auto Kac( Tcc<TE>::template tensor<F>("Kac") );
@@ -257,3 +231,10 @@ Ptr<TensorUnion<F,TE>> CoupledClusterSinglesDoublesReference::getResiduum(
   }
   return residuum;
 }
+
+// instantiate
+template class cc4s::CcsdReference<Real<64>, DefaultDryTensorEngine>;
+template class cc4s::CcsdReference<Complex<64>, DefaultDryTensorEngine>;
+template class cc4s::CcsdReference<Real<64>, DefaultTensorEngine>;
+template class cc4s::CcsdReference<Complex<64>, DefaultTensorEngine>;
+

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED 
-#define CLUSTER_SINGLES_DOUBLES_ALGORITHM_DEFINED
+#ifndef COUPLED_CLUSTER_DEFINED 
+#define COUPLED_CLUSTER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 #include <math/TensorUnion.hpp>
@@ -30,23 +30,19 @@ namespace cc4s {
    * \f$T_{a}^{i}\f$ and \f$T_{ab}^{ij}\f$ and the Coulomb integrals \f$V_{ij}^{ab}\f$. For
    * calculating the amplitudes it calls the iteration routine of the actual algorithm.
    **/
-  class ClusterSinglesDoublesAlgorithm: public Algorithm {
+  class CoupledCluster: public Algorithm {
   public:
+    ALGORITHM_REGISTRAR_DECLARATION(CoupledCluster)
+
     /**
      * \brief Calculates the energy of a ClusterSinglesDoubles algorithm
      */
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
 
     /**
-     * \brief Returns the abbreviation of the concrete algorithm, e.g. "Ccd",
-     * "Dcd".
-     */
-    virtual std::string getAbbreviation() = 0;
-
-    /**
      * \brief Defines the default number of iterations (16).
      */
-    static int constexpr DEFAULT_MAX_ITERATIONS = 16;
+    static Natural<32> constexpr DEFAULT_MAX_ITERATIONS = 16;
     static Real<64> constexpr DEFAULT_ENERGY_CONVERGENCE = 1E-7;
     static Real<64> constexpr DEFAULT_AMPLITUDES_CONVERGENCE = 1E-6;
 
@@ -59,45 +55,13 @@ namespace cc4s {
     Ptr<MapNode> run();
 
     /**
-     * \brief Computes and returns the residuum of the given amplitudes.
-     **/
-    virtual Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>getResiduum(
-      const int iteration,
-      const Ptr<TensorUnion<Real<>,DefaultDryTensorEngine>> &amplitudes
-    ) = 0;
-
-    /**
-     * \brief Computes and returns the residuum of the given amplitudes.
-     **/
-    virtual Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>getResiduum(
-      const int iteration,
-      const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
-    ) = 0;
-    /**
-     * \brief Computes and returns the residuum of the given amplitudes.
-     **/
-    virtual Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
-    getResiduum(
-      const int iteration,
-      const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
-    ) = 0;
-
-    /**
-     * \brief Computes and returns the residuum of the given amplitudes.
-     **/
-    virtual Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
-    getResiduum(
-      const int iteration,
-      const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
-    ) = 0;
-
-    /**
      * \brief Computes and returns the energy of the given amplitudes.
      **/
     template <typename F, typename TE>
-    F getEnergy( const Ptr<TensorUnion<F,TE>> &amplitdues
-               , const bool finalReport = false
-               );
+    F getEnergy(
+      const Ptr<TensorUnion<F,TE>> &amplitdues,
+      const bool finalReport = false
+    );
 
     /**
      * \brief Calculates an improved estimate of the amplitudes provided
@@ -119,7 +83,7 @@ namespace cc4s {
      * \brief Calculates eps_a+eps_b+...-eps_i-eps_j-... into D^ab..._ij...
      **/
     template <typename F, typename TE>
-    Ptr<Tensor<F,TE>> calculateExcitationEnergies(
+    Ptr<Tensor<F,TE>> calculateEnergyDifferences(
       const std::vector<size_t> &lens, const std::string &indices
     );
 
@@ -128,15 +92,6 @@ namespace cc4s {
       std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
       std::initializer_list<std::string> amplitudeIndices
     );
-
-    /**
-     * \brief The abbreviation of the algorithm in capital letters.
-     **/
-    std::string getCapitalizedAbbreviation();
-
-    std::string getDataName(const std::string &type, const std::string &data);
-
-    bool restart = false;
   };
 }
 

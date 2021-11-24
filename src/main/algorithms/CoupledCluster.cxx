@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-#include <algorithms/ClusterSinglesDoublesAlgorithm.hpp>
+#include <algorithms/CoupledCluster.hpp>
+#include <algorithms/coupledcluster/CoupledClusterMethod.hpp>
 #include <math/MathFunctions.hpp>
 #include <mixers/Mixer.hpp>
 #include <util/SharedPointer.hpp>
@@ -29,7 +30,9 @@
 
 using namespace cc4s;
 
-Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run(const Ptr<MapNode> &arguments){
+ALGORITHM_REGISTRAR_DEFINITION(CoupledCluster)
+
+Ptr<MapNode> CoupledCluster::run(const Ptr<MapNode> &arguments){
   this->arguments = arguments;
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
@@ -57,7 +60,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run(const Ptr<MapNode> &arguments){
 
 
 template <typename F, typename TE>
-Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
+Ptr<MapNode> CoupledCluster::run() {
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));
   auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
@@ -66,7 +69,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   auto No(epsi->inspect()->getLen(0));
   auto Nv(epsa->inspect()->getLen(0));
 
-  size_t i(0);
+  Natural<> i(0); bool restart(false);
   Ptr<TensorUnion<F,TE>> amplitudes;
   if (arguments->get("initialAmplitudes")) {
     amplitudes = arguments->getPtr<TensorUnion<F,TE>>(
@@ -84,6 +87,20 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   energy = New<MapNode>(SOURCE_LOCATION);
   energy->setValue<Real<>>("unit", eigenEnergies->getValue<Real<>>("unit"));
 
+  // create a method handler, by default SinglesDoubles
+  auto methodArguments(arguments->getMap("method"));
+  auto methodType(
+    methodArguments->getValue<std::string>("type", "SinglesDoubles")
+  );
+  Ptr<CoupledClusterMethod<F,TE>> method(
+    CoupledClusterMethodFactory<F,TE>::create(methodType, arguments)
+  );
+  ASSERT_LOCATION(
+    method, std::string("Unknown method type: '") + methodType + "'",
+    methodArguments->get("type")->sourceLocation
+  );
+  OUT() << "Using method " << methodType << std::endl;
+
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
   auto mixerType(mixerArguments->getValue<std::string>("type", "LinearMixer"));
@@ -92,14 +109,14 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
     mixer, std::string("Unknown mixer type: '") + mixerType + "'",
     mixerArguments->get("type")->sourceLocation
   );
-  std::string mixerOption;
+  // TODO: mixer should give state info
   if (mixerType.compare("DiisMixer") == 0 ){
     auto maxResidua(mixerArguments->getValue<std::string>("maxResidua", "4"));
-    OUT() << "Using the " << mixerType << ", with maxResiua " << maxResidua << std::endl;
+    OUT() << "Using mixer " << mixerType << ", with maxResiua " << maxResidua << std::endl;
   }
   else if (mixerType.compare("LinearMixer") == 0){
     auto ratio(mixerArguments->getValue<Real<>>("ratio", 1.0));
-    OUT() << "Using the " << mixerType << ", with ratio " << ratio << std::endl;
+    OUT() << "Using mixer " << mixerType << ", with ratio " << ratio << std::endl;
   }
   // number of iterations for determining the amplitudes
   auto maxIterationsCount(
@@ -127,9 +144,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
   for (; i < maxIterationsCount; ++i) {
     auto startTime(Time::getCurrentRealTime());
     LOG() << "iteration: " << i+1 << std::endl;
-    // call the getResiduum of the actual algorithm,
-    // which will be specified by inheriting classes
-    auto estimatedAmplitudes( getResiduum(i, amplitudes) );
+    auto estimatedAmplitudes( method->getResiduum(i, restart, amplitudes) );
     estimateAmplitudesFromResiduum(estimatedAmplitudes, amplitudes);
     auto amplitudesChange( New<TensorUnion<F,TE>>(*estimatedAmplitudes) );
     *amplitudesChange -= *amplitudes;
@@ -174,7 +189,7 @@ Ptr<MapNode> ClusterSinglesDoublesAlgorithm::run() {
 
 
 template <typename F, typename TE>
-F ClusterSinglesDoublesAlgorithm::getEnergy(
+F CoupledCluster::getEnergy(
   const Ptr<TensorUnion<F,TE>> &amplitudes,
   const bool finalReport
 ) {
@@ -255,7 +270,7 @@ F ClusterSinglesDoublesAlgorithm::getEnergy(
 }
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> ClusterSinglesDoublesAlgorithm::createAmplitudes(
+Ptr<TensorUnion<F,TE>> CoupledCluster::createAmplitudes(
   std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
   std::initializer_list<std::string> amplitudeIndices
 ) {
@@ -270,7 +285,7 @@ Ptr<TensorUnion<F,TE>> ClusterSinglesDoublesAlgorithm::createAmplitudes(
 }
 
 template <typename F, typename TE>
-void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
+void CoupledCluster::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<F,TE>> &residuum,
   const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
@@ -284,7 +299,7 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
   for (unsigned int i(0); i < residuum->componentTensors.size(); ++i) {
     auto R( residuum->get(i) );
     auto indices( residuum->getIndices(i) );
-    auto D( calculateExcitationEnergies<F,TE>(R->inspect()->getLens(),indices) );
+    auto D( calculateEnergyDifferences<F,TE>(R->inspect()->getLens(),indices) );
 
     // divide by -Delta to get new estimate for T
     COMPILE(
@@ -299,29 +314,29 @@ void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
 
 // instantiate
 template
-void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
+void CoupledCluster::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &residuum,
   const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
 );
 template
-void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
+void CoupledCluster::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &residuum,
   const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
 );
 template
-void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
+void CoupledCluster::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &residuum,
   const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
 );
 template
-void ClusterSinglesDoublesAlgorithm::estimateAmplitudesFromResiduum(
+void CoupledCluster::estimateAmplitudesFromResiduum(
   const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &residuum,
   const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
 );
 
 
 template <typename F, typename TE>
-Ptr<Tensor<F,TE>> ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
+Ptr<Tensor<F,TE>> CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 ) {
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
@@ -340,7 +355,7 @@ Ptr<Tensor<F,TE>> ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
     Tcc<TE>::template tensor<F>(lens, std::string("D") + indices)
   );
 
-  // create excitation energy tensor
+  // create energy difference tensor
   int excitationLevel(indices.length()/2);
   for (int p(0); p < excitationLevel; ++p) {
     COMPILE(
@@ -355,45 +370,27 @@ Ptr<Tensor<F,TE>> ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
 // instantiate
 template
 Ptr<Tensor<Real<>, DefaultDryTensorEngine>>
-ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
+CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 );
 template
 Ptr<Tensor<Complex<>, DefaultDryTensorEngine>>
-ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
+CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 );
 template
 Ptr<Tensor<Real<>, DefaultTensorEngine>>
-ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
+CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 );
 template
 Ptr<Tensor<Complex<>, DefaultTensorEngine>>
-ClusterSinglesDoublesAlgorithm::calculateExcitationEnergies(
+CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 );
 
 
-std::string ClusterSinglesDoublesAlgorithm::getCapitalizedAbbreviation() {
-  std::string capitalizedAbbreviation(getAbbreviation());
-  std::transform(
-    capitalizedAbbreviation.begin(), capitalizedAbbreviation.end(),
-    capitalizedAbbreviation.begin(), ::toupper
-  );
-  return capitalizedAbbreviation;
-}
-
-
-std::string ClusterSinglesDoublesAlgorithm::getDataName(
-  const std::string &type, const std::string &data
-) {
-  std::stringstream dataName;
-  dataName << getAbbreviation() << type << data;
-  return dataName.str();
-}
-
-constexpr Real<64> ClusterSinglesDoublesAlgorithm::DEFAULT_ENERGY_CONVERGENCE;
-constexpr Real<64> ClusterSinglesDoublesAlgorithm::DEFAULT_AMPLITUDES_CONVERGENCE;
-constexpr Real<64> ClusterSinglesDoublesAlgorithm::DEFAULT_LEVEL_SHIFT;
+constexpr Real<64> CoupledCluster::DEFAULT_ENERGY_CONVERGENCE;
+constexpr Real<64> CoupledCluster::DEFAULT_AMPLITUDES_CONVERGENCE;
+constexpr Real<64> CoupledCluster::DEFAULT_LEVEL_SHIFT;
 

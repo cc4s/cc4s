@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/CoupledClusterSinglesDoubles.hpp>
+#include <algorithms/coupledcluster/Ccsd.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -21,39 +21,15 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CoupledClusterSinglesDoubles)
+template <typename TE>
+CoupledClusterMethodRegistrar<
+  Real<>,TE,Ccsd<Real<>,TE>
+> Ccsd<Real<>,TE>::registrar_("Ccsd");
+template <typename TE>
+CoupledClusterMethodRegistrar<
+  Complex<>,TE,Ccsd<Complex<>,TE>
+> Ccsd<Complex<>,TE>::registrar_("Ccsd");
 
-Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
-CoupledClusterSinglesDoubles::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
-) {
-  return getResiduum<DefaultDryTensorEngine>(iteration, amplitudes);
-}
-
-Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
-CoupledClusterSinglesDoubles::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
-) {
-  return getResiduum<DefaultDryTensorEngine>(iteration, amplitudes);
-}
-
-Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
-CoupledClusterSinglesDoubles::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
-) {
-  return getResiduum<DefaultTensorEngine>(iteration, amplitudes);
-}
-
-Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
-CoupledClusterSinglesDoubles::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
-) {
-  return getResiduum<DefaultTensorEngine>(iteration, amplitudes);
-}
 
 //////////////////////////////////////////////////////////////////////
 // Hirata iteration routine for the CCSD amplitudes Tabij and Tai from
@@ -61,8 +37,10 @@ CoupledClusterSinglesDoubles::getResiduum(
 //////////////////////////////////////////////////////////////////////
 
 template <typename TE>
-Ptr<TensorUnion<Real<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
-  const int iteration, const Ptr<TensorUnion<Real<>,TE>> &amplitudes
+Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
+  const int iteration,
+  const bool restart,
+  const Ptr<TensorUnion<Real<>,TE>> &amplitudes
 ) {
 
   // get amplitude parts
@@ -75,17 +53,18 @@ Ptr<TensorUnion<Real<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
   auto Rph( residuum->get(0) );
   auto Rpphh( residuum->get(1) );
 
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
+  auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getPtr<TensorExpression<Real<>,TE>>("pphh"));
-  bool ppl(arguments->getValue<bool>("ppl", true));
-  bool twoCc(arguments->getValue<bool>("2cc", false));
-  bool dcsd(arguments->getValue<bool>("dcsd", false));
+  auto Vpphh(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("pphh"));
+  auto methodArguments(this->arguments->getMap("method"));
+  bool ppl(methodArguments->template getValue<bool>("ppl", true));
+  bool twoCc(methodArguments->template getValue<bool>("2cc", false));
+  bool dcsd(methodArguments->template getValue<bool>("dcsd", false));
 
   ASSERT_LOCATION(
     ((ppl && !(twoCc && dcsd)) || (!ppl && !twoCc && !dcsd)), 
     "!ppl, 2cc and dscsd are all mutually exclusive.",
-    arguments->get("ppl")->sourceLocation
+    methodArguments->get("ppl")->sourceLocation
 //    "unsupported orbitals type '" + scalarType + "'",
 //    coulombIntegrals->get("scalarType")->sourceLocation
   );
@@ -96,16 +75,16 @@ Ptr<TensorUnion<Real<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
     )->execute();
   } else {
 //    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
-    auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
+    auto slicedCoulombVertex(this->arguments->getMap("slicedCoulombVertex"));
     auto slices(slicedCoulombVertex->getMap("slices"));
-    auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
-    auto GammaGpp(slices->getPtr<TensorExpression<Complex<>,TE>>("pp"));
-    auto GammaGph(slices->getPtr<TensorExpression<Complex<>,TE>>("ph"));
-    auto GammaGhh(slices->getPtr<TensorExpression<Complex<>,TE>>("hh"));
+    auto orbitals(coulombIntegrals->template getValue<std::string>("scalarType"));
+    auto GammaGpp(slices->template getPtr<TensorExpression<Complex<>,TE>>("pp"));
+    auto GammaGph(slices->template getPtr<TensorExpression<Complex<>,TE>>("ph"));
+    auto GammaGhh(slices->template getPtr<TensorExpression<Complex<>,TE>>("hh"));
 
-    auto Vphph(coulombSlices->getPtr<TensorExpression<Real<>,TE>>("phph"));
-    auto Vhhhh(coulombSlices->getPtr<TensorExpression<Real<>,TE>>("hhhh"));
-    auto Vhhhp(coulombSlices->getPtr<TensorExpression<Real<>,TE>>("hhhp"));
+    auto Vphph(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("phph"));
+    auto Vhhhh(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("hhhh"));
+    auto Vhhhp(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("hhhp"));
 
     //Gamma -> Real/Imag
     auto realGammaGpp( Tcc<TE>::template tensor<Real<>>("realGammaGpp") );
@@ -366,8 +345,11 @@ Ptr<TensorUnion<Real<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
       size_t Nv(realDressedGammaGpp->lens[1]);
       size_t NG(realDressedGammaGpp->lens[0]);
       size_t No(Rpphh->inspect()->getLen(2));
-      int64_t sliceSize(arguments->getValue<int64_t>("integralsSliceSize", No));
-      size_t numberSlices(size_t(ceil(1.0*(Nv)/sliceSize)));
+      // TODO: method argument or algorithm argument?
+      Natural<> sliceSize(
+        this->arguments->template getValue<int64_t>("integralsSliceSize", No)
+      );
+      Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
       std::vector<Ptr<Tensor<Real<>, TE>>> realSlicedGammaGpp;
       std::vector<Ptr<Tensor<Real<>, TE>>> imagSlicedGammaGpp;
       //Slice GammaGab and store it in a vector
@@ -452,8 +434,10 @@ Ptr<TensorUnion<Real<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
 
 
 template <typename TE>
-Ptr<TensorUnion<Complex<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
-  const int iteration, const Ptr<TensorUnion<Complex<>,TE>> &amplitudes
+Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
+  const int iteration,
+  const bool restart,
+  const Ptr<TensorUnion<Complex<>,TE>> &amplitudes
 ) {
 
   // get amplitude parts
@@ -467,10 +451,11 @@ Ptr<TensorUnion<Complex<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
   auto Rpphh( residuum->get(1) );
   Rph->inspect()->setName("Rph"); Rpphh->inspect()->setName("Rpphh");
 
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
+  auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getPtr<TensorExpression<Complex<>,TE>>("pphh"));
-  bool ppl(arguments->getValue<bool>("ppl", true));
+  auto Vpphh(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("pphh"));
+  auto methodArguments(this->arguments->getMap("method"));
+  bool ppl(methodArguments->template getValue<bool>("ppl", true));
 
   if (iteration == 0) {
     //TODO
@@ -483,13 +468,13 @@ Ptr<TensorUnion<Complex<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
   }
   else {
 //    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
-    auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
+    auto slicedCoulombVertex(this->arguments->getMap("slicedCoulombVertex"));
     auto slices(slicedCoulombVertex->getMap("slices"));
-    auto orbitals(coulombIntegrals->getValue<std::string>("scalarType"));
-    auto GammaGpp(slices->getPtr<TensorExpression<Complex<>,TE>>("pp"));
-    auto GammaGph(slices->getPtr<TensorExpression<Complex<>,TE>>("ph"));
-    auto GammaGhp(slices->getPtr<TensorExpression<Complex<>,TE>>("hp"));
-    auto GammaGhh(slices->getPtr<TensorExpression<Complex<>,TE>>("hh"));
+    auto orbitals(coulombIntegrals->template getValue<std::string>("scalarType"));
+    auto GammaGpp(slices->template getPtr<TensorExpression<Complex<>,TE>>("pp"));
+    auto GammaGph(slices->template getPtr<TensorExpression<Complex<>,TE>>("ph"));
+    auto GammaGhp(slices->template getPtr<TensorExpression<Complex<>,TE>>("hp"));
+    auto GammaGhh(slices->template getPtr<TensorExpression<Complex<>,TE>>("hh"));
 //we need all conjugate transposed.
 //strange labeling, though
     auto cTGammaGph( Tcc<TE>::template tensor<Complex<>>("cTGammaGph"));
@@ -507,12 +492,12 @@ Ptr<TensorUnion<Complex<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
     auto dressedGammaGhh( Tcc<TE>::template tensor<Complex<>>("dressedGammaGhh"));
     auto dressedGammaGpp( Tcc<TE>::template tensor<Complex<>>("dressedGammaGpp"));
 
-    auto Vphhp(coulombSlices->getPtr<TensorExpression<Complex<>,TE>>("phhp"));
-    auto Vhhpp(coulombSlices->getPtr<TensorExpression<Complex<>,TE>>("hhpp"));
-    auto Vphph(coulombSlices->getPtr<TensorExpression<Complex<>,TE>>("phph"));
-    auto Vhhhh(coulombSlices->getPtr<TensorExpression<Complex<>,TE>>("hhhh"));
-    auto Vhhhp(coulombSlices->getPtr<TensorExpression<Complex<>,TE>>("hhhp"));
-    auto Vphhh(coulombSlices->getPtr<TensorExpression<Complex<>,TE>>("phhh"));
+    auto Vphhp(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("phhp"));
+    auto Vhhpp(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("hhpp"));
+    auto Vphph(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("phph"));
+    auto Vhhhh(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("hhhh"));
+    auto Vhhhp(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("hhhp"));
+    auto Vphhh(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("phhh"));
     // Hirata intermediates
     auto Lac( Tcc<TE>::template tensor<Complex<>>("Lac") );
     auto Kac( Tcc<TE>::template tensor<Complex<>>("Kac") );
@@ -619,8 +604,10 @@ Ptr<TensorUnion<Complex<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
       size_t NG(cTGammaGpp->getLen(0));
       size_t Nv(Rpphh->inspect()->getLen(0));
       size_t No(Rpphh->inspect()->getLen(2));
-      int64_t sliceSize(arguments->getValue<int64_t>("integralsSliceSize", No));
-      size_t numberSlices(size_t(ceil(1.0*(Nv)/sliceSize)));
+      Natural<> sliceSize(
+        this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
+      );
+      Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
       std::vector<Ptr<Tensor<Complex<>, TE>>> cTSlicedGammaGpp;
       std::vector<Ptr<Tensor<Complex<>, TE>>>   SlicedGammaGpp;
       COMPILE(
@@ -705,3 +692,10 @@ Ptr<TensorUnion<Complex<>,TE>> CoupledClusterSinglesDoubles::getResiduum(
   }
   return residuum;
 }
+
+// instantiate
+template class cc4s::Ccsd<Real<64>, DefaultDryTensorEngine>;
+template class cc4s::Ccsd<Complex<64>, DefaultDryTensorEngine>;
+template class cc4s::Ccsd<Real<64>, DefaultTensorEngine>;
+template class cc4s::Ccsd<Complex<64>, DefaultTensorEngine>;
+

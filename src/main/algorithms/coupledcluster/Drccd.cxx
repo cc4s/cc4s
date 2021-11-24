@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/DirectRingCoupledClusterDoubles.hpp>
+#include <algorithms/coupledcluster/Drccd.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
 #include <util/SharedPointer.hpp>
@@ -21,55 +21,29 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(DirectRingCoupledClusterDoubles)
-
-Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>>
-DirectRingCoupledClusterDoubles::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
-) {
-  return getResiduum<Real<>, DefaultDryTensorEngine>(iteration, amplitudes);
-}
-Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>>
-DirectRingCoupledClusterDoubles::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
-) {
-  return getResiduum<Complex<>, DefaultDryTensorEngine>(iteration, amplitudes);
-}
-
-Ptr<TensorUnion<Real<>, DefaultTensorEngine>>
-DirectRingCoupledClusterDoubles::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
-) {
-  return getResiduum<Real<>, DefaultTensorEngine>(iteration, amplitudes);
-}
-Ptr<TensorUnion<Complex<>, DefaultTensorEngine>>
-DirectRingCoupledClusterDoubles::getResiduum(
-  const int iteration,
-  const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
-) {
-  return getResiduum<Complex<>, DefaultTensorEngine>(iteration, amplitudes);
-}
+template <typename F, typename TE>
+CoupledClusterMethodRegistrar<
+  F,TE,Drccd<F,TE>
+> Drccd<F,TE>::registrar_("Drccd");
 
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> DirectRingCoupledClusterDoubles::getResiduum(
-  const int iteration, const Ptr<TensorUnion<F,TE>> &amplitudes
+Ptr<TensorUnion<F,TE>> Drccd<F,TE>::getResiduum(
+  const int iteration, const bool restart,
+  const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
   // read all required integrals
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
+  auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getPtr<TensorExpression<F,TE>>("pphh"));
-  auto Vphhp(coulombSlices->getPtr<TensorExpression<F,TE>>("phhp"));
-  auto Vhhpp(coulombSlices->getPtr<TensorExpression<F,TE>>("hhpp"));
+  auto Vpphh(coulombSlices->template getPtr<TensorExpression<F,TE>>("pphh"));
+  auto Vphhp(coulombSlices->template getPtr<TensorExpression<F,TE>>("phhp"));
+  auto Vhhpp(coulombSlices->template getPtr<TensorExpression<F,TE>>("hhpp"));
 
   // get spins
   auto orbitalType(
     coulombIntegrals->getMap(
       "indices"
-    )->getMap("orbital")->getValue<std::string>("type")
+    )->getMap("orbital")->template getValue<std::string>("type")
   );
   Real<> spins;
   if (orbitalType == "spatial") {
@@ -93,9 +67,10 @@ Ptr<TensorUnion<F,TE>> DirectRingCoupledClusterDoubles::getResiduum(
   *residuum *= F(0);
   auto Rpphh( residuum->get(1) );
 
-  bool linearized(arguments->getValue<bool>("linearized", false));
+  auto methodArguments(this->arguments->getMap("method"));
+  bool linearized(methodArguments->template getValue<bool>("linearized", false));
   bool adjacentPairsExchange(
-    arguments->getValue<bool>("adjacentPairsExchange", false)
+    methodArguments->template getValue<bool>("adjacentPairsExchange", false)
   );
   if (linearized) {
 //    OUT() << "Solving linearized T2 Amplitude Equations" << std::endl;
@@ -148,4 +123,10 @@ Ptr<TensorUnion<F,TE>> DirectRingCoupledClusterDoubles::getResiduum(
 
   return residuum;
 }
+
+// instantiate
+template class cc4s::Drccd<Real<64>, DefaultDryTensorEngine>;
+template class cc4s::Drccd<Complex<64>, DefaultDryTensorEngine>;
+template class cc4s::Drccd<Real<64>, DefaultTensorEngine>;
+template class cc4s::Drccd<Complex<64>, DefaultTensorEngine>;
 
