@@ -39,7 +39,6 @@ namespace cc4s {
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
     virtual Ptr<TensorUnion<F,TE>> getResiduum(
-      const int iteration, const bool restart,
       const Ptr<TensorUnion<F,TE>> &amplitudes
     ) = 0;
 

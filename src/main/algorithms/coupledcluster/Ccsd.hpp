@@ -46,7 +46,6 @@ namespace cc4s {
      * \param[in] i Iteration number
      */
     Ptr<TensorUnion<Real<>,TE>> getResiduum(
-      const int iteration, const bool restart,
       const Ptr<TensorUnion<Real<>,TE>> &amplitudes
     ) override;
   };
@@ -68,7 +67,6 @@ namespace cc4s {
      * \param[in] i Iteration number
      */
     Ptr<TensorUnion<Complex<>,TE>> getResiduum(
-      const int iteration, const bool restart,
       const Ptr<TensorUnion<Complex<>,TE>> &amplitudes
     ) override;
   };
