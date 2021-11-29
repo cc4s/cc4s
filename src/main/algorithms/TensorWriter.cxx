@@ -234,7 +234,7 @@ void TensorWriter::writeText(
   }
 
   size_t index(0);
-  LOG() << "indexCount=" << tensor->getElementsCount() << std::endl;
+  LOG() << "indexCount: " << tensor->getElementsCount() << std::endl;
   while (index < tensor->getElementsCount()) {
     size_t elementsCount(std::min(bufferSize, tensor->getElementsCount()-index));
     size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);

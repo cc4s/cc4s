@@ -42,7 +42,7 @@ void Cc4s::addFloatingPointOperations(const Natural<128> ops) {
 
 void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   auto algorithmName(step->getSymbol("name"));
-  OUT() << "step=" << (i+1) << ", " << algorithmName << std::endl;
+  OUT() << "step: " << (i+1) << ", " << algorithmName << std::endl;
 
   // create algorithm
   auto algorithm(AlgorithmFactory::create(algorithmName));
@@ -78,9 +78,9 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   realtime << time;
   OUT() << "realtime " << realtime.str() << " s" << std::endl;
   OUT() << "--" << std::endl;
-  LOG() << "step=" << (i+1) << ", realtime=" << realtime.str() << " s"
-    << ", operations=" << operations / 1e9 << " GFLOP"
-    << ", speed=" << operations / 1e9 / time.getFractionalSeconds() << " GFLOP/s" << std::endl;
+  LOG() << "step: " << (i+1) << ", realtime: " << realtime.str() << " s"
+    << ", operations: " << operations / 1e9 << " GFLOP"
+    << ", speed: " << operations / 1e9 / time.getFractionalSeconds() << " GFLOP/s" << std::endl;
   step->setValue("realtime", realtime.str());
   step->setValue("floatingPointOperations", operations);
   step->setValue("flops", operations / time.getFractionalSeconds());
@@ -100,7 +100,7 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   auto steps(input->toPtr<MapNode>());
   ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
   report->get("steps") = steps;
-  OUT() << "execution plan read, steps=" << steps->size() << std::endl << std::endl;
+  OUT() << "execution plan read, steps: " << steps->size() << std::endl << std::endl;
 
   Natural<128> totalOperations;
   Time totalTime;
@@ -190,11 +190,11 @@ void Cc4s::printBanner(const Ptr<MapNode> &report) {
         << "   / /__/ /__/__  __(__  ) " << std::endl
         << "   \\___/\\___/  /_/ /____/  " << std::endl
         << "  Coupled Cluster for Solids" << std::endl << std::endl;
-  OUT() << "version= " << CC4S_VERSION <<
-    ", date=" << CC4S_DATE << std::endl;
-  OUT() << "build date= " << buildDate.str() << std::endl;
-  OUT() << "compiler= " << COMPILER_VERSION << std::endl;
-  OUT() << "total processes= " << world->getProcesses() << std::endl;
+  OUT() << "version: " << CC4S_VERSION <<
+    ", date: " << CC4S_DATE << std::endl;
+  OUT() << "build date: " << buildDate.str() << std::endl;
+  OUT() << "compiler: " << COMPILER_VERSION << std::endl;
+  OUT() << "total processes: " << world->getProcesses() << std::endl;
   OUT() << "calculation started on: " << ctime (&rawtime) << std::endl << std::endl;
   report->setValue("version", std::string(CC4S_VERSION));
   report->setValue("buildDate", buildDate.str());

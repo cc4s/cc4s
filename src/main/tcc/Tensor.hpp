@@ -244,7 +244,7 @@ namespace cc4s {
           );
           s << " " <<
             dimensionPropertyReference.dimension << "." <<
-            dimensionPropertyReference.property->name << "=" <<
+            dimensionPropertyReference.property->name << ": " <<
             nonZeroCondition->tuples[tp][i];
         }
         s << ";";

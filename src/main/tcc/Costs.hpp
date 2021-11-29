@@ -97,10 +97,10 @@ namespace cc4s {
     operator std::string () const {
       std::stringstream stream;
       stream << "Costs("
-        << "maxStorage=" << maxStorageCount
-        << ", accesses=" << accessCount
-        << ", multiplications=" << multiplicationsCount
-        << ", additions=" << additionsCount
+        << "maxStorage: " << maxStorageCount
+        << ", accesses: " << accessCount
+        << ", multiplications: " << multiplicationsCount
+        << ", additions: " << additionsCount
         << ")";
       return stream.str();
     }
