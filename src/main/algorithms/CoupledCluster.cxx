@@ -94,7 +94,8 @@ Ptr<MapNode> CoupledCluster::run() {
     method, std::string("Unknown method type: '") + methodType + "'",
     methodArguments->get("type")->sourceLocation
   );
-  OUT() << "Using method " << methodType << endl;
+  OUT() << "Using method "
+    << methodType << ". " << method->describeOptions() << endl;
 
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
@@ -104,15 +105,9 @@ Ptr<MapNode> CoupledCluster::run() {
     mixer, std::string("Unknown mixer type: '") + mixerType + "'",
     mixerArguments->get("type")->sourceLocation
   );
-  // TODO: mixer should give state info
-  if (mixerType.compare("DiisMixer") == 0 ){
-    auto maxResidua(mixerArguments->getValue<std::string>("maxResidua", "4"));
-    OUT() << "Using mixer " << mixerType << ", with maxResiua " << maxResidua << endl;
-  }
-  else if (mixerType.compare("LinearMixer") == 0){
-    auto ratio(mixerArguments->getValue<Real<>>("ratio", 1.0));
-    OUT() << "Using mixer " << mixerType << ", with ratio " << ratio << endl;
-  }
+  OUT() << "Using mixer "
+    << mixerType << ". " << mixer->describeOptions() << endl;
+
   // number of iterations for determining the amplitudes
   auto maxIterationsCount(
     arguments->getValue<size_t>("maxIterations", DEFAULT_MAX_ITERATIONS)
@@ -254,6 +249,10 @@ F CoupledCluster::getEnergy(
       OUT() << "Total Energy: " << std::setprecision(10) << real(e) << std::endl;
       OUT() << "Direct: "       << std::setprecision(10) << real(D) << std::endl;
       OUT() << "Exchange: "     << std::setprecision(10) << real(X) << std::endl;
+      if (energy->get("secondOrder")) {
+        OUT() << "Second Order: "     << std::setprecision(10)
+          << energy->getValue<Real<>>("secondOrder") << std::endl;
+      }
     }
     energy->setValue<Real<>>("value", real(e));
     energy->setValue<Real<>>("direct", real(D));

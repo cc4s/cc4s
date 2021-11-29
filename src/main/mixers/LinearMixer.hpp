@@ -27,11 +27,13 @@ namespace cc4s {
     MIXER_REGISTRAR_DECLARATION(LinearMixer)
     LinearMixer(const Ptr<MapNode> &arguments);
 
-    virtual void append(
+    std::string describeOptions() override;
+
+    void append(
       const Ptr<TensorUnion<F,TE>> &A, const Ptr<TensorUnion<F,TE>> &R
-    );
-    virtual Ptr<TensorUnion<F,TE>> get();
-    virtual Real<> getResiduumNorm();
+    ) override ;
+    Ptr<TensorUnion<F,TE>> get() override;
+    Real<> getResiduumNorm() override;
 
     Ptr<TensorUnion<F,TE>> last;
     Ptr<TensorUnion<F,TE>> lastResiduum;

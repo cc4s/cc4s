@@ -48,6 +48,12 @@ template <typename F, typename TE>
 DiisMixer<F,TE>::~DiisMixer() {
 }
 
+template <typename F, typename TE>
+std::string DiisMixer<F,TE>::describeOptions() {
+  std::stringstream stream;
+  stream << "maxResidua: " << N;
+  return stream.str();
+}
 
 template <typename F, typename TE>
 void DiisMixer<F,TE>::append(

@@ -34,6 +34,13 @@ LinearMixer<F,TE>::LinearMixer(
 }
 
 template <typename F, typename TE>
+std::string LinearMixer<F,TE>::describeOptions() {
+  std::stringstream stream;
+  stream << "ratio: " << real(ratio);
+  return stream.str();
+}
+
+template <typename F, typename TE>
 void LinearMixer<F,TE>::append(
   const Ptr<TensorUnion<F,TE>> &next,
   const Ptr<TensorUnion<F,TE>> &nextResiduum
