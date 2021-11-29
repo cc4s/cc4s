@@ -97,12 +97,13 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
   )->execute();
 
 
-  //We have to take out calculate the overlap coefficients Cpq(G) from Γpq(G) by taking
-  //out the reciprocal Coulomb kernel
-  //Finally the StructureFactor reads: S(G)=Cai(G)*Cbj*(G)*Tabij
+  //We have to calculate the overlap coefficients Cpq(G) from Γpq(G) by dividing
+  //by the reciprocal Coulomb kernel
+  //Finally the StructureFactor reads: S(G)=Cai(G) (Cjb(G))^(*) ( Tabij + Tia Tjb )
   auto CGph   = ( Tcc<TE>::template tensor<Complex<>>("CGph"));
   auto cTCGph = ( Tcc<TE>::template tensor<Complex<>>("cTCGph"));
-
+ 
+  //units of Coulomb potential [Energy*Volume]
   auto CoulombPotential(arguments->getMap("coulombPotential"));
   auto VofG(CoulombPotential->getPtr<Tr>("data"));
   auto invSqrtCoulombPotential(
@@ -162,19 +163,12 @@ void StructureFactorFiniteSizeCorrection::interpolation(
 
   Real<> sum3D(0.0), inter3D(0.0);
   Natural<> countNO(0), countNOg(0);
-  // hard coded resolution of the fine grid
-  Natural<> N(20);
-  // this is hard coded for vasp:
-  // the coulomb Energy in eV using the lattice dimensions of vasp
+  // resolution for fine grid used for interpolating the transition structure factor
+  auto N(arguments->getValue<size_t>("interpolationGridSize", 20));
 
   auto gridVectors(arguments->getMap("gridVectors"));
-  auto volume(gridVectors->getValue<Real<>>("volume"));
 
-// constant factor is still unclear to me
-//  Real<> factor(4.5835494674469/volume);
-  // FIXME: unit conversion
-  // 4.583594607547605 = 4*PI*2*RYTOEV*AUTOA/4/pi**2 =EDEPS/4/pi**2
-  Real<> factor(4.583594607547605/volume);
+
   // READ THE MOMENTUM GRID
   auto grid(gridVectors->getPtr<T>("data")->evaluate());
   ASSERT_LOCATION(
@@ -193,7 +187,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   }
 
 
-  // READ THE RECIPROCAL CELL
+  // reciprocal lattice vectors ( 2pi/a )
   std::vector<Vector<>> B(3);
 
   auto Gi(gridVectors->getMap("Gi"));
@@ -220,10 +214,6 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   // READ THE Structure Factor
   std::vector<Real<>> SofG;
   auto structureFactor(result->getPtr<T>("structureFactor")->evaluate());
-//  ASSERT_LOCATION(
-//    structureFactor, "expecting the structureFactor",
-//    structureFactor->sourceLocation
-//  );
   SofG = structureFactor->readAll();
 
   // the tricubic interpolation requires a rectangular grid
@@ -235,6 +225,17 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   A[0] = B[1].cross(B[2])/Omega;
   A[1] = B[2].cross(B[0])/Omega;
   A[2] = B[0].cross(B[1])/Omega;
+
+  auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
+  auto CoulombPotential(arguments->getMap("coulombPotential"));
+// convert all computed emergies to units used for CoulombVertex
+  auto toCoulombVertexUnits = pow(coulombVertex->getValue<Real<>>("unit"),2.0) /
+    pow(gridVectors->getValue<Real<>>("unit"),3.0) / CoulombPotential->getValue<Real<>>("unit");
+  // 4.583594607547605 = 4*PI*2*RYTOEV*AUTOA/4/pi**2 =EDEPS/4/pi**2
+  //Real<> factor(4.583594607547605*Omega/2.0/M_PI);
+  Real<> factor(gridVectors->getValue<Real<>>("unit")/pow(coulombVertex->getValue<Real<>>("unit"),2.0)*Omega/2.0/M_PI/M_PI);
+  
+
 
   // determine bounding box in direct coordinates (in reciprocal space)
   Vector<> directMin, directMax;
@@ -255,8 +256,6 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   // allocate and initialize direct-grid StructureFactor
   std::vector<Real<>> directSofG(boxSize, 0.0);
 
-//  OUT() << boxSize << std::endl;
-  // enter known SG values
   for (Natural<> g(0); g < NG; ++g) {
     Natural<> index(0);
     Vector<> directG;
@@ -279,7 +278,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
   // Real<> check: calculate the structure Factor on the regular grid
   for (Natural<> i(0); i < NG; ++i) {
     if (cartesianGrid[i].length() < 1e-8) continue;
-    sum3D += factor/cartesianGrid[i].sqrLength()*SofG[i];
+    sum3D += toCoulombVertexUnits * factor/cartesianGrid[i].sqrLength()*SofG[i];
   }
 
 
@@ -305,7 +304,7 @@ void StructureFactorFiniteSizeCorrection::interpolation(
       countNO++;
       if (g.length() < 1e-8) continue;
       Real<> interpol(interpolatedSofG(directG[0], directG[1], directG[2]));
-      inter3D += interpol * factor/g.sqrLength();
+      inter3D += toCoulombVertexUnits * interpol * factor/g.sqrLength();
     }
   }
   Real<> totalInter3D(0.0);
