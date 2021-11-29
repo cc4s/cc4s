@@ -248,11 +248,11 @@ F CoupledCluster::getEnergy(
     e = D+X;
     if (isFinalReport){
       OUT() << std::endl;
-      OUT() << "CCSD correlation energy: " << std::setprecision(10) << real(e) << std::endl;
+      OUT() << "CCSD correlation energy:          " << std::setprecision(10) << real(e) << std::endl;
 //      OUT() << "  direct: "       << std::setprecision(10) << real(D) << std::endl;
 //      OUT() << "  exchange: "     << std::setprecision(10) << real(X) << std::endl;
       if (energy->get("secondOrder")) {
-        OUT() << "Second-order correlation energy: "     << std::setprecision(10)
+        OUT() << "2nd-order correlation energy:     "     << std::setprecision(10)
           << energy->getValue<Real<>>("secondOrder") << std::endl;
       }
     }
