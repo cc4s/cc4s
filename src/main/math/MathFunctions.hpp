@@ -61,42 +61,6 @@ namespace cc4s {
     return cabsq(toComplex128(c));
   }
 
-  //TODO: no backstop if x=0
-  template <typename F>
-  inline F inverseSqrt(const Real<> x) {
-    return F(1.0/std::sqrt(x));
-  }
-
-  //TODO: no backstop if x=0
-  template <typename F>
-  inline F inverse(const F x) {
-    return F(1.0/x);
-  }
-
-  template <typename F>
-  inline F fromReal(const Real<> x) {
-    return F(x);
-  }
-
-  template <typename F>
-  Complex<> toComplex(const F x) {
-    return Complex<>(x);
-  }
-
-  template <typename F>
-  F fromComplex(Complex<> &d);
-
-
-  template <typename F=Real<>>
-  Real<> fromComplex(Complex<> &d) {
-    return std::real(d);
-  }
-
-  template <typename F=Complex<>>
-  Complex<> fromComplex(Complex<> &d) {
-    return d;
-  }
-
   // real part, same if real
   template <typename F>
   inline typename ComplexTraits<F>::RealType real(const F c) {

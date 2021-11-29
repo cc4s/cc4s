@@ -156,18 +156,18 @@ namespace cc4s {
       auto dimensions(New<MapNode>(SOURCE_LOCATION));
       for (size_t d(0); d < tensor->lens.size(); ++d) {
         auto dimension(New<MapNode>(SOURCE_LOCATION));
-        dimension->setValue<>("length", tensor->lens[d]);
+        dimension->setValue("length", tensor->lens[d]);
         if (tensor->dimensions[d]) {
-          dimension->setValue<>("dimension", tensor->dimensions[d]->name);
+          dimension->setValue("dimension", tensor->dimensions[d]->name);
         }
         dimensions->get(d) = dimension;
       }
       writtenTensor->get("dimensions") = dimensions;
       writtenTensor->setSymbol("scalarType", TypeTraits<F>::getName());
-      writtenTensor->setValue<std::string>("version", VERSION);
+      writtenTensor->setValue("version", std::string(VERSION));
       auto dataNode(New<MapNode>(SOURCE_LOCATION));
-      dataNode->setValue<std::string>("type", "externalFile");
-      dataNode->setValue<bool>("binary", useBinary);
+      dataNode->setValue("type", std::string("externalFile"));
+      dataNode->setValue("binary", useBinary);
       writtenTensor->get("data") = dataNode;
 
       // write tensor data as side effect

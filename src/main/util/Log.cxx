@@ -30,14 +30,14 @@ Log::HeaderFunction Log::outHeaderFunction(
 Log::HeaderFunction Log::errorHeaderFunction(
   [](const SourceLocation &location){
     std::stringstream header;
-    header << location << ": \033[1;31mERROR:\033[0m ";
+    header << location << ": ERROR: ";
     return header.str();
   }
 );
 Log::HeaderFunction Log::warningHeaderFunction(
   [](const SourceLocation &location){
     std::stringstream header;
-    header << location << ": \033[1;35mWARNING:\033[0m ";
+    header << location << ": WARNING: ";
     return header.str();
   }
 );

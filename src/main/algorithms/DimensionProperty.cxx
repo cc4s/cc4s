@@ -127,18 +127,18 @@ Ptr<MapNode> DimensionProperty::run(
 
   // build meta data of Delta tensor
   auto DimensionPropertyNode( New<MapNode>(op->sourceLocation) );
-  DimensionPropertyNode->setValue<>("version", std::string("v1.0"));
-  DimensionPropertyNode->setValue<>("scalarType", TypeTraits<F>::getName());
+  DimensionPropertyNode->setValue("version", std::string("v1.0"));
+  DimensionPropertyNode->setValue("scalarType", TypeTraits<F>::getName());
   auto dimensionsNode( New<MapNode>(SOURCE_LOCATION) );
   for (Natural<> d(0); d < lens.size(); ++d) {
     auto dimensionNode( New<MapNode>(SOURCE_LOCATION) );
-    dimensionNode->setValue<>("length", lens[d]);
-    dimensionNode->setValue<>("type", types[d]);
+    dimensionNode->setValue("length", lens[d]);
+    dimensionNode->setValue("type", types[d]);
     // NOTE: no type written
     dimensionsNode->get(d) = dimensionNode;
   }
   DimensionPropertyNode->get("dimensions") = dimensionsNode;
-  DimensionPropertyNode->setPtr<TensorExpression<F,TE>>("data", P);
+  DimensionPropertyNode->setPtr("data", P);
 
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("dimensionProperty") = DimensionPropertyNode;

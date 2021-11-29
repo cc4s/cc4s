@@ -96,16 +96,18 @@ bool CcsdFocalPointBasisSetCorrection::run(
     Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Mabij")
   );
 
+  auto fromReal( [](Real<> x) { return F(x); } );
+  auto inverse( [](F x) { return 1.0 / x; } );
   COMPILE(
   //reconstruct mp2 amplitudes on-the-fly
-    (*Mabij)["abij"] <<= map<F>(fromReal<F>, (*epsi)["i"]),
-    (*Mabij)["abij"] +=  map<F>(fromReal<F>, (*epsi)["j"]),
-    (*Mabij)["abij"] -=  map<F>(fromReal<F>, (*epsa)["a"]),
-    (*Mabij)["abij"] -=  map<F>(fromReal<F>, (*epsa)["b"]),
+    (*Mabij)["abij"] <<= map<F>(fromReal, (*epsi)["i"]),
+    (*Mabij)["abij"] +=  map<F>(fromReal, (*epsi)["j"]),
+    (*Mabij)["abij"] -=  map<F>(fromReal, (*epsa)["a"]),
+    (*Mabij)["abij"] -=  map<F>(fromReal, (*epsa)["b"]),
 
     (*Mabij)["abij"] <<=
       map<F>(conj<F>, (*Vabij)["abij"]) *
-      map<F>(inverse<F>, (*Mabij)["abij"]),
+      map<F>(inverse, (*Mabij)["abij"]),
   // calculate mp2 pair energies in fno basis
     (*mp2PairEnergiesFno)["ij"] <<= ( 2.0) * (*Mabij)["abij"] * (*Vabij)["abij"],
     (*mp2PairEnergiesFno)["ij"]  += (-1.0) * (*Mabij)["abij"] * (*Vabij)["abji"],
@@ -119,11 +121,11 @@ bool CcsdFocalPointBasisSetCorrection::run(
     (*eCcsd)[""] <<= ( 2.0) * (*Tabij)["abij"] * (*Vabij)["abij"],
     (*eCcsd)[""]  += (-1.0) * (*Tabij)["abij"] * (*Vabij)["abji"],
   // evaluate nominator
-    (*gijccd)["ij"] <<= map<F>(fromReal<F>, (*Dabij)["abij"]) * (*Tabij)["abij"],
-    (*gijmp2)["ij"] <<= map<F>(fromReal<F>, (*Dabij)["abij"]) * (*Mabij)["abij"],
-  // divide by <ij|δ|ij>
-    (*gijccd)["ij"] <<= (*gijccd)["ij"] * map<F>(inverse<F>, (*nij)["ij"]),
-    (*gijmp2)["ij"] <<= (*gijmp2)["ij"] * map<F>(inverse<F>, (*nij)["ij"]),
+    (*gijccd)["ij"] <<= map<F>(fromReal, (*Dabij)["abij"]) * (*Tabij)["abij"],
+    (*gijmp2)["ij"] <<= map<F>(fromReal, (*Dabij)["abij"]) * (*Mabij)["abij"],
+  // divide by <ij|\delta|ij>
+    (*gijccd)["ij"] <<= (*gijccd)["ij"] * map<F>(inverse, (*nij)["ij"]),
+    (*gijmp2)["ij"] <<= (*gijmp2)["ij"] * map<F>(inverse, (*nij)["ij"]),
 
   // final multiplicative factor for the cbsEigenEnergies
     (*geff)["ij"] <<= map<Real<>>(real<F>, (*gijccd)["ij"]),
@@ -131,7 +133,7 @@ bool CcsdFocalPointBasisSetCorrection::run(
     (*geff)["ij"]  += map<Real<>>(real<F>, (*gijmp2)["ij"])
                     * map<Real<>>(real<F>, (*gijccd)["ij"]),
 
-  // construct ΔEmp2 and scale with geff
+  // construct \Delta Emp2 and scale with geff
     (*mp2PairEnergiesCbs)["ij"] +=
       (-1.0) * map<Real<>>(real<F>, (*mp2PairEnergiesFno)["ij"]),
     (*deltaEppl)[""] <<= (*geff)["ij"] * (*mp2PairEnergiesCbs)["ij"]
@@ -145,13 +147,13 @@ bool CcsdFocalPointBasisSetCorrection::run(
 
   OUT() << "ccsd fno:         " << Eccsd << "\n";
   OUT() << "mp2 fno:          " << Emp2 << "\n";
-  OUT() << "Δmp2:             " << Emp2Cbs - Emp2 << "\n";
+  OUT() << "Delta mp2:        " << Emp2Cbs - Emp2 << "\n";
   OUT() << "ps-ppl:           " << deltaPsPpl << "\n";
   OUT() << "corrected Energy: " << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << std::endl;
 
-//  result->setPtr<Tr>("geff", geff);
-//  result->setPtr<T>("gijccd", nij);
-//  result->setPtr<Tr>("mp2p", mp2PairEnergies);
+//  result->setPtr("geff", geff);
+//  result->setPtr("gijccd", nij);
+//  result->setPtr("mp2p", mp2PairEnergies);
 
   return true;
 }

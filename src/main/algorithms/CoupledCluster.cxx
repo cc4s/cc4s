@@ -80,7 +80,7 @@ Ptr<MapNode> CoupledCluster::run() {
 
   // TODO: conversion to eigen untis
   energy = New<MapNode>(SOURCE_LOCATION);
-  energy->setValue<Real<>>("unit", eigenEnergies->getValue<Real<>>("unit"));
+  energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
 
   // create a method handler, by default SinglesDoubles
   auto methodArguments(arguments->getMap("method"));
@@ -163,10 +163,12 @@ Ptr<MapNode> CoupledCluster::run() {
       << setw(12) << setprecision(4) << real(residuumNorm) << " "
       << fixed
       << setw(8) << setprecision(1) << time.getFractionalSeconds() << " "
-      << setw(6) << setprecision(1) << operations / 1e9
+      << setw(6) << setprecision(1)
+      << operations / 1e9 / time.getFractionalSeconds()
+        / Cc4s::world->getProcesses()
       << endl;
     if (isSecondOrder) {
-      energy->setValue<Real<>>("secondOrder", real(e));
+      energy->setValue("secondOrder", real(e));
     }
     if (
       !Cc4s::options->dryRun &&
@@ -190,7 +192,7 @@ Ptr<MapNode> CoupledCluster::run() {
 
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
-  result->setValue<bool>("convergenceReached", convergenceReached);
+  result->setValue("convergenceReached", convergenceReached);
   result->setPtr("amplitudes", amplitudes);
   return result;
 }
@@ -246,18 +248,17 @@ F CoupledCluster::getEnergy(
     e = D+X;
     if (isFinalReport){
       OUT() << std::endl;
-      OUT() << "Total Energy: " << std::setprecision(10) << real(e) << std::endl;
-      OUT() << "Direct: "       << std::setprecision(10) << real(D) << std::endl;
-      OUT() << "Exchange: "     << std::setprecision(10) << real(X) << std::endl;
+      OUT() << "correlation energy: " << std::setprecision(10) << real(e) << std::endl;
+      OUT() << "  direct: "       << std::setprecision(10) << real(D) << std::endl;
+      OUT() << "  exchange: "     << std::setprecision(10) << real(X) << std::endl;
       if (energy->get("secondOrder")) {
-        OUT() << "Second Order: "     << std::setprecision(10)
+        OUT() << "  second Order: "     << std::setprecision(10)
           << energy->getValue<Real<>>("secondOrder") << std::endl;
       }
     }
-    energy->setValue<Real<>>("value", real(e));
-    energy->setValue<Real<>>("direct", real(D));
-    energy->setValue<Real<>>("exchange", real(X));
-    // TODO: energy units
+    energy->setValue("value", real(e));
+    energy->setValue("direct", real(D));
+    energy->setValue("exchange", real(X));
   }
   std::cout << std::setprecision(ss);
 
@@ -305,9 +306,10 @@ Ptr<Tensor<F,TE>> CoupledCluster::calculateEnergyDifferences(
   auto Fepsi(Tcc<TE>::template tensor<F>(epsi->inspect()->getLens(), "Fepsi"));
   auto Fepsa(Tcc<TE>::template tensor<F>(epsa->inspect()->getLens(), "Fepsa"));
   // convert to type F (either complex or double)
+  auto fromReal( [](Real<> eps) {return F(eps);} );
   COMPILE(
-    (*Fepsa)["a"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
-    (*Fepsi)["i"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"])
+    (*Fepsa)["a"] <<= map<F>(fromReal, (*epsa)["a"]),
+    (*Fepsi)["i"] <<= map<F>(fromReal, (*epsi)["i"])
   )->execute();
 
   auto D(

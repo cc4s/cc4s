@@ -123,7 +123,7 @@ void SliceOperator::slice(
       }
     }
     auto result(Tcc<TE>::template tensor<F>(tensor->getName() + parts ));
-    slices->setPtr<TensorExpression<F,TE>>(
+    slices->setPtr(
       parts,
       COMPILE_RECIPE(result,
         (*result)[index] <<= (*(*tensorExpression)(begins,ends))[index]

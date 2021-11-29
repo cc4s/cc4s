@@ -97,8 +97,8 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
   )->execute();
 
 
-  //We have to take out calculate the overlap coefficients Cpq(G) from Γpq(G) by taking
-  //out the reciprocal Coulomb kernel
+  //We have to calculate the overlap coefficients Cpq(G)
+  //from Gammapq(G) by dividing by the Coulomb kernel
   //Finally the StructureFactor reads: S(G)=Cai(G)*Cbj*(G)*Tabij
   auto CGph   = ( Tcc<TE>::template tensor<Complex<>>("CGph"));
   auto cTCGph = ( Tcc<TE>::template tensor<Complex<>>("cTCGph"));
@@ -109,9 +109,10 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
     Tcc<TE>::template tensor<Complex<>>("invSqrtCoulombPotential")
   );
 
+  auto inverseSqrt( [](const Real<> x) { return 1.0 / Complex<>(sqrt(x)); } );
   COMPILE(
     (*invSqrtCoulombPotential)["G"] <<=
-      map<Complex<>>(inverseSqrt<Complex<>>, (*VofG)["G"]),
+      map<Complex<>>(inverseSqrt, (*VofG)["G"]),
     // PH codensities
     (*CGph)["Gai"]    <<= (*GammaGph)["Gai"] * (*invSqrtCoulombPotential)["G"],
     (*cTCGph)["Gai"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGhp)["Gia"]),
@@ -131,10 +132,11 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
   auto Tai( Tcc<TE>::template tensor<Complex<>>("Tai"));
 
 
+  auto toComplex( [](F x) { return Complex<>(x); } );
   COMPILE(
 //    (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
-    (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"]),
-    (*Tai)["ai"] <<= map<Complex<>>(toComplex<F>, (*Tph)["ai"]),
+    (*Tabij)["abij"] <<= map<Complex<>>(toComplex, (*Tpphh)["abij"]),
+    (*Tai)["ai"] <<= map<Complex<>>(toComplex, (*Tph)["ai"]),
     (*Tabij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"] 
   )->execute();
 
@@ -147,9 +149,7 @@ void StructureFactorFiniteSizeCorrection::calculateStructureFactor(
 
 //  auto result(New<MapNode>(SOURCE_LOCATION));
 
-  result->setPtr<TensorExpression<Real<>, TE>>(
-    "structureFactor", StructureFactor
-  );
+  result->setPtr("structureFactor", StructureFactor);
 //  return result;
 }
 

@@ -92,7 +92,7 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
   LOG() << "Energy: " << out.energy << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
-  energy->setValue<Real<>>("triples", out.energy);
+  energy->setValue("triples", real(out.energy));
   result->get("energy") = energy;
 
   return result;
