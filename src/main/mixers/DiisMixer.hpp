@@ -28,11 +28,13 @@ namespace cc4s {
     DiisMixer(const Ptr<MapNode> &arguments);
     virtual ~DiisMixer();
 
-    virtual void append(
+    std::string describeOptions() override;
+
+    void append(
       const Ptr<TensorUnion<F,TE>> &A, const Ptr<TensorUnion<F,TE>> &R
-    );
-    virtual Ptr<TensorUnion<F,TE>> get();
-    virtual Real<64> getResiduumNorm();
+    ) override ;
+    Ptr<TensorUnion<F,TE>> get() override;
+    Real<> getResiduumNorm() override;
 
     Ptr<TensorUnion<F,TE>> next;
     Ptr<TensorUnion<F,TE>> nextResiduum; // AI: dont know what this is good for

@@ -27,6 +27,7 @@
 
 #include <array>
 #include <initializer_list>
+#include <iomanip>
 
 using namespace cc4s;
 
@@ -61,6 +62,8 @@ Ptr<MapNode> CoupledCluster::run(const Ptr<MapNode> &arguments){
 
 template <typename F, typename TE>
 Ptr<MapNode> CoupledCluster::run() {
+  using namespace std;
+
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));
   auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
@@ -72,12 +75,12 @@ Ptr<MapNode> CoupledCluster::run() {
     amplitudes = arguments->getPtr<TensorUnion<F,TE>>(
       "initialAmplitudes"
     );
-    OUT() << "Using given initial amplitudes " << amplitudes << std::endl;
+    OUT() << "Using given initial amplitudes " << amplitudes << endl;
   }
 
   // TODO: conversion to eigen untis
   energy = New<MapNode>(SOURCE_LOCATION);
-  energy->setValue<Real<>>("unit", eigenEnergies->getValue<Real<>>("unit"));
+  energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
 
   // create a method handler, by default SinglesDoubles
   auto methodArguments(arguments->getMap("method"));
@@ -91,7 +94,8 @@ Ptr<MapNode> CoupledCluster::run() {
     method, std::string("Unknown method type: '") + methodType + "'",
     methodArguments->get("type")->sourceLocation
   );
-  OUT() << "Using method " << methodType << std::endl;
+  OUT() << "Using method "
+    << methodType << ". " << method->describeOptions() << endl;
 
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
@@ -101,15 +105,9 @@ Ptr<MapNode> CoupledCluster::run() {
     mixer, std::string("Unknown mixer type: '") + mixerType + "'",
     mixerArguments->get("type")->sourceLocation
   );
-  // TODO: mixer should give state info
-  if (mixerType.compare("DiisMixer") == 0 ){
-    auto maxResidua(mixerArguments->getValue<std::string>("maxResidua", "4"));
-    OUT() << "Using mixer " << mixerType << ", with maxResiua " << maxResidua << std::endl;
-  }
-  else if (mixerType.compare("LinearMixer") == 0){
-    auto ratio(mixerArguments->getValue<Real<>>("ratio", 1.0));
-    OUT() << "Using mixer " << mixerType << ", with ratio " << ratio << std::endl;
-  }
+  OUT() << "Using mixer "
+    << mixerType << ". " << mixer->describeOptions() << endl;
+
   // number of iterations for determining the amplitudes
   auto maxIterationsCount(
     arguments->getValue<size_t>("maxIterations", DEFAULT_MAX_ITERATIONS)
@@ -124,22 +122,23 @@ Ptr<MapNode> CoupledCluster::run() {
     arguments->getValue<Real<>>("energyConvergence", DEFAULT_ENERGY_CONVERGENCE)
   );
 
-  OUT() << "Maximum number of iterations: " << maxIterationsCount << std::endl;
-  OUT() << "Unless reaching energy convergence dE: " << energyConvergence << std::endl;
-  OUT() << "Or amplitudes convergence dR: " << amplitudesConvergence << std::endl;
+  OUT() << "Maximum number of iterations: " << maxIterationsCount << endl;
+  OUT() << "Unless reaching energy convergence dE: " << energyConvergence << endl;
+  OUT() << "and amplitudes convergence dR: " << amplitudesConvergence << endl;
   F e(0), previousE(0);
   Real<> residuumNorm;
-  char outstring[80];
-  sprintf(outstring,"%4s %16s %11s %15s %6s\n",
-          "Iter", "Energy  ", "dE   ", "dR      ", "time");
-  OUT() << outstring;
+  OUT()
+    << "Iter         Energy         dE           dR         time   GF/s/core"
+    << endl;
 
   bool isSecondOrder;
   for (; i < maxIterationsCount; ++i) {
-    LOG() << "iteration: " << i+1 << std::endl;
+    LOG() << "iteration: " << i+1 << endl;
     Time time;
+    Natural<128> operations;
     {
       Timer timer(&time);
+      OperationsCounter operationsCounter(&operations);
       auto residuum( method->getResiduum(amplitudes) );
       residuumToAmplitudes(residuum, amplitudes);
       auto amplitudesChange( New<TensorUnion<F,TE>>(*residuum) );
@@ -156,13 +155,20 @@ Ptr<MapNode> CoupledCluster::run() {
       e = getEnergy(amplitudes);
     }
 
-    // TODO: write GFLOP/s/core
-    sprintf(outstring,"%4ld %16.8f %12.4e %12.4e %8.1f\n",
-            i+1, real(e), real(e - previousE), real(residuumNorm),
-            time.getFractionalSeconds());
-    OUT() << outstring;
+    OUT()
+      << setw(4) << i+1 << " "
+      << scientific
+      << setw(16) << setprecision(8) << real(e) << " "
+      << setw(12) << setprecision(4) << real(e - previousE) << " "
+      << setw(12) << setprecision(4) << real(residuumNorm) << " "
+      << fixed
+      << setw(8) << setprecision(1) << time.getFractionalSeconds() << " "
+      << setw(6) << setprecision(1)
+      << operations / 1e9 / time.getFractionalSeconds()
+        / Cc4s::world->getProcesses()
+      << endl;
     if (isSecondOrder) {
-      energy->setValue<Real<>>("secondOrder", real<F>(e));
+      energy->setValue("secondOrder", real(e));
     }
     if (
       !Cc4s::options->dryRun &&
@@ -175,10 +181,10 @@ Ptr<MapNode> CoupledCluster::run() {
   }
 
   if (maxIterationsCount == 0) {
-    OUT() << "computing energy from given amplitudes" << std::endl;
+    OUT() << "computing energy from given amplitudes" << endl;
   } else if (i == maxIterationsCount) {
     WARNING_LOCATION(arguments->sourceLocation) <<
-      "energy or amplitudes convergence not reached." << std::endl;
+      "energy or amplitudes convergence not reached." << endl;
   }
 
   e = getEnergy(amplitudes, true);
@@ -186,11 +192,10 @@ Ptr<MapNode> CoupledCluster::run() {
 
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
-  result->setValue<bool>("convergenceReached", convergenceReached);
+  result->setValue("convergenceReached", convergenceReached);
   result->setPtr("amplitudes", amplitudes);
   return result;
 }
-
 
 template <typename F, typename TE>
 F CoupledCluster::getEnergy(
@@ -243,14 +248,17 @@ F CoupledCluster::getEnergy(
     e = D+X;
     if (isFinalReport){
       OUT() << std::endl;
-      OUT() << "Total Energy: " << std::setprecision(10) << real(e) << std::endl;
-      OUT() << "Direct: "       << std::setprecision(10) << real(D) << std::endl;
-      OUT() << "Exchange: "     << std::setprecision(10) << real(X) << std::endl;
+      OUT() << "correlation energy: " << std::setprecision(10) << real(e) << std::endl;
+      OUT() << "  direct: "       << std::setprecision(10) << real(D) << std::endl;
+      OUT() << "  exchange: "     << std::setprecision(10) << real(X) << std::endl;
+      if (energy->get("secondOrder")) {
+        OUT() << "  second Order: "     << std::setprecision(10)
+          << energy->getValue<Real<>>("secondOrder") << std::endl;
+      }
     }
-    energy->setValue<Real<>>("value", real(e));
-    energy->setValue<Real<>>("direct", real(D));
-    energy->setValue<Real<>>("exchange", real(X));
-    // TODO: energy units
+    energy->setValue("value", real(e));
+    energy->setValue("direct", real(D));
+    energy->setValue("exchange", real(X));
   }
   std::cout << std::setprecision(ss);
 
@@ -266,8 +274,8 @@ void CoupledCluster::residuumToAmplitudes(
     arguments->getValue<Real<>>("levelShift", DEFAULT_LEVEL_SHIFT)
   );
 
-  if (amplitudes) {
-    // apply level shifting on right hand side, if present
+  if (amplitudes && levelShift != 0.0) {
+    // apply level shifting on right hand side, if given and amplitudes present
     *residuum -= F(levelShift) * *amplitudes;
   }
 
@@ -298,9 +306,10 @@ Ptr<Tensor<F,TE>> CoupledCluster::calculateEnergyDifferences(
   auto Fepsi(Tcc<TE>::template tensor<F>(epsi->inspect()->getLens(), "Fepsi"));
   auto Fepsa(Tcc<TE>::template tensor<F>(epsa->inspect()->getLens(), "Fepsa"));
   // convert to type F (either complex or double)
+  auto fromReal( [](Real<> eps) {return F(eps);} );
   COMPILE(
-    (*Fepsa)["a"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
-    (*Fepsi)["i"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"])
+    (*Fepsa)["a"] <<= map<F>(fromReal, (*epsa)["a"]),
+    (*Fepsi)["i"] <<= map<F>(fromReal, (*epsi)["i"])
   )->execute();
 
   auto D(

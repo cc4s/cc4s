@@ -91,8 +91,8 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
   )->execute();
 
 
-  //We have to take out calculate the overlap coefficients Cpq(G) from Γpq(G) by taking
-  //out the reciprocal Coulomb kernel
+  //We have to calculate the overlap coefficients Cpq(G)
+  //from Gammapq(G) by dividing by the Coulomb kernel
   //Finally the StructureFactor reads: S(G)=Cai(G)*Cbj*(G)*Tabij
   auto CGph   = ( Tcc<TE>::template tensor<Complex<>>("CGph"));
   auto cTCGph = ( Tcc<TE>::template tensor<Complex<>>("cTCGph"));
@@ -108,9 +108,10 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
   auto invSqrtCoulombPotential( Tcc<TE>::template tensor<Complex<>>
     ("invSqrtCoulombPotential"));
 
+  auto inverseSqrt( [](const Real<> x) { return 1.0 / Complex<>(sqrt(x)); } );
   COMPILE(
     (*invSqrtCoulombPotential)["G"] <<=
-      map<Complex<>>(inverseSqrt<Complex<>>, (*VofG)["G"]),
+      map<Complex<>>(inverseSqrt, (*VofG)["G"]),
     // PH codensities
     (*CGph)["Gai"]    <<= (*GammaGph)["Gai"] * (*invSqrtCoulombPotential)["G"],
     (*cTCGph)["Gai"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGhp)["Gia"]),
@@ -137,10 +138,10 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
   auto Tpphh( amplitudes->get(1) );
   auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
 
-
+  auto toComplex( [](F x) { return Complex<>(x); } );
   COMPILE(
 //    (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
-    (*Tabij)["abij"] <<= map<Complex<>>(toComplex<F>, (*Tpphh)["abij"])
+    (*Tabij)["abij"] <<= map<Complex<>>(toComplex, (*Tpphh)["abij"])
   )->execute();
 
   auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
@@ -152,8 +153,8 @@ Ptr<MapNode> StructureFactor::calculateStructureFactor(
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
-  result->setPtr<TensorExpression<Real<>, TE>>("structureFactor", StructureFactor);
-  result->setPtr<TensorExpression<F, TE>>("deltaIntegrals", Dpphh);
-  result->setPtr<TensorExpression<F, TE>>("nij", Nij);
+  result->setPtr("structureFactor", StructureFactor);
+  result->setPtr("deltaIntegrals", Dpphh);
+  result->setPtr("nij", Nij);
   return result;
 }

@@ -31,9 +31,17 @@ namespace cc4s {
     virtual ~CoupledClusterMethod();
 
     /**
-      * \brief Returns the name of the implementing coupled cluster method.
+     * \brief Returns the name of the implementing coupled cluster method.
      **/
     virtual std::string getName() = 0;
+
+    /**
+     * \brief Returns a user description of the method's options,
+     * such as sliceSizes etc.
+     **/
+    virtual std::string describeOptions() {
+      return "";
+    }
 
     /**
      * \brief Computes and returns the residuum of the given amplitudes.

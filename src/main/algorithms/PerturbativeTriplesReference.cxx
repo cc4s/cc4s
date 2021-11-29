@@ -76,6 +76,8 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
   auto T( Tcc<TE>::template tensor<F>("T"));
   auto S( Tcc<TE>::template tensor<F>("S"));
   auto E( Tcc<TE>::template tensor<F>("E"));
+  auto fromReal( [](Real<> x) { return F(x); } );
+  auto inverse( [](F x) { return 1.0 / x; } );
   COMPILE(
     (*T)["abcijk"]  <<=          (*Vppph)["bcdk"] * (*Tpphh)["adij"],
     (*T)["abcijk"]   += (-1.0) * (*Vhhhp)["jklc"] * (*Tpphh)["abil"],
@@ -89,14 +91,14 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
     (*Z)["abcijk"]  += (+2.0) * (*S)["cabijk"],
     (*Z)["abcijk"]  += (-4.0) * (*S)["cbaijk"],
 
-    (*S)["abcijk"] <<= ( 1.0) * map<F>(fromReal<F>, (*epsi)["i"]),
-    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal<F>, (*epsi)["j"]),
-    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal<F>, (*epsi)["k"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal<F>, (*epsa)["a"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal<F>, (*epsa)["b"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal<F>, (*epsa)["c"]),
+    (*S)["abcijk"] <<= ( 1.0) * map<F>(fromReal, (*epsi)["i"]),
+    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsi)["j"]),
+    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsi)["k"]),
+    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsa)["a"]),
+    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsa)["b"]),
+    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsa)["c"]),
 
-    (*Z)["abcijk"] <<= (*Z)["abcijk"] * map<F>(inverse<F>, (*S)["abcijk"]),
+    (*Z)["abcijk"] <<= (*Z)["abcijk"] * map<F>(inverse, (*S)["abcijk"]),
     (*E)[""] <<= (*T)["abcijk"] * (*Z)["abcijk"],
     (*E)[""]  += (*T)["bacjik"] * (*Z)["abcijk"],
     (*E)[""]  += (*T)["acbikj"] * (*Z)["abcijk"],
@@ -111,8 +113,8 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
         << real<F>(eTriples) << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
-  energy->setValue<Real<>>("triples", real<F>(eTriples));
-  energy->setValue<Real<>>("unit", eigenEnergies->getValue<Real<>>("unit"));
+  energy->setValue("triples", real(eTriples));
+  energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   return result;

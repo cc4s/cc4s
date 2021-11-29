@@ -33,6 +33,38 @@ CoupledClusterMethodRegistrar<
   Complex<>,TE,Ccsd<Complex<>,TE>
 > Ccsd<Complex<>,TE>::registrar_("Ccsd");
 
+template <typename TE>
+std::string Ccsd<Real<>,TE>::describeOptions() {
+  std::stringstream stream;
+  auto eigenEnergies(this->arguments->getMap("slicedEigenEnergies"));
+  auto energySlices(eigenEnergies->getMap("slices"));
+  auto epsi(energySlices->template getPtr<TensorExpression<Real<>,TE>>("h"));
+  auto No(epsi->inspect()->getLen(0));
+  auto methodArguments(this->arguments->getMap("method"));
+  auto integralsSliceSize(
+    methodArguments->template getValue<Natural<>>("integralsSliceSize", No)
+  );
+  stream
+    << "integralsSliceSize: " << integralsSliceSize;
+  return stream.str();
+}
+
+template <typename TE>
+std::string Ccsd<Complex<>,TE>::describeOptions() {
+  std::stringstream stream;
+  auto eigenEnergies(this->arguments->getMap("slicedEigenEnergies"));
+  auto energySlices(eigenEnergies->getMap("slices"));
+  auto epsi(energySlices->template getPtr<TensorExpression<Real<>,TE>>("h"));
+  auto No(epsi->inspect()->getLen(0));
+  auto methodArguments(this->arguments->getMap("method"));
+  auto integralsSliceSize(
+    methodArguments->template getValue<Natural<>>("integralsSliceSize", No)
+  );
+  stream
+    << "integralsSliceSize: " << integralsSliceSize;
+  return stream.str();
+}
+
 
 //////////////////////////////////////////////////////////////////////
 // Hirata iteration routine for the CCSD amplitudes Tabij and Tai from

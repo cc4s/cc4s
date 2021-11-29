@@ -114,17 +114,17 @@ Ptr<MapNode> NonZeroCondition::run(
 
       // build meta data of Delta tensor
       auto nonZeroConditionNode( New<MapNode>(op->sourceLocation) );
-      nonZeroConditionNode->setValue<>("version", std::string("v1.0"));
-      nonZeroConditionNode->setValue<>("scalarType", TypeTraits<F>::getName());
+      nonZeroConditionNode->setValue("version", std::string("v1.0"));
+      nonZeroConditionNode->setValue("scalarType", TypeTraits<F>::getName());
       auto dimensionsNode( New<MapNode>(SOURCE_LOCATION) );
       for (Natural<> d(0); d < conditionLens.size(); ++d) {
         auto dimensionNode( New<MapNode>(SOURCE_LOCATION) );
-        dimensionNode->setValue<>("length", conditionLens[d]);
-        dimensionNode->setValue<>("type", conditionDimensions[d]);
+        dimensionNode->setValue("length", conditionLens[d]);
+        dimensionNode->setValue("type", conditionDimensions[d]);
         dimensionsNode->get(d) = dimensionNode;
       }
       nonZeroConditionNode->get("dimensions") = dimensionsNode;
-      nonZeroConditionNode->setPtr<TensorExpression<F,TE>>("data", Delta);
+      nonZeroConditionNode->setPtr("data", Delta);
 
       auto result(New<MapNode>(SOURCE_LOCATION));
       result->get("nonZeroCondition") = nonZeroConditionNode;

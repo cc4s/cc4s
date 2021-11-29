@@ -63,9 +63,9 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   );
 
   auto Nv(Np-No);
-  OUT() << "number of holes     No= " << No << std::endl;
-  OUT() << "number of particles Nv= " << Nv << std::endl;
-  OUT() << "number of states    Np= " << Np << std::endl;
+  OUT() << "number of holes     No: " << No << std::endl;
+  OUT() << "number of particles Nv: " << Nv << std::endl;
+  OUT() << "number of states    Np: " << Np << std::endl;
 
   auto slices(New<MapNode>(eigenEnergies->sourceLocation));
   {
@@ -93,8 +93,8 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   slicedEigenEnergies->get("indices") = eigenEnergies->get("indices");
   slicedEigenEnergies->get("dimensions") = eigenEnergies->get("dimensions");
   slicedEigenEnergies->get("unit") = eigenEnergies->get("unit");
-  slicedEigenEnergies->setValue<Natural<>>("holesCount", No);
-  slicedEigenEnergies->setValue<Natural<>>("particlesCount", Nv);
+  slicedEigenEnergies->setValue("holesCount", No);
+  slicedEigenEnergies->setValue("particlesCount", Nv);
   slicedEigenEnergies->get("slices") = slices;
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("slicedEigenEnergies") = slicedEigenEnergies;

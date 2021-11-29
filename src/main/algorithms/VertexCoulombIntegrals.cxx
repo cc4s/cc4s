@@ -72,7 +72,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
   auto GammaGhh(slices->getPtr<TensorExpression<Complex<>,TE>>("hh"));
 
   auto NF(GammaGhh->inspect()->lens[0]);
-  OUT() << "number of field variables NF= " << NF << std::endl;
+  OUT() << "number of field variables NF: " << NF << std::endl;
 
 #define DEFINE_VERTEX_PART(PART, SLICE) \
   Ptr<TensorRecipe<Real<>,TE>> PART##GammaG##SLICE; \
@@ -103,7 +103,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
     auto result( \
       Tcc<TE>::template tensor<Real<>>(std::string("V") + sliceName) \
     ); \
-    integralSlices->setPtr<TensorExpression<Real<>,TE>>(sliceName, \
+    integralSlices->setPtr(sliceName, \
       COMPILE_RECIPE(result, ( \
         (*result)["pqsr"] <<= \
           (*realGammaG##LO##LI)["Gps"] * (*realGammaG##RO##RI)["Gqr"], \
@@ -137,8 +137,8 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
   // create result
   auto coulombIntegrals(New<MapNode>(SOURCE_LOCATION));
   coulombIntegrals->get("slices") = integralSlices;
-  coulombIntegrals->setValue<std::string>("scalarType", "real64");
-  coulombIntegrals->setValue<Real<>>(
+  coulombIntegrals->setValue("scalarType", std::string("real64"));
+  coulombIntegrals->setValue(
     "unit", pow(coulombVertex->getValue<Real<>>("unit"),2.0)
   );
   // create indices entry
@@ -170,7 +170,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
   auto GammaGhh(slices->getPtr<TensorExpression<Complex<>,TE>>("hh"));
 
   auto NF(GammaGhh->inspect()->lens[0]);
-  OUT() << "number of field variables NF= " << NF << std::endl;
+  OUT() << "number of field variables NF: " << NF << std::endl;
 
 #define DEFINE_VERTEX_CONJT(O,I) \
   Ptr<TensorRecipe<Complex<>,TE>> conjTGammaG##O##I; \
@@ -197,7 +197,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
     auto result( \
       Tcc<TE>::template tensor<Complex<>>(std::string("V") + sliceName) \
     ); \
-    integralSlices->setPtr<TensorExpression<Complex<>,TE>>(sliceName, \
+    integralSlices->setPtr(sliceName, \
       COMPILE_RECIPE(result, (\
         (*result)["pqsr"] <<= \
           (*conjTGammaG##LO##LI)["Gps"] * (*GammaG##RO##RI)["Gqr"] \
@@ -228,10 +228,10 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
   // create result
   auto coulombIntegrals(New<MapNode>(SOURCE_LOCATION));
   coulombIntegrals->get("slices") = integralSlices;
-  coulombIntegrals->setValue<Real<>>(
+  coulombIntegrals->setValue(
     "unit", pow(coulombVertex->getValue<Real<>>("unit"),2.0)
   );
-  coulombIntegrals->setValue<std::string>("scalarType", "complex64");
+  coulombIntegrals->setValue("scalarType", std::string("complex64"));
   // create indices entry
   auto indices(New<MapNode>(SOURCE_LOCATION));
   indices->get("orbital") = coulombVertex->getMap("indices")->get("orbital");

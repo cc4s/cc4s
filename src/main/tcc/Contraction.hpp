@@ -266,7 +266,7 @@ namespace cc4s {
                 bestContractions = allContractions;
                 if (level == 0) { // do output only in topmost level
                   LOG_LOCATION(SourceLocation(scope.file, scope.line))
-                    << "possibilites tried="
+                    << "possibilites tried: "
                     << scope.triedPossibilitiesCount
                     << ", improved solution found with "
                     << std::string(allContractions->costs)
@@ -277,7 +277,7 @@ namespace cc4s {
               } else {
                 if (level == 0) {
                   LOG_LOCATION(SourceLocation(scope.file, scope.line))
-                    << "possibilites tried="
+                    << "possibilites tried: "
                     << scope.triedPossibilitiesCount
                     << ", discarding inferior solution with "
                     << std::string(allContractions->costs)

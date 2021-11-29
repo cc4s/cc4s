@@ -35,6 +35,10 @@ namespace cc4s {
      **/
     virtual std::string getName() = 0;
 
+    virtual std::string describeOptions() {
+      return "";
+    }
+
     /**
      * \brief Appends the given pair (A,R) of TensorUnions to the mixer,
      * where R is the residuum when using the amplitudes A.

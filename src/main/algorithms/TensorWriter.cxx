@@ -54,10 +54,10 @@ Ptr<MapNode> TensorWriter::run(const Ptr<MapNode> &arguments) {
 
   // prepare node containing meta data for writing tensor
   auto writtenTensor(New<MapNode>(SOURCE_LOCATION));
-  writtenTensor->setValue<std::string>("version", "v1.0");
+  writtenTensor->setValue("version", std::string("v1.0"));
   writtenTensor->get("scalarType") = tensor->get("scalarType");
   writtenTensor->get("indices") = tensor->get("indices");
-  writtenTensor->setValue<bool>("binary", binary);
+  writtenTensor->setValue("binary", binary);
 
   if (tensor->get("components")) {
     auto writtenComponents(New<MapNode>(SOURCE_LOCATION));
@@ -188,7 +188,7 @@ void TensorWriter::writeData(
     }
   }
 
-  tensorNode->setValue<std::string>("data", fileName);
+  tensorNode->setValue("data", fileName);
 }
 
 template <typename F, typename TE>
@@ -214,8 +214,8 @@ void TensorWriter::writeText(
     auto dimensions(New<MapNode>(SOURCE_LOCATION));
     for (size_t d(0); d < tensor->lens.size(); ++d) {
       auto dimension(New<MapNode>(SOURCE_LOCATION));
-      dimension->setValue<>("length", tensor->lens[d]);
-      dimension->setValue<>("length", tensor->dimensions[d]->name);
+      dimension->setValue("length", tensor->lens[d]);
+      dimension->setValue("length", tensor->dimensions[d]->name);
       dimensions->get(d) = dimension;
     }
     tensorNode->get("dimensions") = dimensions;
@@ -234,7 +234,7 @@ void TensorWriter::writeText(
   }
 
   size_t index(0);
-  LOG() << "indexCount=" << tensor->getElementsCount() << std::endl;
+  LOG() << "indexCount: " << tensor->getElementsCount() << std::endl;
   while (index < tensor->getElementsCount()) {
     size_t elementsCount(std::min(bufferSize, tensor->getElementsCount()-index));
     size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
@@ -281,7 +281,7 @@ void TensorWriter::writeBinary(
     auto dimensions(New<MapNode>(SOURCE_LOCATION));
     for (size_t d(0); d < tensor->lens.size(); ++d) {
       auto dimension(New<MapNode>(SOURCE_LOCATION));
-      dimension->setValue<size_t>("length", tensor->lens[d]);
+      dimension->setValue("length", tensor->lens[d]);
       dimensions->get(d) = dimension;
       // TODO: how to determine dimension type?
     }

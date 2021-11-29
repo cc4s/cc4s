@@ -41,9 +41,12 @@ namespace cc4s {
       Real<>,TE,Ccsd<Real<>,TE>
     > registrar_;
 
+    std::string describeOptions() override;
+
     /**
      * \brief Implements the iterate method with the CCSD iteration.
-     * \param[in] i Iteration number
+     * \param[in] amplitudes the current guess for the singles and doubles
+     * amplitudes.
      */
     Ptr<TensorUnion<Real<>,TE>> getResiduum(
       const Ptr<TensorUnion<Real<>,TE>> &amplitudes
@@ -62,9 +65,12 @@ namespace cc4s {
       Complex<>,TE,Ccsd<Complex<>,TE>
     > registrar_;
 
+    std::string describeOptions() override;
+
     /**
      * \brief Implements the iterate method with the CCSD iteration.
-     * \param[in] i Iteration number
+     * \param[in] amplitudes the current guess for the singles and doubles
+     * amplitudes.
      */
     Ptr<TensorUnion<Complex<>,TE>> getResiduum(
       const Ptr<TensorUnion<Complex<>,TE>> &amplitudes

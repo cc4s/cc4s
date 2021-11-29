@@ -120,7 +120,7 @@ namespace cc4s {
       );
 
       LOG_LOCATION(SourceLocation(outerScope.file, outerScope.line))
-        << "possibilites tried=" << scope.triedPossibilitiesCount
+        << "possibilites tried: " << scope.triedPossibilitiesCount
         << ", best has " << std::string(operation->costs)
         << ": " << std::string(*operation)
         << std::endl;
@@ -141,7 +141,7 @@ namespace cc4s {
     operator std::string () const override {
       std::stringstream stream;
       stream << "Sum( " <<
-        std::string(*lhs) << ", " << std::string(*rhs) << ", beta=" << beta << " )";
+        std::string(*lhs) << ", " << std::string(*rhs) << ", beta: " << beta << " )";
       return stream.str();
     }
 
