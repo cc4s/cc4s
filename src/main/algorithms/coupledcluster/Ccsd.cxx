@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// TODO: discuss 2cc and dcsd options
+// TODO: cleanup TODOs
+
 #include <algorithms/coupledcluster/Ccsd.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
@@ -38,20 +41,17 @@ CoupledClusterMethodRegistrar<
 
 template <typename TE>
 Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
-  const int iteration,
-  const bool restart,
   const Ptr<TensorUnion<Real<>,TE>> &amplitudes
 ) {
-
-  // get amplitude parts
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
-
-  // construct residuum
-  auto residuum( New<TensorUnion<Real<>,TE>>(*amplitudes) );
-  *residuum *= 0.0;
-  auto Rph( residuum->get(0) );
-  auto Rpphh( residuum->get(1) );
+  // construct residuum. Shape will be assumed upon first use.
+  auto Rph( Tcc<TE>::template tensor<Real<>>("Rph") );
+  auto Rpphh( Tcc<TE>::template tensor<Real<>>("Rpphh") );
+  auto residuum(
+    New<TensorUnion<Real<>,TE>>(
+      std::vector<Ptr<TensorExpression<Real<>,TE>>>({Rph, Rpphh}),
+      std::vector<std::string>({"ai", "abij"})
+    )
+  );
 
   auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
@@ -65,15 +65,21 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
     ((ppl && !(twoCc && dcsd)) || (!ppl && !twoCc && !dcsd)), 
     "!ppl, 2cc and dscsd are all mutually exclusive.",
     methodArguments->get("ppl")->sourceLocation
-//    "unsupported orbitals type '" + scalarType + "'",
-//    coulombIntegrals->get("scalarType")->sourceLocation
   );
 
-  if (iteration == 0 && !restart ) {
+  if (!amplitudes) {
+    // no previous amplitudes given
     COMPILE(
-      (*Rpphh)["abij"] += (*Vpphh)["abij"]
+      (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
+      (*Rpphh)["abij"] <<= (*Vpphh)["abij"]
     )->execute();
   } else {
+    // TODO: check if given amplitudes contain expected parts
+    // get amplitude parts
+    auto Tph( amplitudes->get(0) );
+    auto Tpphh( amplitudes->get(1) );
+    Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
+
 //    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
     auto slicedCoulombVertex(this->arguments->getMap("slicedCoulombVertex"));
     auto slices(slicedCoulombVertex->getMap("slices"));
@@ -101,11 +107,21 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
       (*realGammaGhh)["Gij"] <<= map<Real<>>(real<Complex<>>, (*GammaGhh)["Gij"] ),
       (*imagGammaGhh)["Gij"] <<= map<Real<>>(imag<Complex<>>, (*GammaGhh)["Gij"] )
     )->execute();
-    auto realDressedGammaGpp( Tcc<TE>::template tensor<Real<>>("realDressedGammaGpp") );
-    auto imagDressedGammaGpp( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGpp") );
-    auto realDressedGammaGph( Tcc<TE>::template tensor<Real<>>("realDressedGammaGph") );
-    auto imagDressedGammaGph( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGph") );
-    auto realDressedGammaGhh( Tcc<TE>::template tensor<Real<>>("realDressedGammaGhh") );
+    auto realDressedGammaGpp(
+      Tcc<TE>::template tensor<Real<>>("realDressedGammaGpp")
+    );
+    auto imagDressedGammaGpp(
+      Tcc<TE>::template tensor<Real<>>("imagDressedGammaGpp")
+    );
+    auto realDressedGammaGph(
+      Tcc<TE>::template tensor<Real<>>("realDressedGammaGph")
+    );
+    auto imagDressedGammaGph(
+      Tcc<TE>::template tensor<Real<>>("imagDressedGammaGph")
+    );
+    auto realDressedGammaGhh(
+      Tcc<TE>::template tensor<Real<>>("realDressedGammaGhh")
+    );
     auto imagDressedGammaGhh( Tcc<TE>::template tensor<Real<>>("imagDressedGammaGhh") );
     // define intermediates
     auto Kac( Tcc<TE>::template tensor<Real<>>("Kac") ); //kappa_ac
@@ -342,20 +358,19 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
 
     if (ppl) {
 //      OUT() << "\tAdding Particle-particle contraction"  << std::endl;
-      size_t Nv(realDressedGammaGpp->lens[1]);
-      size_t NG(realDressedGammaGpp->lens[0]);
-      size_t No(Rpphh->inspect()->getLen(2));
-      // TODO: method argument or algorithm argument?
+      Natural<> Nv(realDressedGammaGpp->lens[1]);
+      Natural<> NG(realDressedGammaGpp->lens[0]);
+      Natural<> No(Rpphh->inspect()->getLen(2));
       Natural<> sliceSize(
-        this->arguments->template getValue<int64_t>("integralsSliceSize", No)
+        methodArguments->template getValue<Natural<>>("integralsSliceSize", No)
       );
       Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
       std::vector<Ptr<Tensor<Real<>, TE>>> realSlicedGammaGpp;
       std::vector<Ptr<Tensor<Real<>, TE>>> imagSlicedGammaGpp;
       //Slice GammaGab and store it in a vector
-      for (size_t v(0); v < numberSlices; v++){
-        size_t xStart = v*sliceSize;
-        size_t xEnd = std::min((v+1)*sliceSize,Nv);
+      for (Natural<> v(0); v < numberSlices; v++){
+        Natural<> xStart = v*sliceSize;
+        Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
         auto dummyr( Tcc<TE>::template tensor<Real<>>("dummyr") );
         auto dummyi( Tcc<TE>::template tensor<Real<>>("dummyi") );
         COMPILE(
@@ -368,14 +383,14 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         imagSlicedGammaGpp.push_back(dummyi);
       }
       // loop over slices
-      for (size_t m(0); m < numberSlices; m++)
-      for (size_t n(m); n < numberSlices; n++){
+      for (Natural<> m(0); m < numberSlices; m++)
+      for (Natural<> n(m); n < numberSlices; n++){
         auto Vxycd( Tcc<TE>::template tensor<Real<>>("Vxycd") );
         auto Rxyij( Tcc<TE>::template tensor<Real<>>("Rxyij") );
         auto Ryxji( Tcc<TE>::template tensor<Real<>>("Ryxji") );
-        size_t a(n*sliceSize); size_t b(m*sliceSize);
-        size_t Nx(realSlicedGammaGpp[n]->lens[1]);
-        size_t Ny(realSlicedGammaGpp[m]->lens[1]);
+        Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
+        Natural<> Nx(realSlicedGammaGpp[n]->lens[1]);
+        Natural<> Ny(realSlicedGammaGpp[m]->lens[1]);
         COMPILE(
           (*Vxycd)["xycd"] <<=
             (*realSlicedGammaGpp[n])["Gxc"] * (*realSlicedGammaGpp[m])["Gyd"],
@@ -435,21 +450,17 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
 
 template <typename TE>
 Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
-  const int iteration,
-  const bool restart,
   const Ptr<TensorUnion<Complex<>,TE>> &amplitudes
 ) {
-
-  // get amplitude parts
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
-  Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
-  // construct residuum
-  auto residuum( New<TensorUnion<Complex<>,TE>>(*amplitudes) );
-  *residuum *= 0.0;
-  auto Rph( residuum->get(0) );
-  auto Rpphh( residuum->get(1) );
-  Rph->inspect()->setName("Rph"); Rpphh->inspect()->setName("Rpphh");
+  // construct residuum. Shape will be assumed upon first use.
+  auto Rph( Tcc<TE>::template tensor<Complex<>>("Rph") );
+  auto Rpphh( Tcc<TE>::template tensor<Complex<>>("Rpphh") );
+  auto residuum(
+    New<TensorUnion<Complex<>,TE>>(
+      std::vector<Ptr<TensorExpression<Complex<>,TE>>>({Rph, Rpphh}),
+      std::vector<std::string>({"ai", "abij"})
+    )
+  );
 
   auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
@@ -457,16 +468,19 @@ Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
   auto methodArguments(this->arguments->getMap("method"));
   bool ppl(methodArguments->template getValue<bool>("ppl", true));
 
-  if (iteration == 0) {
-    //TODO
-    // && !isArgumentGiven("initialDoublesAmplitudes"))  {
-    // For first iteration compute only the MP2 amplitudes
-//    OUT() << "\tMP2 T2 Amplitudes" << std::endl;
+  if (!amplitudes) {
+    // no previous amplitudes given
     COMPILE(
-      (*Rpphh)["abij"] += (*Vpphh)["abij"]
+      (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
+      (*Rpphh)["abij"] <<= (*Vpphh)["abij"]
     )->execute();
-  }
-  else {
+  } else {
+    // TODO: check if given amplitudes contain expected parts
+    // get amplitude parts
+    auto Tph( amplitudes->get(0) );
+    auto Tpphh( amplitudes->get(1) );
+    Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
+
 //    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
     auto slicedCoulombVertex(this->arguments->getMap("slicedCoulombVertex"));
     auto slices(slicedCoulombVertex->getMap("slices"));
@@ -601,11 +615,11 @@ Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
 
     if (ppl) {
 //      OUT() << "\tAdding Particle-particle contraction"  << std::endl;
-      size_t NG(cTGammaGpp->getLen(0));
-      size_t Nv(Rpphh->inspect()->getLen(0));
-      size_t No(Rpphh->inspect()->getLen(2));
+      Natural<> NG(cTGammaGpp->getLen(0));
+      Natural<> Nv(Rpphh->inspect()->getLen(0));
+      Natural<> No(Rpphh->inspect()->getLen(2));
       Natural<> sliceSize(
-        this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
+        methodArguments->template getValue<Natural<>>("integralsSliceSize", No)
       );
       Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
       std::vector<Ptr<Tensor<Complex<>, TE>>> cTSlicedGammaGpp;
@@ -615,9 +629,9 @@ Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
         (*dressedGammaGpp)["Gab"] += (-1.0) * (*GammaGhp)["Gkb"] * (*Tph)["ak"]
       )->execute();
       //Slice GammaGab and store it in a vector
-      for (size_t v(0); v < numberSlices; v++){
-        size_t xStart = v*sliceSize;
-        size_t xEnd = std::min((v+1)*sliceSize,Nv);
+      for (Natural<> v(0); v < numberSlices; v++){
+        Natural<> xStart = v*sliceSize;
+        Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
         auto dummy(   Tcc<TE>::template tensor<Complex<>>("dummy")   );
         auto dummyct( Tcc<TE>::template tensor<Complex<>>("dummyct") );
         COMPILE(
@@ -630,14 +644,14 @@ Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
         cTSlicedGammaGpp.push_back(dummyct);
       }
       // loop over slices
-      for (size_t m(0); m < numberSlices; m++)
-      for (size_t n(m); n < numberSlices; n++){
+      for (Natural<> m(0); m < numberSlices; m++)
+      for (Natural<> n(m); n < numberSlices; n++){
         auto Vxycd( Tcc<TE>::template tensor<Complex<>>("Vxycd") );
         auto Rxyij( Tcc<TE>::template tensor<Complex<>>("Rxyij") );
         auto Ryxji( Tcc<TE>::template tensor<Complex<>>("Ryxji") );
-        size_t a(n*sliceSize); size_t b(m*sliceSize);
-        size_t Nx(cTSlicedGammaGpp[n]->lens[1]);
-        size_t Ny(SlicedGammaGpp[m]->lens[1]);
+        Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
+        Natural<> Nx(cTSlicedGammaGpp[n]->lens[1]);
+        Natural<> Ny(SlicedGammaGpp[m]->lens[1]);
         COMPILE(
           (*Vxycd)["xycd"] <<=
             (*cTSlicedGammaGpp[n])["Gxc"] * (*SlicedGammaGpp[m])["Gyd"],
@@ -667,8 +681,8 @@ Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
 //    OUT() << "\tSolving T1 Amplitude Equations" << std::endl;
     COMPILE(
       // Contract Kac and Kki with T1 amplitudes
-      (*Rph)["ai"] += ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
-      (*Rph)["ai"] += (-1.0) * (*Kki)["ki"] * (*Tph)["ak"],
+      (*Rph)["ai"] <<= ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
+      (*Rph)["ai"] +=  (-1.0) * (*Kki)["ki"] * (*Tph)["ak"],
 
       //Build Kck
       (*Kck)["ck"] <<= ( 2.0) * (*Vhhpp)["klcd"] * (*Tph)["dl"],

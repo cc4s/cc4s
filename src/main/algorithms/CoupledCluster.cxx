@@ -66,21 +66,13 @@ Ptr<MapNode> CoupledCluster::run() {
   auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
   auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
 
-  auto No(epsi->inspect()->getLen(0));
-  auto Nv(epsa->inspect()->getLen(0));
-
-  Natural<> i(0); bool restart(false);
+  Natural<> i(0);
   Ptr<TensorUnion<F,TE>> amplitudes;
   if (arguments->get("initialAmplitudes")) {
     amplitudes = arguments->getPtr<TensorUnion<F,TE>>(
       "initialAmplitudes"
     );
     OUT() << "Using given initial amplitudes " << amplitudes << std::endl;
-    restart = true;
-  } else {
-    amplitudes = createAmplitudes<F,TE>(
-      {{Nv,No}, {Nv,Nv,No,No}}, {"ai", "abij"}
-    );
   }
 
   // TODO: conversion to eigen untis
@@ -90,7 +82,7 @@ Ptr<MapNode> CoupledCluster::run() {
   // create a method handler, by default SinglesDoubles
   auto methodArguments(arguments->getMap("method"));
   auto methodType(
-    methodArguments->getValue<std::string>("type", "SinglesDoubles")
+    methodArguments->getValue<std::string>("type", "Ccsd")
   );
   Ptr<CoupledClusterMethod<F,TE>> method(
     CoupledClusterMethodFactory<F,TE>::create(methodType, arguments)
@@ -103,7 +95,7 @@ Ptr<MapNode> CoupledCluster::run() {
 
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
-  auto mixerType(mixerArguments->getValue<std::string>("type", "LinearMixer"));
+  auto mixerType(mixerArguments->getValue<std::string>("type", "DiisMixer"));
   Ptr<Mixer<F,TE>> mixer(MixerFactory<F,TE>::create(mixerType, mixerArguments));
   ASSERT_LOCATION(
     mixer, std::string("Unknown mixer type: '") + mixerType + "'",
@@ -136,30 +128,42 @@ Ptr<MapNode> CoupledCluster::run() {
   OUT() << "Unless reaching energy convergence dE: " << energyConvergence << std::endl;
   OUT() << "Or amplitudes convergence dR: " << amplitudesConvergence << std::endl;
   F e(0), previousE(0);
+  Real<> residuumNorm;
   char outstring[80];
   sprintf(outstring,"%4s %16s %11s %15s %6s\n",
           "Iter", "Energy  ", "dE   ", "dR      ", "time");
   OUT() << outstring;
 
+  bool isSecondOrder;
   for (; i < maxIterationsCount; ++i) {
-    auto startTime(Time::getCurrentRealTime());
     LOG() << "iteration: " << i+1 << std::endl;
-    auto estimatedAmplitudes( method->getResiduum(i, restart, amplitudes) );
-    estimateAmplitudesFromResiduum(estimatedAmplitudes, amplitudes);
-    auto amplitudesChange( New<TensorUnion<F,TE>>(*estimatedAmplitudes) );
-    *amplitudesChange -= *amplitudes;
-    mixer->append(estimatedAmplitudes, amplitudesChange);
-    // get mixer's best guess for amplitudes
-    amplitudes = mixer->get();
-    auto residuumNorm( mixer->getResiduumNorm());
-    e = getEnergy(amplitudes);
+    Time time;
+    {
+      Timer timer(&time);
+      auto residuum( method->getResiduum(amplitudes) );
+      residuumToAmplitudes(residuum, amplitudes);
+      auto amplitudesChange( New<TensorUnion<F,TE>>(*residuum) );
+      if (amplitudes) {
+        *amplitudesChange -= *amplitudes;
+        isSecondOrder = false;
+      } else {
+        isSecondOrder = true;
+      }
+      mixer->append(residuum, amplitudesChange);
+      // get mixer's best guess for amplitudes
+      amplitudes = mixer->get();
+      residuumNorm = mixer->getResiduumNorm();
+      e = getEnergy(amplitudes);
+    }
 
-    auto iterTime(Time::getCurrentRealTime() - startTime);
-
+    // TODO: write GFLOP/s/core
     sprintf(outstring,"%4ld %16.8f %12.4e %12.4e %8.1f\n",
             i+1, real(e), real(e - previousE), real(residuumNorm),
-            iterTime.getFractionalSeconds());
+            time.getFractionalSeconds());
     OUT() << outstring;
+    if (isSecondOrder) {
+      energy->setValue<Real<>>("secondOrder", real<F>(e));
+    }
     if (
       !Cc4s::options->dryRun &&
       abs(e-previousE) < energyConvergence &&
@@ -191,7 +195,7 @@ Ptr<MapNode> CoupledCluster::run() {
 template <typename F, typename TE>
 F CoupledCluster::getEnergy(
   const Ptr<TensorUnion<F,TE>> &amplitudes,
-  const bool finalReport
+  const bool isFinalReport
 ) {
   // get the Coulomb integrals to compute the energy
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
@@ -221,19 +225,6 @@ F CoupledCluster::getEnergy(
   auto Tabij( amplitudes->get(1) );
   F e;
   std::streamsize ss(std::cout.precision());
-  // TODO: antisymmetrized
-/*
-  if (antisymmetrized) {
-    energy[""] += ( + 0.25  ) * (*Tabij)["abkl"] * (*Vijab)["klab"];
-    energy[""] += ( + 0.5  ) * (*Tai)["aj"] * (*Tai)["cl"] * (*Vijab)["jlac"];
-    e = energy.get_val();
-    // FIXME: imaginary part ignored
-    EMIT() << YAML::Key << "energy" << YAML::Value
-      << YAML::BeginMap
-      << YAML::Key << "value" << YAML::Value << real(e)
-      << YAML::EndMap;
-  } else
-*/
   {
     auto direct( Tcc<TE>::template tensor<F>("D") );
     auto exchange( Tcc<TE>::template tensor<F>("X") );
@@ -250,42 +241,24 @@ F CoupledCluster::getEnergy(
     F D(direct->read());
     F X(exchange->read());
     e = D+X;
-    if (finalReport){
+    if (isFinalReport){
       OUT() << std::endl;
-      OUT() << "Total Energy: " << std::setprecision(10) << e << std::endl;
-      OUT() << "Direct: "       << std::setprecision(10) << D << std::endl;
-      OUT() << "Exchange: "     << std::setprecision(10) << X << std::endl;
+      OUT() << "Total Energy: " << std::setprecision(10) << real(e) << std::endl;
+      OUT() << "Direct: "       << std::setprecision(10) << real(D) << std::endl;
+      OUT() << "Exchange: "     << std::setprecision(10) << real(X) << std::endl;
     }
-    energy->setValue<Real<>>("value", real<F>(e));
-    energy->setValue<Real<>>("direct", real<F>(D));
-    energy->setValue<Real<>>("exchange", real<F>(X));
+    energy->setValue<Real<>>("value", real(e));
+    energy->setValue<Real<>>("direct", real(D));
+    energy->setValue<Real<>>("exchange", real(X));
     // TODO: energy units
   }
-
-
-
   std::cout << std::setprecision(ss);
 
   return e;
 }
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> CoupledCluster::createAmplitudes(
-  std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
-  std::initializer_list<std::string> amplitudeIndices
-) {
-  std::vector<Ptr<Tensor<F,TE>>> amplitudeTensors;
-  for (auto lens: amplitudeLens) {
-    amplitudeTensors.push_back(Tcc<TE>::template tensor<F>(lens, "T"));
-  }
-  return New<TensorUnion<F,TE>>(
-    amplitudeTensors.begin(), amplitudeTensors.end(),
-    amplitudeIndices.begin(), amplitudeIndices.end()
-  );
-}
-
-template <typename F, typename TE>
-void CoupledCluster::estimateAmplitudesFromResiduum(
+void CoupledCluster::residuumToAmplitudes(
   const Ptr<TensorUnion<F,TE>> &residuum,
   const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
@@ -293,10 +266,12 @@ void CoupledCluster::estimateAmplitudesFromResiduum(
     arguments->getValue<Real<>>("levelShift", DEFAULT_LEVEL_SHIFT)
   );
 
-  // apply level shifting on right hand side
-  *residuum -= F(levelShift) * *amplitudes;
+  if (amplitudes) {
+    // apply level shifting on right hand side, if present
+    *residuum -= F(levelShift) * *amplitudes;
+  }
 
-  for (unsigned int i(0); i < residuum->componentTensors.size(); ++i) {
+  for (Natural<> i(0); i < residuum->componentTensors.size(); ++i) {
     auto R( residuum->get(i) );
     auto indices( residuum->getIndices(i) );
     auto D( calculateEnergyDifferences<F,TE>(R->inspect()->getLens(),indices) );
@@ -311,29 +286,6 @@ void CoupledCluster::estimateAmplitudesFromResiduum(
     )->execute();
   }
 }
-
-// instantiate
-template
-void CoupledCluster::estimateAmplitudesFromResiduum(
-  const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &residuum,
-  const Ptr<TensorUnion<Real<>, DefaultDryTensorEngine>> &amplitudes
-);
-template
-void CoupledCluster::estimateAmplitudesFromResiduum(
-  const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &residuum,
-  const Ptr<TensorUnion<Complex<>, DefaultDryTensorEngine>> &amplitudes
-);
-template
-void CoupledCluster::estimateAmplitudesFromResiduum(
-  const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &residuum,
-  const Ptr<TensorUnion<Real<>, DefaultTensorEngine>> &amplitudes
-);
-template
-void CoupledCluster::estimateAmplitudesFromResiduum(
-  const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &residuum,
-  const Ptr<TensorUnion<Complex<>, DefaultTensorEngine>> &amplitudes
-);
-
 
 template <typename F, typename TE>
 Ptr<Tensor<F,TE>> CoupledCluster::calculateEnergyDifferences(
@@ -366,29 +318,6 @@ Ptr<Tensor<F,TE>> CoupledCluster::calculateEnergyDifferences(
 
   return D;
 }
-
-// instantiate
-template
-Ptr<Tensor<Real<>, DefaultDryTensorEngine>>
-CoupledCluster::calculateEnergyDifferences(
-  const std::vector<size_t> &lens, const std::string &indices
-);
-template
-Ptr<Tensor<Complex<>, DefaultDryTensorEngine>>
-CoupledCluster::calculateEnergyDifferences(
-  const std::vector<size_t> &lens, const std::string &indices
-);
-template
-Ptr<Tensor<Real<>, DefaultTensorEngine>>
-CoupledCluster::calculateEnergyDifferences(
-  const std::vector<size_t> &lens, const std::string &indices
-);
-template
-Ptr<Tensor<Complex<>, DefaultTensorEngine>>
-CoupledCluster::calculateEnergyDifferences(
-  const std::vector<size_t> &lens, const std::string &indices
-);
-
 
 constexpr Real<64> CoupledCluster::DEFAULT_ENERGY_CONVERGENCE;
 constexpr Real<64> CoupledCluster::DEFAULT_AMPLITUDES_CONVERGENCE;

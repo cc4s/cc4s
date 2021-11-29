@@ -55,10 +55,8 @@ namespace cc4s {
       TensorUnion &&a
     ):
       componentTensors(a.componentTensors),
-      componentIndices(a.componentIndices),
-      indexEnds(a.componentTensors.size())
+      componentIndices(a.componentIndices)
     {
-      buildIndexTranslation();
     }
 
     /**
@@ -68,11 +66,9 @@ namespace cc4s {
       const TensorUnion &a
     ):
       componentTensors(a.componentTensors.size()),
-      componentIndices(a.componentIndices),
-      indexEnds(a.componentTensors.size())
+      componentIndices(a.componentIndices)
     {
       copyComponents(a.componentTensors);
-      buildIndexTranslation();
     }
 
     /**
@@ -83,10 +79,8 @@ namespace cc4s {
       const std::vector<std::string> &indices
     ):
       componentTensors(tensors),
-      componentIndices(indices),
-      indexEnds(componentTensors.size())
+      componentIndices(indices)
     {
-      buildIndexTranslation();
     }
 
     /**
@@ -99,10 +93,8 @@ namespace cc4s {
       IndicesIterator indicesBegin, IndicesIterator indicesEnd
     ):
       componentTensors(tensorsBegin, tensorsEnd),
-      componentIndices(indicesBegin, indicesEnd),
-      indexEnds(componentTensors.size())
+      componentIndices(indicesBegin, indicesEnd)
     {
-      buildIndexTranslation();
     }
 
     /**
@@ -110,28 +102,28 @@ namespace cc4s {
      * the Tensor is not const since rearrangement may be
      * required also in non-modifying tensor operations.
      **/
-    const Ptr<TensorExpression<F,TE>> &get(const size_t i) const {
+    const Ptr<TensorExpression<F,TE>> &get(const Natural<> i) const {
       return componentTensors[i];
     }
 
     /**
      * \brief Retrieves the i-th component tensor.
      **/
-    Ptr<TensorExpression<F,TE>> &get(const size_t i) {
+    Ptr<TensorExpression<F,TE>> &get(const Natural<> i) {
       return componentTensors[i];
     }
 
     /**
      * \brief Retrieves the i-th component indices.
      **/
-    const std::string &getIndices(const size_t i) const {
+    const std::string &getIndices(const Natural<> i) const {
       return componentIndices[i];
     }
 
     /**
      * \brief Retrieves the i-th component indices as modifiable string.
      **/
-    std::string &getIndices(const size_t i) {
+    std::string &getIndices(const Natural<> i) {
       return componentIndices[i];
     }
 
@@ -142,7 +134,6 @@ namespace cc4s {
     TensorUnion &operator =(const TensorUnion &&a) {
       componentTensors = a.componentTensors;
       componentIndices = a.componentIndices;
-      buildIndexTranslation();
       return *this;
     }
 
@@ -152,7 +143,6 @@ namespace cc4s {
     TensorUnion &operator =(const TensorUnion &a) {
       componentIndices = a.componentIndices;
       copyComponents(a.componentTensors);
-      buildIndexTranslation();
       return *this;
     }
 
@@ -161,10 +151,8 @@ namespace cc4s {
      * to the respective component of this TensorUnion.
      **/
     TensorUnion &operator += (const TensorUnion &a) {
-      checkCompatibilityTo(a);
-      for (size_t i(0); i < componentTensors.size(); ++i) {
-//        const char *indices(componentIndices[i].c_str());
-//        get(i)->sum(+1.0, *a.get(i), indices, 1.0, indices);
+      ASSERT(isCompatibleTo(a), "Incompatible TensorUnions");
+      for (Natural<> i(0); i < componentTensors.size(); ++i) {
         COMPILE(
           (*get(i))[getIndices(i)] += (*a.get(i))[getIndices(i)]
         )->execute();
@@ -177,10 +165,8 @@ namespace cc4s {
      * from the respective component of this TensorUnion.
      **/
     TensorUnion &operator -= (const TensorUnion &a) {
-      checkCompatibilityTo(a);
-      for (size_t i(0); i < componentTensors.size(); ++i) {
-//        const char *indices(getIndices(i).c_str());
-//        get(i)->sum(-1.0, *a.get(i), indices, 1.0, indices);
+      ASSERT(isCompatibleTo(a), "Incompatible tensor unions.");
+      for (Natural<> i(0); i < componentTensors.size(); ++i) {
         COMPILE(
           (*get(i))[getIndices(i)] -= (*a.get(i))[getIndices(i)]
         )->execute();
@@ -193,9 +179,7 @@ namespace cc4s {
      * each component of this TensorUnion by the given scalar.
      **/
     TensorUnion &operator *= (const F s) {
-      for (size_t i(0); i < componentTensors.size(); ++i) {
-//        const char *indices(getIndices(i).c_str());
-//        get(i)->sum(s, *get(i), indices, 0.0, indices);
+      for (Natural<> i(0); i < componentTensors.size(); ++i) {
         COMPILE(
           (*get(i))[getIndices(i)] <<= s * (*get(i))[getIndices(i)]
         )->execute();
@@ -204,68 +188,14 @@ namespace cc4s {
     }
 
     /**
-     * \brief Creates and returns the conjugate transpose of this TensorUnion.
-     * The first and the second half of the inidices in each component are
-     * swapped for the transposition. For real types F the conjugation
-     * does nothing.
-     **/
-    // TOOD: precompile operations
-    TensorUnion conjugateTranspose() const {
-      TensorUnion result;
-      for (size_t i(0); i < componentTensors.size(); ++i) {
-        size_t order(getIndices(i).length() / 2);
-        std::vector<int> transposedLens(get(i)->lens, get(i)->lens + 2*order);
-        std::rotate(
-          transposedLens.begin(),
-          transposedLens.begin() + order,
-          transposedLens.begin() + 2*order
-        );
-        result.componentTensors.push_back(
-          Tcc<TE>::template tensor<F>(
-            transposedLens,
-            std::string(get(i)->get_name()) + "*"
-          )
-        );
-        result.componentIndices.push_back(
-          getIndices(i).substr(order, 2*order) + getIndices(i).substr(0, order)
-        );
-        COMPILE(
-          (*result.get(i))[result.getIndices(i)] <<= map<F>(
-            cc4s::conj<F>,
-            (*get(i))[getIndices(i)]
-          )
-        )->execute();
-      }
-      return std::move(result);
-    }
-
-    /**
-     * \brief Returns the matrix product of this bra-TensorUnion with the
-     * given dual ket-TensorUnion ket.
-     **/
-    F braket(const TensorUnion &ket) const {
-      checkDualCompatibility(ket);
-      auto result( Tcc<TE>::template tensor<F>("dot") );
-      for (size_t i(0); i < componentTensors.size(); ++i) {
-        // add to result
-        COMPILE(
-          (*result)[""] +=
-            (*get(i))[getIndices(i)] * (*ket.get(i))[ket.getIndices(i)]
-        )->execute();
-      }
-      return result->read();
-    }
-
-    /**
      * \brief Returns the inner product of this ket-TensorUnion with the
      * given ket-TensorUnion a. The elements of this TensorUnion are conjugated
-     * in the inner product, i.e. this->dot(a) yields the same results as
-     * this->conjugateTranspose().braket(a).
+     * in the inner product.
      **/
     F dot(const TensorUnion &a) const {
-      checkCompatibilityTo(a);
+      ASSERT(isCompatibleTo(a), "Incompatible TensorUnions");
       auto result( Tcc<TE>::template tensor<F>("dot") );
-      for (size_t i(0); i < componentTensors.size(); ++i) {
+      for (Natural<> i(0); i < componentTensors.size(); ++i) {
         // add to result
         COMPILE(
           (*result)[""] += (*get(i))[getIndices(i)] *
@@ -278,132 +208,18 @@ namespace cc4s {
     /**
      * \brief Get the number of component tensors of this TensorUnion.
      */
-    size_t getComponentsCount() const {
+    Natural<> getComponentsCount() const {
       return componentTensors.size();
     }
 
-    /**
-     * \brief Get the total number of degrees of freedom represented by this
-     * TensorUnion, i.e. the total number of field values contained in all
-     * component tensors. The indices used by read and write are between
-     * 0 and getDimension()-1.
-     */
-    size_t getDimension() const {
-      return indexEnds.back();
-    }
-
-    /**
-     * \Brief Translates the given component and component index into
-     * its element into an index between 0 and getDimension()-1.
-     **/
-    size_t getIndex(const size_t component, const size_t componentIndex) const {
-      size_t base(component > 0 ? indexEnds[component-1] : 0);
-      return base + componentIndex;
-    }
-
-    /**
-     * \Brief Translates the given index between 0 and getDimension()-1
-     * into a component number and component index into the corresponding
-     * component tensor.
-     **/
-    void fromIndex(
-      const size_t index, size_t &component, size_t &componentIndex
-    ) const {
-      component = 0;
-      size_t base(0);
-      while (component < indexEnds.size()) {
-        if (index < indexEnds[component]) break;
-        base = indexEnds[component++];
-      }
-      ASSERT(component < indexEnds.size(), "Index out bounds");
-      componentIndex = index - base;
-    }
-
-    /**
-     * \brief Reads out all locally stored values together with their
-     * respective indices. The indices are between 0 and getDimension()-1.
-     **/
-    std::vector<std::pair<size_t,F>> readLocal() const {
-      size_t elementsCount(0);
-      std::vector<std::pair<size_t,F>> elements;
-      for (size_t i(0); i < componentTensors.size(); ++i) {
-        size_t componentValuesCount;
-        size_t *componentIndices;
-        F *componentValues;
-        get(i)->read_local(
-          reinterpret_cast<int64_t *>(&componentValuesCount),
-          reinterpret_cast<int64_t **>(&componentIndices),
-          &componentValues
-        );
-
-        elements.resize(elementsCount+componentValuesCount);
-        for (size_t k(0); k < componentValuesCount; ++k) {
-          // translate index within component tensor to TensorUnion index
-          elements[elementsCount+k].first = getIndex(i, componentIndices[k]);
-          elements[elementsCount+k].second = componentValues[k];
-        }
-        elementsCount += componentValuesCount;
-        free(componentIndices);
-        free(componentValues);
-      }
-      return elements;
-    }
-
-    /**
-     * \brief Writes the given values together with their
-     * respective indices. The indices are between 0 and getDimension()-1.
-     **/
-    void write(const std::vector<std::pair<size_t,F>> &elements) {
-      // vectors to contain indices and values for each component tensor
-      std::vector<std::vector<size_t>> tensorIndices(componentTensors.size());
-      std::vector<std::vector<F>> tensorValues(componentTensors.size());
-
-      for (size_t k(0); k < elements.size(); ++k) {
-        size_t component;
-        size_t componentIndex;
-        fromIndex(elements[k].first, component, componentIndex);
-        // write to respective component tensor
-        tensorIndices[component].push_back(componentIndex);
-        tensorValues[component].push_back(elements[k].second);
-      }
-
-      // write data of each tensor
-      for (size_t i(0); i < componentTensors.size(); ++i) {
-        tensorIndices[i].reserve(tensorIndices[i].size()+1);
-        tensorValues[i].reserve(tensorIndices[i].size()+1);
-        get(i)->evaluate()->write(
-          tensorIndices[i].size(),
-          reinterpret_cast<int64_t *>(tensorIndices[i].data()),
-          tensorValues[i].data()
-        );
-      }
+    bool isCompatibleTo(const TensorUnion &a) const {
+      return
+        componentTensors.size() == a.componentTensors.size() &&
+        componentIndices.size() == a.componentIndices.size();
+      // TODO: check shapes.
     }
 
   protected:
-    /**
-     * \brief The end of the TensorUnion index range for each component.
-     * This vector is used for translating component number and indices
-     * into TensorUnion indicies.
-     **/
-    std::vector<size_t> indexEnds;
-
-    /**
-     * \Brief Builds the index ends vector needed for the
-     * index translation methods getIndex and fromIndex.
-     **/
-    void buildIndexTranslation() {
-      indexEnds.resize(componentTensors.size());
-      size_t indexBase(0);
-      for (size_t i(0); i < componentTensors.size(); ++i) {
-        size_t tensorIndexSize(1);
-        auto componentTensor(get(i)->inspect());
-        for (size_t d(0); d < componentTensor->getLens().size(); ++d) {
-          tensorIndexSize *= componentTensor->getLen(d);
-        }
-        indexEnds[i] = indexBase += tensorIndexSize;
-      }
-    }
-
     /**
      * \brief Sets this TensorUnion's component tensors by copying the given
      * component tensors. Called by copy constructors and copy assignments.
@@ -412,11 +228,11 @@ namespace cc4s {
       const std::vector<Ptr<TensorExpression<F,TE>>> &components
     ) {
       componentTensors.resize(components.size());
-      for (size_t i(0); i < components.size(); ++i) {
+      for (Natural<> i(0); i < components.size(); ++i) {
         auto componentTensor(components[i]->inspect());
         // create tensor of identical shape, NOTE: no data is copied yet
         componentTensors[i] = Tcc<TE>::template tensor<F>(
-          componentTensor->getLens(), componentTensor->getName()
+          componentTensor->getName()
         );
         // copy data
         COMPILE(
@@ -424,43 +240,6 @@ namespace cc4s {
             (*components[i])[componentIndices[i]]
         )->execute();
       }
-    }
-
-    /**
-     * \brief Check if two TensorUnions are transpose of each other by swapping
-     * the first and the second half of the component indices.
-     **/
-    // TODO: Improve speed?
-    void checkDualCompatibility(const TensorUnion &a) const {
-      checkCompatibilityTo(a);
-      for (size_t i(0); i < componentTensors.size() ; i++) {
-        size_t indexLens(a.get(i)->order());
-        for (size_t j(0); j < indexLens; j++) {
-          size_t indexPos( get(i).find(a.getIndicies(i)[j]) );
-          if (indexPos == std::string::npos) {
-            throw New<Exception>(
-              "Indices of tensor unions do not match", SOURCE_LOCATION
-            );
-          }
-          if (a.get(i)->lens[j] != get(i)->lens[indexPos]) {
-            throw New<Exception>(
-              "Shapes of component tensors does not match", SOURCE_LOCATION
-            );
-          }
-        }
-      }
-    }
-
-    void checkCompatibilityTo(const TensorUnion &a) const {
-      if (
-        componentTensors.size() != a.componentTensors.size() ||
-        componentIndices.size() != a.componentIndices.size()
-      ) {
-        throw New<Exception>(
-          "Number of component tensors does no match", SOURCE_LOCATION
-        );
-      }
-      // TODO: check shapes.
     }
 
   public:
@@ -473,7 +252,7 @@ namespace cc4s {
       if (!t) return nullptr;
       auto componentsNode(New<MapNode>(SOURCE_LOCATION));
       auto componentsNodePath(nodePath + ".components");
-      for (size_t i(0); i < t->componentTensors.size(); ++i) {
+      for (Natural<> i(0); i < t->componentTensors.size(); ++i) {
         auto componentNode(New<MapNode>(SOURCE_LOCATION));
         componentNode->setValue("indices", t->componentIndices[i]);
         auto tensorNode(
@@ -500,7 +279,7 @@ namespace cc4s {
       auto componentsNodePath(nodePath + ".components");
       std::vector<Ptr<TensorExpression<F,TE>>> tensors;
       std::vector<std::string> indices;
-      for (size_t i(0); componentsNode->get(i); ++i) {
+      for (Natural<> i(0); componentsNode->get(i); ++i) {
         auto tensorNode(
           TensorIo::read(
             componentsNode->getMap(i)->getMap("tensor"),
@@ -581,7 +360,7 @@ namespace cc4s {
       throw New<Exception>(explanation.str(), SOURCE_LOCATION);
     }
 
-    static int WRITE_REGISTERED, READ_REGISTERED;
+    static bool WRITE_REGISTERED, READ_REGISTERED;
   };
 
   /**
@@ -708,7 +487,7 @@ namespace cc4s {
   ) {
     stream << "( ";
     stream << a.get(0) << "[" << a.getIndices(0) << "]";
-    for (size_t i(1); i < a.componentTensors.size(); ++i) {
+    for (Natural<> i(1); i < a.componentTensors.size(); ++i) {
       stream << ", " << a.get(i) << "[" << a.getIndices(i) << "]";
     }
     return stream << " )";

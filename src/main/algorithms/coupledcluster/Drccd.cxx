@@ -29,7 +29,6 @@ CoupledClusterMethodRegistrar<
 
 template <typename F, typename TE>
 Ptr<TensorUnion<F,TE>> Drccd<F,TE>::getResiduum(
-  const int iteration, const bool restart,
   const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
   // read all required integrals
@@ -59,33 +58,41 @@ Ptr<TensorUnion<F,TE>> Drccd<F,TE>::getResiduum(
     );
   }
 
-  // get amplitude parts
-  auto Tpphh( amplitudes->get(1) );
-
-  // construct residuum
-  auto residuum( New<TensorUnion<F,TE>>(*amplitudes) );
-  *residuum *= F(0);
-  auto Rpphh( residuum->get(1) );
+  // construct residuum. Shape will be assumed upon first use.
+  auto Rph( Tcc<TE>::template tensor<F>("Rph") );
+  auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
+  auto residuum(
+    New<TensorUnion<F,TE>>(
+      std::vector<Ptr<TensorExpression<F,TE>>>({Rph, Rpphh}),
+      std::vector<std::string>({"ai", "abij"})
+    )
+  );
 
   auto methodArguments(this->arguments->getMap("method"));
   bool linearized(methodArguments->template getValue<bool>("linearized", false));
   bool adjacentPairsExchange(
     methodArguments->template getValue<bool>("adjacentPairsExchange", false)
   );
-  if (linearized) {
-//    OUT() << "Solving linearized T2 Amplitude Equations" << std::endl;
-  } else {
-//    OUT() << "Solving T2 Amplitude Equations" << std::endl;
-  }
 
-  // TODO: deal with starting amplitudes
-  if (iteration > 0 || restart) { // || isArgumentGiven("startingDoublesAmplitudes")) {
+  if (!amplitudes) {
+    // no previous amplitudes given
+    COMPILE(
+      (*Rph)["ai"] <<= F(0.0) * (*Vpphh)["aaii"],
+      (*Rpphh)["abij"] <<= (*Vpphh)["abij"]
+    )->execute();
+  } else {
+    // TODO: check if given amplitudes contain expected parts
+    // get amplitude parts
+    auto Tph( amplitudes->get(0) );
+    auto Tpphh( amplitudes->get(1) );
+    Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
+
     auto Whhpp( Tcc<TE>::template tensor<F>("Whhpp") );
     // for the remaining iterations compute the drCCD residuum
     COMPILE(
+      (*Rpphh)["abij"] <<= spins * (*Vphhp)["akic"] * (*Tpphh)["cbkj"],
+      (*Rpphh)["abij"] += (*Rpphh)["baji"],
       (*Rpphh)["abij"] += (*Vpphh)["abij"],
-      (*Rpphh)["abij"] += spins * (*Vphhp)["akic"] * (*Tpphh)["cbkj"],
-      (*Rpphh)["abij"] += spins * (*Vphhp)["bkjc"] * (*Tpphh)["acik"],
       (linearized) ? (
         // linearized: nothing more to do
         Tcc<TE>::sequence()
@@ -105,19 +112,6 @@ Ptr<TensorUnion<F,TE>> Drccd<F,TE>::getResiduum(
           spins * (*Whhpp)["klcd"] * (*Tpphh)["acik"] * (*Tpphh)["dblj"],
         Tcc<TE>::sequence()
       )
-    )->execute();
-// TODO: adjacent pairs exchange
-/*
-      Tensor<F> Wijab(false, *Vijab);
-      Wijab["ijab"] = ;
-      if (getIntegerArgument("adjacentPairsExchange", 0)) {
-        Wijab["ijab"] -= (*Vijab)["jiab"];
-      }
-*/
-  } else {
-    // no amplitudes given: start with MP2 amplitudes
-    COMPILE(
-      (*Rpphh)["abij"] += (*Vpphh)["abij"]
     )->execute();
   }
 

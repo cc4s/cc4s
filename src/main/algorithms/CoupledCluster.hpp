@@ -60,7 +60,7 @@ namespace cc4s {
     template <typename F, typename TE>
     F getEnergy(
       const Ptr<TensorUnion<F,TE>> &amplitdues,
-      const bool finalReport = false
+      const bool isFinalReport = false
     );
 
     /**
@@ -70,11 +70,11 @@ namespace cc4s {
        {-\Delta_{ij\ldots}^{ab\ldots}}\f$
      * with \f$\Delta_{ij\ldots}^{ab\ldots} =
        \varepsilon_i+\ldots-\varepsilon_a-\ldots\f$.
-     * \param[inout] residuum Fock vector, overwritten with new amplitudes.
-     * \param[in] amplitudes Fock vector, previous amplitudes
+     * \param[inout] residuum TensorUnion, overwritten with new amplitudes.
+     * \param[in] amplitudes TensorUnion, previous amplitudes
      **/
     template <typename F, typename TE>
-    void estimateAmplitudesFromResiduum(
+    void residuumToAmplitudes(
       const Ptr<TensorUnion<F,TE>> &residuum,
       const Ptr<TensorUnion<F,TE>> &amplitudes
     );
@@ -85,12 +85,6 @@ namespace cc4s {
     template <typename F, typename TE>
     Ptr<Tensor<F,TE>> calculateEnergyDifferences(
       const std::vector<size_t> &lens, const std::string &indices
-    );
-
-    template <typename F, typename TE>
-    Ptr<TensorUnion<F,TE>> createAmplitudes(
-      std::initializer_list<std::initializer_list<size_t>> amplitudeLens,
-      std::initializer_list<std::string> amplitudeIndices
     );
   };
 }

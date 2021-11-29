@@ -34,19 +34,17 @@ CoupledClusterMethodRegistrar<
 
 template <typename F, typename TE>
 Ptr<TensorUnion<F,TE>> CcsdReference<F,TE>::getResiduum(
-  const int iteration,
-  const bool restart,
   const Ptr<TensorUnion<F,TE>> &amplitudes
 ) {
-  // get amplitude parts
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
-
-  // construct residuum
-  auto residuum( New<TensorUnion<F,TE>>(*amplitudes) );
-  *residuum *= F(0);
-  auto Rph( residuum->get(0) );
-  auto Rpphh( residuum->get(1) );
+  // construct residuum. Shape will be assumed upon first use.
+  auto Rph( Tcc<TE>::template tensor<F>("Rph") );
+  auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
+  auto residuum(
+    New<TensorUnion<F,TE>>(
+      std::vector<Ptr<TensorExpression<F,TE>>>({Rph, Rpphh}),
+      std::vector<std::string>({"ai", "abij"})
+    )
+  );
 
   auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
@@ -56,16 +54,18 @@ Ptr<TensorUnion<F,TE>> CcsdReference<F,TE>::getResiduum(
   auto onlyPpl(this->arguments->template getValue<size_t>("onlyPpl", 0) );
 
 
-  if ( (iteration == 0) && !restart  && (onlyPpl == 0)) {
-
-    //TODO
-    // && !isArgumentGiven("initialDoublesAmplitudes"))  {
-    // For first iteration compute only the MP2 amplitudes
-//    OUT() << "MP2 T2 Amplitudes" << std::endl;
+  if (!amplitudes) {
+    // no previous amplitudes given
     COMPILE(
-      (*Rpphh)["abij"] += (*Vpphh)["abij"]
+      (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
+      (*Rpphh)["abij"] <<= (*Vpphh)["abij"]
     )->execute();
   } else if (onlyPpl == 1) {
+    // TODO: check if given amplitudes contain expected parts
+    // get amplitude parts
+    auto Tph( amplitudes->get(0) );
+    auto Tpphh( amplitudes->get(1) );
+    Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
 //    OUT() << "Calculate only PPL diagrams" << std::endl;
 
@@ -84,6 +84,12 @@ Ptr<TensorUnion<F,TE>> CcsdReference<F,TE>::getResiduum(
     )->execute();
 
   } else {
+    // TODO: check if given amplitudes contain expected parts
+    // get amplitude parts
+    auto Tph( amplitudes->get(0) );
+    auto Tpphh( amplitudes->get(1) );
+    Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
+
     auto Vpppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pppp"));
     auto Vphph(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phph"));
     auto Vhhhh(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhhh"));
@@ -134,7 +140,7 @@ Ptr<TensorUnion<F,TE>> CcsdReference<F,TE>::getResiduum(
       (*Lki)["ki"] += (-1.0) * (*Vhhph)["klci"] * (*Tph)["cl"],
 
       // Contract Lac with T2 Amplitudes
-      (*Rpphh)["abij"] += ( 1.0) * (*Lac)["ac"] * (*Tpphh)["cbij"],
+      (*Rpphh)["abij"] <<= ( 1.0) * (*Lac)["ac"] * (*Tpphh)["cbij"],
 
       // Contract Lki with T2 Amplitudes
       (*Rpphh)["abij"] += (-1.0) * (*Lki)["ki"] * (*Tpphh)["abkj"],
@@ -205,8 +211,8 @@ Ptr<TensorUnion<F,TE>> CcsdReference<F,TE>::getResiduum(
 //    OUT() << "Solving T1 Amplitude Equations" << std::endl;
     COMPILE(
       // Contract Kac and Kki with T1 amplitudes
-      (*Rph)["ai"] += ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
-      (*Rph)["ai"] += (-1.0) * (*Kki)["ki"] * (*Tph)["ak"],
+      (*Rph)["ai"] <<= ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
+      (*Rph)["ai"] +=  (-1.0) * (*Kki)["ki"] * (*Tph)["ak"],
 
       //Build Kck
       (*Kck)["ck"] <<= ( 2.0) * (*Vhhpp)["klcd"] * (*Tph)["dl"],
