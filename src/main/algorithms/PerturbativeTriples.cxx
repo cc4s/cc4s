@@ -19,6 +19,7 @@
 #include <math/TensorUnion.hpp>
 #include <math/MathFunctions.hpp>
 #include <atrip.hpp>
+#include <atrip/Debug.hpp>
 
 using namespace cc4s;
 ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
@@ -30,9 +31,6 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
   using TE = DefaultTensorEngine;
 
   auto result(New<MapNode>(SOURCE_LOCATION));
-
-  OUT() << "Atrip commit " << QUOTE(ATRIP_COMMIT) << std::endl;
-  OUT() << "Atrip init.. " << std::endl;
 
   atrip::Atrip::init();
   atrip::Atrip::Input in;
@@ -82,14 +80,49 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
     .with_Vabci(__V__(ppph))
     // some options
     .with_barrier(false)
-    .with_iterationMod(100)
+    .with_percentageMod(10)
     ;
+
+  const double No = double((__V__(pphh))->lens[2])
+             , Nv = double((__V__(pphh))->lens[0])
+             , doublesFlops = No * No * No
+                            * (No + Nv)
+                            * 2.0
+                            * 6.0
+                            / 1e9
+                            ;
+  //OUT() << "doublesFlops " << doublesFlops << std::endl;
+  auto const rank = Cc4s::world->getRank();
+  bool firstHeaderPrinted = false;
+  atrip::registerIterationDescriptor
+    ([doublesFlops, &firstHeaderPrinted, rank]
+       (atrip::IterationDescription const& d) {
+      const char
+        *fmt_header = "%-13s%-10s%-13s",
+        *fmt_nums = "%-13.0f%-10.0f%-13.3f";
+      char out[256];
+      if (!firstHeaderPrinted) {
+        sprintf(out, fmt_header, "Progress(%)", "time(s)", "GFLOP/s");
+        firstHeaderPrinted = true;
+        OUT() << out << "\n";
+      }
+      sprintf(out, fmt_nums,
+              double(d.currentIteration) / double(d.totalIterations) * 100,
+              d.currentElapsedTime,
+              doublesFlops / d.currentElapsedTime);
+      OUT() << out << "\n";
+    });
+
+
 #undef __V__
 #undef __T__
 #undef __eps__
 
   auto out = atrip::Atrip::run(in);
-  LOG() << "Energy: " << out.energy << std::endl;
+  OUT() << "(T) correlation energy: "
+        << std::setprecision(15) << std::setw(23)
+        << out.energy << std::endl;
+  OUT() << "(T*) correlation energy: " << "TODO" << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("triples", real(out.energy));
