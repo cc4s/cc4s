@@ -83,15 +83,14 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
     .with_percentageMod(10)
     ;
 
-  const double No = double((__V__(pphh))->lens[2])
-             , Nv = double((__V__(pphh))->lens[0])
+  const double No = *(__eps__(h))->lens
+             , Nv = *(__eps__(p))->lens
              , doublesFlops = No * No * No
                             * (No + Nv)
                             * 2.0
                             * 6.0
                             / 1e9
                             ;
-  //OUT() << "doublesFlops " << doublesFlops << std::endl;
   auto const rank = Cc4s::world->getRank();
   bool firstHeaderPrinted = false;
   atrip::registerIterationDescriptor
