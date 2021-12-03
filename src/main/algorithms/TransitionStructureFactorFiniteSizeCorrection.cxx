@@ -217,7 +217,8 @@ void TransitionStructureFactorFiniteSizeCorrection::interpolation(
 
   //construct the transformation matrix, which is the real cell
   std::vector<Vector<>> A(3);
-  Real<> Omega((B[0].cross(B[1])).dot(B[2]));
+  Real<> Omega(abs((B[0].cross(B[1])).dot(B[2])));
+
   A[0] = B[1].cross(B[2])/Omega;
   A[1] = B[2].cross(B[0])/Omega;
   A[2] = B[0].cross(B[1])/Omega;
@@ -254,9 +255,9 @@ void TransitionStructureFactorFiniteSizeCorrection::interpolation(
     Natural<> index(0);
     Vector<> directG;
     for (Natural<> d(0); d < 3; ++d) {
-      directG[d] = A[d].dot(cartesianGrid[g]);
-      index *= boxDimensions[d];
-      index += std::floor(directG[d] + 0.5) - boxOrigin[d];
+      directG[2-d] = A[2-d].dot(cartesianGrid[g]);
+      index *= boxDimensions[2-d];
+      index += std::floor(directG[2-d] + 0.5) - boxOrigin[2-d];
     }
     directSofG[index] = SofG[g];
   }
