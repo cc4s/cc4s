@@ -90,6 +90,7 @@ Ptr<TensorUnion<F,TE>> Drccd<F,TE>::getResiduum(
     auto Whhpp( Tcc<TE>::template tensor<F>("Whhpp") );
     // for the remaining iterations compute the drCCD residuum
     COMPILE(
+      (*Rph)["ai"] <<= F(0.0) * (*Vpphh)["aaii"],
       (*Rpphh)["abij"] <<= spins * (*Vphhp)["akic"] * (*Tpphh)["cbkj"],
       (*Rpphh)["abij"] += (*Rpphh)["baji"],
       (*Rpphh)["abij"] += (*Vpphh)["abij"],

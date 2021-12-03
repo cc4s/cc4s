@@ -27,14 +27,14 @@ namespace cc4s {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(CcsdFocalPointBasisSetCorrection)
     /**
-     * \brief run routine 
+     * \brief run routine
      */
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
 
   protected:
     template <typename F, typename TE>
     bool run(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
-  
+
   };
 }
 

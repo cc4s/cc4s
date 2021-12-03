@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef NON_ZERO_CONDITION_DEFINED 
+#ifndef NON_ZERO_CONDITION_DEFINED
 #define NON_ZERO_CONDITION_DEFINED
 
 #include <algorithms/Algorithm.hpp>

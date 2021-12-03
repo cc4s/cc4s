@@ -45,7 +45,7 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   ASSERT_LOCATION(
     eps, "expecting list of eigenEnergies",
     eigenEnergies->sourceLocation
-  );  
+  );
 
   auto Np(energies->size());
 

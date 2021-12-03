@@ -55,7 +55,7 @@ Ptr<MapNode> TransitionStructureFactorFiniteSizeCorrection::run(
     }
 
     interpolation<TE>(arguments, result);
-  } 
+  }
   return result;
 }
 
@@ -98,7 +98,7 @@ void TransitionStructureFactorFiniteSizeCorrection::calculateTransitionStructure
   //Finally the TransitionStructureFactor reads: S(G)=Cai(G) (Cjb(G))^(*) ( Tabij + Tia Tjb )
   auto CGph   = ( Tcc<TE>::template tensor<Complex<>>("CGph"));
   auto cTCGph = ( Tcc<TE>::template tensor<Complex<>>("cTCGph"));
- 
+
   //units of Coulomb potential [Energy*Volume]
   auto CoulombPotential(arguments->getMap("coulombPotential"));
   auto VofG(CoulombPotential->getPtr<Tr>("data"));
@@ -134,7 +134,7 @@ void TransitionStructureFactorFiniteSizeCorrection::calculateTransitionStructure
 //    (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
     (*Tabij)["abij"] <<= map<Complex<>>(toComplex, (*Tpphh)["abij"]),
     (*Tai)["ai"] <<= map<Complex<>>(toComplex, (*Tph)["ai"]),
-    (*Tabij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"] 
+    (*Tabij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"]
   )->execute();
 
   auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
@@ -229,7 +229,7 @@ void TransitionStructureFactorFiniteSizeCorrection::interpolation(
   auto toCoulombVertexUnits = pow(coulombVertex->getValue<Real<>>("unit"),2.0) /
     pow(gridVectors->getValue<Real<>>("unit"),3.0) / CoulombPotential->getValue<Real<>>("unit");
   Real<> factor(gridVectors->getValue<Real<>>("unit")/pow(coulombVertex->getValue<Real<>>("unit"),2.0)*Omega/2.0/M_PI/M_PI);
-  
+
 
 
   // determine bounding box in direct coordinates (in reciprocal space)

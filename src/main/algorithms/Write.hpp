@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef WRITE_DEFINED 
+#ifndef WRITE_DEFINED
 #define WRITE_DEFINED
 
 #include <algorithms/Algorithm.hpp>

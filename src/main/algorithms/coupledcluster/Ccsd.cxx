@@ -94,7 +94,7 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
   bool dcsd(methodArguments->template getValue<bool>("dcsd", false));
 
   ASSERT_LOCATION(
-    ((ppl && !(twoCc && dcsd)) || (!ppl && !twoCc && !dcsd)), 
+    ((ppl && !(twoCc && dcsd)) || (!ppl && !twoCc && !dcsd)),
     "!ppl, 2cc and dscsd are all mutually exclusive.",
     methodArguments->get("ppl")->sourceLocation
   );
@@ -193,37 +193,37 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         (*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Tph)["ak"] * (*Tph)["dl"],
         // Lac
         (*Lac)["ac"] <<= (*Kac)["ac"],
-	//Add left-out term of Kac for T1-equation later
+        //Add left-out term of Kac for T1-equation later
         (*Kac)["ac"]  += (-2.0) * (*Vpphh)["cdkl"] * (*Tpphh)["adkl"],
-	(*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Tpphh)["adkl"],
+        (*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Tpphh)["adkl"],
         //Xakic with D-term removed
         (*Xakic)["akic"] <<= (-1.0) * (*Vpphh)["dclk"] * (*Tph)["di"] * (*Tph)["al"]
-	//Leave out D^{ex}-term from Xakci (i.e don't do anything at this point)
+        //Leave out D^{ex}-term from Xakci (i.e don't do anything at this point)
       )->execute();
     }
     else if(dcsd){
 //      OUT() << "\tUsing the DCSD approximation"  << std::endl;
       COMPILE(
-	// Build Kki, prefactor A-term by 0.5
+        // Build Kki, prefactor A-term by 0.5
         (*Kki)["ki"] <<= ( 1.0) * (*Vpphh)["cdkl"] * (*Yabij)["cdil"],
-        (*Kki)["ki"] +=  (-0.5) * (*Vpphh)["dckl"] * (*Yabij)["cdil"],	     
+        (*Kki)["ki"] +=  (-0.5) * (*Vpphh)["dckl"] * (*Yabij)["cdil"],
         // Build Lki
         (*Lki)["ki"] <<= (*Kki)["ki"],
-	//Add left out term of Kki for T1-equation later
-	(*Kki)["ki"] += ( 1.0) * (*Vpphh)["cdkl"] * (*Tpphh)["cdil"],
-	(*Kki)["ki"] += (-0.5) * (*Vpphh)["dckl"] * (*Tpphh)["cdil"],
-	// Build Kac, prefactor C-term by 0.5
-	(*Kac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Yabij)["adkl"],
-	(*Kac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Yabij)["adkl"],
-	// Lac
-	(*Lac)["ac"] <<= (*Kac)["ac"],
+        //Add left out term of Kki for T1-equation later
+        (*Kki)["ki"] += ( 1.0) * (*Vpphh)["cdkl"] * (*Tpphh)["cdil"],
+        (*Kki)["ki"] += (-0.5) * (*Vpphh)["dckl"] * (*Tpphh)["cdil"],
+        // Build Kac, prefactor C-term by 0.5
+        (*Kac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Yabij)["adkl"],
+        (*Kac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Yabij)["adkl"],
+        // Lac
+        (*Lac)["ac"] <<= (*Kac)["ac"],
         //Add left-out term of Kac for T1-equation later
-	(*Kac)["ac"] += (-1.0) * (*Vpphh)["cdkl"] * (*Tpphh)["adkl"],
-	(*Kac)["ac"] += (0.5) * (*Vpphh)["dckl"] * (*Tpphh)["adkl"],
-	//Xakic with D^{ex}-term removed
-	(*Xakic)["akic"] <<= (-0.5) * (*Vpphh)["dclk"] * (*Yabij)["dail"],
+        (*Kac)["ac"] += (-1.0) * (*Vpphh)["cdkl"] * (*Tpphh)["adkl"],
+        (*Kac)["ac"] += (0.5) * (*Vpphh)["dckl"] * (*Tpphh)["adkl"],
+        //Xakic with D^{ex}-term removed
+        (*Xakic)["akic"] <<= (-0.5) * (*Vpphh)["dclk"] * (*Yabij)["dail"],
         (*Xakic)["akic"] += ( 1.0) * (*Vpphh)["dclk"] * (*Tpphh)["adil"]
-	//Leave out D^{ex}-term from Xakci (i.e dont't do anything at this point)
+        //Leave out D^{ex}-term from Xakci (i.e dont't do anything at this point)
       )->execute();
     }
     else{
@@ -236,7 +236,7 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         (*Lki)["ki"] <<= (*Kki)["ki"],
         //Build Kac
         (*Kac)["ac"] <<= (-2.0) * (*Vpphh)["cdkl"] * (*Xabij)["adkl"],
-	(*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Xabij)["adkl"],
+        (*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Xabij)["adkl"],
         // Lac
         (*Lac)["ac"] <<= (*Kac)["ac"],
         //Xakic
@@ -244,11 +244,10 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         (*Xakic)["akic"] += ( 1.0) * (*Vpphh)["dclk"] * (*Tpphh)["adil"], //if 2CC: throw out (D^c term)
         //TODO if (!distinguishable) {
         (*Xakic)["akic"] += (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["adil"], //if 2CC: throw out (D^{ex} term)
-	//Xakci
-	//TODO  if (!distinguishable) {
+        //Xakci
+        //TODO  if (!distinguishable) {
         (*Xakci)["akci"] <<= (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["dail"]
       )->execute();
-    
     }
 
     COMPILE(
@@ -341,12 +340,12 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
         (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
         //Construct last term without B-term
-	(*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Tph)["ci"] * (*Tph)["dj"],
-	(*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tpphh)["abkl"]//,
-//	//Add left-out term for second Xklij-contribution
-//	(*Xklij)["klij"] += (*Vpphh)["cdkl"] * (*Tpphh)["cdij"],
-//	(*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tph)["ak"] * (*Tph)["bl"]
-      )->execute(); 
+        (*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Tph)["ci"] * (*Tph)["dj"],
+        (*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tpphh)["abkl"]//,
+//        //Add left-out term for second Xklij-contribution
+//        (*Xklij)["klij"] += (*Vpphh)["cdkl"] * (*Tpphh)["cdij"],
+//        (*Rpphh)["abij"] += (*Xklij)["klij"] * (*Tph)["ak"] * (*Tph)["bl"]
+      )->execute();
     }
     else{
       COMPILE(
@@ -366,7 +365,7 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         ) : (
           (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Xabij)["abkl"]
         )
-   )->execute();   
+      )->execute();
     }
 
 //    COMPILE(
