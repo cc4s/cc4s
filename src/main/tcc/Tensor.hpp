@@ -256,7 +256,7 @@ namespace cc4s {
 
 
   /**
-   * \brief 
+   * \brief
    **/
   template <typename F, typename TE>
   class Tensor: public TensorExpression<F,TE> {

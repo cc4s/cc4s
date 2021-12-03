@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef LINEAR_MIXER_DEFINED 
+#ifndef LINEAR_MIXER_DEFINED
 #define LINEAR_MIXER_DEFINED
 
 #include <mixers/Mixer.hpp>

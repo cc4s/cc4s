@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef READ_DEFINED 
+#ifndef READ_DEFINED
 #define READ_DEFINED
 
 #include <algorithms/Algorithm.hpp>

@@ -45,14 +45,14 @@ Ptr<MapNode> DimensionProperty::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
   if (Cc4s::options->dryRun) {
     using TE = DefaultDryTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {  
+    if (scalarType == TypeTraits<Real<>>::getName()) {
       return run<Real<>,TE>(arguments);
     } else if (scalarType == TypeTraits<Complex<>>::getName()) {
       return run<Complex<>,TE>(arguments);
     }
   } else {
     using TE = DefaultTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {  
+    if (scalarType == TypeTraits<Real<>>::getName()) {
       return run<Real<>,TE>(arguments);
     } else if (scalarType == TypeTraits<Complex<>>::getName()) {
       return run<Complex<>,TE>(arguments);

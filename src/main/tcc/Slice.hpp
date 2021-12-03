@@ -25,7 +25,7 @@
 
 namespace cc4s {
   /**
-   * \brief 
+   * \brief
    **/
   template <typename F, typename TE>
   class Slice: public TensorExpression<F,TE> {

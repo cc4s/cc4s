@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef COUPLED_CLUSTER_DEFINED 
+#ifndef COUPLED_CLUSTER_DEFINED
 #define COUPLED_CLUSTER_DEFINED
 
 #include <algorithms/Algorithm.hpp>

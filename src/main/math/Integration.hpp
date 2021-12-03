@@ -34,7 +34,7 @@ namespace cc4s {
       return (f(x) + f(x+h))/2;
     }
   };
- 
+
   class Simpson {
   public:
     template<typename F, typename Real>

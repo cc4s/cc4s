@@ -22,6 +22,46 @@
 // TODO: use define for name mangling: underscore or not
 
 extern "C" {
+  void dggev_(
+    const char *jobvLeft,
+    const char *jobvRight,
+    const int *n,
+    cc4s::Real<64> *a,
+    const int *lda,
+    cc4s::Real<64> *b,
+    const int *ldb,
+    cc4s::Real<64> *alphaReal,
+    cc4s::Real<64> *alphaImag,
+    cc4s::Real<64> *beta,
+    cc4s::Real<64> *vLeft,
+    const int *ldvLeft,
+    cc4s::Real<64> *vRight,
+    const int *ldvRight,
+    cc4s::Real<64> *work,
+    const int *workSize,
+    int *info
+  );
+
+  void zggev_(
+    const char *jobvLeft,
+    const char *jobvRight,
+    const int *n,
+    const cc4s::Complex<64> *a,
+    const int *lda,
+    const cc4s::Complex<64> *b,
+    const int *ldb,
+    cc4s::Complex<64> *alpha,
+    cc4s::Complex<64> *beta,
+    cc4s::Complex<64> *vLeft,
+    const int *ldvLeft,
+    cc4s::Complex<64> *vRight,
+    const int *ldvRight,
+    cc4s::Complex<64> *work,
+    const int *workSize,
+    cc4s::Real<64> *rwork,
+    int *info
+  );
+
   void dgeev_(
     const char *jobvLeft,
     const char *jobvRight,

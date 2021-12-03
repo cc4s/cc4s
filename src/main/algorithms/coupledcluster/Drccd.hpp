@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef DRCCD_DEFINED 
+#ifndef DRCCD_DEFINED
 #define DRCCD_DEFINED
 
 #include <algorithms/coupledcluster/CoupledClusterMethod.hpp>

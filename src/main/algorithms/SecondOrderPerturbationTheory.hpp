@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef SECOND_ORDER_PERTURBATION_THEORY_DEFINED 
+#ifndef SECOND_ORDER_PERTURBATION_THEORY_DEFINED
 #define SECOND_ORDER_PERTURBATION_THEORY_DEFINED
 
 #include <algorithms/Algorithm.hpp>

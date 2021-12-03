@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef TENSOR_READER_DEFINED 
+#ifndef TENSOR_READER_DEFINED
 #define TENSOR_READER_DEFINED
 
 #include <algorithms/Algorithm.hpp>

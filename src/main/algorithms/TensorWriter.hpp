@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef TENSOR_WRITER_DEFINED 
+#ifndef TENSOR_WRITER_DEFINED
 #define TENSOR_WRITER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
