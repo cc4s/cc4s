@@ -58,10 +58,10 @@ bool CcsdFocalPointBasisSetCorrection::run(
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
 
-  auto DabijNode(arguments->getMap("deltaIntegrals"));
-  auto Dabij(DabijNode->getPtr<Tr>("data"));
-  auto nijNode(arguments->getMap("nij"));
-  auto nij(nijNode->getPtr<Tr>("data"));
+  auto DabijNode(arguments->getMap("deltaIntegralsPPHH"));
+  auto Dabij(DabijNode->getPtr<T>("data"));
+  auto nijNode(arguments->getMap("deltaIntegralsHH"));
+  auto nij(nijNode->getPtr<T>("data"));
 
   // these should be the cbs estimates for the mp2 pair energies
   auto mp2PairEnergiesNode(arguments->getMap("mp2PairEnergies"));
@@ -121,8 +121,8 @@ bool CcsdFocalPointBasisSetCorrection::run(
     (*eCcsd)[""] <<= ( 2.0) * (*Tabij)["abij"] * (*Vabij)["abij"],
     (*eCcsd)[""]  += (-1.0) * (*Tabij)["abij"] * (*Vabij)["abji"],
   // evaluate nominator
-    (*gijccd)["ij"] <<= map<F>(fromReal, (*Dabij)["abij"]) * (*Tabij)["abij"],
-    (*gijmp2)["ij"] <<= map<F>(fromReal, (*Dabij)["abij"]) * (*Mabij)["abij"],
+    (*gijccd)["ij"] <<= (*Dabij)["abij"] * (*Tabij)["abij"],
+    (*gijmp2)["ij"] <<= (*Dabij)["abij"] * (*Mabij)["abij"],
   // divide by <ij|\delta|ij>
     (*gijccd)["ij"] <<= (*gijccd)["ij"] * map<F>(inverse, (*nij)["ij"]),
     (*gijmp2)["ij"] <<= (*gijmp2)["ij"] * map<F>(inverse, (*nij)["ij"]),
@@ -146,15 +146,12 @@ bool CcsdFocalPointBasisSetCorrection::run(
   Real<> Eccsd(real<F>(eCcsd->read()));
 
   OUT() << "CCSD correlation energy:          " << std::setprecision(10) << Eccsd  << "\n";
-  OUT() << "CCSD-FP correlation energy:       " << std::setprecision(10) << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << std::endl;
-  OUT() << "CCSD-BSIE energy correction:      " << std::setprecision(10) << - Emp2 + Emp2Cbs + deltaPsPpl << std::endl;
-  OUT() << "2nd-order correlation energy:     " << std::setprecision(10) << Emp2 << "\n";
+  OUT() << "CCSD-FP correlation energy:       " << std::setprecision(10) << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
   OUT() << "2nd-order-CBS correlation energy: " << std::setprecision(10) << Emp2Cbs << "\n";
-  OUT() << "PS-PPL:                           " << std::setprecision(10) << deltaPsPpl << "\n";
-
-//  result->setPtr("geff", geff);
-//  result->setPtr("gijccd", nij);
-//  result->setPtr("mp2p", mp2PairEnergies);
+  OUT() << "==================================" << "\n";
+  OUT() << "CCSD-BSIE energy correction:      " << std::setprecision(10) << - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
+  OUT() << "2nd-order energy correction :     " << std::setprecision(10) << Emp2Cbs - Emp2 << "\n";
+  OUT() << "PS-PPL-BSIE energy correction:    " << std::setprecision(10) << deltaPsPpl << std::endl;
 
   return true;
 }
