@@ -1,0 +1,86 @@
+
+                __ __      
+     __________/ // / _____
+    / ___/ ___/ // /_/ ___/
+   / /__/ /__/__  __(__  ) 
+   \___/\___/  /_/ /____/  
+  Coupled Cluster for Solids
+
+version: heads/develop-0-g3297689, date: Wed Dec 1 23:26:21 2021 +0100
+build date: Dec  2 2021 10:45:24
+compiler: icc (ICC) 19.1.2.254 20200623
+total processes: 40
+calculation started on: Sun Dec  5 22:12:47 2021
+
+
+execution plan read, steps: 7
+
+step: 1, TensorReader
+Reading from text file EigenEnergies.dat
+realtime 0.010755440 s
+--
+step: 2, TensorReader
+Reading from binary file CoulombVertex.dat
+realtime 0.045400572 s
+--
+step: 3, DefineHolesAndParticles
+number of holes     No: 4
+number of particles Nv: 36
+number of states    Np: 40
+realtime 0.000832881 s
+--
+step: 4, SliceOperator
+Slicing CoulombVertex.dat into holes and particles.
+realtime 0.000798066 s
+--
+step: 5, VertexCoulombIntegrals
+number of field variables NF: 1099
+realtime 0.003376161 s
+--
+step: 6, CoupledCluster
+Using method Ccsd. integralsSliceSize: 4
+Using mixer DiisMixer. maxResidua: 4
+Maximum number of iterations: 20
+Unless reaching energy convergence dE: 1e-08
+and amplitudes convergence dR: 1e-08
+Iter         Energy         dE           dR         time   GF/s/core
+   1  -2.19730058e-01  -2.1973e-01   2.0939e-01      0.1    0.4
+   2  -2.21835712e-01  -2.1057e-03   3.8456e-02      0.4    0.5
+   3  -2.26495855e-01  -4.6601e-03   9.9168e-03      0.4    0.5
+   4  -2.27521677e-01  -1.0258e-03   3.1438e-03      0.4    0.5
+   5  -2.27465900e-01   5.5777e-05   8.1756e-04      0.4    0.5
+   6  -2.27487552e-01  -2.1652e-05   2.6291e-04      0.4    0.5
+   7  -2.27475561e-01   1.1991e-05   8.8399e-05      0.4    0.5
+   8  -2.27475500e-01   6.1366e-08   2.9393e-05      0.4    0.5
+   9  -2.27474382e-01   1.1177e-06   1.1505e-05      0.4    0.5
+  10  -2.27474265e-01   1.1668e-07   3.9212e-06      0.4    0.5
+  11  -2.27474173e-01   9.2600e-08   1.7162e-06      0.4    0.5
+  12  -2.27474134e-01   3.9308e-08   6.2261e-07      0.4    0.5
+  13  -2.27474134e-01  -8.0285e-10   2.7854e-07      0.4    0.5
+  14  -2.27474129e-01   5.5236e-09   1.0219e-07      0.4    0.5
+  15  -2.27474131e-01  -1.7430e-09   4.3224e-08      0.4    0.5
+  16  -2.27474131e-01  -8.8854e-11   1.5846e-08      0.4    0.5
+  17  -2.27474131e-01  -3.2779e-10   6.8693e-09      0.4    0.5
+
+CCSD correlation energy:          -0.2274741310
+2nd-order correlation energy:     -0.2197300580
+realtime 5.823667805 s
+--
+step: 7, PerturbativeTriples
+Progress(%)  time(s)   GFLOP/s      
+10           0         0.003        
+20           0         0.002        
+30           0         0.001        
+40           0         0.001        
+50           0         0.001        
+60           0         0.001        
+70           0         0.001        
+80           0         0.001        
+90           0         0.000        
+100          0         0.000        
+(T) correlation energy:      -0.005239608018571
+(T*) correlation energy: TODO
+realtime 0.108463064 s
+--
+total realtime: 6.005558371 s
+total operations: 120.367935754000001 GFLOPS, speed: 0.501068877855055 GFLOPS/s/core

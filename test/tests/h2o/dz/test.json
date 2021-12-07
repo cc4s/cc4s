@@ -2,7 +2,7 @@
   "name": "h2o molecule aug-cc-pvdz",
   "resources": [
     {
-      "out": "EigenEnergiesReal.yaml",
+      "out": "EigenEnergies.yaml",
       "uri": "{nwchem-h2o}/dz/EigenEnergies.yaml"
     },
     {
