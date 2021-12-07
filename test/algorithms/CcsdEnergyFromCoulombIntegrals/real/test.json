@@ -3,35 +3,35 @@
   "resources": [
     {
       "out": "EigenEnergiesReal.yaml",
-      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesReal.yaml"
+      "uri": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesReal.yaml"
     },
     {
       "out": "EigenEnergiesReal.dat",
-      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesReal.dat"
+      "uri": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/EigenEnergiesReal.dat"
     },
     {
       "out": "Spins.yaml",
-      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/Spins.yaml"
+      "uri": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/Spins.yaml"
     },
     {
       "out": "Spins.dat",
-      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/Spins.dat"
+      "uri": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/Spins.dat"
     },
     {
       "out": "FockOperatorReal.yaml",
-      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/FockOperatorReal.yaml"
+      "uri": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/FockOperatorReal.yaml"
     },
     {
       "out": "FockOperatorReal.dat",
-      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/FockOperatorReal.dat"
+      "uri": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/FockOperatorReal.dat"
     },
     {
       "out": "CoulombVertexReal.yaml",
-      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexReal.yaml"
+      "uri": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexReal.yaml"
     },
     {
       "out": "CoulombVertexReal.bin",
-      "url": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexReal.bin"
+      "uri": "https://raw.githubusercontent.com/cc4s/cc4s-tutorials/962e7ec2f07e55cb08f927803d017125afc0c245/systems/H2O/CoulombVertexReal.bin"
     }
   ],
   "tags": "essential real"

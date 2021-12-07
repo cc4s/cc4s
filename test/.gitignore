@@ -7,3 +7,5 @@ cc4s.log
 launch.sh
 core
 FTODDUMP.bak
+testis-store/
+test-results

@@ -1,0 +1,128 @@
+* Writing tests
+
+A test case consists of a folder with a =test.json=
+file in it.
+
+A valid =test.json= file is one that has the following fields
+
+| Name        | default      | Description                                |
+|-------------+--------------+--------------------------------------------|
+| name        | ""           | Name of the test                           |
+| resources   | []           | Resources to be linked into the directory  |
+|             |              | as a data dependency for the test          |
+| description | ""           | A description of the test                  |
+| tags        | ""           | Tags of the test, e.g., ="essential base"= |
+| run         | "./run.py"   | Script to run to perform the test          |
+| check       | "./check.py" | Script to run to perform the checking      |
+|             |              | of the run phase.                          |
+
+Every resouce has the fields
+- out :: Where is the file going to be copied in the test directory.
+- uri :: The =uri= of the resource. Here the name of a source
+  appearing in =sources.json= can be included in brackets ={}=
+  and it will be included accordingly. Refere to the sources file
+  documentation for more information.
+
+
+* The sources file
+
+The source file describes the sources that are predefined for the test case
+to get the data from the internet or from a local path.
+
+A resource is composed of the following fields:
+
+- uri ::
+  Which is an identifier of the path of the sources, it can be an url
+  or a local path.
+- type ::
+  The type of resource for =testis= to know how to deal with it.
+
+The =type= can be one of the following keywords
+
+- raw ::
+  A raw source will be copied directly to the uri of the test case,
+  i.e., if =user-manual= is defiend as
+  #+begin_src json
+  "user-manual" {
+      "uri": "https://raw.githubusercontent.com/cc4s/user-manual/master/data/",
+      "type": "raw"
+  }
+  #+end_src
+  then if a test case uses
+  #+begin_src json
+  {
+      "out": "script.sh",
+      "uri": "{user-manual}/script.sh"
+  }
+  #+end_src
+  then =uri= will be rendered as taking the =uri= of =user-data= and pasting it
+  in place.
+- zip ::
+  A zip file to be downloaded, extracted and its contents to be linked
+  individually.
+- tar ::
+  A tar file to be downloaded, extracted and its contents to be linked
+  individually. Bear in mind that =tar= and =tar.gz= and usual
+  formats are supported under the same *tar* type.
+  For more information check the =tarfile= python package documentation [[https://docs.python.org/3/library/tarfile.html?highlight=tar#module-tarfile][here]].
+
+** Example getting sources from all types
+
+This example shows all the ways that there are to declare resources for a test
+from predefined source aliases.
+
+#+headers: :tangle ./tests/testis/test.json :mkdirp t
+#+begin_src json
+{
+    "name": "Testis test",
+    "resources": [
+        {
+            "out": "script.sh",
+            "uri": "{user-manual-master}/run-simple-lih.sh",
+            "_comment": "test raw"
+        }, {
+            "out": "again.sh",
+            "uri": "{user-manual-master-zip}/data/run-simple-lih.sh",
+            "_comment": "test zip"
+        }, {
+            "out": "Aluminium",
+            "uri": "{ppl-supporting-information}/f12dz_gamma1.0/Al",
+            "_comment": "test downloading from zenodo"
+        }, {
+            "out": "Aluminium",
+            "uri": "{ppl-supporting-information-github-v1-2}/f12dz_gamma1.0/Al",
+            "_comment": "test downloading a tar file"
+        }
+    ],
+    "tags": "essential infrastructure"
+}
+#+end_src
+
+where the sources ahve been defined to be as
+
+#+begin_src json
+{
+
+    "user-manual-master": {
+        "uri": "https://raw.githubusercontent.com/cc4s/user-manual/master/data/",
+        "type": "raw"
+    },
+
+    "user-manual-master-zip": {
+        "uri": "https://github.com/cc4s/user-manual/archive/refs/heads/master.zip",
+        "type": "zip"
+    },
+
+    "ppl-supporting-information": {
+        "uri": "https://zenodo.org/record/4597520/files/alejandrogallo/ppl-supporting-information-v1.2.zip?download=1",
+        "type": "zip"
+    },
+
+    "ppl-supporting-information-github-v1-2": {
+        "uri": "https://github.com/cc4s/ppl-supporting-information/archive/refs/tags/v1.2.tar.gz",
+        "type": "tar"
+    }
+
+
+}
+#+end_src

@@ -1,3 +1,4 @@
+-include config.mk
 TESTIS = ./testis.py
 PYTHON ?= python3
 CONFIG ?= gcc-debug

@@ -1,0 +1,24 @@
+{
+
+    "user-manual-master": {
+        "uri": "https://raw.githubusercontent.com/cc4s/user-manual/master/data/",
+        "type": "raw"
+    },
+
+    "user-manual-master-zip": {
+        "uri": "https://github.com/cc4s/user-manual/archive/refs/heads/master.zip",
+        "type": "zip"
+    },
+
+    "ppl-supporting-information": {
+        "uri": "https://zenodo.org/record/4597520/files/alejandrogallo/ppl-supporting-information-v1.2.zip?download=1",
+        "type": "zip"
+    },
+
+    "ppl-supporting-information-github-v1-2": {
+        "uri": "https://github.com/cc4s/ppl-supporting-information/archive/refs/tags/v1.2.tar.gz",
+        "type": "tar"
+    }
+
+
+}
