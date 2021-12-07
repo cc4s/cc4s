@@ -7,9 +7,14 @@ CC4S_RUN ?= $(CC4S_PATH)
 OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum $(CC4S_PATH) | cut -d ' ' -f1).testis
 TAGS =
 TESTMATCH ?= .*
+TEST_FOLDERS = $(shell find . -name test.json | xargs dirname)
+TESTIS_LINKS = $(patsubst %,%/$(TESTIS),$(TEST_FOLDERS))
 
 -include config.$(CONFIG)
 
+link: $(TESTIS_LINKS)
+$(TESTIS_LINKS): $(TESTIS)
+	ln -rs $< $@
 
 ifeq ($(CC4S_RUN),)
 $(error DEAR USER: Please define the CC4S_RUN environment variable)
@@ -20,16 +25,19 @@ endif
 $(info CC4S_PATH = $(CC4S_PATH))
 $(info CC4S_RUN = $(CC4S_RUN))
 
+test: link
 test:
 	$(PYTHON) $(TESTIS) -rc . -n $(OUTPUT_NAME) \
 		--rx "$(TESTMATCH)" \
 		--tags "$(TAGS)"
 
+check: link
 check:
 	$(PYTHON) $(TESTIS) -c . -n $(OUTPUT_NAME) \
 		--rx "$(TESTMATCH)" \
 		--tags "$(TAGS)"
 
+run: link
 run:
 	$(PYTHON) $(TESTIS) -r . -n $(OUTPUT_NAME) \
 		--rx "$(TESTMATCH)" \

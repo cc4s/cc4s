@@ -9,3 +9,4 @@ core
 FTODDUMP.bak
 testis-store/
 test-results
+*.testis
