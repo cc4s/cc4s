@@ -9,12 +9,17 @@ TAGS =
 TESTMATCH ?= .*
 TEST_FOLDERS = $(shell find . -name test.json | xargs dirname)
 TESTIS_LINKS = $(patsubst %,%/$(TESTIS),$(TEST_FOLDERS))
+BINARY_LINKS = $(patsubst %,%/$(OUTPUT_NAME)/Cc4s,$(TEST_FOLDERS))
 
 -include config.$(CONFIG)
 
-link: $(TESTIS_LINKS)
+link: $(TESTIS_LINKS) $(BINARY_LINKS)
 $(TESTIS_LINKS): $(TESTIS)
 	ln -rs $< $@
+
+$(BINARY_LINKS):
+	mkdir -p $(@D)
+	ln -rs $(CC4S_PATH) $@
 
 ifeq ($(CC4S_RUN),)
 $(error DEAR USER: Please define the CC4S_RUN environment variable)
