@@ -281,13 +281,13 @@ void TransitionStructureFactorFiniteSizeCorrection::interpolation(
     Cc4s::world->getRank(), Cc4s::world->getProcesses(), Cc4s::world->getComm()
   );
   communicator.barrier();
-  for (Natural<> a(0); a < N; ++a)
-  for (Natural<> b(0); b < N; ++b)
-  for (Natural<> c(0); c < N; ++c) {
+  for (int a(-int(N)); a < int(N); ++a)
+  for (int b(-int(N)); b < int(N); ++b)
+  for (int c(-int(N)); c < int(N); ++c) {
     if ((a+b+c) % Cc4s::world->getProcesses() != Cc4s::world->getRank()) continue;
-    Vector<Real<>> ga(((B[0]/Real<>(N))*Real<>(a)));
-    Vector<Real<>> gb(((B[1]/Real<>(N))*Real<>(b)));
-    Vector<Real<>> gc(((B[2]/Real<>(N))*Real<>(c)));
+    Vector<Real<>> ga(((B[0]/Real<>(N*2))*Real<>(a)));
+    Vector<Real<>> gb(((B[1]/Real<>(N*2))*Real<>(b)));
+    Vector<Real<>> gc(((B[2]/Real<>(N*2))*Real<>(c)));
     Vector<Real<>> g(ga+gb+gc);
     countNOg++;
     // loop over coarse grid. i.e. shift fine grid onto every coarse grid-point
@@ -306,7 +306,7 @@ void TransitionStructureFactorFiniteSizeCorrection::interpolation(
   communicator.allReduce(inter3D, totalInter3D);
 
   OUT() << "Uncorrected correlation energy:   " << std::setprecision(10) << sum3D << "\n";
-  OUT() << "Finite-size energy correction:    " << std::setprecision(10) << totalInter3D/N/N/N-sum3D << "\n";
+  OUT() << "Finite-size energy correction:    " << std::setprecision(10) << totalInter3D/N/N/N/8.0-sum3D << "\n";
 
 
   result->setValue("corrected", inter3D);
