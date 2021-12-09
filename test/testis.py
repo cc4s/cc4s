@@ -237,7 +237,7 @@ def run_in_test(test, script_file):
     assert isinstance(test, TestCase)
     assert isinstance(script_file, str)
     cmd = shlex.split(script_file)
-    logging.debug("running: %s", cmd)
+    logging.info("running: %s", cmd)
     cwd = os.getcwd()
 
     logging.debug("chdir: %s", test.outpath)

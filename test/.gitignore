@@ -1,3 +1,5 @@
+tests/**/testis.py
+config.mk
 *.out
 *.err
 cc4s.yaml

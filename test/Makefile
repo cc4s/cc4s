@@ -1,12 +1,13 @@
 -include config.mk
-TESTIS = ./testis.py
 PYTHON ?= python3
 CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
 CC4S_RUN ?= $(CC4S_PATH)
 OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum $(CC4S_PATH) | cut -d ' ' -f1).testis
-TAGS =
+TAGS ?= essential
 TESTMATCH ?= .*
+
+TESTIS = ./testis.py
 TEST_FOLDERS = $(shell find . -name test.json | xargs dirname)
 TESTIS_LINKS = $(patsubst %,%/$(TESTIS),$(TEST_FOLDERS))
 BINARY_LINKS = $(patsubst %,%/$(OUTPUT_NAME)/Cc4s,$(TEST_FOLDERS))
@@ -48,11 +49,17 @@ run:
 		--rx "$(TESTMATCH)" \
 		--tags "$(TAGS)"
 
+data:
+	$(PYTHON) $(TESTIS) . -n $(OUTPUT_NAME) \
+		--rx "$(TESTMATCH)" \
+		--tags "$(TAGS)"
+
 clean:
 	-@find . -name '*.testis'   -type d -exec rm -vr {} \;
 	-@find . -name testis-store -type d -exec rm -vr {} \;
 	-@find . -name __pycache__  -type d -exec rm -vr {} \;
+	-@rm -v $(TESTIS_LINKS)
 
 gdb: CC4S_RUN="gdb $(CC4S_PATH)"
 
-.PHONY: test check all gdb clean
+.PHONY: test check all gdb clean data
