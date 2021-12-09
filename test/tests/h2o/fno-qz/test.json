@@ -1,5 +1,5 @@
 {
-  "name": "h2o molecule aug-cc-pvdz",
+  "name": "h2o mp2 fno aug-cc-pvqz",
   "resources": [
     {
       "out": "EigenEnergies.yaml",

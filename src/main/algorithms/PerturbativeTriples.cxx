@@ -89,12 +89,13 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
                             * (No + Nv)
                             * 2.0
                             * 6.0
-                            / 1e9
+                            / 1.0e9
                             ;
+  double lastElapsedTime = 0;
   auto const rank = Cc4s::world->getRank();
   bool firstHeaderPrinted = false;
   atrip::registerIterationDescriptor
-    ([doublesFlops, &firstHeaderPrinted, rank]
+    ([doublesFlops, &firstHeaderPrinted, rank, &lastElapsedTime]
        (atrip::IterationDescription const& d) {
       const char
         *fmt_header = "%-13s%-10s%-13s",
@@ -107,8 +108,9 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
       }
       sprintf(out, fmt_nums,
               double(d.currentIteration) / double(d.totalIterations) * 100,
-              d.currentElapsedTime,
+              (d.currentElapsedTime - lastElapsedTime),
               doublesFlops / d.currentElapsedTime);
+      lastElapsedTime = d.currentElapsedTime;
       OUT() << out << "\n";
     });
 
