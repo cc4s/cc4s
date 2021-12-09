@@ -1,0 +1,88 @@
+- name: TensorReader
+  in:
+    fileName: "EigenEnergies.yaml"
+  out:
+    tensor: EigenEnergies
+
+- name: TensorReader
+  in:
+    fileName: "CoulombVertex.yaml"
+  out:
+    tensor: CoulombVertex
+
+- name: TensorReader
+  in:
+    fileName: "DeltaIntegralsHH.yaml"
+  out:
+    tensor: DeltaIntegralsHH
+
+- name: TensorReader
+  in:
+    fileName: "DeltaIntegralsPPHH.yaml"
+  out:
+    tensor: DeltaIntegralsPPHH
+
+- name: TensorReader
+  in:
+    fileName: "Mp2PairEnergies.yaml"
+  out:
+    tensor: Mp2PairEnergies
+
+
+- name: DefineHolesAndParticles
+  in:
+    eigenEnergies: EigenEnergies
+  out:
+    slicedEigenEnergies: EigenEnergies
+
+- name: SliceOperator
+  in:
+    slicedEigenEnergies: EigenEnergies
+    operator: CoulombVertex
+  out:
+    slicedOperator: CoulombVertex
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method:
+      type: Ccsd
+      integralsSliceSize: 100
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
+    maxIterations: 50
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+
+- name: CcsdFocalPointBasisSetCorrection
+  in:
+    slicedEigenEnergies: EigenEnergies
+    amplitudes: Amplitudes
+    coulombIntegrals: CoulombIntegrals
+    mp2PairEnergies: Mp2PairEnergies
+    deltaIntegralsHH: DeltaIntegralsHH
+    deltaIntegralsPPHH: DeltaIntegralsPPHH
+  out:
+    {}
+
+
+- name: PerturbativeTriples
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    slicedEigenEnergies: EigenEnergies
+  out:
+    {}

@@ -1,0 +1,46 @@
+{
+  "name": "h2o molecule aug-cc-pvdz",
+  "resources": [
+    {
+      "out": "EigenEnergies.yaml",
+      "uri": "{nwchem-h2o}/fno-qz/EigenEnergies.yaml"
+    },
+    {
+      "out": "EigenEnergies.dat",
+      "uri": "{nwchem-h2o}/fno-qz/EigenEnergies.dat"
+    },
+    {
+      "out": "CoulombVertex.yaml",
+      "uri": "{nwchem-h2o}/fno-qz/CoulombVertex.yaml"
+    },
+    {
+      "out": "CoulombVertex.dat",
+      "uri": "{nwchem-h2o}/fno-qz/CoulombVertex.dat"
+    },
+    {
+      "out": "DeltaIntegralsHH.yaml",
+      "uri": "{nwchem-h2o}/fno-qz/DeltaIntegralsHH.yaml"
+    },
+    {
+      "out": "DeltaIntegralsHH.dat",
+      "uri": "{nwchem-h2o}/fno-qz/DeltaIntegralsHH.dat"
+    },
+    {
+      "out": "DeltaIntegralsPPHH.yaml",
+      "uri": "{nwchem-h2o}/fno-qz/DeltaIntegralsPPHH.yaml"
+    },
+    {
+      "out": "DeltaIntegralsPPHH.dat",
+      "uri": "{nwchem-h2o}/fno-qz/DeltaIntegralsPPHH.dat"
+    },
+    {
+      "out": "Mp2PairEnergies.yaml",
+      "uri": "{nwchem-h2o}/fno-qz/Mp2PairEnergies.yaml"
+    },
+    {
+      "out": "Mp2PairEnergies.dat",
+      "uri": "{nwchem-h2o}/fno-qz/Mp2PairEnergies.dat"
+    }
+  ],
+  "tags": "essential nwchem molecule gaussian ccsd ccsd(t)"
+}
