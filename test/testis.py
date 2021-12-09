@@ -404,6 +404,8 @@ def main():
                     out = ["\t{}» ({}){}  {}".format(RED, f, CLEAR, l)
                             for l in result[f].split("\n")]
                     print("\n".join(["\t...."] + tail(out, args.tail)))
+                print("\n\tDirectory to inspect the error:\n"
+                      "\n\tcd {}\n".format(test.outpath))
             else:
                 print("{}\t[ok]{} ({})".format(GREEN, CLEAR, script))
 
