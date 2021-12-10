@@ -1,6 +1,14 @@
-CONFIG ?= gcc
+CONFIG ?=
 -include config.mk
 CONFIG_PATH ?= etc/config/${CONFIG}.mk
+ifndef CONFIG
+$(info ERROR: \
+	CONFIG is not defined, choose a config from etc/config or define your own.)
+$(info ERROR: You can:)
+$(info ERROR:    - run e.g. make CONFIG=icc-mkl-impi)
+$(info ERROR:    - define CONFIG variable in ./config.mk and run make)
+$(error exiting now..)
+endif
 include ${CONFIG_PATH}
 include Sources.mk
 
