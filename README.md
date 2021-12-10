@@ -6,11 +6,11 @@ Quick start for icc and Intel MPI library
 
 To build the required libraries and cc4s issue the following command
 ```
-make CONFIG=icc_impi extern -j 4
-make CONFIG=icc_impi cc4s -j 4
+make CONFIG=icc-mkl-impi extern -j 4
+make CONFIG=icc-mkl-impi cc4s -j 4
 ```
 
-These commands use the configuration specified in the `./etc/config/icc_impi.mk` file.
+These commands use the configuration specified in the `./etc/config/icc-mkl-impi.mk` file.
 
 Library dependencies
 --------------------
@@ -30,11 +30,11 @@ Different features of the code can be controlled by the `config.mk`
 file in the root directory.
 
 For instance, if you want the library `atrip` to be built,
-using the `icc_impi` configuration,
+using the `icc-mkl-impi` configuration,
 you can write in your `config.mk` file the following
 
 ```make
-CONFIG = icc_impi
+CONFIG = icc-mkl-impi
 ```
 
 and you can simply build by doing
