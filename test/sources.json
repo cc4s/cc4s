@@ -1,7 +1,12 @@
 {
 
   "nwchem-h2o": {
-    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/cd5a78f38d9675a0fbec65151e76d8449f5627c1/h2o",
+    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/335958fa0a9d163e9e329a4e7a8b59d775617bb8/h2o",
+    "type": "raw"
+  },
+
+  "r-bn-gamma": {
+    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/335958fa0a9d163e9e329a4e7a8b59d775617bb8/r-bn/gamma",
     "type": "raw"
   },
 

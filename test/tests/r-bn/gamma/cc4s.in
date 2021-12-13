@@ -1,0 +1,116 @@
+- name: TensorReader
+  in:
+    fileName: "EigenEnergies.yaml"
+  out:
+    tensor: EigenEnergies
+
+- name: TensorReader
+  in:
+    fileName: "CoulombVertex.yaml"
+  out:
+    tensor: CoulombVertex
+
+- name: TensorReader
+  in:
+    fileName: "CoulombVertexSingularVectors.yaml"
+  out:
+    tensor: CoulombVertexSingularVectors
+
+- name: TensorReader
+  in:
+    fileName: "GridVectors.yaml"
+  out:
+    tensor: GridVectors
+
+- name: TensorReader
+  in:
+    fileName: "CoulombPotential.yaml"
+  out:
+    tensor: CoulombPotential
+
+- name: DefineHolesAndParticles
+  in:
+    eigenEnergies: EigenEnergies
+  out:
+    slicedEigenEnergies: EigenEnergies
+
+- name: SliceOperator
+  in:
+    slicedEigenEnergies: EigenEnergies
+    operator: CoulombVertex
+  out:
+    slicedOperator: CoulombVertex
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method:
+      type: Ccsd
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
+    integralsSliceSize: 100
+    maxIterations: 30
+    energyConvergence: 1.0E-5
+    amplitudesConvergence: 1.0E-5
+    mixer:
+      type: DiisMixer
+      maxResidua: 32
+  out:
+    energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+- name: TransitionStructureFactorFiniteSizeCorrection
+  in:
+    slicedCoulombVertex: CoulombVertex
+    amplitudes: Amplitudes
+    coulombVertexSingularVectors: CoulombVertexSingularVectors
+    coulombPotential: CoulombPotential
+    gridVectors: GridVectors
+  out:
+    corrected: Corrected
+    uncorrected: Uncorrected
+    transitionStructureFactor: SF
+
+- name: TensorReader
+  in:
+    fileName: "DeltaIntegralsHH.yaml"
+  out:
+    tensor: Nij
+
+- name: TensorReader
+  in:
+    fileName: "DeltaIntegralsPPHH.yaml"
+  out:
+    tensor: DeltaIntegrals
+
+- name: TensorReader
+  in:
+    fileName: "Mp2PairEnergies.yaml"
+  out:
+    tensor: Mp2PairEnergies
+
+- name: CcsdFocalPointBasisSetCorrection
+  in:
+    slicedEigenEnergies: EigenEnergies
+    amplitudes: Amplitudes
+    coulombIntegrals: CoulombIntegrals
+    mp2PairEnergies: Mp2PairEnergies
+    deltaIntegralsHH: Nij
+    deltaIntegralsPPHH: DeltaIntegrals
+  out:
+    {}
+
+
+- name: PerturbativeTriples
+  in:
+    slicedEigenEnergies: EigenEnergies
+    amplitudes: Amplitudes
+    coulombIntegrals: CoulombIntegrals
+  out:
+    energy: AtripEnergy

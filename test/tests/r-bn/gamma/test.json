@@ -1,0 +1,70 @@
+{
+  "name": "r-BN Γ-point",
+  "resources": [
+    {
+      "out": "EigenEnergies.yaml",
+      "uri": "{r-bn-gamma}/EigenEnergies.yaml"
+    },
+    {
+      "out": "EigenEnergies.dat",
+      "uri": "{r-bn-gamma}/EigenEnergies.dat"
+    },
+    {
+      "out": "CoulombVertex.yaml",
+      "uri": "{r-bn-gamma}/CoulombVertex.yaml"
+    },
+    {
+      "out": "CoulombVertex.dat",
+      "uri": "{r-bn-gamma}/CoulombVertex.dat"
+    },
+    {
+      "out": "CoulombVertexSingularVectors.yaml",
+      "uri": "{r-bn-gamma}/CoulombVertexSingularVectors.yaml"
+    },
+    {
+      "out": "CoulombVertexSingularVectors.dat",
+      "uri": "{r-bn-gamma}/CoulombVertexSingularVectors.dat"
+    },
+    {
+      "out": "GridVectors.yaml",
+      "uri": "{r-bn-gamma}/GridVectors.yaml"
+    },
+    {
+      "out": "GridVectors.dat",
+      "uri": "{r-bn-gamma}/GridVectors.dat"
+    },
+    {
+      "out": "CoulombPotential.yaml",
+      "uri": "{r-bn-gamma}/CoulombPotential.yaml"
+    },
+    {
+      "out": "CoulombPotential.dat",
+      "uri": "{r-bn-gamma}/CoulombPotential.dat"
+    },
+    {
+      "out": "DeltaIntegralsHH.yaml",
+      "uri": "{r-bn-gamma}/DeltaIntegralsHH.yaml"
+    },
+    {
+      "out": "DeltaIntegralsHH.dat",
+      "uri": "{r-bn-gamma}/DeltaIntegralsHH.dat"
+    },
+    {
+      "out": "DeltaIntegralsPPHH.yaml",
+      "uri": "{r-bn-gamma}/DeltaIntegralsPPHH.yaml"
+    },
+    {
+      "out": "DeltaIntegralsPPHH.dat",
+      "uri": "{r-bn-gamma}/DeltaIntegralsPPHH.dat"
+    },
+    {
+      "out": "Mp2PairEnergies.yaml",
+      "uri": "{r-bn-gamma}/Mp2PairEnergies.yaml"
+    },
+    {
+      "out": "Mp2PairEnergies.dat",
+      "uri": "{r-bn-gamma}/Mp2PairEnergies.dat"
+    }
+  ],
+  "tags": "essential vasp ppl"
+}
