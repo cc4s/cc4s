@@ -145,6 +145,7 @@ namespace cc4s {
       const bool useBinary
     ) {
       auto pointerNode(node->toPtr<AtomicNode<Ptr<Object>>>());
+      if (!pointerNode) return nullptr;
       auto tensorExpression(
         dynamicPtrCast<TensorExpression<F,TE>>(pointerNode->value)
       );
@@ -157,7 +158,7 @@ namespace cc4s {
       for (size_t d(0); d < tensor->lens.size(); ++d) {
         auto dimension(New<MapNode>(SOURCE_LOCATION));
         dimension->setValue("length", tensor->lens[d]);
-        if (tensor->dimensions[d]) {
+        if (tensor->dimensions.size() > 0 && tensor->dimensions[d]) {
           dimension->setValue("dimension", tensor->dimensions[d]->name);
         }
         dimensions->get(d) = dimension;
