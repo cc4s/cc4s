@@ -68,7 +68,7 @@ void DiisMixer<F,TE>::append(
   // write the overlap matrix for the new residua
   for (size_t i(0); i < N; ++i) {
     if (residua[i]) {
-      F overlap( 2.0*residua[i]->dot(*R) );
+      F overlap( 2.0*real(residua[i]->dot(*R)) );
       size_t j((i+1)*(N+1)+nextIndex+1);
       B[j] = overlap;
       j = (nextIndex+1)*(N+1)+i+1;
