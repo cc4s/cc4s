@@ -96,8 +96,8 @@ void TransitionStructureFactorFiniteSizeCorrection::calculateTransitionStructure
   //We have to calculate the overlap coefficients Cpq(G) from Γpq(G) by dividing
   //by the reciprocal Coulomb kernel
   //Finally the TransitionStructureFactor reads: S(G)=Cai(G) (Cjb(G))^(*) ( Tabij + Tia Tjb )
-  auto CGph   = ( Tcc<TE>::template tensor<Complex<>>("CGph"));
-  auto cTCGph = ( Tcc<TE>::template tensor<Complex<>>("cTCGph"));
+  auto CGhp   = ( Tcc<TE>::template tensor<Complex<>>("CGhp"));
+  auto cTCGhp = ( Tcc<TE>::template tensor<Complex<>>("cTCGhp"));
 
   //units of Coulomb potential [Energy*Volume]
   auto CoulombPotential(arguments->getMap("coulombPotential"));
@@ -111,9 +111,9 @@ void TransitionStructureFactorFiniteSizeCorrection::calculateTransitionStructure
     (*invSqrtCoulombPotential)["G"] <<=
       map<Complex<>>(inverseSqrt, (*VofG)["G"]),
     // PH codensities
-    (*CGph)["Gai"]    <<= (*GammaGph)["Gai"] * (*invSqrtCoulombPotential)["G"],
-    (*cTCGph)["Gai"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGhp)["Gia"]),
-    (*cTCGph)["Gai"]  <<= (*cTCGph)["Gai"] * (*invSqrtCoulombPotential)["G"]
+    (*CGhp)["Gia"]    <<= (*GammaGhp)["Gia"] * (*invSqrtCoulombPotential)["G"],
+    (*cTCGhp)["Gia"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGph)["Gai"]),
+    (*cTCGhp)["Gia"]  <<= (*cTCGhp)["Gia"] * (*invSqrtCoulombPotential)["G"]
   )->execute();
 
   auto TransitionStructureFactor( Tcc<TE>::template tensor<Real<>>("TransitionStructureFactor"));
@@ -139,8 +139,8 @@ void TransitionStructureFactorFiniteSizeCorrection::calculateTransitionStructure
 
   auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
   COMPILE(
-    (*SofG)["G"] <<= ( 2.0) * (*cTCGph)["Gai"] * (*CGph)["Gbj"] * (*Tabij)["abij"],
-    (*SofG)["G"]  += (-1.0) * (*cTCGph)["Gaj"] * (*CGph)["Gbi"] * (*Tabij)["abij"],
+    (*SofG)["G"] <<= ( 2.0) * (*cTCGhp)["Gia"] * (*CGhp)["Gjb"] * (*Tabij)["abij"],
+    (*SofG)["G"]  += (-1.0) * (*cTCGhp)["Gja"] * (*CGhp)["Gib"] * (*Tabij)["abij"],
     (*TransitionStructureFactor)["G"] <<= map<Real<>>(real<Complex<>>, (*SofG)["G"])
   )->execute();
 
