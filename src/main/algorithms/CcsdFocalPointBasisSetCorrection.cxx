@@ -143,8 +143,8 @@ bool CcsdFocalPointBasisSetCorrection::run(
 
   Real<> Emp2Cbs(eMp2Cbs->read());
   Real<> deltaPsPpl(deltaEppl->read());
-  Real<> Emp2(real<F>(eMp2->read()));
-  Real<> Eccsd(real<F>(eCcsd->read()));
+  Real<> Emp2(real(eMp2->read()));
+  Real<> Eccsd(real(eCcsd->read()));
 
   OUT() << "CCSD correlation energy:          " << std::setprecision(10) << Eccsd  << "\n";
   OUT() << "CCSD-FP correlation energy:       " << std::setprecision(10) << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << "\n";

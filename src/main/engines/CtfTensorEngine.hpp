@@ -41,13 +41,13 @@ namespace cc4s {
       Natural<128> lTotal(
         1000 * l.maxStorageCount +
         10 * l.accessCount +
-        sizeof(F) / sizeof(real<F>(F(0))) * l.multiplicationsCount +
+        sizeof(F) / sizeof(real(F(0))) * l.multiplicationsCount +
         l.additionsCount
       );
       Natural<128> rTotal(
         1000 * l.maxStorageCount +
         10 * l.accessCount +
-        sizeof(F) / sizeof(real<F>(F(0))) * r.multiplicationsCount +
+        sizeof(F) / sizeof(real(F(0))) * r.multiplicationsCount +
         r.additionsCount
       );
       return (rTotal < lTotal) - (lTotal < rTotal);

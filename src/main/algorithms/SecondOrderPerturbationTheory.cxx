@@ -110,9 +110,12 @@ Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
   OUT() << "  exchange: " << X << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
-  energy->setValue("direct", real<F>(D));
-  energy->setValue("exchange", real<F>(X));
-  energy->setValue("value", real<F>(D+X));
+  energy->setValue("direct", real(D));
+  energy->setValue("exchange", real(X));
+  energy->setValue("correlation", real(D+X));
+  energy->setValue("secondOrderDirect", real(D));
+  energy->setValue("secondOrderExchange", real(X));
+  energy->setValue("secondOrder", real(D+X));
   energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;

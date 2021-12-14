@@ -110,7 +110,7 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
   F eTriples(E->read());
   OUT() << "(T) correlation energy: "
         << std::setprecision(15) << std::setw(23)
-        << real<F>(eTriples) << std::endl;
+        << real(eTriples) << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("triples", real(eTriples));
