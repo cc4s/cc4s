@@ -112,5 +112,7 @@
     slicedEigenEnergies: EigenEnergies
     amplitudes: Amplitudes
     coulombIntegrals: CoulombIntegrals
+    mp2CorrelationEnergy: 1
+    mp2CorrelationEnergyCBS: 2
   out:
     energy: AtripEnergy

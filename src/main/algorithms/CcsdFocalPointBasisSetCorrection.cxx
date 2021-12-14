@@ -116,14 +116,14 @@ bool CcsdFocalPointBasisSetCorrection::run(
     (*eMp2Cbs)[""] <<= (*mp2PairEnergiesCbs)["ij"],
 
   //ccsd amplitudes
-    (*Tabij)["abij"] <<= (*Tpphh)["abij"],
-    (*Tabij)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
+    (*Tabij)["abij"] <<=  map<F>(conj<F>, (*Tpphh)["abij"]),
+    (*Tabij)["abij"]  += map<F>(conj<F>,  (*Tph)["ai"] * (*Tph)["bj"]),
   // reevalaute ccsd energy
     (*eCcsd)[""] <<= ( 2.0) * (*Tabij)["abij"] * (*Vabij)["abij"],
     (*eCcsd)[""]  += (-1.0) * (*Tabij)["abij"] * (*Vabij)["abji"],
   // evaluate nominator
-    (*gijccd)["ij"] <<= (*Dabij)["abij"] * (*Tabij)["abij"],
-    (*gijmp2)["ij"] <<= (*Dabij)["abij"] * (*Mabij)["abij"],
+    (*gijccd)["ij"] <<= map<F>(conj<F>, (*Dabij)["abij"] ) * (*Tabij)["abij"],
+    (*gijmp2)["ij"] <<= map<F>(conj<F>, (*Dabij)["abij"] ) * (*Mabij)["abij"],
   // divide by <ij|\delta|ij>
     (*gijccd)["ij"] <<= (*gijccd)["ij"] * map<F>(inverse, (*nij)["ij"]),
     (*gijmp2)["ij"] <<= (*gijmp2)["ij"] * map<F>(inverse, (*nij)["ij"]),
