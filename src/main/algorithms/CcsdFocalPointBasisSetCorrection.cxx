@@ -55,6 +55,7 @@ bool CcsdFocalPointBasisSetCorrection::run(
   using Tr = TensorExpression<Real<>, TE>;
   using T = TensorExpression<F, TE>;
   auto amplitudes( arguments->getPtr<TensorUnion<F,TE>>("amplitudes") );
+  if (!amplitudes) return false;
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
 

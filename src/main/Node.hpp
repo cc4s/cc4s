@@ -181,13 +181,7 @@ namespace cc4s {
       );
       // then, try to convert pointer to target type
       auto pointer(dynamicPtrCast<PointedTarget>(ptrAtom->value));
-      ASSERT_LOCATION(
-        pointer,
-        std::string("expecting object ")
-          + TypeTraits<PointedTarget>::getName() + " as value of key '"
-          + key + "'",
-        sourceLocation
-      );
+      // if it fails nullptr will be returned
       return pointer;
     }
     template <typename Target>
