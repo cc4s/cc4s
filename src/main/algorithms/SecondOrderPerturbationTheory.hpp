@@ -32,6 +32,9 @@ namespace cc4s {
   protected:
     template <typename F, typename TE>
     Ptr<MapNode> calculateMp2Energy(const Ptr<MapNode> &arguments);
+
+    template <typename F, typename TE>
+    Ptr<MapNode> getFockOperator(const Ptr<MapNode> &arguments);
   };
 }
 
