@@ -109,7 +109,7 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
       sprintf(out, fmt_nums,
               double(d.currentIteration) / double(d.totalIterations) * 100,
               (d.currentElapsedTime - lastElapsedTime),
-              doublesFlops / d.currentElapsedTime);
+              d.currentIteration * doublesFlops / d.currentElapsedTime);
       lastElapsedTime = d.currentElapsedTime;
       OUT() << out << "\n";
     });
