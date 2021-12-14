@@ -109,7 +109,7 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
       sprintf(out, fmt_nums,
               double(d.currentIteration) / double(d.totalIterations) * 100,
               (d.currentElapsedTime - lastElapsedTime),
-              doublesFlops / d.currentElapsedTime);
+              d.currentIteration * doublesFlops / d.currentElapsedTime);
       lastElapsedTime = d.currentElapsedTime;
       OUT() << out << "\n";
     });
@@ -123,10 +123,20 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
   OUT() << "(T) correlation energy: "
         << std::setprecision(15) << std::setw(23)
         << out.energy << std::endl;
-  OUT() << "(T*) correlation energy: " << "TODO" << std::endl;
+
+  const double
+    mp2Energy = arguments->getValue<double>("mp2CorrelationEnergy", 0.0),
+    mp2EnergyCBS = arguments->getValue<double>("mp2CorrelationEnergyCBS", 1.0),
+    ratio = mp2Energy / mp2EnergyCBS,
+    triples_star = ratio * out.energy;
+
+  OUT() << "(T*) correlation energy: "
+        << std::setprecision(15) << std::setw(23)
+        << triples_star << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("triples", real(out.energy));
+  energy->setValue("triples*", real(triples_star));
   result->get("energy") = energy;
 
   return result;

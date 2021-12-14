@@ -55,7 +55,7 @@ Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
 ) {
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vabij(coulombSlices->getPtr<TensorExpression<F,TE>>("pphh"));
+  auto Vpphh(coulombSlices->getPtr<TensorExpression<F,TE>>("pphh"));
   auto orbitalType(
     coulombIntegrals->getMap(
       "indices"
@@ -75,47 +75,109 @@ Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
     );
   }
 
+  auto fockOperator(getFockOperator<F,TE>(arguments));
+  auto fockSlices(fockOperator->getMap("slices"));
+  auto fph(fockSlices->template getPtr<TensorExpression<F,TE>>("ph"));
+
   auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
   auto energySlices(eigenEnergies->getMap("slices"));
   auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
   auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
 
-  auto No(epsi->inspect()->getLens()[0]);
-  auto Nv(epsa->inspect()->getLens()[0]);
-  auto Dabij(
-    Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Dabij")
+  auto No(epsi->inspect()->getLen(0));
+  auto Nv(epsa->inspect()->getLen(0));
+  auto Dph(
+    Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,No}),"Dph")
   );
+  auto Dpphh(
+    Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Dpphh")
+  );
+  auto singles( Tcc<TE>::template tensor<F>("S") );
   auto direct( Tcc<TE>::template tensor<F>("D") );
   auto exchange( Tcc<TE>::template tensor<F>("X") );
-  auto toEigenUnits = pow(eigenEnergies->getValue<Real<>>("unit"),2.0) /
-    pow(coulombIntegrals->getValue<Real<>>("unit"),2.0);
+  auto toEigenUnits(
+    pow(eigenEnergies->getValue<Real<>>("unit"),2.0)
+    / pow(coulombIntegrals->getValue<Real<>>("unit"),2.0)
+  );
   OUT() << "Contracting MP2 energy..." << std::endl;
   COMPILE(
-    (*Dabij)["abij"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
-    (*Dabij)["abij"] +=  map<F>([](Real<> eps) {return F(eps);}, (*epsa)["b"]),
-    (*Dabij)["abij"] -=  map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"]),
-    (*Dabij)["abij"] -=  map<F>([](Real<> eps) {return F(eps);}, (*epsi)["j"]),
-    (*Dabij)["abij"] <<=
-      map<F>(conj<F>, (*Vabij)["abij"]) *
-      map<F>([](F delta) { return F(1)/delta; }, (*Dabij)["abij"]),
+    (*Dph)["ai"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
+    (*Dph)["ai"] -=  map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"]),
+    (*Dpphh)["abij"] <<= (*Dph)["ai"],
+    (*Dpphh)["abij"] +=  (*Dph)["bj"],
+    // first-order singles amplitudes
+    (*Dph)["ai"] <<=
+      map<F>(conj<F>, (*fph)["ai"]) *
+      map<F>([](F delta) { return F(1/real(delta)); }, (*Dph)["ai"]),
+    // first-order doubles amplitudes
+    (*Dpphh)["abij"] <<=
+      map<F>(conj<F>, (*Vpphh)["abij"]) *
+      map<F>([](F delta) { return F(1/real(delta)); }, (*Dpphh)["abij"]),
+    (*singles)[""] <<=
+      toEigenUnits * -spins * (*fph)["ai"] * (*Dph)["ai"],
     (*direct)[""] <<=
-      toEigenUnits * -0.5*spins*spins * (*Vabij)["abij"] * (*Dabij)["abij"],
+      toEigenUnits * -0.5*spins*spins * (*Vpphh)["abij"] * (*Dpphh)["abij"],
     (*exchange)[""] <<=
-      toEigenUnits * +0.5*spins * (*Vabij)["abji"] * (*Dabij)["abij"]
+      toEigenUnits * +0.5*spins * (*Vpphh)["abji"] * (*Dpphh)["abij"]
   )->execute();
 
-  F D(direct->read()), X(exchange->read());
-  OUT() << "correlation energy: " << D+X << std::endl;
-  OUT() << "  direct: " << D << std::endl;
+  F S(singles->read()), D(direct->read()), X(exchange->read());
+  OUT() << "correlation energy: " << S+D+X << std::endl;
+  OUT() << "  singles:  " << S << std::endl;
+  OUT() << "  direct:   " << D << std::endl;
   OUT() << "  exchange: " << X << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
-  energy->setValue("direct", real<F>(D));
-  energy->setValue("exchange", real<F>(X));
-  energy->setValue("value", real<F>(D+X));
+  energy->setValue("singles", real(S));
+  energy->setValue("direct", real(D));
+  energy->setValue("exchange", real(X));
+  energy->setValue("correlation", real(S+D+X));
+  energy->setValue("secondOrderSingles", real(S));
+  energy->setValue("secondOrderDirect", real(D));
+  energy->setValue("secondOrderExchange", real(X));
+  energy->setValue("secondOrder", real(S+D+X));
   energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
+  return result;
+}
+
+template <typename F, typename TE>
+Ptr<MapNode> SecondOrderPerturbationTheory::getFockOperator(
+  const Ptr<MapNode> &arguments
+) {
+  if (arguments->isGiven("slicedFockOperator")) {
+    return arguments->getMap("slicedFockOperator");
+  }
+  // else assume canonical calculation and compute from eigenenergies
+  auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
+  auto energySlices(eigenEnergies->getMap("slices"));
+  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
+  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
+  auto No(epsi->inspect()->getLen(0));
+  auto Nv(epsa->inspect()->getLen(0));
+  
+  auto fhh(Tcc<TE>::template tensor<F>(std::vector<Natural<>>({No,No}),"fhh"));
+  auto fph(Tcc<TE>::template tensor<F>(std::vector<Natural<>>({Nv,No}),"fph"));
+  auto fhp(Tcc<TE>::template tensor<F>(std::vector<Natural<>>({No,Nv}),"fhp"));
+  auto fpp(Tcc<TE>::template tensor<F>(std::vector<Natural<>>({Nv,Nv}),"fpp"));
+
+  // off-diagonal slices are zero tensors
+  // diagonal slices have eigenenergies on diagonal
+  COMPILE(
+    (*fhh)["ii"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"]),
+    (*fpp)["aa"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"])
+  )->execute();
+
+  auto result( New<MapNode>(SOURCE_LOCATION) );
+  result->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
+  result->setValue("scalarType", TypeTraits<F>::getName());
+  auto slices( New<MapNode>(SOURCE_LOCATION) );
+  slices->setPtr("hh", fhh);
+  slices->setPtr("ph", fph);
+  slices->setPtr("hp", fhp);
+  slices->setPtr("pp", fpp);
+  result->get("slices") = slices;
   return result;
 }
 

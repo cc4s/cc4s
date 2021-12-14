@@ -55,6 +55,7 @@ bool CcsdFocalPointBasisSetCorrection::run(
   using Tr = TensorExpression<Real<>, TE>;
   using T = TensorExpression<F, TE>;
   auto amplitudes( arguments->getPtr<TensorUnion<F,TE>>("amplitudes") );
+  if (!amplitudes) return false;
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
 
@@ -115,14 +116,14 @@ bool CcsdFocalPointBasisSetCorrection::run(
     (*eMp2Cbs)[""] <<= (*mp2PairEnergiesCbs)["ij"],
 
   //ccsd amplitudes
-    (*Tabij)["abij"] <<= (*Tpphh)["abij"],
-    (*Tabij)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
+    (*Tabij)["abij"] <<=  map<F>(conj<F>, (*Tpphh)["abij"]),
+    (*Tabij)["abij"]  += map<F>(conj<F>,  (*Tph)["ai"] * (*Tph)["bj"]),
   // reevalaute ccsd energy
     (*eCcsd)[""] <<= ( 2.0) * (*Tabij)["abij"] * (*Vabij)["abij"],
     (*eCcsd)[""]  += (-1.0) * (*Tabij)["abij"] * (*Vabij)["abji"],
   // evaluate nominator
-    (*gijccd)["ij"] <<= (*Dabij)["abij"] * (*Tabij)["abij"],
-    (*gijmp2)["ij"] <<= (*Dabij)["abij"] * (*Mabij)["abij"],
+    (*gijccd)["ij"] <<= map<F>(conj<F>, (*Dabij)["abij"] ) * (*Tabij)["abij"],
+    (*gijmp2)["ij"] <<= map<F>(conj<F>, (*Dabij)["abij"] ) * (*Mabij)["abij"],
   // divide by <ij|\delta|ij>
     (*gijccd)["ij"] <<= (*gijccd)["ij"] * map<F>(inverse, (*nij)["ij"]),
     (*gijmp2)["ij"] <<= (*gijmp2)["ij"] * map<F>(inverse, (*nij)["ij"]),
@@ -142,8 +143,8 @@ bool CcsdFocalPointBasisSetCorrection::run(
 
   Real<> Emp2Cbs(eMp2Cbs->read());
   Real<> deltaPsPpl(deltaEppl->read());
-  Real<> Emp2(real<F>(eMp2->read()));
-  Real<> Eccsd(real<F>(eCcsd->read()));
+  Real<> Emp2(real(eMp2->read()));
+  Real<> Eccsd(real(eCcsd->read()));
 
   OUT() << "CCSD correlation energy:          " << std::setprecision(10) << Eccsd  << "\n";
   OUT() << "CCSD-FP correlation energy:       " << std::setprecision(10) << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
