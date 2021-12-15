@@ -41,8 +41,11 @@ $(EXTERN_DONE_FILE): $(EXTERNAL_DEPENDENCIES)
 	@touch $@
 extern: $(EXTERN_DONE_FILE)
 
+fetch: $(FETCH_DEPENDENCIES) test-data
+.PHONY: fetch
 
 ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),fetch)
 ifneq ($(MAKECMDGOALS),clean-all)
 ifneq ($(MAKECMDGOALS),extern)
 ifneq ($(CREATE_EXTERN),FALSE)
@@ -61,6 +64,7 @@ endif
 endif
 endif
 endif
+endif
 
 $(DEP_FILES): $(INTERNAL_DEPENDENCIES)
 cc4s: $(BIN_PATH)/${CC4S_TARGET}
@@ -72,8 +76,16 @@ clean:
 clean-all: clean
 	@$(MAKE) CREATE_EXTERN=FALSE $(patsubst %,%-clean,$(EXTERNAL_DEPENDENCIES))
 
-test:
-	$(MAKE) -C $@
+test-run:
+	$(MAKE) -C test run
+
+test-check:
+	$(MAKE) -C test run
+
+test-data:
+	$(MAKE) -C test data
+
+.PHONY: test-run test-check test-data
 
 unit-test: $(BIN_PATH)/Test
 

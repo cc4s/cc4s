@@ -3,7 +3,9 @@ PYTHON ?= python3
 CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
 CC4S_RUN ?= $(CC4S_PATH)
-OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum $(CC4S_PATH) | cut -d ' ' -f1).testis
+ifneq ($(MAKECMDGOALS),data)
+OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum "$(CC4S_PATH)" | cut -d ' ' -f1).testis
+endif
 TAGS ?= essential
 TESTMATCH ?= .*
 
@@ -22,10 +24,12 @@ $(BINARY_LINKS):
 	mkdir -p $(@D)
 	ln -rs $(CC4S_PATH) $@
 
+ifneq ($(MAKECMDGOALS),data)
 ifeq ($(CC4S_RUN),)
 $(error DEAR USER: Please define the CC4S_RUN environment variable)
 else
 export CC4S_PATH CC4S_RUN
+endif
 endif
 
 $(info CC4S_PATH = $(CC4S_PATH))
@@ -50,7 +54,7 @@ run:
 		--tags "$(TAGS)"
 
 data:
-	$(PYTHON) $(TESTIS) . -n $(OUTPUT_NAME) \
+	$(PYTHON) $(TESTIS) . \
 		--rx "$(TESTMATCH)" \
 		--tags "$(TAGS)"
 
