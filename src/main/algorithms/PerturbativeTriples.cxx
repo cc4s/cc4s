@@ -14,6 +14,7 @@
  */
 
 #include <algorithms/PerturbativeTriples.hpp>
+#include <algorithms/PerturbativeTriplesStar.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <math/TensorUnion.hpp>
@@ -28,7 +29,9 @@ ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 #define QUOTE(...) Q(__VA_ARGS__)
 
 Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
+  using F = Real<>;
   using TE = DefaultTensorEngine;
+  using Tr = TensorExpression<F, TE>;
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
@@ -83,10 +86,10 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
     .with_percentageMod(10)
     ;
 
-  const double No = *(__eps__(h))->lens
-             , Nv = *(__eps__(p))->lens
-             , doublesFlops = No * No * No
-                            * (No + Nv)
+  const double _No = *(__eps__(h))->lens
+             , _Nv = *(__eps__(p))->lens
+             , doublesFlops = _No * _No * _No
+                            * (_No + _Nv)
                             * 2.0
                             * 6.0
                             / 1.0e9
@@ -124,19 +127,19 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
         << std::setprecision(15) << std::setw(23)
         << out.energy << std::endl;
 
-  const double
-    mp2Energy = arguments->getValue<double>("mp2CorrelationEnergy", 0.0),
-    mp2EnergyCBS = arguments->getValue<double>("mp2CorrelationEnergyCBS", 1.0),
-    ratio = mp2Energy / mp2EnergyCBS,
-    triples_star = ratio * out.energy;
-
-  OUT() << "(T*) correlation energy: "
-        << std::setprecision(15) << std::setw(23)
-        << triples_star << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("triples", real(out.energy));
-  energy->setValue("triples*", real(triples_star));
+
+  if (arguments->isGiven("mp2PairEnergies")) {
+    const Real<>
+      triples_star = computeCssdPtStar<F, TE>(arguments, out.energy);
+    OUT() << "(T*) correlation energy: "
+          << std::setprecision(15) << std::setw(23)
+          << triples_star << std::endl;
+    energy->setValue("triples*", real(triples_star));
+  }
+
   result->get("energy") = energy;
 
   return result;

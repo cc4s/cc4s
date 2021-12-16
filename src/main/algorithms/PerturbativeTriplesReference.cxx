@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <algorithms/PerturbativeTriplesStar.hpp>
 #include <algorithms/PerturbativeTriplesReference.hpp>
 #include <math/MathFunctions.hpp>
 #include <util/Log.hpp>
@@ -115,6 +116,16 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("triples", real(eTriples));
   energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
+
+  if (arguments->isGiven("mp2PairEnergies")) {
+    const Real<>
+      triples_star = computeCssdPtStar<F, TE>(arguments, real(eTriples));
+    OUT() << "(T*) correlation energy: "
+          << std::setprecision(15) << std::setw(23)
+          << triples_star << std::endl;
+    energy->setValue("triples*", real(triples_star));
+  }
+
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   return result;
