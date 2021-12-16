@@ -106,13 +106,20 @@
   out:
     {}
 
-
 - name: PerturbativeTriples
   in:
     slicedEigenEnergies: EigenEnergies
     amplitudes: Amplitudes
     coulombIntegrals: CoulombIntegrals
-    mp2CorrelationEnergy: 1
-    mp2CorrelationEnergyCBS: 2
+    mp2PairEnergies: Mp2PairEnergies
   out:
     energy: AtripEnergy
+
+#  - name: PerturbativeTriplesReference
+#    in:
+#      slicedEigenEnergies: EigenEnergies
+#      amplitudes: Amplitudes
+#      coulombIntegrals: CoulombIntegrals
+#      mp2PairEnergies: Mp2PairEnergies
+#    out:
+#      energy: AtripEnergy
