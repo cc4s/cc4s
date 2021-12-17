@@ -12,3 +12,5 @@ FTODDUMP.bak
 testis-store/
 test-results
 *.testis
+pyyaml
+lib

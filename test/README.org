@@ -126,3 +126,7 @@ where the sources ahve been defined to be as
 
 }
 #+end_src
+
+* Writing checks
+- Every test has to include a reference
+  yaml output that has been manually validated.

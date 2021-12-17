@@ -4,7 +4,9 @@ CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
 CC4S_RUN ?= $(CC4S_PATH)
 ifneq ($(MAKECMDGOALS),data)
+ifneq ($(MAKECMDGOALS),pyyaml)
 OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum "$(CC4S_PATH)" | cut -d ' ' -f1).testis
+endif
 endif
 TAGS ?= essential
 TESTMATCH ?= .*
@@ -25,10 +27,12 @@ $(BINARY_LINKS):
 	ln -rs $(CC4S_PATH) $@
 
 ifneq ($(MAKECMDGOALS),data)
+ifneq ($(MAKECMDGOALS),pyyaml)
 ifeq ($(CC4S_RUN),)
 $(error DEAR USER: Please define the CC4S_RUN environment variable)
 else
 export CC4S_PATH CC4S_RUN
+endif
 endif
 endif
 
@@ -64,6 +68,17 @@ clean:
 	-@find . -name __pycache__  -type d -exec rm -vr {} \;
 	-@rm -v $(TESTIS_LINKS)
 
+clean-all: clean
+	rm -vrf lib
+	rm -vfr pyyaml
+
 gdb: CC4S_RUN="gdb $(CC4S_PATH)"
 
-.PHONY: test check all gdb clean data
+pyyaml: lib/python/yaml
+lib/python/yaml:
+	git clone https://github.com/yaml/pyyaml
+	mkdir -p $(@D)
+	ln -rs pyyaml/lib/yaml/ $@
+	
+
+.PHONY: test check all gdb clean data pyyaml clean-all
