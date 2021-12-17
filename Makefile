@@ -71,11 +71,15 @@ endif
 $(DEP_FILES): $(INTERNAL_DEPENDENCIES)
 cc4s: $(BIN_PATH)/${CC4S_TARGET}
 
+DIST_DEPENDENCIES = \
+Makefile LICENSE README.md \
+./Extern.mk ./Sources.mk ./Cc4s.mk \
+src test extern/src etc
 DIST_NAME ?= dist-$(shell echo $(VERSION) | tr "/" "-")
 dist: $(DIST_NAME).tar
 $(DIST_NAME).tar: fetch
 	ln -s . $(DIST_NAME)
-	tar cf "$@" src test extern/src etc
+	tar cf "$@" $(DIST_DEPENDENCIES)
 	rm $(DIST_NAME)
 .PHONY: dist
 
