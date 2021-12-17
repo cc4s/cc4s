@@ -79,7 +79,7 @@ DIST_NAME ?= dist-$(shell echo $(VERSION) | tr "/" "-")
 dist: $(DIST_NAME).tar
 $(DIST_NAME).tar: fetch
 	ln -s . $(DIST_NAME)
-	tar cf "$@" $(DIST_DEPENDENCIES)
+	tar cf "$@" $(patsubst %,$(DIST_NAME)/%,$(DIST_DEPENDENCIES))
 	rm $(DIST_NAME)
 .PHONY: dist
 
