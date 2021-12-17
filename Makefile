@@ -46,6 +46,7 @@ fetch: $(FETCH_DEPENDENCIES) test-data
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),fetch)
+ifneq ($(MAKECMDGOALS),dist)
 ifneq ($(MAKECMDGOALS),clean-all)
 ifneq ($(MAKECMDGOALS),extern)
 ifneq ($(CREATE_EXTERN),FALSE)
@@ -65,9 +66,18 @@ endif
 endif
 endif
 endif
+endif
 
 $(DEP_FILES): $(INTERNAL_DEPENDENCIES)
 cc4s: $(BIN_PATH)/${CC4S_TARGET}
+
+DIST_NAME ?= dist-$(shell echo $(VERSION) | tr "/" "-")
+dist: $(DIST_NAME).tar
+$(DIST_NAME).tar: fetch
+	ln -s . $(DIST_NAME)
+	tar cf "$@" src test extern/src etc
+	rm $(DIST_NAME)
+.PHONY: dist
 
 clean:
 	rm -rf $(OBJ_PATH)
@@ -83,6 +93,7 @@ test-check:
 	$(MAKE) -C test run
 
 test-data:
+	$(MAKE) -C test pyyaml
 	$(MAKE) -C test data
 
 .PHONY: test-run test-check test-data
