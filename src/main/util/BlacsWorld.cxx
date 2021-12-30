@@ -21,6 +21,9 @@
 
 using namespace cc4s;
 
+// only if we have cblacs and scalapack in the project
+#if defined(HAVE_CBLACS) && defined(HAVE_SCALAPACK)
+
 BlacsWorld::BlacsWorld(int rank_, int processes, int processRows): rank(rank_) {
   lens[0] = processRows > 0 ?
     processRows : static_cast<int>(sqrt(processes));
@@ -44,3 +47,4 @@ void BlacsWorld::barrier() {
   Cblacs_barrier(context, "All");
 }
 
+#endif

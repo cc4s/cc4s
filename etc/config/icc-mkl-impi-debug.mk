@@ -18,8 +18,7 @@ CXXFLAGS += -O0 -g
 
 # libraries provided by the enviornment
 # BLAS and LAPACK library contained in mkl
-# ScaLAPACK libarary, expects mkl and intelmpi to be loaded
-MKL_LIB += -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64
+MKL_LIB += -lmkl_blacs_intelmpi_lp64
 
 CTF_CONFIG_FLAGS = CXX=mpiicc \
                    CXXFLAGS="-O0 -g" \

@@ -68,7 +68,6 @@ Building
 -   for the gcc configuration the following additional libraries are
     required
     - OpenBLAS
-    - scalapack
 - make sure, the above library dependencies are built for your configuration
 - run `make -j 8 [CONFIG=<config]` to build for the desired environment, by
   default for `gcc`. The `-j` option issues a parallel make on 8 processes.
@@ -129,3 +128,31 @@ git commit -m "Update dependency to version {...}"
 
 Note that you may commit changes to the your branch even if things do
 not work. However, each commit will be visible in the history.
+
+
+Additional dependencies
+-----------------------
+
+The code has some dormant dependencies like ScaLaPack that might be turneed
+on in the future for applications. These dependencies are controled
+with a preprocesor variable `HAVE_<NAME-OF-THE-DEPENDENCY>`.
+For instance, in the case of ScaLaPack we have `HAVE_SCALAPACK`.
+If you want to activate this feature, put in your makefile configuration
+file
+
+```make
+CXXFLAGS += -DHAVE_SCALAPACK
+```
+
+In order to figure out all features just run the following command
+
+```sh
+grep -h -E -r -o "HAVE_[^ )]*" src/  | sort -u
+```
+
+Note: If you want to use scalapack with mkl, you should set the following
+flags
+
+```make
+LDFLAGS += -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64
+```
