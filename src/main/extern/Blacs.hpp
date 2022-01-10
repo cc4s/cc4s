@@ -16,6 +16,7 @@
 #ifndef BLACS_DEFINED
 #define BLACS_DEFINED
 
+#ifdef HAVE_CBLACS
 extern "C" {
   void Cblacs_get(int context, int request, int *value);
   int Cblacs_gridinit(int *context, char const *order, int np_row, int np_col);
@@ -25,6 +26,7 @@ extern "C" {
   void Cblacs_gridexit(int ictxt);
   void Cblacs_barrier(int ictxt, char const *order);
 }
+#endif
 
 #endif
 

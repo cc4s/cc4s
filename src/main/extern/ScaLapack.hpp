@@ -21,6 +21,8 @@
 
 // TODO: use define for name mangling: underscore or not
 
+#ifdef HAVE_SCALAPACK
+
 extern "C" {
   void descinit_(
     int *descriptor,
@@ -127,5 +129,7 @@ extern "C" {
   );
 }
 
+// endif of HAVE_SCALAPACK
 #endif
 
+#endif
