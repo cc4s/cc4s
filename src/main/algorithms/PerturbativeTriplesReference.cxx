@@ -114,7 +114,7 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
         << real(eTriples) << std::endl;
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
-  energy->setValue("triples", real(eTriples));
+  energy->setValue("correlation", real(eTriples));
   energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
 
   if (arguments->isGiven("mp2PairEnergies")) {
@@ -123,7 +123,7 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
     OUT() << "(T*) correlation energy: "
           << std::setprecision(15) << std::setw(23)
           << triples_star << std::endl;
-    energy->setValue("triples*", real(triples_star));
+    energy->setValue("starCorrelation", real(triples_star));
   }
 
   auto result(New<MapNode>(SOURCE_LOCATION));

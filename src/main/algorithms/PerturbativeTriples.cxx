@@ -117,7 +117,9 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
       OUT() << out << "\n";
     });
 
-
+  result->setValue("unit", arguments
+                            ->getMap("slicedEigenEnergies")
+                            ->getValue<Real<>>("unit"));
 #undef __V__
 #undef __T__
 #undef __eps__
@@ -129,7 +131,7 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
 
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
-  energy->setValue("triples", real(out.energy));
+  energy->setValue("correlation", real(out.energy));
 
   if (arguments->isGiven("mp2PairEnergies")) {
     const Real<>
@@ -137,7 +139,7 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
     OUT() << "(T*) correlation energy: "
           << std::setprecision(15) << std::setw(23)
           << triples_star << std::endl;
-    energy->setValue("triples*", real(triples_star));
+    energy->setValue("starCorrelation", real(triples_star));
   }
 
   result->get("energy") = energy;
