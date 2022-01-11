@@ -5,7 +5,7 @@ CC4S_EXTERN_SRC   = $(abspath ./extern/src/)
 CC4S_INTERN_SRC   = $(abspath ./src/)
 
 # Cyclops Tensor Framework ====================================================
-CTF_COMMIT         ?= 968f8f9eb6aab1d6b67d2fcc1a70c9fc3b98adfa
+CTF_COMMIT         ?= 4c4b1ea26d3075f97ad70685d26a936ce2284d6b
 CTF_BUILD_PATH     ?= $(CC4S_EXTERN_BUILD)/ctf/$(CTF_COMMIT)
 CTF_SRC_PATH       ?= $(CC4S_EXTERN_SRC)/ctf/$(CTF_COMMIT)
 CTF_LDFLAGS        ?= -L${CTF_BUILD_PATH}/lib -lctf

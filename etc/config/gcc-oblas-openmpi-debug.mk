@@ -20,7 +20,8 @@ CTF_CONFIG_FLAGS = CXX=$(CXX) \
                    AR=gcc-ar \
                    CXXFLAGS="-Ofast -march=native -fno-lto -fopenmp -DPROFILE" \
                    LIBS="-L$(BLAS_PATH)/lib" \
-                   --no-dynamic
+                   --no-dynamic \
+                   --without-scalapack
 
 LDFLAGS += \
 -Wl,-Bstatic \
