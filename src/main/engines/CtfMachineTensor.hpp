@@ -16,7 +16,8 @@
 #ifndef CTF_MACHINE_TENSOR_DEFINED
 #define CTF_MACHINE_TENSOR_DEFINED
 
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <ctf.hpp>
 #include <string>
 

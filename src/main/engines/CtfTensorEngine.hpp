@@ -18,7 +18,7 @@
 
 #include <engines/CtfMachineTensor.hpp>
 #include <tcc/Costs.hpp>
-#include <math/MathFunctions.hpp>
+#include <MathFunctions.hpp>
 
 // TODO: create object of this class for runtime arguments of tensor engine
 // such as MPI communicators

@@ -14,12 +14,11 @@
  */
 
 #include <algorithms/DefineHolesAndParticles.hpp>
-
-#include <math/Complex.hpp>
-#include <math/MathFunctions.hpp>
-#include <util/Log.hpp>
-#include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
+#include <Complex.hpp>
+#include <MathFunctions.hpp>
+#include <Log.hpp>
+#include <Exception.hpp>
 #include <Cc4s.hpp>
 
 using namespace cc4s;

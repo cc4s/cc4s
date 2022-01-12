@@ -16,7 +16,7 @@
 #ifndef COMPLEX_DEFINED
 #define COMPLEX_DEFINED
 
-#include <math/Real.hpp>
+#include <Real.hpp>
 #include <complex>
 
 namespace cc4s {

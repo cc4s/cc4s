@@ -18,7 +18,8 @@
 
 #include <tcc/Operation.hpp>
 
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <functional>
 
 namespace cc4s {

@@ -16,8 +16,8 @@
 #ifndef EXCEPTION_DEFINED
 #define EXCEPTION_DEFINED
 
-#include <util/SourceLocation.hpp>
-#include <util/SharedPointer.hpp>
+#include <SourceLocation.hpp>
+#include <SharedPointer.hpp>
 
 #include <string>
 #include <sstream>

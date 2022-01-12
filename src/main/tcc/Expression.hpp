@@ -18,11 +18,11 @@
 
 #include <Object.hpp>
 
-#include <util/SharedPointer.hpp>
-#include <util/Exception.hpp>
 #include <tcc/Operation.hpp>
 #include <tcc/Scope.hpp>
-#include <util/Log.hpp>
+#include <SharedPointer.hpp>
+#include <Exception.hpp>
+#include <Log.hpp>
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;

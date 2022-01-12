@@ -17,7 +17,7 @@
 #define TCC_OPERATION_DEFINED
 
 #include <tcc/Costs.hpp>
-#include <math/Integer.hpp>
+#include <Integer.hpp>
 
 namespace cc4s {
   template <typename TE>

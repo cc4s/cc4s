@@ -19,9 +19,10 @@
 #include <tcc/TensorExpression.hpp>
 
 #include <tcc/TensorLoadOperation.hpp>
-#include <util/SharedPointer.hpp>
-#include <math/Integer.hpp>
+#include <SharedPointer.hpp>
+#include <Integer.hpp>
 #include <Cc4s.hpp>
+
 #include <cstdint>
 #include <vector>
 #include <string>

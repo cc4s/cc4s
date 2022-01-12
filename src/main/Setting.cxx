@@ -14,6 +14,7 @@
  */
 
 #include <Setting.hpp>
+
 #include <regex>
 
 using namespace cc4s;

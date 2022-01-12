@@ -17,11 +17,11 @@
 #define NODE_DEFINED
 
 #include <Object.hpp>
-#include <math/Integer.hpp>
-#include <util/SourceLocation.hpp>
-#include <util/Exception.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/TypeTraits.hpp>
+#include <Integer.hpp>
+#include <SourceLocation.hpp>
+#include <Exception.hpp>
+#include <SharedPointer.hpp>
+#include <TypeTraits.hpp>
 
 #include <string>
 #include <map>

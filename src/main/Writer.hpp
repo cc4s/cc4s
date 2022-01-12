@@ -19,7 +19,8 @@
 #include <Node.hpp>
 #include <Emitter.hpp>
 #include <Cc4s.hpp>
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <string>
 
 namespace cc4s {

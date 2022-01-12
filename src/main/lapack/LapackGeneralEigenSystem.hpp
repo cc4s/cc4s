@@ -16,12 +16,12 @@
 #ifndef LAPACK_GENERAL_EIGEN_SYSTEM_DEFINED
 #define LAPACK_GENERAL_EIGEN_SYSTEM_DEFINED
 
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
-#include <util/LapackMatrix.hpp>
-#include <util/Exception.hpp>
 #include <extern/Lapack.hpp>
-#include <util/Log.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
+#include <LapackMatrix.hpp>
+#include <Exception.hpp>
+#include <Log.hpp>
 
 #include <vector>
 

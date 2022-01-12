@@ -16,7 +16,8 @@
 #ifndef LAPACK_MATRIX_DEFINED
 #define LAPACK_MATRIX_DEFINED
 
-#include <math/Complex.hpp>
+#include <Complex.hpp>
+
 #include <vector>
 #include <sstream>
 #include <ctf.hpp>

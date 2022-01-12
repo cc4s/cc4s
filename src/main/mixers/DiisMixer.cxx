@@ -14,11 +14,11 @@
  */
 
 #include <mixers/DiisMixer.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Log.hpp>
 #include <algorithms/Algorithm.hpp>
-#include <Node.hpp>
 #include <extern/Lapack.hpp>
+#include <SharedPointer.hpp>
+#include <Log.hpp>
+#include <Node.hpp>
 
 using namespace cc4s;
 

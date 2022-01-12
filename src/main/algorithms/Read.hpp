@@ -17,7 +17,7 @@
 #define READ_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <util/SourceLocation.hpp>
+#include <SourceLocation.hpp>
 
 namespace cc4s {
   class Read: public Algorithm {

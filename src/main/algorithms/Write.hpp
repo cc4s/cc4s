@@ -17,7 +17,7 @@
 #define WRITE_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <util/SourceLocation.hpp>
+#include <SourceLocation.hpp>
 
 namespace cc4s {
   class Write: public Algorithm {

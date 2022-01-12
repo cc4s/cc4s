@@ -2,8 +2,8 @@
 #define PERT_TRIP_STAR_DEFINED
 
 #include <tcc/Tcc.hpp>
-#include <math/TensorSet.hpp>
-#include <math/MathFunctions.hpp>
+#include <TensorSet.hpp>
+#include <MathFunctions.hpp>
 
 namespace cc4s {
 

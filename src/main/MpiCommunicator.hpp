@@ -16,10 +16,11 @@
 #ifndef MPI_COMMUNICATOR_DEFINED
 #define MPI_COMMUNICATOR_DEFINED
 
+#include <Integer.hpp>
+#include <Complex.hpp>
+#include <Vector.hpp>
+
 #include "mpi.h"
-#include <math/Integer.hpp>
-#include <math/Complex.hpp>
-#include <math/Vector.hpp>
 
 namespace cc4s {
   // base template for type traits

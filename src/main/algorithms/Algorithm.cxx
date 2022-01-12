@@ -16,10 +16,10 @@
 #include <algorithms/Algorithm.hpp>
 #include <Node.hpp>
 #include <tcc/Tcc.hpp>
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
-#include <util/Exception.hpp>
-#include <util/Log.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
+#include <Exception.hpp>
+#include <Log.hpp>
 
 #include <iostream>
 #include <sstream>

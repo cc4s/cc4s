@@ -17,9 +17,9 @@
 #define COUPLED_CLUSTER_METHOD_DEFINED
 
 #include <Node.hpp>
-#include <math/Complex.hpp>
-#include <math/TensorSet.hpp>
-#include <util/SharedPointer.hpp>
+#include <Complex.hpp>
+#include <TensorSet.hpp>
+#include <SharedPointer.hpp>
 
 #include <string>
 

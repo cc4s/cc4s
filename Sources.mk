@@ -4,12 +4,15 @@ main/Options.cxx \
 main/Writer.cxx \
 main/Reader.cxx \
 main/Setting.cxx \
-main/util/Log.cxx \
-main/util/Timer.cxx \
-main/util/TensorIo.cxx \
-main/util/BlacsWorld.cxx \
+main/Log.cxx \
+main/Timer.cxx \
+main/TensorIo.cxx \
+main/TensorSet.cxx \
 main/tcc/Tcc.cxx \
 main/engines/DryTensor.cxx \
+main/mixers/Mixer.cxx \
+main/mixers/LinearMixer.cxx \
+main/mixers/DiisMixer.cxx \
 main/algorithms/Algorithm.cxx \
 main/algorithms/Write.cxx \
 main/algorithms/Read.cxx \
@@ -29,10 +32,6 @@ main/algorithms/coupledcluster/Drccd.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/FiniteSizeCorrection.cxx \
 main/algorithms/BasisSetCorrection.cxx \
-main/mixers/Mixer.cxx \
-main/mixers/LinearMixer.cxx \
-main/mixers/DiisMixer.cxx \
-main/math/TensorSet.cxx \
 
 ifeq ($(ATRIP), yes)
 SRC_FILES += main/algorithms/PerturbativeTriples.cxx

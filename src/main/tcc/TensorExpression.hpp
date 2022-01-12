@@ -20,8 +20,9 @@
 
 #include <tcc/Indexing.hpp>
 #include <tcc/Slice.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/TypeTraits.hpp>
+#include <SharedPointer.hpp>
+#include <TypeTraits.hpp>
+
 #include <initializer_list>
 
 namespace cc4s {

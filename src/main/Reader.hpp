@@ -19,7 +19,8 @@
 #include <Node.hpp>
 #include <Parser.hpp>
 #include <Cc4s.hpp>
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <string>
 
 namespace cc4s {

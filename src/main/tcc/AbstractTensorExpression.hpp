@@ -19,7 +19,7 @@
 #include <tcc/Expression.hpp>
 
 #include <tcc/TensorOperation.hpp>
-#include <util/Exception.hpp>
+#include <Exception.hpp>
 
 namespace cc4s {
   template <typename F, typename TE>

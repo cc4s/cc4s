@@ -17,8 +17,7 @@
 #define DRCCD_DEFINED
 
 #include <algorithms/coupledcluster/CoupledClusterMethod.hpp>
-
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
 
 namespace cc4s {
   // this algorithm is now based on the ClusterSinglesDoublesAlgorithm

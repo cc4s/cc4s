@@ -18,7 +18,7 @@
 
 #include <mixers/Mixer.hpp>
 
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
 
 namespace cc4s {
   template <typename F, typename TE>

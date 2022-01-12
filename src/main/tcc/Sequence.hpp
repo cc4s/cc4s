@@ -19,8 +19,9 @@
 #include <tcc/Expression.hpp>
 
 #include <tcc/SequenceOperation.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/StaticAssert.hpp>
+#include <SharedPointer.hpp>
+#include <StaticAssert.hpp>
+
 #include <vector>
 
 namespace cc4s {

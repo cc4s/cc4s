@@ -16,9 +16,10 @@
 #ifndef TYPE_TRAITS_DEFINED
 #define TYPE_TRAITS_DEFINED
 
-#include <math/Integer.hpp>
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
+#include <Integer.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
+
 #include <string>
 
 namespace cc4s {

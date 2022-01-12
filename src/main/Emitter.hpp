@@ -18,7 +18,8 @@
 
 #include <Node.hpp>
 #include <Cc4s.hpp>
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <string>
 #include <yaml-cpp/yaml.h>
 

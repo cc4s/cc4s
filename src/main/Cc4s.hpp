@@ -16,9 +16,9 @@
 #ifndef CC4S_DEFINED
 #define CC4S_DEFINED
 
-#include <util/SharedPointer.hpp>
-#include <util/MpiCommunicator.hpp>
-#include <math/Integer.hpp>
+#include <SharedPointer.hpp>
+#include <MpiCommunicator.hpp>
+#include <Integer.hpp>
 #include <Options.hpp>
 #include <Node.hpp>
 

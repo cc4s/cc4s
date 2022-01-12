@@ -15,12 +15,12 @@
 
 #include <algorithms/PerturbativeTriplesStar.hpp>
 #include <algorithms/PerturbativeTriplesReference.hpp>
-#include <math/MathFunctions.hpp>
-#include <util/Log.hpp>
-#include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
+#include <TensorSet.hpp>
+#include <MathFunctions.hpp>
+#include <Log.hpp>
+#include <Exception.hpp>
 #include <Cc4s.hpp>
-#include <math/TensorSet.hpp>
 
 
 using namespace cc4s;

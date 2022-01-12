@@ -20,7 +20,8 @@
 
 #include <tcc/Costs.hpp>
 #include <tcc/Tensor.hpp>
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <string>
 
 namespace cc4s {

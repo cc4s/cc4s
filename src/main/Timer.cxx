@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <util/Timer.hpp>
+#include <Timer.hpp>
 
 using namespace cc4s;
 

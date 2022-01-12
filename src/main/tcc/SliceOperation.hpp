@@ -19,7 +19,8 @@
 #include <tcc/TensorOperation.hpp>
 
 #include <tcc/Costs.hpp>
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <string>
 #include <vector>
 

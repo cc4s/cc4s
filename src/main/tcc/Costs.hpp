@@ -16,7 +16,8 @@
 #ifndef TCC_COSTS_DEFINED
 #define TCC_COSTS_DEFINED
 
-#include <math/Integer.hpp>
+#include <Integer.hpp>
+
 #include <string>
 #include <sstream>
 #include <limits>

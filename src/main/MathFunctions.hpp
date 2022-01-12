@@ -16,12 +16,13 @@
 #ifndef MATH_FUNCTIONS_DEFINED
 #define MATH_FUNCTIONS_DEFINED
 
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
+#include <Log.hpp>
+
 #include <cmath>
 #include <string>
 #include <ctf.hpp>
-#include <util/Log.hpp>
 
 namespace cc4s {
   // Provides template typed wrappers for std:: math constants and functions,

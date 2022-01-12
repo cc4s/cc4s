@@ -16,7 +16,7 @@
 #ifndef LOG_DEFINED
 #define LOG_DEFINED
 
-#include <util/SourceLocation.hpp>
+#include <SourceLocation.hpp>
 
 #include <string>
 #include <iostream>

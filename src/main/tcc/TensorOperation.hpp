@@ -18,10 +18,10 @@
 
 #include <tcc/Operation.hpp>
 #include <tcc/Costs.hpp>
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Log.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
+#include <SharedPointer.hpp>
+#include <Log.hpp>
 
 namespace cc4s {
   template <typename F, typename TE> class Tensor;

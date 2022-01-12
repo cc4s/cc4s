@@ -16,12 +16,12 @@
 #ifndef TENSOR_SET_DEFINED
 #define TENSOR_SET_DEFINED
 
-#include <math/MathFunctions.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
-#include <util/TensorIo.hpp>
-#include <util/Log.hpp>
+#include <MathFunctions.hpp>
+#include <SharedPointer.hpp>
+#include <Exception.hpp>
+#include <TensorIo.hpp>
+#include <Log.hpp>
 
 #include <vector>
 #include <string>

@@ -18,8 +18,8 @@
 
 #include <tcc/IndexedTensorOperation.hpp>
 
-#include <util/SharedPointer.hpp>
-#include <util/Log.hpp>
+#include <SharedPointer.hpp>
+#include <Log.hpp>
 
 namespace cc4s {
   template <typename F, typename TE> class Contraction;

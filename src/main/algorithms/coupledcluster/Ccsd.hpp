@@ -17,8 +17,7 @@
 #define CCSD_DEFINED
 
 #include <algorithms/coupledcluster/CoupledClusterMethod.hpp>
-
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
 
 namespace cc4s {
   /**

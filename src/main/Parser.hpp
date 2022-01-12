@@ -17,8 +17,9 @@
 #define PARSER_DEFINED
 
 #include <Node.hpp>
-#include <util/Log.hpp>
-#include <util/SharedPointer.hpp>
+#include <Log.hpp>
+#include <SharedPointer.hpp>
+
 #include <yaml-cpp/yaml.h>
 #include <string>
 #include <istream>

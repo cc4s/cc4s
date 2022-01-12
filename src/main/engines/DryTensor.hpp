@@ -16,9 +16,10 @@
 #ifndef DRY_TENSOR_DEFINED
 #define DRY_TENSOR_DEFINED
 
-#include <math/Real.hpp>
-#include <util/SourceLocation.hpp>
-#include <util/Log.hpp>
+#include <Real.hpp>
+#include <SourceLocation.hpp>
+#include <Log.hpp>
+
 #include <cstdint>
 #include <vector>
 #include <string>

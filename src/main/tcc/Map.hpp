@@ -19,8 +19,8 @@
 #include <tcc/IndexedTensorExpression.hpp>
 
 #include <tcc/MapOperation.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/StaticAssert.hpp>
+#include <SharedPointer.hpp>
+#include <StaticAssert.hpp>
 
 namespace cc4s {
   template <typename Target, typename Domain, typename TE>

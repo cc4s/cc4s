@@ -24,7 +24,7 @@
 #include <tcc/Slice.hpp>
 #include <tcc/TensorRecipe.hpp>
 #include <tcc/Tensor.hpp>
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
 
 // TODO: binary function application
 // TODO: support hard memory limit for costs

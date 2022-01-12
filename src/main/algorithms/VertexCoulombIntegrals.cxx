@@ -15,10 +15,10 @@
 
 #include <algorithms/VertexCoulombIntegrals.hpp>
 
-#include <math/Complex.hpp>
-#include <math/MathFunctions.hpp>
-#include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
+#include <Complex.hpp>
+#include <MathFunctions.hpp>
+#include <Exception.hpp>
 #include <Cc4s.hpp>
 
 using namespace cc4s;

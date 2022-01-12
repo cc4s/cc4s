@@ -17,8 +17,8 @@
 #define TENSOR_READER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <util/SourceLocation.hpp>
 #include <tcc/Tensor.hpp>
+#include <SourceLocation.hpp>
 
 namespace cc4s {
   class TensorReader: public Algorithm {

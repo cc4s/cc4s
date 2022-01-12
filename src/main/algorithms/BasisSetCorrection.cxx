@@ -16,7 +16,7 @@
 #include <algorithms/BasisSetCorrection.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
-#include <math/TensorSet.hpp>
+#include <TensorSet.hpp>
 
 
 using namespace cc4s;

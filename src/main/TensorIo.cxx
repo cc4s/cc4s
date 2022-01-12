@@ -13,21 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef BLACS_WORLD_DEFINED
-#define BLACS_WORLD_DEFINED
+#include <TensorIo.hpp>
+#include <Reader.hpp>
 
-namespace cc4s {
-  class BlacsWorld {
-  public:
-    BlacsWorld(int rank, int processes, int processRows = -1);
-    ~BlacsWorld();
-    void barrier();
+// using namespace cc4s;
 
-    int rank;
-    int context;
-    int lens[2], firstElement[2];
-  };
-}
+int cc4s::TensorIo::WRITE_REGISTERED =
+  cc4s::Writer::registerWriteFunction("tensor", cc4s::TensorIo::write);
 
-#endif
+int cc4s::TensorIo::READ_REGISTERED =
+  cc4s::Reader::registerReadFunction("tensor", cc4s::TensorIo::read);
 

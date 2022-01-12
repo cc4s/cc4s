@@ -20,8 +20,9 @@
 
 #include <tcc/MoveOperation.hpp>
 #include <tcc/ContractionOperation.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/StaticAssert.hpp>
+#include <SharedPointer.hpp>
+#include <StaticAssert.hpp>
+
 #include <vector>
 #include <limits>
 

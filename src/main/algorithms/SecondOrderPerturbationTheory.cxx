@@ -14,10 +14,10 @@
  */
 
 #include <algorithms/SecondOrderPerturbationTheory.hpp>
-#include <math/MathFunctions.hpp>
-#include <util/Log.hpp>
-#include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
+#include <MathFunctions.hpp>
+#include <Log.hpp>
+#include <Exception.hpp>
 #include <Cc4s.hpp>
 
 using namespace cc4s;

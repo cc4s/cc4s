@@ -19,8 +19,8 @@
 #include <tcc/IndexedTensorExpression.hpp>
 
 #include <tcc/Contraction.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/StaticAssert.hpp>
+#include <SharedPointer.hpp>
+#include <StaticAssert.hpp>
 
 namespace cc4s {
   template <typename F, typename TE>

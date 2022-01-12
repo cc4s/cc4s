@@ -16,7 +16,7 @@
 #ifndef OBJECT_DEFINED
 #define OBJECT_DEFINED
 
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
 
 namespace cc4s {
   /**

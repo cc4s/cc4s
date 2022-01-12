@@ -20,7 +20,8 @@
 
 #include <tcc/SliceOperation.hpp>
 #include <tcc/Costs.hpp>
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <string>
 
 namespace cc4s {

@@ -16,14 +16,14 @@
 #ifndef TIME_DEFINED
 #define TIME_DEFINED
 
+#include <Real.hpp>
+
 #include <ctime>
 #include <cstdint>
 #include <ostream>
 #include <iomanip>
 #include <sstream>
 #include <cmath>
-
-#include <math/Real.hpp>
 
 namespace cc4s {
   /**

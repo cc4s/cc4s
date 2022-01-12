@@ -19,7 +19,8 @@
 #include <tcc/TensorExpression.hpp>
 
 #include <tcc/IndexedTensorExpression.hpp>
-#include <util/SharedPointer.hpp>
+#include <SharedPointer.hpp>
+
 #include <string>
 
 namespace cc4s {

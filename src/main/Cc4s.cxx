@@ -14,14 +14,15 @@
  */
 
 #include <Cc4s.hpp>
+#include <algorithms/Algorithm.hpp>
+#include <tcc/Tcc.hpp>
 #include <Parser.hpp>
 #include <Emitter.hpp>
-#include <algorithms/Algorithm.hpp>
-#include <util/Timer.hpp>
-#include <util/MpiCommunicator.hpp>
-#include <util/Log.hpp>
-#include <util/Exception.hpp>
-#include <tcc/Tcc.hpp>
+#include <Timer.hpp>
+#include <MpiCommunicator.hpp>
+#include <Log.hpp>
+#include <Exception.hpp>
+
 #include <fstream>
 #include <string>
 #include <sstream>

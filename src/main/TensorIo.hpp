@@ -16,11 +16,11 @@
 #ifndef TENSOR_IO_DEFINED
 #define TENSOR_IO_DEFINED
 
-#include <Writer.hpp>
-#include <Reader.hpp>
-#include <util/Scanner.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <tcc/Tcc.hpp>
+#include <Writer.hpp>
+#include <Reader.hpp>
+#include <Scanner.hpp>
 
 namespace cc4s {
   class TensorIo {

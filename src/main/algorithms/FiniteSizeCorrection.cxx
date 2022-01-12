@@ -16,7 +16,7 @@
 #include <algorithms/FiniteSizeCorrection.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
-#include <math/TensorSet.hpp>
+#include <TensorSet.hpp>
 #include <gte/TricubicInterpolation.hpp>
 
 

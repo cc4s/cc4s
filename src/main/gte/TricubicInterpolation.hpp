@@ -9,7 +9,8 @@
 #define TRICUBIC_INTERPOLATION_H
 
 // different assert routines in cc4s
-#include <util/Exception.hpp>
+#include <Exception.hpp>
+
 #include <assert.h>
 // The interpolator is for uniformly spaced(x,y z)-values.  The input samples
 // must be stored in lexicographical order to represent f(x,y,z); that is,

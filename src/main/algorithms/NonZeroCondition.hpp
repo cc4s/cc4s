@@ -17,8 +17,8 @@
 #define NON_ZERO_CONDITION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <util/SourceLocation.hpp>
 #include <tcc/Tensor.hpp>
+#include <SourceLocation.hpp>
 
 namespace cc4s {
   class NonZeroCondition: public Algorithm {

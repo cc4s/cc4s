@@ -16,8 +16,8 @@
 #ifndef STATIC_ASSERT_DEFINED
 #define STATIC_ASSERT_DEFINED
 
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
 
 namespace cc4s {
   template <typename T>

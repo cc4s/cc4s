@@ -15,14 +15,14 @@
 
 #include <algorithms/CoupledCluster.hpp>
 #include <algorithms/coupledcluster/CoupledClusterMethod.hpp>
-#include <math/MathFunctions.hpp>
 #include <mixers/Mixer.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Log.hpp>
-#include <util/Exception.hpp>
+#include <MathFunctions.hpp>
+#include <SharedPointer.hpp>
+#include <Log.hpp>
+#include <Exception.hpp>
 #include <Options.hpp>
 #include <Cc4s.hpp>
-#include <util/Timer.hpp>
+#include <Timer.hpp>
 
 
 #include <array>

@@ -15,16 +15,17 @@
 
 #include <algorithms/TensorReader.hpp>
 
+#include <tcc/TensorExpression.hpp>
 #include <Node.hpp>
 #include <Cc4s.hpp>
 #include <Parser.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Scanner.hpp>
-#include <util/TensorIo.hpp>
-#include <tcc/TensorExpression.hpp>
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
-#include <math/MathFunctions.hpp>
+#include <SharedPointer.hpp>
+#include <Scanner.hpp>
+#include <TensorIo.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
+#include <MathFunctions.hpp>
+
 #include <vector>
 
 using namespace cc4s;

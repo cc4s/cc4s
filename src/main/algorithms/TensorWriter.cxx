@@ -15,12 +15,12 @@
 
 #include <algorithms/TensorWriter.hpp>
 
-#include <Cc4s.hpp>
 #include <tcc/Tcc.hpp>
-#include <tcc/TensorExpression.hpp>
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
+#include <Cc4s.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
 #include <Emitter.hpp>
+
 #include <vector>
 
 using namespace cc4s;

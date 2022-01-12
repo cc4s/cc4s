@@ -15,13 +15,14 @@
 
 #include <algorithms/DimensionProperty.hpp>
 
+#include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <Parser.hpp>
-#include <util/Scanner.hpp>
-#include <tcc/Tcc.hpp>
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
-#include <math/MathFunctions.hpp>
+#include <Scanner.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
+#include <MathFunctions.hpp>
+
 #include <vector>
 
 using namespace cc4s;

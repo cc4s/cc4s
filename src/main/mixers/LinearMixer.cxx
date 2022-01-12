@@ -14,9 +14,9 @@
  */
 
 #include <mixers/LinearMixer.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Log.hpp>
 #include <algorithms/Algorithm.hpp>
+#include <SharedPointer.hpp>
+#include <Log.hpp>
 #include <Node.hpp>
 
 using namespace cc4s;

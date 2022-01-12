@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <math/TensorSet.hpp>
+#include <TensorSet.hpp>
 #include <Writer.hpp>
 
 using namespace cc4s;

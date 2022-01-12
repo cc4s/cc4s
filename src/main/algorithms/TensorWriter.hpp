@@ -18,7 +18,7 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <tcc/TensorExpression.hpp>
-#include <util/SourceLocation.hpp>
+#include <SourceLocation.hpp>
 
 namespace cc4s {
   class TensorWriter: public Algorithm {

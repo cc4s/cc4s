@@ -14,10 +14,10 @@
  */
 
 #include <algorithms/coupledcluster/CcsdReference.hpp>
-#include <math/MathFunctions.hpp>
-#include <util/Log.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Exception.hpp>
+#include <MathFunctions.hpp>
+#include <Log.hpp>
+#include <SharedPointer.hpp>
+#include <Exception.hpp>
 
 using namespace cc4s;
 

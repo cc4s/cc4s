@@ -16,8 +16,8 @@
 #ifndef LAPACK_DEFINED
 #define LAPACK_DEFINED
 
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
 
 // TODO: use define for name mangling: underscore or not
 

@@ -17,8 +17,8 @@
 #define COUPLED_CLUSTER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <math/TensorSet.hpp>
-#include <util/SharedPointer.hpp>
+#include <TensorSet.hpp>
+#include <SharedPointer.hpp>
 
 #include <string>
 #include <initializer_list>

@@ -17,9 +17,10 @@
 #define DRY_MACHINE_TENSOR_DEFINED
 
 #include <engines/DryTensor.hpp>
-#include <util/SharedPointer.hpp>
-#include <util/Exception.hpp>
-#include <util/Log.hpp>
+#include <SharedPointer.hpp>
+#include <Exception.hpp>
+#include <Log.hpp>
+
 #include <string>
 #include <mpi.h>
 #include <functional>

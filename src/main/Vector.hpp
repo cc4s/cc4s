@@ -16,7 +16,8 @@
 #ifndef VECTOR_DEFINED
 #define VECTOR_DEFINED
 
-#include <math/MathFunctions.hpp>
+#include <MathFunctions.hpp>
+
 #include <iostream>
 
 namespace cc4s {

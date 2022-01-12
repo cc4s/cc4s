@@ -13,20 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef BLACS_DEFINED
-#define BLACS_DEFINED
+#ifndef TIMER_DEFINED
+#define TIMER_DEFINED
 
-#ifdef HAVE_CBLACS
-extern "C" {
-  void Cblacs_get(int context, int request, int *value);
-  int Cblacs_gridinit(int *context, char const *order, int np_row, int np_col);
-  void Cblacs_gridinfo(
-    int context, int *np_row, int *np_col, int *my_row, int *my_col
-  );
-  void Cblacs_gridexit(int ictxt);
-  void Cblacs_barrier(int ictxt, char const *order);
+#include <Time.hpp>
+
+namespace cc4s {
+  /**
+   * Timer class providing timing functionality.
+   * The object can be created in a scope whose lifetime
+   * is then measured.
+   */
+  class Timer {
+  public:
+    Timer(Time *time);
+    ~Timer();
+  protected:
+    Time *time;
+    Time start;
+  };
 }
-#endif
 
 #endif
 

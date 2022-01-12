@@ -17,8 +17,8 @@
 #include <algorithms/PerturbativeTriplesStar.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
-#include <math/TensorSet.hpp>
-#include <math/MathFunctions.hpp>
+#include <TensorSet.hpp>
+#include <MathFunctions.hpp>
 #include <atrip.hpp>
 #include <atrip/Debug.hpp>
 

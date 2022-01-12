@@ -16,10 +16,11 @@
 #ifndef SCANNER_DEFINED
 #define SCANNER_DEFINED
 
-#include <math/Real.hpp>
-#include <math/Complex.hpp>
-#include <util/Log.hpp>
-#include <util/Exception.hpp>
+#include <Real.hpp>
+#include <Complex.hpp>
+#include <Log.hpp>
+#include <Exception.hpp>
+
 #include <sstream>
 #include <istream>
 #include <cstring>
