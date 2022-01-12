@@ -32,7 +32,6 @@ namespace cc4s {
   protected:
     template <typename F, typename TE>
     Ptr<MapNode> calculateTriplesEnergy(const Ptr<MapNode> &arguments);
-
   };
 }
 

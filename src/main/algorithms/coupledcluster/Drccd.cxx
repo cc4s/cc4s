@@ -28,8 +28,8 @@ CoupledClusterMethodRegistrar<
 
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> Drccd<F,TE>::getResiduum(
-  const Ptr<TensorUnion<F,TE>> &amplitudes
+Ptr<TensorSet<F,TE>> Drccd<F,TE>::getResiduum(
+  const Ptr<TensorSet<F,TE>> &amplitudes
 ) {
   // read all required integrals
   auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
@@ -62,7 +62,7 @@ Ptr<TensorUnion<F,TE>> Drccd<F,TE>::getResiduum(
   auto Rph( Tcc<TE>::template tensor<F>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
   auto residuum(
-    New<TensorUnion<F,TE>>(
+    New<TensorSet<F,TE>>(
       std::vector<Ptr<TensorExpression<F,TE>>>({Rph, Rpphh}),
       std::vector<std::string>({"ai", "abij"})
     )

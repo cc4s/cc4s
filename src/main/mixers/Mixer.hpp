@@ -18,7 +18,7 @@
 
 #include <Node.hpp>
 #include <math/Complex.hpp>
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 #include <util/SharedPointer.hpp>
 
 #include <string>
@@ -40,31 +40,31 @@ namespace cc4s {
     }
 
     /**
-     * \brief Appends the given pair (A,R) of TensorUnions to the mixer,
+     * \brief Appends the given pair (A,R) of TensorSets to the mixer,
      * where R is the residuum when using the amplitudes A.
      * The mixer may use the given amplitudes and residua to provide
      * an estimated amplitude with a lower expected residuum.
      * A and R are not expected to change upon return.
      **/
     virtual void append(
-      const Ptr<TensorUnion<F,TE>> &A,
-      const Ptr<TensorUnion<F,TE>> &R
+      const Ptr<TensorSet<F,TE>> &A,
+      const Ptr<TensorSet<F,TE>> &R
     ) = 0;
 
     /**
      * \brief Returns the current best estimate of the amplitudes
      * according to previously given pairs of amplitudes and residua.
      * Requires one or more previous calls to append.
-     * The returned TensorUnions must not be changed.
+     * The returned TensorSets must not be changed.
      **/
-    virtual Ptr<TensorUnion<F,TE>> get() = 0;
+    virtual Ptr<TensorSet<F,TE>> get() = 0;
 
     /**
      * \brief Returns the estimated residuum of the current best estimate
      * of the amplitdues according to previously given pairs of amplitudes
      * and residua.
      * Requires one or more previous calls to append.
-     * The returned TensorUnions must not be changed.
+     * The returned TensorSets must not be changed.
      **/
     virtual Real<> getResiduumNorm() = 0;
 

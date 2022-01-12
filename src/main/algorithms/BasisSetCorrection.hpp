@@ -17,7 +17,6 @@
 #define BASIS_SET_CORRECTION
 
 #include <algorithms/Algorithm.hpp>
-#include <math/TensorUnion.hpp>
 
 namespace cc4s {
   /**

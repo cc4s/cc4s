@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 #include <Writer.hpp>
 
 using namespace cc4s;
 
-bool TensorUnionIo::WRITE_REGISTERED =
-  Writer::registerWriteFunction("tensorUnion", TensorUnionIo::write);
+bool TensorSetIo::WRITE_REGISTERED =
+  Writer::registerWriteFunction("tensorSet", TensorSetIo::write);
 
-bool TensorUnionIo::READ_REGISTERED =
-  Reader::registerReadFunction("tensorUnion", TensorUnionIo::read);
+bool TensorSetIo::READ_REGISTERED =
+  Reader::registerReadFunction("tensorSet", TensorSetIo::read);
 

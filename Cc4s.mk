@@ -45,7 +45,8 @@ SCALAPACK_LDFLAGS ?= -L${SCALAPACK_PATH}/lib -lscalapack
 ATRIP_COMMIT         ?= b117599
 ATRIP_SRC_PATH       ?= $(CC4S_INTERN_SRC)/atrip/$(ATRIP_COMMIT)
 ATRIP_GIT_REPOSITORY ?= git@gitlab.cc4s.org:gallo/atrip
-ATRIP                ?= yes
+#ATRIP                ?= yes
+ATRIP                ?= no
 CXXFLAGS             += -DATRIP_COMMIT=$(ATRIP_COMMIT)
 CXXFLAGS             += -DATRIP_NO_OUTPUT
 

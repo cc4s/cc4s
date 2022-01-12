@@ -2,7 +2,7 @@
 #define PERT_TRIP_STAR_DEFINED
 
 #include <tcc/Tcc.hpp>
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 #include <math/MathFunctions.hpp>
 
 namespace cc4s {

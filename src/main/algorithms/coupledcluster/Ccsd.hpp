@@ -48,8 +48,8 @@ namespace cc4s {
      * \param[in] amplitudes the current guess for the singles and doubles
      * amplitudes.
      */
-    Ptr<TensorUnion<Real<>,TE>> getResiduum(
-      const Ptr<TensorUnion<Real<>,TE>> &amplitudes
+    Ptr<TensorSet<Real<>,TE>> getResiduum(
+      const Ptr<TensorSet<Real<>,TE>> &amplitudes
     ) override;
   };
 
@@ -72,8 +72,8 @@ namespace cc4s {
      * \param[in] amplitudes the current guess for the singles and doubles
      * amplitudes.
      */
-    Ptr<TensorUnion<Complex<>,TE>> getResiduum(
-      const Ptr<TensorUnion<Complex<>,TE>> &amplitudes
+    Ptr<TensorSet<Complex<>,TE>> getResiduum(
+      const Ptr<TensorSet<Complex<>,TE>> &amplitudes
     ) override;
   };
 }

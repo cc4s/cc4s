@@ -17,7 +17,7 @@
 #define COUPLED_CLUSTER_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 #include <util/SharedPointer.hpp>
 
 #include <string>
@@ -59,7 +59,7 @@ namespace cc4s {
      **/
     template <typename F, typename TE>
     F getEnergy(
-      const Ptr<TensorUnion<F,TE>> &amplitdues,
+      const Ptr<TensorSet<F,TE>> &amplitdues,
       const bool isFinalReport = false
     );
 
@@ -70,13 +70,13 @@ namespace cc4s {
        {-\Delta_{ij\ldots}^{ab\ldots}}\f$
      * with \f$\Delta_{ij\ldots}^{ab\ldots} =
        \varepsilon_i+\ldots-\varepsilon_a-\ldots\f$.
-     * \param[inout] residuum TensorUnion, overwritten with new amplitudes.
-     * \param[in] amplitudes TensorUnion, previous amplitudes
+     * \param[inout] residuum TensorSet, overwritten with new amplitudes.
+     * \param[in] amplitudes TensorSet, previous amplitudes
      **/
     template <typename F, typename TE>
     void residuumToAmplitudes(
-      const Ptr<TensorUnion<F,TE>> &residuum,
-      const Ptr<TensorUnion<F,TE>> &amplitudes
+      const Ptr<TensorSet<F,TE>> &residuum,
+      const Ptr<TensorSet<F,TE>> &amplitudes
     );
 
     /**

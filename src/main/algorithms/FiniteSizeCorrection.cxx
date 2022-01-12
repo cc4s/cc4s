@@ -16,7 +16,7 @@
 #include <algorithms/FiniteSizeCorrection.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 #include <gte/TricubicInterpolation.hpp>
 
 
@@ -121,7 +121,7 @@ void FiniteSizeCorrection::calculateTransitionStructureFactor(
 
 
   //THESE TWO LINES ARE SEGFAULTING
-  auto amplitudes(arguments->getPtr<TensorUnion<F,TE>>("amplitudes"));
+  auto amplitudes(arguments->getPtr<TensorSet<F,TE>>("amplitudes"));
 
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );

@@ -18,7 +18,7 @@
 
 #include <Node.hpp>
 #include <math/Complex.hpp>
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 #include <util/SharedPointer.hpp>
 
 #include <string>
@@ -46,8 +46,8 @@ namespace cc4s {
     /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
-    virtual Ptr<TensorUnion<F,TE>> getResiduum(
-      const Ptr<TensorUnion<F,TE>> &amplitudes
+    virtual Ptr<TensorSet<F,TE>> getResiduum(
+      const Ptr<TensorSet<F,TE>> &amplitudes
     ) = 0;
 
     Ptr<MapNode> arguments;

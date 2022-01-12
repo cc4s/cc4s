@@ -70,14 +70,14 @@ std::string Ccsd<Complex<>,TE>::describeOptions() {
 //////////////////////////////////////////////////////////////////////
 
 template <typename TE>
-Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
-  const Ptr<TensorUnion<Real<>,TE>> &amplitudes
+Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
+  const Ptr<TensorSet<Real<>,TE>> &amplitudes
 ) {
   // construct residuum. Shape will be assumed upon first use.
   auto Rph( Tcc<TE>::template tensor<Real<>>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<Real<>>("Rpphh") );
   auto residuum(
-    New<TensorUnion<Real<>,TE>>(
+    New<TensorSet<Real<>,TE>>(
       std::vector<Ptr<TensorExpression<Real<>,TE>>>({Rph, Rpphh}),
       std::vector<std::string>({"ai", "abij"})
     )
@@ -477,14 +477,14 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
 
 
 template <typename TE>
-Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
-  const Ptr<TensorUnion<Complex<>,TE>> &amplitudes
+Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
+  const Ptr<TensorSet<Complex<>,TE>> &amplitudes
 ) {
   // construct residuum. Shape will be assumed upon first use.
   auto Rph( Tcc<TE>::template tensor<Complex<>>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<Complex<>>("Rpphh") );
   auto residuum(
-    New<TensorUnion<Complex<>,TE>>(
+    New<TensorSet<Complex<>,TE>>(
       std::vector<Ptr<TensorExpression<Complex<>,TE>>>({Rph, Rpphh}),
       std::vector<std::string>({"ai", "abij"})
     )

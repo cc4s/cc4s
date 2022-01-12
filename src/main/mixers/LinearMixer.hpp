@@ -30,13 +30,13 @@ namespace cc4s {
     std::string describeOptions() override;
 
     void append(
-      const Ptr<TensorUnion<F,TE>> &A, const Ptr<TensorUnion<F,TE>> &R
+      const Ptr<TensorSet<F,TE>> &A, const Ptr<TensorSet<F,TE>> &R
     ) override ;
-    Ptr<TensorUnion<F,TE>> get() override;
+    Ptr<TensorSet<F,TE>> get() override;
     Real<> getResiduumNorm() override;
 
-    Ptr<TensorUnion<F,TE>> last;
-    Ptr<TensorUnion<F,TE>> lastResiduum;
+    Ptr<TensorSet<F,TE>> last;
+    Ptr<TensorSet<F,TE>> lastResiduum;
 
     F ratio;
     Real<> residuumNorm;

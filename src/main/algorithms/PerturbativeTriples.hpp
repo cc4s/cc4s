@@ -17,7 +17,6 @@
 #define _PERTURBATIVE_TRIPLES_HEADER_FILE
 
 #include <algorithms/Algorithm.hpp>
-#include <math/TensorUnion.hpp>
 
 namespace cc4s {
   struct PerturbativeTriples: public Algorithm {

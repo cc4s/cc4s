@@ -16,7 +16,7 @@
 #include <algorithms/BasisSetCorrection.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 
 
 using namespace cc4s;
@@ -54,7 +54,7 @@ bool BasisSetCorrection::run(
 ) {
   using Tr = TensorExpression<Real<>, TE>;
   using T = TensorExpression<F, TE>;
-  auto amplitudes( arguments->getPtr<TensorUnion<F,TE>>("amplitudes") );
+  auto amplitudes( arguments->getPtr<TensorSet<F,TE>>("amplitudes") );
   if (!amplitudes) return false;
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );

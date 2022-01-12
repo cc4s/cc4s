@@ -32,7 +32,7 @@ main/algorithms/BasisSetCorrection.cxx \
 main/mixers/Mixer.cxx \
 main/mixers/LinearMixer.cxx \
 main/mixers/DiisMixer.cxx \
-main/math/TensorUnion.cxx \
+main/math/TensorSet.cxx \
 
 ifeq ($(ATRIP), yes)
 SRC_FILES += main/algorithms/PerturbativeTriples.cxx

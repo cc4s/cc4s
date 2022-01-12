@@ -17,7 +17,6 @@
 #define FINITE_SIZE_CORRECTION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
-#include <math/TensorUnion.hpp>
 
 namespace cc4s {
   /**

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef TENSOR_UNION_DEFINED
-#define TENSOR_UNION_DEFINED
+#ifndef TENSOR_SET_DEFINED
+#define TENSOR_SET_DEFINED
 
 #include <math/MathFunctions.hpp>
 #include <util/SharedPointer.hpp>
@@ -30,12 +30,12 @@
 
 namespace cc4s {
   /**
-   * \brief Represents the union of tensors and provides
+   * \brief Represents a set of tensors and provides
    * vector space operations: addition, scalar multiplication, inner product,
    * and complex conjugation.
    **/
   template <typename F, typename TE>
-  class TensorUnion: public Object {
+  class TensorSet: public Object {
   public:
     typedef F FieldType;
 
@@ -43,16 +43,16 @@ namespace cc4s {
     std::vector<std::string> componentIndices;
 
     /**
-     * \brief Default constructor for an empty tensor union without elements.
+     * \brief Default constructor for an empty tensor set without elements.
      **/
-    TensorUnion() {
+    TensorSet() {
     }
 
     /**
      * \brief Move constructor taking possession of the tensors owned by a.
      **/
-    TensorUnion(
-      TensorUnion &&a
+    TensorSet(
+      TensorSet &&a
     ):
       componentTensors(a.componentTensors),
       componentIndices(a.componentIndices)
@@ -62,8 +62,8 @@ namespace cc4s {
     /**
      * \brief Copy constructor copying the tensors owned by a.
      **/
-    TensorUnion(
-      const TensorUnion &a
+    TensorSet(
+      const TensorSet &a
     ):
       componentTensors(a.componentTensors.size()),
       componentIndices(a.componentIndices)
@@ -74,7 +74,7 @@ namespace cc4s {
     /**
      * \brief Move constructor taking possession of the tensors given.
      **/
-    TensorUnion(
+    TensorSet(
       const std::vector<Ptr<TensorExpression<F,TE>>> &tensors,
       const std::vector<std::string> &indices
     ):
@@ -88,7 +88,7 @@ namespace cc4s {
      * by the iterators.
      **/
     template <typename TensorsIterator, typename IndicesIterator>
-    TensorUnion(
+    TensorSet(
       TensorsIterator tensorsBegin, TensorsIterator tensorsEnd,
       IndicesIterator indicesBegin, IndicesIterator indicesEnd
     ):
@@ -131,7 +131,7 @@ namespace cc4s {
      * \brief Move assignment operator taking possession of the tensors
      * owned by a.
      **/
-    TensorUnion &operator =(const TensorUnion &&a) {
+    TensorSet &operator =(const TensorSet &&a) {
       componentTensors = a.componentTensors;
       componentIndices = a.componentIndices;
       return *this;
@@ -140,7 +140,7 @@ namespace cc4s {
     /**
      * \brief Copy assignment operator copying the tensors owned by a.
      **/
-    TensorUnion &operator =(const TensorUnion &a) {
+    TensorSet &operator =(const TensorSet &a) {
       componentIndices = a.componentIndices;
       copyComponents(a.componentTensors);
       return *this;
@@ -148,10 +148,10 @@ namespace cc4s {
 
     /**
      * \brief Add-to assignment operator adding each component of a
-     * to the respective component of this TensorUnion.
+     * to the respective component of this TensorSet.
      **/
-    TensorUnion &operator += (const TensorUnion &a) {
-      ASSERT(isCompatibleTo(a), "Incompatible TensorUnions");
+    TensorSet &operator += (const TensorSet &a) {
+      ASSERT(isCompatibleTo(a), "Incompatible TensorSets");
       for (Natural<> i(0); i < componentTensors.size(); ++i) {
         COMPILE(
           (*get(i))[getIndices(i)] += (*a.get(i))[getIndices(i)]
@@ -162,10 +162,10 @@ namespace cc4s {
 
     /**
      * \brief Subtract-from assignment operator subtracting each component of a
-     * from the respective component of this TensorUnion.
+     * from the respective component of this TensorSet.
      **/
-    TensorUnion &operator -= (const TensorUnion &a) {
-      ASSERT(isCompatibleTo(a), "Incompatible tensor unions.");
+    TensorSet &operator -= (const TensorSet &a) {
+      ASSERT(isCompatibleTo(a), "Incompatible TensorSets.");
       for (Natural<> i(0); i < componentTensors.size(); ++i) {
         COMPILE(
           (*get(i))[getIndices(i)] -= (*a.get(i))[getIndices(i)]
@@ -176,9 +176,9 @@ namespace cc4s {
 
     /**
      * \brief Multiply-by assignment operator scalar multiplying each component
-     * each component of this TensorUnion by the given scalar.
+     * each component of this TensorSet by the given scalar.
      **/
-    TensorUnion &operator *= (const F s) {
+    TensorSet &operator *= (const F s) {
       for (Natural<> i(0); i < componentTensors.size(); ++i) {
         COMPILE(
           (*get(i))[getIndices(i)] <<= s * (*get(i))[getIndices(i)]
@@ -188,12 +188,12 @@ namespace cc4s {
     }
 
     /**
-     * \brief Returns the inner product of this ket-TensorUnion with the
-     * given ket-TensorUnion a. The elements of this TensorUnion are conjugated
+     * \brief Returns the inner product of this ket-TensorSet with the
+     * given ket-TensorSet a. The elements of this TensorSet are conjugated
      * in the inner product.
      **/
-    F dot(const TensorUnion &a) const {
-      ASSERT(isCompatibleTo(a), "Incompatible TensorUnions");
+    F dot(const TensorSet &a) const {
+      ASSERT(isCompatibleTo(a), "Incompatible TensorSets");
       auto result( Tcc<TE>::template tensor<F>("dot") );
       for (Natural<> i(0); i < componentTensors.size(); ++i) {
         // add to result
@@ -206,13 +206,13 @@ namespace cc4s {
     }
 
     /**
-     * \brief Get the number of component tensors of this TensorUnion.
+     * \brief Get the number of component tensors of this TensorSet.
      */
     Natural<> getComponentsCount() const {
       return componentTensors.size();
     }
 
-    bool isCompatibleTo(const TensorUnion &a) const {
+    bool isCompatibleTo(const TensorSet &a) const {
       return
         componentTensors.size() == a.componentTensors.size() &&
         componentIndices.size() == a.componentIndices.size();
@@ -221,7 +221,7 @@ namespace cc4s {
 
   protected:
     /**
-     * \brief Sets this TensorUnion's component tensors by copying the given
+     * \brief Sets this TensorSet's component tensors by copying the given
      * component tensors. Called by copy constructors and copy assignments.
      **/
     void copyComponents(
@@ -248,7 +248,7 @@ namespace cc4s {
     ) {
       auto pointerNode(node->toPtr<AtomicNode<Ptr<Object>>>());
       if (!pointerNode) return nullptr;
-      auto t( dynamicPtrCast<TensorUnion<F,TE>>(pointerNode->value) );
+      auto t( dynamicPtrCast<TensorSet<F,TE>>(pointerNode->value) );
       if (!t) return nullptr;
       auto componentsNode(New<MapNode>(SOURCE_LOCATION));
       auto componentsNodePath(nodePath + ".components");
@@ -296,18 +296,18 @@ namespace cc4s {
         OUT() << i << " tensor=" << tensors.back() << endl;
         OUT() << i << " indices=" << indices.back() << endl;
       }
-      auto tensorUnion(New<TensorUnion<F,TE>>(tensors,indices));
-      OUT() << "tensor union=" << tensorUnion << endl;
-      return New<AtomicNode<Ptr<const TensorUnion<F,TE>>>>(
-        tensorUnion, node->sourceLocation
+      auto tensorSet(New<TensorSet<F,TE>>(tensors,indices));
+      OUT() << "tensor set=" << tensorSet << endl;
+      return New<AtomicNode<Ptr<const TensorSet<F,TE>>>>(
+        tensorSet, node->sourceLocation
       );
     }
 
-    class TensorUnionIo;
-    friend class TensorUnionIo;
+    class TensorSetIo;
+    friend class TensorSetIo;
   };
 
-  class TensorUnionIo {
+  class TensorSetIo {
   public:
     static Ptr<Node> write(
       const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
@@ -316,15 +316,15 @@ namespace cc4s {
       Ptr<Node> writtenNode;
       if (!Cc4s::options->dryRun) {
         using TE = DefaultTensorEngine;
-        writtenNode = TensorUnion<Real<64>,TE>::write(node, nodePath, useBinary);
+        writtenNode = TensorSet<Real<64>,TE>::write(node, nodePath, useBinary);
         if (writtenNode) return writtenNode;
-        writtenNode = TensorUnion<Complex<64>,TE>::write(node, nodePath, useBinary);
+        writtenNode = TensorSet<Complex<64>,TE>::write(node, nodePath, useBinary);
         if (writtenNode) return writtenNode;
       } else {
         using TE = DefaultDryTensorEngine;
-        writtenNode = TensorUnion<Real<64>,TE>::write(node, nodePath, useBinary);
+        writtenNode = TensorSet<Real<64>,TE>::write(node, nodePath, useBinary);
         if (writtenNode) return writtenNode;
-        writtenNode = TensorUnion<Complex<64>,TE>::write(node, nodePath, useBinary);
+        writtenNode = TensorSet<Complex<64>,TE>::write(node, nodePath, useBinary);
         if (writtenNode) return writtenNode;
       }
       return nullptr;
@@ -343,16 +343,16 @@ namespace cc4s {
       if (!Cc4s::options->dryRun) {
         using TE = DefaultTensorEngine;
         if (scalarType == TypeTraits<Real<>>::getName()) {
-          return TensorUnion<Real<>,TE>::read(node, nodePath);
+          return TensorSet<Real<>,TE>::read(node, nodePath);
         } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-          return TensorUnion<Complex<>,TE>::read(node, nodePath);
+          return TensorSet<Complex<>,TE>::read(node, nodePath);
         }
       } else {
         using TE = DefaultDryTensorEngine;
         if (scalarType == TypeTraits<Real<>>::getName()) {
-          return TensorUnion<Real<>,TE>::read(node, nodePath);
+          return TensorSet<Real<>,TE>::read(node, nodePath);
         } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-          return TensorUnion<Complex<>,TE>::read(node, nodePath);
+          return TensorSet<Complex<>,TE>::read(node, nodePath);
         }
       }
       std::stringstream explanation;
@@ -364,70 +364,70 @@ namespace cc4s {
   };
 
   /**
-   * \brief Returns the sum of two TensorUnions a and b, where
+   * \brief Returns the sum of two TensorSets a and b, where
    * neither a nor b are modified.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> operator +(
-    const TensorUnion<F,TE> &a, const TensorUnion<F,TE> &b
+  inline TensorSet<F,TE> operator +(
+    const TensorSet<F,TE> &a, const TensorSet<F,TE> &b
   ) {
-    TensorUnion<F,TE> result(a);
+    TensorSet<F,TE> result(a);
     result += b;
     return std::move(result);
   }
   /**
-   * \brief Returns the sum of two TensorUnions a and b, where
+   * \brief Returns the sum of two TensorSets a and b, where
    * a is movable and will be used for the result.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> &&operator +(
-    TensorUnion<F,TE> &&a, const TensorUnion<F,TE> &b
+  inline TensorSet<F,TE> &&operator +(
+    TensorSet<F,TE> &&a, const TensorSet<F,TE> &b
   ) {
     a += b;
     return std::move(a);
   }
   /**
-   * \brief Returns the sum of two TensorUnions a and b, where
+   * \brief Returns the sum of two TensorSets a and b, where
    * b is movable and will be used for the result.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> &&operator +(
-    TensorUnion<F,TE> &a, const TensorUnion<F,TE> &&b
+  inline TensorSet<F,TE> &&operator +(
+    TensorSet<F,TE> &a, const TensorSet<F,TE> &&b
   ) {
     b += a;
     return std::move(b);
   }
 
   /**
-   * \brief Returns the difference between two TensorUnions a and b, where
+   * \brief Returns the difference between two TensorSets a and b, where
    * neither a nor b are modified.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> operator -(
-    const TensorUnion<F,TE> &a, const TensorUnion<F,TE> &b
+  inline TensorSet<F,TE> operator -(
+    const TensorSet<F,TE> &a, const TensorSet<F,TE> &b
   ) {
-    TensorUnion<F,TE> result(a);
+    TensorSet<F,TE> result(a);
     result -= b;
     return std::move(result);
   }
   /**
-   * \brief Returns the difference between two TensorUnions a and b, where
+   * \brief Returns the difference between two TensorSets a and b, where
    * a is movable and will be used for the result.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> &&operator -(
-    TensorUnion<F,TE> &&a, const TensorUnion<F,TE> &b
+  inline TensorSet<F,TE> &&operator -(
+    TensorSet<F,TE> &&a, const TensorSet<F,TE> &b
   ) {
     a -= b;
     return std::move(a);
   }
   /**
-   * \brief Returns the difference between two TensorUnions a and b, where
+   * \brief Returns the difference between two TensorSets a and b, where
    * b is movable and will be used for the result.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> &&operator -(
-    const TensorUnion<F,TE> &a, TensorUnion<F,TE> &&b
+  inline TensorSet<F,TE> &&operator -(
+    const TensorSet<F,TE> &a, TensorSet<F,TE> &&b
   ) {
     b -= a;
     // TODO: directly invoke sum to prevent extra multiplication by -1
@@ -436,54 +436,54 @@ namespace cc4s {
   }
 
   /**
-   * \brief Returns the scalar multiple of the TensorUnion a
+   * \brief Returns the scalar multiple of the TensorSet a
    * right-multiplied with the scalar s, where a is not modified.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> operator *(const TensorUnion<F,TE> &a, const F s) {
-    TensorUnion<F,TE> result(a);
+  inline TensorSet<F,TE> operator *(const TensorSet<F,TE> &a, const F s) {
+    TensorSet<F,TE> result(a);
     result *= s;
     return std::move(result);
   }
   /**
-   * \brief Returns the scalar multiple of the TensorUnion a
+   * \brief Returns the scalar multiple of the TensorSet a
    * right-multiplied with the scalar s, where a movable and will be used
    * for the result.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> &&operator *(TensorUnion<F,TE> &&a, const F s) {
+  inline TensorSet<F,TE> &&operator *(TensorSet<F,TE> &&a, const F s) {
     a *= s;
     return std::move(a);
   }
 
   /**
-   * \brief Returns the scalar multiple of the TensorUnion a
+   * \brief Returns the scalar multiple of the TensorSet a
    * left-multiplied with the scalar s, where a is not modified.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> operator *(const F s, const TensorUnion<F,TE> &a) {
-    TensorUnion<F,TE> result(a);
+  inline TensorSet<F,TE> operator *(const F s, const TensorSet<F,TE> &a) {
+    TensorSet<F,TE> result(a);
     result *= s;
     return result;
   }
   /**
-   * \brief Returns the scalar multiple of the TensorUnion a
+   * \brief Returns the scalar multiple of the TensorSet a
    * left-multiplied with the scalar s, where a movable and will be used
    * for the result.
    **/
   template <typename F, typename TE>
-  inline TensorUnion<F,TE> &&operator *(const F s, TensorUnion<F,TE> &&a) {
+  inline TensorSet<F,TE> &&operator *(const F s, TensorSet<F,TE> &&a) {
     a *= s;
     return std::move(a);
   }
 
   /**
-   * \brief Writes the TensorUnion a to the given stream and returns it
+   * \brief Writes the TensorSet a to the given stream and returns it
    * for further stream operations.
    **/
   template <typename F, typename TE>
   inline std::ostream &operator <<(
-    std::ostream &stream, const TensorUnion<F,TE> &a
+    std::ostream &stream, const TensorSet<F,TE> &a
   ) {
     stream << "( ";
     stream << a.get(0) << "[" << a.getIndices(0) << "]";

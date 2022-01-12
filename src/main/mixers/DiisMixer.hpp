@@ -31,22 +31,22 @@ namespace cc4s {
     std::string describeOptions() override;
 
     void append(
-      const Ptr<TensorUnion<F,TE>> &A, const Ptr<TensorUnion<F,TE>> &R
+      const Ptr<TensorSet<F,TE>> &A, const Ptr<TensorSet<F,TE>> &R
     ) override ;
-    Ptr<TensorUnion<F,TE>> get() override;
+    Ptr<TensorSet<F,TE>> get() override;
     Real<> getResiduumNorm() override;
 
-    Ptr<TensorUnion<F,TE>> next;
-    Ptr<TensorUnion<F,TE>> nextResiduum; // AI: dont know what this is good for
+    Ptr<TensorSet<F,TE>> next;
+    Ptr<TensorSet<F,TE>> nextResiduum;
 
     /**
      * \brief The amplitudes associated to each residuum in the overlap matrix B
      **/
-    std::vector<Ptr<TensorUnion<F,TE>>> amplitudes;
+    std::vector<Ptr<TensorSet<F,TE>>> amplitudes;
     /**
      * \brief The residua contained in the overlap matrix B
      **/
-    std::vector<Ptr<TensorUnion<F,TE>>> residua;
+    std::vector<Ptr<TensorSet<F,TE>>> residua;
     /**
      * \brief Overlap matrix \f$B(i,j) = 2*Re(\langleR(i)|R(j)\rangle),
        B(i,N) = 1, B(N,j) = 1, B(N,N) = 0\f$ where \f$i,j < N\f$.

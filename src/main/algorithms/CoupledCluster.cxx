@@ -70,9 +70,9 @@ Ptr<MapNode> CoupledCluster::run() {
   auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
 
   Natural<> i(0);
-  Ptr<TensorUnion<F,TE>> amplitudes;
+  Ptr<TensorSet<F,TE>> amplitudes;
   if (arguments->get("initialAmplitudes")) {
-    amplitudes = arguments->getPtr<TensorUnion<F,TE>>(
+    amplitudes = arguments->getPtr<TensorSet<F,TE>>(
       "initialAmplitudes"
     );
     OUT() << "Using given initial amplitudes " << amplitudes << endl;
@@ -138,7 +138,7 @@ Ptr<MapNode> CoupledCluster::run() {
       OperationsCounter operationsCounter(&operations);
       auto residuum( method->getResiduum(amplitudes) );
       residuumToAmplitudes(residuum, amplitudes);
-      auto amplitudesChange( New<TensorUnion<F,TE>>(*residuum) );
+      auto amplitudesChange( New<TensorSet<F,TE>>(*residuum) );
       if (amplitudes) {
         *amplitudesChange -= *amplitudes;
         isSecondOrder = false;
@@ -196,7 +196,7 @@ Ptr<MapNode> CoupledCluster::run() {
 
 template <typename F, typename TE>
 F CoupledCluster::getEnergy(
-  const Ptr<TensorUnion<F,TE>> &amplitudes,
+  const Ptr<TensorSet<F,TE>> &amplitudes,
   const bool isFinalReport
 ) {
   // get the Coulomb integrals to compute the energy
@@ -264,8 +264,8 @@ F CoupledCluster::getEnergy(
 
 template <typename F, typename TE>
 void CoupledCluster::residuumToAmplitudes(
-  const Ptr<TensorUnion<F,TE>> &residuum,
-  const Ptr<TensorUnion<F,TE>> &amplitudes
+  const Ptr<TensorSet<F,TE>> &residuum,
+  const Ptr<TensorSet<F,TE>> &amplitudes
 ) {
   auto levelShift(
     arguments->getValue<Real<>>("levelShift", DEFAULT_LEVEL_SHIFT)

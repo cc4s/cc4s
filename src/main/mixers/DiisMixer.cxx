@@ -57,8 +57,8 @@ std::string DiisMixer<F,TE>::describeOptions() {
 
 template <typename F, typename TE>
 void DiisMixer<F,TE>::append(
-  const Ptr<TensorUnion<F,TE>> &A,
-  const Ptr<TensorUnion<F,TE>> &R
+  const Ptr<TensorSet<F,TE>> &A,
+  const Ptr<TensorSet<F,TE>> &R
 ) {
 
   // replace amplidue and residuum at nextIndex
@@ -89,9 +89,9 @@ void DiisMixer<F,TE>::append(
     column = inverse(matrix, dim);
   }
 
-  next = New<TensorUnion<F,TE>>(*A);
+  next = New<TensorSet<F,TE>>(*A);
   *next *= F(0);
-  nextResiduum = New<TensorUnion<F,TE>>(*R);
+  nextResiduum = New<TensorSet<F,TE>>(*R);
   *nextResiduum *= F(0);
 //  OUT() << "\tDiis: ";
   for (size_t j(0); j < count; ++j) {
@@ -107,7 +107,7 @@ void DiisMixer<F,TE>::append(
 }
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> DiisMixer<F,TE>::get() {
+Ptr<TensorSet<F,TE>> DiisMixer<F,TE>::get() {
   return next;
 }
 

@@ -46,8 +46,8 @@ namespace cc4s {
      * \brief Implements the iterate method with the CCSD iteration.
      * \param[in] i Iteration number
      */
-    Ptr<TensorUnion<F,TE>> getResiduum(
-      const Ptr<TensorUnion<F,TE>> &amplitudes
+    Ptr<TensorSet<F,TE>> getResiduum(
+      const Ptr<TensorSet<F,TE>> &amplitudes
     ) override;
   };
 }

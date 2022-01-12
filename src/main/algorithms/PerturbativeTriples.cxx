@@ -17,7 +17,7 @@
 #include <algorithms/PerturbativeTriplesStar.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 #include <math/MathFunctions.hpp>
 #include <atrip.hpp>
 #include <atrip/Debug.hpp>
@@ -56,7 +56,7 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
     })()
 #define __T__(_idx) \
    &(arguments                                                    \
-      ->getPtr<TensorUnion<Real<>,TE>>("amplitudes")              \
+      ->getPtr<TensorSet<Real<>,TE>>("amplitudes")                \
       ->get(_idx)                                                 \
       ->evaluate()                                                \
       ->getMachineTensor()                                        \

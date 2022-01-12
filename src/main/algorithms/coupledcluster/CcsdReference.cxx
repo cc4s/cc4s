@@ -33,14 +33,14 @@ CoupledClusterMethodRegistrar<
 //////////////////////////////////////////////////////////////////////
 
 template <typename F, typename TE>
-Ptr<TensorUnion<F,TE>> CcsdReference<F,TE>::getResiduum(
-  const Ptr<TensorUnion<F,TE>> &amplitudes
+Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
+  const Ptr<TensorSet<F,TE>> &amplitudes
 ) {
   // construct residuum. Shape will be assumed upon first use.
   auto Rph( Tcc<TE>::template tensor<F>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
   auto residuum(
-    New<TensorUnion<F,TE>>(
+    New<TensorSet<F,TE>>(
       std::vector<Ptr<TensorExpression<F,TE>>>({Rph, Rpphh}),
       std::vector<std::string>({"ai", "abij"})
     )

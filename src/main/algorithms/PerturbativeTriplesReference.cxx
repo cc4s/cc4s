@@ -20,7 +20,7 @@
 #include <util/Exception.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
-#include <math/TensorUnion.hpp>
+#include <math/TensorSet.hpp>
 
 
 using namespace cc4s;
@@ -57,7 +57,7 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
   const Ptr<MapNode> &arguments
 ) {
 
-  auto amplitudes = arguments->getPtr<TensorUnion<F,TE>>("amplitudes");
+  auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
   auto Tph( amplitudes->get(0) );
   auto Tpphh( amplitudes->get(1) );
 
