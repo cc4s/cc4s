@@ -50,7 +50,6 @@ Ptr<TensorUnion<F,TE>> CcsdReference<F,TE>::getResiduum(
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vpphh(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pphh"));
 
-  auto methodArguments(this->arguments->getMap("method"));
   auto onlyPpl(this->arguments->template getValue<size_t>("onlyPpl", 0) );
 
 

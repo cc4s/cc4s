@@ -27,8 +27,8 @@ main/algorithms/coupledcluster/Ccsd.cxx \
 main/algorithms/coupledcluster/CcsdReference.cxx \
 main/algorithms/coupledcluster/Drccd.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
-main/algorithms/TransitionStructureFactorFiniteSizeCorrection.cxx \
-main/algorithms/CcsdFocalPointBasisSetCorrection.cxx \
+main/algorithms/FiniteSizeCorrection.cxx \
+main/algorithms/BasisSetCorrection.cxx \
 main/mixers/Mixer.cxx \
 main/mixers/LinearMixer.cxx \
 main/mixers/DiisMixer.cxx \

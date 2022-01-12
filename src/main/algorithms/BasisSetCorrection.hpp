@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CCSD_FOCAL_POINT_BASIS_SET_CORRECTION
-#define CCSD_FOCAL_POINT_BASIS_SET_CORRECTION
+#ifndef BASIS_SET_CORRECTION
+#define BASIS_SET_CORRECTION
 
 #include <algorithms/Algorithm.hpp>
 #include <math/TensorUnion.hpp>
@@ -23,9 +23,9 @@ namespace cc4s {
   /**
    * \brief Caclulates basis set correction scheme called ps-ppl
    */
-  class CcsdFocalPointBasisSetCorrection: public Algorithm {
+  class BasisSetCorrection: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(CcsdFocalPointBasisSetCorrection)
+    ALGORITHM_REGISTRAR_DECLARATION(BasisSetCorrection)
     /**
      * \brief run routine
      */
@@ -34,7 +34,6 @@ namespace cc4s {
   protected:
     template <typename F, typename TE>
     bool run(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
-
   };
 }
 

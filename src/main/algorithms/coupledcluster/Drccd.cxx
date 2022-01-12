@@ -68,10 +68,11 @@ Ptr<TensorUnion<F,TE>> Drccd<F,TE>::getResiduum(
     )
   );
 
-  auto methodArguments(this->arguments->getMap("method"));
-  bool linearized(methodArguments->template getValue<bool>("linearized", false));
+  bool linearized(
+    this->arguments->template getValue<bool>("linearized", false)
+  );
   bool adjacentPairsExchange(
-    methodArguments->template getValue<bool>("adjacentPairsExchange", false)
+    this->arguments->template getValue<bool>("adjacentPairsExchange", false)
   );
 
   if (!amplitudes) {

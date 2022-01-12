@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/TransitionStructureFactorFiniteSizeCorrection.hpp>
+#include <algorithms/FiniteSizeCorrection.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <math/TensorUnion.hpp>
@@ -22,9 +22,9 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(TransitionStructureFactorFiniteSizeCorrection)
+ALGORITHM_REGISTRAR_DEFINITION(FiniteSizeCorrection)
 
-Ptr<MapNode> TransitionStructureFactorFiniteSizeCorrection::run(
+Ptr<MapNode> FiniteSizeCorrection::run(
   const Ptr<MapNode> &arguments
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
@@ -64,7 +64,7 @@ Ptr<MapNode> TransitionStructureFactorFiniteSizeCorrection::run(
 // - divide te CoulombVertex by the Coulomb potential to obtain the codensities
 
 template <typename F, typename TE>
-void TransitionStructureFactorFiniteSizeCorrection::calculateTransitionStructureFactor(
+void FiniteSizeCorrection::calculateTransitionStructureFactor(
   const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ) {
   using Tc = TensorExpression<Complex<>, TE>;
@@ -151,7 +151,7 @@ void TransitionStructureFactorFiniteSizeCorrection::calculateTransitionStructure
 }
 
 template <typename TE>
-void TransitionStructureFactorFiniteSizeCorrection::interpolation(
+void FiniteSizeCorrection::interpolation(
   const Ptr<MapNode> &arguments,
   Ptr<MapNode> &result
 ) {
@@ -226,9 +226,16 @@ void TransitionStructureFactorFiniteSizeCorrection::interpolation(
   auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
   auto CoulombPotential(arguments->getMap("coulombPotential"));
 // convert all computed emergies to units used for CoulombVertex
-  auto toCoulombVertexUnits = pow(coulombVertex->getValue<Real<>>("unit"),2.0) /
-    pow(gridVectors->getValue<Real<>>("unit"),3.0) / CoulombPotential->getValue<Real<>>("unit");
-  Real<> factor(gridVectors->getValue<Real<>>("unit")/pow(coulombVertex->getValue<Real<>>("unit"),2.0)*Omega/2.0/M_PI/M_PI);
+  auto toCoulombVertexUnits(
+    pow(coulombVertex->getValue<Real<>>("unit"),2.0)
+      / pow(gridVectors->getValue<Real<>>("unit"),3.0)
+      / CoulombPotential->getValue<Real<>>("unit")
+  );
+  auto factor(
+    gridVectors->getValue<Real<>>("unit")
+      / pow(coulombVertex->getValue<Real<>>("unit"),2.0)
+      * Omega/2.0/Pi<>()/Pi<>()
+  );
 
 
 

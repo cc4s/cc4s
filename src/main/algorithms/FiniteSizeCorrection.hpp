@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef TRANSITION_STRUCTURE_FACTOR_FINITE_SIZE_CORRECTION_DEFINED
-#define TRANSITION_STRUCTURE_FACTOR_FINITE_SIZE_CORRECTION_DEFINED
+#ifndef FINITE_SIZE_CORRECTION_DEFINED
+#define FINITE_SIZE_CORRECTION_DEFINED
 
 #include <algorithms/Algorithm.hpp>
 #include <math/TensorUnion.hpp>
@@ -23,9 +23,9 @@ namespace cc4s {
   /**
    * \brief Caclulates different Finite Size corrections
    */
-  class TransitionStructureFactorFiniteSizeCorrection: public Algorithm {
+  class FiniteSizeCorrection: public Algorithm {
   public:
-    ALGORITHM_REGISTRAR_DECLARATION(TransitionStructureFactorFiniteSizeCorrection)
+    ALGORITHM_REGISTRAR_DECLARATION(FiniteSizeCorrection)
     /**
      * \brief runs main routine
      */
@@ -36,8 +36,9 @@ namespace cc4s {
     void interpolation(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
   protected:
     template <typename F, typename TE>
-    void calculateTransitionStructureFactor(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
-
+    void calculateTransitionStructureFactor(
+      const Ptr<MapNode> &arguments, Ptr<MapNode> &result
+    );
   };
 
 }

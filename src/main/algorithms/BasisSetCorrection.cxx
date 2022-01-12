@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <algorithms/CcsdFocalPointBasisSetCorrection.hpp>
+#include <algorithms/BasisSetCorrection.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <math/TensorUnion.hpp>
@@ -21,9 +21,9 @@
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CcsdFocalPointBasisSetCorrection)
+ALGORITHM_REGISTRAR_DEFINITION(BasisSetCorrection)
 
-Ptr<MapNode> CcsdFocalPointBasisSetCorrection::run(
+Ptr<MapNode> BasisSetCorrection::run(
   const Ptr<MapNode> &arguments
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
@@ -49,7 +49,7 @@ Ptr<MapNode> CcsdFocalPointBasisSetCorrection::run(
 
 
 template <typename F, typename TE>
-bool CcsdFocalPointBasisSetCorrection::run(
+bool BasisSetCorrection::run(
   const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ) {
   using Tr = TensorExpression<Real<>, TE>;
