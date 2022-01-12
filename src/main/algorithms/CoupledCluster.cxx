@@ -82,20 +82,17 @@ Ptr<MapNode> CoupledCluster::run() {
   energy = New<MapNode>(SOURCE_LOCATION);
   energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
 
-  // create a method handler, by default SinglesDoubles
-  auto methodArguments(arguments->getMap("method"));
-  auto methodType(
-    methodArguments->getValue<std::string>("type", "Ccsd")
-  );
+  // create a method handler, by default Ccsd
+  auto methodName( arguments->getValue<std::string>("method", "Ccsd") );
   Ptr<CoupledClusterMethod<F,TE>> method(
-    CoupledClusterMethodFactory<F,TE>::create(methodType, arguments)
+    CoupledClusterMethodFactory<F,TE>::create(methodName, arguments)
   );
   ASSERT_LOCATION(
-    method, std::string("Unknown method type: '") + methodType + "'",
-    methodArguments->get("type")->sourceLocation
+    method, std::string("Unknown method: '") + methodName + "'",
+    arguments->get("method")->sourceLocation
   );
   OUT() << "Using method "
-    << methodType << ". " << method->describeOptions() << endl;
+    << methodName << ". " << method->describeOptions() << endl;
 
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));

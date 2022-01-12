@@ -40,9 +40,8 @@ std::string Ccsd<Real<>,TE>::describeOptions() {
   auto energySlices(eigenEnergies->getMap("slices"));
   auto epsi(energySlices->template getPtr<TensorExpression<Real<>,TE>>("h"));
   auto No(epsi->inspect()->getLen(0));
-  auto methodArguments(this->arguments->getMap("method"));
   auto integralsSliceSize(
-    methodArguments->template getValue<Natural<>>("integralsSliceSize", No)
+    this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
   );
   stream
     << "integralsSliceSize: " << integralsSliceSize;
@@ -56,9 +55,8 @@ std::string Ccsd<Complex<>,TE>::describeOptions() {
   auto energySlices(eigenEnergies->getMap("slices"));
   auto epsi(energySlices->template getPtr<TensorExpression<Real<>,TE>>("h"));
   auto No(epsi->inspect()->getLen(0));
-  auto methodArguments(this->arguments->getMap("method"));
   auto integralsSliceSize(
-    methodArguments->template getValue<Natural<>>("integralsSliceSize", No)
+    this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
   );
   stream
     << "integralsSliceSize: " << integralsSliceSize;
@@ -88,15 +86,14 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
   auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vpphh(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("pphh"));
-  auto methodArguments(this->arguments->getMap("method"));
-  bool ppl(methodArguments->template getValue<bool>("ppl", true));
-  bool twoCc(methodArguments->template getValue<bool>("2cc", false));
-  bool dcsd(methodArguments->template getValue<bool>("dcsd", false));
+  bool ppl(this->arguments->template getValue<bool>("ppl", true));
+  bool twoCc(this->arguments->template getValue<bool>("2cc", false));
+  bool dcsd(this->arguments->template getValue<bool>("dcsd", false));
 
   ASSERT_LOCATION(
     ((ppl && !(twoCc && dcsd)) || (!ppl && !twoCc && !dcsd)),
-    "!ppl, 2cc and dscsd are all mutually exclusive.",
-    methodArguments->get("ppl")->sourceLocation
+    "!ppl, 2cc and dcsd are all mutually exclusive.",
+    this->arguments->sourceLocation
   );
 
   if (!amplitudes) {
@@ -393,7 +390,7 @@ Ptr<TensorUnion<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
       Natural<> NG(realDressedGammaGpp->lens[0]);
       Natural<> No(Rpphh->inspect()->getLen(2));
       Natural<> sliceSize(
-        methodArguments->template getValue<Natural<>>("integralsSliceSize", No)
+        this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
       );
       Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
       std::vector<Ptr<Tensor<Real<>, TE>>> realSlicedGammaGpp;
@@ -496,8 +493,7 @@ Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
   auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));
   auto Vpphh(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("pphh"));
-  auto methodArguments(this->arguments->getMap("method"));
-  bool ppl(methodArguments->template getValue<bool>("ppl", true));
+  bool ppl(this->arguments->template getValue<bool>("ppl", true));
 
   if (!amplitudes) {
     // no previous amplitudes given
@@ -650,7 +646,7 @@ Ptr<TensorUnion<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
       Natural<> Nv(Rpphh->inspect()->getLen(0));
       Natural<> No(Rpphh->inspect()->getLen(2));
       Natural<> sliceSize(
-        methodArguments->template getValue<Natural<>>("integralsSliceSize", No)
+        this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
       );
       Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
       std::vector<Ptr<Tensor<Complex<>, TE>>> cTSlicedGammaGpp;
