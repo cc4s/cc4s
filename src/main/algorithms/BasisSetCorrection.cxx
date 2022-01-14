@@ -146,13 +146,25 @@ bool BasisSetCorrection::run(
   Real<> Emp2(real(eMp2->read()));
   Real<> Eccsd(real(eCcsd->read()));
 
-  OUT() << "CCSD correlation energy:          " << std::setprecision(10) << Eccsd  << "\n";
-  OUT() << "CCSD-FP correlation energy:       " << std::setprecision(10) << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
-  OUT() << "2nd-order-CBS correlation energy: " << std::setprecision(10) << Emp2Cbs << "\n";
-  OUT() << "==================================" << "\n";
+//  OUT() << "CCSD correlation energy:          " << std::setprecision(10) << Eccsd  << "\n";
+//  OUT() << "CCSD-FP correlation energy:       " << std::setprecision(10) << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
+//  OUT() << "2nd-order-CBS correlation energy: " << std::setprecision(10) << Emp2Cbs << "\n";
+//  OUT() << "==================================" << "\n";
   OUT() << "CCSD-BSIE energy correction:      " << std::setprecision(10) << - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
-  OUT() << "2nd-order energy correction :     " << std::setprecision(10) << Emp2Cbs - Emp2 << "\n";
-  OUT() << "PS-PPL-BSIE energy correction:    " << std::setprecision(10) << deltaPsPpl << std::endl;
+//  OUT() << "2nd-order energy correction :     " << std::setprecision(10) << Emp2Cbs - Emp2 << "\n";
+//  OUT() << "PS-PPL-BSIE energy correction:    " << std::setprecision(10) << deltaPsPpl << std::endl;
+
+
+  auto energy(New<MapNode>(SOURCE_LOCATION));
+  energy->setValue("correction", - Emp2 + Emp2Cbs + deltaPsPpl);
+  energy->setValue("pplCorrection", deltaPsPpl);
+  energy->setValue("secondOrderCorrection", - Emp2 + Emp2Cbs );
+  energy->setValue("uncorrectedCorrelation", Eccsd );
+  energy->setValue("unit", arguments
+                            ->getMap("slicedEigenEnergies")
+                            ->getValue<Real<>>("unit"));
+
+  result->get("energy") = energy;
 
   return true;
 }

@@ -312,10 +312,16 @@ void FiniteSizeCorrection::interpolation(
   Real<> totalInter3D(0.0);
   communicator.allReduce(inter3D, totalInter3D);
 
-  OUT() << "Uncorrected correlation energy:   " << std::setprecision(10) << sum3D << "\n";
+//  OUT() << "Uncorrected correlation energy:   " << std::setprecision(10) << sum3D << "\n";
   OUT() << "Finite-size energy correction:    " << std::setprecision(10) << totalInter3D/N/N/N/8.0-sum3D << "\n";
 
 
-  result->setValue("corrected", inter3D);
-  result->setValue("uncorrected", sum3D);
+  auto energy(New<MapNode>(SOURCE_LOCATION));
+  energy->setValue("correction", totalInter3D/N/N/N/8.0-sum3D);
+  energy->setValue("uncorrected", sum3D);
+  energy->setValue("corrected", inter3D);
+  energy->setValue("unit", CoulombPotential->getValue<Real<>>("unit")*pow(gridVectors->getValue<Real<>>("unit"),3.0) );
+
+  result->get("energy") = energy;
+
 }

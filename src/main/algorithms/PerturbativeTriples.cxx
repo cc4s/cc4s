@@ -117,9 +117,6 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
       OUT() << out << "\n";
     });
 
-  result->setValue("unit", arguments
-                            ->getMap("slicedEigenEnergies")
-                            ->getValue<Real<>>("unit"));
 #undef __V__
 #undef __T__
 #undef __eps__
@@ -141,6 +138,10 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
           << triples_star << std::endl;
     energy->setValue("starCorrelation", real(triples_star));
   }
+
+  energy->setValue("unit", arguments
+                            ->getMap("slicedEigenEnergies")
+                            ->getValue<Real<>>("unit"));
 
   result->get("energy") = energy;
 

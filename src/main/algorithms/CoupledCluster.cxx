@@ -253,7 +253,7 @@ F CoupledCluster::getEnergy(
           << energy->getValue<Real<>>("secondOrder") << std::endl;
       }
     }
-    energy->setValue("value", real(e));
+    energy->setValue("correlation", real(e));
     energy->setValue("direct", real(D));
     energy->setValue("exchange", real(X));
   }
