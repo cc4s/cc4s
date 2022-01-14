@@ -146,14 +146,7 @@ bool BasisSetCorrection::run(
   Real<> Emp2(real(eMp2->read()));
   Real<> Eccsd(real(eCcsd->read()));
 
-//  OUT() << "CCSD correlation energy:          " << std::setprecision(10) << Eccsd  << "\n";
-//  OUT() << "CCSD-FP correlation energy:       " << std::setprecision(10) << Eccsd - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
-//  OUT() << "2nd-order-CBS correlation energy: " << std::setprecision(10) << Emp2Cbs << "\n";
-//  OUT() << "==================================" << "\n";
-  OUT() << "CCSD-BSIE energy correction:      " << std::setprecision(10) << - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
-//  OUT() << "2nd-order energy correction :     " << std::setprecision(10) << Emp2Cbs - Emp2 << "\n";
-//  OUT() << "PS-PPL-BSIE energy correction:    " << std::setprecision(10) << deltaPsPpl << std::endl;
-
+  OUT() << "Ccsd-Bsie energy correction:      " << std::setprecision(10) << - Emp2 + Emp2Cbs + deltaPsPpl << "\n";
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correction", - Emp2 + Emp2Cbs + deltaPsPpl);
