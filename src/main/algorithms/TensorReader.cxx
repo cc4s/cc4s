@@ -207,7 +207,7 @@ Ptr<Node> TensorReader::readText(
   const Ptr<TensorNonZeroConditions> &nonZeroConditions,
   const SourceLocation &sourceLocation
 ) {
-  constexpr size_t MAX_BUFFER_SIZE(128*1024*1024);
+  constexpr size_t MAX_BUFFER_SIZE(32*1024*1024);
   std::ifstream stream(fileName.c_str());
   if (stream.fail()) {
     std::stringstream explanation;
