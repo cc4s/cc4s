@@ -47,6 +47,14 @@ namespace cc4s {
       const Ptr<TensorNonZeroConditions> &nonZeroConditions,
       const SourceLocation &sourceLocation
     );
+    template <typename F, typename TE>
+    Ptr<Node> readBinaryDense(
+      const std::string &fileName,
+      const std::vector<size_t> &lens,
+      const std::vector<Ptr<TensorDimension>> &dimensions,
+      const Ptr<TensorNonZeroConditions> &nonZeroConditions,
+      const SourceLocation &sourceLocation
+    );
   };
 }
 

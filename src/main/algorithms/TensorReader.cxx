@@ -274,6 +274,81 @@ Ptr<Node> TensorReader::readBinary(
   const Ptr<TensorNonZeroConditions> &nonZeroConditions,
   const SourceLocation &sourceLocation
 ) {
+  if (nonZeroConditions->all.size() == 0) {
+    return readBinaryDense<F,TE>(
+      fileName, lens, dimensions, nonZeroConditions, sourceLocation
+    );
+  }
+
+  constexpr size_t MAX_BUFFER_SIZE(32*1024*1024);
+  std::ifstream stream(fileName.c_str());
+  if (stream.fail()) {
+    std::stringstream explanation;
+    explanation << "Failed to open file \"" << fileName << "\"";
+    throw New<Exception>(explanation.str(), sourceLocation);
+  }
+
+  // create dense result tensor
+  auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
+  A->dimensions = dimensions;
+  A->nonZeroConditions = nonZeroConditions;
+  auto result(
+    New<PointerNode<TensorExpression<F,TE>>>(A, SourceLocation(fileName,1))
+  );
+  OUT() << "Reading from binary file " << fileName << std::endl;
+  if (Cc4s::options->dryRun) return result;
+
+  LOG() << "#non-zero conditions: " << nonZeroConditions->all.size() << std::endl;
+  TensorNonZeroBlockIterator blockIterator(nonZeroConditions);
+  while (!blockIterator.atEnd()) {
+    auto elementIterator(blockIterator.getElementIterator(lens));
+    auto blockElementsCount(elementIterator.getCount());
+    LOG() << "reading block:" << blockIterator.print() <<
+      " with " << blockElementsCount << " elements" << std::endl;
+
+    // read the values only on root, all others still pariticipate calling MPI
+    const size_t bufferSize(std::min(blockElementsCount, MAX_BUFFER_SIZE));
+    size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
+    std::vector<size_t> indices(localBufferSize);
+    std::vector<F> values(localBufferSize);
+
+    size_t readElementsCount(0);
+    while (readElementsCount < blockElementsCount) {
+      size_t elementsCount(
+        std::min(bufferSize, blockElementsCount - readElementsCount)
+      );
+      size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
+      if (localElementsCount > 0) {
+        stream.read(
+          reinterpret_cast<char *>(values.data()),
+          localElementsCount * sizeof(F)
+        );
+      }
+      for (size_t i(0); i < localElementsCount; ++i) {
+        indices[i] = elementIterator.getGlobalIndex();
+        ++elementIterator;
+      }
+      // wait until all processes finished reading this buffer into the tensor
+      Cc4s::world->barrier();
+      LOG() << "writing " << elementsCount << " values to tensor..." << std::endl;
+      A->write(localElementsCount, indices.data(), values.data());
+      readElementsCount += elementsCount;
+    }
+
+    ++blockIterator;
+  }
+
+  return result;
+}
+
+template <typename F, typename TE>
+Ptr<Node> TensorReader::readBinaryDense(
+  const std::string &fileName,
+  const std::vector<size_t> &lens,
+  const std::vector<Ptr<TensorDimension>> &dimensions,
+  const Ptr<TensorNonZeroConditions> &nonZeroConditions,
+  const SourceLocation &sourceLocation
+) {
   // open the file
   MPI_File file;
   int mpiError(
@@ -294,12 +369,12 @@ Ptr<Node> TensorReader::readBinary(
     New<PointerNode<TensorExpression<F,TE>>>(A, SourceLocation(fileName,1))
   );
 
-  OUT() << "Reading from binary file " << fileName << std::endl;
+  OUT() << "Reading from dense binary file " << fileName << std::endl;
   if (Cc4s::options->dryRun) return result;
   // write tensor data with values from file
   A->writeFromFile(file);
   LOG() << "Read " << sizeof(F)*A->getElementsCount() <<
-    " bytes from binary file " << fileName << std::endl;
+    " bytes from dense binary file " << fileName << std::endl;
 
   // done
   MPI_File_close(&file);
