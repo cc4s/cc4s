@@ -18,11 +18,98 @@
 
 using namespace cc4s;
 
-int TensorIo::WRITE_REGISTERED =
-  Writer::registerWriteFunction("tensor", TensorIo::write);
+bool TensorIo::WRITE_REGISTERED =
+  Writer::registerWriteFunction("Tensor", TensorIo::write);
 
-int TensorIo::READ_REGISTERED =
-  Reader::registerReadFunction("tensor", TensorIo::read);
+bool TensorIo::READ_REGISTERED =
+  Reader::registerReadFunction("Tensor", TensorIo::read);
+
+const Natural<32> TensorIo::VERSION = 100;
+
+
+Ptr<TensorDimension> TensorIo::getDimension(const std::string &name) {
+  // check if name is entetered in map
+  auto iterator(TensorDimension::dimensions.find(name));
+  if (iterator != TensorDimension::dimensions.end()) return iterator->second;
+  // otherwise: create new tensor dimension entry
+  auto tensorDimension(New<TensorDimension>());
+  tensorDimension->name = name;
+  TensorDimension::dimensions[name] = tensorDimension;
+
+  // check if file exists specifying dimension properties
+  auto propertiesFileName(name + ".yaml");
+  if (std::ifstream(propertiesFileName).good()) {
+    auto propertiesMap(
+      Parser(propertiesFileName).parse()->toPtr<MapNode>()
+    );
+    for (auto key: propertiesMap->getKeys()) {
+      auto propertyMap(propertiesMap->getMap(key));
+      auto property(New<TensorDimensionProperty>());
+      property->name = key;
+      for (auto indexKey: propertyMap->getKeys()) {
+        auto index(std::stol(indexKey));
+        auto propertyValue(propertyMap->getValue<Natural<>>(indexKey));
+        // enter index -> property map
+        property->propertyOfIndex[index] = propertyValue;
+        // build reverse lookup map of sets as well
+        property->indicesOfProperty[propertyValue].insert(index);
+      }
+      LOG() << "entering property "
+        << property->name << " of dimension " << name << std::endl;
+      tensorDimension->properties[property->name] = property;
+    }
+  }
+  return tensorDimension;
+}
+
+Ptr<Node> TensorIo::write(
+  const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+) {
+  // multiplex different tensor types
+  Ptr<Node> writtenNode;
+  if (!Cc4s::options->dryRun) {
+    using TE = DefaultTensorEngine;
+    writtenNode = writeTensor<Real<64>,TE>(node, nodePath, useBinary);
+    if (writtenNode) return writtenNode;
+    writtenNode = writeTensor<Complex<64>,TE>(node, nodePath, useBinary);
+    if (writtenNode) return writtenNode;
+  } else {
+    using TE = DefaultDryTensorEngine;
+    writtenNode = writeTensor<Real<64>,TE>(node, nodePath, useBinary);
+    if (writtenNode) return writtenNode;
+    writtenNode = writeTensor<Complex<64>,TE>(node, nodePath, useBinary);
+    if (writtenNode) return writtenNode;
+  }
+  // otherwise, not my type ... let another write routine handle this data
+  return nullptr;
+}
+
+Ptr<Node> TensorIo::read(
+  const Ptr<MapNode> &node, const std::string &nodePath
+) {
+  auto scalarType(node->getValue<std::string>("scalarType"));
+  // multiplex different tensor types
+  Ptr<Node> workingNode;
+  if (!Cc4s::options->dryRun) {
+    using TE = DefaultTensorEngine;
+    if (scalarType == TypeTraits<Real<64>>::getName()) {
+      return readTensor<Real<64>,TE>(node, nodePath);
+    } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
+      return readTensor<Complex<64>,TE>(node, nodePath);
+    }
+  } else {
+    using TE = DefaultDryTensorEngine;
+    if (scalarType == TypeTraits<Real<64>>::getName()) {
+      return readTensor<Real<64>,TE>(node, nodePath);
+    } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
+      return readTensor<Complex<64>,TE>(node, nodePath);
+    }
+  }
+  std::stringstream explanation;
+  explanation << "Unsupported scalarType \"" << scalarType << "\"";
+  throw New<Exception>(explanation.str(), SOURCE_LOCATION);
+}
+
 
 template <typename F, typename TE>
 Ptr<MapNode> TensorIo::writeTensor(
@@ -51,9 +138,11 @@ Ptr<MapNode> TensorIo::writeTensor(
   }
   writtenTensor->get("dimensions") = dimensions;
   writtenTensor->setSymbol("scalarType", TypeTraits<F>::getName());
-  writtenTensor->setValue("version", std::string(VERSION));
+  writtenTensor->setValue("version", VERSION);
   auto elementsNode(New<MapNode>(SOURCE_LOCATION));
   writtenTensor->get("elements") = elementsNode;
+  writtenTensor->setValue("unit", tensor->getUnit());
+  writtenTensor->get("metaData") = tensor->getMetaData();
 
   // write tensor elements as side effect
   if (useBinary) {
@@ -68,33 +157,38 @@ Ptr<MapNode> TensorIo::writeTensor(
 }
 
 template <typename F, typename TE>
-Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorIo::readTensor(
+Ptr<PointerNode<Tensor<F,TE>>> TensorIo::readTensor(
   const Ptr<MapNode> &node,
   const std::string &nodePath
 ) {
-  auto version(node->getValue<std::string>("version"));
+  auto version(node->getValue<Natural<32>>("version"));
   ASSERT_LOCATION(
     version == VERSION,
     "Found and expected serialization versions mismatch. Found " +
-      version + ", expecting " + VERSION,
+      std::to_string(version) + ", expecting " + std::to_string(VERSION),
     node->get("version")->sourceLocation
   );
   auto elementsNode(node->getMap("elements"));
   auto elementsType(elementsNode->getValue<std::string>("type"));
   auto elementsBinary(elementsType == "IeeBinaryFile" ? true : false);
-  auto fileName(nodePath + (elementsBinary ? ".bin" : ".dat"));
+  auto elementsPath(nodePath + ".elements");
   auto sourceLocation(node->sourceLocation);
-  // get dimensions from meta data
   auto dimensions(node->getMap("dimensions"));
+
   std::vector<size_t> lens;
   for (auto key: dimensions->getKeys()) {
     lens.push_back(dimensions->getMap(key)->getValue<size_t>("length"));
   }
+  Ptr<Tensor<F,TE>> tensor;
   if (elementsBinary) {
-    return readTensorElementsBinary<F,TE>(fileName, lens, sourceLocation);
+    tensor = readTensorElementsBinary<F,TE>(elementsPath, lens, sourceLocation);
   } else {
-    return readTensorElementsText<F,TE>(fileName, lens, sourceLocation);
+    tensor = readTensorElementsText<F,TE>(elementsPath, lens, sourceLocation);
   }
+  tensor->unit = node->getValue<Real<>>("unit");
+  tensor->metaData = node->getMap("metaData");
+
+  return New<PointerNode<Tensor<F,TE>>>(tensor, SourceLocation(nodePath,1));
 }
 
 template <typename F, typename TE>
@@ -103,11 +197,11 @@ void TensorIo::writeTensorElementsText(
 ) {
   // TODO: query max buffer size for tensor write from tensor engine
   constexpr size_t MAX_BUFFER_SIZE(32*1024*1024);
-  std::string elementsFileName(nodePath + ".dat");
-  std::ofstream stream(elementsFileName);
+  std::string elementsPath(nodePath + ".elements");
+  std::ofstream stream(elementsPath);
   if (stream.fail()) {
     std::stringstream explanation;
-    explanation << "Failed to open file \"" << elementsFileName << "\"";
+    explanation << "Failed to open file \"" << elementsPath << "\"";
     throw New<Exception>(explanation.str(), SOURCE_LOCATION);
   }
   // TODO: use stream Printer rather than <<
@@ -121,7 +215,7 @@ void TensorIo::writeTensorElementsText(
   std::vector<size_t> indices(localBufferSize);
   std::vector<F> values(localBufferSize);
 
-  OUT() << "Writing to text file " << elementsFileName << std::endl;
+  OUT() << "Writing to text file " << elementsPath << std::endl;
   if (Cc4s::options->dryRun) {
     stream << "# dry-run: no elements written" << std::endl;
     return;
@@ -149,42 +243,42 @@ void TensorIo::writeTensorElementsText(
     index += elementsCount;
   }
   LOG() << "Written " << tensor->getElementsCount() <<
-    " elements to text file " << elementsFileName << std::endl;
+    " elements to text file " << elementsPath << std::endl;
 }
 
 template <typename F, typename TE>
 void TensorIo::writeTensorElementsBinary(
   const Ptr<Tensor<F,TE>> &tensor, const std::string &nodePath
 ) {
-  std::string elementsFileName(nodePath + ".bin");
+  std::string elementsPath(nodePath + ".elements");
   // open the file
   MPI_File file;
   int mpiError(
     MPI_File_open(
-      Cc4s::world->getComm(), elementsFileName.c_str(),
+      Cc4s::world->getComm(), elementsPath.c_str(),
       MPI_MODE_CREATE | MPI_MODE_WRONLY,
       MPI_INFO_NULL, &file
     )
   );
   ASSERT_LOCATION(
-    !mpiError, std::string("Failed to open file '") + elementsFileName + "'",
+    !mpiError, std::string("Failed to open file '") + elementsPath + "'",
     SOURCE_LOCATION
   )
 
-  OUT() << "Writing to binary file " << elementsFileName << std::endl;
+  OUT() << "Writing to binary file " << elementsPath << std::endl;
   if (Cc4s::options->dryRun) return;
 
   // write tensor elements with values from file
   tensor->readToFile(file);
   LOG() << "Written " << sizeof(F)*tensor->getElementsCount() <<
-    " bytes to binary file " << elementsFileName << std::endl;
+    " bytes to binary file " << elementsPath << std::endl;
 
   // done
   MPI_File_close(&file);
 }
 
 template <typename F, typename TE>
-Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorIo::readTensorElementsText(
+Ptr<Tensor<F,TE>> TensorIo::readTensorElementsText(
   const std::string &fileName,
   const std::vector<size_t> &lens,
   const SourceLocation &sourceLocation
@@ -200,24 +294,21 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorIo::readTensorElementsText(
   Scanner scanner(&stream);
 
   // create tensor
-  auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
-  auto result(
-    New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
-  );
+  auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
   OUT() << "Reading from text file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return result;
+  if (Cc4s::options->dryRun) return tensor;
 
   // read the values only on root, all others still pariticipate calling MPI
-  const size_t bufferSize(std::min(A->getElementsCount(), MAX_BUFFER_SIZE));
+  const size_t bufferSize(std::min(tensor->getElementsCount(), MAX_BUFFER_SIZE));
   size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
   std::vector<size_t> indices(localBufferSize);
   std::vector<F> values(localBufferSize);
 
   size_t index(0);
-  LOG() << "indexCount=" << A->getElementsCount() << std::endl;
+  LOG() << "indexCount=" << tensor->getElementsCount() << std::endl;
   NumberScanner<F> numberScanner(&scanner);
-  while (index < A->getElementsCount()) {
-    size_t elementsCount(std::min(bufferSize, A->getElementsCount()-index));
+  while (index < tensor->getElementsCount()) {
+    size_t elementsCount(std::min(bufferSize, tensor->getElementsCount()-index));
     size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
     for (size_t i(0); i < localElementsCount; ++i) {
       indices[i] = index+i;
@@ -226,17 +317,17 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorIo::readTensorElementsText(
     // wait until all processes finished reading this buffer into the tensor
     Cc4s::world->barrier();
     LOG() << "writing " << elementsCount << " values to tensor..." << std::endl;
-    A->write(localElementsCount, indices.data(), values.data());
+    tensor->write(localElementsCount, indices.data(), values.data());
     index += elementsCount;
   }
-  LOG() << "Read " << A->getElementsCount() <<
+  LOG() << "Read " << tensor->getElementsCount() <<
     " elements from text file " << fileName << std::endl;
 
-  return result;
+  return tensor;
 }
 
 template <typename F, typename TE>
-Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorIo::readTensorElementsBinary(
+Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinary(
   const std::string &fileName,
   const std::vector<size_t> &lens,
   const SourceLocation &sourceLocation
@@ -255,20 +346,17 @@ Ptr<AtomicNode<Ptr<Tensor<F,TE>>>> TensorIo::readTensorElementsBinary(
   )
 
   // create tensor
-  auto A( Tcc<TE>::template tensor<F>(lens, fileName) );
-  auto result(
-    New<AtomicNode<Ptr<Tensor<F,TE>>>>(A, SourceLocation(fileName,1))
-  );
+  auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
 
   OUT() << "Reading from binary file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return result;
+  if (Cc4s::options->dryRun) return tensor;
   // write tensor elements with values from file
-  A->writeFromFile(file);
-  LOG() << "Read " << sizeof(F)*A->getElementsCount() <<
+  tensor->writeFromFile(file);
+  LOG() << "Read " << sizeof(F)*tensor->getElementsCount() <<
     " bytes from binary file " << fileName << std::endl;
 
   // done
   MPI_File_close(&file);
-  return result;
+  return tensor;
 }
 

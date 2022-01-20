@@ -21,6 +21,7 @@
 #include <tcc/TensorLoadOperation.hpp>
 #include <SharedPointer.hpp>
 #include <Integer.hpp>
+#include <Node.hpp>
 #include <Cc4s.hpp>
 
 #include <cstdint>
@@ -287,6 +288,8 @@ namespace cc4s {
 
     std::vector<Ptr<TensorDimension>> dimensions;
     Ptr<TensorNonZeroConditions> nonZeroConditions;
+    Real<> unit;
+    Ptr<MapNode> metaData;
 
   protected:
     /**
@@ -490,6 +493,14 @@ namespace cc4s {
     }
     Natural<> getLen(Natural<> d) const {
       return lens[d];
+    }
+
+    Real<> getUnit() const {
+      return unit;
+    }
+
+    Ptr<MapNode> getMetaData() const {
+      return metaData;
     }
 
 
