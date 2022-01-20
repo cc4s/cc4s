@@ -39,42 +39,42 @@ namespace cc4s {
   template <>
   class TypeTraits<std::string> {
   public:
-    static std::string getName() { return "text"; }
+    static std::string getName() { return "Text"; }
   };
   template <>
   class TypeTraits<bool> {
   public:
-    static std::string getName() { return "boolean"; }
+    static std::string getName() { return "Boolean"; }
   };
   template <>
   class TypeTraits<Integer<64>> {
   public:
-    static std::string getName() { return "integer64"; }
+    static std::string getName() { return "Integer64"; }
   };
   template <>
   class TypeTraits<Natural<64>> {
   public:
-    static std::string getName() { return "natural64"; }
+    static std::string getName() { return "Natural64"; }
   };
   template <>
   class TypeTraits<Real<64>> {
   public:
-    static std::string getName() { return "real64"; }
+    static std::string getName() { return "Real64"; }
   };
   template <>
   class TypeTraits<Complex<64>> {
   public:
-    static std::string getName() { return "complex64"; }
+    static std::string getName() { return "Complex64"; }
   };
   template <>
   class TypeTraits<Real<128>> {
   public:
-    static std::string getName() { return "real128"; }
+    static std::string getName() { return "Real128"; }
   };
   template <>
   class TypeTraits<Complex<128>> {
   public:
-    static std::string getName() { return "complex128"; }
+    static std::string getName() { return "Complex128"; }
   };
 }
 

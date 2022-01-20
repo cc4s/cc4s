@@ -60,7 +60,7 @@ namespace cc4s {
       auto persistentNode(Parser(fileName).parse());
 
       // translate from persistent node tree into working node tree.
-      // e.g. tensors are read into AtomicNode<Ptr<Tensor<F,TE>> etc.
+      // e.g. tensors are read into PointerNode<Ptr<Tensor<F,TE>> etc.
       // Contained tensor data are read as side effects.
       auto node(read(persistentNode, baseName));
 

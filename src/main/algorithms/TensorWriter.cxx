@@ -108,13 +108,13 @@ void TensorWriter::writeData(
     fileName = baseName + ".bin";
     if (Cc4s::options->dryRun) {
       using TE = DefaultDryTensorEngine;
-      if (scalarType == "real64") {
+      if (scalarType == TypeTraits<Real<64>>::getName()) {
         writeBinary(
           tensorNode,
           tensorNode->getPtr<TensorExpression<Real<64>,TE>>("data"),
           fileName, sourceLocation
         );
-      } else if (scalarType == "complex64") {
+      } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
         writeBinary(
           tensorNode,
           tensorNode->getPtr<TensorExpression<Complex<64>,TE>>("data"),
@@ -127,13 +127,13 @@ void TensorWriter::writeData(
       }
     } else {
       using TE = DefaultTensorEngine;
-      if (scalarType == "real64") {
+      if (scalarType == TypeTraits<Real<64>>::getName()) {
         writeBinary(
           tensorNode,
           tensorNode->getPtr<TensorExpression<Real<64>,TE>>("data"),
           fileName, sourceLocation
         );
-      } else if (scalarType == "complex64") {
+      } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
         writeBinary(
           tensorNode,
           tensorNode->getPtr<TensorExpression<Complex<64>,TE>>("data"),
@@ -149,13 +149,13 @@ void TensorWriter::writeData(
     fileName = baseName + ".dat";
     if (Cc4s::options->dryRun) {
       using TE = DefaultDryTensorEngine;
-      if (scalarType == "real64") {
+      if (scalarType == TypeTraits<Real<64>>::getName()) {
         writeText(
           tensorNode,
           tensorNode->getPtr<TensorExpression<Real<64>,TE>>("data"),
           fileName, sourceLocation
         );
-      } else if (scalarType == "complex64") {
+      } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
         writeText(
           tensorNode,
           tensorNode->getPtr<TensorExpression<Complex<64>,TE>>("data"),
@@ -168,13 +168,13 @@ void TensorWriter::writeData(
       }
     } else {
       using TE = DefaultTensorEngine;
-      if (scalarType == "real64") {
+      if (scalarType == TypeTraits<Real<64>>::getName()) {
         writeText(
           tensorNode,
           tensorNode->getPtr<TensorExpression<Real<64>,TE>>("data"),
           fileName, sourceLocation
         );
-      } else if (scalarType == "complex64") {
+      } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
         writeText(
           tensorNode,
           tensorNode->getPtr<TensorExpression<Complex<64>,TE>>("data"),

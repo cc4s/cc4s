@@ -137,7 +137,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
   // create result
   auto coulombIntegrals(New<MapNode>(SOURCE_LOCATION));
   coulombIntegrals->get("slices") = integralSlices;
-  coulombIntegrals->setValue("scalarType", std::string("real64"));
+  coulombIntegrals->setValue("scalarType", TypeTraits<Real<64>>::getName());
   coulombIntegrals->setValue(
     "unit", pow(coulombVertex->getValue<Real<>>("unit"),2.0)
   );
@@ -231,7 +231,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
   coulombIntegrals->setValue(
     "unit", pow(coulombVertex->getValue<Real<>>("unit"),2.0)
   );
-  coulombIntegrals->setValue("scalarType", std::string("complex64"));
+  coulombIntegrals->setValue("scalarType", TypeTraits<Complex<64>>::getName());
   // create indices entry
   auto indices(New<MapNode>(SOURCE_LOCATION));
   indices->get("orbital") = coulombVertex->getMap("indices")->get("orbital");
