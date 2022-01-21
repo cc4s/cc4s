@@ -18,6 +18,7 @@
 
 #include <algorithms/Algorithm.hpp>
 #include <tcc/TensorExpression.hpp>
+#include <TensorSet.hpp>
 
 namespace cc4s {
   class SliceOperator: public Algorithm {
@@ -30,12 +31,13 @@ namespace cc4s {
     Ptr<MapNode> run(const Ptr<MapNode> &arguments);
     template <typename F, typename TE>
     void slice(
-      const Ptr<TensorExpression<F,TE>> &tensor, const std::string &parts
+      const Ptr<TensorExpression<F,TE>> &tensor,
+      const std::string &parts,
+      const Ptr<TensorSet<F,TE>> &slices
     );
 
-    Ptr<MapNode> slices;
-    std::vector<size_t> dims;
-    size_t No, Nv;
+    std::vector<Natural<>> dims;
+    Natural<> No, Nv;
   };
 }
 

@@ -173,11 +173,18 @@ Ptr<PointerNode<Tensor<F,TE>>> TensorIo::readTensor(
   auto elementsBinary(elementsType == "IeeBinaryFile" ? true : false);
   auto elementsPath(nodePath + ".elements");
   auto sourceLocation(node->sourceLocation);
-  auto dimensions(node->getMap("dimensions"));
+  auto dimensionsMap(node->getMap("dimensions"));
 
-  std::vector<size_t> lens;
-  for (auto key: dimensions->getKeys()) {
-    lens.push_back(dimensions->getMap(key)->getValue<size_t>("length"));
+  std::vector<Natural<>> lens;
+  std::vector<Ptr<TensorDimension>> dimensions;
+  for (auto key: dimensionsMap->getKeys()) {
+    lens.push_back(dimensionsMap->getMap(key)->getValue<size_t>("length"));
+    // get dimension properties, if given
+    dimensions.push_back(
+      TensorIo::getDimension(
+        dimensionsMap->getMap(key)->getValue<std::string>("type")
+      )
+    );
   }
   Ptr<Tensor<F,TE>> tensor;
   if (elementsBinary) {
@@ -185,6 +192,7 @@ Ptr<PointerNode<Tensor<F,TE>>> TensorIo::readTensor(
   } else {
     tensor = readTensorElementsText<F,TE>(elementsPath, lens, sourceLocation);
   }
+  tensor->dimensions = dimensions;
   tensor->unit = node->getValue<Real<>>("unit");
   tensor->metaData = node->getMap("metaData");
 
