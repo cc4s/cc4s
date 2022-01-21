@@ -123,8 +123,8 @@ void FiniteSizeCorrection::calculateTransitionStructureFactor(
   //THESE TWO LINES ARE SEGFAULTING
   auto amplitudes(arguments->getPtr<TensorSet<F,TE>>("amplitudes"));
 
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
+  auto Tph( amplitudes->get("ph") );
+  auto Tpphh( amplitudes->get("pphh") );
   auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
   auto Tai( Tcc<TE>::template tensor<Complex<>>("Tai"));
 

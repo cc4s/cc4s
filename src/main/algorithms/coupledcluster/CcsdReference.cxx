@@ -41,8 +41,9 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
   auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
   auto residuum(
     New<TensorSet<F,TE>>(
-      std::vector<Ptr<TensorExpression<F,TE>>>({Rph, Rpphh}),
-      std::vector<std::string>({"ai", "abij"})
+      std::map<std::string,Ptr<TensorExpression<F,TE>>>(
+        {{"ph",Rph}, {"pphh",Rpphh}}
+      )
     )
   );
 
@@ -62,8 +63,8 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
   } else if (onlyPpl == 1) {
     // TODO: check if given amplitudes contain expected parts
     // get amplitude parts
-    auto Tph( amplitudes->get(0) );
-    auto Tpphh( amplitudes->get(1) );
+    auto Tph( amplitudes->get("ph") );
+    auto Tpphh( amplitudes->get("pphh") );
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
 //    OUT() << "Calculate only PPL diagrams" << std::endl;
@@ -85,8 +86,8 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
   } else {
     // TODO: check if given amplitudes contain expected parts
     // get amplitude parts
-    auto Tph( amplitudes->get(0) );
-    auto Tpphh( amplitudes->get(1) );
+    auto Tph( amplitudes->get("ph") );
+    auto Tpphh( amplitudes->get("pphh") );
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
     auto Vpppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pppp"));

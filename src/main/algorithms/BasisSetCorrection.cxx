@@ -56,8 +56,8 @@ bool BasisSetCorrection::run(
   using T = TensorExpression<F, TE>;
   auto amplitudes( arguments->getPtr<TensorSet<F,TE>>("amplitudes") );
   if (!amplitudes) return false;
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
+  auto Tph( amplitudes->get("ph") );
+  auto Tpphh( amplitudes->get("pphh") );
 
   auto DabijNode(arguments->getMap("deltaIntegralsPPHH"));
   auto Dabij(DabijNode->getPtr<T>("data"));

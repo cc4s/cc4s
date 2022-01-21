@@ -117,7 +117,7 @@ void TensorReader::readData(
         ++D;
       }
       auto tuplesMap(allMap->getMap(key)->getMap("nonZeros"));
-      for (Natural<> i(0); i < tuplesMap->size(); ++i) {
+      for (Natural<> i(0); i < tuplesMap->getSize(); ++i) {
         std::vector<Natural<>> tuple(D);
         for (Natural<> d(0); d < D; ++d) {
           tuple[d] = tuplesMap->getMap(i)->getValue<Natural<>>(d);

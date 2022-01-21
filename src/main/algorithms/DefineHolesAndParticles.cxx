@@ -46,7 +46,7 @@ Ptr<MapNode> DefineHolesAndParticles::run(
     eigenEnergies->sourceLocation
   );
 
-  auto Np(energies->size());
+  auto Np(energies->getSize());
 
   // find fermi energy to determine No and Nv
   auto fermiEnergy(eigenEnergies->getValue<Real<>>("fermiEnergy"));

@@ -76,8 +76,8 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
     // setup tensors
     .with_epsilon_i(__eps__(h))
     .with_epsilon_a(__eps__(p))
-    .with_Tai(__T__(0))
-    .with_Tabij(__T__(1))
+    .with_Tai(__T__("ph"))
+    .with_Tabij(__T__("pphh"))
     .with_Vabij(__V__(pphh))
     .with_Vijka(__V__(hhhp))
     .with_Vabci(__V__(ppph))

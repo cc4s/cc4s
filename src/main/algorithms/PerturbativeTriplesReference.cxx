@@ -58,8 +58,8 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
 ) {
 
   auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
+  auto Tph( amplitudes->get("ph") );
+  auto Tpphh( amplitudes->get("pphh") );
 
   auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
   auto coulombSlices(coulombIntegrals->getMap("slices"));

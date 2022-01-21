@@ -222,9 +222,8 @@ F CoupledCluster::getEnergy(
     );
   }
 
-  // singles amplitudes are optional
-  auto Tai( amplitudes->get(0) );
-  auto Tabij( amplitudes->get(1) );
+  auto Tai( amplitudes->get("ph") );
+  auto Tabij( amplitudes->get("pphh") );
   F e;
   std::streamsize ss(std::cout.precision());
   {
@@ -276,9 +275,9 @@ void CoupledCluster::residuumToAmplitudes(
     *residuum -= F(levelShift) * *amplitudes;
   }
 
-  for (Natural<> i(0); i < residuum->componentTensors.size(); ++i) {
-    auto R( residuum->get(i) );
-    auto indices( residuum->getIndices(i) );
+  for (auto key: residuum->getKeys()) {
+    auto R( residuum->get(key) );
+    auto indices( residuum->generateIndices(key) );
     auto D( calculateEnergyDifferences<F,TE>(R->inspect()->getLens(),indices) );
 
     // divide by -Delta to get new estimate for T

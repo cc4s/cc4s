@@ -114,17 +114,24 @@ namespace cc4s {
     Ptr<Node> &get(const Natural<> key) {
       return elements[std::to_string(key)];
     }
-    // TODO: proper key iterators
+
     std::vector<std::string> getKeys() const {
       std::vector<std::string> keys;
       keys.reserve(elements.size());
-      for (auto pairs: elements) {
-        keys.push_back(pairs.first);
+      for (auto pair: elements) {
+        if (pair.second) {
+          keys.push_back(pair.first);
+        }
       }
       return keys;
     }
-    Natural<> size() const {
-      return elements.size();
+
+    Natural<> getSize() const {
+      Natural<> size(0);
+      for (auto pair: elements) {
+        if (pair.second) ++size;
+      }
+      return size;
     }
 
     // convenience member access
@@ -255,8 +262,20 @@ namespace cc4s {
     }
 
     void push_back(const Ptr<Node> &node) {
-      get(size()) = node;
+      get(getSize()) = node;
     }
+
+    std::vector<std::string> getKeys() {
+      std::vector<std::string> keys;
+      keys.reserve(elements.size());
+      for (auto pair: elements) {
+        if (pair.second) {
+          keys.push_back(pair.first);
+        }
+      }
+      return keys;
+    }
+
   protected:
     std::map<std::string,Ptr<Node>> elements;
   };
