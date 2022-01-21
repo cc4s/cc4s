@@ -192,6 +192,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
   DEFINE_VERTEX_CONJT(p,h)
   DEFINE_VERTEX_CONJT(h,p)
   DEFINE_VERTEX_CONJT(h,h)
+#undef DEFINE_VERTEX_CONJT
 
 #define DEFINE_COMPLEX_INTEGRALS_SLICE(LO,RO,LI,RI) \
   { \
@@ -226,6 +227,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
   DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,p,p);
   DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,p,p);
   DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,p,p);
+#undef DEFINE_COMPLEX_INTEGRALS_SLICE
 
   // create result
   auto coulombIntegrals(New<MapNode>(SOURCE_LOCATION));
