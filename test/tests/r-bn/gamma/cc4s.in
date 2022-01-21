@@ -49,8 +49,7 @@
 
 - name: CoupledCluster
   in:
-    method:
-      type: Ccsd
+    method: Ccsd
     slicedEigenEnergies: EigenEnergies
     coulombIntegrals: CoulombIntegrals
     slicedCoulombVertex: CoulombVertex
@@ -65,7 +64,7 @@
     energy: CcsdEnergy
     amplitudes: Amplitudes
 
-- name: TransitionStructureFactorFiniteSizeCorrection
+- name: FiniteSizeCorrection
   in:
     slicedCoulombVertex: CoulombVertex
     amplitudes: Amplitudes
@@ -95,7 +94,7 @@
   out:
     tensor: Mp2PairEnergies
 
-- name: CcsdFocalPointBasisSetCorrection
+- name: BasisSetCorrection
   in:
     slicedEigenEnergies: EigenEnergies
     amplitudes: Amplitudes

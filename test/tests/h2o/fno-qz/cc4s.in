@@ -50,9 +50,8 @@
 
 - name: CoupledCluster
   in:
-    method:
-      type: Ccsd
-      integralsSliceSize: 100
+    method: Ccsd
+    integralsSliceSize: 100
     slicedEigenEnergies: EigenEnergies
     coulombIntegrals: CoulombIntegrals
     slicedCoulombVertex: CoulombVertex
@@ -67,7 +66,7 @@
     amplitudes: Amplitudes
 
 
-- name: CcsdFocalPointBasisSetCorrection
+- name: BasisSetCorrection
   in:
     slicedEigenEnergies: EigenEnergies
     amplitudes: Amplitudes

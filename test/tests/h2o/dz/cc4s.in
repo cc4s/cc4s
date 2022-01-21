@@ -31,8 +31,7 @@
 
 - name: CoupledCluster
   in:
-    method:
-      type: Ccsd
+    method: Ccsd
     slicedEigenEnergies: EigenEnergies
     coulombIntegrals: CoulombIntegrals
     slicedCoulombVertex: CoulombVertex
