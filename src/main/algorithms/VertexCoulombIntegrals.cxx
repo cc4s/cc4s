@@ -35,6 +35,7 @@ Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
 
   // multiplex calls to template methods
   if (momentumType == "halfGrid") {
+    OUT() << "using real coulomb vertex" << std::endl;
     if (Cc4s::options->dryRun) {
       using TE = DefaultDryTensorEngine;
       return calculateRealIntegrals<TE>(arguments);
@@ -43,6 +44,7 @@ Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
       return calculateRealIntegrals<TE>(arguments);
     }
   } else if (momentumType == "fullGrid") {
+    OUT() << "using complex coulomb vertex" << std::endl;
     if (Cc4s::options->dryRun) {
       using TE = DefaultDryTensorEngine;
       return calculateComplexIntegrals<TE>(arguments);
