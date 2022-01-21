@@ -1,12 +1,12 @@
 {
 
   "nwchem-h2o": {
-    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/335958fa0a9d163e9e329a4e7a8b59d775617bb8/h2o",
+    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/b1f66463511e974e5ad91652acb6aef0225bd7f0/h2o",
     "type": "raw"
   },
 
-  "r-bn-gamma": {
-    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/335958fa0a9d163e9e329a4e7a8b59d775617bb8/r-bn/gamma",
+  "r-bn": {
+    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/b1f66463511e974e5ad91652acb6aef0225bd7f0/r-bn",
     "type": "raw"
   },
 

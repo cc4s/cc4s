@@ -1,0 +1,70 @@
+{
+  "name": "r-BN shifted single k-point",
+  "resources": [
+    {
+      "out": "EigenEnergies.yaml",
+      "uri": "{r-bn}/shifted/EigenEnergies.yaml"
+    },
+    {
+      "out": "EigenEnergies.dat",
+      "uri": "{r-bn}/shifted/EigenEnergies.dat"
+    },
+    {
+      "out": "CoulombVertex.yaml",
+      "uri": "{r-bn}/shifted/CoulombVertex.yaml"
+    },
+    {
+      "out": "CoulombVertex.dat",
+      "uri": "{r-bn}/shifted/CoulombVertex.dat"
+    },
+    {
+      "out": "CoulombVertexSingularVectors.yaml",
+      "uri": "{r-bn}/shifted/CoulombVertexSingularVectors.yaml"
+    },
+    {
+      "out": "CoulombVertexSingularVectors.dat",
+      "uri": "{r-bn}/shifted/CoulombVertexSingularVectors.dat"
+    },
+    {
+      "out": "GridVectors.yaml",
+      "uri": "{r-bn}/shifted/GridVectors.yaml"
+    },
+    {
+      "out": "GridVectors.dat",
+      "uri": "{r-bn}/shifted/GridVectors.dat"
+    },
+    {
+      "out": "CoulombPotential.yaml",
+      "uri": "{r-bn}/shifted/CoulombPotential.yaml"
+    },
+    {
+      "out": "CoulombPotential.dat",
+      "uri": "{r-bn}/shifted/CoulombPotential.dat"
+    },
+    {
+      "out": "DeltaIntegralsHH.yaml",
+      "uri": "{r-bn}/shifted/DeltaIntegralsHH.yaml"
+    },
+    {
+      "out": "DeltaIntegralsHH.dat",
+      "uri": "{r-bn}/shifted/DeltaIntegralsHH.dat"
+    },
+    {
+      "out": "DeltaIntegralsPPHH.yaml",
+      "uri": "{r-bn}/shifted/DeltaIntegralsPPHH.yaml"
+    },
+    {
+      "out": "DeltaIntegralsPPHH.dat",
+      "uri": "{r-bn}/shifted/DeltaIntegralsPPHH.dat"
+    },
+    {
+      "out": "Mp2PairEnergies.yaml",
+      "uri": "{r-bn}/shifted/Mp2PairEnergies.yaml"
+    },
+    {
+      "out": "Mp2PairEnergies.dat",
+      "uri": "{r-bn}/shifted/Mp2PairEnergies.dat"
+    }
+  ],
+  "tags": "essential vasp ppl complex"
+}
