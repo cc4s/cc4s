@@ -29,10 +29,10 @@ Ptr<MapNode> Read::run(const Ptr<MapNode> &arguments) {
   auto fileName(arguments->getValue<std::string>("fileName"));
 
   try {
-    auto data(Reader(fileName).read());
+    auto destination(Reader(fileName).read());
     // create result
-    auto result(New<MapNode>(data->sourceLocation));
-    result->get("data") = data;
+    auto result(New<MapNode>(destination->sourceLocation));
+    result->get("destination") = destination;
     return result;
   } catch (const Ptr<Exception> &cause) {
     throw New<Exception>(
