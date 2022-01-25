@@ -499,6 +499,10 @@ namespace cc4s {
       return unit;
     }
 
+    Ptr<MapNode> &getMetaData() {
+      return metaData;
+    }
+
     Ptr<MapNode> getMetaData() const {
       return metaData;
     }
