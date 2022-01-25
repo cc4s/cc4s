@@ -37,11 +37,12 @@ Ptr<TensorDimension> TensorIo::getDimension(const std::string &name) {
   TensorDimension::dimensions[name] = tensorDimension;
 
   // check if file exists specifying dimension properties
-  auto propertiesFileName(name + ".yaml");
-  if (std::ifstream(propertiesFileName).good()) {
-    auto propertiesMap(
-      Parser(propertiesFileName).parse()->toPtr<MapNode>()
+  auto dimensionFileName(name + ".yaml");
+  if (std::ifstream(dimensionFileName).good()) {
+    auto dimensionMap(
+      Parser(dimensionFileName).parse()->toPtr<MapNode>()
     );
+    auto propertiesMap(dimensionMap->getMap("propertyIndices"));
     for (auto key: propertiesMap->getKeys()) {
       auto propertyMap(propertiesMap->getMap(key));
       auto property(New<TensorDimensionProperty>());
