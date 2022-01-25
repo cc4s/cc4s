@@ -252,6 +252,8 @@ namespace cc4s {
         COMPILE(
           (*component)[indices] <<= (*sourceTensor)[indices]
         )->execute();
+        // TODO: transfer meta-data
+        component->getMetaData() = sourceTensor->getMetaData();
         // enter in map
         components[sourceKey] = component;
       }
