@@ -115,6 +115,9 @@ void SliceOperator::slice(
       COMPILE_RECIPE(result,
         (*result)[index] <<= (*(*tensorExpression)(begins,ends))[index]
       );
+    OUT() << tensor->getName() << ".metaData=" << tensor->getMetaData() << std::endl;
+    // TODO: transfer meta-data in execute
+    result->getMetaData() = tensor->getMetaData();
   }
 }
 
