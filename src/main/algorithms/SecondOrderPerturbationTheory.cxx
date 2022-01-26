@@ -37,7 +37,7 @@ Ptr<MapNode> SecondOrderPerturbationTheory::run(const Ptr<MapNode> &arguments) {
       || (result = run<Complex<>,TE>(arguments));
   }
   ASSERT_LOCATION(
-    result, "unsupported tensor type as 'operator'",
+    result, "unsupported tensor type as 'coulombIntegrals'",
     arguments->sourceLocation
   );
   return result;

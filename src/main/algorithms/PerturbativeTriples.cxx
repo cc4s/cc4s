@@ -31,28 +31,25 @@ ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
   using F = Real<>;
   using TE = DefaultTensorEngine;
-  using Tr = TensorExpression<F, TE>;
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
   atrip::Atrip::init();
   atrip::Atrip::Input in;
 
-#define __V__(_idx)                                         \
-    ([&arguments]() {                                       \
-      COMPILE(arguments                                     \
-        ->getMap("coulombIntegrals")                        \
-        ->getMap("slices")                                  \
-        ->getPtr<TensorExpression<Real<>,TE>>(#_idx)        \
-        )->execute();                                       \
-      return                                                \
-          &(arguments                                       \
-            ->getMap("coulombIntegrals")                    \
-            ->getMap("slices")                              \
-            ->getPtr<TensorExpression<Real<>,TE>>(#_idx)    \
-            ->evaluate()                                    \
-            ->getMachineTensor()                            \
-            ->tensor);                                      \
+#define __V__(_idx)                                            \
+    ([&arguments]() {                                          \
+      COMPILE(arguments                                        \
+        ->getPtr<TensorSet<Real<>,TE>>("coulombIntegrals")     \
+        ->get(#_idx)                                           \
+        )->execute();                                          \
+      return                                                   \
+          &(arguments                                          \
+            ->getPtr<TensorSet<Real<>,TE>>("coulombIntegrals") \
+            ->get(#_idx)                                       \
+            ->evaluate()                                       \
+            ->getMachineTensor()                               \
+            ->tensor);                                         \
     })()
 #define __T__(_idx) \
    &(arguments                                                    \
@@ -61,13 +58,12 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
       ->evaluate()                                                \
       ->getMachineTensor()                                        \
       ->tensor)
-#define __eps__(_idx)                                      \
-   &(arguments                                             \
-      ->getMap("slicedEigenEnergies")                      \
-      ->getMap("slices")                                   \
-      ->getPtr<TensorExpression<Real<>,TE>>(#_idx)         \
-      ->evaluate()                                         \
-      ->getMachineTensor()                                 \
+#define __eps__(_idx)                                        \
+   &(arguments                                               \
+      ->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")  \
+      ->get(#_idx)                                           \
+      ->evaluate()                                           \
+      ->getMachineTensor()                                   \
       ->tensor)
 
   // this is a hack so that a CTF::World gets created for sure
