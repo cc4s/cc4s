@@ -35,7 +35,7 @@ namespace cc4s {
     void interpolation(const Ptr<MapNode> &arguments, Ptr<MapNode> &result);
   protected:
     template <typename F, typename TE>
-    void calculateTransitionStructureFactor(
+    bool calculateTransitionStructureFactor(
       const Ptr<MapNode> &arguments, Ptr<MapNode> &result
     );
   };
