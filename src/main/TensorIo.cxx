@@ -90,7 +90,6 @@ Ptr<Node> TensorIo::read(
 ) {
   auto scalarType(node->getValue<std::string>("scalarType"));
   // multiplex different tensor types
-  Ptr<Node> workingNode;
   if (!Cc4s::options->dryRun) {
     using TE = DefaultTensorEngine;
     if (scalarType == TypeTraits<Real<64>>::getName()) {
@@ -137,6 +136,7 @@ Ptr<MapNode> TensorIo::writeTensor(
     }
     dimensions->get(d) = dimension;
   }
+  writtenTensor->setSymbol("type", "Tensor");
   writtenTensor->get("dimensions") = dimensions;
   writtenTensor->setSymbol("scalarType", TypeTraits<F>::getName());
   writtenTensor->setValue("version", VERSION);
@@ -158,7 +158,7 @@ Ptr<MapNode> TensorIo::writeTensor(
 }
 
 template <typename F, typename TE>
-Ptr<PointerNode<Tensor<F,TE>>> TensorIo::readTensor(
+Ptr<PointerNode<Object>> TensorIo::readTensor(
   const Ptr<MapNode> &node,
   const std::string &nodePath
 ) {
@@ -179,13 +179,16 @@ Ptr<PointerNode<Tensor<F,TE>>> TensorIo::readTensor(
   std::vector<Natural<>> lens;
   std::vector<Ptr<TensorDimension>> dimensions;
   for (auto key: dimensionsMap->getKeys()) {
-    lens.push_back(dimensionsMap->getMap(key)->getValue<size_t>("length"));
+    auto dimensionMap(dimensionsMap->getMap(key));
+    lens.push_back(dimensionMap->getValue<size_t>("length"));
     // get dimension properties, if given
-    dimensions.push_back(
-      TensorIo::getDimension(
-        dimensionsMap->getMap(key)->getValue<std::string>("type")
-      )
-    );
+    if (dimensionMap->isGiven("type")) {
+      dimensions.push_back(
+        TensorIo::getDimension(
+          dimensionsMap->getMap(key)->getValue<std::string>("type")
+        )
+      );
+    }
   }
   Ptr<Tensor<F,TE>> tensor;
   if (elementsBinary) {
@@ -195,9 +198,11 @@ Ptr<PointerNode<Tensor<F,TE>>> TensorIo::readTensor(
   }
   tensor->dimensions = dimensions;
   tensor->unit = node->getValue<Real<>>("unit");
-  tensor->metaData = node->getMap("metaData");
+  if (node->isGiven("metaData")) {
+    tensor->metaData = node->getMap("metaData");
+  }
 
-  return New<PointerNode<Tensor<F,TE>>>(tensor, SourceLocation(nodePath,1));
+  return New<PointerNode<Object>>(tensor, SourceLocation(nodePath,1));
 }
 
 template <typename F, typename TE>

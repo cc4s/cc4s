@@ -61,7 +61,7 @@ namespace cc4s {
     );
 
     template <typename F, typename TE>
-    static Ptr<PointerNode<Tensor<F,TE>>> readTensor(
+    static Ptr<PointerNode<Object>> readTensor(
       const Ptr<MapNode> &node,
       const std::string &nodePath
     );

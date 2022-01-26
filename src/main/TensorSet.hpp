@@ -138,14 +138,17 @@ namespace cc4s {
       return *this;
     }
 
-    std::string generateIndices(const std::string &key) const {
-      auto size(get(key)->inspect()->getLens().size());
+    std::string generateIndices(const Natural<> size) const {
       char indices[size+1];
       for (Natural<> i(0); i < size; ++i) {
         indices[i] = 'a' + i;
       }
       indices[size] = 0;
       return std::string(indices);
+    }
+
+    std::string generateIndices(const std::string &key) const {
+      return generateIndices(get(key)->inspect()->getLens().size());
     }
 
     /**
@@ -243,16 +246,18 @@ namespace cc4s {
       for (auto source: sources) {
         auto sourceKey(source.first);
         auto sourceTensor(source.second->inspect());
-        auto indices(generateIndices(sourceKey));
-        // create tensor of identical shape, NOTE: no data is copied yet
+        // create tensor receiving copy of sourceTensor
         auto component(
           Tcc<TE>::template tensor<F>(sourceTensor->getName())
         );
         // copy data
+        auto indices(generateIndices(sourceTensor->getLens().size()));
         COMPILE(
           (*component)[indices] <<= (*sourceTensor)[indices]
         )->execute();
-        // TODO: transfer meta-data
+        // transfer dimension info, TODO: should be done in tcc
+        component->dimensions = sourceTensor->dimensions;
+        // transfer meta-data, TODO: should be done in tcc
         component->getMetaData() = sourceTensor->getMetaData();
         // enter in map
         components[sourceKey] = component;
@@ -270,16 +275,17 @@ namespace cc4s {
       auto componentsNode(New<MapNode>(SOURCE_LOCATION));
       auto componentsNodePath(nodePath + ".components");
       for (auto component: t->components) {
-        auto componentNode(New<MapNode>(SOURCE_LOCATION));
         auto tensorNode(
           New<PointerNode<TensorExpression<F,TE>>>(
             component.second, SOURCE_LOCATION
           )
         );
-        componentNode->get("tensor") = TensorIo::write(
-          tensorNode,
-          componentsNodePath + "." + component.first,
-          useBinary
+        auto componentNode(
+          TensorIo::write(
+            tensorNode,
+            componentsNodePath + "." + component.first,
+            useBinary
+          )
         );
         componentsNode->get(component.first) = componentNode;
       }
@@ -297,17 +303,15 @@ namespace cc4s {
       for (auto key: componentsNode->getKeys()) {
         auto tensorNode(
           TensorIo::read(
-            componentsNode->getMap(key)->getMap("tensor"),
+            componentsNode->getMap(key),
             componentsNodePath + "." + key
           )
         );
         auto pointerNode(tensorNode->toPtr<PointerNode<Object>>());
         components[key] =
-          dynamicPtrCast<TensorExpression<F,TE>>(pointerNode->value);
-        OUT() << key << " tensor=" << components[key] << endl;
+          dynamicPtrCast<Tensor<F,TE>>(pointerNode->value);
       }
       auto tensorSet(New<TensorSet<F,TE>>(components));
-      OUT() << "tensor set=" << tensorSet << endl;
       return New<PointerNode<TensorSet<F,TE>>>(
         tensorSet, node->sourceLocation
       );
@@ -343,11 +347,11 @@ namespace cc4s {
     static Ptr<Node> read(
       const Ptr<MapNode> &node, const std::string &nodePath
     ) {
-      // assume at least one component
+      auto componentsNode(node->getMap("components"));
+      // NOTE: assumes at least one component
+      auto firstKey(componentsNode->getKeys()[0]);
       auto scalarType(
-        node->getMap("components")->getMap(0)->getMap(
-          "tensor"
-        )->getValue<std::string>("scalarType")
+        componentsNode->getMap(firstKey)->getValue<std::string>("scalarType")
       );
       // multiplex different tensor types
       if (!Cc4s::options->dryRun) {
