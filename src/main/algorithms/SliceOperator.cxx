@@ -115,7 +115,9 @@ void SliceOperator::slice(
       COMPILE_RECIPE(result,
         (*result)[index] <<= (*(*tensorExpression)(begins,ends))[index]
       );
-    // TODO: transfer meta-data in execute
+    // TODO: transfer unit in tcc
+    result->getUnit() = tensor->getUnit();
+    // TODO: transfer meta-data in tcc
     result->getMetaData() = tensor->getMetaData();
   }
 }

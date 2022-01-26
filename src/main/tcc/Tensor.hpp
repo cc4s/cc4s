@@ -495,6 +495,10 @@ namespace cc4s {
       return lens[d];
     }
 
+    Real<> &getUnit() {
+      return unit;
+    }
+
     Real<> getUnit() const {
       return unit;
     }

@@ -110,6 +110,7 @@ Ptr<MapNode> SecondOrderPerturbationTheory::run(
   energy->setValue("secondOrderDirect", real(D));
   energy->setValue("secondOrderExchange", real(X));
   energy->setValue("secondOrder", real(S+D+X));
+  // TODO: use unit of scalar as determined by tcc
   energy->setValue("unit", epsh->inspect()->getUnit());
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;

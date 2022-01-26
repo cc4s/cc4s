@@ -203,6 +203,8 @@ F CoupledCluster::getEnergy(
 
   auto Tai( amplitudes->get("ph") );
   auto Tabij( amplitudes->get("pphh") );
+  // TODO: determine units in tcc
+  Tai->inspect()->getUnit() = Tabij->inspect()->getUnit() = 1.0;
   F e;
   std::streamsize ss(std::cout.precision());
   {
@@ -233,6 +235,7 @@ F CoupledCluster::getEnergy(
     energy->setValue("correlation", real(e));
     energy->setValue("direct", real(D));
     energy->setValue("exchange", real(X));
+    energy->setValue("unit", Vijab->inspect()->getUnit());
   }
   std::cout << std::setprecision(ss);
 
