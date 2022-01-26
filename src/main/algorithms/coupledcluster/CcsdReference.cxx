@@ -47,9 +47,10 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
     )
   );
 
-  auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
-  auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pphh"));
+  auto coulombIntegrals(
+    this->arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
+  );
+  auto Vpphh(coulombIntegrals->get("pphh"));
 
   auto onlyPpl(this->arguments->template getValue<size_t>("onlyPpl", 0) );
 
@@ -69,9 +70,9 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
 
 //    OUT() << "Calculate only PPL diagrams" << std::endl;
 
-    auto Vpppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pppp"));
-    auto Vphpp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phpp"));
-    auto Vhppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hppp"));
+    auto Vpppp(coulombIntegrals->get("pppp"));
+    auto Vphpp(coulombIntegrals->get("phpp"));
+    auto Vhppp(coulombIntegrals->get("hppp"));
     auto Xabcd( Tcc<TE>::template tensor<F>("Xabcd") );
 
     COMPILE(
@@ -90,19 +91,19 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
     auto Tpphh( amplitudes->get("pphh") );
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
-    auto Vpppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pppp"));
-    auto Vphph(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phph"));
-    auto Vhhhh(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhhh"));
-    auto Vhhhp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhhp"));
-    auto Vppph(coulombSlices->template getPtr<TensorRecipe<F,TE>>("ppph"));
-    auto Vhhpp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhpp"));
-    auto Vpphp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("pphp"));
-    auto Vphhh(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phhh"));
-    auto Vhphp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hphp"));
-    auto Vphhp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phhp"));
-    auto Vphpp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("phpp"));
-    auto Vhhph(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hhph"));
-    auto Vhppp(coulombSlices->template getPtr<TensorRecipe<F,TE>>("hppp"));
+    auto Vpppp(coulombIntegrals->get("pppp"));
+    auto Vphph(coulombIntegrals->get("phph"));
+    auto Vhhhh(coulombIntegrals->get("hhhh"));
+    auto Vhhhp(coulombIntegrals->get("hhhp"));
+    auto Vppph(coulombIntegrals->get("ppph"));
+    auto Vhhpp(coulombIntegrals->get("hhpp"));
+    auto Vpphp(coulombIntegrals->get("pphp"));
+    auto Vphhh(coulombIntegrals->get("phhh"));
+    auto Vhphp(coulombIntegrals->get("hphp"));
+    auto Vphhp(coulombIntegrals->get("phhp"));
+    auto Vphpp(coulombIntegrals->get("phpp"));
+    auto Vhhph(coulombIntegrals->get("hhph"));
+    auto Vhppp(coulombIntegrals->get("hppp"));
     // Hirata intermediates
     auto Lac( Tcc<TE>::template tensor<F>("Lac") );
     auto Kac( Tcc<TE>::template tensor<F>("Kac") );
