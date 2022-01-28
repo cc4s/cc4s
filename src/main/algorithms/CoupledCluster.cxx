@@ -33,30 +33,22 @@ using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(CoupledCluster)
 
-Ptr<MapNode> CoupledCluster::run(const Ptr<MapNode> &arguments){
-  this->arguments = arguments;
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
+Ptr<MapNode> CoupledCluster::run(const Ptr<MapNode> &arguments_){
+  this->arguments = arguments_;
   // multiplex calls to template methods
+  Ptr<MapNode> result;
   if (Cc4s::options->dryRun) {
     using TE = DefaultDryTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return run<Real<>,TE>();
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return run<Complex<>,TE>();
-    }
+    (result = run<Real<>,TE>()) || (result = run<Complex<>,TE>());
   } else {
     using TE = DefaultTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return run<Real<>,TE>();
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return run<Complex<>,TE>();
-    }
+    (result = run<Real<>,TE>()) || (result = run<Complex<>,TE>());
   }
   ASSERT_LOCATION(
-    false, "unsupported orbitals type '" + scalarType + "'",
-    coulombIntegrals->get("scalarType")->sourceLocation
+    result, "unsupported tensor type as 'operator'",
+    arguments->sourceLocation
   );
+  return result;
 }
 
 
@@ -64,23 +56,25 @@ template <typename F, typename TE>
 Ptr<MapNode> CoupledCluster::run() {
   using namespace std;
 
-  auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
-  auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
-  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
+  auto coulombIntegrals(arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals"));
+  if (!coulombIntegrals) return nullptr;
+
+  auto eigenEnergies(
+    arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
+  );
+  auto epsh(eigenEnergies->get("h"));
+  auto epsp(eigenEnergies->get("p"));
 
   Natural<> i(0);
   Ptr<TensorSet<F,TE>> amplitudes;
-  if (arguments->get("initialAmplitudes")) {
+  if (arguments->isGiven("initialAmplitudes")) {
     amplitudes = arguments->getPtr<TensorSet<F,TE>>(
       "initialAmplitudes"
     );
     OUT() << "Using given initial amplitudes " << amplitudes << endl;
   }
 
-  // TODO: conversion to eigen untis
   energy = New<MapNode>(SOURCE_LOCATION);
-  energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
 
   // create a method handler, by default Ccsd
   auto methodName( arguments->getValue<std::string>("method", "Ccsd") );
@@ -199,32 +193,18 @@ F CoupledCluster::getEnergy(
   const Ptr<TensorSet<F,TE>> &amplitudes,
   const bool isFinalReport
 ) {
-  // get the Coulomb integrals to compute the energy
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vijab(coulombSlices->getPtr<TensorExpression<F,TE>>("hhpp"));
-  auto orbitalType(
-    coulombIntegrals->getMap(
-      "indices"
-    )->getMap("orbital")->getValue<std::string>("type")
-  );
-  Real<> spins;
-  if (orbitalType == "spatial") {
-    spins = 2;
-  } else if (orbitalType == "spin") {
-    spins = 1;
-  } else {
-    ASSERT_LOCATION(
-      false, "unsupported orbital type '" + orbitalType + "'",
-      coulombIntegrals->getMap(
-        "indices"
-      )->getMap("orbital")->get("type")->sourceLocation
-    );
-  }
+  auto methodName( arguments->getValue<std::string>("method", "Ccsd") );
 
-  // singles amplitudes are optional
-  auto Tai( amplitudes->get(0) );
-  auto Tabij( amplitudes->get(1) );
+  // get the Coulomb integrals to compute the energy
+  auto coulombIntegrals(arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals"));
+  auto Vijab(coulombIntegrals->get("hhpp"));
+  // TODO: get from size of spin properies
+  Real<> degeneracy(2);
+
+  auto Tai( amplitudes->get("ph") );
+  auto Tabij( amplitudes->get("pphh") );
+  // TODO: determine units in tcc
+  Tai->inspect()->getUnit() = Tabij->inspect()->getUnit() = 1.0;
   F e;
   std::streamsize ss(std::cout.precision());
   {
@@ -232,30 +212,30 @@ F CoupledCluster::getEnergy(
     auto exchange( Tcc<TE>::template tensor<F>("X") );
     COMPILE(
       (*direct)[""] <<=
-        0.5*spins*spins * (*Tabij)["abij"] * (*Vijab)["ijab"],
+        0.5*degeneracy*degeneracy * (*Tabij)["abij"] * (*Vijab)["ijab"],
       (*direct)[""] +=
-        0.5*spins*spins * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijab"],
+        0.5*degeneracy*degeneracy * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijab"],
       (*exchange)[""] <<=
-        -0.5*spins * (*Tabij)["abij"] * (*Vijab)["ijba"],
+        -0.5*degeneracy * (*Tabij)["abij"] * (*Vijab)["ijba"],
       (*exchange)[""]
-        += -0.5*spins * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"]
+        += -0.5*degeneracy * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"]
     )->execute();
     F D(direct->read());
     F X(exchange->read());
     e = D+X;
     if (isFinalReport){
       OUT() << std::endl;
-      OUT() << "Ccsd correlation energy:          " << std::setprecision(10) << real(e) << std::endl;
-//      OUT() << "  direct: "       << std::setprecision(10) << real(D) << std::endl;
-//      OUT() << "  exchange: "     << std::setprecision(10) << real(X) << std::endl;
+      OUT() << methodName << " correlation energy:          "
+        << std::setprecision(10) << real(e) << std::endl;
       if (energy->get("secondOrder")) {
-        OUT() << "2nd-order correlation energy:     "     << std::setprecision(10)
+        OUT() << "2nd-order correlation energy:     " << std::setprecision(10)
           << energy->getValue<Real<>>("secondOrder") << std::endl;
       }
     }
     energy->setValue("correlation", real(e));
     energy->setValue("direct", real(D));
     energy->setValue("exchange", real(X));
+    energy->setValue("unit", Vijab->inspect()->getUnit());
   }
   std::cout << std::setprecision(ss);
 
@@ -276,9 +256,9 @@ void CoupledCluster::residuumToAmplitudes(
     *residuum -= F(levelShift) * *amplitudes;
   }
 
-  for (Natural<> i(0); i < residuum->componentTensors.size(); ++i) {
-    auto R( residuum->get(i) );
-    auto indices( residuum->getIndices(i) );
+  for (auto key: residuum->getKeys()) {
+    auto R( residuum->get(key) );
+    auto indices( residuum->generateIndices(key) );
     auto D( calculateEnergyDifferences<F,TE>(R->inspect()->getLens(),indices) );
 
     // divide by -Delta to get new estimate for T
@@ -296,17 +276,18 @@ template <typename F, typename TE>
 Ptr<Tensor<F,TE>> CoupledCluster::calculateEnergyDifferences(
   const std::vector<size_t> &lens, const std::string &indices
 ) {
-  auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
-  auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
-  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
-  auto Fepsi(Tcc<TE>::template tensor<F>(epsi->inspect()->getLens(), "Fepsi"));
-  auto Fepsa(Tcc<TE>::template tensor<F>(epsa->inspect()->getLens(), "Fepsa"));
+  auto eigenEnergies(
+    arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
+  );
+  auto epsh(eigenEnergies->get("h"));
+  auto epsp(eigenEnergies->get("p"));
+  auto Fepsh(Tcc<TE>::template tensor<F>(epsh->inspect()->getLens(), "Fepsh"));
+  auto Fepsp(Tcc<TE>::template tensor<F>(epsp->inspect()->getLens(), "Fepsp"));
   // convert to type F (either complex or double)
   auto fromReal( [](Real<> eps) {return F(eps);} );
   COMPILE(
-    (*Fepsa)["a"] <<= map<F>(fromReal, (*epsa)["a"]),
-    (*Fepsi)["i"] <<= map<F>(fromReal, (*epsi)["i"])
+    (*Fepsp)["a"] <<= map<F>(fromReal, (*epsp)["a"]),
+    (*Fepsh)["i"] <<= map<F>(fromReal, (*epsh)["i"])
   )->execute();
 
   auto D(
@@ -317,8 +298,8 @@ Ptr<Tensor<F,TE>> CoupledCluster::calculateEnergyDifferences(
   int excitationLevel(indices.length()/2);
   for (int p(0); p < excitationLevel; ++p) {
     COMPILE(
-      (*D)[indices] += (*Fepsa)[indices.substr(p,1)],
-      (*D)[indices] -= (*Fepsi)[indices.substr(excitationLevel+p,1)]
+      (*D)[indices] += (*Fepsp)[indices.substr(p,1)],
+      (*D)[indices] -= (*Fepsh)[indices.substr(excitationLevel+p,1)]
     )->execute();
   }
 

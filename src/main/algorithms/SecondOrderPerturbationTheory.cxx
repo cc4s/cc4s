@@ -25,84 +25,58 @@ using namespace cc4s;
 ALGORITHM_REGISTRAR_DEFINITION(SecondOrderPerturbationTheory)
 
 Ptr<MapNode> SecondOrderPerturbationTheory::run(const Ptr<MapNode> &arguments) {
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
+  Ptr<MapNode> result;
   if (Cc4s::options->dryRun) {
     using TE = DefaultDryTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return calculateMp2Energy<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return calculateMp2Energy<Complex<>,TE>(arguments);
-    }
+    (result = run<Real<>,TE>(arguments))
+      || (result = run<Complex<>,TE>(arguments));
   } else {
     using TE = DefaultTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return calculateMp2Energy<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return calculateMp2Energy<Complex<>,TE>(arguments);
-    }
+    (result = run<Real<>,TE>(arguments))
+      || (result = run<Complex<>,TE>(arguments));
   }
   ASSERT_LOCATION(
-    false, "unsupported orbitals type '" + scalarType + "'",
-    coulombIntegrals->get("scalarType")->sourceLocation
+    result, "unsupported tensor type as 'coulombIntegrals'",
+    arguments->sourceLocation
   );
+  return result;
 }
 
 template <typename F, typename TE>
-Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
+Ptr<MapNode> SecondOrderPerturbationTheory::run(
   const Ptr<MapNode> &arguments
 ) {
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getPtr<TensorExpression<F,TE>>("pphh"));
-  auto orbitalType(
-    coulombIntegrals->getMap(
-      "indices"
-    )->getMap("orbital")->getValue<std::string>("type")
-  );
-  Real<> spins;
-  if (orbitalType == "spatial") {
-    spins = 2;
-  } else if (orbitalType == "spin") {
-    spins = 1;
-  } else {
-    ASSERT_LOCATION(
-      false, "unsupported orbital type '" + orbitalType + "'",
-      coulombIntegrals->getMap(
-        "indices"
-      )->getMap("orbital")->get("type")->sourceLocation
-    );
-  }
+  auto coulombIntegrals(arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals"));
+  if (!coulombIntegrals) return nullptr;
+  auto Vpphh(coulombIntegrals->get("pphh"));
+  // TODO: find number of spin properties
+  Real<> degeneracy(2);
 
   auto fockOperator(getFockOperator<F,TE>(arguments));
-  auto fockSlices(fockOperator->getMap("slices"));
-  auto fph(fockSlices->template getPtr<TensorExpression<F,TE>>("ph"));
+  auto fph(fockOperator->get("ph"));
 
-  auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
-  auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
-  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
+  auto eigenEnergies(
+    arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
+  );
+  auto epsh(eigenEnergies->get("h"));
+  auto epsp(eigenEnergies->get("p"));
 
-  auto No(epsi->inspect()->getLen(0));
-  auto Nv(epsa->inspect()->getLen(0));
+  auto No(epsh->inspect()->getLen(0));
+  auto Nv(epsp->inspect()->getLen(0));
   auto Dph(
-    Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,No}),"Dph")
+    Tcc<TE>::template tensor<F>(std::vector<Natural<>>({Nv,No}),"Dph")
   );
   auto Dpphh(
-    Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Dpphh")
+    Tcc<TE>::template tensor<F>(std::vector<Natural<>>({Nv,Nv,No,No}),"Dpphh")
   );
   auto singles( Tcc<TE>::template tensor<F>("S") );
   auto direct( Tcc<TE>::template tensor<F>("D") );
   auto exchange( Tcc<TE>::template tensor<F>("X") );
-  auto toEigenUnits(
-    pow(eigenEnergies->getValue<Real<>>("unit"),2.0)
-    / pow(coulombIntegrals->getValue<Real<>>("unit"),2.0)
-  );
-  OUT() << "Contracting MP2 energy..." << std::endl;
+  OUT() << "Contracting second order energy..." << std::endl;
   COMPILE(
-    (*Dph)["ai"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"]),
-    (*Dph)["ai"] -=  map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"]),
+    (*Dph)["ai"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsp)["a"]),
+    (*Dph)["ai"] -=  map<F>([](Real<> eps) {return F(eps);}, (*epsh)["i"]),
     (*Dpphh)["abij"] <<= (*Dph)["ai"],
     (*Dpphh)["abij"] +=  (*Dph)["bj"],
     // first-order singles amplitudes
@@ -114,11 +88,11 @@ Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
       map<F>(conj<F>, (*Vpphh)["abij"]) *
       map<F>([](F delta) { return F(1/real(delta)); }, (*Dpphh)["abij"]),
     (*singles)[""] <<=
-      toEigenUnits * -spins * (*fph)["ai"] * (*Dph)["ai"],
+      -degeneracy * (*fph)["ai"] * (*Dph)["ai"],
     (*direct)[""] <<=
-      toEigenUnits * -0.5*spins*spins * (*Vpphh)["abij"] * (*Dpphh)["abij"],
+      -0.5*degeneracy*degeneracy * (*Vpphh)["abij"] * (*Dpphh)["abij"],
     (*exchange)[""] <<=
-      toEigenUnits * +0.5*spins * (*Vpphh)["abji"] * (*Dpphh)["abij"]
+      +0.5*degeneracy * (*Vpphh)["abji"] * (*Dpphh)["abij"]
   )->execute();
 
   F S(singles->read()), D(direct->read()), X(exchange->read());
@@ -136,26 +110,28 @@ Ptr<MapNode> SecondOrderPerturbationTheory::calculateMp2Energy(
   energy->setValue("secondOrderDirect", real(D));
   energy->setValue("secondOrderExchange", real(X));
   energy->setValue("secondOrder", real(S+D+X));
-  energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
+  // TODO: use unit of scalar as determined by tcc
+  energy->setValue("unit", epsh->inspect()->getUnit());
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
   return result;
 }
 
 template <typename F, typename TE>
-Ptr<MapNode> SecondOrderPerturbationTheory::getFockOperator(
+Ptr<TensorSet<F,TE>> SecondOrderPerturbationTheory::getFockOperator(
   const Ptr<MapNode> &arguments
 ) {
   if (arguments->isGiven("slicedFockOperator")) {
-    return arguments->getMap("slicedFockOperator");
+    return arguments->getPtr<TensorSet<F,TE>>("slicedFockOperator");
   }
   // else assume canonical calculation and compute from eigenenergies
-  auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
-  auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
-  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
-  auto No(epsi->inspect()->getLen(0));
-  auto Nv(epsa->inspect()->getLen(0));
+  auto eigenEnergies(
+    arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
+  );
+  auto epsh(eigenEnergies->get("h"));
+  auto epsp(eigenEnergies->get("p"));
+  auto No(epsh->inspect()->getLen(0));
+  auto Nv(epsp->inspect()->getLen(0));
   
   auto fhh(Tcc<TE>::template tensor<F>(std::vector<Natural<>>({No,No}),"fhh"));
   auto fph(Tcc<TE>::template tensor<F>(std::vector<Natural<>>({Nv,No}),"fph"));
@@ -165,19 +141,15 @@ Ptr<MapNode> SecondOrderPerturbationTheory::getFockOperator(
   // off-diagonal slices are zero tensors
   // diagonal slices have eigenenergies on diagonal
   COMPILE(
-    (*fhh)["ii"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsi)["i"]),
-    (*fpp)["aa"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsa)["a"])
+    (*fhh)["ii"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsh)["i"]),
+    (*fpp)["aa"] <<= map<F>([](Real<> eps) {return F(eps);}, (*epsp)["a"])
   )->execute();
 
-  auto result( New<MapNode>(SOURCE_LOCATION) );
-  result->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
-  result->setValue("scalarType", TypeTraits<F>::getName());
-  auto slices( New<MapNode>(SOURCE_LOCATION) );
-  slices->setPtr("hh", fhh);
-  slices->setPtr("ph", fph);
-  slices->setPtr("hp", fhp);
-  slices->setPtr("pp", fpp);
-  result->get("slices") = slices;
+  auto result( New<TensorSet<F,TE>>() );
+  result->get("hh") = fhh;
+  result->get("ph") = fph;
+  result->get("hp") = fhp;
+  result->get("pp") = fpp;
   return result;
 }
 

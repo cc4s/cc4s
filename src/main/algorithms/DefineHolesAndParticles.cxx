@@ -15,6 +15,7 @@
 
 #include <algorithms/DefineHolesAndParticles.hpp>
 #include <tcc/Tcc.hpp>
+#include <TensorSet.hpp>
 #include <Complex.hpp>
 #include <MathFunctions.hpp>
 #include <Log.hpp>
@@ -38,27 +39,22 @@ template <typename TE>
 Ptr<MapNode> DefineHolesAndParticles::run(
   const Ptr<MapNode> &arguments
 ) {
-  auto eigenEnergies(arguments->getMap("eigenEnergies"));
-  auto energies(eigenEnergies->getMap("energies"));
-  auto eps(eigenEnergies->getPtr<TensorExpression<Real<>,TE>>("data"));
-  ASSERT_LOCATION(
-    eps, "expecting list of eigenEnergies",
-    eigenEnergies->sourceLocation
-  );
-
-  auto Np(energies->size());
+  auto eps(arguments->getPtr<TensorExpression<Real<>,TE>>("eigenEnergies"));
+  Ptr<MapNode> metaData(eps->inspect()->getMetaData());
+  auto energies(metaData->getMap("energies"));
+  auto Np(energies->getSize());
 
   // find fermi energy to determine No and Nv
-  auto fermiEnergy(eigenEnergies->getValue<Real<>>("fermiEnergy"));
+  auto fermiEnergy(metaData->getValue<Real<>>("fermiEnergy"));
   size_t No(0);
   while (No < Np && energies->getValue<Real<>>(No) < fermiEnergy) { ++No; }
   ASSERT_LOCATION(
     0 < No, "Fermi energy below all eigen energies.",
-    eigenEnergies->sourceLocation
+    metaData->sourceLocation
   );
   ASSERT_LOCATION(
     No < Np, "Fermi energy above all eigen energies.",
-    eigenEnergies->sourceLocation
+    metaData->sourceLocation
   );
 
   auto Nv(Np-No);
@@ -66,37 +62,30 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   OUT() << "number of particles Nv: " << Nv << std::endl;
   OUT() << "number of states    Np: " << Np << std::endl;
 
-  auto slices(New<MapNode>(eigenEnergies->sourceLocation));
-  {
-    auto epsi(Tcc<TE>::template tensor<Real<>>("epsi"));
-    slices->setPtr(
-      "h",
-      COMPILE_RECIPE(epsi,
-        (*epsi)["i"] <<= (*(*eps)({0},{No}))["i"]
-      )
-    );
-  }
-  {
-    auto epsa(Tcc<TE>::template tensor<Real<>>("epsa"));
-    slices->setPtr(
-      "p",
-      COMPILE_RECIPE(epsa,
-        (*epsa)["a"] <<= (*(*eps)({No},{Np}))["a"]
-      )
-    );
-  }
+  auto epsh(Tcc<TE>::template tensor<Real<>>("epsh"));
+  auto epshRecipe(
+    COMPILE_RECIPE(epsh,
+      (*epsh)["i"] <<= (*(*eps)({0},{No}))["i"]
+    )
+  );
+
+  auto epsp(Tcc<TE>::template tensor<Real<>>("epsp"));
+  auto epspRecipe(
+    COMPILE_RECIPE(epsp,
+      (*epsp)["a"] <<= (*(*eps)({No},{Np}))["a"]
+    )
+  );
 
   // create result
-  auto slicedEigenEnergies(New<MapNode>(eigenEnergies->sourceLocation));
-  slicedEigenEnergies->get("scalarType") = eigenEnergies->get("scalarType");
-  slicedEigenEnergies->get("indices") = eigenEnergies->get("indices");
-  slicedEigenEnergies->get("dimensions") = eigenEnergies->get("dimensions");
-  slicedEigenEnergies->get("unit") = eigenEnergies->get("unit");
-  slicedEigenEnergies->setValue("holesCount", No);
-  slicedEigenEnergies->setValue("particlesCount", Nv);
-  slicedEigenEnergies->get("slices") = slices;
+  auto slicedEigenEnergies(
+    New<TensorSet<Real<>,TE>>(
+      std::map<std::string,Ptr<TensorExpression<Real<>,TE>>>(
+        {{"h",epshRecipe}, {"p",epspRecipe}}
+      )
+    )
+  );
   auto result(New<MapNode>(SOURCE_LOCATION));
-  result->get("slicedEigenEnergies") = slicedEigenEnergies;
+  result->setPtr("slicedEigenEnergies", slicedEigenEnergies);
   return result;
 }
 

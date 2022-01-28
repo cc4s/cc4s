@@ -31,7 +31,7 @@ namespace cc4s {
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
     template <typename F, typename TE>
-    Ptr<MapNode> calculateTriplesEnergy(const Ptr<MapNode> &arguments);
+    Ptr<MapNode> run(const Ptr<MapNode> &arguments);
   };
 }
 

@@ -29,31 +29,16 @@ Ptr<MapNode> FiniteSizeCorrection::run(
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
 
-  auto slicedCoulombVertex(arguments->getMap("slicedCoulombVertex"));
-  auto momentumType(
-    slicedCoulombVertex->getMap(
-      "indices"
-    )->getMap("momentum")->getValue<std::string>("type")
-  );
-
-
   if (Cc4s::options->dryRun) {
     using TE = DefaultDryTensorEngine;
-    if (momentumType == "halfGrid") {
-      calculateTransitionStructureFactor<Real<>, TE>(arguments, result);
-    } else if (momentumType == "fullGrid") {
-      calculateTransitionStructureFactor<Complex<>, TE>(arguments, result);
-    }
+    calculateTransitionStructureFactor<Real<>, TE>(arguments, result)
+      || calculateTransitionStructureFactor<Complex<>, TE>(arguments, result);
     interpolation<TE>(arguments, result);
   }
   else {
     using TE = DefaultTensorEngine;
-    if (momentumType == "halfGrid") {
-      calculateTransitionStructureFactor<Real<>, TE>(arguments, result);
-    } else if (momentumType == "fullGrid") {
-      calculateTransitionStructureFactor<Complex<>, TE>(arguments, result);
-    }
-
+    calculateTransitionStructureFactor<Real<>, TE>(arguments, result)
+      || calculateTransitionStructureFactor<Complex<>, TE>(arguments, result);
     interpolation<TE>(arguments, result);
   }
   return result;
@@ -64,25 +49,26 @@ Ptr<MapNode> FiniteSizeCorrection::run(
 // - divide te CoulombVertex by the Coulomb potential to obtain the codensities
 
 template <typename F, typename TE>
-void FiniteSizeCorrection::calculateTransitionStructureFactor(
+bool FiniteSizeCorrection::calculateTransitionStructureFactor(
   const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ) {
   using Tc = TensorExpression<Complex<>, TE>;
   using Tr = TensorExpression<Real<>, TE>;
+  using TSc = TensorSet<Complex<>, TE>;
 
   // READ input to compute structure factors
+  auto amplitudes(arguments->getPtr<TensorSet<F,TE>>("amplitudes"));
+  if (!amplitudes) return false;
 
-  auto coulombVertexSingularVectors(
-    arguments->getMap("coulombVertexSingularVectors")
+  auto singularVectors(
+    arguments->getPtr<Tc>("coulombVertexSingularVectors")
   );
-  auto singularVectors(coulombVertexSingularVectors->getPtr<Tc>("data"));
 
-  auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
-  auto slices(coulombVertex->getMap("slices"));
+  auto coulombVertex(arguments->getPtr<TSc>("slicedCoulombVertex"));
   // get input tensor expression
-  auto GammaFph(slices->getPtr<Tc>("ph"));
-  auto GammaFhp(slices->getPtr<Tc>("hp"));
-  auto GammaFhh(slices->getPtr<Tc>("hh"));
+  auto GammaFph(coulombVertex->get("ph"));
+  auto GammaFhp(coulombVertex->get("hp"));
+  auto GammaFhh(coulombVertex->get("hh"));
   auto GammaGph( Tcc<TE>::template tensor<Complex<>>("Gph"));
   auto GammaGhp( Tcc<TE>::template tensor<Complex<>>("Ghp"));
   auto GammaGhh( Tcc<TE>::template tensor<Complex<>>("Ghh"));
@@ -100,8 +86,7 @@ void FiniteSizeCorrection::calculateTransitionStructureFactor(
   auto cTCGhp = ( Tcc<TE>::template tensor<Complex<>>("cTCGhp"));
 
   //units of Coulomb potential [Energy*Volume]
-  auto CoulombPotential(arguments->getMap("coulombPotential"));
-  auto VofG(CoulombPotential->getPtr<Tr>("data"));
+  auto VofG(arguments->getPtr<Tr>("coulombPotential"));
   auto invSqrtCoulombPotential(
     Tcc<TE>::template tensor<Complex<>>("invSqrtCoulombPotential")
   );
@@ -119,12 +104,8 @@ void FiniteSizeCorrection::calculateTransitionStructureFactor(
   auto TransitionStructureFactor( Tcc<TE>::template tensor<Real<>>("TransitionStructureFactor"));
   //prepare T amplitudes
 
-
-  //THESE TWO LINES ARE SEGFAULTING
-  auto amplitudes(arguments->getPtr<TensorSet<F,TE>>("amplitudes"));
-
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
+  auto Tph( amplitudes->get("ph") );
+  auto Tpphh( amplitudes->get("pphh") );
   auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
   auto Tai( Tcc<TE>::template tensor<Complex<>>("Tai"));
 
@@ -147,7 +128,7 @@ void FiniteSizeCorrection::calculateTransitionStructureFactor(
 //  auto result(New<MapNode>(SOURCE_LOCATION));
 
   result->setPtr("transitionStructureFactor", TransitionStructureFactor);
-//  return result;
+  return true;
 }
 
 template <typename TE>
@@ -162,20 +143,15 @@ void FiniteSizeCorrection::interpolation(
   // resolution for fine grid used for interpolating the transition structure factor
   auto N(arguments->getValue<size_t>("interpolationGridSize", 20));
 
-  auto gridVectors(arguments->getMap("gridVectors"));
-
-
   // READ THE MOMENTUM GRID
-  auto grid(gridVectors->getPtr<T>("data")->evaluate());
-  ASSERT_LOCATION(
-    grid, "expecting the reciprocal Grid",
-    gridVectors->sourceLocation
-  );
+  auto grid(arguments->getPtr<T>("gridVectors"));
 
-  Natural<> NG(grid->lens[1]);
+
+
+  Natural<> NG(grid->inspect()->lens[1]);
   std::vector<Vector<>> cartesianGrid(NG);
   std::vector<Real<>> output(NG*3);
-  output = grid->readAll();
+  output = grid->inspect()->readAll();
   for (Natural<> i(0); i < NG; i++){
     cartesianGrid[i][0] = output[3*i+0];
     cartesianGrid[i][1] = output[3*i+1];
@@ -186,9 +162,10 @@ void FiniteSizeCorrection::interpolation(
   // reciprocal lattice vectors ( 2pi/a )
   std::vector<Vector<>> B(3);
 
-  auto Gi(gridVectors->getMap("Gi"));
-  auto Gj(gridVectors->getMap("Gj"));
-  auto Gk(gridVectors->getMap("Gk"));
+  Ptr<MapNode> metaData(grid->inspect()->getMetaData());
+  auto Gi(metaData->getMap("Gi"));
+  auto Gj(metaData->getMap("Gj"));
+  auto Gk(metaData->getMap("Gk"));
 
   auto Gix(Gi->getValue<Real<>>(0));
   auto Giy(Gi->getValue<Real<>>(1));
@@ -223,17 +200,20 @@ void FiniteSizeCorrection::interpolation(
   A[1] = B[2].cross(B[0])/Omega;
   A[2] = B[0].cross(B[1])/Omega;
 
-  auto coulombVertex(arguments->getMap("slicedCoulombVertex"));
-  auto CoulombPotential(arguments->getMap("coulombPotential"));
+  auto coulombVertex(
+    arguments->getPtr<TensorSet<Complex<>,TE>>("slicedCoulombVertex")
+  );
+  auto GammaFhh(coulombVertex->get("hh"));
+  auto coulombPotential(arguments->getPtr<T>("coulombPotential"));
 // convert all computed emergies to units used for CoulombVertex
   auto toCoulombVertexUnits(
-    pow(coulombVertex->getValue<Real<>>("unit"),2.0)
-      / pow(gridVectors->getValue<Real<>>("unit"),3.0)
-      / CoulombPotential->getValue<Real<>>("unit")
+    pow(GammaFhh->inspect()->getUnit(),2.0)
+      / pow(grid->inspect()->getUnit(),3.0)
+      / coulombPotential->inspect()->getUnit()
   );
   auto factor(
-    gridVectors->getValue<Real<>>("unit")
-      / pow(coulombVertex->getValue<Real<>>("unit"),2.0)
+      grid->inspect()->getUnit()
+      / pow(GammaFhh->inspect()->getUnit(),2.0)
       * Omega/2.0/Pi<>()/Pi<>()
   );
 
@@ -320,8 +300,10 @@ void FiniteSizeCorrection::interpolation(
   energy->setValue("correction", totalInter3D/N/N/N/8.0-sum3D);
   energy->setValue("uncorrected", sum3D);
   energy->setValue("corrected", totalInter3D/N/N/N/8.0);
-  energy->setValue("unit", CoulombPotential->getValue<Real<>>("unit")*pow(gridVectors->getValue<Real<>>("unit"),3.0) );
-
+  energy->setValue("unit",
+    coulombPotential->inspect()->getUnit()
+      * pow(grid->inspect()->getUnit(),3.0)
+  );
   result->get("energy") = energy;
 
 }

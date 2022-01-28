@@ -32,39 +32,23 @@ Ptr<TensorSet<F,TE>> Drccd<F,TE>::getResiduum(
   const Ptr<TensorSet<F,TE>> &amplitudes
 ) {
   // read all required integrals
-  auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
-  auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->template getPtr<TensorExpression<F,TE>>("pphh"));
-  auto Vphhp(coulombSlices->template getPtr<TensorExpression<F,TE>>("phhp"));
-  auto Vhhpp(coulombSlices->template getPtr<TensorExpression<F,TE>>("hhpp"));
-
-  // get spins
-  auto orbitalType(
-    coulombIntegrals->getMap(
-      "indices"
-    )->getMap("orbital")->template getValue<std::string>("type")
+  auto coulombIntegrals(
+    this->arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
   );
-  Real<> spins;
-  if (orbitalType == "spatial") {
-    spins = 2;
-  } else if (orbitalType == "spin") {
-    spins = 1;
-  } else {
-    ASSERT_LOCATION(
-      false, "unsupported orbital type '" + orbitalType + "'",
-      coulombIntegrals->getMap(
-        "indices"
-      )->getMap("orbital")->get("type")->sourceLocation
-    );
-  }
+  auto Vpphh(coulombIntegrals->get("pphh"));
+  auto Vphhp(coulombIntegrals->get("phhp"));
+  auto Vhhpp(coulombIntegrals->get("hhpp"));
+
+  Real<> degeneracy(2);
 
   // construct residuum. Shape will be assumed upon first use.
   auto Rph( Tcc<TE>::template tensor<F>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
   auto residuum(
     New<TensorSet<F,TE>>(
-      std::vector<Ptr<TensorExpression<F,TE>>>({Rph, Rpphh}),
-      std::vector<std::string>({"ai", "abij"})
+      std::map<std::string,Ptr<TensorExpression<F,TE>>>(
+        {{"ph",Rph}, {"pphh",Rpphh}}
+      )
     )
   );
 
@@ -84,15 +68,15 @@ Ptr<TensorSet<F,TE>> Drccd<F,TE>::getResiduum(
   } else {
     // TODO: check if given amplitudes contain expected parts
     // get amplitude parts
-    auto Tph( amplitudes->get(0) );
-    auto Tpphh( amplitudes->get(1) );
+    auto Tph( amplitudes->get("ph") );
+    auto Tpphh( amplitudes->get("pphh") );
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
     auto Whhpp( Tcc<TE>::template tensor<F>("Whhpp") );
     // for the remaining iterations compute the drCCD residuum
     COMPILE(
       (*Rph)["ai"] <<= F(0.0) * (*Vpphh)["aaii"],
-      (*Rpphh)["abij"] <<= spins * (*Vphhp)["akic"] * (*Tpphh)["cbkj"],
+      (*Rpphh)["abij"] <<= degeneracy * (*Vphhp)["akic"] * (*Tpphh)["cbkj"],
       (*Rpphh)["abij"] += (*Rpphh)["baji"],
       (*Rpphh)["abij"] += (*Vpphh)["abij"],
       (linearized) ? (
@@ -100,7 +84,7 @@ Ptr<TensorSet<F,TE>> Drccd<F,TE>::getResiduum(
         Tcc<TE>::sequence()
       ) : (
         // otherwise: do quadratic contribution
-        (*Whhpp)["ijab"] <<= spins * (*Vhhpp)["ijab"],
+        (*Whhpp)["ijab"] <<= degeneracy * (*Vhhpp)["ijab"],
         (adjacentPairsExchange) ? (
           // adjacent pairs correction: also exchange holes in Whhpp
           (*Whhpp)["ijab"] -= (*Vhhpp)["jiab"],
@@ -111,7 +95,7 @@ Ptr<TensorSet<F,TE>> Drccd<F,TE>::getResiduum(
         ),
         // compute quadratic contribution
         (*Rpphh)["abij"] +=
-          spins * (*Whhpp)["klcd"] * (*Tpphh)["acik"] * (*Tpphh)["dblj"],
+          degeneracy * (*Whhpp)["klcd"] * (*Tpphh)["acik"] * (*Tpphh)["dblj"],
         Tcc<TE>::sequence()
       )
     )->execute();

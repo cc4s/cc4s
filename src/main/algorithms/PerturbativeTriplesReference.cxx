@@ -28,49 +28,41 @@ using namespace cc4s;
 ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriplesReference)
 
 Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto scalarType(coulombIntegrals->getValue<std::string>("scalarType"));
+  Ptr<MapNode> result;
   // multiplex calls to template methods
   if (Cc4s::options->dryRun) {
     using TE = DefaultDryTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return calculateTriplesEnergy<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return calculateTriplesEnergy<Complex<>,TE>(arguments);
-    }
+    (result = run<Real<>,TE>(arguments))
+      || (result = run<Complex<>,TE>(arguments));
   } else {
     using TE = DefaultTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return calculateTriplesEnergy<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return calculateTriplesEnergy<Complex<>,TE>(arguments);
-    }
+    (result = run<Real<>,TE>(arguments))
+      || (result = run<Complex<>,TE>(arguments));
   }
   ASSERT_LOCATION(
-    false, "unsupported orbitals type '" + scalarType + "'",
-    coulombIntegrals->get("scalarType")->sourceLocation
+    result, "unsupported tensor type as 'amplitudes'",
+    arguments->sourceLocation
   );
+  return result;
 }
 
 template <typename F, typename TE>
-Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
-  const Ptr<MapNode> &arguments
-) {
-
+Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
+  if (!amplitudes) return nullptr;
+  auto Tph( amplitudes->get("ph") );
+  auto Tpphh( amplitudes->get("pphh") );
 
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->getPtr<TensorExpression<F,TE>>("pphh"));
-  auto Vppph(coulombSlices->getPtr<TensorExpression<F,TE>>("ppph"));
-  auto Vhhhp(coulombSlices->getPtr<TensorExpression<F,TE>>("hhhp"));
+  auto coulombIntegrals(arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals"));
+  auto Vpphh(coulombIntegrals->get("pphh"));
+  auto Vppph(coulombIntegrals->get("ppph"));
+  auto Vhhhp(coulombIntegrals->get("hhhp"));
 
-  auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
-  auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getPtr<TensorExpression<Real<>,TE>>("h"));
-  auto epsa(energySlices->getPtr<TensorExpression<Real<>,TE>>("p"));
+  auto eigenEnergies(
+    arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
+  );
+  auto epsh(eigenEnergies->get("h"));
+  auto epsp(eigenEnergies->get("p"));
 
 
   auto Z( Tcc<TE>::template tensor<F>("Z"));
@@ -92,12 +84,12 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
     (*Z)["abcijk"]  += (+2.0) * (*S)["cabijk"],
     (*Z)["abcijk"]  += (-4.0) * (*S)["cbaijk"],
 
-    (*S)["abcijk"] <<= ( 1.0) * map<F>(fromReal, (*epsi)["i"]),
-    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsi)["j"]),
-    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsi)["k"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsa)["a"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsa)["b"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsa)["c"]),
+    (*S)["abcijk"] <<= ( 1.0) * map<F>(fromReal, (*epsh)["i"]),
+    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsh)["j"]),
+    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsh)["k"]),
+    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["a"]),
+    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["b"]),
+    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["c"]),
 
     (*Z)["abcijk"] <<= (*Z)["abcijk"] * map<F>(inverse, (*S)["abcijk"]),
     (*E)[""] <<= map<F>(conj<F>, (*T)["abcijk"]) * (*Z)["abcijk"],
@@ -115,7 +107,7 @@ Ptr<MapNode> PerturbativeTriplesReference::calculateTriplesEnergy(
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correlation", real(eTriples));
-  energy->setValue("unit", eigenEnergies->getValue<Real<>>("unit"));
+  energy->setValue("unit", epsh->inspect()->getUnit());
 
   if (arguments->isGiven("mp2PairEnergies")) {
     const Real<>

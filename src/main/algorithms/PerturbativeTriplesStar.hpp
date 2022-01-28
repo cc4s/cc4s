@@ -11,7 +11,7 @@ namespace cc4s {
    * * What to compute
    *
    *    - MP2 CBS energy :: from the matrix =mp2PairEnergies(ij)=
-   *    - MP2     energy :: from the tensors =Vabij=, =epsi= and =epsa=
+   *    - MP2     energy :: from the tensors =Vabij=, =epsh= and =epsp=
    *
    *    where
    *
@@ -33,30 +33,28 @@ namespace cc4s {
   template <typename F, typename TE>
   Real<> computeCssdPtStar(const Ptr<MapNode> &arguments, Real<> triples) {
     using Tr = TensorExpression<Real<>, TE>;
-    using T = TensorExpression<F, TE>;
+    using TS = TensorSet<F, TE>;
+    using TSr = TensorSet<Real<>, TE>;
 
     auto Vabij
       = arguments
-      ->getMap("coulombIntegrals")
-      ->getMap("slices")
-      ->getPtr<T>("pphh")
+      ->getPtr<TS>("coulombIntegrals")
+      ->get("pphh")
       ;
 
     // these should be the cbs estimates for the mp2 pair energies
     auto mp2PairEnergiesCbs
       = arguments
-      ->getMap("mp2PairEnergies")
-      ->getPtr<Tr>("data")
+      ->getPtr<Tr>("mp2PairEnergies")
       ;
 
     auto energySlices
-      = arguments->getMap("slicedEigenEnergies")
-                 ->getMap("slices") ;
-    auto epsi(energySlices->getPtr<Tr>("h"))
-       , epsa(energySlices->getPtr<Tr>("p"))
+      = arguments->getPtr<TSr>("slicedEigenEnergies");
+    auto epsh(energySlices->get("h"))
+       , epsp(energySlices->get("p"))
        ;
-    auto No(epsi->inspect()->getLen(0))
-       , Nv(epsa->inspect()->getLen(0))
+    auto No(epsh->inspect()->getLen(0))
+       , Nv(epsp->inspect()->getLen(0))
        ;
     auto Mabij( // Mabij are the two-body amplitudes for MP2
       Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Mabij")
@@ -73,10 +71,10 @@ namespace cc4s {
     auto fromReal( [](Real<> x) { return F(x); } );
     auto inverse( [](F x) { return 1.0 / x; } );
 
-    COMPILE( (*Mabij)["abij"] <<= cc4s::map<F>(fromReal, (*epsi)["i"])
-           , (*Mabij)["abij"]  += cc4s::map<F>(fromReal, (*epsi)["j"])
-           , (*Mabij)["abij"]  -= cc4s::map<F>(fromReal, (*epsa)["a"])
-           , (*Mabij)["abij"]  -= cc4s::map<F>(fromReal, (*epsa)["b"])
+    COMPILE( (*Mabij)["abij"] <<= cc4s::map<F>(fromReal, (*epsh)["i"])
+           , (*Mabij)["abij"]  += cc4s::map<F>(fromReal, (*epsh)["j"])
+           , (*Mabij)["abij"]  -= cc4s::map<F>(fromReal, (*epsp)["a"])
+           , (*Mabij)["abij"]  -= cc4s::map<F>(fromReal, (*epsp)["b"])
            , (*Mabij)["abij"] <<= cc4s::map<F>(cc4s::conj<F>, (*Vabij)["abij"])
                                 * cc4s::map<F>(inverse, (*Mabij)["abij"])
 

@@ -27,95 +27,83 @@ using namespace cc4s;
 ALGORITHM_REGISTRAR_DEFINITION(SliceOperator)
 
 Ptr<MapNode> SliceOperator::run(const Ptr<MapNode> &arguments) {
-  auto op(arguments->getMap("operator"));
-  auto scalarType(op->getValue<std::string>("scalarType"));
+  Ptr<MapNode> result;
   // multiplex calls to template methods
   if (Cc4s::options->dryRun) {
     using TE = DefaultDryTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return run<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return run<Complex<>,TE>(arguments);
-    }
+    (result = run<Real<>,TE>(arguments))
+      || (result = run<Complex<>,TE>(arguments));
   } else {
     using TE = DefaultTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return run<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return run<Complex<>,TE>(arguments);
-    }
+    (result = run<Real<>,TE>(arguments))
+      || (result = run<Complex<>,TE>(arguments));
   }
   ASSERT_LOCATION(
-    false, "scalar type '" + scalarType + "' not supported",
-    op->get("scalarType")->sourceLocation
+    result, "unsupported tensor type as 'operator'",
+    arguments->sourceLocation
   );
+  return result;
 }
 
 template <typename F, typename TE>
 Ptr<MapNode> SliceOperator::run(
   const Ptr<MapNode> &arguments
 ) {
-  typedef TensorExpression<F,TE> T;
-  auto op(arguments->getMap("operator"));
-  auto tensorExpression(op->getPtr<T>("data"));
+  auto tensorExpression(
+    arguments->getPtr<TensorExpression<F,TE>>("operator")
+  );
+  if (!tensorExpression) return nullptr;
+  auto tensor(tensorExpression->inspect());
+  auto slicedEigenEnergies(
+    arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
+  );
+  // TODO: determine units in tcc
   ASSERT_LOCATION(
-    tensorExpression,
-    "expecting operator to be a tensor expression", op->sourceLocation
+    slicedEigenEnergies, "expecting TensorSet of Real64 as 'slicedEigenEnergies'",
+    arguments->sourceLocation
   );
 
-  // read dimensions from eigen energies meta data
-  auto slicedEigenEnergies(arguments->getMap("slicedEigenEnergies"));
-  No = slicedEigenEnergies->getValue<size_t>("holesCount");
-  Nv = slicedEigenEnergies->getValue<size_t>("particlesCount");
+  No = slicedEigenEnergies->get("h")->inspect()->getLen(0);
+  Nv = slicedEigenEnergies->get("p")->inspect()->getLen(0);
 
-  auto dimensions(op->getMap("dimensions"));
-  size_t d(0);
-  for (auto key: dimensions->getKeys()) {
-    auto dimension(dimensions->getMap(key));
-    if (dimension->getValue<std::string>("type") == "orbital") {
-      // only slice dimensions of type 'orbital'
+  for (Natural<> d(0); d < tensor->dimensions.size(); ++d) {
+    auto dimension(tensor->dimensions[d]);
+    if (dimension->name == "State") {
+      // only slice dimensions of type 'State'
       dims.push_back(d);
     }
-    ++d;
   }
 
-  slices = New<MapNode>(op->sourceLocation);
   OUT() <<
     "Slicing " << tensorExpression->inspect()->getName() <<
     " into holes and particles." << std::endl;
-  slice(tensorExpression, "");
+  auto slices( New<TensorSet<F,TE>>() );
+  slice(tensorExpression, "", slices);
 
   // create result
-  auto slicedOperator(New<MapNode>(op->sourceLocation));
-  // copy all meta tensorExpression from original operator
-  for (auto key: op->getKeys()) {
-    if (key != "data") {
-      slicedOperator->get(key) = op->get(key);
-    }
-  }
-  // enter slices
-  slicedOperator->get("slices") = slices;
   auto result(New<MapNode>(SOURCE_LOCATION));
-  result->get("slicedOperator") = slicedOperator;
+  result->setPtr("slicedOperator", slices);
   return result;
 }
 
 template <typename F, typename TE>
 void SliceOperator::slice(
-  const Ptr<TensorExpression<F,TE>> &tensorExpression, const std::string &parts
+  const Ptr<TensorExpression<F,TE>> &tensorExpression,
+  const std::string &parts,
+  const Ptr<TensorSet<F,TE>> &slices
 ) {
   if (parts.length() < dims.size()) {
-    slice(tensorExpression, parts + "h");
-    slice(tensorExpression, parts + "p");
+    slice(tensorExpression, parts + "h", slices);
+    slice(tensorExpression, parts + "p", slices);
   } else {
     auto tensor(tensorExpression->inspect());
-    std::vector<size_t> begins(tensor->getLens().size());
-    std::vector<size_t> ends(tensor->getLens());
+    std::vector<Natural<>> begins(tensor->getLens().size());
+    std::vector<Natural<>> ends(tensor->getLens());
     std::string index("");
-    for (unsigned int i(0); i < tensor->getLens().size(); ++i) {
+    for (Natural<> i(0); i < tensor->getLens().size(); ++i) {
       index += ('a' + i);
     }
-    for (unsigned int i(0); i < dims.size(); ++i) {
+    for (Natural<> i(0); i < dims.size(); ++i) {
       if (parts[i] == 'h') {
         ends[dims[i]] = No;
       } else {
@@ -123,12 +111,16 @@ void SliceOperator::slice(
       }
     }
     auto result(Tcc<TE>::template tensor<F>(tensor->getName() + parts ));
-    slices->setPtr(
-      parts,
+    slices->get(parts) =
       COMPILE_RECIPE(result,
         (*result)[index] <<= (*(*tensorExpression)(begins,ends))[index]
-      )
-    );
+      );
+    // TODO: transfer dimension info in tcc
+    result->dimensions = tensor->dimensions;
+    // TODO: transfer unit in tcc
+    result->getUnit() = tensor->getUnit();
+    // TODO: transfer meta-data in tcc
+    result->getMetaData() = tensor->getMetaData();
   }
 }
 

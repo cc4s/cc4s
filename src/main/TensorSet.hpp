@@ -23,7 +23,7 @@
 #include <TensorIo.hpp>
 #include <Log.hpp>
 
-#include <vector>
+#include <map>
 #include <string>
 #include <algorithm>
 #include <ostream>
@@ -39,8 +39,10 @@ namespace cc4s {
   public:
     typedef F FieldType;
 
-    std::vector<Ptr<TensorExpression<F,TE>>> componentTensors;
-    std::vector<std::string> componentIndices;
+  protected:
+    std::map<std::string,Ptr<TensorExpression<F,TE>>> components;
+
+  public:
 
     /**
      * \brief Default constructor for an empty tensor set without elements.
@@ -54,8 +56,7 @@ namespace cc4s {
     TensorSet(
       TensorSet &&a
     ):
-      componentTensors(a.componentTensors),
-      componentIndices(a.componentIndices)
+      components(a.components)
     {
     }
 
@@ -64,67 +65,60 @@ namespace cc4s {
      **/
     TensorSet(
       const TensorSet &a
-    ):
-      componentTensors(a.componentTensors.size()),
-      componentIndices(a.componentIndices)
-    {
-      copyComponents(a.componentTensors);
+    ) {
+      copyComponents(a.components);
     }
 
     /**
      * \brief Move constructor taking possession of the tensors given.
      **/
     TensorSet(
-      const std::vector<Ptr<TensorExpression<F,TE>>> &tensors,
-      const std::vector<std::string> &indices
+      const std::map<std::string, Ptr<TensorExpression<F,TE>>> &components_
     ):
-      componentTensors(tensors),
-      componentIndices(indices)
+      components(components_)
     {
     }
 
-    /**
-     * \brief Move constructor taking possession of the tensors given
-     * by the iterators.
-     **/
-    template <typename TensorsIterator, typename IndicesIterator>
-    TensorSet(
-      TensorsIterator tensorsBegin, TensorsIterator tensorsEnd,
-      IndicesIterator indicesBegin, IndicesIterator indicesEnd
-    ):
-      componentTensors(tensorsBegin, tensorsEnd),
-      componentIndices(indicesBegin, indicesEnd)
-    {
+    Natural<> getSize() const {
+      Natural<> size(0);
+      for (auto pair: components) {
+        if (pair.second) ++size;
+      }
+      return size;
+    }
+
+    std::vector<std::string> getKeys() const {
+      std::vector<std::string> keys;
+      keys.reserve(components.size());
+      for (auto component: components) {
+        if (component.second) {
+          keys.push_back(component.first);
+        }
+      }
+      return keys;
     }
 
     /**
-     * \brief Retrieves the i-th component tensor. Note that
-     * the Tensor is not const since rearrangement may be
+     * \brief Retrieves the requested component tensor addressed by the
+     * given key string.
+     * Note that the Tensor is not const since rearrangement may be
      * required also in non-modifying tensor operations.
      **/
-    const Ptr<TensorExpression<F,TE>> &get(const Natural<> i) const {
-      return componentTensors[i];
+    const Ptr<TensorExpression<F,TE>> get(const std::string &key) const {
+      auto iterator(components.find(key));
+      if (iterator == components.end()) {
+        return nullptr;
+      } else {
+        return iterator->second;
+      }
     }
 
     /**
-     * \brief Retrieves the i-th component tensor.
+     * \brief Retrieves the requested component tensor addressed by the
+     * given key string.
      **/
-    Ptr<TensorExpression<F,TE>> &get(const Natural<> i) {
-      return componentTensors[i];
-    }
-
-    /**
-     * \brief Retrieves the i-th component indices.
-     **/
-    const std::string &getIndices(const Natural<> i) const {
-      return componentIndices[i];
-    }
-
-    /**
-     * \brief Retrieves the i-th component indices as modifiable string.
-     **/
-    std::string &getIndices(const Natural<> i) {
-      return componentIndices[i];
+    Ptr<TensorExpression<F,TE>> &get(const std::string &key) {
+      return components[key];
     }
 
     /**
@@ -132,8 +126,7 @@ namespace cc4s {
      * owned by a.
      **/
     TensorSet &operator =(const TensorSet &&a) {
-      componentTensors = a.componentTensors;
-      componentIndices = a.componentIndices;
+      components = a.components;
       return *this;
     }
 
@@ -141,9 +134,21 @@ namespace cc4s {
      * \brief Copy assignment operator copying the tensors owned by a.
      **/
     TensorSet &operator =(const TensorSet &a) {
-      componentIndices = a.componentIndices;
       copyComponents(a.componentTensors);
       return *this;
+    }
+
+    std::string generateIndices(const Natural<> size) const {
+      char indices[size+1];
+      for (Natural<> i(0); i < size; ++i) {
+        indices[i] = 'a' + i;
+      }
+      indices[size] = 0;
+      return std::string(indices);
+    }
+
+    std::string generateIndices(const std::string &key) const {
+      return generateIndices(get(key)->inspect()->getLens().size());
     }
 
     /**
@@ -152,9 +157,12 @@ namespace cc4s {
      **/
     TensorSet &operator += (const TensorSet &a) {
       ASSERT(isCompatibleTo(a), "Incompatible TensorSets");
-      for (Natural<> i(0); i < componentTensors.size(); ++i) {
+      for (auto component: components) {
+        auto key(component.first);
+        auto tensorExpression(component.second);
+        auto indices(generateIndices(key));
         COMPILE(
-          (*get(i))[getIndices(i)] += (*a.get(i))[getIndices(i)]
+          (*tensorExpression)[indices] += (*a.get(key))[indices]
         )->execute();
       }
       return *this;
@@ -165,10 +173,13 @@ namespace cc4s {
      * from the respective component of this TensorSet.
      **/
     TensorSet &operator -= (const TensorSet &a) {
-      ASSERT(isCompatibleTo(a), "Incompatible TensorSets.");
-      for (Natural<> i(0); i < componentTensors.size(); ++i) {
+      ASSERT(isCompatibleTo(a), "Incompatible TensorSets");
+      for (auto component: components) {
+        auto key(component.first);
+        auto tensorExpression(component.second);
+        auto indices(generateIndices(key));
         COMPILE(
-          (*get(i))[getIndices(i)] -= (*a.get(i))[getIndices(i)]
+          (*tensorExpression)[indices] -= (*a.get(key))[indices]
         )->execute();
       }
       return *this;
@@ -179,9 +190,12 @@ namespace cc4s {
      * each component of this TensorSet by the given scalar.
      **/
     TensorSet &operator *= (const F s) {
-      for (Natural<> i(0); i < componentTensors.size(); ++i) {
+      for (auto component: components) {
+        auto key(component.first);
+        auto tensorExpression(component.second);
+        auto indices(generateIndices(key));
         COMPILE(
-          (*get(i))[getIndices(i)] <<= s * (*get(i))[getIndices(i)]
+          (*tensorExpression)[indices] <<= s * (*tensorExpression)[indices]
         )->execute();
       }
       return *this;
@@ -195,11 +209,14 @@ namespace cc4s {
     F dot(const TensorSet &a) const {
       ASSERT(isCompatibleTo(a), "Incompatible TensorSets");
       auto result( Tcc<TE>::template tensor<F>("dot") );
-      for (Natural<> i(0); i < componentTensors.size(); ++i) {
+      for (auto component: components) {
+        auto key(component.first);
+        auto tensorExpression(component.second);
+        auto indices(generateIndices(key));
         // add to result
         COMPILE(
-          (*result)[""] += (*get(i))[getIndices(i)] *
-            map<F>(cc4s::conj<F>, (*a.get(i))[getIndices(i)])
+          (*result)[""] += (*tensorExpression)[indices] *
+            map<F>(cc4s::conj<F>, (*a.get(key))[indices])
         )->execute();
       }
       return result->read();
@@ -209,13 +226,11 @@ namespace cc4s {
      * \brief Get the number of component tensors of this TensorSet.
      */
     Natural<> getComponentsCount() const {
-      return componentTensors.size();
+      return components.size();
     }
 
     bool isCompatibleTo(const TensorSet &a) const {
-      return
-        componentTensors.size() == a.componentTensors.size() &&
-        componentIndices.size() == a.componentIndices.size();
+      return components.size() == a.components.size();
       // TODO: check shapes.
     }
 
@@ -225,20 +240,27 @@ namespace cc4s {
      * component tensors. Called by copy constructors and copy assignments.
      **/
     void copyComponents(
-      const std::vector<Ptr<TensorExpression<F,TE>>> &components
+      const std::map<std::string, Ptr<TensorExpression<F,TE>>> &sources
     ) {
-      componentTensors.resize(components.size());
-      for (Natural<> i(0); i < components.size(); ++i) {
-        auto componentTensor(components[i]->inspect());
-        // create tensor of identical shape, NOTE: no data is copied yet
-        componentTensors[i] = Tcc<TE>::template tensor<F>(
-          componentTensor->getName()
+      components.clear();
+      for (auto source: sources) {
+        auto sourceKey(source.first);
+        auto sourceTensor(source.second->inspect());
+        // create tensor receiving copy of sourceTensor
+        auto component(
+          Tcc<TE>::template tensor<F>(sourceTensor->getName())
         );
         // copy data
+        auto indices(generateIndices(sourceTensor->getLens().size()));
         COMPILE(
-          (*componentTensors[i])[componentIndices[i]] <<=
-            (*components[i])[componentIndices[i]]
+          (*component)[indices] <<= (*sourceTensor)[indices]
         )->execute();
+        // transfer dimension info, TODO: should be done in tcc
+        component->dimensions = sourceTensor->dimensions;
+        // transfer meta-data, TODO: should be done in tcc
+        component->getMetaData() = sourceTensor->getMetaData();
+        // enter in map
+        components[sourceKey] = component;
       }
     }
 
@@ -252,20 +274,20 @@ namespace cc4s {
       if (!t) return nullptr;
       auto componentsNode(New<MapNode>(SOURCE_LOCATION));
       auto componentsNodePath(nodePath + ".components");
-      for (Natural<> i(0); i < t->componentTensors.size(); ++i) {
-        auto componentNode(New<MapNode>(SOURCE_LOCATION));
-        componentNode->setValue("indices", t->componentIndices[i]);
+      for (auto component: t->components) {
         auto tensorNode(
           New<PointerNode<TensorExpression<F,TE>>>(
-            t->componentTensors[i], SOURCE_LOCATION
+            component.second, SOURCE_LOCATION
           )
         );
-        componentNode->get("tensor") = TensorIo::write(
-          tensorNode,
-          componentsNodePath + "." + to_string(i),
-          useBinary
+        auto componentNode(
+          TensorIo::write(
+            tensorNode,
+            componentsNodePath + "." + component.first,
+            useBinary
+          )
         );
-        componentsNode->get(i) = componentNode;
+        componentsNode->get(component.first) = componentNode;
       }
       auto writtenNode(New<MapNode>(SOURCE_LOCATION));
       writtenNode->get("components") = componentsNode;
@@ -277,28 +299,20 @@ namespace cc4s {
     ) {
       auto componentsNode(node->getMap("components"));
       auto componentsNodePath(nodePath + ".components");
-      std::vector<Ptr<TensorExpression<F,TE>>> tensors;
-      std::vector<std::string> indices;
-      for (Natural<> i(0); componentsNode->get(i); ++i) {
+      std::map<std::string, Ptr<TensorExpression<F,TE>>> components;
+      for (auto key: componentsNode->getKeys()) {
         auto tensorNode(
           TensorIo::read(
-            componentsNode->getMap(i)->getMap("tensor"),
-            componentsNodePath + "." + to_string(i)
+            componentsNode->getMap(key),
+            componentsNodePath + "." + key
           )
         );
-        auto pointerNode(tensorNode->toPtr<AtomicNode<Ptr<Object>>>());
-        tensors.push_back(
-          dynamicPtrCast<TensorExpression<F,TE>>(pointerNode->value)
-        );
-        indices.push_back(
-          componentsNode->getMap(i)->getValue<std::string>("indices")
-        );
-        OUT() << i << " tensor=" << tensors.back() << endl;
-        OUT() << i << " indices=" << indices.back() << endl;
+        auto pointerNode(tensorNode->toPtr<PointerNode<Object>>());
+        components[key] =
+          dynamicPtrCast<Tensor<F,TE>>(pointerNode->value);
       }
-      auto tensorSet(New<TensorSet<F,TE>>(tensors,indices));
-      OUT() << "tensor set=" << tensorSet << endl;
-      return New<AtomicNode<Ptr<const TensorSet<F,TE>>>>(
+      auto tensorSet(New<TensorSet<F,TE>>(components));
+      return New<PointerNode<TensorSet<F,TE>>>(
         tensorSet, node->sourceLocation
       );
     }
@@ -333,11 +347,11 @@ namespace cc4s {
     static Ptr<Node> read(
       const Ptr<MapNode> &node, const std::string &nodePath
     ) {
-      // assume at least one component
+      auto componentsNode(node->getMap("components"));
+      // NOTE: assumes at least one component
+      auto firstKey(componentsNode->getKeys()[0]);
       auto scalarType(
-        node->getMap("components")->getMap(0)->getMap(
-          "tensor"
-        )->getValue<std::string>("scalarType")
+        componentsNode->getMap(firstKey)->getValue<std::string>("scalarType")
       );
       // multiplex different tensor types
       if (!Cc4s::options->dryRun) {
@@ -485,10 +499,11 @@ namespace cc4s {
   inline std::ostream &operator <<(
     std::ostream &stream, const TensorSet<F,TE> &a
   ) {
+    std::string delimiter("");
     stream << "( ";
-    stream << a.get(0) << "[" << a.getIndices(0) << "]";
-    for (Natural<> i(1); i < a.componentTensors.size(); ++i) {
-      stream << ", " << a.get(i) << "[" << a.getIndices(i) << "]";
+    for (auto component: a.components) {
+      stream << delimiter << component.first;
+      delimiter = ", ";
     }
     return stream << " )";
   }

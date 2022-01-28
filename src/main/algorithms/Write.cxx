@@ -26,16 +26,17 @@ ALGORITHM_REGISTRAR_DEFINITION(Write)
  * \brief Interface to Writer.
  */
 Ptr<MapNode> Write::run(const Ptr<MapNode> &arguments) {
-  auto data(arguments->get("data"));
-  ASSERT_LOCATION(data, "expecting key 'data'", arguments->sourceLocation);
+  auto source(arguments->get("source"));
+  ASSERT_LOCATION(source, "expecting key 'source'", arguments->sourceLocation);
   auto fileName(arguments->getValue<std::string>("fileName"));
+  // TODO: use options
   auto useBinary(arguments->getValue<bool>("binary", false));
 
-  auto persistentData(Writer(fileName, useBinary).write(data));
+  auto persistentSource(Writer(fileName, useBinary).write(source));
 
   // create result
-  auto result(New<MapNode>(data->sourceLocation));
-  result->get("persitentData") = persistentData;
+  auto result(New<MapNode>(source->sourceLocation));
+  result->get("persitentSource") = persistentSource;
   return result;
 }
 

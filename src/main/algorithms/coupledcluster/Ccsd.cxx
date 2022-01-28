@@ -36,10 +36,13 @@ CoupledClusterMethodRegistrar<
 template <typename TE>
 std::string Ccsd<Real<>,TE>::describeOptions() {
   std::stringstream stream;
-  auto eigenEnergies(this->arguments->getMap("slicedEigenEnergies"));
-  auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->template getPtr<TensorExpression<Real<>,TE>>("h"));
-  auto No(epsi->inspect()->getLen(0));
+  auto eigenEnergies(
+    this->arguments->template getPtr<TensorSet<Real<>,TE>>(
+      "slicedEigenEnergies"
+    )
+  );
+  auto epsh(eigenEnergies->get("h"));
+  auto No(epsh->inspect()->getLen(0));
   auto integralsSliceSize(
     this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
   );
@@ -51,10 +54,13 @@ std::string Ccsd<Real<>,TE>::describeOptions() {
 template <typename TE>
 std::string Ccsd<Complex<>,TE>::describeOptions() {
   std::stringstream stream;
-  auto eigenEnergies(this->arguments->getMap("slicedEigenEnergies"));
-  auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->template getPtr<TensorExpression<Real<>,TE>>("h"));
-  auto No(epsi->inspect()->getLen(0));
+  auto eigenEnergies(
+    this->arguments->template getPtr<TensorSet<Real<>,TE>>(
+      "slicedEigenEnergies"
+    )
+  );
+  auto epsh(eigenEnergies->get("h"));
+  auto No(epsh->inspect()->getLen(0));
   auto integralsSliceSize(
     this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
   );
@@ -78,14 +84,16 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
   auto Rpphh( Tcc<TE>::template tensor<Real<>>("Rpphh") );
   auto residuum(
     New<TensorSet<Real<>,TE>>(
-      std::vector<Ptr<TensorExpression<Real<>,TE>>>({Rph, Rpphh}),
-      std::vector<std::string>({"ai", "abij"})
+      std::map<std::string,Ptr<TensorExpression<Real<>,TE>>>(
+        {{"ph",Rph}, {"pphh",Rpphh}}
+      )
     )
   );
 
-  auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
-  auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("pphh"));
+  auto coulombIntegrals(
+    this->arguments->template getPtr<TensorSet<Real<>,TE>>("coulombIntegrals")
+  );
+  auto Vpphh(coulombIntegrals->get("pphh"));
   bool ppl(this->arguments->template getValue<bool>("ppl", true));
   bool twoCc(this->arguments->template getValue<bool>("2cc", false));
   bool dcsd(this->arguments->template getValue<bool>("dcsd", false));
@@ -105,21 +113,23 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
   } else {
     // TODO: check if given amplitudes contain expected parts
     // get amplitude parts
-    auto Tph( amplitudes->get(0) );
-    auto Tpphh( amplitudes->get(1) );
+    auto Tph( amplitudes->get("ph") );
+    auto Tpphh( amplitudes->get("pphh") );
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
 //    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
-    auto slicedCoulombVertex(this->arguments->getMap("slicedCoulombVertex"));
-    auto slices(slicedCoulombVertex->getMap("slices"));
-    auto orbitals(coulombIntegrals->template getValue<std::string>("scalarType"));
-    auto GammaGpp(slices->template getPtr<TensorExpression<Complex<>,TE>>("pp"));
-    auto GammaGph(slices->template getPtr<TensorExpression<Complex<>,TE>>("ph"));
-    auto GammaGhh(slices->template getPtr<TensorExpression<Complex<>,TE>>("hh"));
+    auto coulombVertex(
+      this->arguments->template getPtr<TensorSet<Complex<>,TE>>(
+        "slicedCoulombVertex"
+      )
+    );
+    auto GammaGpp(coulombVertex->get("pp"));
+    auto GammaGph(coulombVertex->get("ph"));
+    auto GammaGhh(coulombVertex->get("hh"));
 
-    auto Vphph(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("phph"));
-    auto Vhhhh(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("hhhh"));
-    auto Vhhhp(coulombSlices->template getPtr<TensorExpression<Real<>,TE>>("hhhp"));
+    auto Vphph(coulombIntegrals->get("phph"));
+    auto Vhhhh(coulombIntegrals->get("hhhh"));
+    auto Vhhhp(coulombIntegrals->get("hhhp"));
 
     //Gamma -> Real/Imag
     auto realGammaGpp( Tcc<TE>::template tensor<Real<>>("realGammaGpp") );
@@ -485,14 +495,18 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
   auto Rpphh( Tcc<TE>::template tensor<Complex<>>("Rpphh") );
   auto residuum(
     New<TensorSet<Complex<>,TE>>(
-      std::vector<Ptr<TensorExpression<Complex<>,TE>>>({Rph, Rpphh}),
-      std::vector<std::string>({"ai", "abij"})
+      std::map<std::string,Ptr<TensorExpression<Complex<>,TE>>>(
+        {{"ph",Rph}, {"pphh",Rpphh}}
+      )
     )
   );
 
-  auto coulombIntegrals(this->arguments->getMap("coulombIntegrals"));
-  auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vpphh(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("pphh"));
+  auto coulombIntegrals(
+    this->arguments->template getPtr<TensorSet<Complex<>,TE>>(
+      "coulombIntegrals"
+    )
+  );
+  auto Vpphh(coulombIntegrals->get("pphh"));
   bool ppl(this->arguments->template getValue<bool>("ppl", true));
 
   if (!amplitudes) {
@@ -504,20 +518,21 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
   } else {
     // TODO: check if given amplitudes contain expected parts
     // get amplitude parts
-    auto Tph( amplitudes->get(0) );
-    auto Tpphh( amplitudes->get(1) );
+    auto Tph( amplitudes->get("ph") );
+    auto Tpphh( amplitudes->get("pphh") );
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
 //    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
-    auto slicedCoulombVertex(this->arguments->getMap("slicedCoulombVertex"));
-    auto slices(slicedCoulombVertex->getMap("slices"));
-    auto orbitals(coulombIntegrals->template getValue<std::string>("scalarType"));
-    auto GammaGpp(slices->template getPtr<TensorExpression<Complex<>,TE>>("pp"));
-    auto GammaGph(slices->template getPtr<TensorExpression<Complex<>,TE>>("ph"));
-    auto GammaGhp(slices->template getPtr<TensorExpression<Complex<>,TE>>("hp"));
-    auto GammaGhh(slices->template getPtr<TensorExpression<Complex<>,TE>>("hh"));
-//we need all conjugate transposed.
-//strange labeling, though
+    auto coulombVertex(
+      this->arguments->template getPtr<TensorSet<Complex<>,TE>>(
+        "slicedCoulombVertex"
+      )
+    );
+    auto GammaGpp(coulombVertex->get("pp"));
+    auto GammaGph(coulombVertex->get("ph"));
+    auto GammaGhp(coulombVertex->get("hp"));
+    auto GammaGhh(coulombVertex->get("hh"));
+
     auto cTGammaGph( Tcc<TE>::template tensor<Complex<>>("cTGammaGph"));
     auto cTGammaGhp( Tcc<TE>::template tensor<Complex<>>("cTGammaGhp"));
     auto cTGammaGpp( Tcc<TE>::template tensor<Complex<>>("cTGammaGpp"));
@@ -533,12 +548,12 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
     auto dressedGammaGhh( Tcc<TE>::template tensor<Complex<>>("dressedGammaGhh"));
     auto dressedGammaGpp( Tcc<TE>::template tensor<Complex<>>("dressedGammaGpp"));
 
-    auto Vphhp(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("phhp"));
-    auto Vhhpp(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("hhpp"));
-    auto Vphph(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("phph"));
-    auto Vhhhh(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("hhhh"));
-    auto Vhhhp(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("hhhp"));
-    auto Vphhh(coulombSlices->template getPtr<TensorExpression<Complex<>,TE>>("phhh"));
+    auto Vphhp(coulombIntegrals->get("phhp"));
+    auto Vhhpp(coulombIntegrals->get("hhpp"));
+    auto Vphph(coulombIntegrals->get("phph"));
+    auto Vhhhh(coulombIntegrals->get("hhhh"));
+    auto Vhhhp(coulombIntegrals->get("hhhp"));
+    auto Vphhh(coulombIntegrals->get("phhh"));
     // Hirata intermediates
     auto Lac( Tcc<TE>::template tensor<Complex<>>("Lac") );
     auto Kac( Tcc<TE>::template tensor<Complex<>>("Kac") );

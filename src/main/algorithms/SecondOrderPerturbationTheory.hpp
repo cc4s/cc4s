@@ -18,23 +18,23 @@
 
 #include <algorithms/Algorithm.hpp>
 
+#include <TensorSet.hpp>
+
 namespace cc4s {
   /**
-   * \brief Caclulates MP2 energy from the Coulomb Integrals \f$V_{ij}^{ab}.
+   * \brief Caclulates the second order energy from the pphh Coulomb integrals.
    */
   class SecondOrderPerturbationTheory: public Algorithm {
   public:
     ALGORITHM_REGISTRAR_DECLARATION(SecondOrderPerturbationTheory)
-    /**
-     * \brief Calculates MP2 energy from Coulomb integrals Vabij
-     */
+
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
     template <typename F, typename TE>
-    Ptr<MapNode> calculateMp2Energy(const Ptr<MapNode> &arguments);
+    Ptr<MapNode> run(const Ptr<MapNode> &arguments);
 
     template <typename F, typename TE>
-    Ptr<MapNode> getFockOperator(const Ptr<MapNode> &arguments);
+    Ptr<TensorSet<F,TE>> getFockOperator(const Ptr<MapNode> &arguments);
   };
 }
 

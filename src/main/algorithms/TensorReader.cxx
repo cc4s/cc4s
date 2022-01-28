@@ -24,6 +24,7 @@
 #include <TensorIo.hpp>
 #include <Real.hpp>
 #include <Complex.hpp>
+#include <TypeTraits.hpp>
 #include <MathFunctions.hpp>
 
 #include <vector>
@@ -116,7 +117,7 @@ void TensorReader::readData(
         ++D;
       }
       auto tuplesMap(allMap->getMap(key)->getMap("nonZeros"));
-      for (Natural<> i(0); i < tuplesMap->size(); ++i) {
+      for (Natural<> i(0); i < tuplesMap->getSize(); ++i) {
         std::vector<Natural<>> tuple(D);
         for (Natural<> d(0); d < D; ++d) {
           tuple[d] = tuplesMap->getMap(i)->getValue<Natural<>>(d);
@@ -132,11 +133,11 @@ void TensorReader::readData(
   if (binary) {
     if (Cc4s::options->dryRun) {
       using TE = DefaultDryTensorEngine;
-      if (scalarType == "real64") {
+      if (scalarType == TypeTraits<Real<64>>::getName()) {
         tensorData = readBinary<Real<64>,TE>(
           fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
-      } else if (scalarType == "complex64") {
+      } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
         tensorData = readBinary<Complex<64>,TE>(
           fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
@@ -147,11 +148,11 @@ void TensorReader::readData(
       }
     } else {
       using TE = DefaultTensorEngine;
-      if (scalarType == "real64") {
+      if (scalarType == TypeTraits<Real<64>>::getName()) {
         tensorData = readBinary<Real<64>,TE>(
           fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
-      } else if (scalarType == "complex64") {
+      } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
         tensorData = readBinary<Complex<64>,TE>(
           fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
@@ -164,11 +165,11 @@ void TensorReader::readData(
   } else {
     if (Cc4s::options->dryRun) {
       using TE = DefaultDryTensorEngine;
-      if (scalarType == "real64") {
+      if (scalarType == TypeTraits<Real<64>>::getName()) {
         tensorData = readText<Real<64>,TE>(
           fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
-      } else if (scalarType == "complex64") {
+      } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
         tensorData = readText<Complex<64>,TE>(
           fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
@@ -179,11 +180,11 @@ void TensorReader::readData(
       }
     } else {
       using TE = DefaultTensorEngine;
-      if (scalarType == "real64") {
+      if (scalarType == TypeTraits<Real<64>>::getName()) {
         tensorData = readText<Real<64>,TE>(
           fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );
-      } else if (scalarType == "complex64") {
+      } else if (scalarType == TypeTraits<Complex<64>>::getName()) {
         tensorData = readText<Complex<64>,TE>(
           fileName, lens, dimensions, nonZeroConditions, sourceLocation
         );

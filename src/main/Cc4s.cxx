@@ -101,7 +101,8 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   auto steps(input->toPtr<MapNode>());
   ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
   report->get("steps") = steps;
-  OUT() << "execution plan read, steps: " << steps->size() << std::endl << std::endl;
+  OUT() << "execution plan read, steps: " << steps->getSize()
+    << std::endl << std::endl;
 
   Natural<128> totalOperations;
   Time totalTime;
@@ -109,7 +110,7 @@ void Cc4s::run(const Ptr<MapNode> &report) {
     OperationsCounter totalOperationsCounter(&totalOperations);
     Timer totalTimer(&totalTime);
 
-    for (Natural<> i(0); i < steps->size(); ++i) {
+    for (Natural<> i(0); i < steps->getSize(); ++i) {
       runStep(i, steps->getMap(i));
       // emit report, overwrite from previous step
       Emitter emitter(Cc4s::options->name + ".out");

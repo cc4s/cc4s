@@ -52,21 +52,20 @@ template <typename F, typename TE>
 bool BasisSetCorrection::run(
   const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ) {
-  using Tr = TensorExpression<Real<>, TE>;
   using T = TensorExpression<F, TE>;
-  auto amplitudes( arguments->getPtr<TensorSet<F,TE>>("amplitudes") );
+  using Tr = TensorExpression<Real<>, TE>;
+  using TS = TensorSet<F,TE>;
+  using TSr = TensorSet<Real<>, TE>;
+  auto amplitudes( arguments->getPtr<TS>("amplitudes") );
   if (!amplitudes) return false;
-  auto Tph( amplitudes->get(0) );
-  auto Tpphh( amplitudes->get(1) );
+  auto Tph( amplitudes->get("ph") );
+  auto Tpphh( amplitudes->get("pphh") );
 
-  auto DabijNode(arguments->getMap("deltaIntegralsPPHH"));
-  auto Dabij(DabijNode->getPtr<T>("data"));
-  auto nijNode(arguments->getMap("deltaIntegralsHH"));
-  auto nij(nijNode->getPtr<T>("data"));
+  auto Dabij(arguments->getPtr<T>("deltaIntegralsPPHH"));
+  auto nij(arguments->getPtr<T>("deltaIntegralsHH"));
 
   // these should be the cbs estimates for the mp2 pair energies
-  auto mp2PairEnergiesNode(arguments->getMap("mp2PairEnergies"));
-  auto mp2PairEnergiesCbs(mp2PairEnergiesNode->getPtr<Tr>("data"));
+  auto mp2PairEnergiesCbs(arguments->getPtr<Tr>("mp2PairEnergies"));
 
   // these are the mp2 pair energies in the fno/finite/cc4s basis
   auto mp2PairEnergiesFno( Tcc<TE>::template tensor<F>("mp2PairEnergiesFno"));
@@ -82,17 +81,15 @@ bool BasisSetCorrection::run(
   auto geff  ( Tcc<TE>::template tensor<Real<>>("geff"));
   auto deltaEppl( Tcc<TE>::template tensor<Real<>>("deltaEppl"));
   //mp2 amplitudes
-  auto coulombIntegrals(arguments->getMap("coulombIntegrals"));
-  auto coulombSlices(coulombIntegrals->getMap("slices"));
-  auto Vabij(coulombSlices->getPtr<T>("pphh"));
+  auto coulombIntegrals(arguments->getPtr<TS>("coulombIntegrals"));
+  auto Vabij(coulombIntegrals->get("pphh"));
 
-  auto eigenEnergies(arguments->getMap("slicedEigenEnergies"));
-  auto energySlices(eigenEnergies->getMap("slices"));
-  auto epsi(energySlices->getPtr<Tr>("h"));
-  auto epsa(energySlices->getPtr<Tr>("p"));
+  auto eigenEnergies(arguments->getPtr<TSr>("slicedEigenEnergies"));
+  auto epsh(eigenEnergies->get("h"));
+  auto epsp(eigenEnergies->get("p"));
 
-  auto No(epsi->inspect()->getLen(0));
-  auto Nv(epsa->inspect()->getLen(0));
+  auto No(epsh->inspect()->getLen(0));
+  auto Nv(epsp->inspect()->getLen(0));
   auto Mabij(
     Tcc<TE>::template tensor<F>(std::vector<size_t>({Nv,Nv,No,No}),"Mabij")
   );
@@ -101,10 +98,10 @@ bool BasisSetCorrection::run(
   auto inverse( [](F x) { return 1.0 / x; } );
   COMPILE(
   //reconstruct mp2 amplitudes on-the-fly
-    (*Mabij)["abij"] <<= map<F>(fromReal, (*epsi)["i"]),
-    (*Mabij)["abij"] +=  map<F>(fromReal, (*epsi)["j"]),
-    (*Mabij)["abij"] -=  map<F>(fromReal, (*epsa)["a"]),
-    (*Mabij)["abij"] -=  map<F>(fromReal, (*epsa)["b"]),
+    (*Mabij)["abij"] <<= map<F>(fromReal, (*epsh)["i"]),
+    (*Mabij)["abij"] +=  map<F>(fromReal, (*epsh)["j"]),
+    (*Mabij)["abij"] -=  map<F>(fromReal, (*epsp)["a"]),
+    (*Mabij)["abij"] -=  map<F>(fromReal, (*epsp)["b"]),
 
     (*Mabij)["abij"] <<=
       map<F>(conj<F>, (*Vabij)["abij"]) *
@@ -113,7 +110,7 @@ bool BasisSetCorrection::run(
     (*mp2PairEnergiesFno)["ij"] <<= ( 2.0) * (*Mabij)["abij"] * (*Vabij)["abij"],
     (*mp2PairEnergiesFno)["ij"]  += (-1.0) * (*Mabij)["abij"] * (*Vabij)["abji"],
     (*eMp2)[""] <<= (*mp2PairEnergiesFno)["ij"],
-    (*eMp2Cbs)[""] <<= (*mp2PairEnergiesCbs)["ij"],
+    (*eMp2Cbs)[""] <<= (*mp2PairEnergiesCbs)["ij"] ,
 
   //ccsd amplitudes
     (*Tabij)["abij"] <<=  map<F>(conj<F>, (*Tpphh)["abij"]),
@@ -137,6 +134,7 @@ bool BasisSetCorrection::run(
   // construct \Delta Emp2 and scale with geff
     (*mp2PairEnergiesCbs)["ij"] +=
       (-1.0) * map<Real<>>(real<F>, (*mp2PairEnergiesFno)["ij"]),
+////    (*deltaEppl)[""] <<= (*geff)["ij"] * (*mp2PairEnergiesCbs)["ij"]
     (*deltaEppl)[""] <<= (*geff)["ij"] * (*mp2PairEnergiesCbs)["ij"]
 
   )->execute();
@@ -153,9 +151,7 @@ bool BasisSetCorrection::run(
   energy->setValue("pplCorrection", deltaPsPpl);
   energy->setValue("secondOrderCorrection", - Emp2 + Emp2Cbs );
   energy->setValue("uncorrectedCorrelation", Eccsd );
-  energy->setValue("unit", arguments
-                            ->getMap("slicedEigenEnergies")
-                            ->getValue<Real<>>("unit"));
+  energy->setValue("unit", epsh->inspect()->getUnit());
 
   result->get("energy") = energy;
 

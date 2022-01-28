@@ -19,8 +19,8 @@
 using namespace cc4s;
 
 bool TensorSetIo::WRITE_REGISTERED =
-  Writer::registerWriteFunction("tensorSet", TensorSetIo::write);
+  Writer::registerWriteFunction("TensorSet", TensorSetIo::write);
 
 bool TensorSetIo::READ_REGISTERED =
-  Reader::registerReadFunction("tensorSet", TensorSetIo::read);
+  Reader::registerReadFunction("TensorSet", TensorSetIo::read);
 
