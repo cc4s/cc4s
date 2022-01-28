@@ -44,10 +44,10 @@ Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   );
   auto halfGrid(metaData->getValue<bool>("halfGrid", 0));
   if (halfGrid) {
-    OUT() << "using real coulomb vertex" << std::endl;
+    OUT() << "Using real Coulomb integrals" << std::endl;
     return calculateRealIntegrals<TE>(slicedCoulombVertex);
   } else {
-    OUT() << "using complex coulomb vertex" << std::endl;
+    OUT() << "Using complex Coulomb integrals" << std::endl;
     return calculateComplexIntegrals<TE>(slicedCoulombVertex);
   }
 }

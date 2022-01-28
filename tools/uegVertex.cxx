@@ -15,14 +15,6 @@
 // the size of the vertex is in principle of size Ng x Np x Np
 // with Ng = Np x Np. However, using a smaller Ng is a good approximation
 
-
-// USAGE:  g++ uegVertex.cxx -std=c++11 -o uegVertex
-//         ./uegVertex 1.0 7 50
-//         for a system with rs=1.0, No=7, Nv=50 
-   
-
-
-
 // default is the HF reference. However, free electron gas is also possible
 bool lhfref = true;
 
@@ -32,6 +24,7 @@ bool lhfref = true;
 using namespace std;
 using ivec  = array<int,3>;
 using dvec  = array<double,4>;
+
 
 double evalMadelung(const double v){
   double kappa = pow(v,-1.0/3.0);
@@ -64,6 +57,7 @@ double Vijji(const dvec a, const dvec b, const double v){
   return 4.0*M_PI/v/sL(q);
 }
 
+
 int main(int argc, char ** argv){
 
   if (argc != 4) {
@@ -76,13 +70,9 @@ int main(int argc, char ** argv){
   size_t Np(No+Nv);
   std::vector<int> shell = { 1, 7, 19, 27, 33, 57, 81, 93, 123, 147, 171,\
                              179, 203, 257, 305, 341, 365, 389, 437, 461,\
-                             485, 516, 587, 619, 739, 751, 799, 847, 895,\
-                             925, 949, 1021, 1045, 1141, 1189, 1237, 1309,\
-                             1357, 1503, 1551, 1575, 1647, 1743, 1791};
+                             485, 515, 587, 619};
 
-  // to be conitnued
-
-  if(No < 620 && std::find(shell.begin(), shell.end(), No) == shell.end()){
+if(No < 620 && std::find(shell.begin(), shell.end(), No) == shell.end()){
     printf("No not valid!\n Possible candidates: ");
     for (auto s: shell) std::cout << s << " ";
     printf("\n");
@@ -107,7 +97,7 @@ int main(int argc, char ** argv){
   for (int g3(-maxG); g3 <= maxG; g3++)
     iGrid.push_back({g1, g2, g3});
 
-    sort(iGrid.begin(), iGrid.end(), [](ivec a, ivec b){ return sL(a) < sL(b); });
+  sort(iGrid.begin(), iGrid.end(), [](ivec a, ivec b){ return sL(a) < sL(b); });
   if (iGrid.size() < Np ) throw invalid_argument("BUG related to Np & maxG\n");
   if (sL(iGrid[No]) == sL(iGrid[No-1])) throw invalid_argument("No not valid\n");
   if (sL(iGrid[Np]) == sL(iGrid[Np-1])) throw invalid_argument("Nv not valid\n");
@@ -140,13 +130,15 @@ int main(int argc, char ** argv){
   printf("  rs %5.3lf, No %d, Nv %d\n", rs, No, Nv);
   printf("  Volume %14.10lf, madelung %14.10lf\n", v, evalMadelung(v));
   printf("  HOMO %14.10lf, LUMO %14.10lf\n", dGrid[No-1][3], dGrid[No][3]);
-  printf("  Reference Energy per Electron/total %14.10lf / %14.10lf\n", refE/No/2, refE);
+  printf("  Reference Energy per Electron/total %14.10lf / %14.10lf\n",
+         refE/No/2, refE);
   cout << endl;
 
 
   // construct the momentum transition grid
   // 1.) get the largest momentum vector between two states p - q
   // 2.) construct a full grid with a largest grid vec. of this size
+
   ivec maxMom({0,0,0});
   for (int p(0); p < Np; p++)
   for (int q(0); q < Np; q++){
@@ -176,9 +168,10 @@ int main(int argc, char ** argv){
 
   size_t NF = momMap.size();
   double fac(4.0*M_PI/v);
+
   // WRITING COMPLEX VERTEX TO FILE
   vector< complex<double> > out(NF*Np*Np,{0,0});
-  ivec e;
+
   for (size_t p(0); p < Np; p++)
   for (size_t q(0); q < Np; q++){
     ivec d = { iGrid[q][0] - iGrid[p][0]
@@ -186,78 +179,21 @@ int main(int argc, char ** argv){
              , iGrid[q][2] - iGrid[p][2]
              };
     size_t idx = momMap[d];
-    double res; complex<double> cres;
-		(sL(d)) ? res = fac/( 4.0*b*b*sL(d) ) : res = evalMadelung(v);
-//    (sL(d)) ? cres = { sqrt(res), sqrt(res) } : cres = { sqrt(res), 0.0};
-    if (p==q) {
-      out[idx+p*NF+p*NF*Np] = sqrt(res);
-    }
-    else if (p > q ) {
-      out[idx+p*NF+q*NF*Np] = {sqrt(res), sqrt(res)};
-    } else {
-      out[idx+p*NF+q*NF*Np] = {sqrt(res), -sqrt(res)};
-    }
-    if (sL(d)){
-      e = { iGrid[p][0] - iGrid[q][0]
-          , iGrid[p][1] - iGrid[q][1]
-          , iGrid[p][2] - iGrid[q][2]
-          };
-      size_t idx = momMap[e];
-      if (p > q ) {
-        out[idx+p*NF+q*NF*Np] = {sqrt(res), sqrt(res)};
-      } else {
-        out[idx+p*NF+q*NF*Np] = {sqrt(res), -sqrt(res)};
-      }
-    } 
-//      out[idx+ p*NF + q*NF*Np] = { sqrt(res), -sqrt(res)};
-////      if ( d[0] > 0 ) out[idx+ p*NF + q*NF*Np] = { sqrt(res), sqrt(res)};
-////      else            out[idx+ p*NF + q*NF*Np] = { sqrt(res), -sqrt(res)};
-//    } else {
-//      out[idx+p*NF+q*NF*Np] = {sqrt(res), 0.0};
-//    }
-
-//    complex<double> cres({sqrt(res/2.0), sqrt(res/2.0)}); 
-//    (sL(d)) ? out[idx+q*NF+p*NF*Np] += cres
-//            : out[idx+q*NF+p*NF*Np] = {sqrt(res), 0.0}; 
-//    d = { iGrid[p][0] - iGrid[q][0]
-//        , iGrid[p][1] - iGrid[q][1]
-//        , iGrid[p][2] - iGrid[q][2]
-//        };
-//    idx = momMap[d];
-//    (sL(d)) ? out[idx+p*NF+q*NF*Np] += cres
-//            : out[idx+p*NF+q*NF*Np] = {sqrt(res), 0.0}; 
-//    printf("%lf\n", res);
-//    if (sL(d))
-//      printf("%ld %ld: %d %d %d|%d %d %d\n",  p, q, d[0], d[1], d[2],e[0],e[1],e[2]);
-//    else
-//      printf("%ld %ld: %d %d %d\n",  p, q, d[0], d[1], d[2]);
+    double res;
+    (sL(d)) ? res = fac/( b*b*sL(d) ) : res = evalMadelung(v);
+    out[idx+p*NF+q*NF*Np] = { sqrt(res), 0.0};
   }
-
-  for (size_t p(0); p < Np; p++)
-  for (size_t q(0); q < Np; q++)
-  for (size_t g(0); g < momMap.size(); g++){
-    if ( real(out[g + p*NF+q*NF*Np]) == 0) continue;
-    printf("%ld %ld: %ld, %lf %lf\n", p, q, g, real(out[g+p*NF+q*NF*Np]), imag(out[g+p*NF+q*NF*Np]));
-  }
- 
-
-
-  // Construct the Vertex
-
-  printf("Writing CoulombVertex to file\n");
 
   string yamlout;
-  yamlout += "version: v1.0\nscalarType: complex64\n";
-  yamlout += "indices:\n  momentum:\n    type: halfGrid\n";
-  yamlout += "  orbital:\n    type: spatial\n";
+  yamlout += "version: 100\nscalarType: Complex64\ntype: Tensor\n";
   yamlout += "dimensions:\n  - length:     ";
   yamlout += to_string(NF);
-  yamlout += "\n    type: momentum\n  - length:     ";
+  yamlout += "\n    type: AuxiliaryField\n  - length:     ";
   yamlout += to_string(Np);
-  yamlout += "\n    type: orbital\n  - length:     ";
+  yamlout += "\n    type: State\n  - length:     ";
   yamlout += to_string(Np);
-  yamlout += "\n    type: orbital\ndata: CoulombVertex.dat\n";
-  yamlout += "binary: 1\nunit: 1\n";
+  yamlout += "\n    type: State\nelements:\n  type: IeeBinaryFile\n";
+  yamlout += "metaData:\n  halfGrid: 0\nunit: 1\n";
 
   ofstream vertyaml;
   vertyaml.open("CoulombVertex.yaml");
@@ -265,33 +201,32 @@ int main(int argc, char ** argv){
   vertyaml.close();
 
   ofstream vertex;
-  vertex.open("CoulombVertex.dat", ios::out | ios::binary);
+  vertex.open("CoulombVertex.elements", ios::out | ios::binary);
   vertex.write((char*)&out[0], NF*Np*Np*sizeof(complex<double>));
   vertex.close();
-
 
 
   // Write Eigenenergies
   double fermiEnergy((dGrid[No][3]+dGrid[No-1][3])/2.0);
 
-
   printf("Writing EigenEnergies to file\n");
   char buf[50];
   yamlout.clear();
-  yamlout += "version: v1.0\nscalarType: real64\n";
-  yamlout += "indices:\n  orbital:\n    type: spatial\n";
+  yamlout += "version: 100\nscalarType: Real64\n";
+  yamlout += "type: Tensor\n";
   yamlout += "dimensions:\n  - length:   ";
   yamlout += to_string(Np);
-  yamlout += "\n    type: orbital\ndata: EigenEnergies.dat\n";
-  yamlout += "unit: 1\nfermiEnergy:  ";
+  yamlout += "\n    type: State\nelements:\n  type: TextFile\n";
+  yamlout += "unit: 1\nmetaData:\n  fermiEnergy:  ";
   sprintf(buf, "%16.14lf\n", fermiEnergy);
   yamlout += buf;
-  yamlout += "energies:";
+  yamlout += "  energies:";
   for ( auto d: dGrid){
-    sprintf(buf, "\n  -  %16.14lf", d[3]);
+    sprintf(buf, "\n    -  %16.14lf", d[3]);
     yamlout += buf;
   }
   yamlout += "\n";
+
   // Write to yaml
   ofstream eigyaml;
   eigyaml.open("EigenEnergies.yaml");
@@ -299,7 +234,7 @@ int main(int argc, char ** argv){
   eigyaml.close();
 
   ofstream eigdat;
-  eigdat.open("EigenEnergies.dat");
+  eigdat.open("EigenEnergies.elements");
   yamlout.clear();
   for ( auto d: dGrid){
     sprintf(buf, "%16.14lf\n", d[3]);
@@ -310,6 +245,4 @@ int main(int argc, char ** argv){
 
 
   return 0;
-
 }
-
