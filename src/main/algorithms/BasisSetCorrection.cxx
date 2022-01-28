@@ -65,8 +65,7 @@ bool BasisSetCorrection::run(
   auto nij(arguments->getPtr<T>("deltaIntegralsHH"));
 
   // these should be the cbs estimates for the mp2 pair energies
-  auto mp2PairEnergiesNode(arguments->getMap("mp2PairEnergies"));
-  auto mp2PairEnergiesCbs(mp2PairEnergiesNode->getPtr<Tr>("data"));
+  auto mp2PairEnergiesCbs(arguments->getPtr<Tr>("mp2PairEnergies"));
 
   // these are the mp2 pair energies in the fno/finite/cc4s basis
   auto mp2PairEnergiesFno( Tcc<TE>::template tensor<F>("mp2PairEnergiesFno"));
@@ -111,7 +110,7 @@ bool BasisSetCorrection::run(
     (*mp2PairEnergiesFno)["ij"] <<= ( 2.0) * (*Mabij)["abij"] * (*Vabij)["abij"],
     (*mp2PairEnergiesFno)["ij"]  += (-1.0) * (*Mabij)["abij"] * (*Vabij)["abji"],
     (*eMp2)[""] <<= (*mp2PairEnergiesFno)["ij"],
-    (*eMp2Cbs)[""] <<= (*mp2PairEnergiesCbs)["ij"],
+    (*eMp2Cbs)[""] <<= (*mp2PairEnergiesCbs)["ij"] ,
 
   //ccsd amplitudes
     (*Tabij)["abij"] <<=  map<F>(conj<F>, (*Tpphh)["abij"]),
@@ -135,6 +134,7 @@ bool BasisSetCorrection::run(
   // construct \Delta Emp2 and scale with geff
     (*mp2PairEnergiesCbs)["ij"] +=
       (-1.0) * map<Real<>>(real<F>, (*mp2PairEnergiesFno)["ij"]),
+////    (*deltaEppl)[""] <<= (*geff)["ij"] * (*mp2PairEnergiesCbs)["ij"]
     (*deltaEppl)[""] <<= (*geff)["ij"] * (*mp2PairEnergiesCbs)["ij"]
 
   )->execute();
@@ -151,9 +151,7 @@ bool BasisSetCorrection::run(
   energy->setValue("pplCorrection", deltaPsPpl);
   energy->setValue("secondOrderCorrection", - Emp2 + Emp2Cbs );
   energy->setValue("uncorrectedCorrelation", Eccsd );
-  energy->setValue("unit", arguments
-                            ->getMap("slicedEigenEnergies")
-                            ->getValue<Real<>>("unit"));
+  energy->setValue("unit", epsh->inspect()->getUnit());
 
   result->get("energy") = energy;
 
