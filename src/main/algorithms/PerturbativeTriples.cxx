@@ -135,9 +135,8 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
     energy->setValue("starCorrelation", real(triples_star));
   }
 
-  energy->setValue("unit", arguments
-                            ->getMap("slicedEigenEnergies")
-                            ->getValue<Real<>>("unit"));
+  using TSr = TensorSet<Real<>, TE>;
+  energy->setValue("unit", arguments->getPtr<TSr>("slicedEigenEnergies")->get("h")->inspect()->getUnit());
 
   result->get("energy") = energy;
 

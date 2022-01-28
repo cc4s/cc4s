@@ -143,20 +143,15 @@ void FiniteSizeCorrection::interpolation(
   // resolution for fine grid used for interpolating the transition structure factor
   auto N(arguments->getValue<size_t>("interpolationGridSize", 20));
 
-  auto gridVectors(arguments->getMap("gridVectors"));
-
-
   // READ THE MOMENTUM GRID
-  auto grid(gridVectors->getPtr<T>("data")->evaluate());
-  ASSERT_LOCATION(
-    grid, "expecting the reciprocal Grid",
-    gridVectors->sourceLocation
-  );
+  auto grid(arguments->getPtr<T>("gridVectors"));
 
-  Natural<> NG(grid->lens[1]);
+
+
+  Natural<> NG(grid->inspect()->lens[1]);
   std::vector<Vector<>> cartesianGrid(NG);
   std::vector<Real<>> output(NG*3);
-  output = grid->readAll();
+  output = grid->inspect()->readAll();
   for (Natural<> i(0); i < NG; i++){
     cartesianGrid[i][0] = output[3*i+0];
     cartesianGrid[i][1] = output[3*i+1];
@@ -167,9 +162,10 @@ void FiniteSizeCorrection::interpolation(
   // reciprocal lattice vectors ( 2pi/a )
   std::vector<Vector<>> B(3);
 
-  auto Gi(gridVectors->getMap("Gi"));
-  auto Gj(gridVectors->getMap("Gj"));
-  auto Gk(gridVectors->getMap("Gk"));
+  Ptr<MapNode> metaData(grid->inspect()->getMetaData());
+  auto Gi(metaData->getMap("Gi"));
+  auto Gj(metaData->getMap("Gj"));
+  auto Gk(metaData->getMap("Gk"));
 
   auto Gix(Gi->getValue<Real<>>(0));
   auto Giy(Gi->getValue<Real<>>(1));
@@ -212,11 +208,11 @@ void FiniteSizeCorrection::interpolation(
 // convert all computed emergies to units used for CoulombVertex
   auto toCoulombVertexUnits(
     pow(GammaFhh->inspect()->getUnit(),2.0)
-      / pow(gridVectors->getValue<Real<>>("unit"),3.0)
+      / pow(grid->inspect()->getUnit(),3.0)
       / coulombPotential->inspect()->getUnit()
   );
   auto factor(
-    gridVectors->getValue<Real<>>("unit")
+      grid->inspect()->getUnit()
       / pow(GammaFhh->inspect()->getUnit(),2.0)
       * Omega/2.0/Pi<>()/Pi<>()
   );
@@ -306,7 +302,7 @@ void FiniteSizeCorrection::interpolation(
   energy->setValue("corrected", totalInter3D/N/N/N/8.0);
   energy->setValue("unit",
     coulombPotential->inspect()->getUnit()
-      * pow(gridVectors->getValue<Real<>>("unit"),3.0)
+      * pow(grid->inspect()->getUnit(),3.0)
   );
   result->get("energy") = energy;
 
