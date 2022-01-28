@@ -192,7 +192,7 @@ if(No < 620 && std::find(shell.begin(), shell.end(), No) == shell.end()){
   yamlout += to_string(Np);
   yamlout += "\n    type: State\n  - length:     ";
   yamlout += to_string(Np);
-  yamlout += "\n    type: State\nelements:\n  type: IeeBinaryFile\n";
+  yamlout += "\n    type: State\nelements:\n  type: IeeeBinaryFile\n";
   yamlout += "metaData:\n  halfGrid: 0\nunit: 1\n";
 
   ofstream vertyaml;
