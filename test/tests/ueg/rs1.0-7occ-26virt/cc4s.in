@@ -61,11 +61,10 @@
     energy: CcsdEnergy
     amplitudes: Amplitudes
 
-%no complex atrip yet
-%- name: PerturbativeTriples
-%  in:
-%    coulombIntegrals: CoulombIntegrals
-%    amplitudes: Amplitudes
-%    slicedEigenEnergies: EigenEnergies
-%  out:
-%    {}
+- name: PerturbativeTriplesReference
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    slicedEigenEnergies: EigenEnergies
+  out:
+    {}
