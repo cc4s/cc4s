@@ -171,7 +171,7 @@ Ptr<PointerNode<Object>> TensorIo::readTensor(
   );
   auto elementsNode(node->getMap("elements"));
   auto elementsType(elementsNode->getValue<std::string>("type"));
-  auto elementsBinary(elementsType == "IeeBinaryFile" ? true : false);
+  auto elementsBinary(elementsType == "IeeeBinaryFile" ? true : false);
   auto elementsPath(nodePath + ".elements");
   auto sourceLocation(node->sourceLocation);
   auto dimensionsMap(node->getMap("dimensions"));
