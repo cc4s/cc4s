@@ -31,11 +31,26 @@
 
 - name: CoupledCluster
   in:
-    method: Ccsd
+    method: Drccd
     slicedEigenEnergies: EigenEnergies
     coulombIntegrals: CoulombIntegrals
     slicedCoulombVertex: CoulombVertex
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: Ccsd
     integralsSliceSize: 100
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
     maxIterations: 20
     energyConvergence: 1.0E-8
     amplitudesConvergence: 1.0E-8
@@ -46,10 +61,11 @@
     energy: CcsdEnergy
     amplitudes: Amplitudes
 
-- name: PerturbativeTriples
-  in:
-    coulombIntegrals: CoulombIntegrals
-    amplitudes: Amplitudes
-    slicedEigenEnergies: EigenEnergies
-  out:
-    {}
+%no complex atrip yet
+%- name: PerturbativeTriples
+%  in:
+%    coulombIntegrals: CoulombIntegrals
+%    amplitudes: Amplitudes
+%    slicedEigenEnergies: EigenEnergies
+%  out:
+%    {}

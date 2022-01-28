@@ -1,12 +1,17 @@
 {
 
   "nwchem-h2o": {
-    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/b1f66463511e974e5ad91652acb6aef0225bd7f0/h2o",
+    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/ae8e2f44b74e3a8d8479e83ab29d76a411f8c308/h2o",
     "type": "raw"
   },
 
   "r-bn": {
-    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/b1f66463511e974e5ad91652acb6aef0225bd7f0/r-bn",
+    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/ae8e2f44b74e3a8d8479e83ab29d76a411f8c308/r-bn",
+    "type": "raw"
+  },
+
+  "ueg-rs1-no7-nv26": {
+    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/9c3b647e58854a415177d4445c4daccc8a830345/ueg/rs1.0_7occ_26virt",
     "type": "raw"
   },
 

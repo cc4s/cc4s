@@ -6,16 +6,16 @@
       "uri": "{nwchem-h2o}/dz/EigenEnergies.yaml"
     },
     {
-      "out": "EigenEnergies.dat",
-      "uri": "{nwchem-h2o}/dz/EigenEnergies.dat"
+      "out": "EigenEnergies.elements",
+      "uri": "{nwchem-h2o}/dz/EigenEnergies.elements"
     },
     {
       "out": "CoulombVertex.yaml",
       "uri": "{nwchem-h2o}/dz/CoulombVertex.yaml"
     },
     {
-      "out": "CoulombVertex.dat",
-      "uri": "{nwchem-h2o}/dz/CoulombVertex.dat"
+      "out": "CoulombVertex.elements",
+      "uri": "{nwchem-h2o}/dz/CoulombVertex.elements"
     }
   ],
   "tags": "essential nwchem molecule gaussian ccsd ccsd(t)"

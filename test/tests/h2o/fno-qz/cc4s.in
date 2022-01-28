@@ -1,32 +1,32 @@
-- name: TensorReader
+- name: Read
   in:
     fileName: "EigenEnergies.yaml"
   out:
-    tensor: EigenEnergies
+    destination: EigenEnergies
 
-- name: TensorReader
+- name: Read
   in:
     fileName: "CoulombVertex.yaml"
   out:
-    tensor: CoulombVertex
+    destination: CoulombVertex
 
-- name: TensorReader
+- name: Read
   in:
     fileName: "DeltaIntegralsHH.yaml"
   out:
-    tensor: DeltaIntegralsHH
+    destination: DeltaIntegralsHH
 
-- name: TensorReader
+- name: Read
   in:
     fileName: "DeltaIntegralsPPHH.yaml"
   out:
-    tensor: DeltaIntegralsPPHH
+    destination: DeltaIntegralsPPHH
 
-- name: TensorReader
+- name: Read
   in:
     fileName: "Mp2PairEnergies.yaml"
   out:
-    tensor: Mp2PairEnergies
+    destination: Mp2PairEnergies
 
 
 - name: DefineHolesAndParticles

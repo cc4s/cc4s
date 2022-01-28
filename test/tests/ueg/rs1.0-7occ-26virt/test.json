@@ -1,0 +1,22 @@
+{
+  "name": "ueg model rs1_no7_nv26",
+  "resources": [
+    {
+      "out": "EigenEnergies.yaml",
+      "uri": "{ueg-rs1-no7-nv26}/EigenEnergies.yaml"
+    },
+    {
+      "out": "EigenEnergies.elements",
+      "uri": "{ueg-rs1-no7-nv26}/EigenEnergies.elements"
+    },
+    {
+      "out": "CoulombVertex.yaml",
+      "uri": "{ueg-rs1-no7-nv26}/CoulombVertex.yaml"
+    },
+    {
+      "out": "CoulombVertex.elements",
+      "uri": "{ueg-rs1-no7-nv26}/CoulombVertex.elements"
+    }
+  ],
+  "tags": "essential ueg drccd ccsd ccsd(t)"
+}

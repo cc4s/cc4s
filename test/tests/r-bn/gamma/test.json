@@ -6,64 +6,64 @@
       "uri": "{r-bn}/gamma/EigenEnergies.yaml"
     },
     {
-      "out": "EigenEnergies.dat",
-      "uri": "{r-bn}/gamma/EigenEnergies.dat"
+      "out": "EigenEnergies.elements",
+      "uri": "{r-bn}/gamma/EigenEnergies.elements"
     },
     {
       "out": "CoulombVertex.yaml",
       "uri": "{r-bn}/gamma/CoulombVertex.yaml"
     },
     {
-      "out": "CoulombVertex.dat",
-      "uri": "{r-bn}/gamma/CoulombVertex.dat"
+      "out": "CoulombVertex.elements",
+      "uri": "{r-bn}/gamma/CoulombVertex.elements"
     },
     {
       "out": "CoulombVertexSingularVectors.yaml",
       "uri": "{r-bn}/gamma/CoulombVertexSingularVectors.yaml"
     },
     {
-      "out": "CoulombVertexSingularVectors.dat",
-      "uri": "{r-bn}/gamma/CoulombVertexSingularVectors.dat"
+      "out": "CoulombVertexSingularVectors.elements",
+      "uri": "{r-bn}/gamma/CoulombVertexSingularVectors.elements"
     },
     {
       "out": "GridVectors.yaml",
       "uri": "{r-bn}/gamma/GridVectors.yaml"
     },
     {
-      "out": "GridVectors.dat",
-      "uri": "{r-bn}/gamma/GridVectors.dat"
+      "out": "GridVectors.elements",
+      "uri": "{r-bn}/gamma/GridVectors.elements"
     },
     {
       "out": "CoulombPotential.yaml",
       "uri": "{r-bn}/gamma/CoulombPotential.yaml"
     },
     {
-      "out": "CoulombPotential.dat",
-      "uri": "{r-bn}/gamma/CoulombPotential.dat"
+      "out": "CoulombPotential.elements",
+      "uri": "{r-bn}/gamma/CoulombPotential.elements"
     },
     {
       "out": "DeltaIntegralsHH.yaml",
       "uri": "{r-bn}/gamma/DeltaIntegralsHH.yaml"
     },
     {
-      "out": "DeltaIntegralsHH.dat",
-      "uri": "{r-bn}/gamma/DeltaIntegralsHH.dat"
+      "out": "DeltaIntegralsHH.elements",
+      "uri": "{r-bn}/gamma/DeltaIntegralsHH.elements"
     },
     {
       "out": "DeltaIntegralsPPHH.yaml",
       "uri": "{r-bn}/gamma/DeltaIntegralsPPHH.yaml"
     },
     {
-      "out": "DeltaIntegralsPPHH.dat",
-      "uri": "{r-bn}/gamma/DeltaIntegralsPPHH.dat"
+      "out": "DeltaIntegralsPPHH.elements",
+      "uri": "{r-bn}/gamma/DeltaIntegralsPPHH.elements"
     },
     {
       "out": "Mp2PairEnergies.yaml",
       "uri": "{r-bn}/gamma/Mp2PairEnergies.yaml"
     },
     {
-      "out": "Mp2PairEnergies.dat",
-      "uri": "{r-bn}/gamma/Mp2PairEnergies.dat"
+      "out": "Mp2PairEnergies.elements",
+      "uri": "{r-bn}/gamma/Mp2PairEnergies.elements"
     }
   ],
   "tags": "essential vasp ppl real"
