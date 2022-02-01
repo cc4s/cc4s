@@ -114,7 +114,7 @@ void Cc4s::run(const Ptr<MapNode> &report) {
     for (Natural<> i(0); i < steps->getSize(); ++i) {
       runStep(i, steps->getMap(i));
       // emit report, overwrite from previous step
-      Emitter emitter(options->name + ".out");
+      Emitter emitter(options->name + ".out.yaml");
       emitter.emit(report);
     }
   }

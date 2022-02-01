@@ -34,6 +34,6 @@ Options::Options(int argumentCount, char **arguments) {
       dryRunOnly = true;
     }
   }
-  if (inFile == "") inFile = name + ".in";
+  if (inFile == "") inFile = name + ".in.yaml";
 }
 
