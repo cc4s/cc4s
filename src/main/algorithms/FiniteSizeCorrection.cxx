@@ -125,6 +125,8 @@ bool FiniteSizeCorrection::calculateTransitionStructureFactor(
     (*TransitionStructureFactor)["G"] <<= map<Real<>>(real<Complex<>>, (*SofG)["G"])
   )->execute();
 
+  // TODO: determinde unit in tcc
+  TransitionStructureFactor->getUnit() = 1.0;
 //  auto result(New<MapNode>(SOURCE_LOCATION));
 
   result->setPtr("transitionStructureFactor", TransitionStructureFactor);
