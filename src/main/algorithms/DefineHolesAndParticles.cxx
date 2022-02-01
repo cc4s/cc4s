@@ -68,6 +68,9 @@ Ptr<MapNode> DefineHolesAndParticles::run(
       (*epsh)["i"] <<= (*(*eps)({0},{No}))["i"]
     )
   );
+  // TODO: units and meta data should be entered in tcc
+  epsh->getUnit() = eps->inspect()->getUnit();
+  epsh->getMetaData() = eps->inspect()->getMetaData();
 
   auto epsp(Tcc<TE>::template tensor<Real<>>("epsp"));
   auto epspRecipe(
@@ -75,6 +78,9 @@ Ptr<MapNode> DefineHolesAndParticles::run(
       (*epsp)["a"] <<= (*(*eps)({No},{Np}))["a"]
     )
   );
+  // TODO: units and meta data should be entered in tcc
+  epsp->getUnit() = eps->inspect()->getUnit();
+  epsp->getMetaData() = eps->inspect()->getMetaData();
 
   // create result
   auto slicedEigenEnergies(

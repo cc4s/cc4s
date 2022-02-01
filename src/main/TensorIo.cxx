@@ -197,7 +197,7 @@ Ptr<PointerNode<Object>> TensorIo::readTensor(
     tensor = readTensorElementsText<F,TE>(elementsPath, lens, sourceLocation);
   }
   tensor->dimensions = dimensions;
-  tensor->unit = node->getValue<Real<>>("unit");
+  tensor->getUnit() = node->getValue<Real<>>("unit");
   if (node->isGiven("metaData")) {
     tensor->metaData = node->getMap("metaData");
   }

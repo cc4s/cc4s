@@ -300,6 +300,7 @@ void FiniteSizeCorrection::interpolation(
   energy->setValue("correction", totalInter3D/N/N/N/8.0-sum3D);
   energy->setValue("uncorrected", sum3D);
   energy->setValue("corrected", totalInter3D/N/N/N/8.0);
+  // TODO: should match units of eigenenergies
   energy->setValue("unit",
     coulombPotential->inspect()->getUnit()
       * pow(grid->inspect()->getUnit(),3.0)
