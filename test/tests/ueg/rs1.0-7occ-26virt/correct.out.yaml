@@ -1,0 +1,172 @@
+buildDate: Feb  1 2022 16:40:52
+compiler: icc (ICC) 19.1.2.254 20200623
+dryRun: 0
+hosts:
+  0:
+    host: n412-010.vsc4.prov
+    ranks:
+      0: 0
+      1: 1
+      10: 10
+      11: 11
+      12: 12
+      13: 13
+      14: 14
+      15: 15
+      16: 16
+      17: 17
+      18: 18
+      19: 19
+      2: 2
+      20: 20
+      21: 21
+      22: 22
+      23: 23
+      24: 24
+      25: 25
+      26: 26
+      27: 27
+      28: 28
+      29: 29
+      3: 3
+      30: 30
+      31: 31
+      32: 32
+      33: 33
+      34: 34
+      35: 35
+      36: 36
+      37: 37
+      38: 38
+      39: 39
+      4: 4
+      40: 40
+      41: 41
+      42: 42
+      43: 43
+      44: 44
+      45: 45
+      46: 46
+      47: 47
+      5: 5
+      6: 6
+      7: 7
+      8: 8
+      9: 9
+steps:
+  0:
+    floatingPointOperations: 0
+    flops: 0
+    in:
+      fileName: EigenEnergies.yaml
+    name: Read
+    out:
+      destination: 0x19ef068
+    realtime: 0.012771009
+  1:
+    floatingPointOperations: 0
+    flops: 0
+    in:
+      fileName: CoulombVertex.yaml
+    name: Read
+    out:
+      destination: 0x19ee398
+    realtime: 0.020619070
+  2:
+    floatingPointOperations: 0
+    flops: 0
+    in:
+      eigenEnergies: 0x19ef068
+    name: DefineHolesAndParticles
+    out:
+      slicedEigenEnergies: 0x19f6d58
+    realtime: 0.001749757
+  3:
+    floatingPointOperations: 0
+    flops: 0
+    in:
+      operator: 0x19ee398
+      slicedEigenEnergies: 0x19f6d58
+    name: SliceOperator
+    out:
+      slicedOperator: 0x19e6fb8
+    realtime: 0.001644505
+  4:
+    floatingPointOperations: 0
+    flops: 0
+    in:
+      slicedCoulombVertex: 0x19e6fb8
+    name: VertexCoulombIntegrals
+    out:
+      coulombIntegrals: 0x19f2078
+    realtime: 0.002394294
+  5:
+    floatingPointOperations: 6540330624
+    flops: 19200026209.352989
+    in:
+      adjacentPairsExchange: 0
+      amplitudesConvergence: 1e-08
+      coulombIntegrals: 0x19f2078
+      energyConvergence: 1e-08
+      levelShift: 0
+      linearized: 0
+      maxIterations: 20
+      method: Drccd
+      mixer:
+        maxResidua: 4
+        type: DiisMixer
+      slicedCoulombVertex: 0x19e6fb8
+      slicedEigenEnergies: 0x19f6d58
+    name: CoupledCluster
+    out:
+      amplitudes: 0x1a47c48
+      convergenceReached: 1
+      energy:
+        correlation: -0.2758298986953282
+        direct: -0.4128084206966558
+        exchange: 0.1369785220013276
+        secondOrder: -0.36143028565969504
+        unit: 1
+    realtime: 0.340641755
+  6:
+    floatingPointOperations: 34338854716
+    flops: 29714002666.052773
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals: 0x19f2078
+      energyConvergence: 1e-08
+      integralsSliceSize: 100
+      levelShift: 0
+      maxIterations: 20
+      method: Ccsd
+      mixer:
+        maxResidua: 4
+        type: DiisMixer
+      ppl: 1
+      slicedCoulombVertex: 0x19e6fb8
+      slicedEigenEnergies: 0x19f6d58
+    name: CoupledCluster
+    out:
+      amplitudes: 0x1b1f348
+      convergenceReached: 1
+      energy:
+        correlation: -0.39269658954585018
+        direct: -0.5953888037963122
+        exchange: 0.20269221425046202
+        secondOrder: -0.36143028565969504
+        unit: 1
+    realtime: 1.155645542
+  7:
+    floatingPointOperations: 4235977244
+    flops: 2236584757.7848673
+    in:
+      amplitudes: 0x1b1f348
+      coulombIntegrals: 0x19f2078
+      slicedEigenEnergies: 0x19f6d58
+    name: PerturbativeTriplesReference
+    out:
+      energy:
+        correlation: -0.0063019625641725016
+        unit: 1
+    realtime: 1.893948901
+version: heads/develop-0-g4082441-dirty

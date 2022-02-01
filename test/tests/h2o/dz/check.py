@@ -2,7 +2,7 @@
 
 from testis import read_yaml, compare_energies
 
-out = read_yaml("cc4s.out")
+out = read_yaml("cc4s.out.yaml")
 
 assert out["dryRun"] == 0, "We should not be doing dryRuns now"
 
