@@ -27,7 +27,7 @@ ALGORITHM_REGISTRAR_DEFINITION(VertexCoulombIntegrals)
 
 Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     return run<DefaultDryTensorEngine>(arguments);
   } else {
     return run<DefaultTensorEngine>(arguments);

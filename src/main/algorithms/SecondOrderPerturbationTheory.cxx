@@ -27,7 +27,7 @@ ALGORITHM_REGISTRAR_DEFINITION(SecondOrderPerturbationTheory)
 Ptr<MapNode> SecondOrderPerturbationTheory::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
   Ptr<MapNode> result;
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
     (result = run<Real<>,TE>(arguments))
       || (result = run<Complex<>,TE>(arguments));

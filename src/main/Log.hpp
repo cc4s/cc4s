@@ -17,6 +17,7 @@
 #define LOG_DEFINED
 
 #include <SourceLocation.hpp>
+#include <Cc4s.hpp>
 
 #include <string>
 #include <iostream>
@@ -36,13 +37,22 @@ namespace cc4s {
     static void setRank(const int rank);
     static int getRank();
     static std::ostream &getOutStream() {
+      if (rank == 0 && !Cc4s::dryRun) return std::cout;
+      else return nullStream;
+    }
+    static std::ostream &getErrorStream() {
+      if (rank == 0) return std::cerr;
+      else return nullStream;
+    }
+    static std::ostream &getWarningStream() {
       if (rank == 0) return std::cout;
-      else return logStream;
+      else return nullStream;
     }
     static void setFileName(const std::string &fileName);
     static std::string getFileName();
     static std::ofstream &getLogStream() {
-      return logStream;
+      if (rank == 0) return logStream;
+      else return nullStream;
     }
     static void setOutHeaderFunction(const HeaderFunction &f) {
       outHeaderFunction = f;
@@ -73,6 +83,7 @@ namespace cc4s {
     static int rank;
     static std::string fileName;
     static std::ofstream logStream;
+    static std::ofstream nullStream;
     static HeaderFunction
       outHeaderFunction, errorHeaderFunction, warningHeaderFunction,
       logHeaderFunction;
@@ -90,11 +101,11 @@ namespace cc4s {
 #define ERROR() \
   (Log::getOutStream() << Log::getErrorHeaderFunction()(SOURCE_LOCATION))
 #define ERROR_LOCATION(LOCATION) \
-  (Log::getOutStream() << Log::getErrorHeaderFunction()(LOCATION))
+  (Log::getErrorStream() << Log::getErrorHeaderFunction()(LOCATION))
 #define WARNING() \
-  (Log::getOutStream() << Log::getWarningHeaderFunction()(SOURCE_LOCATION))
+  (Log::getErrorStream() << Log::getWarningHeaderFunction()(SOURCE_LOCATION))
 #define WARNING_LOCATION(LOCATION) \
-  (Log::getOutStream() << Log::getWarningHeaderFunction()(LOCATION))
+  (Log::getErrorStream() << Log::getWarningHeaderFunction()(LOCATION))
 #define LOG() \
   (Log::getLogStream() << Log::getLogHeaderFunction()(SOURCE_LOCATION))
 #define LOG_LOCATION(LOCATION) \

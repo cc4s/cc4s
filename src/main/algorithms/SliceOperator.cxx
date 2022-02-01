@@ -29,7 +29,7 @@ ALGORITHM_REGISTRAR_DEFINITION(SliceOperator)
 Ptr<MapNode> SliceOperator::run(const Ptr<MapNode> &arguments) {
   Ptr<MapNode> result;
   // multiplex calls to template methods
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
     (result = run<Real<>,TE>(arguments))
       || (result = run<Complex<>,TE>(arguments));

@@ -328,7 +328,7 @@ namespace cc4s {
     ) {
       // multiplex different tensor types
       Ptr<Node> writtenNode;
-      if (!Cc4s::options->dryRun) {
+      if (!Cc4s::dryRun) {
         using TE = DefaultTensorEngine;
         writtenNode = TensorSet<Real<64>,TE>::write(node, nodePath, useBinary);
         if (writtenNode) return writtenNode;
@@ -354,7 +354,7 @@ namespace cc4s {
         componentsNode->getMap(firstKey)->getValue<std::string>("scalarType")
       );
       // multiplex different tensor types
-      if (!Cc4s::options->dryRun) {
+      if (!Cc4s::dryRun) {
         using TE = DefaultTensorEngine;
         if (scalarType == TypeTraits<Real<>>::getName()) {
           return TensorSet<Real<>,TE>::read(node, nodePath);

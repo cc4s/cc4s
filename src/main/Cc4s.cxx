@@ -30,13 +30,13 @@
 using namespace cc4s;
 
 Natural<128> Cc4s::getFloatingPointOperations() {
-  return options->dryRun ?
+  return dryRun ?
     Operation<DefaultDryTensorEngine>::getFloatingPointOperations() :
     Operation<DefaultTensorEngine>::getFloatingPointOperations();
 }
 
 void Cc4s::addFloatingPointOperations(const Natural<128> ops) {
-  return options->dryRun ?
+  return dryRun ?
     Operation<DefaultDryTensorEngine>::addFloatingPointOperations(ops) :
     Operation<DefaultTensorEngine>::addFloatingPointOperations(ops);
 }
@@ -104,6 +104,7 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   OUT() << "execution plan read, steps: " << steps->getSize()
     << std::endl << std::endl;
 
+  if (options->dryRunOnly) dryRun = true;
   Natural<128> totalOperations;
   Time totalTime;
   {
@@ -113,17 +114,18 @@ void Cc4s::run(const Ptr<MapNode> &report) {
     for (Natural<> i(0); i < steps->getSize(); ++i) {
       runStep(i, steps->getMap(i));
       // emit report, overwrite from previous step
-      Emitter emitter(Cc4s::options->name + ".out");
+      Emitter emitter(options->name + ".out");
       emitter.emit(report);
     }
   }
+  dryRun = false;
 
-  if (options->dryRun)
+  if (dryRun)
     OUT() << "\nMemory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB\n";
 
   std::stringstream totalRealtime;
   totalRealtime << totalTime;
-  if (options->dryRun){
+  if (dryRun){
     OUT() << "total operations: " << totalOperations / 1e9 << " GFLOP" << std::endl;
   }
   else {
@@ -201,9 +203,9 @@ void Cc4s::printBanner(const Ptr<MapNode> &report) {
   report->setValue("version", std::string(CC4S_VERSION));
   report->setValue("buildDate", buildDate.str());
   report->setValue("compiler", std::string(COMPILER_VERSION));
-  report->setValue("dryRun", options->dryRun);
-  if (options->dryRun) {
-    OUT() << "DRY RUN - nothing will be calculated" << std::endl;
+  report->setValue("dry run only", options->dryRunOnly);
+  if (options->dryRunOnly) {
+    OUT() << "DRY RUN ONLY - nothing will be calculated" << std::endl;
   }
 }
 
@@ -228,7 +230,7 @@ bool Cc4s::isDebugged() {
 
 void Cc4s::listHosts(const Ptr<MapNode> &report) {
   // TODO: list planned execution environment from options
-  if (!options->dryRun) {
+  if (!options->dryRunOnly) {
     char ownName[MPI_MAX_PROCESSOR_NAME];
     int nameLength;
     MPI_Get_processor_name(ownName, &nameLength);
@@ -277,7 +279,7 @@ void Cc4s::listHosts(const Ptr<MapNode> &report) {
 
 Ptr<MpiCommunicator> Cc4s::world;
 Ptr<Options> Cc4s::options;
-
+bool Cc4s::dryRun = false;
 
 int main(int argumentCount, char **arguments) {
   MPI_Init(&argumentCount, &arguments);

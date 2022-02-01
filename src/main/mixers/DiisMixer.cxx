@@ -85,7 +85,7 @@ void DiisMixer<F,TE>::append(
   for ( size_t n(0); n < dim; n++)
     matrix[n+dim*m] = B[n+(N+1)*m];
 
-  if (!Cc4s::options->dryRun) {
+  if (!Cc4s::dryRun) {
     column = inverse(matrix, dim);
   }
 

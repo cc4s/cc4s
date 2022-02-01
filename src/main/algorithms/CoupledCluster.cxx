@@ -37,7 +37,7 @@ Ptr<MapNode> CoupledCluster::run(const Ptr<MapNode> &arguments_){
   this->arguments = arguments_;
   // multiplex calls to template methods
   Ptr<MapNode> result;
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
     (result = run<Real<>,TE>()) || (result = run<Complex<>,TE>());
   } else {
@@ -162,7 +162,7 @@ Ptr<MapNode> CoupledCluster::run() {
       energy->setValue("secondOrder", real(e));
     }
     if (
-      !Cc4s::options->dryRun &&
+      !Cc4s::dryRun &&
       abs(e-previousE) < energyConvergence &&
       residuumNorm < amplitudesConvergence
     ) {

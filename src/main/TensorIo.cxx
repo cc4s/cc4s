@@ -68,7 +68,7 @@ Ptr<Node> TensorIo::write(
 ) {
   // multiplex different tensor types
   Ptr<Node> writtenNode;
-  if (!Cc4s::options->dryRun) {
+  if (!Cc4s::dryRun) {
     using TE = DefaultTensorEngine;
     writtenNode = writeTensor<Real<64>,TE>(node, nodePath, useBinary);
     if (writtenNode) return writtenNode;
@@ -90,7 +90,7 @@ Ptr<Node> TensorIo::read(
 ) {
   auto scalarType(node->getValue<std::string>("scalarType"));
   // multiplex different tensor types
-  if (!Cc4s::options->dryRun) {
+  if (!Cc4s::dryRun) {
     using TE = DefaultTensorEngine;
     if (scalarType == TypeTraits<Real<64>>::getName()) {
       return readTensor<Real<64>,TE>(node, nodePath);
@@ -230,7 +230,7 @@ void TensorIo::writeTensorElementsText(
   std::vector<F> values(localBufferSize);
 
   OUT() << "Writing to text file " << elementsPath << std::endl;
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     stream << "# dry-run: no elements written" << std::endl;
     return;
   }
@@ -280,7 +280,7 @@ void TensorIo::writeTensorElementsBinary(
   )
 
   OUT() << "Writing to binary file " << elementsPath << std::endl;
-  if (Cc4s::options->dryRun) return;
+  if (Cc4s::dryRun) return;
 
   // write tensor elements with values from file
   tensor->readToFile(file);
@@ -310,7 +310,7 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsText(
   // create tensor
   auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
   OUT() << "Reading from text file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return tensor;
+  if (Cc4s::dryRun) return tensor;
 
   // read the values only on root, all others still pariticipate calling MPI
   const size_t bufferSize(std::min(tensor->getElementsCount(), MAX_BUFFER_SIZE));
@@ -363,7 +363,7 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinary(
   auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
 
   OUT() << "Reading from binary file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return tensor;
+  if (Cc4s::dryRun) return tensor;
   // write tensor elements with values from file
   tensor->writeFromFile(file);
   LOG() << "Read " << sizeof(F)*tensor->getElementsCount() <<

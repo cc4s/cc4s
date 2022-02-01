@@ -44,7 +44,7 @@ Ptr<MapNode> DimensionProperty::run(const Ptr<MapNode> &arguments) {
   auto op(arguments->getMap("operator"));
   auto scalarType(op->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
     if (scalarType == TypeTraits<Real<>>::getName()) {
       return run<Real<>,TE>(arguments);
