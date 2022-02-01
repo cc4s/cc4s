@@ -94,7 +94,7 @@ test-run:
 	$(MAKE) -C test run
 
 test-check:
-	$(MAKE) -C test run
+	$(MAKE) -C test check
 
 test-data:
 	$(MAKE) -C test pyyaml
