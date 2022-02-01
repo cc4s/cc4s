@@ -94,7 +94,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
     auto result( \
       Tcc<TE>::template tensor<Real<>>(std::string("V") + sliceName) \
     ); \
-    result->getUnit() = pow(realGammaG##RO##RI->inspect()->getUnit(),2.0); \
+    result->getUnit() = pow(GammaGhh->inspect()->getUnit(),2.0); \
     coulombIntegrals->get(sliceName) = \
       COMPILE_RECIPE(result, ( \
         (*result)["pqsr"] <<= \
@@ -170,7 +170,7 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
     auto result( \
       Tcc<TE>::template tensor<Complex<>>(std::string("V") + sliceName) \
     ); \
-    result->getUnit() = pow(GammaG##RO##RI->inspect()->getUnit(),2.0); \
+    result->getUnit() = pow(GammaGhh->inspect()->getUnit(),2.0); \
     coulombIntegrals->get(sliceName) = \
       COMPILE_RECIPE(result, (\
         (*result)["pqsr"] <<= \
