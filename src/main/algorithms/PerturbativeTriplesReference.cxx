@@ -91,13 +91,17 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
     (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["b"]),
     (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["c"]),
 
-    (*Z)["abcijk"] <<= (*Z)["abcijk"] * map<F>(inverse, (*S)["abcijk"]),
-    (*E)[""] <<= map<F>(conj<F>, (*T)["abcijk"]) * (*Z)["abcijk"],
-    (*E)[""]  += map<F>(conj<F>, (*T)["bacjik"]) * (*Z)["abcijk"],
-    (*E)[""]  += map<F>(conj<F>, (*T)["acbikj"]) * (*Z)["abcijk"],
-    (*E)[""]  += map<F>(conj<F>, (*T)["cbakji"]) * (*Z)["abcijk"],
-    (*E)[""]  += map<F>(conj<F>, (*T)["cabkij"]) * (*Z)["abcijk"],
-    (*E)[""]  += map<F>(conj<F>, (*T)["bcajki"]) * (*Z)["abcijk"]
+    (*Z)["abcijk"]
+      <<= map<F>(conj<F>, (*Z)["abcijk"]) * map<F>(inverse, (*S)["abcijk"])
+  )->execute();
+
+  COMPILE(
+    (*E)[""] <<= (*T)["abcijk"] * (*Z)["abcijk"],
+    (*E)[""]  += (*T)["bacjik"] * (*Z)["abcijk"],
+    (*E)[""]  += (*T)["acbikj"] * (*Z)["abcijk"],
+    (*E)[""]  += (*T)["cbakji"] * (*Z)["abcijk"],
+    (*E)[""]  += (*T)["cabkij"] * (*Z)["abcijk"],
+    (*E)[""]  += (*T)["bcajki"] * (*Z)["abcijk"]
   )->execute();
 
   F eTriples(E->read());
