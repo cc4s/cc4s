@@ -55,8 +55,8 @@
     slicedCoulombVertex: CoulombVertex
     integralsSliceSize: 100
     maxIterations: 30
-    energyConvergence: 1.0E-5
-    amplitudesConvergence: 1.0E-5
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
     mixer:
       type: DiisMixer
       maxResidua: 4
@@ -72,8 +72,6 @@
     coulombPotential: CoulombPotential
     gridVectors: GridVectors
   out:
-    corrected: Corrected
-    uncorrected: Uncorrected
     transitionStructureFactor: SF
 
 - name: Read
@@ -104,6 +102,8 @@
     deltaIntegralsPPHH: DeltaIntegrals
   out:
     {}
+
+# we will add atrip at a later stage
 
 #- name: PerturbativeTriplesReference
 #  in:
