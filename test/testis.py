@@ -274,9 +274,12 @@ def compare_energies(correct_file, test_file, accuracy=1e-7):
                     tenergy = float(out_tstep["energy"][energy_name])
                     diff = abs(cenergy - tenergy)
                     if diff > accuracy:
-                        raise Exception(
-                                "Energy {[name]}.{} should be {} but found {}"
-                                .format(cstep, energy_name, cenergy, tenergy))
+                        raise Exception("Energy {[name]}.{}\n"
+                                        "                   should be {}\n"
+                                        "                   but found {}\n"
+                                        "                   Δε = {}"
+                                        .format(cstep, energy_name,
+                                                cenergy, tenergy, diff))
 
 
 def call(cmd):
