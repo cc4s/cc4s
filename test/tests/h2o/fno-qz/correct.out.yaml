@@ -1,6 +1,6 @@
-buildDate: Feb  1 2022 16:40:52
+buildDate: Feb  2 2022 13:39:29
 compiler: icc (ICC) 19.1.2.254 20200623
-dryRun: 0
+dry run only: 0
 hosts:
   0:
     host: n412-010.vsc4.prov
@@ -61,8 +61,8 @@ steps:
       fileName: EigenEnergies.yaml
     name: Read
     out:
-      destination: 0x146e2f8
-    realtime: 0.036248060
+      destination: 0x2daf488
+    realtime: 0.016883001
   1:
     floatingPointOperations: 0
     flops: 0
@@ -70,21 +70,21 @@ steps:
       fileName: CoulombVertex.yaml
     name: Read
     out:
-      destination: 0x1470318
-    realtime: 0.212365466
+      destination: 0x2dbad88
+    realtime: 0.215213547
   10:
     floatingPointOperations: 3437766144
-    flops: 8855884052.5483017
+    flops: 8838770256.8641415
     in:
-      amplitudes: 0x1b5b8f8
-      coulombIntegrals: 0x1462268
-      slicedEigenEnergies: 0x146ad58
+      amplitudes: 0x3499238
+      coulombIntegrals: 0x2db65f8
+      slicedEigenEnergies: 0x2db47c8
     name: PerturbativeTriples
     out:
       energy:
         correlation: -0.0087270673465142494
         unit: 1
-    realtime: 0.388190058
+    realtime: 0.388941679
   2:
     floatingPointOperations: 0
     flops: 0
@@ -92,8 +92,8 @@ steps:
       fileName: DeltaIntegralsHH.yaml
     name: Read
     out:
-      destination: 0x14619e8
-    realtime: 0.002921173
+      destination: 0x2daf8d8
+    realtime: 0.003060177
   3:
     floatingPointOperations: 0
     flops: 0
@@ -101,8 +101,8 @@ steps:
       fileName: DeltaIntegralsPPHH.yaml
     name: Read
     out:
-      destination: 0x1461298
-    realtime: 0.048253704
+      destination: 0x2dbbb08
+    realtime: 0.048703410
   4:
     floatingPointOperations: 0
     flops: 0
@@ -110,43 +110,43 @@ steps:
       fileName: Mp2PairEnergies.yaml
     name: Read
     out:
-      destination: 0x146af18
-    realtime: 0.002811394
+      destination: 0x2db4b78
+    realtime: 0.003181092
   5:
     floatingPointOperations: 0
     flops: 0
     in:
-      eigenEnergies: 0x146e2f8
+      eigenEnergies: 0x2daf488
     name: DefineHolesAndParticles
     out:
-      slicedEigenEnergies: 0x146ad58
-    realtime: 0.001942379
+      slicedEigenEnergies: 0x2db47c8
+    realtime: 0.002294061
   6:
     floatingPointOperations: 0
     flops: 0
     in:
-      operator: 0x1470318
-      slicedEigenEnergies: 0x146ad58
+      operator: 0x2dbad88
+      slicedEigenEnergies: 0x2db47c8
     name: SliceOperator
     out:
-      slicedOperator: 0x1459918
-    realtime: 0.002356584
+      slicedOperator: 0x2db62a8
+    realtime: 0.002396965
   7:
     floatingPointOperations: 0
     flops: 0
     in:
-      slicedCoulombVertex: 0x1459918
+      slicedCoulombVertex: 0x2db62a8
     name: VertexCoulombIntegrals
     out:
-      coulombIntegrals: 0x1462268
-    realtime: 0.002966875
+      coulombIntegrals: 0x2db65f8
+    realtime: 0.002866897
   8:
     floatingPointOperations: 654495733052
-    flops: 145240113791.28705
+    flops: 145802968267.93683
     in:
       2cc: 0
       amplitudesConvergence: 1e-08
-      coulombIntegrals: 0x1462268
+      coulombIntegrals: 0x2db65f8
       dcsd: 0
       energyConvergence: 1e-08
       integralsSliceSize: 100
@@ -157,29 +157,29 @@ steps:
         maxResidua: 4
         type: DiisMixer
       ppl: 1
-      slicedCoulombVertex: 0x1459918
-      slicedEigenEnergies: 0x146ad58
+      slicedCoulombVertex: 0x2db62a8
+      slicedEigenEnergies: 0x2db47c8
     name: CoupledCluster
     out:
-      amplitudes: 0x1b5b8f8
+      amplitudes: 0x3499238
       convergenceReached: 1
       energy:
         correlation: -0.28130342836593875
         direct: -0.44466398803406526
         exchange: 0.16336055966812651
         secondOrder: -0.27612981111450785
-        unit: inf
-    realtime: 4.506301434
+        unit: 1
+    realtime: 4.488905410
   9:
     floatingPointOperations: 1763817739
-    flops: 84893577936.170181
+    flops: 84734433819.412079
     in:
-      amplitudes: 0x1b5b8f8
-      coulombIntegrals: 0x1462268
-      deltaIntegralsHH: 0x14619e8
-      deltaIntegralsPPHH: 0x1461298
-      mp2PairEnergies: 0x146af18
-      slicedEigenEnergies: 0x146ad58
+      amplitudes: 0x3499238
+      coulombIntegrals: 0x2db65f8
+      deltaIntegralsHH: 0x2daf8d8
+      deltaIntegralsPPHH: 0x2dbbb08
+      mp2PairEnergies: 0x2db4b78
+      slicedEigenEnergies: 0x2db47c8
     name: BasisSetCorrection
     out:
       energy:
@@ -188,5 +188,5 @@ steps:
         secondOrderCorrection: -0.022933201217492261
         uncorrectedCorrelation: -0.28130342836593858
         unit: 1
-    realtime: 0.020776810
-version: heads/develop-0-g4082441-dirty
+    realtime: 0.020815832
+version: heads/develop-0-gae7d6b7
