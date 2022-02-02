@@ -30,10 +30,11 @@ Options::Options(int argumentCount, char **arguments) {
       inFile = arguments[++i];
     } else if (argument == "-n" || argument == "--name") {
       name = arguments[++i];
-    } else if (argument == "-D" || argument == "--dry-run-only") {
+    } else if (argument == "-D" || argument == "--dry-run-only"
+            || argument == "-d") {
       dryRunOnly = true;
     }
   }
-  if (inFile == "") inFile = name + ".in.yaml";
+  if (inFile == "") inFile = name + ".in";
 }
 
