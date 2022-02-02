@@ -1,4 +1,5 @@
 src/atrip/
+__pycache__
 /config.mk
 /extern
 lib
