@@ -238,7 +238,7 @@ namespace cc4s {
       const Natural<> index, const Target &value,
       const SourceLocation &sourceLocation = SOURCE_LOCATION
     ) {
-      get(index) = New<AtomicNode<Target>>(value, sourceLocation);
+      setValue(std::to_string(index), value, sourceLocation);
     }
     template <typename PointedTarget>
     void setPtr(
