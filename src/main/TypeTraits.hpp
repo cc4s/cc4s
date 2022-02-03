@@ -34,47 +34,80 @@ namespace cc4s {
     static std::string getName() {
       return std::string("unspecified type ") + typeid(F).name();
     }
+    enum { IS_PRIMITIVE = false };
   };
 
   template <>
   class TypeTraits<std::string> {
   public:
     static std::string getName() { return "Text"; }
+    enum { IS_PRIMITIVE = true };
   };
   template <>
   class TypeTraits<bool> {
   public:
     static std::string getName() { return "Boolean"; }
+    enum { IS_PRIMITIVE = true };
+  };
+  template <>
+  class TypeTraits<Integer<32>> {
+  public:
+    static std::string getName() { return "Integer32"; }
+    enum { IS_PRIMITIVE = true };
+  };
+  template <>
+  class TypeTraits<Natural<32>> {
+  public:
+    static std::string getName() { return "Natural32"; }
+    enum { IS_PRIMITIVE = true };
   };
   template <>
   class TypeTraits<Integer<64>> {
   public:
     static std::string getName() { return "Integer64"; }
+    enum { IS_PRIMITIVE = true };
   };
   template <>
   class TypeTraits<Natural<64>> {
   public:
     static std::string getName() { return "Natural64"; }
+    enum { IS_PRIMITIVE = true };
+  };
+  template <>
+  class TypeTraits<Integer<128>> {
+  public:
+    static std::string getName() { return "Integer128"; }
+    enum { IS_PRIMITIVE = true };
+  };
+  template <>
+  class TypeTraits<Natural<128>> {
+  public:
+    static std::string getName() { return "Natural128"; }
+    enum { IS_PRIMITIVE = true };
   };
   template <>
   class TypeTraits<Real<64>> {
   public:
     static std::string getName() { return "Real64"; }
+    enum { IS_PRIMITIVE = true };
   };
   template <>
   class TypeTraits<Complex<64>> {
   public:
     static std::string getName() { return "Complex64"; }
+    enum { IS_PRIMITIVE = true };
   };
   template <>
   class TypeTraits<Real<128>> {
   public:
     static std::string getName() { return "Real128"; }
+    enum { IS_PRIMITIVE = true };
   };
   template <>
   class TypeTraits<Complex<128>> {
   public:
     static std::string getName() { return "Complex128"; }
+    enum { IS_PRIMITIVE = true };
   };
 }
 
