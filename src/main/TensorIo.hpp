@@ -80,6 +80,7 @@ namespace cc4s {
     static Ptr<Tensor<F,TE>> readTensorElementsText(
       const std::string &fileName,
       const std::vector<size_t> &lens,
+      const Ptr<TensorNonZeroConditions> &nonZeroConditions,
       const SourceLocation &sourceLocation
     );
 
@@ -87,6 +88,15 @@ namespace cc4s {
     static Ptr<Tensor<F,TE>> readTensorElementsBinary(
       const std::string &fileName,
       const std::vector<size_t> &lens,
+      const Ptr<TensorNonZeroConditions> &nonZeroConditions,
+      const SourceLocation &sourceLocation
+    );
+
+    template <typename F, typename TE>
+    static Ptr<Tensor<F,TE>> readTensorElementsBinaryDense(
+      const std::string &fileName,
+      const std::vector<size_t> &lens,
+      const Ptr<TensorNonZeroConditions> &nonZeroConditions,
       const SourceLocation &sourceLocation
     );
 
