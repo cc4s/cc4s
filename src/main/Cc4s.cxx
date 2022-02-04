@@ -41,6 +41,22 @@ void Cc4s::addFloatingPointOperations(const Natural<128> ops) {
     Operation<DefaultTensorEngine>::addFloatingPointOperations(ops);
 }
 
+void Cc4s::runSteps(const Ptr<MapNode> &steps, const std::string &stage) {
+  Natural<128> totalOperations;
+  Time totalTime;
+  {
+    OperationsCounter totalOperationsCounter(&totalOperations);
+    Timer totalTimer(&totalTime);
+
+    for (Natural<> i(0); i < steps->getSize(); ++i) {
+      runStep(i, steps->getMap(i));
+      // emit report, overwrite from previous step
+      Emitter emitter(options->name + "." + stage + ".yaml");
+      emitter.emit(report);
+    }
+  }
+}
+
 void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   auto algorithmName(step->getSymbol("name"));
   OUT() << "step: " << (i+1) << ", " << algorithmName << std::endl;
@@ -104,24 +120,16 @@ void Cc4s::run(const Ptr<MapNode> &report) {
   OUT() << "execution plan read, steps: " << steps->getSize()
     << std::endl << std::endl;
 
-  if (options->dryRunOnly) dryRun = true;
-  Natural<128> totalOperations;
-  Time totalTime;
-  {
-    OperationsCounter totalOperationsCounter(&totalOperations);
-    Timer totalTimer(&totalTime);
 
-    for (Natural<> i(0); i < steps->getSize(); ++i) {
-      runStep(i, steps->getMap(i));
-      // emit report, overwrite from previous step
-      Emitter emitter(options->name + ".out.yaml");
-      emitter.emit(report);
-    }
-  }
+  dryRun = true;
+  runSteps(steps, "dry");
   dryRun = false;
+  OUT() << "\nMemory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB\n";
 
-  if (dryRun)
-    OUT() << "\nMemory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB\n";
+  if (options->dryRunOnly) return;
+  
+  runSteps(steps, "out");
+
 
   std::stringstream totalRealtime;
   totalRealtime << totalTime;
