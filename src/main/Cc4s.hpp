@@ -38,7 +38,7 @@ namespace cc4s {
     static void addFloatingPointOperations(const Natural<128> ops);
 
   protected:
-    void runSteps(const Ptr<MapNode> &step, const std::string &stage);
+    void runSteps(const bool dry = false);
     void runStep(const Natural<> i, const Ptr<MapNode> &step);
     void fetchSymbols(const Ptr<MapNode> &arguments);
     void storeSymbols(const Ptr<MapNode> &result,const Ptr<MapNode> &variables);
@@ -46,7 +46,7 @@ namespace cc4s {
     Ptr<MapNode> getExecutionEnvironment();
     Ptr<MapNode> getHostList();
 
-    Ptr<MapNode> storage;
+    Ptr<MapNode> executionEnvironment, storage;
   };
 
   class OperationsCounter {

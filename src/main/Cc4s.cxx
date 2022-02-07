@@ -31,23 +31,9 @@ using namespace cc4s;
 
 void Cc4s::run() {
   printBanner();
-
-  // parse input
-  Parser parser(options->inFile);
-  auto input(parser.parse());
-  auto steps(input->toPtr<MapNode>());
-  ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
-  OUT() << "execution plan read, steps: " << steps->getSize()
-    << std::endl << std::endl;
-
-  dryRun = true;
-  runSteps(steps, "dry");
-  dryRun = false;
-  OUT() << "\nMemory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB\n";
-
+  runSteps(true);
   if (options->dryRunOnly) return;
-  
-  runSteps(steps, "out");
+  runSteps();
 }
 
 
@@ -63,13 +49,24 @@ void Cc4s::addFloatingPointOperations(const Natural<128> ops) {
     Operation<DefaultTensorEngine>::addFloatingPointOperations(ops);
 }
 
-void Cc4s::runSteps(const Ptr<MapNode> &steps,  const std::string &stage) {
+void Cc4s::runSteps(const bool dry) {
+  auto output(New<MapNode>(SOURCE_LOCATION));
+  output->get("executionEnvironment") = executionEnvironment;
+
+  Cc4s::dryRun = dry;
+  // parse input
+  Parser parser(options->inFile);
+  auto input(parser.parse());
+  auto steps(input->toPtr<MapNode>());
+  ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
+
   // start with empty storage
   storage = New<MapNode>(SOURCE_LOCATION);
 
-  auto report(New<MapNode>(SOURCE_LOCATION));
-  report->get("executionEnvironment") = getExecutionEnvironment();
+  auto executedSteps(New<MapNode>(SOURCE_LOCATION));
+  output->get("steps") = executedSteps;
 
+  auto stage( dry ? "dry" : "out" );
   Natural<128> totalOperations;
   Time totalTime;
   {
@@ -79,12 +76,13 @@ void Cc4s::runSteps(const Ptr<MapNode> &steps,  const std::string &stage) {
     for (Natural<> i(0); i < steps->getSize(); ++i) {
       auto step(steps->getMap(i));
       runStep(i, step);
-      report->get(i) = step;
-      // emit report, overwrite from previous step
+      executedSteps->get(i) = step;
+      // emit output, overwrite from previous step
       Emitter emitter(options->name + "." + stage + ".yaml");
-      emitter.emit(report);
+      emitter.emit(output);
     }
   }
+  Cc4s::dryRun = false;
 
   auto statistics(New<MapNode>(SOURCE_LOCATION));
   std::stringstream totalRealtime;
@@ -94,14 +92,20 @@ void Cc4s::runSteps(const Ptr<MapNode> &steps,  const std::string &stage) {
     << "speed: "
     << totalOperations/1e9 / totalTime.getFractionalSeconds()
     << " GFLOP/s" << std::endl;
+  if (dry) {
+    OUT() << "Dry run finished." << std::endl;
+    OUT() << "Memory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
+    OUT() << "--" << std::endl;
+    LOG() << "memory estimate: " << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
+  }
   statistics->setValue("realtime", totalRealtime.str());
   statistics->setValue("floatingPointOperations", totalOperations);
   statistics->setValue("flops", totalOperations/totalTime.getFractionalSeconds());
-  report->get("statistics") = statistics;
+  output->get("statistics") = statistics;
 
-  // emit final stage report
+  // emit final stage output
   Emitter emitter(options->name + "." + stage + ".yaml");
-  emitter.emit(report);
+  emitter.emit(output);
 }
 
 void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
@@ -195,10 +199,8 @@ void Cc4s::printBanner() {
         << "   / /__/ /__/__  __(__  ) " << std::endl
         << "   \\___/\\___/  /_/ /____/  " << std::endl
         << "  Coupled Cluster for Solids" << std::endl << std::endl;
-}
 
-Ptr<MapNode> Cc4s::getExecutionEnvironment() {
-  auto executionEnvironment(New<MapNode>(SOURCE_LOCATION));
+  executionEnvironment = New<MapNode>(SOURCE_LOCATION);
   std::stringstream buildDate;
   buildDate << __DATE__ << " " << __TIME__;
   time_t rawtime;
@@ -208,7 +210,7 @@ Ptr<MapNode> Cc4s::getExecutionEnvironment() {
   OUT() << "build date: " << buildDate.str() << std::endl;
   OUT() << "compiler: " << COMPILER_VERSION << std::endl;
   OUT() << "total processes: " << world->getProcesses() << std::endl;
-  OUT() << "calculation started on: " << ctime (&rawtime) << std::endl << std::endl;
+  OUT() << "calculation started on: " << ctime (&rawtime) << std::endl;
   executionEnvironment->setValue("version", std::string(CC4S_VERSION));
   executionEnvironment->setValue("buildDate", buildDate.str());
   executionEnvironment->setValue("compiler", std::string(COMPILER_VERSION));
@@ -219,7 +221,6 @@ Ptr<MapNode> Cc4s::getExecutionEnvironment() {
     OUT() << "DRY RUN ONLY - nothing will be calculated" << std::endl;
   }
   executionEnvironment->get("hosts") = getHostList();
-  return executionEnvironment;
 }
 
 Ptr<MapNode> Cc4s::getHostList() {
