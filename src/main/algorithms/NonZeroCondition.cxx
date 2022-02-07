@@ -42,28 +42,27 @@ ALGORITHM_REGISTRAR_DEFINITION(NonZeroCondition)
  * Hamiltonian's indices must match.
  */
 Ptr<MapNode> NonZeroCondition::run(const Ptr<MapNode> &arguments) {
-  auto op(arguments->getMap("operator"));
-  auto scalarType(op->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
+  Ptr<MapNode> result;
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return run<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return run<Complex<>,TE>(arguments);
-    }
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   } else {
     using TE = DefaultTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return run<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return run<Complex<>,TE>(arguments);
-    }
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   }
   ASSERT_LOCATION(
-    false, "scalar type '" + scalarType + "' not supported",
-    op->get("scalarType")->sourceLocation
+    result, "expecting operator to be a tensor", arguments->sourceLocation
   );
+  return result;
 }
 
 template <typename F, typename TE>
@@ -71,11 +70,8 @@ Ptr<MapNode> NonZeroCondition::run(
   const Ptr<MapNode> &arguments
 ) {
   typedef TensorExpression<F,TE> T;
-  auto op(arguments->getMap("operator"));
-  auto tensorExpression(op->getPtr<T>("data"));
-  ASSERT_LOCATION(
-    tensorExpression, "expecting operator to be a tensor", op->sourceLocation
-  );
+  auto tensorExpression(arguments->getPtr<T>("operator"));
+  if (!tensorExpression) return nullptr;
   auto tensor(tensorExpression->inspect());
 
   auto conditionName(arguments->getValue<std::string>("conditionName"));
@@ -112,23 +108,10 @@ Ptr<MapNode> NonZeroCondition::run(
         values[t] = F(1);
       }
       Delta->write(indicesCount, indices.data(), values.data());
-
-      // build meta data of Delta tensor
-      auto nonZeroConditionNode( New<MapNode>(op->sourceLocation) );
-      nonZeroConditionNode->setValue("version", std::string("v1.0"));
-      nonZeroConditionNode->setValue("scalarType", TypeTraits<F>::getName());
-      auto dimensionsNode( New<MapNode>(SOURCE_LOCATION) );
-      for (Natural<> d(0); d < conditionLens.size(); ++d) {
-        auto dimensionNode( New<MapNode>(SOURCE_LOCATION) );
-        dimensionNode->setValue("length", conditionLens[d]);
-        dimensionNode->setValue("type", conditionDimensions[d]);
-        dimensionsNode->get(d) = dimensionNode;
-      }
-      nonZeroConditionNode->get("dimensions") = dimensionsNode;
-      nonZeroConditionNode->setPtr("data", Delta);
-
+      Delta->getUnit() = 1.0;
+      // generate result
       auto result(New<MapNode>(SOURCE_LOCATION));
-      result->get("nonZeroCondition") = nonZeroConditionNode;
+      result->setPtr("nonZeroCondition", Delta);
       return result;
     }
   }
@@ -138,7 +121,7 @@ Ptr<MapNode> NonZeroCondition::run(
       + tensor->getName()
       + " does not have a non-zero condition named "
       + conditionName,
-    op->sourceLocation
+    arguments->sourceLocation
   );
 }
 
