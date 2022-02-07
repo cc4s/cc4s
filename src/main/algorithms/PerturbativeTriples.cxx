@@ -19,6 +19,7 @@
 #include <Cc4s.hpp>
 #include <TensorSet.hpp>
 #include <MathFunctions.hpp>
+#include <iomanip>
 #include <atrip.hpp>
 #include <atrip/Debug.hpp>
 
@@ -28,35 +29,40 @@ ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 #define Q(...) #__VA_ARGS__
 #define QUOTE(...) Q(__VA_ARGS__)
 
-Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
-  using F = Real<>;
+
+template <typename F>
+Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   using TE = DefaultTensorEngine;
+  {
+    auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
+    if (!amplitudes) return nullptr;
+  }
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
   atrip::Atrip::init();
-  atrip::Atrip::Input in;
+  atrip::Atrip::Input<F> in;
 
 #define __V__(_idx)                                            \
     ([&arguments]() {                                          \
       COMPILE(arguments                                        \
-        ->getPtr<TensorSet<Real<>,TE>>("coulombIntegrals")     \
+        ->getPtr<TensorSet<F,TE>>("coulombIntegrals")          \
         ->get(#_idx)                                           \
         )->execute();                                          \
       return                                                   \
           &(arguments                                          \
-            ->getPtr<TensorSet<Real<>,TE>>("coulombIntegrals") \
+            ->getPtr<TensorSet<F,TE>>("coulombIntegrals")      \
             ->get(#_idx)                                       \
             ->evaluate()                                       \
             ->getMachineTensor()                               \
             ->tensor);                                         \
     })()
-#define __T__(_idx) \
-   &(arguments                                                    \
-      ->getPtr<TensorSet<Real<>,TE>>("amplitudes")                \
-      ->get(_idx)                                                 \
-      ->evaluate()                                                \
-      ->getMachineTensor()                                        \
+#define __T__(_idx)                                          \
+   &(arguments                                               \
+      ->getPtr<TensorSet<F,TE>>("amplitudes")                \
+      ->get(_idx)                                            \
+      ->evaluate()                                           \
+      ->getMachineTensor()                                   \
       ->tensor)
 #define __eps__(_idx)                                        \
    &(arguments                                               \
@@ -66,12 +72,21 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
       ->getMachineTensor()                                   \
       ->tensor)
 
+  CTF::Tensor<F>
+      epsi(1, (__eps__(h))->lens, (__eps__(h))->sym)
+    , epsa(1, (__eps__(p))->lens, (__eps__(p))->sym)
+    ;
+  const auto toComplex
+    = CTF::Transform<double, F>([](double d, F &f) { f = d; });
+  toComplex((*__eps__(h))["i"], epsi["i"]);
+  toComplex((*__eps__(p))["a"], epsa["a"]);
+
   // this is a hack so that a CTF::World gets created for sure
   CTF::World _w(MPI_COMM_WORLD);
   in
     // setup tensors
-    .with_epsilon_i(__eps__(h))
-    .with_epsilon_a(__eps__(p))
+    .with_epsilon_i(&epsi)
+    .with_epsilon_a(&epsa)
     .with_Tai(__T__("ph"))
     .with_Tabij(__T__("pphh"))
     .with_Vabij(__V__(pphh))
@@ -117,22 +132,22 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
 #undef __T__
 #undef __eps__
 
-  auto out = atrip::Atrip::run(in);
+  auto out = atrip::Atrip::run<F>(in);
   OUT() << "(T) correlation energy: "
         << std::setprecision(15) << std::setw(23)
         << out.energy << std::endl;
 
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
-  energy->setValue("correlation", real(out.energy));
+  energy->setValue("correlation", std::real(out.energy));
 
   if (arguments->isGiven("mp2PairEnergies")) {
-    const Real<>
+    const F
       triples_star = computeCssdPtStar<F, TE>(arguments, out.energy);
     OUT() << "(T*) correlation energy: "
           << std::setprecision(15) << std::setw(23)
-          << triples_star << std::endl;
-    energy->setValue("starCorrelation", real(triples_star));
+          << std::real(triples_star) << std::endl;
+    energy->setValue("starCorrelation", std::real(triples_star));
   }
 
   using TSr = TensorSet<Real<>, TE>;
@@ -140,5 +155,13 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
 
   result->get("energy") = energy;
 
+  return result;
+}
+
+Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
+  Ptr<MapNode> result;
+     (result = runAtrip<Real<>>(arguments))
+  || (result = runAtrip<Complex<>>(arguments))
+  ;
   return result;
 }
