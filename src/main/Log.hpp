@@ -99,7 +99,7 @@ namespace cc4s {
 #define OUT_LOCATION(LOCATION) \
   (Log::getOutStream() << Log::getOutHeaderFunction()(LOCATION))
 #define ERROR() \
-  (Log::getOutStream() << Log::getErrorHeaderFunction()(SOURCE_LOCATION))
+  (Log::getErrorStream() << Log::getErrorHeaderFunction()(SOURCE_LOCATION))
 #define ERROR_LOCATION(LOCATION) \
   (Log::getErrorStream() << Log::getErrorHeaderFunction()(LOCATION))
 #define WARNING() \

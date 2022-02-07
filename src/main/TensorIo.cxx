@@ -401,7 +401,7 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinary(
   const SourceLocation &sourceLocation
 ) {
   if (nonZeroConditions->all.size() == 0) {
-    return readTensorElementsBinary<F,TE>(
+    return readTensorElementsBinaryDense<F,TE>(
       fileName, lens, nonZeroConditions, sourceLocation
     );
   }
