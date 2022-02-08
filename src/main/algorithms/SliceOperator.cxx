@@ -31,12 +31,18 @@ Ptr<MapNode> SliceOperator::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
-    (result = run<Real<>,TE>(arguments))
-      || (result = run<Complex<>,TE>(arguments));
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   } else {
     using TE = DefaultTensorEngine;
-    (result = run<Real<>,TE>(arguments))
-      || (result = run<Complex<>,TE>(arguments));
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   }
   ASSERT_LOCATION(
     result, "unsupported tensor type as 'operator'",

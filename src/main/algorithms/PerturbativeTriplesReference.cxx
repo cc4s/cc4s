@@ -32,12 +32,18 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
-    (result = run<Real<>,TE>(arguments))
-      || (result = run<Complex<>,TE>(arguments));
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   } else {
     using TE = DefaultTensorEngine;
-    (result = run<Real<>,TE>(arguments))
-      || (result = run<Complex<>,TE>(arguments));
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   }
   ASSERT_LOCATION(
     result, "unsupported tensor type as 'amplitudes'",
@@ -104,6 +110,16 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
     (*E)[""]  += (*T)["bcajki"] * (*Z)["abcijk"]
   )->execute();
 
+  /* DUPLICATION WARNING:
+   * --------------------
+   *
+   * If you change something in the output of this algorithm
+   * be sure to change accordingly the output of the
+   * PerturbativeTriples, as they should be
+   * symmetric.
+   *
+   */
+
   F eTriples(E->read());
   OUT() << "(T) correlation energy: "
         << std::setprecision(15) << std::setw(23)
@@ -116,10 +132,10 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   if (arguments->isGiven("mp2PairEnergies")) {
     const Real<>
       triples_star = computeCssdPtStar<F, TE>(arguments, real(eTriples));
-    OUT() << "(T*) correlation energy: "
+    OUT() << "(T*)-Bsie energy correction: "
           << std::setprecision(15) << std::setw(23)
           << triples_star << std::endl;
-    energy->setValue("starCorrelation", real(triples_star));
+    energy->setValue("starCorrection", real(triples_star));
   }
 
   auto result(New<MapNode>(SOURCE_LOCATION));
