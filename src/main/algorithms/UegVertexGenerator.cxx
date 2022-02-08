@@ -61,7 +61,7 @@ ALGORITHM_REGISTRAR_DEFINITION(UegVertexGenerator)
 Ptr<MapNode> UegVertexGenerator::run(const Ptr<MapNode> &arguments) {
   Ptr<MapNode> result;
   // multiplex calls to template methods
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
     (result = run<Real<>,TE>(arguments))
       || (result = run<Complex<>,TE>(arguments));
@@ -224,7 +224,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   result->setPtr("coulombVertex", coulombVertex);
 
   // if we are in a dryRun there is nothing more to do
-  if (Cc4s::options->dryRun) return result;
+  if (Cc4s::dryRun) return result;
 
   //only rank 0 writes the data to the tensor
   std::vector<size_t> idx;
