@@ -2,7 +2,7 @@
 PYTHON ?= python3
 CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
-CC4S_RUN ?= $(CC4S_PATH)
+CC4S_RUN ?= mpirun $(CC4S_PATH)
 ifneq ($(MAKECMDGOALS),data)
 ifneq ($(MAKECMDGOALS),pyyaml)
 OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum "$(CC4S_PATH)" | cut -d ' ' -f1).testis

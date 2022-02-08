@@ -122,6 +122,15 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
         << std::setprecision(15) << std::setw(23)
         << out.energy << std::endl;
 
+  /* DUPLICATION WARNING:
+   * --------------------
+   *
+   * If you change something in the output of this algorithm
+   * be sure to change accordingly the output of the
+   * PerturbativeTriplesReference, as they should be
+   * symmetric.
+   *
+   */
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correlation", real(out.energy));
@@ -129,10 +138,10 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
   if (arguments->isGiven("mp2PairEnergies")) {
     const Real<>
       triples_star = computeCssdPtStar<F, TE>(arguments, out.energy);
-    OUT() << "(T*) correlation energy: "
+    OUT() << "(T*)-Bsie energy correction: "
           << std::setprecision(15) << std::setw(23)
           << triples_star << std::endl;
-    energy->setValue("starCorrelation", real(triples_star));
+    energy->setValue("starCorrection", real(triples_star));
   }
 
   using TSr = TensorSet<Real<>, TE>;

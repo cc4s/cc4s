@@ -131,7 +131,7 @@ void TensorReader::readData(
   Ptr<Node> tensorData;
   // multiplex calls to template methods depending on tensor engine and type
   if (binary) {
-    if (Cc4s::options->dryRun) {
+    if (Cc4s::dryRun) {
       using TE = DefaultDryTensorEngine;
       if (scalarType == TypeTraits<Real<64>>::getName()) {
         tensorData = readBinary<Real<64>,TE>(
@@ -163,7 +163,7 @@ void TensorReader::readData(
       }
     }
   } else {
-    if (Cc4s::options->dryRun) {
+    if (Cc4s::dryRun) {
       using TE = DefaultDryTensorEngine;
       if (scalarType == TypeTraits<Real<64>>::getName()) {
         tensorData = readText<Real<64>,TE>(
@@ -226,7 +226,7 @@ Ptr<Node> TensorReader::readText(
     New<PointerNode<TensorExpression<F,TE>>>(A, SourceLocation(fileName,1))
   );
   OUT() << "Reading from text file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return result;
+  if (Cc4s::dryRun) return result;
 
   LOG() << "#non-zero conditions: " << nonZeroConditions->all.size() << std::endl;
   TensorNonZeroBlockIterator blockIterator(nonZeroConditions);
@@ -297,7 +297,7 @@ Ptr<Node> TensorReader::readBinary(
     New<PointerNode<TensorExpression<F,TE>>>(A, SourceLocation(fileName,1))
   );
   OUT() << "Reading from binary file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return result;
+  if (Cc4s::dryRun) return result;
 
   LOG() << "#non-zero conditions: " << nonZeroConditions->all.size() << std::endl;
   TensorNonZeroBlockIterator blockIterator(nonZeroConditions);
@@ -371,7 +371,7 @@ Ptr<Node> TensorReader::readBinaryDense(
   );
 
   OUT() << "Reading from dense binary file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return result;
+  if (Cc4s::dryRun) return result;
   // write tensor data with values from file
   A->writeFromFile(file);
   LOG() << "Read " << sizeof(F)*A->getElementsCount() <<

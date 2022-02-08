@@ -134,7 +134,7 @@ namespace cc4s {
      * \brief Copy assignment operator copying the tensors owned by a.
      **/
     TensorSet &operator =(const TensorSet &a) {
-      copyComponents(a.componentTensors);
+      copyComponents(a.components);
       return *this;
     }
 
@@ -328,7 +328,7 @@ namespace cc4s {
     ) {
       // multiplex different tensor types
       Ptr<Node> writtenNode;
-      if (!Cc4s::options->dryRun) {
+      if (!Cc4s::dryRun) {
         using TE = DefaultTensorEngine;
         writtenNode = TensorSet<Real<64>,TE>::write(node, nodePath, useBinary);
         if (writtenNode) return writtenNode;
@@ -354,7 +354,7 @@ namespace cc4s {
         componentsNode->getMap(firstKey)->getValue<std::string>("scalarType")
       );
       // multiplex different tensor types
-      if (!Cc4s::options->dryRun) {
+      if (!Cc4s::dryRun) {
         using TE = DefaultTensorEngine;
         if (scalarType == TypeTraits<Real<>>::getName()) {
           return TensorSet<Real<>,TE>::read(node, nodePath);
@@ -387,7 +387,7 @@ namespace cc4s {
   ) {
     TensorSet<F,TE> result(a);
     result += b;
-    return std::move(result);
+    return result;
   }
   /**
    * \brief Returns the sum of two TensorSets a and b, where
@@ -422,7 +422,7 @@ namespace cc4s {
   ) {
     TensorSet<F,TE> result(a);
     result -= b;
-    return std::move(result);
+    return result;
   }
   /**
    * \brief Returns the difference between two TensorSets a and b, where
@@ -457,7 +457,7 @@ namespace cc4s {
   inline TensorSet<F,TE> operator *(const TensorSet<F,TE> &a, const F s) {
     TensorSet<F,TE> result(a);
     result *= s;
-    return std::move(result);
+    return result;
   }
   /**
    * \brief Returns the scalar multiple of the TensorSet a

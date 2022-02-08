@@ -106,7 +106,7 @@ void TensorWriter::writeData(
   // multiplex calls to template methods depending on tensor engine and type
   if (binary) {
     fileName = baseName + ".bin";
-    if (Cc4s::options->dryRun) {
+    if (Cc4s::dryRun) {
       using TE = DefaultDryTensorEngine;
       if (scalarType == TypeTraits<Real<64>>::getName()) {
         writeBinary(
@@ -147,7 +147,7 @@ void TensorWriter::writeData(
     }
   } else {
     fileName = baseName + ".dat";
-    if (Cc4s::options->dryRun) {
+    if (Cc4s::dryRun) {
       using TE = DefaultDryTensorEngine;
       if (scalarType == TypeTraits<Real<64>>::getName()) {
         writeText(
@@ -228,7 +228,7 @@ void TensorWriter::writeText(
   std::vector<F> values(localBufferSize);
 
   OUT() << "Writing to text file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     stream << "# dry-run: no data written" << std::endl;
     return;
   }
@@ -289,7 +289,7 @@ void TensorWriter::writeBinary(
   }
 
   OUT() << "Writing to binary file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return;
+  if (Cc4s::dryRun) return;
 
   // write tensor data with values from file
   tensor->readToFile(file);

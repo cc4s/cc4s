@@ -41,40 +41,35 @@ ALGORITHM_REGISTRAR_DEFINITION(DimensionProperty)
  * The matrix is zero otherwise.
  */
 Ptr<MapNode> DimensionProperty::run(const Ptr<MapNode> &arguments) {
-  auto op(arguments->getMap("operator"));
-  auto scalarType(op->getValue<std::string>("scalarType"));
   // multiplex calls to template methods
-  if (Cc4s::options->dryRun) {
+  Ptr<MapNode> result;
+  if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return run<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return run<Complex<>,TE>(arguments);
-    }
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   } else {
     using TE = DefaultTensorEngine;
-    if (scalarType == TypeTraits<Real<>>::getName()) {
-      return run<Real<>,TE>(arguments);
-    } else if (scalarType == TypeTraits<Complex<>>::getName()) {
-      return run<Complex<>,TE>(arguments);
-    }
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   }
   ASSERT_LOCATION(
-    false, "scalar type '" + scalarType + "' not supported",
-    op->get("scalarType")->sourceLocation
+    result, "expecting operator to be a tensor", arguments->sourceLocation
   );
+  return result;
 }
 
 template <typename F, typename TE>
 Ptr<MapNode> DimensionProperty::run(
   const Ptr<MapNode> &arguments
 ) {
-  auto op(arguments->getMap("operator"));
-  auto tensorExpression(op->getPtr<TensorExpression<F,TE>>("data"));
-  ASSERT_LOCATION(
-    tensorExpression,
-    "expecting operator to be a tensor expression", op->sourceLocation
-  );
+  auto tensorExpression(arguments->getPtr<TensorExpression<F,TE>>("operator"));
+  if (!tensorExpression) return nullptr;
 
   auto tensor(tensorExpression->inspect());
   auto dimensionIndex(arguments->getValue<Natural<>>("dimension"));
@@ -86,7 +81,7 @@ Ptr<MapNode> DimensionProperty::run(
       + tensor->getName()
       + " has no dimension #"
       + std::to_string(dimensionIndex),
-    op->sourceLocation
+    arguments->sourceLocation
   );
 
   auto propertyIt(
@@ -100,7 +95,7 @@ Ptr<MapNode> DimensionProperty::run(
       + std::to_string(dimensionIndex)
       + " does not have a property "
       + propertyName,
-    op->sourceLocation
+    arguments->sourceLocation
   );
   auto property(propertyIt->second);
 
@@ -126,23 +121,9 @@ Ptr<MapNode> DimensionProperty::run(
   }
   P->write(indices.size(), indices.data(), values.data());
 
-  // build meta data of Delta tensor
-  auto DimensionPropertyNode( New<MapNode>(op->sourceLocation) );
-  DimensionPropertyNode->setValue("version", std::string("v1.0"));
-  DimensionPropertyNode->setValue("scalarType", TypeTraits<F>::getName());
-  auto dimensionsNode( New<MapNode>(SOURCE_LOCATION) );
-  for (Natural<> d(0); d < lens.size(); ++d) {
-    auto dimensionNode( New<MapNode>(SOURCE_LOCATION) );
-    dimensionNode->setValue("length", lens[d]);
-    dimensionNode->setValue("type", types[d]);
-    // NOTE: no type written
-    dimensionsNode->get(d) = dimensionNode;
-  }
-  DimensionPropertyNode->get("dimensions") = dimensionsNode;
-  DimensionPropertyNode->setPtr("data", P);
-
+  // build result
   auto result(New<MapNode>(SOURCE_LOCATION));
-  result->get("dimensionProperty") = DimensionPropertyNode;
+  result->setPtr("dimensionProperty", P);
   return result;
 }
 

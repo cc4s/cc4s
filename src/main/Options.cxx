@@ -23,16 +23,16 @@ using namespace cc4s;
 Options::Options(int argumentCount, char **arguments) {
   name = "cc4s";
   inFile = "";
-  dryRun = false;
+  dryRunOnly = false;
   for (int i(0); i < argumentCount; ++i) {
     std::string argument(arguments[i]);
-    // deprecated: old options
-    if (argument == "-i" || argument == "-file") {
+    if (argument == "-i" || argument == "--input") {
       inFile = arguments[++i];
     } else if (argument == "-n" || argument == "--name") {
       name = arguments[++i];
-    } else if (argument == "--dry-run" || argument == "-dryRun") {
-      dryRun = true;
+    } else if (argument == "-D" || argument == "--dry-run-only"
+            || argument == "-d") {
+      dryRunOnly = true;
     }
   }
   if (inFile == "") inFile = name + ".in";

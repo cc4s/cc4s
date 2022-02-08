@@ -20,6 +20,7 @@
 #include <Complex.hpp>
 #include <Vector.hpp>
 
+#include <vector>
 #include "mpi.h"
 
 namespace cc4s {
@@ -149,6 +150,9 @@ namespace cc4s {
     static MPI_Datatype elementType() { return MPI_DOUBLE_COMPLEX; }
     static Natural<> elementCount() { return 1; }
   };
+
+//  template <typename F, Natural<> D>
+//  class Vector;
 
   template <typename F, Natural<> D>
   class MpiTypeTraits<Vector<F, D>> {

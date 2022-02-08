@@ -153,6 +153,12 @@ namespace cc4s {
     }
     template <typename Target>
     Target getValue(const std::string &key) {
+      static_assert(
+        TypeTraits<Target>::IS_PRIMITIVE,
+        "Cannot use getValue<Target> with non-standard atomic type Target. "
+        "See TypeTraits.hpp for standard atomic types. "
+        "Use getPtr<Type> for pointers."
+      );
       ASSERT_LOCATION(get(key), "expecting key '" + key + "'", sourceLocation);
       // first, try to convert to expected type node
       auto targetAtomNode(get(key)->toPtr<AtomicNode<Target>>());
@@ -219,6 +225,12 @@ namespace cc4s {
       const std::string &key, const Target &value,
       const SourceLocation &sourceLocation = SOURCE_LOCATION
     ) {
+      static_assert(
+        TypeTraits<Target>::IS_PRIMITIVE,
+        "Cannot use setValue<Target> with non-primitive atomic type Target. "
+        "See TypeTraits.hpp for primitive atomic types. "
+        "Use setPtr<Type> for pointers."
+      );
       get(key) = New<AtomicNode<Target>>(value, sourceLocation);
     }
     template <typename Target>
@@ -226,7 +238,7 @@ namespace cc4s {
       const Natural<> index, const Target &value,
       const SourceLocation &sourceLocation = SOURCE_LOCATION
     ) {
-      get(index) = New<AtomicNode<Target>>(value, sourceLocation);
+      setValue(std::to_string(index), value, sourceLocation);
     }
     template <typename PointedTarget>
     void setPtr(

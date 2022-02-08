@@ -29,7 +29,7 @@ Ptr<MapNode> BasisSetCorrection::run(
   auto result(New<MapNode>(SOURCE_LOCATION));
   // multiplex calls to template methods
   bool success(false);
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
     success =
       run<Real<>,TE>(arguments, result) ||

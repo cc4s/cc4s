@@ -253,6 +253,35 @@ def run_in_test(test, script_file):
                    )
 
 
+def compare_energies(correct_file, test_file, accuracy=1e-7):
+    import yaml
+    with open(correct_file) as fcorrect:
+        with open(test_file) as ftest:
+            correct_yaml = yaml.load(fcorrect)
+            test_yaml = yaml.load(ftest)
+            correct_steps = correct_yaml["steps"]
+            test_steps = test_yaml["steps"]
+            for step_idx in correct_steps:
+                cstep = correct_steps[step_idx]
+                tstep = test_steps[step_idx]
+                if cstep["name"] != tstep["name"]:
+                    raise Exception("Name mismatch: {[name]} is not {[name]}"
+                                    .format(cstep, tstep))
+                out_cstep = cstep["out"]
+                out_tstep = tstep["out"]
+                for energy_name in out_cstep.get("energy", []):
+                    cenergy = float(out_cstep["energy"][energy_name])
+                    tenergy = float(out_tstep["energy"][energy_name])
+                    diff = abs(cenergy - tenergy)
+                    if diff > accuracy:
+                        raise Exception("Energy {[name]}.{}\n"
+                                        "                   should be {}\n"
+                                        "                   but found {}\n"
+                                        "                   Δε = {}"
+                                        .format(cstep, energy_name,
+                                                cenergy, tenergy, diff))
+
+
 def call(cmd):
     assert isinstance(cmd, str)
     try:

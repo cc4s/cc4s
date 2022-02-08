@@ -68,7 +68,7 @@ Ptr<Node> TensorIo::write(
 ) {
   // multiplex different tensor types
   Ptr<Node> writtenNode;
-  if (!Cc4s::options->dryRun) {
+  if (!Cc4s::dryRun) {
     using TE = DefaultTensorEngine;
     writtenNode = writeTensor<Real<64>,TE>(node, nodePath, useBinary);
     if (writtenNode) return writtenNode;
@@ -90,7 +90,7 @@ Ptr<Node> TensorIo::read(
 ) {
   auto scalarType(node->getValue<std::string>("scalarType"));
   // multiplex different tensor types
-  if (!Cc4s::options->dryRun) {
+  if (!Cc4s::dryRun) {
     using TE = DefaultTensorEngine;
     if (scalarType == TypeTraits<Real<64>>::getName()) {
       return readTensor<Real<64>,TE>(node, nodePath);
@@ -128,7 +128,7 @@ Ptr<MapNode> TensorIo::writeTensor(
 
   // build dimensions from tensor length
   auto dimensions(New<MapNode>(SOURCE_LOCATION));
-  for (size_t d(0); d < tensor->lens.size(); ++d) {
+  for (Natural<> d(0); d < tensor->lens.size(); ++d) {
     auto dimension(New<MapNode>(SOURCE_LOCATION));
     dimension->setValue("length", tensor->lens[d]);
     if (tensor->dimensions.size() > 0 && tensor->dimensions[d]) {
@@ -180,7 +180,7 @@ Ptr<PointerNode<Object>> TensorIo::readTensor(
   std::vector<Ptr<TensorDimension>> dimensions;
   for (auto key: dimensionsMap->getKeys()) {
     auto dimensionMap(dimensionsMap->getMap(key));
-    lens.push_back(dimensionMap->getValue<size_t>("length"));
+    lens.push_back(dimensionMap->getValue<Natural<>>("length"));
     // get dimension properties, if given
     if (dimensionMap->isGiven("type")) {
       dimensions.push_back(
@@ -190,11 +190,51 @@ Ptr<PointerNode<Object>> TensorIo::readTensor(
       );
     }
   }
+
+  // check if tensor is given in block sparse format
+  auto nonZeroConditions(New<TensorNonZeroConditions>());
+  auto nonZeroConditionsNode(node->get("nonZeroCondition"));
+  if (nonZeroConditionsNode) {
+    OUT() << "Unpacking block-sparse tensor" << std::endl;
+    // currently only "all" is supported as non-zero conditions
+    auto allMap(nonZeroConditionsNode->toPtr<MapNode>()->getMap("all"));
+    for (auto key: allMap->getKeys()) {
+      auto nonZeroCondition(New<TensorNonZeroCondition>());
+      nonZeroCondition->name = allMap->getMap(key)->getValue<std::string>("name");
+      auto propertiesMap(allMap->getMap(key)->getMap("properties"));
+      Natural<> D(0);
+      for (auto propertyKey: propertiesMap->getKeys()) {
+        auto propertyMap(propertiesMap->getMap(propertyKey));
+        TensorDimensionPropertyReference dimensionProperty;
+        dimensionProperty.dimension = propertyMap->getValue<Natural<>>("dimension");
+        auto dimension(dimensions[dimensionProperty.dimension]);
+        dimensionProperty.property = dimension->properties[
+          propertyMap->getValue<std::string>("property")
+        ];
+        nonZeroCondition->dimensionPropertyReferences.push_back(dimensionProperty);
+        ++D;
+      }
+      auto tuplesMap(allMap->getMap(key)->getMap("nonZeros"));
+      for (Natural<> i(0); i < tuplesMap->getSize(); ++i) {
+        std::vector<Natural<>> tuple(D);
+        for (Natural<> d(0); d < D; ++d) {
+          tuple[d] = tuplesMap->getMap(i)->getValue<Natural<>>(d);
+        }
+        nonZeroCondition->tuples.push_back(tuple);
+      }
+      nonZeroConditions->all.push_back(nonZeroCondition);
+    }
+  }
+
   Ptr<Tensor<F,TE>> tensor;
   if (elementsBinary) {
-    tensor = readTensorElementsBinary<F,TE>(elementsPath, lens, sourceLocation);
+    tensor = readTensorElementsBinary<F,TE>(
+      elementsPath, lens, nonZeroConditions, sourceLocation
+    );
   } else {
-    tensor = readTensorElementsText<F,TE>(elementsPath, lens, sourceLocation);
+    tensor = readTensorElementsText<F,TE>(
+      elementsPath, lens, nonZeroConditions, sourceLocation
+    );
   }
   tensor->dimensions = dimensions;
   tensor->getUnit() = node->getValue<Real<>>("unit");
@@ -210,7 +250,7 @@ void TensorIo::writeTensorElementsText(
   const Ptr<Tensor<F,TE>> &tensor, const std::string &nodePath
 ) {
   // TODO: query max buffer size for tensor write from tensor engine
-  constexpr size_t MAX_BUFFER_SIZE(32*1024*1024);
+  constexpr Natural<> MAX_BUFFER_SIZE(32*1024*1024);
   std::string elementsPath(nodePath + ".elements");
   std::ofstream stream(elementsPath);
   if (stream.fail()) {
@@ -222,34 +262,34 @@ void TensorIo::writeTensorElementsText(
   stream << setprecision(17);
 
   // write the values only on root, all others still pariticipate calling MPI
-  const size_t bufferSize(
+  const Natural<> bufferSize(
     std::min(tensor->getElementsCount(), MAX_BUFFER_SIZE)
   );
-  size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
-  std::vector<size_t> indices(localBufferSize);
+  Natural<> localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
+  std::vector<Natural<>> indices(localBufferSize);
   std::vector<F> values(localBufferSize);
 
   OUT() << "Writing to text file " << elementsPath << std::endl;
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     stream << "# dry-run: no elements written" << std::endl;
     return;
   }
 
-  size_t index(0);
+  Natural<> index(0);
   LOG() << "indexCount=" << tensor->getElementsCount() << std::endl;
   while (index < tensor->getElementsCount()) {
-    size_t elementsCount(
+    Natural<> elementsCount(
       std::min(bufferSize, tensor->getElementsCount()-index)
     );
-    size_t localElementsCount(
+    Natural<> localElementsCount(
       Cc4s::world->getRank() == 0 ? elementsCount : 0
     );
-    for (size_t i(0); i < localElementsCount; ++i) {
+    for (Natural<> i(0); i < localElementsCount; ++i) {
       indices[i] = index+i;
     }
     LOG() << "reading " << elementsCount << " values from tensor..." << std::endl;
     tensor->read(localElementsCount, indices.data(), values.data());
-    for (size_t i(0); i < localElementsCount; ++i) {
+    for (Natural<> i(0); i < localElementsCount; ++i) {
       stream << values[i] << "\n";
     }
     // wait until all processes finished
@@ -280,7 +320,7 @@ void TensorIo::writeTensorElementsBinary(
   )
 
   OUT() << "Writing to binary file " << elementsPath << std::endl;
-  if (Cc4s::options->dryRun) return;
+  if (Cc4s::dryRun) return;
 
   // write tensor elements with values from file
   tensor->readToFile(file);
@@ -294,11 +334,12 @@ void TensorIo::writeTensorElementsBinary(
 template <typename F, typename TE>
 Ptr<Tensor<F,TE>> TensorIo::readTensorElementsText(
   const std::string &fileName,
-  const std::vector<size_t> &lens,
+  const std::vector<Natural<>> &lens,
+  const Ptr<TensorNonZeroConditions> &nonZeroConditions,
   const SourceLocation &sourceLocation
 ) {
   // TODO: query max buffer size for tensor write from tensor engine
-  constexpr size_t MAX_BUFFER_SIZE(32*1024*1024);
+  constexpr Natural<> MAX_BUFFER_SIZE(32*1024*1024);
   std::ifstream stream(fileName.c_str());
   if (stream.fail()) {
     std::stringstream explanation;
@@ -309,33 +350,45 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsText(
 
   // create tensor
   auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
+  tensor->nonZeroConditions = nonZeroConditions;
   OUT() << "Reading from text file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return tensor;
+  if (Cc4s::dryRun) return tensor;
 
-  // read the values only on root, all others still pariticipate calling MPI
-  const size_t bufferSize(std::min(tensor->getElementsCount(), MAX_BUFFER_SIZE));
-  size_t localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
-  std::vector<size_t> indices(localBufferSize);
-  std::vector<F> values(localBufferSize);
+  LOG() << "#non-zero conditions: " << nonZeroConditions->all.size() << std::endl;
+  TensorNonZeroBlockIterator blockIterator(nonZeroConditions);
+  while (!blockIterator.atEnd()) {
+    auto elementIterator(blockIterator.getElementIterator(lens));
+    auto blockElementsCount(elementIterator.getCount());
+    LOG() << "reading block:" << blockIterator.print() <<
+      " with " << blockElementsCount << " elements" << std::endl;
 
-  size_t index(0);
-  LOG() << "indexCount=" << tensor->getElementsCount() << std::endl;
-  NumberScanner<F> numberScanner(&scanner);
-  while (index < tensor->getElementsCount()) {
-    size_t elementsCount(std::min(bufferSize, tensor->getElementsCount()-index));
-    size_t localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
-    for (size_t i(0); i < localElementsCount; ++i) {
-      indices[i] = index+i;
-      values[i] = numberScanner.nextNumber();
+    // read the values only on root, all others still pariticipate calling MPI
+    const Natural<> bufferSize(std::min(tensor->getElementsCount(), MAX_BUFFER_SIZE));
+    Natural<> localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
+    std::vector<Natural<>> indices(localBufferSize);
+    std::vector<F> values(localBufferSize);
+
+    Natural<> readElementsCount(0);
+    NumberScanner<F> numberScanner(&scanner);
+    while (readElementsCount < blockElementsCount) {
+      Natural<> elementsCount(
+        std::min(bufferSize, blockElementsCount - readElementsCount)
+      );
+      Natural<> localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
+      for (Natural<> i(0); i < localElementsCount; ++i) {
+        indices[i] = elementIterator.getGlobalIndex();
+        values[i] = numberScanner.nextNumber();
+        ++elementIterator;
+      }
+      // wait until all processes finished reading this buffer into the tensor
+      Cc4s::world->barrier();
+      LOG() << "writing " << elementsCount << " values to tensor..." << std::endl;
+      tensor->write(localElementsCount, indices.data(), values.data());
+      readElementsCount += elementsCount;
     }
-    // wait until all processes finished reading this buffer into the tensor
-    Cc4s::world->barrier();
-    LOG() << "writing " << elementsCount << " values to tensor..." << std::endl;
-    tensor->write(localElementsCount, indices.data(), values.data());
-    index += elementsCount;
+
+    ++blockIterator;
   }
-  LOG() << "Read " << tensor->getElementsCount() <<
-    " elements from text file " << fileName << std::endl;
 
   return tensor;
 }
@@ -343,7 +396,78 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsText(
 template <typename F, typename TE>
 Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinary(
   const std::string &fileName,
-  const std::vector<size_t> &lens,
+  const std::vector<Natural<>> &lens,
+  const Ptr<TensorNonZeroConditions> &nonZeroConditions,
+  const SourceLocation &sourceLocation
+) {
+  if (nonZeroConditions->all.size() == 0) {
+    return readTensorElementsBinaryDense<F,TE>(
+      fileName, lens, nonZeroConditions, sourceLocation
+    );
+  }
+
+  constexpr Natural<> MAX_BUFFER_SIZE(32*1024*1024);
+  std::ifstream stream(fileName.c_str());
+  if (stream.fail()) {
+    std::stringstream explanation;
+    explanation << "Failed to open file \"" << fileName << "\"";
+    throw New<Exception>(explanation.str(), sourceLocation);
+  }
+
+  // create dense result tensor
+  auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
+  tensor->nonZeroConditions = nonZeroConditions;
+  OUT() << "Reading from binary file " << fileName << std::endl;
+  if (Cc4s::dryRun) return tensor;
+
+  LOG() << "#non-zero conditions: " << nonZeroConditions->all.size() << std::endl;
+  TensorNonZeroBlockIterator blockIterator(nonZeroConditions);
+  while (!blockIterator.atEnd()) {
+    auto elementIterator(blockIterator.getElementIterator(lens));
+    auto blockElementsCount(elementIterator.getCount());
+    LOG() << "reading block:" << blockIterator.print() <<
+      " with " << blockElementsCount << " elements" << std::endl;
+
+    // read the values only on root, all others still pariticipate calling MPI
+    const Natural<> bufferSize(std::min(blockElementsCount, MAX_BUFFER_SIZE));
+    Natural<> localBufferSize(Cc4s::world->getRank() == 0 ? bufferSize : 0);
+    std::vector<Natural<>> indices(localBufferSize);
+    std::vector<F> values(localBufferSize);
+
+    Natural<> readElementsCount(0);
+    while (readElementsCount < blockElementsCount) {
+      Natural<> elementsCount(
+        std::min(bufferSize, blockElementsCount - readElementsCount)
+      );
+      Natural<> localElementsCount(Cc4s::world->getRank() == 0 ? elementsCount : 0);
+      if (localElementsCount > 0) {
+        stream.read(
+          reinterpret_cast<char *>(values.data()),
+          localElementsCount * sizeof(F)
+        );
+      }
+      for (Natural<> i(0); i < localElementsCount; ++i) {
+        indices[i] = elementIterator.getGlobalIndex();
+        ++elementIterator;
+      }
+      // wait until all processes finished reading this buffer into the tensor
+      Cc4s::world->barrier();
+      LOG() << "writing " << elementsCount << " values to tensor..." << std::endl;
+      tensor->write(localElementsCount, indices.data(), values.data());
+      readElementsCount += elementsCount;
+    }
+
+    ++blockIterator;
+  }
+
+  return tensor;
+}
+
+template <typename F, typename TE>
+Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinaryDense(
+  const std::string &fileName,
+  const std::vector<Natural<>> &lens,
+  const Ptr<TensorNonZeroConditions> &nonZeroConditions,
   const SourceLocation &sourceLocation
 ) {
   // open the file
@@ -363,7 +487,7 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinary(
   auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
 
   OUT() << "Reading from binary file " << fileName << std::endl;
-  if (Cc4s::options->dryRun) return tensor;
+  if (Cc4s::dryRun) return tensor;
   // write tensor elements with values from file
   tensor->writeFromFile(file);
   LOG() << "Read " << sizeof(F)*tensor->getElementsCount() <<

@@ -33,6 +33,8 @@ namespace cc4s {
     static Ptr<MpiCommunicator> world;
     static Ptr<Options> options;
 
+    static bool dryRun;
+
     static Natural<128> getFloatingPointOperations();
     static void addFloatingPointOperations(const Natural<128> ops);
 

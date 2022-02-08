@@ -29,7 +29,7 @@ Ptr<MapNode> FiniteSizeCorrection::run(
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
 
-  if (Cc4s::options->dryRun) {
+  if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
     calculateTransitionStructureFactor<Real<>, TE>(arguments, result)
       || calculateTransitionStructureFactor<Complex<>, TE>(arguments, result);

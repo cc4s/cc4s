@@ -18,7 +18,6 @@
 
 #include <Real.hpp>
 #include <Complex.hpp>
-#include <Log.hpp>
 
 #include <cmath>
 #include <string>
