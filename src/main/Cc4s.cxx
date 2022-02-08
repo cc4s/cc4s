@@ -94,7 +94,8 @@ void Cc4s::runSteps(const bool dry) {
     << " GFLOP/s" << std::endl;
   if (dry) {
     OUT() << "Dry run finished." << std::endl;
-    OUT() << "Memory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
+    OUT() << "Operations estimate: " << totalOperations / 1e9 << " GFLOPS" << std::endl;
+    OUT() << "Memory estimate:     " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
     OUT() << "--" << std::endl;
     LOG() << "memory estimate: " << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
   }
