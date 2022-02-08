@@ -32,6 +32,7 @@ main/algorithms/coupledcluster/Drccd.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/FiniteSizeCorrection.cxx \
 main/algorithms/BasisSetCorrection.cxx \
+main/algorithms/UegVertexGenerator.cxx \
 
 ifeq ($(ATRIP), yes)
 SRC_FILES += main/algorithms/PerturbativeTriples.cxx
