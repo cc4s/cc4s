@@ -173,7 +173,7 @@ Ptr<MapNode> CoupledCluster::run() {
 
   if (maxIterationsCount == 0) {
     OUT() << "computing energy from given amplitudes" << endl;
-  } else if (i == maxIterationsCount) {
+  } else if (i == maxIterationsCount && !Cc4s::dryRun) {
     WARNING_LOCATION(arguments->sourceLocation) <<
       "energy or amplitudes convergence not reached." << endl;
   }
