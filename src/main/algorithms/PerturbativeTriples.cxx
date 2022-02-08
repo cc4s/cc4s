@@ -15,6 +15,7 @@
 
 #include <algorithms/PerturbativeTriples.hpp>
 #include <algorithms/PerturbativeTriplesStar.hpp>
+#include <algorithms/PerturbativeTriplesReference.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <TensorSet.hpp>
@@ -29,6 +30,10 @@ ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 #define QUOTE(...) Q(__VA_ARGS__)
 
 Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
+  if (Cc4s::dryRun) {
+    return New<PerturbativeTriplesReference>()->run(arguments);
+  }
+
   using F = Real<>;
   using TE = DefaultTensorEngine;
 
