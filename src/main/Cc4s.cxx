@@ -114,7 +114,7 @@ void Cc4s::run(const Ptr<MapNode> &report) {
     for (Natural<> i(0); i < steps->getSize(); ++i) {
       runStep(i, steps->getMap(i));
       // emit report, overwrite from previous step
-      Emitter emitter(options->name + ".out.yaml");
+      Emitter emitter(options->yamlOutFile);
       emitter.emit(report);
     }
   }
@@ -286,7 +286,9 @@ int main(int argumentCount, char **arguments) {
 
   Cc4s::world = New<MpiCommunicator>();
   Cc4s::options = New<Options>(argumentCount, arguments);
-  Log::setFileName(Cc4s::options->name + ".log");
+  if (int errcode = Cc4s::options->parse()) std::exit(errcode);
+
+  Log::setFileName(Cc4s::options->logFile);
   Log::setRank(Cc4s::world->getRank());
   Time startTime(Time::getCurrentRealTime());
   Log::setLogHeaderFunction(
