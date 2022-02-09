@@ -375,11 +375,11 @@ namespace cc4s {
 
       if (outerElementsCount > std::numeric_limits<Natural<64>>::max()) {
         // overflow: result is definitely too big to be stored
-        return ContractionOperation<F,TE>::create(
-          a, b,
-          nullptr, static_cast<const char *>(outerIndices),
-          Costs::createMax(), scope
-        );
+        LOG() << "Not considering contraction of "
+          << a->getResult()->getName() << " and "
+          << b->getResult()->getName()
+          << ", Result would exceed 2^64 elements." << std::endl;
+        return nullptr;
       }
 
       // allocate intermedate result
