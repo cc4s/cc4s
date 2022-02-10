@@ -117,16 +117,16 @@ void SliceOperator::slice(
       }
     }
     auto result(Tcc<TE>::template tensor<F>(tensor->getName() + parts ));
-    slices->get(parts) =
-      COMPILE_RECIPE(result,
-        (*result)[index] <<= (*(*tensorExpression)(begins,ends))[index]
-      );
+    COMPILE(
+      (*result)[index] <<= (*(*tensorExpression)(begins,ends))[index]
+    )->execute();
     // TODO: transfer dimension info in tcc
     result->dimensions = tensor->dimensions;
     // TODO: transfer unit in tcc
     result->getUnit() = tensor->getUnit();
     // TODO: transfer meta-data in tcc
     result->getMetaData() = tensor->getMetaData();
+    slices->get(parts) = result;
   }
 }
 
