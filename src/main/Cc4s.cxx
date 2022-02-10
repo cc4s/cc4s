@@ -78,7 +78,7 @@ void Cc4s::runSteps(const bool dry) {
       runStep(i, step);
       executedSteps->get(i) = step;
       // emit output, overwrite from previous step
-      Emitter emitter(options->name + "." + stage + ".yaml");
+      Emitter emitter(options->yamlOutFile);
       emitter.emit(output);
     }
   }
@@ -105,7 +105,7 @@ void Cc4s::runSteps(const bool dry) {
   output->get("statistics") = statistics;
 
   // emit final stage output
-  Emitter emitter(options->name + "." + stage + ".yaml");
+  Emitter emitter(options->yamlOutFile);
   emitter.emit(output);
 }
 
@@ -303,7 +303,9 @@ int main(int argumentCount, char **arguments) {
 
   Cc4s::world = New<MpiCommunicator>();
   Cc4s::options = New<Options>(argumentCount, arguments);
-  Log::setFileName(Cc4s::options->name + ".log");
+  if (int errcode = Cc4s::options->parse()) std::exit(errcode);
+
+  Log::setFileName(Cc4s::options->logFile);
   Log::setRank(Cc4s::world->getRank());
   Time startTime(Time::getCurrentRealTime());
   Log::setLogHeaderFunction(
