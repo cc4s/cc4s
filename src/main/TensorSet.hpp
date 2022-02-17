@@ -215,8 +215,9 @@ namespace cc4s {
         auto indices(generateIndices(key));
         // add to result
         COMPILE(
-          (*result)[""] += (*tensorExpression)[indices] *
-            map<F>(cc4s::conj<F>, (*a.get(key))[indices])
+          (*result)[""] +=
+            map<F>(cc4s::conj<F>, (*tensorExpression)[indices]) *
+            (*a.get(key))[indices]
         )->execute();
       }
       return result->read();
