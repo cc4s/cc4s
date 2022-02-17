@@ -66,7 +66,6 @@ void Cc4s::runSteps(const bool dry) {
   auto executedSteps(New<MapNode>(SOURCE_LOCATION));
   output->get("steps") = executedSteps;
 
-  auto stage( dry ? "dry" : "out" );
   Natural<128> totalOperations;
   Time totalTime;
   {
@@ -105,7 +104,8 @@ void Cc4s::runSteps(const bool dry) {
   output->get("statistics") = statistics;
 
   // emit final stage output
-  Emitter emitter(options->yamlOutFile);
+  std::string stagePrefix( dry ? "dry-" : "" );
+  Emitter emitter(stagePrefix + options->yamlOutFile);
   emitter.emit(output);
 }
 
