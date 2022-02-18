@@ -5,7 +5,7 @@ CC4S_EXTERN_SRC   = $(abspath ./extern/src/)
 CC4S_INTERN_SRC   = $(abspath ./src/)
 
 # Cyclops Tensor Framework ====================================================
-CTF_COMMIT         ?= 4c4b1ea26d3075f97ad70685d26a936ce2284d6b
+CTF_COMMIT         ?= f1d951de96c3f2fc5e76df2b0f6f6148e5216776
 CTF_BUILD_PATH     ?= $(CC4S_EXTERN_BUILD)/ctf/$(CTF_COMMIT)
 CTF_SRC_PATH       ?= $(CC4S_EXTERN_SRC)/ctf/$(CTF_COMMIT)
 CTF_LDFLAGS        ?= -L${CTF_BUILD_PATH}/lib -lctf
@@ -42,11 +42,10 @@ BLAS_LDFLAGS ?= -L${BLAS_PATH}/lib -lopenblas
 SCALAPACK_LDFLAGS ?= -L${SCALAPACK_PATH}/lib -lscalapack
 
 # ATRIP =======================================================================
-ATRIP_COMMIT         ?= b117599
+ATRIP_COMMIT         ?= bbbfb30
 ATRIP_SRC_PATH       ?= $(CC4S_INTERN_SRC)/atrip/$(ATRIP_COMMIT)
 ATRIP_GIT_REPOSITORY ?= git@gitlab.cc4s.org:gallo/atrip
 ATRIP                ?= yes
-#ATRIP                ?= no
 CXXFLAGS             += -DATRIP_COMMIT=$(ATRIP_COMMIT)
 CXXFLAGS             += -DATRIP_NO_OUTPUT
 

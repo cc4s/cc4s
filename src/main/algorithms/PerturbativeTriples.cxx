@@ -40,6 +40,25 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
+  const auto
+    distribution
+      = arguments->getValue<std::string>("tuplesDistribution", "group") == "group"
+      ? atrip::Atrip::Input<F>::TuplesDistribution::GROUP_AND_SORT
+      : atrip::Atrip::Input<F>::TuplesDistribution::NAIVE
+      ;
+
+  const bool
+    rankRoundRobin
+      = arguments->getValue<std::string>("tuplesRoundRobin", "node") == "node"
+      ? false
+      : true
+      ;
+
+#ifdef DEBUG
+  OUT() << "Using atrip distribution " << distribution << "\n";
+  OUT() << "rankRoundRobin? " << rankRoundRobin << "\n";
+#endif
+
   atrip::Atrip::init();
   atrip::Atrip::Input<F> in;
 
@@ -95,12 +114,15 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     // some options
     .with_barrier(false)
     .with_percentageMod(10)
+    .with_tuplesDistribution(distribution)
+    .with_rankRoundRobin(rankRoundRobin)
     ;
 
   const double _No = *(__eps__(h))->lens
              , _Nv = *(__eps__(p))->lens
              , doublesFlops = _No * _No * _No
                             * (_No + _Nv)
+                            * double(sizeof(F) / sizeof(double))
                             * 2.0
                             * 6.0
                             / 1.0e9

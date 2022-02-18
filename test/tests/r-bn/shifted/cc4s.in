@@ -114,11 +114,13 @@
 #  out:
 #    energy: AtripEnergy
 
-#- name: PerturbativeTriples
-  #in:
-    #slicedEigenEnergies: EigenEnergies
-    #amplitudes: Amplitudes
-    #coulombIntegrals: CoulombIntegrals
-    #mp2PairEnergies: Mp2PairEnergies
-  #out:
-    #energy: AtripEnergy
+- name: PerturbativeTriples
+  in:
+    slicedEigenEnergies: EigenEnergies
+    amplitudes: Amplitudes
+    coulombIntegrals: CoulombIntegrals
+    mp2PairEnergies: Mp2PairEnergies
+    tuplesDistribution: group
+    tuplesRoundRobin: "node"
+  out:
+    energy: AtripEnergy
