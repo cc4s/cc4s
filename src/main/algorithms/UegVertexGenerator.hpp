@@ -37,7 +37,8 @@ namespace cc4s {
     double evalMadelung(double volume);
     double Vijji(const dvec a, const dvec b, const double v);
 
-    size_t No, Nv;
+    int halfGrid;
+    size_t No, Nv, NF;
     double rs, madelung;
   };
 }
