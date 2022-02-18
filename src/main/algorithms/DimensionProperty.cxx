@@ -99,14 +99,21 @@ Ptr<MapNode> DimensionProperty::run(
   );
   auto property(propertyIt->second);
 
+  // enter property name as dimension type
+  auto propertyDimension(New<TensorDimension>());
+  propertyDimension->name =
+    tensor->dimensions[dimensionIndex]->name + "." + propertyName;
+  cc4s::TensorDimension::dimensions[propertyDimension->name] = propertyDimension;
+
   // create property matrix
   std::vector<Natural<>> lens(
     {tensor->getLens()[dimensionIndex], property->indicesOfProperty.size()}
   );
-  std::vector<std::string> types(
-    {tensor->dimensions[dimensionIndex]->name, propertyName}
+  std::vector<Ptr<TensorDimension>> dimensions(
+    {tensor->dimensions[dimensionIndex], propertyDimension}
   );
   auto P( Tcc<TE>::template tensor<F>(lens, propertyName) );
+  P->dimensions = dimensions;
 
   // enter one at the respective positions
   std::vector<Natural<>> indices(0);
