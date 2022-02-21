@@ -134,7 +134,7 @@ namespace cc4s {
      * \brief Copy assignment operator copying the tensors owned by a.
      **/
     TensorSet &operator =(const TensorSet &a) {
-      copyComponents(a.componentTensors);
+      copyComponents(a.components);
       return *this;
     }
 
@@ -215,8 +215,9 @@ namespace cc4s {
         auto indices(generateIndices(key));
         // add to result
         COMPILE(
-          (*result)[""] += (*tensorExpression)[indices] *
-            map<F>(cc4s::conj<F>, (*a.get(key))[indices])
+          (*result)[""] +=
+            map<F>(cc4s::conj<F>, (*tensorExpression)[indices]) *
+            (*a.get(key))[indices]
         )->execute();
       }
       return result->read();
@@ -387,7 +388,7 @@ namespace cc4s {
   ) {
     TensorSet<F,TE> result(a);
     result += b;
-    return std::move(result);
+    return result;
   }
   /**
    * \brief Returns the sum of two TensorSets a and b, where
@@ -422,7 +423,7 @@ namespace cc4s {
   ) {
     TensorSet<F,TE> result(a);
     result -= b;
-    return std::move(result);
+    return result;
   }
   /**
    * \brief Returns the difference between two TensorSets a and b, where
@@ -457,7 +458,7 @@ namespace cc4s {
   inline TensorSet<F,TE> operator *(const TensorSet<F,TE> &a, const F s) {
     TensorSet<F,TE> result(a);
     result *= s;
-    return std::move(result);
+    return result;
   }
   /**
    * \brief Returns the scalar multiple of the TensorSet a

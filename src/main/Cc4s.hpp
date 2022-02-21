@@ -22,32 +22,31 @@
 #include <Options.hpp>
 #include <Node.hpp>
 
+int main(int argumentCount, char **arguments);
+
 namespace cc4s {
   class Cc4s {
   public:
-    void run(const Ptr<MapNode> &report);
-
-    static bool isDebugged();
+    void run();
 
     // static properties, accessible from everywhere
     static Ptr<MpiCommunicator> world;
     static Ptr<Options> options;
-
     static bool dryRun;
 
     static Natural<128> getFloatingPointOperations();
     static void addFloatingPointOperations(const Natural<128> ops);
 
   protected:
+    void runSteps(const bool dry = false);
     void runStep(const Natural<> i, const Ptr<MapNode> &step);
     void fetchSymbols(const Ptr<MapNode> &arguments);
     void storeSymbols(const Ptr<MapNode> &result,const Ptr<MapNode> &variables);
+    void printBanner();
+    Ptr<MapNode> getExecutionEnvironment();
+    Ptr<MapNode> getHostList();
 
-    void printBanner(const Ptr<MapNode> &job);
-    void printStatistics(const Ptr<MapNode> &job);
-    void listHosts(const Ptr<MapNode> &job);
-
-    Ptr<MapNode> storage;
+    Ptr<MapNode> executionEnvironment, storage;
   };
 
   class OperationsCounter {

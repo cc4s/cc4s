@@ -29,12 +29,18 @@ Ptr<MapNode> SecondOrderPerturbationTheory::run(const Ptr<MapNode> &arguments) {
   Ptr<MapNode> result;
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
-    (result = run<Real<>,TE>(arguments))
-      || (result = run<Complex<>,TE>(arguments));
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   } else {
     using TE = DefaultTensorEngine;
-    (result = run<Real<>,TE>(arguments))
-      || (result = run<Complex<>,TE>(arguments));
+    (
+      result = run<Real<>,TE>(arguments)
+    ) || (
+      result = run<Complex<>,TE>(arguments)
+    );
   }
   ASSERT_LOCATION(
     result, "unsupported tensor type as 'coulombIntegrals'",

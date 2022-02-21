@@ -528,6 +528,8 @@ namespace cc4s {
     }
 
     Ptr<Tensor<F,TE>> evaluate() override {
+      // force allocation with zero-initialization if not allocated yet
+      getMachineTensor();
       return this->template toPtr<Tensor<F,TE>>();
     }
 

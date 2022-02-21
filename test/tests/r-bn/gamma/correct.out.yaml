@@ -130,7 +130,7 @@ steps:
     out:
       energy:
         correlation: -0.82253065011063076
-        starCorrelation: -0.21951212581719681
+        starCorrection: -0.21951212581719681
         unit: 0.036749322175638782
     realtime: 5.923606473
   2:

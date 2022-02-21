@@ -1,17 +1,16 @@
 {
-
   "nwchem-h2o": {
-    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/ae8e2f44b74e3a8d8479e83ab29d76a411f8c308/h2o",
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/8c7a8d3446f20b2b2d8ddb6bd031067640968dab/h2o",
     "type": "raw"
   },
 
   "r-bn": {
-    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/ae8e2f44b74e3a8d8479e83ab29d76a411f8c308/r-bn",
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/8c7a8d3446f20b2b2d8ddb6bd031067640968dab/r-bn",
     "type": "raw"
   },
 
   "ueg-rs1-no7-nv26": {
-    "uri": "https://raw.githubusercontent.com/cc4s/test-resources/9c3b647e58854a415177d4445c4daccc8a830345/ueg/rs1.0_7occ_26virt",
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/8c7a8d3446f20b2b2d8ddb6bd031067640968dab/ueg/rs1.0_7occ_26virt",
     "type": "raw"
   },
 
@@ -34,6 +33,4 @@
     "uri": "https://github.com/cc4s/ppl-supporting-information/archive/refs/tags/v1.2.tar.gz",
     "type": "tar"
   }
-
-
 }

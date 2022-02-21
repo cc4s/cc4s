@@ -66,17 +66,13 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
   OUT() << "number of field variables NF: " << NF << std::endl;
 
 #define DEFINE_VERTEX_PART(PART, SLICE) \
-  Ptr<TensorRecipe<Real<>,TE>> PART##GammaG##SLICE; \
-  { \
-    auto result(Tcc<TE>::template tensor<Real<>>( \
-      std::string(#PART) + "GammaG" + #SLICE) \
-    ); \
-    PART##GammaG##SLICE = COMPILE_RECIPE(result, (\
-      (*result)["Gqr"] <<= \
-        map<Real<>>(PART<Complex<>>, (*GammaG##SLICE)["Gqr"]) \
-      ) \
-    ); \
-  }
+  auto PART##GammaG##SLICE(Tcc<TE>::template tensor<Real<>>( \
+    std::string(#PART) + "GammaG" + #SLICE) \
+  ); \
+  COMPILE( \
+    (*PART##GammaG##SLICE)["Gqr"] <<= \
+      map<Real<>>(PART<Complex<>>, (*GammaG##SLICE)["Gqr"]) \
+  )->execute(); \
   // define intermediate recipes
   DEFINE_VERTEX_PART(real, pp)
   DEFINE_VERTEX_PART(real, ph)
@@ -145,18 +141,13 @@ Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
   OUT() << "number of field variables NF: " << NF << std::endl;
 
 #define DEFINE_VERTEX_CONJT(O,I) \
-  Ptr<TensorRecipe<Complex<>,TE>> conjTGammaG##O##I; \
-  { \
-    auto result(Tcc<TE>::template tensor<Complex<>>( \
-      std::string("conjTGammaG") + #O + #I) \
-    ); \
-    conjTGammaG##O##I = COMPILE_RECIPE(result, \
-      ( \
-        (*result)["Gqr"] <<= \
-          map<Complex<>>(conj<Complex<>>, (*GammaG##I##O)["Grq"]) \
-      ) \
-    ); \
-  }
+  auto conjTGammaG##O##I(Tcc<TE>::template tensor<Complex<>>( \
+    std::string("conjTGammaG") + #O + #I) \
+  ); \
+  COMPILE( \
+    (*conjTGammaG##O##I)["Gqr"] <<= \
+      map<Complex<>>(conj<Complex<>>, (*GammaG##I##O)["Grq"]) \
+  )->execute(); \
   // define intermediate recipes
   DEFINE_VERTEX_CONJT(p,p)
   DEFINE_VERTEX_CONJT(p,h)

@@ -15,6 +15,7 @@
 
 #include <algorithms/PerturbativeTriples.hpp>
 #include <algorithms/PerturbativeTriplesStar.hpp>
+#include <algorithms/PerturbativeTriplesReference.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
 #include <TensorSet.hpp>
@@ -28,7 +29,6 @@ ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 
 #define Q(...) #__VA_ARGS__
 #define QUOTE(...) Q(__VA_ARGS__)
-
 
 template <typename F>
 Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
@@ -159,6 +159,15 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
         << std::setprecision(15) << std::setw(23)
         << out.energy << std::endl;
 
+  /* DUPLICATION WARNING:
+   * --------------------
+   *
+   * If you change something in the output of this algorithm
+   * be sure to change accordingly the output of the
+   * PerturbativeTriplesReference, as they should be
+   * symmetric.
+   *
+   */
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correlation", std::real(out.energy));
@@ -166,10 +175,10 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   if (arguments->isGiven("mp2PairEnergies")) {
     const F
       triples_star = computeCssdPtStar<F, TE>(arguments, out.energy);
-    OUT() << "(T*) correlation energy: "
+    OUT() << "(T*)-Bsie energy correction: "
           << std::setprecision(15) << std::setw(23)
           << std::real(triples_star) << std::endl;
-    energy->setValue("starCorrelation", std::real(triples_star));
+    energy->setValue("starCorrection", std::real(triples_star));
   }
 
   using TSr = TensorSet<Real<>, TE>;
@@ -181,6 +190,13 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 }
 
 Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
+
+  if (Cc4s::dryRun) {
+    DryMemory::allocate(2);
+    DryMemory::free(2);
+    return New<PerturbativeTriplesReference>()->run(arguments);
+  }
+
   Ptr<MapNode> result;
      (result = runAtrip<Real<>>(arguments))
   || (result = runAtrip<Complex<>>(arguments))

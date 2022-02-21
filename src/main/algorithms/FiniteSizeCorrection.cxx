@@ -33,7 +33,6 @@ Ptr<MapNode> FiniteSizeCorrection::run(
     using TE = DefaultDryTensorEngine;
     calculateTransitionStructureFactor<Real<>, TE>(arguments, result)
       || calculateTransitionStructureFactor<Complex<>, TE>(arguments, result);
-    interpolation<TE>(arguments, result);
   }
   else {
     using TE = DefaultTensorEngine;

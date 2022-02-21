@@ -29,6 +29,14 @@
 
 using namespace cc4s;
 
+void Cc4s::run() {
+  printBanner();
+  runSteps(true);
+  if (options->dryRunOnly) return;
+  runSteps();
+}
+
+
 Natural<128> Cc4s::getFloatingPointOperations() {
   return dryRun ?
     Operation<DefaultDryTensorEngine>::getFloatingPointOperations() :
@@ -39,6 +47,66 @@ void Cc4s::addFloatingPointOperations(const Natural<128> ops) {
   return dryRun ?
     Operation<DefaultDryTensorEngine>::addFloatingPointOperations(ops) :
     Operation<DefaultTensorEngine>::addFloatingPointOperations(ops);
+}
+
+void Cc4s::runSteps(const bool dry) {
+  auto output(New<MapNode>(SOURCE_LOCATION));
+  output->get("executionEnvironment") = executionEnvironment;
+
+  Cc4s::dryRun = dry;
+  // parse input
+  Parser parser(options->inFile);
+  auto input(parser.parse());
+  auto steps(input->toPtr<MapNode>());
+  ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
+
+  // start with empty storage
+  storage = New<MapNode>(SOURCE_LOCATION);
+
+  auto executedSteps(New<MapNode>(SOURCE_LOCATION));
+  output->get("steps") = executedSteps;
+
+  Natural<128> totalOperations;
+  Time totalTime;
+  {
+    OperationsCounter totalOperationsCounter(&totalOperations);
+    Timer totalTimer(&totalTime);
+
+    for (Natural<> i(0); i < steps->getSize(); ++i) {
+      auto step(steps->getMap(i));
+      runStep(i, step);
+      executedSteps->get(i) = step;
+      // emit output, overwrite from previous step
+      Emitter emitter(options->yamlOutFile);
+      emitter.emit(output);
+    }
+  }
+  Cc4s::dryRun = false;
+
+  auto statistics(New<MapNode>(SOURCE_LOCATION));
+  std::stringstream totalRealtime;
+  totalRealtime << totalTime;
+  LOG() << "total realtime: " << totalRealtime.str() << " s" << std::endl;
+  LOG() << "total operations: " << totalOperations / 1e9 << " GFLOPS, "
+    << "speed: "
+    << totalOperations/1e9 / totalTime.getFractionalSeconds()
+    << " GFLOP/s" << std::endl;
+  if (dry) {
+    OUT() << "Dry run finished." << std::endl;
+    OUT() << "Operations estimate: " << totalOperations / 1e9 << " GFLOPS" << std::endl;
+    OUT() << "Memory estimate:     " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
+    OUT() << "--" << std::endl;
+    LOG() << "memory estimate: " << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
+  }
+  statistics->setValue("realtime", totalRealtime.str());
+  statistics->setValue("floatingPointOperations", totalOperations);
+  statistics->setValue("flops", totalOperations/totalTime.getFractionalSeconds());
+  output->get("statistics") = statistics;
+
+  // emit final stage output
+  std::string stagePrefix( dry ? "dry-" : "" );
+  Emitter emitter(stagePrefix + options->yamlOutFile);
+  emitter.emit(output);
 }
 
 void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
@@ -75,6 +143,7 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   // store output in report
   step->get("out") = output;
 
+  auto statistics(New<MapNode>(SOURCE_LOCATION));
   std::stringstream realtime;
   realtime << time;
   OUT() << "realtime " << realtime.str() << " s" << std::endl;
@@ -82,69 +151,11 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   LOG() << "step: " << (i+1) << ", realtime: " << realtime.str() << " s"
     << ", operations: " << operations / 1e9 << " GFLOP"
     << ", speed: " << operations / 1e9 / time.getFractionalSeconds() << " GFLOP/s" << std::endl;
-  step->setValue("realtime", realtime.str());
-  step->setValue("floatingPointOperations", operations);
-  step->setValue("flops", operations / time.getFractionalSeconds());
-  // resources which maybe held by the algorithm automatically released
-}
-
-void Cc4s::run(const Ptr<MapNode> &report) {
-  printBanner(report);
-  listHosts(report);
-
-  // start with empty storage
-  storage = New<MapNode>(SOURCE_LOCATION);
-
-  // parse input
-  Parser parser(options->inFile);
-  auto input(parser.parse());
-  auto steps(input->toPtr<MapNode>());
-  ASSERT_LOCATION(steps, "expecting map as input", input->sourceLocation);
-  report->get("steps") = steps;
-  OUT() << "execution plan read, steps: " << steps->getSize()
-    << std::endl << std::endl;
-
-  if (options->dryRunOnly) dryRun = true;
-  Natural<128> totalOperations;
-  Time totalTime;
-  {
-    OperationsCounter totalOperationsCounter(&totalOperations);
-    Timer totalTimer(&totalTime);
-
-    for (Natural<> i(0); i < steps->getSize(); ++i) {
-      runStep(i, steps->getMap(i));
-      // emit report, overwrite from previous step
-      Emitter emitter(options->name + ".out.yaml");
-      emitter.emit(report);
-    }
-  }
-  dryRun = false;
-
-  if (dryRun)
-    OUT() << "\nMemory Estimate: " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB\n";
-
-  std::stringstream totalRealtime;
-  totalRealtime << totalTime;
-  if (dryRun){
-    OUT() << "total operations: " << totalOperations / 1e9 << " GFLOP" << std::endl;
-  }
-  else {
-    OUT() << "total realtime: " << totalRealtime.str() << " s" << std::endl;
-    OUT() << "total operations: "
-      << totalOperations / 1e9 << " GFLOPS, "
-      << "speed: "
-      << totalOperations/1e9 / totalTime.getFractionalSeconds()
-        / world->getProcesses()
-      << " GFLOPS/s/core" << std::endl;
-  }
-  LOG() << "total realtime: " << totalRealtime.str() << " s" << std::endl;
-  LOG() << "total operations: " << totalOperations / 1e9 << " GFLOPS, "
-    << "speed: "
-    << totalOperations/1e9 / totalTime.getFractionalSeconds()
-    << " GFLOP/s" << std::endl;
-  report->setValue("realtime", totalRealtime.str());
-  report->setValue("floatingPointOperations", totalOperations);
-  report->setValue("flops", totalOperations/totalTime.getFractionalSeconds());
+  statistics->setValue("realtime", realtime.str());
+  statistics->setValue("floatingPointOperations", operations);
+  statistics->setValue("flops", operations / time.getFractionalSeconds());
+  step->get("statistics") = statistics;
+  // resources held by the algorithm are released when it goes out of scope
 }
 
 void Cc4s::fetchSymbols(const Ptr<MapNode> &arguments) {
@@ -181,12 +192,7 @@ void Cc4s::storeSymbols(const Ptr<MapNode> &result, const Ptr<MapNode> &variable
 }
 
 
-void Cc4s::printBanner(const Ptr<MapNode> &report) {
-  std::stringstream buildDate;
-  buildDate << __DATE__ << " " << __TIME__;
-  time_t rawtime;
-  time (&rawtime);
-
+void Cc4s::printBanner() {
   OUT() << std::endl
         << "                __ __      " << std::endl
         << "     __________/ // / _____" << std::endl
@@ -194,42 +200,32 @@ void Cc4s::printBanner(const Ptr<MapNode> &report) {
         << "   / /__/ /__/__  __(__  ) " << std::endl
         << "   \\___/\\___/  /_/ /____/  " << std::endl
         << "  Coupled Cluster for Solids" << std::endl << std::endl;
+
+  executionEnvironment = New<MapNode>(SOURCE_LOCATION);
+  std::stringstream buildDate;
+  buildDate << __DATE__ << " " << __TIME__;
+  time_t rawtime;
+  time (&rawtime);
   OUT() << "version: " << CC4S_VERSION <<
     ", date: " << CC4S_DATE << std::endl;
   OUT() << "build date: " << buildDate.str() << std::endl;
   OUT() << "compiler: " << COMPILER_VERSION << std::endl;
   OUT() << "total processes: " << world->getProcesses() << std::endl;
-  OUT() << "calculation started on: " << ctime (&rawtime) << std::endl << std::endl;
-  report->setValue("version", std::string(CC4S_VERSION));
-  report->setValue("buildDate", buildDate.str());
-  report->setValue("compiler", std::string(COMPILER_VERSION));
-  report->setValue("dry run only", options->dryRunOnly);
+  OUT() << "calculation started on: " << ctime (&rawtime) << std::endl;
+  executionEnvironment->setValue("version", std::string(CC4S_VERSION));
+  executionEnvironment->setValue("buildDate", buildDate.str());
+  executionEnvironment->setValue("compiler", std::string(COMPILER_VERSION));
+  executionEnvironment->setValue("totalProcesses", world->getProcesses());
+  executionEnvironment->setValue("startTime", std::string(ctime (&rawtime)));
+  executionEnvironment->setValue("dryRunOnly", options->dryRunOnly);
   if (options->dryRunOnly) {
     OUT() << "DRY RUN ONLY - nothing will be calculated" << std::endl;
   }
+  executionEnvironment->get("hosts") = getHostList();
 }
 
-bool Cc4s::isDebugged() {
-  // assuming LINUX
-  std::ifstream statusStream("/proc/self/status", std::ios_base::in);
-  std::string line;
-  while (std::getline(statusStream, line)) {
-    std::string pidField("TracerPid:");
-    size_t position(line.find(pidField));
-    if (position != std::string::npos) {
-      std::stringstream pidStream(line.substr(position + pidField.length()));
-      size_t pid; pidStream >> pid;
-      if (pid > 0) {
-        LOG() << "Debugger present" << std::endl;
-      }
-      return pid > 0;
-    }
-  }
-  return false;
-}
-
-void Cc4s::listHosts(const Ptr<MapNode> &report) {
-  // TODO: list planned execution environment from options
+Ptr<MapNode> Cc4s::getHostList() {
+  auto hosts(New<MapNode>(SOURCE_LOCATION));
   if (!options->dryRunOnly) {
     char ownName[MPI_MAX_PROCESSOR_NAME];
     int nameLength;
@@ -254,7 +250,6 @@ void Cc4s::listHosts(const Ptr<MapNode> &report) {
         // and enter remote name/rank into map
         ranksOfHosts[remoteName].push_back(remoteRank);
       }
-      auto hosts(New<MapNode>(SOURCE_LOCATION));
       for (auto &ranksOfHost: ranksOfHosts) {
         auto host(New<MapNode>(SOURCE_LOCATION));
         host->setValue("host", ranksOfHost.first);
@@ -265,7 +260,6 @@ void Cc4s::listHosts(const Ptr<MapNode> &report) {
         host->get("ranks") = ranks;
         hosts->push_back(host);
       }
-      report->get("hosts") = hosts;
     } else {
       // send own name
       MPI_Send(
@@ -273,7 +267,29 @@ void Cc4s::listHosts(const Ptr<MapNode> &report) {
         0, 0, MPI_COMM_WORLD
       );
     }
+  } else {
+    // TODO: list planned execution environment from options
   }
+  return hosts;
+}
+
+bool isDebugged() {
+  // assuming LINUX
+  std::ifstream statusStream("/proc/self/status", std::ios_base::in);
+  std::string line;
+  while (std::getline(statusStream, line)) {
+    std::string pidField("TracerPid:");
+    size_t position(line.find(pidField));
+    if (position != std::string::npos) {
+      std::stringstream pidStream(line.substr(position + pidField.length()));
+      size_t pid; pidStream >> pid;
+      if (pid > 0) {
+        LOG() << "Debugger present" << std::endl;
+      }
+      return pid > 0;
+    }
+  }
+  return false;
 }
 
 
@@ -281,12 +297,15 @@ Ptr<MpiCommunicator> Cc4s::world;
 Ptr<Options> Cc4s::options;
 bool Cc4s::dryRun = false;
 
+
 int main(int argumentCount, char **arguments) {
   MPI_Init(&argumentCount, &arguments);
 
   Cc4s::world = New<MpiCommunicator>();
   Cc4s::options = New<Options>(argumentCount, arguments);
-  Log::setFileName(Cc4s::options->name + ".log");
+  if (int errcode = Cc4s::options->parse()) std::exit(errcode);
+
+  Log::setFileName(Cc4s::options->logFile);
   Log::setRank(Cc4s::world->getRank());
   Time startTime(Time::getCurrentRealTime());
   Log::setLogHeaderFunction(
@@ -300,19 +319,18 @@ int main(int argumentCount, char **arguments) {
       return header.str();
     }
   );
-  auto report(New<MapNode>(SOURCE_LOCATION));
-  bool errorHappened(false);
+  bool isSuccessful(true);
 
   Cc4s cc4s;
-  if (Cc4s::isDebugged()) {
+  if (isDebugged()) {
     // run without try-catch in debugger to allow tracing throwing code
-    cc4s.run(report);
+    cc4s.run();
   } else {
     // without debugger: catch and write list of causes
     try {
-      cc4s.run(report);
+      cc4s.run();
     } catch (Ptr<Exception> cause) {
-      errorHappened = true;
+      isSuccessful = false;
       auto sourceLocation(cause->getSourceLocation());
       if (!sourceLocation.isValid()) sourceLocation = SOURCE_LOCATION;
       ERROR_LOCATION(sourceLocation) << cause->what() << std::endl;
@@ -326,20 +344,20 @@ int main(int argumentCount, char **arguments) {
         cause = cause->getCause();
       }
     } catch (std::exception &cause) {
-      errorHappened = true;
+      isSuccessful = false;
       OUT() << "unhandled exception encountered (std::exception):" << std::endl;
       OUT() << cause.what() << std::endl;
     } catch (const char *message) {
-      errorHappened = true;
+      isSuccessful = false;
       OUT() << "unhandled exception encountered (const char *):" << std::endl;
       OUT() << message << std::endl;
     } catch (...) {
-      errorHappened = true;
+      isSuccessful = false;
       OUT() << "unhandled exception encountered (...)." << std::endl;
     }
   }
 
   MPI_Finalize();
-  return errorHappened ? 1 : 0;
+  return isSuccessful ? 0 : 1;
 }
 
