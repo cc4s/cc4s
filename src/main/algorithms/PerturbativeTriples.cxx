@@ -30,9 +30,8 @@ ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 #define Q(...) #__VA_ARGS__
 #define QUOTE(...) Q(__VA_ARGS__)
 
-template <typename F>
+template <typename F, typename TE>
 Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
-  using TE = DefaultTensorEngine;
   {
     auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
     if (!amplitudes) return nullptr;
@@ -91,6 +90,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       ->getMachineTensor()                                   \
       ->tensor)
 
+
   CTF::Tensor<F>
       epsi(1, (__eps__(h))->lens, (__eps__(h))->sym)
     , epsa(1, (__eps__(p))->lens, (__eps__(p))->sym)
@@ -127,6 +127,8 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
                             * 6.0
                             / 1.0e9
                             ;
+
+
   double lastElapsedTime = 0;
   auto const rank = Cc4s::world->getRank();
   bool firstHeaderPrinted = false;
@@ -152,7 +154,6 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
 #undef __V__
 #undef __T__
-#undef __eps__
 
   auto out = atrip::Atrip::run<F>(in);
   OUT() << "(T) correlation energy: "
@@ -189,17 +190,74 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   return result;
 }
 
-Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
-
-  if (Cc4s::dryRun) {
-    DryMemory::allocate(2);
-    DryMemory::free(2);
-    return New<PerturbativeTriplesReference>()->run(arguments);
+template <typename F, typename TE>
+Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
+  {
+    auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
+    if (!amplitudes) return nullptr;
   }
-
   Ptr<MapNode> result;
-     (result = runAtrip<Real<>>(arguments))
-  || (result = runAtrip<Complex<>>(arguments))
-  ;
+  const
+  size_t
+      no = *(__eps__(h))->lens
+    , nv = *(__eps__(p))->lens
+    , nranks = Cc4s::getProcessesCount()
+    , f = sizeof(F)
+    , n_tuples = nv * (nv + 1) * (nv + 2) / 6 - nv
+    , atrip_memory
+        = /* tuples_memory */ 3 * sizeof(size_t) * n_tuples
+          //
+          // one dimensional slices (all ranks)
+          //
+        + /* taphh */ f * nranks * 6 * nv * no * no
+        + /* hhha  */ f * nranks * 6 * no * no * no
+          //
+          // two dimensional slices (all ranks)
+          //
+        + /* abph  */ f * nranks * 12 * nv * no
+        + /* abhh  */ f * nranks *  6 * no * no
+        + /* tabhh */ f * nranks *  6 * no * no
+          //
+          // distributed sources (all ranks)
+          //
+        + /* tpphh */ f * nv * nv * no * no
+        + /* vhhhp */ f * no * no * no * nv
+        + /* vppph */ f * nv * nv * nv * no
+        + /* vpphh */ f * nv * nv * no * no
+        + /* tpphh2 */ f * nv * nv * no * no
+          //
+          // tensors in every rank
+          //
+        + /* tijk */ f * nranks * no * no * no
+        + /* zijk */ f * nranks * no * no * no
+        + /* epsp */ f * nranks * (no + nv)
+        + /* tai  */ f * nranks * no * nv
+    ;
+  DryMemory::allocate(atrip_memory, SOURCE_LOCATION);
+  DryMemory::free(atrip_memory);
   return result;
 }
+
+Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
+
+  using TE = DefaultTensorEngine;
+  Ptr<MapNode> result;
+
+  if (Cc4s::dryRun) {
+    (
+      result = atripDryRun<Real<>, TE>(arguments)
+    ) || (
+      result = atripDryRun<Complex<>, TE>(arguments)
+    );
+  } else {
+    (
+      result = runAtrip<Real<>,TE>(arguments)
+    ) || (
+      result = runAtrip<Complex<>,TE>(arguments)
+    );
+  }
+
+  return result;
+}
+
+#undef __eps__
