@@ -54,6 +54,7 @@ void Cc4s::runSteps(const bool dry) {
   output->get("executionEnvironment") = executionEnvironment;
 
   Cc4s::dryRun = dry;
+  std::string outPrefix(dry ? "dry" : "");
   // parse input
   Parser parser(options->inFile);
   auto input(parser.parse());
@@ -77,7 +78,7 @@ void Cc4s::runSteps(const bool dry) {
       runStep(i, step);
       executedSteps->get(i) = step;
       // emit output, overwrite from previous step
-      Emitter emitter(options->yamlOutFile);
+      Emitter emitter(outPrefix + options->yamlOutFile);
       emitter.emit(output);
     }
   }
@@ -92,16 +93,24 @@ void Cc4s::runSteps(const bool dry) {
     << totalOperations/1e9 / totalTime.getFractionalSeconds() / getProcessesCount()
     << " GFLOP/core/s" << std::endl;
   if (dry) {
-    OUT() << "Dry run finished." << std::endl;
-    OUT() << "Operations estimate: " << totalOperations / 1e9 << " GFLOPS, "
-      << totalOperations / 1e9 / getProcessesCount() << " GFLOPS/core"
-      << std::endl;
-    OUT() << "Memory estimate:     "
-      << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB, "
-      << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) / getProcessesCount()
-      << " GB/core" << std::endl;
+    auto GB(1024.0*1024.0*1024.0);
+    auto assumedGflops(10);
+    OUT() << "Dry run finished. Estimates provided for "
+      << getProcessesCount() << " ranks.\n";
+    OUT() << "Memory estimate (per Rank/Total): ";
+    OUT() <<  DryMemory::maxTotalSize / GB / getProcessesCount() << " / "
+          <<  DryMemory::maxTotalSize / GB << " GB\n";
+    OUT() << "Operations estimate (per Rank/Total): ";
+    OUT() << totalOperations / 1e9 / getProcessesCount() << " / "
+          << totalOperations / 1e9 << " GFLOPS" << std::endl;
+    OUT() << "Time estimate with assumed performance of "
+      << assumedGflops << " GFLOPS/core/s: ";
+    OUT() << totalOperations / 1e9 / getProcessesCount() / assumedGflops
+          << " s "
+          << "(" << totalOperations / 1e9 / getProcessesCount() / assumedGflops / 3600 << " h)\n";
     OUT() << "--" << std::endl;
-    LOG() << "memory estimate: " << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
+    LOG() << "memory estimate: " << DryMemory::maxTotalSize / GB << " GB"
+      << std::endl;
   }
   statistics->setValue("realtime", totalRealtime.str());
   statistics->setValue("floatingPointOperations", totalOperations);
