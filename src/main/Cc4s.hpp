@@ -43,7 +43,7 @@ namespace cc4s {
     void fetchSymbols(const Ptr<MapNode> &arguments);
     void storeSymbols(const Ptr<MapNode> &result,const Ptr<MapNode> &variables);
     void printBanner();
-    Ptr<MapNode> getExecutionEnvironment();
+    Natural<> getProcessesCount();
     Ptr<MapNode> getHostList();
 
     Ptr<MapNode> executionEnvironment, storage;

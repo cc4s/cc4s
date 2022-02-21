@@ -24,7 +24,7 @@ namespace cc4s {
   struct Options {
 
     std::string inFile, logFile, yamlOutFile;
-    int dryRunOnly;
+    int dryRanks;
     CLI::App app;
     int argc;
     char** argv;
@@ -33,7 +33,7 @@ namespace cc4s {
       : inFile("cc4s.in")
       , logFile("cc4s.log")
       , yamlOutFile("cc4s.out.yaml")
-      , dryRunOnly(0)
+      , dryRanks(0)
       , app{"CC4S: Coupled Cluster For Solids"}
       , argc(_argc)
       , argv(_argv)
@@ -44,12 +44,13 @@ namespace cc4s {
          ->default_val(yamlOutFile);
       app.add_option("-l,--log", logFile, "Output log file")
          ->default_val(logFile);
-      app.add_flag("-D,--dry-run-only", dryRunOnly, "Equivalent to -d 1")
-         ->default_val(dryRunOnly);
       app.add_option("-d,--dry-ranks",
-                     dryRunOnly,
-                    "Number of processes for dry run")
-         ->default_val(dryRunOnly);
+                     dryRanks,
+                    "Number of processes for dry run.\n"
+                    "If zero, run normally after dry run.\n"
+                    "If non-zero, specifies number ranks for resource\n"
+                    "estimation and do not run after dry run")
+         ->default_val(dryRanks);
     }
 
     int parse() {
