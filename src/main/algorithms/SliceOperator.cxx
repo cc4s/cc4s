@@ -74,7 +74,7 @@ Ptr<MapNode> SliceOperator::run(
 
   for (Natural<> d(0); d < tensor->dimensions.size(); ++d) {
     auto dimension(tensor->dimensions[d]);
-    if (dimension->name == "State") {
+    if (dimension && dimension->name == "State") {
       // only slice dimensions of type 'State'
       dims.push_back(d);
     }

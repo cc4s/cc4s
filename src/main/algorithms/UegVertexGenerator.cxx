@@ -85,7 +85,9 @@ Ptr<MapNode> UegVertexGenerator::run(
   bool lhfref(true);
   No = arguments->getValue<int>("No");
   Nv = arguments->getValue<int>("Nv");
-  rs =arguments->getValue<double> ("rs");
+  rs = arguments->getValue<double> ("rs");
+  NF = arguments->getValue<int>("NF",0);
+  halfGrid = arguments->getValue<int>("halfGrid",0);
   madelung = arguments->getValue<double> ("madelung", -1.0);
   size_t Np(No+Nv);
   if (!No) THROW("No larger zero please");
@@ -183,17 +185,19 @@ Ptr<MapNode> UegVertexGenerator::run(
     if ( sL(t) > maxR ) continue;
     momMap[t] = index++;
   }
+  if (NF == 0) NF = momMap.size();
 
-  size_t NF = momMap.size();
+  if (NF != momMap.size() || halfGrid)
+    OUT() << "WARNING: the Vertex will not be correct! Just for profiling!\n";
+
   double fac(4.0*M_PI/v);
-
 
   auto coulombVertex(
     Tcc<TE>::template tensor<Complex<>>({NF,Np,Np}, "CoulombVertex")
    );
 
   auto metaCoulomb( New<MapNode>(SOURCE_LOCATION) );
-  metaCoulomb->setValue("halfGrid", 0);
+  metaCoulomb->setValue("halfGrid", halfGrid);
   coulombVertex->getMetaData() = metaCoulomb;
 
   OUT() << "System Information:\n";
@@ -270,7 +274,9 @@ Ptr<MapNode> UegVertexGenerator::run(
              , iGrid[q][1] - iGrid[p][1]
              , iGrid[q][2] - iGrid[p][2]
              };
-    size_t ii = momMap[d];
+    // This is a hack!
+    // If NF is chosen by the user we will not have an overflow
+    size_t ii = momMap[d] % NF;
     double res;
     (sL(d)) ? res = fac/( b*b*sL(d) ) : res = evalMadelung(v);
     out[ii+q*NF+s*NF*Np] = { sqrt(res), 0.0};

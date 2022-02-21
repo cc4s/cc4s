@@ -92,9 +92,26 @@ void Cc4s::runSteps(const bool dry) {
     << totalOperations/1e9 / totalTime.getFractionalSeconds()
     << " GFLOP/s" << std::endl;
   if (dry) {
-    OUT() << "Dry run finished." << std::endl;
-    OUT() << "Operations estimate: " << totalOperations / 1e9 << " GFLOPS" << std::endl;
-    OUT() << "Memory estimate:     " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
+    auto drank(options->dryRunOnly);
+    // if this is the dryRun before the actual calculation set number of procesess.
+    if(!drank) drank = world->getProcesses();
+    auto GB(1024.0*1024.0*1024.0);
+    if (drank==1){
+      OUT() << "Dry run finished." << std::endl;
+      OUT() << "Operations estimate: " << totalOperations / 1e9 << " GFLOPS" << std::endl;
+      OUT() << "Memory estimate:     " <<  DryMemory::maxTotalSize / GB << " GB" << std::endl;
+    } else {
+      OUT() << "Dry run finished. Estimates provided for " << drank << " ranks.\n";
+      OUT() << "Memory estimate (per Rank/Total): ";
+      OUT() <<  DryMemory::maxTotalSize / GB / drank << " / "
+            <<  DryMemory::maxTotalSize / GB << " GB\n";
+      OUT() << "Operations estimate (per Rank/Total): ";
+      OUT() << totalOperations / 1e9 / drank << " / "
+            << totalOperations / 1e9 << " GFLOPS" << std::endl;
+      OUT() << "Time estimate with assumed performance of 10 GFLOPS/core/s: ";
+      OUT() << totalOperations / 1e9 / drank / 10 << " s "
+            << "(" << totalOperations / 1e9 / drank / 10 / 3600 << " h)\n";
+    }
     OUT() << "--" << std::endl;
     LOG() << "memory estimate: " << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
   }
