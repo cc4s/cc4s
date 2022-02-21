@@ -32,8 +32,8 @@ using namespace cc4s;
 void Cc4s::run() {
   printBanner();
   runSteps(true);
-  if (options->dryRunOnly) return;
-  runSteps();
+  if (options->dryRanks > 0) return;
+  runSteps(false);
 }
 
 
@@ -89,12 +89,17 @@ void Cc4s::runSteps(const bool dry) {
   LOG() << "total realtime: " << totalRealtime.str() << " s" << std::endl;
   LOG() << "total operations: " << totalOperations / 1e9 << " GFLOPS, "
     << "speed: "
-    << totalOperations/1e9 / totalTime.getFractionalSeconds()
-    << " GFLOP/s" << std::endl;
+    << totalOperations/1e9 / totalTime.getFractionalSeconds() / getProcessesCount()
+    << " GFLOP/core/s" << std::endl;
   if (dry) {
     OUT() << "Dry run finished." << std::endl;
-    OUT() << "Operations estimate: " << totalOperations / 1e9 << " GFLOPS" << std::endl;
-    OUT() << "Memory estimate:     " <<  DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
+    OUT() << "Operations estimate: " << totalOperations / 1e9 << " GFLOPS, "
+      << totalOperations / 1e9 / getProcessesCount() << " GFLOPS/core"
+      << std::endl;
+    OUT() << "Memory estimate:     "
+      << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB, "
+      << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) / getProcessesCount()
+      << " GB/core" << std::endl;
     OUT() << "--" << std::endl;
     LOG() << "memory estimate: " << DryMemory::maxTotalSize / (1024.0*1024.0*1024.0) << " GB" << std::endl;
   }
@@ -150,7 +155,9 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   OUT() << "--" << std::endl;
   LOG() << "step: " << (i+1) << ", realtime: " << realtime.str() << " s"
     << ", operations: " << operations / 1e9 << " GFLOP"
-    << ", speed: " << operations / 1e9 / time.getFractionalSeconds() << " GFLOP/s" << std::endl;
+    << ", speed: "
+    << operations / 1e9 / time.getFractionalSeconds() / getProcessesCount()
+    << " GFLOP/core/s" << std::endl;
   statistics->setValue("realtime", realtime.str());
   statistics->setValue("floatingPointOperations", operations);
   statistics->setValue("flops", operations / time.getFractionalSeconds());
@@ -217,16 +224,21 @@ void Cc4s::printBanner() {
   executionEnvironment->setValue("compiler", std::string(COMPILER_VERSION));
   executionEnvironment->setValue("totalProcesses", world->getProcesses());
   executionEnvironment->setValue("startTime", std::string(ctime (&rawtime)));
-  executionEnvironment->setValue("dryRunOnly", options->dryRunOnly);
-  if (options->dryRunOnly) {
+  executionEnvironment->setValue("dryRanks", options->dryRanks);
+  if (options->dryRanks == 0) {
     OUT() << "DRY RUN ONLY - nothing will be calculated" << std::endl;
   }
   executionEnvironment->get("hosts") = getHostList();
 }
 
+Natural<> Cc4s::getProcessesCount() {
+  return options->dryRanks > 0 ? options->dryRanks : Cc4s::world->getProcesses();
+}
+
+
 Ptr<MapNode> Cc4s::getHostList() {
   auto hosts(New<MapNode>(SOURCE_LOCATION));
-  if (!options->dryRunOnly) {
+  if (options->dryRanks == 0) {
     char ownName[MPI_MAX_PROCESSOR_NAME];
     int nameLength;
     MPI_Get_processor_name(ownName, &nameLength);
