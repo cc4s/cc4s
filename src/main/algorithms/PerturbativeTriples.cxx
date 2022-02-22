@@ -27,9 +27,6 @@
 using namespace cc4s;
 ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 
-#define Q(...) #__VA_ARGS__
-#define QUOTE(...) Q(__VA_ARGS__)
-
 template <typename F, typename TE>
 Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   {
