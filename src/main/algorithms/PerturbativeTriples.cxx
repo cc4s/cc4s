@@ -183,7 +183,13 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   }
 
   using TSr = TensorSet<Real<>, TE>;
-  energy->setValue("unit", arguments->getPtr<TSr>("slicedEigenEnergies")->get("h")->inspect()->getUnit());
+  energy
+    ->setValue("unit",
+               arguments
+                ->getPtr<TSr>("slicedEigenEnergies")
+                ->get("h")
+                ->inspect()
+                ->getUnit());
 
   result->get("energy") = energy;
 
@@ -192,10 +198,6 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
 template <typename F, typename TE>
 Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
-  {
-    auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
-    if (!amplitudes) return nullptr;
-  }
   Ptr<MapNode> result;
   const
   size_t
