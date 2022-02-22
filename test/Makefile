@@ -65,11 +65,13 @@ data:
 
 clean:
 	-@find . -name '*.testis'   -type d -exec rm -vr {} \;
-	-@find . -name testis-store -type d -exec rm -vr {} \;
 	-@find . -name __pycache__  -type d -exec rm -vr {} \;
 	-@rm -v $(TESTIS_LINKS)
 
-clean-all: clean
+clean-store:
+	-@find . -name testis-store -type d -exec rm -vr {} \;
+
+clean-all: clean clean-store
 	rm -vrf lib
 	rm -vfr pyyaml
 

@@ -359,6 +359,12 @@ def _get_args():
     return parser.parse_args()
 
 
+class WithSeconds(logging.Formatter):
+    def format(self, record):
+        record.relativeCreated = record.relativeCreated // 1000
+        return super().format(record)
+
+
 def main():
     args = _get_args()
     os.makedirs(STORE_FOLDER, exist_ok=True)
@@ -368,8 +374,9 @@ def main():
             level=logging.DEBUG,
             format="(%(relativeCreated)d) %(levelname)s:%(message)s")
     else:
-        logging.basicConfig(level=logging.INFO,
-                            format="(%(relativeCreated)d) %(message)s")
+        logging.basicConfig(level=logging.INFO)
+        formatter = WithSeconds("(%(relativeCreated)d) %(message)s")
+        logging.root.handlers[0].setFormatter(formatter)
 
     logging.info("Getting sources from %s", args.sources)
     sources = get_sources(args.sources)
