@@ -53,11 +53,6 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       : true
       ;
 
-#ifdef DEBUG
-  OUT() << "Using atrip distribution " << distribution << "\n";
-  OUT() << "rankRoundRobin? " << rankRoundRobin << "\n";
-#endif
-
   atrip::Atrip::init();
   atrip::Atrip::Input<F> in;
 
@@ -200,11 +195,9 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 template <typename F, typename TE>
 Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
   auto result(New<MapNode>(SOURCE_LOCATION));
-  std::cout << "TRIPLES\n";
   auto eps(arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies"));
   auto epsh(eps->get("h"));
   auto epsp(eps->get("p"));
-  std::cout << "TRIPLES\n";
   const
   size_t
       no = epsh->inspect()->getLen(0)
