@@ -241,7 +241,7 @@ def run_in_test(test, script_file):
     logging.info("running: %s", cmd)
     cwd = os.getcwd()
 
-    logging.debug("chdir: %s", test.outpath)
+    logging.info("cd %s", test.outpath)
     os.chdir(test.outpath)
 
     with sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE) as p:
