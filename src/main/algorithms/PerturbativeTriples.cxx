@@ -154,6 +154,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
 #undef __V__
 #undef __T__
+#undef __eps__
 
   auto out = atrip::Atrip::run<F>(in);
   OUT() << "(T) correlation energy: "
@@ -198,11 +199,16 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
 template <typename F, typename TE>
 Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
-  Ptr<MapNode> result;
+  auto result(New<MapNode>(SOURCE_LOCATION));
+  std::cout << "TRIPLES\n";
+  auto eps(arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies"));
+  auto epsh(eps->get("h"));
+  auto epsp(eps->get("p"));
+  std::cout << "TRIPLES\n";
   const
   size_t
-      no = *(__eps__(h))->lens
-    , nv = *(__eps__(p))->lens
+      no = epsh->inspect()->getLen(0)
+    , nv = epsp->inspect()->getLen(0)
     , nranks = Cc4s::getProcessesCount()
     , f = sizeof(F)
     , n_tuples = nv * (nv + 1) * (nv + 2) / 6 - nv
@@ -242,16 +248,17 @@ Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
 
 Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
 
-  using TE = DefaultTensorEngine;
   Ptr<MapNode> result;
 
   if (Cc4s::dryRun) {
-    (
-      result = atripDryRun<Real<>, TE>(arguments)
-    ) || (
-      result = atripDryRun<Complex<>, TE>(arguments)
-    );
+    using TE = DefaultDryTensorEngine;
+    if (arguments->getPtr<TensorSet<Real<>,TE>>("amplitudes") != nullptr) {
+      result = atripDryRun<Real<>, TE>(arguments);
+    } else {
+      result = atripDryRun<Complex<>, TE>(arguments);
+    }
   } else {
+    using TE = DefaultTensorEngine;
     (
       result = runAtrip<Real<>,TE>(arguments)
     ) || (
@@ -262,4 +269,3 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
   return result;
 }
 
-#undef __eps__
