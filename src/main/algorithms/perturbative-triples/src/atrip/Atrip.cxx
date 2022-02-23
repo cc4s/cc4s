@@ -6,11 +6,13 @@
 #include <atrip/Equations.hpp>
 #include <atrip/SliceUnion.hpp>
 #include <atrip/Unions.hpp>
+#include <atrip/RankMap.hpp>
 
 using namespace atrip;
 
-bool RankMap<Complex>::RANK_ROUND_ROBIN;
-bool RankMap<double>::RANK_ROUND_ROBIN;
+template <typename F> bool RankMap<F>::RANK_ROUND_ROBIN;
+template bool RankMap<double>::RANK_ROUND_ROBIN;
+template bool RankMap<Complex>::RANK_ROUND_ROBIN;
 int Atrip::rank;
 int Atrip::np;
 Timings Atrip::chrono;

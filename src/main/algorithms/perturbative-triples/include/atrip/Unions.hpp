@@ -60,7 +60,7 @@ namespace atrip {
                           , global_world
                           , Slice<F>::TA
                           , 6) {
-           init(sourceTensor);
+           this->init(sourceTensor);
          }
 
     void sliceIntoBuffer(size_t it, CTF::Tensor<F> &to, CTF::Tensor<F> const& from) override
@@ -98,7 +98,7 @@ namespace atrip {
                          , global_world
                          , Slice<F>::VIJKA
                          , 6) {
-           init(sourceTensor);
+           this->init(sourceTensor);
          }
 
     void sliceIntoBuffer(size_t it, CTF::Tensor<F> &to, CTF::Tensor<F> const& from) override
@@ -135,7 +135,7 @@ namespace atrip {
                          , global_world
                          , Slice<F>::VABCI
                          , 2*6) {
-           init(sourceTensor);
+           this->init(sourceTensor);
          }
 
     void sliceIntoBuffer(size_t it, CTF::Tensor<F> &to, CTF::Tensor<F> const& from) override {
@@ -174,7 +174,7 @@ namespace atrip {
                          , global_world
                          , Slice<F>::VABIJ
                          , 6) {
-           init(sourceTensor);
+           this->init(sourceTensor);
          }
 
     void sliceIntoBuffer(size_t it, CTF::Tensor<F> &to, CTF::Tensor<F> const& from) override {
@@ -214,7 +214,7 @@ namespace atrip {
                           , global_world
                           , Slice<F>::TABIJ
                           , 6) {
-           init(sourceTensor);
+           this->init(sourceTensor);
          }
 
     void sliceIntoBuffer(size_t it, CTF::Tensor<F> &to, CTF::Tensor<F> const& from) override {

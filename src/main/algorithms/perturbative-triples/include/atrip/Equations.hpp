@@ -45,20 +45,20 @@ namespace atrip {
                   , C(maybeConjugate<F>(Tijk_[j + No*i + No*No*k]))
                   , D(maybeConjugate<F>(Tijk_[j + No*k + No*No*i]))
                   , E(maybeConjugate<F>(Tijk_[k + No*i + No*No*j]))
-                  , F(maybeConjugate<F>(Tijk_[k + No*j + No*No*i]))
+                  , _F(maybeConjugate<F>(Tijk_[k + No*j + No*No*i]))
                   , value
                     = 3.0 * ( A * U
                               + B * V
                               + C * W
                               + D * X
                               + E * Y
-                              + F * Z )
+                              + _F * Z )
                    + ( ( U + X + Y )
                      - 2.0 * ( V + W + Z )
                      ) * ( A + D + E )
                    + ( ( V + W + Z )
                      - 2.0 * ( U + X + Y )
-                     ) * ( B + C + F )
+                     ) * ( B + C + _F )
                   ;
                 energy += 2.0 * value / denominator * facjk * facij;
               } // i
