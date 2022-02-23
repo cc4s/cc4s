@@ -1,6 +1,4 @@
 variables:
-  CC4S_PATH: "build/gcc-oblas-ompi/bin/Cc4s"
-  CC4S_RUN: "salloc -N1 -n4 mpirun build/gcc-oblas-ompi/bin/Cc4s"
   CONFIG: "gcc-oblas-ompi"
   NP: 4
 
@@ -29,4 +27,4 @@ test:
     - job: build
       artifacts: true
   script:
-    - make CONFIG=$CONFIG CC4S_RUN="$CC4S_RUN" test-run test-check
+    - salloc -N1 -n$NP make CONFIG=$CONFIG test-run test-check
