@@ -2,7 +2,8 @@
 PYTHON ?= python3
 CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
-CC4S_RUN ?= mpirun $(CC4S_PATH)
+NP ?= 1
+CC4S_RUN ?= mpirun -np $(NP) $(CC4S_PATH)
 ifneq ($(MAKECMDGOALS),data)
 ifneq ($(MAKECMDGOALS),pyyaml)
 OUTPUT_NAME ?= $(CONFIG)-$(shell md5sum "$(CC4S_PATH)" | cut -d ' ' -f1).testis
@@ -64,11 +65,13 @@ data:
 
 clean:
 	-@find . -name '*.testis'   -type d -exec rm -vr {} \;
-	-@find . -name testis-store -type d -exec rm -vr {} \;
 	-@find . -name __pycache__  -type d -exec rm -vr {} \;
 	-@rm -v $(TESTIS_LINKS)
 
-clean-all: clean
+clean-store:
+	-@find . -name testis-store -type d -exec rm -vr {} \;
+
+clean-all: clean clean-store
 	rm -vrf lib
 	rm -vfr pyyaml
 

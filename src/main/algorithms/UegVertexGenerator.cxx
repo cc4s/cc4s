@@ -24,31 +24,31 @@
 
 using namespace cc4s;
 
-double UegVertexGenerator::evalMadelung(const double v){
-  double kappa = pow(v,-1.0/3.0);
-  double term2 = M_PI / (kappa*kappa*v);
-  double term4 = 2 * kappa/sqrt(M_PI);
-  double boxLength = 1.0/kappa;
-  double recipsum = 0.0;
-  double realsum = 0.0;
-  for (int l1=-6; l1 <= 6; ++l1)
-  for (int l2=-6; l2 <= 6; ++l2)
-  for (int l3=-6; l3 <= 6; ++l3){
-    int n2 = l1*l1 + l2*l2 + l3*l3;
-    double modr = boxLength * sqrt((double)n2);
-    double k2 = kappa*kappa*n2;
+Real<> UegVertexGenerator::evalMadelung(const Real<> v){
+  Real<> kappa = pow(v,-1.0/3.0);
+  Real<> term2 = M_PI / (kappa*kappa*v);
+  Real<> term4 = 2 * kappa/sqrt(M_PI);
+  Real<> boxLength = 1.0/kappa;
+  Real<> recipsum = 0.0;
+  Real<> realsum = 0.0;
+  for (Integer<> l1=-6; l1 <= 6; ++l1)
+  for (Integer<> l2=-6; l2 <= 6; ++l2)
+  for (Integer<> l3=-6; l3 <= 6; ++l3){
+    Integer<> n2 = l1*l1 + l2*l2 + l3*l3;
+    Real<> modr = boxLength * sqrt((Real<>)n2);
+    Real<> k2 = kappa*kappa*n2;
     if (n2 > 0){
      recipsum -= 1.0/(M_PI*k2)*exp(-M_PI*M_PI*k2/kappa/kappa)/v;
      realsum -= erfc(kappa*modr)/modr;
     }
   }
   return realsum + term2 + term4 + recipsum;
-};
+}
 
 //define two functions which give the squared length of the grid-points
-size_t sL(const ivec a)   {  return a[0]*a[0] + a[1]*a[1] + a[2]*a[2];}
-double sL(const dvec a){  return a[0]*a[0] + a[1]*a[1] + a[2]*a[2];}
-double UegVertexGenerator::Vijji(const dvec a, const dvec b, const double v){
+Natural<> sL(const ivec a)   {  return a[0]*a[0] + a[1]*a[1] + a[2]*a[2];}
+Real<> sL(const dvec a){  return a[0]*a[0] + a[1]*a[1] + a[2]*a[2];}
+Real<> UegVertexGenerator::Vijji(const dvec a, const dvec b, const Real<> v){
   dvec q({a[0]-b[0], a[1]-b[1], a[2]-b[2]});
   if ( sL(q) < 1e-8 ) return madelung;
   return 4.0*M_PI/v/sL(q);
@@ -83,13 +83,13 @@ Ptr<MapNode> UegVertexGenerator::run(
 ) {
   // We always use the HF reference.
   bool lhfref(true);
-  No = arguments->getValue<int>("No");
-  Nv = arguments->getValue<int>("Nv");
-  rs = arguments->getValue<double> ("rs");
-  NF = arguments->getValue<int>("NF",0);
-  halfGrid = arguments->getValue<int>("halfGrid",0);
-  madelung = arguments->getValue<double> ("madelung", -1.0);
-  size_t Np(No+Nv);
+  No = arguments->getValue<Natural<>>("No");
+  Nv = arguments->getValue<Natural<>>("Nv");
+  rs = arguments->getValue<Real<>> ("rs");
+  NF = arguments->getValue<Natural<>>("NF",0);
+  halfGrid = arguments->getValue<bool>("halfGrid",0);
+  madelung = arguments->getValue<Real<>> ("madelung", -1.0);
+  Natural<> Np(No+Nv);
   if (!No) THROW("No larger zero please");
   if (rs <= 0.0) THROW("Invalid rs");
 
@@ -97,11 +97,11 @@ Ptr<MapNode> UegVertexGenerator::run(
   //  1) gather more than enough candidates
   //  2.) sort by length
   //  3.) split and cut
-  int maxG = pow(5.0*Np,1.0/3.0);
+  Integer<> maxG = pow(5.0*Np,1.0/3.0);
   std::vector<ivec> iGrid;
-  for (int g1(-maxG); g1 <= maxG; g1++)
-  for (int g2(-maxG); g2 <= maxG; g2++)
-  for (int g3(-maxG); g3 <= maxG; g3++)
+  for (Integer<> g1(-maxG); g1 <= maxG; g1++)
+  for (Integer<> g2(-maxG); g2 <= maxG; g2++)
+  for (Integer<> g3(-maxG); g3 <= maxG; g3++)
     iGrid.push_back({g1, g2, g3});
 
   sort(iGrid.begin(), iGrid.end(), [](ivec a, ivec b){ return sL(a) < sL(b); });
@@ -111,9 +111,9 @@ Ptr<MapNode> UegVertexGenerator::run(
   iGrid.resize(Np);
 
   // define volume, lattice Constant, and reciprocal lattice constant
-  double v(rs*rs*rs/3.0*4.0*M_PI*No*2);
-  double a(pow(v,1./3.));
-  double b(2.0*M_PI/a);
+  Real<> v(rs*rs*rs/3.0*4.0*M_PI*No*2);
+  Real<> a(pow(v,1./3.));
+  Real<> b(2.0*M_PI/a);
 
   if (madelung < 0.0) madelung = evalMadelung(v);
 
@@ -125,21 +125,21 @@ Ptr<MapNode> UegVertexGenerator::run(
   // now we can write the hartree fock energy in the 4th entry
   for (auto &d: dGrid){
     d[3] = 0.5*sL(d); // add the kinetic energy
-    double exchE(0.0);
-    for (size_t o(0); o < No; o++)
+    Real<> exchE(0.0);
+    for (Natural<> o(0); o < No; o++)
       exchE += Vijji(d, dGrid[o], v);
     if (lhfref) d[3] -= exchE;
   }
-  double refE(0.0);
-  for (size_t o(0); o < No; o++) {
+  Real<> refE(0.0);
+  for (Natural<> o(0); o < No; o++) {
     refE += dGrid[o][3];
     if (lhfref) refE += 0.5*sL(dGrid[o]);
   }
 
 
-  std::vector<double> energies(dGrid.size());
+  std::vector<Real<>> energies(dGrid.size());
 
-  for (auto d(0); d < dGrid.size(); d++)
+  for (Natural<> d(0); d < dGrid.size(); d++)
     energies[d] = dGrid[d][3];
 
   // Prepare eigenEnergies
@@ -147,12 +147,12 @@ Ptr<MapNode> UegVertexGenerator::run(
     Tcc<TE>::template tensor<Real<>>({Np}, "EigenEnergies")
    );
 
-  double fermiEnergy((energies[No] + energies[No-1])/2.0);
+  Real<> fermiEnergy((energies[No] + energies[No-1])/2.0);
 
   auto metaData( New<MapNode>(SOURCE_LOCATION) );
   metaData->setValue("fermiEnergy", fermiEnergy);
   auto energiesNode( New<MapNode>(SOURCE_LOCATION) );
-  for (size_t i(0); i < Np; ++i) {
+  for (Natural<> i(0); i < Np; ++i) {
     energiesNode->setValue(i, energies[i]);
   }
   metaData->get("energies") = energiesNode;
@@ -163,8 +163,8 @@ Ptr<MapNode> UegVertexGenerator::run(
   // 2.) construct a full grid with a largest grid vec. of this size
 
   ivec maxMom({0,0,0});
-  for (int p(0); p < Np; p++)
-  for (int q(0); q < Np; q++){
+  for (Natural<> p(0); p < Np; p++)
+  for (Natural<> q(0); q < Np; q++){
     ivec d = { iGrid[p][0] - iGrid[q][0]
              , iGrid[p][1] - iGrid[q][1]
              , iGrid[p][2] - iGrid[q][2]
@@ -172,15 +172,15 @@ Ptr<MapNode> UegVertexGenerator::run(
     maxMom = max(maxMom, d, [](ivec a, ivec b) { return sL(a) < sL(b);});
   }
 
-  int maxR = sL(maxMom);
+  Natural<> maxR = sL(maxMom);
   maxG = max( {maxMom[0], maxMom[1], maxMom[2]}
-            , [](int a, int b){ return std::abs(a) < std::abs(b);});
+            , [](Integer<> a, Integer<> b){ return std::abs(a) < std::abs(b);});
   maxG = std::abs(maxG);
-  std::map<ivec,int> momMap;
-  int index(0);
-  for (int g1(-maxG); g1 <= maxG; g1++)
-  for (int g2(-maxG); g2 <= maxG; g2++)
-  for (int g3(-maxG); g3 <= maxG; g3++){
+  std::map<ivec,Natural<>> momMap;
+  Natural<> index(0);
+  for (Integer<> g1(-maxG); g1 <= maxG; g1++)
+  for (Integer<> g2(-maxG); g2 <= maxG; g2++)
+  for (Integer<> g3(-maxG); g3 <= maxG; g3++){
     ivec t({g1,g2,g3});
     if ( sL(t) > maxR ) continue;
     momMap[t] = index++;
@@ -190,7 +190,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   if (NF != momMap.size() || halfGrid)
     OUT() << "WARNING: the Vertex will not be correct! Just for profiling!\n";
 
-  double fac(4.0*M_PI/v);
+  Real<> fac(4.0*M_PI/v);
 
   auto coulombVertex(
     Tcc<TE>::template tensor<Complex<>>({NF,Np,Np}, "CoulombVertex")
@@ -231,7 +231,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   if (Cc4s::dryRun) return result;
 
   //only rank 0 writes the data to the tensor
-  std::vector<size_t> idx;
+  std::vector<Natural<>> idx;
   if (!Cc4s::world->getRank()){
     idx.resize(energies.size());
     std::iota(idx.begin(), idx.end(), 0);
@@ -243,32 +243,31 @@ Ptr<MapNode> UegVertexGenerator::run(
   // Writing CoulombVertex to buffer
   // We have to do it mpi-able...otherwise we will
   // not be able to write it to a ctf tensor
-  size_t np = Cc4s::world->getProcesses();
-  size_t rank = Cc4s::world->getRank();
+  Natural<> np = Cc4s::world->getProcesses();
+  Natural<> rank = Cc4s::world->getRank();
   // We slice the number of states for all the mpi processes
-  size_t slices(Np/np);
-  std::vector<size_t> slicePerRank(np);
-  for (size_t r(0); r < np; r++){
-    size_t lslice(slices);
-    for (size_t i(0); i < Np - slices*np; i++) if (r == i){
+  Natural<> slices(Np/np);
+  std::vector<Natural<>> slicePerRank(np);
+  for (Natural<> r(0); r < np; r++){
+    Natural<> lslice(slices);
+    for (Natural<> i(0); i < Np - slices*np; i++) if (r == i){
       lslice++;
     }
     slicePerRank[r] = lslice;
   }
   slices = slicePerRank[rank];
   //allocate only a buffer of needed size
-  std::vector< complex<double> > out(NF*Np*slices,{0,0});
+  std::vector< Complex<> > out(NF*Np*slices,{0,0});
   // determine begin and end of the rank's slices
   auto sbegin( std::accumulate( slicePerRank.begin()
                               , slicePerRank.begin() + rank
                               , 0UL
-                              , std::plus<size_t>()
+                              , std::plus<Natural<>>()
                               )
              );
-  auto send(sbegin+slices);
 
-  for (size_t s(0); s < slices; s++)
-  for (size_t q(0); q < Np; q++){
+  for (Natural<> s(0); s < slices; s++)
+  for (Natural<> q(0); q < Np; q++){
     auto p(s+sbegin);
     ivec d = { iGrid[q][0] - iGrid[p][0]
              , iGrid[q][1] - iGrid[p][1]
@@ -276,8 +275,8 @@ Ptr<MapNode> UegVertexGenerator::run(
              };
     // This is a hack!
     // If NF is chosen by the user we will not have an overflow
-    size_t ii = momMap[d] % NF;
-    double res;
+    Natural<> ii = momMap[d] % NF;
+    Real<> res;
     (sL(d)) ? res = fac/( b*b*sL(d) ) : res = evalMadelung(v);
     out[ii+q*NF+s*NF*Np] = { sqrt(res), 0.0};
   }

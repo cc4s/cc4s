@@ -13,7 +13,7 @@ CTF_BUILD_PATH     ?= $(CC4S_EXTERN_BUILD)/ctf/$(CTF_COMMIT)
 CTF_SRC_PATH       ?= $(CC4S_EXTERN_SRC)/ctf/$(CTF_COMMIT)
 CTF_LDFLAGS        ?= -L${CTF_BUILD_PATH}/lib -lctf
 CTF_INCLUDE        ?= -I${CTF_BUILD_PATH}/include
-CTF_GIT_REPOSITORY ?= https://github.com/cc4s/ctf
+CTF_GIT_REPOSITORY ?= https://gitlab.cc4s.org/cc4s/ctf.git
 
 # yaml-cpp ====================================================================
 YAML_COMMIT         ?= c9460110e072df84b7dee3eb651f2ec5df75fb18
@@ -21,7 +21,7 @@ YAML_BUILD_PATH     ?= $(CC4S_EXTERN_BUILD)/yaml-cpp/$(YAML_COMMIT)
 YAML_SRC_PATH       ?= $(CC4S_EXTERN_SRC)/yaml-cpp/$(YAML_COMMIT)
 YAML_LDFLAGS        ?= -L${YAML_BUILD_PATH} -lyaml-cpp
 YAML_INCLUDE        ?= -I${YAML_BUILD_PATH}/include
-YAML_GIT_REPOSITORY ?= https://github.com/cc4s/yaml-cpp.git
+YAML_GIT_REPOSITORY ?= https://gitlab.cc4s.org/cc4s/yaml-cpp.git
 
 # BLAS ========================================================================
 BLAS_INCLUDE ?= -I${BLAS_PATH}/include
@@ -31,10 +31,10 @@ BLAS_LDFLAGS ?= -L${BLAS_PATH}/lib -lopenblas
 SCALAPACK_LDFLAGS ?= -L${SCALAPACK_PATH}/lib -lscalapack
 
 # ATRIP =======================================================================
-ATRIP_COMMIT         ?= b117599
+ATRIP_COMMIT         ?= bbbfb30
 ATRIP_SRC_PATH       ?= $(CC4S_INTERN_SRC)/atrip/$(ATRIP_COMMIT)
 ATRIP_GIT_REPOSITORY ?= git@gitlab.cc4s.org:gallo/atrip
-ATRIP                ?= yes
+ATRIP                ?= no
 CXXFLAGS             += -DATRIP_COMMIT=$(ATRIP_COMMIT)
 CXXFLAGS             += -DATRIP_NO_OUTPUT
 
