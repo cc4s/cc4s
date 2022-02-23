@@ -12,7 +12,8 @@ build:
     - master
     - develop
   script:
-    - salloc -N1 -n$NP mpirun -np 1 make CONFIG=$CONFIG -j$NP -s extern cc4s
+    - salloc -N1 -n$NP mpirun -np 1 make CONFIG=$CONFIG -j$NP -s extern
+    - salloc -N1 -n$NP mpirun -np 1 make CONFIG=$CONFIG -j$NP -s
   artifacts:
     paths:
       - "build/*"
@@ -26,4 +27,5 @@ test:
     - job: build
       artifacts: true
   script:
-    - salloc -N1 -n$NP make CONFIG=$CONFIG test-run test-check
+    - salloc -N1 -n$NP make CONFIG=$CONFIG test-run
+    - salloc -N1 -n$NP make CONFIG=$CONFIG test-check
