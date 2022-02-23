@@ -17,7 +17,7 @@ build:
     - salloc -N1 -n1 mpirun make CONFIG=$CONFIG -j$NP -s
   artifacts:
     paths:
-      - build/*/bin/Cc4s
+      - "build/*"
 
 test:
   stage: test
