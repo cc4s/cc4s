@@ -5,11 +5,13 @@ variables:
 
 stages:
   - build
-  - test-run
-  - test-check
+  - test
 
 build:
   stage: build
+  only:
+    - master
+    - develop
   script:
     - salloc -N1 -n$NP make CONFIG=$CONFIG -j -s extern
     - salloc -N1 -n$NP make CONFIG=$CONFIG -j -s
@@ -17,8 +19,11 @@ build:
     paths:
       - $CC4S_PATH
 
-test-run:
-  stage: test-run
+test:
+  stage: test
+  only:
+    - master
+    - develop
   needs:
     - job: build
       artifacts: true
