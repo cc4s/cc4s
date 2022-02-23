@@ -12,8 +12,7 @@ build:
     - master
     - develop
   script:
-    - salloc -N1 -n1 mpirun make CONFIG=$CONFIG -j$NP -s extern
-    - salloc -N1 -n1 mpirun make CONFIG=$CONFIG -j$NP -s
+    - salloc -N1 -n$NP mpirun -np 1 make CONFIG=$CONFIG -j$NP -s extern cc4s
   artifacts:
     paths:
       - "build/*"
