@@ -33,9 +33,11 @@ main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/FiniteSizeCorrection.cxx \
 main/algorithms/BasisSetCorrection.cxx \
 main/algorithms/UegVertexGenerator.cxx \
+main/algorithms/PerturbativeTriples.cxx \
 
-ifeq ($(ATRIP), yes)
-SRC_FILES += main/algorithms/PerturbativeTriples.cxx
+ifeq ($(ATRIP), no)
+SRC_FILES += main/algorithms/perturbative-triples/src/atrip/Atrip.cxx
+CXXFLAGS  += -Isrc/main/algorithms/perturbative-triples/include/
 endif
 
 TEST_SRC_FILES = \

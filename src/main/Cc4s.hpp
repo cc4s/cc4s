@@ -36,6 +36,7 @@ namespace cc4s {
 
     static Natural<128> getFloatingPointOperations();
     static void addFloatingPointOperations(const Natural<128> ops);
+    static Natural<> getProcessesCount();
 
   protected:
     void runSteps(const bool dry = false);
@@ -43,7 +44,6 @@ namespace cc4s {
     void fetchSymbols(const Ptr<MapNode> &arguments);
     void storeSymbols(const Ptr<MapNode> &result,const Ptr<MapNode> &variables);
     void printBanner();
-    Natural<> getProcessesCount();
     Ptr<MapNode> getHostList();
 
     Ptr<MapNode> executionEnvironment, storage;

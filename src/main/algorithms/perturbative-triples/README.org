@@ -1,0 +1,26 @@
+#+title: Sources of ATRIP algorithm for perturbative triples
+#+current-commit: 10a796971012a1ce494d88d983ff6a1725a3dfbe
+
+* Generalities
+
+  This folder contains the exported files of the ATRIP
+  project found at
+    [[https://github.com/alejandrogallo/atrip]]
+  or
+    [[https://cc4s.gitlab.org/gallo/atrip]]
+  and is under the GPLv3 license.
+
+* How to update
+
+  In order to update the sources from the source repositories
+  mentioned above, follow these steps:
+
+  1. Update the =current-commit= line in this file to the
+     commit of your choice.
+  2. Mirror the =include= and =src= contents of the repository
+     with this folder.
+
+* Documentation
+
+  For further documentation and information about the algorithm,
+  refer to the literate program found in the repositories mentioned above.

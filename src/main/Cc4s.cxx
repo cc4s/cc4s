@@ -54,7 +54,6 @@ void Cc4s::runSteps(const bool dry) {
   output->get("executionEnvironment") = executionEnvironment;
 
   Cc4s::dryRun = dry;
-  std::string outPrefix(dry ? "dry" : "");
   // parse input
   Parser parser(options->inFile);
   auto input(parser.parse());
@@ -78,7 +77,8 @@ void Cc4s::runSteps(const bool dry) {
       runStep(i, step);
       executedSteps->get(i) = step;
       // emit output, overwrite from previous step
-      Emitter emitter(outPrefix + options->yamlOutFile);
+      std::string stagePrefix(dry ? "dry-" : "");
+      Emitter emitter(stagePrefix + options->yamlOutFile);
       emitter.emit(output);
     }
   }
