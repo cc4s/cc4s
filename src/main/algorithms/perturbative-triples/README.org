@@ -8,7 +8,7 @@
     [[https://github.com/alejandrogallo/atrip]]
   or
     [[https://cc4s.gitlab.org/gallo/atrip]]
-  and is under the GPLv3 license.
+  and is under the APACHEv2 license.
 
 * How to update
 

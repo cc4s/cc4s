@@ -22,6 +22,7 @@
 
 using namespace cc4s;
 
+
 ALGORITHM_REGISTRAR_DEFINITION(SecondOrderPerturbationTheory)
 
 Ptr<MapNode> SecondOrderPerturbationTheory::run(const Ptr<MapNode> &arguments) {
