@@ -13,8 +13,8 @@ build:
     - master
     - develop
   script:
-    - salloc -N1 -n$NP make CONFIG=$CONFIG -j -s extern
-    - salloc -N1 -n$NP make CONFIG=$CONFIG -j -s
+    - salloc -N1 -n$NP mpirun -np1 make CONFIG=$CONFIG -j -s extern
+    - salloc -N1 -n$NP mpirun -np1 make CONFIG=$CONFIG -j -s
   artifacts:
     paths:
       - $CC4S_PATH
