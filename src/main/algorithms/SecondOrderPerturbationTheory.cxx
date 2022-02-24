@@ -57,8 +57,37 @@ Ptr<MapNode> SecondOrderPerturbationTheory::run(
   auto coulombIntegrals(arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals"));
   if (!coulombIntegrals) return nullptr;
   auto Vpphh(coulombIntegrals->get("pphh"));
-  // TODO: find number of spin properties
-  Real<> degeneracy(2);
+
+  auto stateDimension(
+    TensorDimension::dimensions["State"]
+  );
+  ASSERT(
+    stateDimension, "Dimension information for 'State' expected"
+  );
+  auto spinProperty(
+    stateDimension->properties["Spin"]
+  );
+  ASSERT(
+    spinProperty, "Property 'Spin' expected for dimension 'State'"
+  );
+  // FIXME: workaround for identifying closed-shell states
+  auto statesCountHavingFirstSpin(
+    spinProperty->indicesOfProperty[0].size()
+  );
+  auto statesCountTotal(
+    spinProperty->propertyOfIndex.size()
+  );
+
+  Real<> degeneracy;
+  if (statesCountHavingFirstSpin == statesCountTotal) {
+    // all states have spin with index 0:
+    // assume closed-shell
+    degeneracy = 2.0;
+    // NOTE: all states could also have spin-up in open-shell
+  } else {
+    // definitely open-shell
+    degeneracy = 1.0;
+  }
 
   auto fockOperator(getFockOperator<F,TE>(arguments));
   auto fph(fockOperator->get("ph"));
