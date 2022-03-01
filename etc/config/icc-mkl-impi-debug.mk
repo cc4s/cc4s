@@ -21,7 +21,7 @@ CXXFLAGS += -O0 -g
 MKL_LIB += -lmkl_blacs_intelmpi_lp64
 
 CTF_CONFIG_FLAGS = CXX=mpiicc \
-                   CXXFLAGS="-O0 -g" \
+                   CXXFLAGS="-O0 -std=c++11 -g" \
                    --no-dynamic
 
 LDFLAGS += \
