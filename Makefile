@@ -41,11 +41,13 @@ $(EXTERN_DONE_FILE): $(EXTERNAL_DEPENDENCIES)
 	@touch $@
 extern: $(EXTERN_DONE_FILE)
 
-fetch: $(FETCH_DEPENDENCIES) test-data
-.PHONY: fetch
+fetch-dependencies: $(FETCH_DEPENDENCIES)
+fetch: fetch-dependencies test-data
+.PHONY: fetch fetch-dependencies
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),fetch)
+ifneq ($(MAKECMDGOALS),fetch-dependencies)
 ifneq ($(MAKECMDGOALS),dist)
 ifneq ($(MAKECMDGOALS),clean-all)
 ifneq ($(MAKECMDGOALS),extern)
@@ -61,6 +63,7 @@ $(error exiting now...)
 endif
 # try to include dependency files in order to trigger their creation
 -include $(DEP_FILES)
+endif
 endif
 endif
 endif

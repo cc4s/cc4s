@@ -31,7 +31,7 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
 
     - name: Fetch all sources once
-      run: make fetch CONFIG=dist
+      run: make fetch-dependencies CONFIG=dist
 
     - name: ${compiler} build extern
       run: nix-shell etc/env/nix/shell.nix --attrstr compiler ${compiler} --run 'make -sj extern'
