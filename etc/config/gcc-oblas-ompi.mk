@@ -17,7 +17,7 @@ CXXFLAGS += -Ofast -march=native -fno-lto
 
 CTF_CONFIG_FLAGS = CXX=${CXX} \
                    AR=gcc-ar \
-                   CXXFLAGS="-Ofast -march=native -fno-lto" \
+                   CXXFLAGS="-Ofast -std=c++11 -march=native -fno-lto" \
                    LIBS="-L$(BLAS_PATH)" \
                    --no-dynamic \
                    --without-scalapack
