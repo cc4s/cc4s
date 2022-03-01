@@ -1,3 +1,4 @@
+etc/config/nix*
 src/atrip/
 __pycache__
 /config.mk
