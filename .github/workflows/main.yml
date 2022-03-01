@@ -34,6 +34,6 @@ jobs:
       run: make fetch-dependencies CONFIG=dist
 
     - name: ${compiler} build extern
-      run: nix-shell etc/env/nix/shell.nix --attrstr compiler ${compiler} --run 'make -sj extern'
+      run: nix-shell etc/env/nix/shell.nix --argstr compiler ${compiler} --run 'make -sj extern'
     - name: ${compiler} build cc4s
-      run: nix-shell etc/env/nix/shell.nix --attrstr compiler ${compiler} --run 'make -sj cc4s'
+      run: nix-shell etc/env/nix/shell.nix --argstr compiler ${compiler} --run 'make -sj cc4s'
