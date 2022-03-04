@@ -26,8 +26,8 @@ using namespace cc4s;
 
 Real<> UegVertexGenerator::evalMadelung(const Real<> v){
   Real<> kappa = pow(v,-1.0/3.0);
-  Real<> term2 = M_PI / (kappa*kappa*v);
-  Real<> term4 = 2 * kappa/sqrt(M_PI);
+  Real<> term2 = Pi<>() / (kappa*kappa*v);
+  Real<> term4 = 2 * kappa/sqrt(Pi<>());
   Real<> boxLength = 1.0/kappa;
   Real<> recipsum = 0.0;
   Real<> realsum = 0.0;
@@ -38,7 +38,7 @@ Real<> UegVertexGenerator::evalMadelung(const Real<> v){
     Real<> modr = boxLength * sqrt((Real<>)n2);
     Real<> k2 = kappa*kappa*n2;
     if (n2 > 0){
-     recipsum -= 1.0/(M_PI*k2)*exp(-M_PI*M_PI*k2/kappa/kappa)/v;
+     recipsum -= 1.0/(Pi<>()*k2)*exp(-Pi<>()*Pi<>()*k2/kappa/kappa)/v;
      realsum -= erfc(kappa*modr)/modr;
     }
   }
@@ -51,7 +51,7 @@ Real<> sL(const dvec a){  return a[0]*a[0] + a[1]*a[1] + a[2]*a[2];}
 Real<> UegVertexGenerator::Vijji(const dvec a, const dvec b, const Real<> v){
   dvec q({a[0]-b[0], a[1]-b[1], a[2]-b[2]});
   if ( sL(q) < 1e-8 ) return madelung;
-  return 4.0*M_PI/v/sL(q);
+  return 4.0*Pi<>()/v/sL(q);
 }
 
 
@@ -81,8 +81,8 @@ template <typename F, typename TE>
 Ptr<MapNode> UegVertexGenerator::run(
   const Ptr<MapNode> &arguments
 ) {
-  // We always use the HF reference.
-  bool lhfref(true);
+  // We use the HF reference by default.
+  bool lhfref(arguments->getValue<bool>("hartreeFock", 1));
   No = arguments->getValue<Natural<>>("No");
   Nv = arguments->getValue<Natural<>>("Nv");
   rs = arguments->getValue<Real<>> ("rs");
@@ -111,9 +111,9 @@ Ptr<MapNode> UegVertexGenerator::run(
   iGrid.resize(Np);
 
   // define volume, lattice Constant, and reciprocal lattice constant
-  Real<> v(rs*rs*rs/3.0*4.0*M_PI*No*2);
+  Real<> v(rs*rs*rs/3.0*4.0*Pi<>()*No*2);
   Real<> a(pow(v,1./3.));
-  Real<> b(2.0*M_PI/a);
+  Real<> b(2.0*Pi<>()/a);
 
   if (madelung < 0.0) madelung = evalMadelung(v);
 
@@ -190,7 +190,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   if (NF != momMap.size() || halfGrid)
     OUT() << "WARNING: the Vertex will not be correct! Just for profiling!\n";
 
-  Real<> fac(4.0*M_PI/v);
+  Real<> fac(4.0*Pi<>()/v);
 
   auto coulombVertex(
     Tcc<TE>::template tensor<Complex<>>({NF,Np,Np}, "CoulombVertex")
