@@ -488,6 +488,77 @@ namespace cc4s {
       getMachineTensor()->writeFromFile(file, offset);
     }
 
+    /**
+     * \brief Return index and value of extreme N elements in this tensor
+     * according to the given function before, where isBefore(a,b) is true
+     * if a must come before b and false otherwise, including the case
+     * where a and b are considered equivalent.
+     **/
+    std::vector<std::pair<Natural<>, F>> extrema(
+      const std::function<bool(F, F)>& isBefore, Natural<> N = 1
+    ) {
+      auto elementsCount(getElementsCount());
+      std::vector<Natural<>> localIndices(0);
+      std::vector<F> localValues(0);
+      for (
+        Natural<> index(Cc4s::world->getRank());
+        index < elementsCount;
+        index += Cc4s::world->getProcesses()
+      ) {
+        localIndices.push_back(index);
+        localValues.push_back(F(0));
+      }
+      // read distinct elements on each rank
+      read(localIndices.size(), localIndices.data(), localValues.data());
+
+      // find locally extreme elements
+      std::vector<std::pair<Natural<>,F>> tuples(localIndices.size());
+      for (Natural<> i(0); i < localIndices.size(); ++i) {
+        tuples[i].first = localIndices[i];
+        tuples[i].second = localValues[i];
+      }
+      std::sort(
+        tuples.begin(), tuples.end(),
+        [isBefore] (
+          const std::pair<Natural<>,F> &a, const std::pair<Natural<>,F> &b
+        ) {
+          return isBefore(a.second, b.second);
+        }
+      );
+      // discard all elements that are guaranteed not be be extremizing
+      // TODO: assumes N >= #elements in tensor
+      localIndices.resize(N);
+      localValues.resize(N);
+      // write in separate vectors for MPI communication
+      for (Natural<> i(0); i < localIndices.size(); ++i) {
+        localIndices[i] = tuples[i].first;
+        localValues[i] = tuples[i].second;
+      }
+      // gather exteme cadinates on all ranks
+      std::vector<Natural<>> indices;
+      std::vector<F> values;
+      Cc4s::world->allGather(localIndices, indices);
+      Cc4s::world->allGather(localValues, values);
+
+      // find globally extreme elements
+      tuples.resize(indices.size());
+      for (Natural<> i(0); i < localIndices.size(); ++i) {
+        tuples[i].first = indices[i];
+        tuples[i].second = values[i];
+      }
+      std::sort(
+        tuples.begin(), tuples.end(),
+        [isBefore] (
+          const std::pair<Natural<>,F> &a, const std::pair<Natural<>,F> &b
+        ) {
+          return isBefore(a.second, b.second);
+        }
+      );
+      // discard non extremizing elements
+      tuples.resize(N);
+      return tuples;
+    }
+
     const std::vector<Natural<>> &getLens() const {
       return lens;
     }

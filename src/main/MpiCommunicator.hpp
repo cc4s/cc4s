@@ -88,6 +88,24 @@ namespace cc4s {
       );
     }
 
+    /**
+     * \Brief Gathers the src vectors of all ranks together and
+     * distributes the result to all ranks in the dst vector.
+     **/
+    template <typename F>
+    void allGather(
+      const std::vector<F> &src, std::vector<F> &dst
+    ) {
+      dst.resize(src.size() * processes);
+      MPI_Allgather(
+        src.data(), src.size() * MpiTypeTraits<F>::elementCount(),
+        MpiTypeTraits<F>::elementType(),
+        dst.data(), src.size() * MpiTypeTraits<F>::elementCount(),
+        MpiTypeTraits<F>::elementType(),
+        comm
+      );
+    }
+
     template <typename F>
     void broadcast(
       std::vector<F> &dst, Natural<> rootRank = 0
