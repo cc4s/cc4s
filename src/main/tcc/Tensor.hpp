@@ -493,9 +493,14 @@ namespace cc4s {
      * according to the given function before, where isBefore(a,b) is true
      * if a must come before b and false otherwise, including the case
      * where a and b are considered equivalent.
+     * certainlyLast is the value that is guaranteed to be sorted
+     * after all possible occurring values, e.g. -infinity if searching
+     * for the maximum.
      **/
     std::vector<std::pair<Natural<>, F>> extrema(
-      const std::function<bool(F, F)>& isBefore, Natural<> N = 1
+      const std::function<bool(F, F)>& isBefore,
+      F certainlyLast,
+      Natural<> N = 1
     ) {
       auto elementsCount(getElementsCount());
       std::vector<Natural<>> localIndices(0);
@@ -526,13 +531,19 @@ namespace cc4s {
         }
       );
       // discard all elements that are guaranteed not be be extremizing
-      // TODO: assumes N >= #elements in tensor
       localIndices.resize(N);
       localValues.resize(N);
+      auto tuplesCount(std::min(N, tuples.size()));
       // write in separate vectors for MPI communication
-      for (Natural<> i(0); i < localIndices.size(); ++i) {
+      for (Natural<> i(0); i < tuplesCount; ++i) {
         localIndices[i] = tuples[i].first;
         localValues[i] = tuples[i].second;
+      }
+      // if fewer elements are locally processed than desired, fill up with
+      // elements that will be sorted to the end
+      for (Natural<> i(tuplesCount); i < N; ++i) {
+        localValues[i] = certainlyLast;
+        localIndices[i] = 0;
       }
       // gather exteme cadinates on all ranks
       std::vector<Natural<>> indices;
