@@ -64,29 +64,24 @@ Ptr<MapNode> SecondOrderPerturbationTheory::run(
   ASSERT(
     stateDimension, "Dimension information for 'State' expected"
   );
+  Real<> degeneracy(2.0);
   auto spinProperty(
     stateDimension->properties["Spin"]
   );
-  ASSERT(
-    spinProperty, "Property 'Spin' expected for dimension 'State'"
-  );
-  // FIXME: workaround for identifying closed-shell states
-  auto statesCountHavingFirstSpin(
-    spinProperty->indicesOfProperty[0].size()
-  );
-  auto statesCountTotal(
-    spinProperty->propertyOfIndex.size()
-  );
-
-  Real<> degeneracy;
-  if (statesCountHavingFirstSpin == statesCountTotal) {
-    // all states have spin with index 0:
-    // assume closed-shell
-    degeneracy = 2.0;
+  if (spinProperty) {
+    // FIXME: workaround for identifying closed-shell states
+    auto statesCountHavingFirstSpin(
+      spinProperty->indicesOfProperty[0].size()
+    );
+    auto statesCountTotal(
+      spinProperty->propertyOfIndex.size()
+    );
+    if (statesCountHavingFirstSpin < statesCountTotal) {
+      // definitely open-shell
+      degeneracy = 1.0;
+    }
+    // assume closed-shell otherwise
     // NOTE: all states could also have spin-up in open-shell
-  } else {
-    // definitely open-shell
-    degeneracy = 1.0;
   }
 
   auto fockOperator(getFockOperator<F,TE>(arguments));
