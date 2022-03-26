@@ -367,6 +367,14 @@ namespace cc4s {
       machineTensor = mt;
     }
 
+    ~Tensor() {
+      if (allocated())
+        LOG() << "Free tensor with " <<
+          getElementsCount() << " elements" << std::endl;
+    }
+
+
+
     static Ptr<Tensor<F,TE>> create(const std::string &name) {
       return New<Tensor<F,TE>>(name, ProtectedToken());
     }
