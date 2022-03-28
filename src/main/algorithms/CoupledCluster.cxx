@@ -197,7 +197,14 @@ F CoupledCluster::getEnergy(
 
   // get the Coulomb integrals to compute the energy
   auto coulombIntegrals(arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals"));
-  auto Vijab(coulombIntegrals->get("hhpp"));
+//  auto Vijab(coulombIntegrals->get("hhpp"));
+  auto Vabij(coulombIntegrals->get("pphh"));
+  auto Vijab(Tcc<TE>::template tensor<F>("Vhhpp"));
+  COMPILE(
+    (*Vijab)["ijab"] <<= map<F>(conj<F>, (*Vabij)["abij"])
+  )->execute();
+  Vijab->inspect()->getUnit() = Vabij->inspect()->getUnit();
+
   // TODO: get from size of spin properies
   Real<> degeneracy(2);
 
