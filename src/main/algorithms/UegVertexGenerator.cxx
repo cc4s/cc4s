@@ -83,6 +83,7 @@ Ptr<MapNode> UegVertexGenerator::run(
 ) {
   // We use the HF reference by default.
   bool lhfref(arguments->getValue<bool>("hartreeFock", 1));
+  bool lclosed(true);
   No = arguments->getValue<Natural<>>("No");
   Nv = arguments->getValue<Natural<>>("Nv");
   rs = arguments->getValue<Real<>> ("rs");
@@ -106,8 +107,14 @@ Ptr<MapNode> UegVertexGenerator::run(
 
   sort(iGrid.begin(), iGrid.end(), [](ivec a, ivec b){ return sL(a) < sL(b); });
   if (iGrid.size() < Np ) THROW("BUG related to Np & maxG\n");
-  if (sL(iGrid[No]) == sL(iGrid[No-1])) THROW("No not valid\n");
-  if (sL(iGrid[Np]) == sL(iGrid[Np-1])) THROW("Nv not valid\n");
+  if (sL(iGrid[No]) == sL(iGrid[No-1])){
+    OUT() << "WARNING: occupied orbitals form not a closed shell\n";
+    if (!lhfref) 
+      THROW("Zero gap system! Either change No or use Hartree-Fock!");
+    lclosed = false;
+  }
+  if (sL(iGrid[Np]) == sL(iGrid[Np-1]))
+    OUT() << "WARNING: virtual orbitals form not a closed shell\n";
   iGrid.resize(Np);
 
   // define volume, lattice Constant, and reciprocal lattice constant
@@ -187,7 +194,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   }
   if (NF == 0) NF = momMap.size();
 
-  if (NF != momMap.size() || halfGrid)
+  if (NF != momMap.size() || halfGrid || !lclosed)
     OUT() << "WARNING: the Vertex will not be correct! Just for profiling!\n";
 
   Real<> fac(4.0*Pi<>()/v);
