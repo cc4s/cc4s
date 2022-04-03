@@ -196,7 +196,7 @@ Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
   auto epsh(eps->get("h"));
   auto epsp(eps->get("p"));
   const
-  size_t
+  Natural<128>
       no = epsh->inspect()->getLen(0)
     , nv = epsp->inspect()->getLen(0)
     , nranks = Cc4s::getProcessesCount()
@@ -233,6 +233,8 @@ Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
     ;
   DryMemory::allocate(atrip_memory, SOURCE_LOCATION);
   DryMemory::free(atrip_memory);
+  Operation<TE>::addFloatingPointOperations(no*no*no*nv*nv*nv*(no+nv)*2);
+
   return result;
 }
 
