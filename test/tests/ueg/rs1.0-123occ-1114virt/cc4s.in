@@ -1,0 +1,54 @@
+- name: UegVertexGenerator
+  in: 
+    No: 123
+    Nv: 1114
+    NF: 2000
+    halfGrid: 1
+    rs: 2
+  out: 
+    eigenEnergies: EigenEnergies
+    coulombVertex: CoulombVertex
+
+- name: DefineHolesAndParticles
+  in:
+    eigenEnergies: EigenEnergies
+  out:
+    slicedEigenEnergies: EigenEnergies
+
+- name: SliceOperator
+  in:
+    slicedEigenEnergies: EigenEnergies
+    operator: CoulombVertex
+  out:
+    slicedOperator: CoulombVertex
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method: Ccsd
+    integralsSliceSize: 100
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+#- name: PerturbativeTriples
+#  in:
+#    coulombIntegrals: CoulombIntegrals
+#    amplitudes: Amplitudes
+#    slicedEigenEnergies: EigenEnergies
+#  out:
+#    {}
