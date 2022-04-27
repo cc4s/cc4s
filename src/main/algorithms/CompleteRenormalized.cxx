@@ -43,7 +43,7 @@ cc4s::getCompleteRenormalized(
   auto Iia( Tcc<TE>::template tensor<F>("Iia") );
 
   // Resulting tensors
-  std::shared_ptr<TensorSet<F, TE>> result;
+  std::shared_ptr<TensorSet<F, TE>> result = std::make_shared<TensorSet<F, TE>>();
   auto dpIbcek( Tcc<TE>::template tensor<F>("dpIbcek") );
   auto dpImcjk( Tcc<TE>::template tensor<F>("dpImcjk") );
   result->get("ppph") = dpIbcek;
