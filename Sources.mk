@@ -29,12 +29,12 @@ main/algorithms/coupledcluster/CoupledClusterMethod.cxx \
 main/algorithms/coupledcluster/Ccsd.cxx \
 main/algorithms/coupledcluster/CcsdReference.cxx \
 main/algorithms/coupledcluster/Drccd.cxx \
+main/algorithms/CompleteRenormalized.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/FiniteSizeCorrection.cxx \
 main/algorithms/BasisSetCorrection.cxx \
 main/algorithms/UegVertexGenerator.cxx \
 main/algorithms/PerturbativeTriples.cxx \
-main/algorithms/CompleteRenormalized.cxx \
 
 ifeq ($(ATRIP), no)
 SRC_FILES += main/algorithms/perturbative-triples/src/atrip/Atrip.cxx

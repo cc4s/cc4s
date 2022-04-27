@@ -8,7 +8,7 @@ using namespace cc4s;
 
 template <typename F, typename TE>
 std::shared_ptr<TensorSet<F, TE>>
- getCompleteRenormalized(
+cc4s::getCompleteRenormalized(
   std::shared_ptr<TensorSet<F, TE>> coulombIntegrals,
   std::shared_ptr<TensorSet<F, TE>> amplitudes
 ) {
@@ -46,8 +46,8 @@ std::shared_ptr<TensorSet<F, TE>>
   std::shared_ptr<TensorSet<F, TE>> result;
   auto dpIbcek( Tcc<TE>::template tensor<F>("dpIbcek") );
   auto dpImcjk( Tcc<TE>::template tensor<F>("dpImcjk") );
-  result["ppph"] = dpIbcek;
-  result["hphh"] = dpImcjk;
+  result->get("ppph") = dpIbcek;
+  result->get("hphh") = dpImcjk;
 
   COMPILE(
 
@@ -117,3 +117,22 @@ std::shared_ptr<TensorSet<F, TE>>
   return result;
 
 }
+
+
+
+#define _INSTANTIATE(F, TE) \
+  template                  \
+  std::shared_ptr< cc4s::TensorSet< F , TE > >   \
+  cc4s::getCompleteRenormalized< F , TE >( \
+    std::shared_ptr<cc4s::TensorSet< F , TE > > coulombIntegrals, \
+    std::shared_ptr<cc4s::TensorSet< F , TE > > amplitudes \
+  );
+
+// Dry tensors
+_INSTANTIATE(cc4s::Real<64>, cc4s::DefaultDryTensorEngine)
+_INSTANTIATE(cc4s::Complex<64>, cc4s::DefaultDryTensorEngine)
+// default tensor engines
+_INSTANTIATE(cc4s::Real<64>, cc4s::DefaultTensorEngine)
+_INSTANTIATE(cc4s::Complex<64>, cc4s::DefaultTensorEngine)
+
+#undef _INSTANTIATE
