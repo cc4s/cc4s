@@ -93,7 +93,7 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
     auto Jhphh = intermediates->get("hphh");
     COMPILE(
       (*M)["abcijk"] <<=          (*Jppph)["bcdk"] * (*Tpphh)["adij"],
-      (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Jhphh)["jckl"])
+      (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Jhphh)["lcjk"])
                                 * (*Tpphh)["abil"]
     )->execute();
   }
