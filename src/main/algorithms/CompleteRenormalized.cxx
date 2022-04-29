@@ -8,7 +8,7 @@ using namespace cc4s;
 
 template <typename F, typename TE>
 std::shared_ptr<TensorSet<F, TE>>
-cc4s::getCompleteRenormalized(
+cc4s::cr::getCompleteRenormalized(
   std::shared_ptr<TensorSet<F, TE>> coulombIntegrals,
   std::shared_ptr<TensorSet<F, TE>> amplitudes
 ) {
@@ -115,19 +115,80 @@ cc4s::getCompleteRenormalized(
 
 
   return result;
-
 }
 
+template <typename F, typename TE>
+double cc4s::cr::getDenominator(
+ std::shared_ptr<TensorSet<F, TE>> amplitudes,
+ Ptr<cc4s::Tensor<F,TE>> tabcijk
+) {
+
+  auto Tph ( amplitudes->get("ph") );
+  auto Tpphh( amplitudes->get("pphh") );
+
+  auto yabcijk( Tcc<TE>::template tensor<F>("yabcijk") );
+  auto btabcijk( Tcc<TE>::template tensor<F>("btabcijk") );
+  auto Cabij( Tcc<TE>::template tensor<F>("Cabij") );
+  auto Wabij( Tcc<TE>::template tensor<F>("Wabij") );
+  auto D( Tcc<TE>::template tensor<F>("D") );
+
+  COMPILE(
+
+  (*yabcijk)["abcijk"] <<= (*Tph)["ai"]
+                         * (*Tph)["bj"]
+                         * (*Tph)["ck"],
+  (*yabcijk)["abcijk"] += (*Tph)["ai"] 
+                        * (*Tpphh)["bcjk"],
+  (*yabcijk)["abcijk"] += (*Tph)["bj"] 
+                        * (*Tpphh)["acik"],
+  (*yabcijk)["abcijk"] += (*Tph)["ck"] 
+                        * (*Tpphh)["abij"],
+
+  (*btabcijk)["abcijk"] <<= (4./3) * (*tabcijk)["abcijk"], 
+  (*btabcijk)["abcijk"]  += (-2.0) * (*tabcijk)["acbijk"], 
+  (*btabcijk)["abcijk"]  += (2./3) * (*tabcijk)["bcaijk"],
+ 
+  (*Cabij)["abij"]  <<= (*Tpphh)["abij"], 
+  (*Cabij)["abij"]   += (*Tph)["ai"] * (*Tph)["bj"], 
+  
+  (*Wabij)["abij"]  <<=  (2.0) * (*Tpphh)["abij"],
+  (*Wabij)["abij"]   += (-1.0) * (*Tpphh)["baij"],
+  
+  (*D)[""] <<= (2.0) * (*Tph)["ai"] * (*Tph)["ai"],
+  (*D)[""] += (2.0) * (*Tph)["ai"] * (*Tph)["ai"],
+  (*D)[""] += (*Wabij)["abij"] * (*Cabij)["abij"],
+  (*D)[""] += (*yabcijk)["abcijk"] * (*btabcijk)["abcijk"]
+  
+  )->execute();
+  
+  return std::real(D->read()) + 1.0;
+
+}
 
 
 #define _INSTANTIATE(F, TE) \
   template                  \
   std::shared_ptr< cc4s::TensorSet< F , TE > >   \
-  cc4s::getCompleteRenormalized< F , TE >( \
+  cc4s::cr::getCompleteRenormalized< F , TE >( \
     std::shared_ptr<cc4s::TensorSet< F , TE > > coulombIntegrals, \
     std::shared_ptr<cc4s::TensorSet< F , TE > > amplitudes \
   );
 
+// Dry tensors
+_INSTANTIATE(cc4s::Real<64>, cc4s::DefaultDryTensorEngine)
+_INSTANTIATE(cc4s::Complex<64>, cc4s::DefaultDryTensorEngine)
+// default tensor engines
+_INSTANTIATE(cc4s::Real<64>, cc4s::DefaultTensorEngine)
+_INSTANTIATE(cc4s::Complex<64>, cc4s::DefaultTensorEngine)
+#undef _INSTANTIATE
+
+#define _INSTANTIATE(F, TE) \
+  template                  \
+  double   \
+  cc4s::cr::getDenominator< F , TE >( \
+      std::shared_ptr<TensorSet<F, TE>> amplitudes, \
+      Ptr<cc4s::Tensor<F,TE>> tabcijk \
+  );
 // Dry tensors
 _INSTANTIATE(cc4s::Real<64>, cc4s::DefaultDryTensorEngine)
 _INSTANTIATE(cc4s::Complex<64>, cc4s::DefaultDryTensorEngine)

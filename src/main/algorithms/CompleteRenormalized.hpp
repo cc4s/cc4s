@@ -3,9 +3,11 @@
 
 #include <map>
 #include <TensorSet.hpp>
+#include <tcc/Tcc.hpp>
 
 namespace cc4s {
 
+namespace cr {
 
 // F = Field Value, double, complex etc.
 // TE = TensorEngine (CTF)
@@ -24,6 +26,14 @@ std::shared_ptr<TensorSet<F, TE>>
   std::shared_ptr<TensorSet<F, TE>> coulombIntegrals,
   std::shared_ptr<TensorSet<F, TE>> amplitudes
 ); 
+
+template <typename F, typename TE>
+double getDenominator(
+ std::shared_ptr<TensorSet<F, TE>> amplitudes,
+ Ptr<Tensor<F,TE>> tabcijk
+);
+
+}
 
 }
 
