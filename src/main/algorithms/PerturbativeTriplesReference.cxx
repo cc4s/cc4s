@@ -155,9 +155,20 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
    */
 
   F eTriples(E->read());
+
+  if (completeRenormalized) {
+    double denominator = cr::getDenominator<F, TE>(amplitudes, T);
+    OUT() << "CR-(T) correlation energy: "
+          << std::setprecision(10) << std::setw(20)
+          << real(eTriples) << std::endl;
+    OUT() << "CR-(T) denominator: "
+          << std::setprecision(10) << std::setw(27)
+          << denominator << std::endl;
+  } else {
   OUT() << "(T) correlation energy: "
-        << std::setprecision(15) << std::setw(23)
+        << std::setprecision(10) << std::setw(23)
         << real(eTriples) << std::endl;
+  }
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correlation", real(eTriples));
@@ -170,13 +181,6 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
           << std::setprecision(15) << std::setw(23)
           << triples_star << std::endl;
     energy->setValue("starCorrection", real(triples_star));
-  }
-
-  if (completeRenormalized) {
-    double denominator = cr::getDenominator<F, TE>(amplitudes, T);
-    OUT() << "[T] denominator: "
-          << std::setprecision(15) << std::setw(23)
-          << denominator << std::endl;
   }
 
   auto result(New<MapNode>(SOURCE_LOCATION));
