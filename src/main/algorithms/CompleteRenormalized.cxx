@@ -51,44 +51,44 @@ cc4s::cr::getCompleteRenormalized(
 
   COMPILE(
 
-    // Build Xijka
+    // Build Xijka (X-hhhp intermediate)
     (*Xijka)["ijka"] <<= (*Vhhhp)["ijka"],
     (*Xijka)["ijka"] += (1.0) * (*Tph)["fk"] * (*Vhhpp)["ijfa"],
 
-    // Build pXaibc
+    // Build pXaibc (prime X-phpp intermediate)
     (*pXaibc)["aibc"] <<= (*Vphpp)["aibc"],
     (*pXaibc)["aibc"] += (-0.5) * (*Tph)["al"] * (*Vhhpp)["libc"],
 
-    // Build Iia
+    // Build Iia (I-hp intermediate)
     (*Iia)["ia"] <<= ( 2.0) * (*Vhhpp)["ilaf"] * (*Tph)["fl"],
     (*Iia)["ia"]  += (-1.0) * (*Vhhpp)["ilfa"] * (*Tph)["fl"],
     // (*Iia)["ia"] += Fia["ia"], // TODO: use non-canonical orbitals
 
-    // Build pXiajb
+    // Build pXiajb (prime X-hphp intermediate)
     (*pXiajb)["iajb"] <<= (*Vhphp)["iajb"],
     (*pXiajb)["iajb"] += (-0.5) * (*Vhhhp)["iljb"] * (*Tph)["al"],
     (*pXiajb)["iajb"] += ( 1.0) * (*Tph)["fj"] * (*pXaibc)["aibf"],
 
-    // Build pXiabj
+    // Build pXiabj (prime I-hpph intermediate)
     (*pXiabj)["iabj"] <<= (*Vhpph)["iabj"],
     (*pXiabj)["iabj"] += (-0.5) * (*Vhhph)["ilbj"] * (*Tph)["al"],
     (*pXiabj)["iabj"] += ( 1.0) * (*pXaibc)["aifb"] * (*Tph)["fj"],
 
-    // Build Xaibc
+    // Build Xaibc (X-phpp intermediate)
     (*Xaibc)["aibc"] <<= (*pXaibc)["aibc"],
     (*Xaibc)["aibc"] += (-0.5) * (*Tph)["al"] * (*Vhhpp)["libc"],
 
-    // Build dpXiajb
+    // Build dpXiajb (dp: double prime X-hphp intermediate)
     (*dpXiajb)["iajb"] <<= (*Vhphp)["iajb"],
     (*dpXiajb)["iajb"] += (-1.0) * (*Vhhhp)["iljb"] * (*Tph)["al"],
     (*dpXiajb)["iajb"] += ( 0.5) * (*Tph)["fj"] * (*Xaibc)["aibf"],
 
-    // Build dpXiabj
+    // Build dpXiabj (dp: double prime X-hpph intermediate)
     (*dpXiabj)["iabj"] <<= (*Vhpph)["iabj"],
     (*dpXiabj)["iabj"] += (-1.0) * (*Vhhph)["ilbj"] * (*Tph)["al"],
     (*dpXiabj)["iabj"] += ( 0.5) * (*Xaibc)["aifb"] * (*Tph)["fj"],
 
-    // Build dpIbcek
+    // Build dpIbcek (dp: double prime I-ppph intermediate)
     (*dpIbcek)["bcek"] <<= (*Vppph)["bcek"],
     (*dpIbcek)["bcek"] += ( 1.0) * (*Vpppp)["bcef"] * (*Tph)["fk"],
     (*dpIbcek)["bcek"] += (-1.0) * (*pXiajb)["lbke"] * (*Tph)["cl"],
@@ -100,7 +100,7 @@ cc4s::cr::getCompleteRenormalized(
     (*dpIbcek)["bcek"] += (-1.0) * (*Tpphh)["fbkl"] * (*Xaibc)["clfe"],
     (*dpIbcek)["bcek"] += ( 1.0) * (*Tpphh)["cbln"] * (*Xijka)["lnke"],
 
-    // Build dpImcjk
+    // Build dpImcjk (dp: double prime I-hphh intermediate)
     (*dpImcjk)["mcjk"] <<= (*Vhphh)["mcjk"],
     (*dpImcjk)["mcjk"] += (-1.0) * (*Vhhhh)["mljk"] * (*Tph)["cl"],
     (*dpImcjk)["mcjk"] += ( 1.0) * (*dpXiajb)["mcjf"] * (*Tph)["fk"],
@@ -125,7 +125,8 @@ double cc4s::cr::getDenominator(
 
   auto Tph ( amplitudes->get("ph") );
   auto Tpphh( amplitudes->get("pphh") );
-
+  
+  // Define the needed quantities for the denominator.
   auto yabcijk( Tcc<TE>::template tensor<F>("yabcijk") );
   auto btabcijk( Tcc<TE>::template tensor<F>("btabcijk") );
   auto Cabij( Tcc<TE>::template tensor<F>("Cabij") );
@@ -133,7 +134,8 @@ double cc4s::cr::getDenominator(
   auto D( Tcc<TE>::template tensor<F>("D") );
 
   COMPILE(
-
+  
+  // Build y quantity.
   (*yabcijk)["abcijk"] <<= (*Tph)["ai"]
                          * (*Tph)["bj"]
                          * (*Tph)["ck"],
@@ -143,17 +145,21 @@ double cc4s::cr::getDenominator(
                         * (*Tpphh)["acik"],
   (*yabcijk)["abcijk"] += (*Tph)["ck"] 
                         * (*Tpphh)["abij"],
-
+  
+  // Build t-bar (T) amplitude.
   (*btabcijk)["abcijk"] <<= (4./3) * (*tabcijk)["abcijk"], 
   (*btabcijk)["abcijk"]  += (-2.0) * (*tabcijk)["acbijk"], 
   (*btabcijk)["abcijk"]  += (2./3) * (*tabcijk)["bcaijk"],
- 
+  
+  // Build C-pphh quantity.
   (*Cabij)["abij"]  <<= (*Tpphh)["abij"], 
   (*Cabij)["abij"]   += (*Tph)["ai"] * (*Tph)["bj"], 
   
+  // Build W quantity (defined by us) from "antisymmetrized amplitudes".
   (*Wabij)["abij"]  <<=  (2.0) * (*Tpphh)["abij"],
   (*Wabij)["abij"]   += (-1.0) * (*Tpphh)["baij"],
   
+  // Build Piecuch Denominator.
   (*D)[""] <<= (2.0) * (*Tph)["ai"] * (*Tph)["ai"],
   (*D)[""] += (2.0) * (*Tph)["ai"] * (*Tph)["ai"],
   (*D)[""] += (*Wabij)["abij"] * (*Cabij)["abij"],
