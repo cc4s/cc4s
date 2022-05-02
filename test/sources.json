@@ -32,5 +32,9 @@
   "ppl-supporting-information-github-v1-2": {
     "uri": "https://github.com/cc4s/ppl-supporting-information/archive/refs/tags/v1.2.tar.gz",
     "type": "tar"
+  },
+  "nwchem-hf": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/3dd5d876b8e2d914f06de6b072ec28f30f463f53/hf",
+    "type": "raw"
   }
 }

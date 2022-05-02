@@ -1,0 +1,115 @@
+executionEnvironment:
+  buildDate: Apr 26 2022 11:37:51
+  compiler: g++ (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0
+  dryRanks: 0
+  hosts:
+    0:
+      host: cqc05
+      ranks:
+        0: 0
+        1: 1
+        2: 2
+        3: 3
+  startTime: "Fri Apr 29 16:56:02 2022\n"
+  totalProcesses: 4
+  version: heads/develop-0-gbff205f8
+statistics:
+  floatingPointOperations: 199853482
+  flops: 411553942.62260818
+  realtime: 0.485607016
+steps:
+  0:
+    in:
+      fileName: EigenEnergies.yaml
+    name: Read
+    out:
+      destination: 0x55f6658c4a00
+    statistics:
+      floatingPointOperations: 0
+      flops: 0
+      realtime: 0.001446308
+  1:
+    in:
+      fileName: CoulombVertex.yaml
+    name: Read
+    out:
+      destination: 0x55f6658d5920
+    statistics:
+      floatingPointOperations: 0
+      flops: 0
+      realtime: 0.008233173
+  2:
+    in:
+      eigenEnergies: 0x55f6658c4a00
+    name: DefineHolesAndParticles
+    out:
+      slicedEigenEnergies: 0x55f665869c40
+    statistics:
+      floatingPointOperations: 0
+      flops: 0
+      realtime: 0.000046867
+  3:
+    in:
+      operator: 0x55f6658d5920
+      slicedEigenEnergies: 0x55f665869c40
+    name: SliceOperator
+    out:
+      slicedOperator: 0x55f66586dff0
+    statistics:
+      floatingPointOperations: 0
+      flops: 0
+      realtime: 0.009196304
+  4:
+    in:
+      slicedCoulombVertex: 0x55f66586dff0
+    name: VertexCoulombIntegrals
+    out:
+      coulombIntegrals: 0x55f6658bee10
+    statistics:
+      floatingPointOperations: 506880
+      flops: 161303410.99051329
+      realtime: 0.003142401
+  5:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals: 0x55f6658bee10
+      energyConvergence: 1e-08
+      integralsSliceSize: 100
+      levelShift: 0
+      maxIterations: 20
+      method: Ccsd
+      mixer:
+        maxResidua: 4
+        type: DiisMixer
+      slicedCoulombVertex: 0x55f66586dff0
+      slicedEigenEnergies: 0x55f665869c40
+    name: CoupledCluster
+    out:
+      amplitudes: 0x55f6659beb30
+      convergenceReached: 1
+      energy:
+        correlation: -0.13669572114878675
+        direct: -0.22205142295492328
+        exchange: 0.085355701806136539
+        secondOrder: -0.13422814192934551
+        unit: 1
+    statistics:
+      floatingPointOperations: 198746352
+      flops: 448723890.15997547
+      realtime: 0.442914577
+  6:
+    in:
+      amplitudes: 0x55f6659beb30
+      coulombIntegrals: 0x55f6658bee10
+      slicedEigenEnergies: 0x55f665869c40
+      tuplesDistribution: group
+      tuplesRoundRobin: node
+    name: PerturbativeTriples
+    out:
+      energy:
+        correlation: -0.0013084707456546723
+        unit: 1
+    statistics:
+      floatingPointOperations: 600250
+      flops: 81541647.235007986
+      realtime: 0.007361269

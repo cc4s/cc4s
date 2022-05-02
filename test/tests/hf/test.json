@@ -1,0 +1,22 @@
+{
+  "name": "hf molecule dz",
+  "resources": [
+    {
+      "out": "EigenEnergies.yaml",
+      "uri": "{nwchem-hf}/EigenEnergies.yaml"
+    },
+    {
+      "out": "EigenEnergies.elements",
+      "uri": "{nwchem-hf}/EigenEnergies.elements"
+    },
+    {
+      "out": "CoulombVertex.yaml",
+      "uri": "{nwchem-hf}/CoulombVertex.yaml"
+    },
+    {
+      "out": "CoulombVertex.elements",
+      "uri": "{nwchem-hf}/CoulombVertex.elements"
+    }
+  ],
+  "tags": "essential nwchem molecule gaussian ccsd ccsd(t)"
+}
