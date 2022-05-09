@@ -43,14 +43,52 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       : atrip::Atrip::Input<F>::TuplesDistribution::NAIVE
       ;
 
+  /*
+    This should be added to the manual for CCSD(T).
+
+    The checkpoint can be written every $x$ iterations
+    or every $x$ percentage.
+
+    The default in cc4s is to write a checkpoint every 1.0%.
+    The checkpoint variables are controlled by the input parameters
+
+    | Name                         | Default                 |
+    |------------------------------+-------------------------|
+    | =checkpointAtEveryIteration= | 0                       |
+    | =checkpointAtPercentage=     | 1.0                     |
+    | =checkpointPath=             | "atrip-checkpoint.yaml" |
+    | =useCheckpoint=              | 1                       |
+
+    There is however right now a pitfall, you should
+    be careful to perform two calculation in a row, since then
+    CCSD(T) will use the automatically generated checkpoint file
+    from the previous calculation.
+
+    TODO: maybe set useCheckpoint = 0 by default
+   */
+
+  const auto
+    print_at_percentage = arguments->getValue<int>("printAtPercentage", 10),
+    checkpoint_at_every_iteration
+      = arguments->getValue<int>("checkpointAtEveryIteration", 0);
+  const auto
+    checkpoint_at_percentage
+      = arguments->getValue<double>("checkpointAtPercentage", 1.0);
+  const auto
+    checkpoint_path
+      = arguments->getValue<std::string>("checkpointPath",
+                                         "atrip-checkpoint.yaml");
+
   const bool
     rankRoundRobin
       = arguments->getValue<std::string>("tuplesRoundRobin", "node") == "node"
       ? false
-      : true
+      : true,
+    use_checkpoint
+      = arguments->getValue<int>("useCheckpoint", 1) == 1
       ;
 
-  atrip::Atrip::init();
+  atrip::Atrip::init(MPI_COMM_WORLD);
   atrip::Atrip::Input<F> in;
 
 #define __V__(_idx)                                            \
@@ -105,9 +143,14 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     .with_Vabci(__V__(ppph))
     // some options
     .with_barrier(false)
-    .with_percentageMod(10)
+    .with_percentageMod(print_at_percentage)
     .with_tuplesDistribution(distribution)
     .with_rankRoundRobin(rankRoundRobin)
+    // checkpoint options
+    .with_checkpointAtEveryIteration(checkpoint_at_every_iteration)
+    .with_checkpointAtPercentage(checkpoint_at_percentage)
+    .with_checkpointPath(checkpoint_path)
+    .with_readCheckpointIfExists(use_checkpoint)
     ;
 
   const double _No = *(__eps__(h))->lens
