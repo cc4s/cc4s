@@ -447,82 +447,82 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
     auto Kck( Tcc<TE>::template tensor<Complex<>>("Kck") );
     auto Xabij( Tcc<TE>::template tensor<Complex<>>("Xabij") ); // T2+T1*T1
     auto Yabij( Tcc<TE>::template tensor<Complex<>>("Yabij") ); // T2+2*T1*T1
-    auto Zabij( Tcc<TE>::template tensor<Complex<>>("Zabij") );
     auto Xklij( Tcc<TE>::template tensor<Complex<>>("Xklij") );
-    auto Xakci( Tcc<TE>::template tensor<Complex<>>("Xakci") );
-    auto Xakic( Tcc<TE>::template tensor<Complex<>>("Xakic") );
-    auto Xabcd( Tcc<TE>::template tensor<Complex<>>("Xabcd") );
+    {
+      auto Xakic( Tcc<TE>::template tensor<Complex<>>("Xakic") );
+      COMPILE(
+        (*Xabij)["abij"] <<= (*Tpphh)["abij"],
+        (*Xabij)["abij"] += (*Tph)["ai"] * (*Tph)["bj"],
+        (*Yabij)["abij"] <<= (*Tpphh)["abij"],
+        (*Yabij)["abij"] += ( 2.0) * (*Tph)["ai"] * (*Tph)["bj"],
+        // Build Kac
+        (*Kac)["ac"] <<= (-2.0) * (*Vhhpp)["klcd"] * (*Xabij)["adkl"],
+        (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Xabij)["adkl"],
+        // Build Lac
+        (*Lac)["ac"] <<= (*Kac)["ac"],
+        (*Lac)["ac"] +=  (2.0) * (*cTGammaGpp)["Gac"] * (*GammaGhp)["Gkd"] * (*Tph)["dk"],
+        (*Lac)["ac"] += (-1.0) * (*cTGammaGpp)["Gad"] * (*GammaGhp)["Gkc"] * (*Tph)["dk"],
+        // Build Kki
+        (*Kki)["ki"] <<= (2.0) * (*Vhhpp)["klcd"] * (*Xabij)["cdil"],
+        (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Xabij)["cdil"],
 
-    COMPILE(
-      (*Xabij)["abij"] <<= (*Tpphh)["abij"],
-      (*Xabij)["abij"] += (*Tph)["ai"] * (*Tph)["bj"],
-      (*Yabij)["abij"] <<= (*Tpphh)["abij"],
-      (*Yabij)["abij"] += ( 2.0) * (*Tph)["ai"] * (*Tph)["bj"],
-      // Build Kac
-      (*Kac)["ac"] <<= (-2.0) * (*Vhhpp)["klcd"] * (*Xabij)["adkl"],
-      (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Xabij)["adkl"],
-      // Build Lac
-      (*Lac)["ac"] <<= (*Kac)["ac"],
-      (*Lac)["ac"] +=  (2.0) * (*cTGammaGpp)["Gac"] * (*GammaGhp)["Gkd"] * (*Tph)["dk"],
-      (*Lac)["ac"] += (-1.0) * (*cTGammaGpp)["Gad"] * (*GammaGhp)["Gkc"] * (*Tph)["dk"],
-      // Build Kki
-      (*Kki)["ki"] <<= (2.0) * (*Vhhpp)["klcd"] * (*Xabij)["cdil"],
-      (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Xabij)["cdil"],
+        // Build Lki
+        (*Lki)["ki"] <<= (*Kki)["ki"],
+        (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tph)["cl"],
+        (*Lki)["ki"] += (-1.0) * (*Vhhhp)["lkic"] * (*Tph)["cl"],
 
-      // Build Lki
-      (*Lki)["ki"] <<= (*Kki)["ki"],
-      (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tph)["cl"],
-      (*Lki)["ki"] += (-1.0) * (*Vhhhp)["lkic"] * (*Tph)["cl"],
+        // Contract Lac with T2 Amplitudes
+        (*Rpphh)["abij"] += ( 1.0) * (*Lac)["ac"] * (*Tpphh)["cbij"],
 
-      // Contract Lac with T2 Amplitudes
-      (*Rpphh)["abij"] += ( 1.0) * (*Lac)["ac"] * (*Tpphh)["cbij"],
+        // Contract Lki with T2 Amplitudes
+        (*Rpphh)["abij"] += (-1.0) * (*Lki)["ki"] * (*Tpphh)["abkj"],
 
-      // Contract Lki with T2 Amplitudes
-      (*Rpphh)["abij"] += (-1.0) * (*Lki)["ki"] * (*Tpphh)["abkj"],
+        // Contract Coulomb integrals with T1 amplitudes
+        (*cTDressedGammaGph)["Gai"] <<= (*cTGammaGph)["Gai"],
+        (*cTDressedGammaGph)["Gai"] += (-1.0) * (*cTGammaGhh)["Gki"] * (*Tph)["ak"],
+        (*Rpphh)["abij"] += (*cTDressedGammaGph)["Gai"] * (*GammaGpp)["Gbc"] * (*Tph)["cj"],
+        (*Rpphh)["abij"] += (-1.0) * (*Vphhh)["akij"] * (*Tph)["bk"],
+        (*Rpphh)["abij"] += (-1.0) * (*Vphhp)["akic"] * (*Tph)["cj"] * (*Tph)["bk"],
 
-      // Contract Coulomb integrals with T1 amplitudes
-      (*cTDressedGammaGph)["Gai"] <<= (*cTGammaGph)["Gai"],
-      (*cTDressedGammaGph)["Gai"] += (-1.0) * (*cTGammaGhh)["Gki"] * (*Tph)["ak"],
-      (*Rpphh)["abij"] += (*cTDressedGammaGph)["Gai"] * (*GammaGpp)["Gbc"] * (*Tph)["cj"],
-      (*Rpphh)["abij"] += (-1.0) * (*Vphhh)["akij"] * (*Tph)["bk"],
-      (*Rpphh)["abij"] += (-1.0) * (*Vphhp)["akic"] * (*Tph)["cj"] * (*Tph)["bk"],
+        // Build Xakic
+        (*cTDressedGammaGph)["Gai"] += ( 1.0) * (*cTGammaGpp)["Gad"] * (*Tph)["di"],
+        (*cTDressedGammaGph)["Gai"] += (-0.5) * (*cTGammaGhp)["Gld"] * (*Yabij)["dail"],
+        (*Xakic)["akic"] <<= (*cTDressedGammaGph)["Gai"] * (*GammaGhp)["Gkc"],
+        (*Yabij)["dclk"] <<= (1.0) * (*Vhhpp)["lkdc"],
+        (*Yabij)["dclk"] += (-0.5) * (*Vhhpp)["lkcd"],
+        (*Xakic)["akic"] += (*Yabij)["dclk"] * (*Tpphh)["adil"],
+        (*Yabij)["cbkj"] <<= (2.0) * (*Tpphh)["cbkj"],
+        (*Yabij)["cbkj"] += (-1.0) * (*Tpphh)["bckj"],
+        (*Rpphh)["abij"] += (*Xakic)["akic"] * (*Yabij)["cbkj"]
+      )->execute();
+    }
+    {
+      auto Xakci( Tcc<TE>::template tensor<Complex<>>("Xakci") );
+      COMPILE(
+        // Build Xakci
+        (*cTDressedGammaGpp)["Gab"] <<= (*cTGammaGpp)["Gab"],
+        (*cTDressedGammaGpp)["Gac"] += (-1.0) * (*cTGammaGhp)["Glc"] * (*Tph)["al"],
+        (*dressedGammaGhh)["Gij"] <<= (*GammaGhh)["Gij"],
+        (*dressedGammaGhh)["Gki"]  += (*GammaGhp)["Gkd"] * (*Tph)["di"],
+        // Xakci = Vakci - Vlkci * Tal + Vakcd * Tdi - Vlkcd * Tdail
+        (*Xakci)["akci"] <<= (*cTDressedGammaGpp)["Gac"] * (*dressedGammaGhh)["Gki"],
+        (*Xakci)["akci"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["dail"],
+        (*Rpphh)["abij"] += (-1.0) * (*Xakci)["akci"] * (*Tpphh)["cbkj"],
+        (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"],
 
-      // Build Xakic
-      (*cTDressedGammaGph)["Gai"] += ( 1.0) * (*cTGammaGpp)["Gad"] * (*Tph)["di"],
-      (*cTDressedGammaGph)["Gai"] += (-0.5) * (*cTGammaGhp)["Gld"] * (*Yabij)["dail"],
-      (*Xakic)["akic"] <<= (*cTDressedGammaGph)["Gai"] * (*GammaGhp)["Gkc"],
-      (*Yabij)["dclk"] <<= (1.0) * (*Vhhpp)["lkdc"],
-      (*Yabij)["dclk"] += (-0.5) * (*Vhhpp)["lkcd"],
-      (*Xakic)["akic"] += (*Yabij)["dclk"] * (*Tpphh)["adil"],
-      (*Yabij)["cbkj"] <<= (2.0) * (*Tpphh)["cbkj"],
-      (*Yabij)["cbkj"] += (-1.0) * (*Tpphh)["bckj"],
-      (*Rpphh)["abij"] += (*Xakic)["akic"] * (*Yabij)["cbkj"],
+        // Symmetrize Rpphh by applying permutation operator
+        (*Rpphh)["abij"] += (*Rpphh)["baji"]
 
-      // Build Xakci
-      (*cTDressedGammaGpp)["Gab"] <<= (*cTGammaGpp)["Gab"],
-      (*cTDressedGammaGpp)["Gac"] += (-1.0) * (*cTGammaGhp)["Glc"] * (*Tph)["al"],
-      (*dressedGammaGhh)["Gij"] <<= (*GammaGhh)["Gij"],
-      (*dressedGammaGhh)["Gki"]  += (*GammaGhp)["Gkd"] * (*Tph)["di"],
-      // Xakci = Vakci - Vlkci * Tal + Vakcd * Tdi - Vlkcd * Tdail
-      (*Xakci)["akci"] <<= (*cTDressedGammaGpp)["Gac"] * (*dressedGammaGhh)["Gki"],
-      (*Xakci)["akci"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["dail"],
-      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["akci"] * (*Tpphh)["cbkj"],
-      (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"],
-
-      // Symmetrize Rpphh by applying permutation operator
-      (*Rpphh)["abij"] += (*Rpphh)["baji"]
-
-    )->execute();
-
+      )->execute();
+    }
     //////////////////////////////////////////////////////////////////////
     // Now add all terms to Rpphh that do not need to be symmetrized with
     // the permutation operator
     //////////////////////////////////////////////////////////////////////
-    if (ppl) {
-      COMPILE(
-        (*Rpphh)["abij"] += (*Vpphh)["abij"]
-      )->execute();
-    }
+    COMPILE(
+      (*Rpphh)["abij"] += (*Vpphh)["abij"]
+    )->execute();
+
     COMPILE(
       // Build Xklij intermediate
       (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
@@ -540,72 +540,62 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
       )
     )->execute();
 
-    if (ppl) {
-//      OUT() << "\tAdding Particle-particle contraction"  << std::endl;
-      Natural<> NG(cTGammaGpp->getLen(0));
-      Natural<> Nv(Rpphh->inspect()->getLen(0));
-      Natural<> No(Rpphh->inspect()->getLen(2));
-      Natural<> sliceSize(
-        this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
-      );
-      Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
-      std::vector<Ptr<Tensor<Complex<>, TE>>> cTSlicedGammaGpp;
-      std::vector<Ptr<Tensor<Complex<>, TE>>>   SlicedGammaGpp;
+    Natural<> NG(cTGammaGpp->getLen(0));
+    Natural<> Nv(Rpphh->inspect()->getLen(0));
+    Natural<> No(Rpphh->inspect()->getLen(2));
+    Natural<> sliceSize(
+      this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
+    );
+    Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
+    std::vector<Ptr<Tensor<Complex<>, TE>>> cTSlicedGammaGpp;
+    std::vector<Ptr<Tensor<Complex<>, TE>>>   SlicedGammaGpp;
+    COMPILE(
+      (*dressedGammaGpp)["Gab"] <<= (*GammaGpp)["Gab"],
+      (*dressedGammaGpp)["Gab"] += (-1.0) * (*GammaGhp)["Gkb"] * (*Tph)["ak"]
+    )->execute();
+    //Slice GammaGab and store it in a vector
+    for (Natural<> v(0); v < numberSlices; v++){
+      Natural<> xStart = v*sliceSize;
+      Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
+      auto dummy(   Tcc<TE>::template tensor<Complex<>>("dummy")   );
+      auto dummyct( Tcc<TE>::template tensor<Complex<>>("dummyct") );
       COMPILE(
-        (*dressedGammaGpp)["Gab"] <<= (*GammaGpp)["Gab"],
-        (*dressedGammaGpp)["Gab"] += (-1.0) * (*GammaGhp)["Gkb"] * (*Tph)["ak"]
+        (*dummy )["Gxb"]  <<=
+          (*(*dressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"],
+        (*dummyct)["Gxb"] <<=
+          (*(*cTDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"]
       )->execute();
-      //Slice GammaGab and store it in a vector
-      for (Natural<> v(0); v < numberSlices; v++){
-        Natural<> xStart = v*sliceSize;
-        Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
-        auto dummy(   Tcc<TE>::template tensor<Complex<>>("dummy")   );
-        auto dummyct( Tcc<TE>::template tensor<Complex<>>("dummyct") );
-        COMPILE(
-          (*dummy )["Gxb"]  <<=
-            (*(*dressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"],
-          (*dummyct)["Gxb"] <<=
-            (*(*cTDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"]
-        )->execute();
-          SlicedGammaGpp.push_back(dummy);
-        cTSlicedGammaGpp.push_back(dummyct);
-      }
-      // loop over slices
-      for (Natural<> m(0); m < numberSlices; m++)
-      for (Natural<> n(m); n < numberSlices; n++){
-        auto Vxycd( Tcc<TE>::template tensor<Complex<>>("Vxycd") );
-        auto Rxyij( Tcc<TE>::template tensor<Complex<>>("Rxyij") );
-        auto Ryxji( Tcc<TE>::template tensor<Complex<>>("Ryxji") );
-        Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
-        Natural<> Nx(cTSlicedGammaGpp[n]->lens[1]);
-        Natural<> Ny(SlicedGammaGpp[m]->lens[1]);
-        COMPILE(
-          (*Vxycd)["xycd"] <<=
-            (*cTSlicedGammaGpp[n])["Gxc"] * (*SlicedGammaGpp[m])["Gyd"],
-          (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Xabij)["cdij"],
-          (*(*Rpphh)({a, b, 0, 0},{a+Nx, b+Ny, No, No}))["xyij"] += (*Rxyij)["xyij"],
-          // if a>b: add the same slice at (b,a,j,i):
-          (a>b) ? (
-            (*Ryxji)["yxji"] <<= (*Rxyij)["xyij"],
-            (*(*Rpphh)({b, a, 0, 0},{b+Ny, a+Nx, No, No}))["xyij"] += (*Ryxji)["xyij"]
-          ) : (
-            Tcc<TE>::sequence()
-          )
-        )->execute();
-      }
-//      COMPILE(
-//        (*dressedGammaGpp)["Gab"] <<= (*GammaGpp)["Gab"],
-//        (*dressedGammaGpp)["Gab"] += (-1.0) * (*GammaGhp)["Gkb"] * (*Tph)["ak"],
-//        (*Vxycd)["xycd"] <<= (*cTDressedGammaGpp)["Gxc"] * (*dressedGammaGpp)["Gyd"],
-//        (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Xabij)["cdij"],
-//        (*Rpphh)["abij"] += (*Rxyij)["abij"]
-//      )->execute();
-
+        SlicedGammaGpp.push_back(dummy);
+      cTSlicedGammaGpp.push_back(dummyct);
     }
+    // loop over slices
+    for (Natural<> m(0); m < numberSlices; m++)
+    for (Natural<> n(m); n < numberSlices; n++){
+      auto Vxycd( Tcc<TE>::template tensor<Complex<>>("Vxycd") );
+      auto Rxyij( Tcc<TE>::template tensor<Complex<>>("Rxyij") );
+      auto Ryxji( Tcc<TE>::template tensor<Complex<>>("Ryxji") );
+      Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
+      Natural<> Nx(cTSlicedGammaGpp[n]->lens[1]);
+      Natural<> Ny(SlicedGammaGpp[m]->lens[1]);
+      COMPILE(
+        (*Vxycd)["xycd"] <<=
+          (*cTSlicedGammaGpp[n])["Gxc"] * (*SlicedGammaGpp[m])["Gyd"],
+        (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Xabij)["cdij"],
+        (*(*Rpphh)({a, b, 0, 0},{a+Nx, b+Ny, No, No}))["xyij"] += (*Rxyij)["xyij"],
+        // if a>b: add the same slice at (b,a,j,i):
+        (a>b) ? (
+          (*Ryxji)["yxji"] <<= (*Rxyij)["xyij"],
+          (*(*Rpphh)({b, a, 0, 0},{b+Ny, a+Nx, No, No}))["xyij"] += (*Ryxji)["xyij"]
+        ) : (
+          Tcc<TE>::sequence()
+        )
+      )->execute();
+    }
+
+
     //**************************************************************************
     //***********************  T1 amplitude equations  *************************
     //**************************************************************************
-//    OUT() << "\tSolving T1 Amplitude Equations" << std::endl;
     COMPILE(
       // Contract Kac and Kki with T1 amplitudes
       (*Rph)["ai"] <<= ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
