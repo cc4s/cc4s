@@ -15,6 +15,7 @@
 
 #include <algorithms/PerturbativeTriplesStar.hpp>
 #include <algorithms/PerturbativeTriplesReference.hpp>
+#include <algorithms/CompleteRenormalized.hpp>
 #include <tcc/Tcc.hpp>
 #include <TensorSet.hpp>
 #include <MathFunctions.hpp>
@@ -64,6 +65,9 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto Vppph(coulombIntegrals->get("ppph"));
   auto Vhhhp(coulombIntegrals->get("hhhp"));
 
+  const bool completeRenormalized
+     = arguments->getValue<int>("completeRenormalized", 0) == 1;
+
   auto eigenEnergies(
     arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
   );
@@ -71,13 +75,32 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto epsp(eigenEnergies->get("p"));
 
 
+  // piecuch three body amplitudes
+  auto M( Tcc<TE>::template tensor<F>("M"));
   auto Z( Tcc<TE>::template tensor<F>("Z"));
   auto T( Tcc<TE>::template tensor<F>("T"));
   auto S( Tcc<TE>::template tensor<F>("S"));
   auto E( Tcc<TE>::template tensor<F>("E"));
   auto fromReal( [](Real<> x) { return F(x); } );
   auto inverse( [](F x) { return 1.0 / x; } );
+
+
+  // deal with completeRenormalized
+  if (completeRenormalized) {
+    auto intermediates
+       = cr::getCompleteRenormalized<F, TE>(coulombIntegrals, amplitudes); 
+    auto Jppph = intermediates->get("ppph");
+    auto Jhphh = intermediates->get("hphh");
+    COMPILE(
+      (*M)["abcijk"] <<=          (*Jppph)["bcdk"] * (*Tpphh)["adij"],
+      (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Jhphh)["lcjk"])
+                                * (*Tpphh)["abil"]
+    )->execute();
+  }
+
+
   COMPILE(
+
     (*T)["abcijk"]  <<=          (*Vppph)["bcdk"] * (*Tpphh)["adij"],
     (*T)["abcijk"]   += (-1.0) * map<F>(conj<F>, (*Vhhhp)["jklc"]) * (*Tpphh)["abil"],
     (*S)["abcijk"]  <<= (*T)["abcijk"],
@@ -101,14 +124,25 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
       <<= map<F>(conj<F>, (*Z)["abcijk"]) * map<F>(inverse, (*S)["abcijk"])
   )->execute();
 
-  COMPILE(
-    (*E)[""] <<= (*T)["abcijk"] * (*Z)["abcijk"],
-    (*E)[""]  += (*T)["bacjik"] * (*Z)["abcijk"],
-    (*E)[""]  += (*T)["acbikj"] * (*Z)["abcijk"],
-    (*E)[""]  += (*T)["cbakji"] * (*Z)["abcijk"],
-    (*E)[""]  += (*T)["cabkij"] * (*Z)["abcijk"],
-    (*E)[""]  += (*T)["bcajki"] * (*Z)["abcijk"]
-  )->execute();
+  if (completeRenormalized) {
+    COMPILE(
+      (*E)[""] <<= (*M)["abcijk"] * (*Z)["abcijk"],
+      (*E)[""]  += (*M)["bacjik"] * (*Z)["abcijk"],
+      (*E)[""]  += (*M)["acbikj"] * (*Z)["abcijk"],
+      (*E)[""]  += (*M)["cbakji"] * (*Z)["abcijk"],
+      (*E)[""]  += (*M)["cabkij"] * (*Z)["abcijk"],
+      (*E)[""]  += (*M)["bcajki"] * (*Z)["abcijk"]
+    )->execute();
+  } else {
+    COMPILE(
+      (*E)[""] <<= (*T)["abcijk"] * (*Z)["abcijk"],
+      (*E)[""]  += (*T)["bacjik"] * (*Z)["abcijk"],
+      (*E)[""]  += (*T)["acbikj"] * (*Z)["abcijk"],
+      (*E)[""]  += (*T)["cbakji"] * (*Z)["abcijk"],
+      (*E)[""]  += (*T)["cabkij"] * (*Z)["abcijk"],
+      (*E)[""]  += (*T)["bcajki"] * (*Z)["abcijk"]
+    )->execute();
+  }
 
   /* DUPLICATION WARNING:
    * --------------------
@@ -121,9 +155,20 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
    */
 
   F eTriples(E->read());
-  OUT() << "(T) correlation energy: "
-        << std::setprecision(15) << std::setw(23)
-        << real(eTriples) << std::endl;
+
+  if (completeRenormalized) {
+    double denominator = cr::getDenominator<F, TE>(amplitudes, T);
+    OUT() << "CR-(T) correlation energy: "
+          << std::setprecision(10) << std::setw(20)
+          << real(eTriples) << std::endl;
+    OUT() << "CR-(T) denominator: "
+          << std::setprecision(10) << std::setw(27)
+          << denominator << std::endl;
+  } else {
+    OUT() << "(T) correlation energy: "
+          << std::setprecision(10) << std::setw(23)
+          << real(eTriples) << std::endl;
+  }
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correlation", real(eTriples));
