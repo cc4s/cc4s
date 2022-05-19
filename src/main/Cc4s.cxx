@@ -226,6 +226,7 @@ void Cc4s::printBanner() {
     ", date: " << CC4S_DATE << std::endl;
   OUT() << "build date: " << buildDate.str() << std::endl;
   OUT() << "compiler: " << COMPILER_VERSION << std::endl;
+  OUT() << "mpi: " << CC4S_MPI_VERSION << std::endl;
   OUT() << "total processes: " << world->getProcesses() << std::endl;
   OUT() << "calculation started on: " << ctime (&rawtime) << std::endl;
   executionEnvironment->setValue("version", std::string(CC4S_VERSION));
