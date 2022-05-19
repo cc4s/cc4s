@@ -32,7 +32,7 @@ TESTS_OBJECTS     = $(patsubst %.cxx,$(OBJ_PATH)/%.o,$(TEST_SRC_FILES))
 VERSION          := $(shell git describe --all --dirty --long)
 DATE             := $(shell git log -1 --format="%cd")
 COMPILER_VERSION := $(shell ${CXX} --version | head -n 1)
-
+CC4S_MPI_VERSION := $(shell mpirun --version | head -n 1)
 
 # This is a trick just to make sure that the dependencies are built
 EXTERN_DONE_FILE = $(BUILD_PATH)/extern-built
