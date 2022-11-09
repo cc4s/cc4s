@@ -88,6 +88,9 @@ Ptr<MapNode> CoupledCluster::run() {
   OUT() << "Using method "
     << methodName << ". " << method->describeOptions() << endl;
 
+  bool isLinearized(arguments->getValue<bool>("linearized", false));
+  if (isLinearized && methodName == "Drccd") OUT() << "Solving linearized equations\n";
+
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
   auto mixerType(mixerArguments->getValue<std::string>("type", "DiisMixer"));
