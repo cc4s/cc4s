@@ -277,6 +277,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
     auto Fphph( Tcc<TE>::template tensor<F>("Fphph") );
     auto Fhpph( Tcc<TE>::template tensor<F>("Fhpph") );
     auto Fhphp( Tcc<TE>::template tensor<F>("Fhphp") );
+    auto Fhp( Tcc<TE>::template tensor<F>("Fhp") );
 
     // build epsa and epsi for F
     auto eigenEnergies(
@@ -324,10 +325,14 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       // ERRATUM
       (*Fhpph)["ieam"]   += (-1.0) * (*Vhphh)["ienm"] * (*Tph)["an"],
 
-      // II.13
+      // II.14
       (*Fhphp)["iema"]  <<= (*Vhphp)["iema"],
       // ERRATUM
       (*Fhphp)["iema"]   += (-1.0) * (*Vhhhp)["inme"] * (*Tph)["an"],
+
+      // II.15
+      // bug 3
+      (*Fhp)["me"] <<= (*Whhpp)["mnef"] * (*Tph)["fn"],
 
       // II.1
       (*Xabie)["abie"]  <<=          (*Vpphp)["abie"],
@@ -364,6 +369,8 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Xamij)["amij"]   += (-1.0) * (*Vhhhh)["ijnm"] * (*Tph)["an"],
       // bug? remove
       //(*Xamij)["amij"]   +=          (*Whhpp)["mnef"] * (*Tph)["fn"],
+      // bug3
+      (*Xamij)["amij"]   +=          (*Fhp)["me"] * (*Tpphh)["aeij"],
       (*Xamij)["amij"]   += ( 2.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["aefijn"],
       (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["feaijn"],
       (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["afeijn"],
