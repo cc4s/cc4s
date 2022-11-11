@@ -216,12 +216,16 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
 
     // T3 equations are taken from Noga & Bartlett JCP 86, 7041 (1987)
     // with consideration of the erratum
+
     // T3 -> R1
+    // from:
+    // https://github.com/ValeevGroup/mpqc/blob/master/src/mpqc/chemistry/qc/lcao/cc/ccsdt.h#L446
+    // bug3?
     COMPILE(
-      (*Rph)["ai"] += ( 2.0) * (*Vhhpp)["jkbc"] * (*Tppphhh)["bacjki"],
-      (*Rph)["ai"] += (-2.0) * (*Vhhpp)["jkbc"] * (*Tppphhh)["bcajki"],
-      (*Rph)["ai"] += (-1.0) * (*Vhhpp)["jkcb"] * (*Tppphhh)["bacjki"],
-      (*Rph)["ai"] += (+1.0) * (*Vhhpp)["jkcb"] * (*Tppphhh)["bacjki"]
+      (*Rph)["ai"] += (-2.0) * (*Vhhpp)["jkbc"] * (*Tppphhh)["bacjki"],
+      (*Rph)["ai"] += (+2.0) * (*Vhhpp)["jkbc"] * (*Tppphhh)["bcajki"],
+      (*Rph)["ai"] += (+1.0) * (*Vhhpp)["jkcb"] * (*Tppphhh)["bacjki"],
+      (*Rph)["ai"] += (-1.0) * (*Vhhpp)["jkcb"] * (*Tppphhh)["bcajki"]
     )->execute();
 
     // T3 -> R2
@@ -231,6 +235,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
     auto Xpphh( Tcc<TE>::template tensor<F>("Xpphh") );
 
 
+    // https://github.com/ValeevGroup/mpqc/blob/master/src/mpqc/chemistry/qc/lcao/cc/ccsdt.h#L620
     COMPILE(
       // Pure T3->R2
       (*Wphpp)["akcd"] <<= ( 2.0) * (*Vphpp)["akcd"],
@@ -240,7 +245,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Whhpp)["klcd"] <<= ( 2.0) * (*Vhhpp)["klcd"],
       (*Whhpp)["klcd"]  += (-1.0) * (*Vhhpp)["lkcd"],
 
-			(*Xpphh)["abij"] <<=          (*Wphpp)["akcd"] * (*Tppphhh)["cbdijk"],
+      (*Xpphh)["abij"] <<=          (*Wphpp)["akcd"] * (*Tppphhh)["cbdijk"],
       (*Xpphh)["abij"]  += (-1.0) * (*Vphpp)["akcd"] * (*Tppphhh)["cdbijk"],
       (*Xpphh)["abij"]  += (-1.0) * (*Whhhp)["klic"] * (*Tppphhh)["abckjl"],
       (*Xpphh)["abij"]  +=          (*Vhhhp)["klic"] * (*Tppphhh)["acbkjl"],
@@ -273,36 +278,68 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
     auto Fhpph( Tcc<TE>::template tensor<F>("Fhpph") );
     auto Fhphp( Tcc<TE>::template tensor<F>("Fhphp") );
 
+    // build epsa and epsi for F
+    auto eigenEnergies(
+    // this->arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
+      this->arguments->template getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
+    );
+    auto epsh(eigenEnergies->get("h"));
+    auto epsp(eigenEnergies->get("p"));
+    auto Fepsh(Tcc<TE>::template tensor<F>(epsh->inspect()->getLens(), "Fepsh"));
+    auto Fepsp(Tcc<TE>::template tensor<F>(epsp->inspect()->getLens(), "Fepsp"));
+    // convert to type F (either complex or double)
+    auto fromReal( [](Real<> eps) {return F(eps);} );
+    COMPILE(
+      (*Fepsp)["a"] <<= map<F>(fromReal, (*epsp)["a"]),
+      (*Fepsh)["i"] <<= map<F>(fromReal, (*epsh)["i"])
+    )->execute();
+
+    ///////////////////////
+    // NOGA PAPER EQUATIONS
+    ///////////////////////
     COMPILE(
 
+      // II.16
       (*Xpphh)["abij"]  <<= (*Tpphh)["abij"],
       (*Xpphh)["abij"]   += (*Tph)["ai"] * (*Tph)["bj"],
 
+      // II.9
       (*Fphpp)["amef"]  <<= (*Vphpp)["amef"],
-      (*Fphpp)["amef"]    += (-1.0) * (*Vhhpp)["nmef"] * (*Tph)["an"],
+      (*Fphpp)["amef"]   += (-1.0) * (*Vhhpp)["nmef"] * (*Tph)["an"],
 
+      // II.10
       (*Fphhh)["eimn"]  <<= (*Vphhh)["eimn"],
       (*Fphhh)["eimn"]   += (*Vhhpp)["mnef"] * (*Tph)["fi"],
 
+      // II.11
       (*Fphhp)["amie"]  <<= (*Vphhp)["amie"],
       (*Fphhp)["amie"]   += (*Vphpp)["amfe"] * (*Tph)["fi"],
 
+      // II.12
       (*Fphph)["amei"]  <<= (*Vphph)["amei"],
       (*Fphph)["amei"]   += (*Vphpp)["amef"] * (*Tph)["fi"],
 
+      // II.13
       (*Fhpph)["ieam"]  <<= (*Vhpph)["ieam"],
+      // ERRATUM
       (*Fhpph)["ieam"]   += (-1.0) * (*Vhphh)["ienm"] * (*Tph)["an"],
 
+      // II.13
       (*Fhphp)["iema"]  <<= (*Vhphp)["iema"],
+      // ERRATUM
       (*Fhphp)["iema"]   += (-1.0) * (*Vhhhp)["inme"] * (*Tph)["an"],
 
-
+      // II.1
       (*Xabie)["abie"]  <<=          (*Vpphp)["abie"],
       (*Xabie)["abie"]   +=          (*Fphhh)["eimn"] * (*Xpphh)["abnm"],
       (*Xabie)["abie"]   += ( 2.0) * (*Fphpp)["bmef"] * (*Tpphh)["afim"],
       (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmfe"] * (*Tpphh)["afim"],
-      (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmfe"] * (*Tpphh)["afmi"],
-      (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmef"] * (*Tpphh)["bfmi"],
+      // bug?                                  bmef
+      (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmef"] * (*Tpphh)["afmi"],
+      //(*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmfe"] * (*Tpphh)["afmi"],
+      // bug?                                  amfe
+      (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["amfe"] * (*Tpphh)["bfmi"],
+      //(*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmef"] * (*Tpphh)["bfmi"],
       (*Xabie)["abie"]   += (-1.0) * (*Fphhp)["amie"] * (*Tph)["bm"],
       (*Xabie)["abie"]   += (-1.0) * (*Fphph)["bmei"] * (*Tph)["am"],
       (*Xabie)["abie"]   += ( 1.0) * (*Vpppp)["abfe"] * (*Tph)["fi"],
@@ -311,49 +348,68 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Xabie)["abie"]   += ( 1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfinm"],
 
 
+      // II.2
       (*Xamij)["amij"]  <<=          (*Vphhh)["amij"],
       (*Xamij)["amij"]   +=          (*Fphpp)["amef"] * (*Xpphh)["efij"],
+      // ERRATUM
       (*Xamij)["amij"]   += ( 2.0) * (*Fphhh)["ejnm"] * (*Tpphh)["aein"],
+      // ERRATUM
       (*Xamij)["amij"]   += (-1.0) * (*Fphhh)["ejmn"] * (*Tpphh)["aein"],
+      // ERRATUM
       (*Xamij)["amij"]   += (-1.0) * (*Fphhh)["ejnm"] * (*Tpphh)["eain"],
+      // ERRATUM
       (*Xamij)["amij"]   += (-1.0) * (*Fphhh)["eimn"] * (*Tpphh)["eajn"],
       (*Xamij)["amij"]   +=          (*Fhpph)["ieam"] * (*Tph)["ej"],
       (*Xamij)["amij"]   +=          (*Fhphp)["jema"] * (*Tph)["ei"],
       (*Xamij)["amij"]   += (-1.0) * (*Vhhhh)["ijnm"] * (*Tph)["an"],
-      (*Xamij)["amij"]   +=          (*Whhpp)["mnef"] * (*Tph)["fn"],
+      // bug? remove
+      //(*Xamij)["amij"]   +=          (*Whhpp)["mnef"] * (*Tph)["fn"],
       (*Xamij)["amij"]   += ( 2.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["aefijn"],
       (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["feaijn"],
       (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["afeijn"],
 
+      // II.3
+      // NOTE: we antisymmetrize in place Vhphh
       (*Xim)["im"]      <<= ( 2.0) * (*Vhphh)["iemn"] * (*Tph)["en"],
+      (*Xim)["ii"]       += (*Fepsh)["i"],
       (*Xim)["im"]       += (-1.0) * (*Vhphh)["ienm"] * (*Tph)["en"],
       (*Xim)["im"]       +=          (*Whhpp)["mnef"] * (*Xpphh)["efin"],
 
+      // II.4
+      // NOTE: we antisymmetrize in place Vphpp
       (*Xae)["ae"]      <<= ( 2.0) * (*Vphpp)["amef"] * (*Tph)["fm"],
+      (*Xae)["aa"]       += (*Fepsp)["a"],
       (*Xae)["ae"]       += (-1.0) * (*Vphpp)["amfe"] * (*Tph)["fm"],
       (*Xae)["ae"]       += (-1.0) * (*Whhpp)["mnef"] * (*Xpphh)["afmn"],
 
+      // II.5
       (*Xjkmn)["jkmn"]  <<=          (*Vhhhh)["jkmn"],
+      // ERRATUM
       (*Xjkmn)["jkmn"]   +=          (*Vhhpp)["mnef"] * (*Xpphh)["efjk"],
       (*Xjkmn)["jkmn"]   +=          (*Vhphh)["jemn"] * (*Tph)["ek"],
       (*Xjkmn)["jkmn"]   +=          (*Vphhh)["ekmn"] * (*Tph)["ej"],
 
+      // II.6
       (*Xbcef)["bcef"]  <<=          (*Vpppp)["bcef"],
+      // ERRATUM
       (*Xbcef)["bcef"]   +=          (*Vpphh)["efmn"] * (*Xpphh)["bcmn"],
       (*Xbcef)["bcef"]   += (-1.0) * (*Vphpp)["bmef"] * (*Tph)["cm"],
       (*Xbcef)["bcef"]   += (-1.0) * (*Vhppp)["mcef"] * (*Tph)["bm"],
 
+      // II.7
       (*Xamei)["amei"]  <<=          (*Vphph)["amei"],
       (*Xamei)["amei"]   += (-1.0) * (*Vhhpp)["mnfe"] * (*Xpphh)["fain"],
       (*Xamei)["amei"]   += (-1.0) * (*Vhhph)["nmei"] * (*Tph)["an"],
       (*Xamei)["amei"]   +=          (*Vphpp)["amef"] * (*Tph)["fi"],
 
+      // II.8
       (*Xamie)["amie"]  <<=          (*Vphhp)["amie"],
       (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Xpphh)["afin"],
       (*Xamie)["amie"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Xpphh)["fain"],
       (*Xamie)["amie"]   += (-1.0) * (*Vhhhp)["nmie"] * (*Tph)["an"],
       (*Xamie)["amie"]   +=          (*Vppph)["aefm"] * (*Tph)["fi"],
 
+      // I.3 until I.10 (numbers are counting terms)
       (*Xp3h3)["abcijk"]   <<=          (*Xjkmn)["jkmn"] * (*Tppphhh)["abcimn"],
       (*Xp3h3)["abcijk"]    +=          (*Xbcef)["bcef"] * (*Tppphhh)["aefijk"],
       (*Xp3h3)["abcijk"]    += ( 2.0) * (*Xamie)["amie"] * (*Tppphhh)["ebcmjk"],
@@ -365,10 +421,12 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Xp3h3)["abcijk"]    +=          (*Xae)["ae"]     * (*Tppphhh)["ebcijk"],
       (*Xp3h3)["abcijk"]    += (-1.0) * (*Xim)["im"]     * (*Tppphhh)["abcmjk"],
 
+      // Permute I.3 until I.10 through P(ia/jb, kc)
       (*Rppphhh)["abcijk"] <<= (*Xp3h3)["abcijk"],
       (*Rppphhh)["abcijk"]  += (*Xp3h3)["bacjik"],
       (*Rppphhh)["abcijk"]  += (*Xp3h3)["cbakji"],
 
+      // I.1 and I.2
       (*Xp3h3)["abcijk"]   <<= ( 1.0) * (*Xabie)["abie"] * (*Tpphh)["cekj"],
       (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamij)["amij"] * (*Tpphh)["bcmk"],
       (*Rppphhh)["abcijk"]  += (*Xp3h3)["abcijk"],
@@ -376,8 +434,9 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Rppphhh)["abcijk"]  += (*Xp3h3)["cabkij"],
       (*Rppphhh)["abcijk"]  += (*Xp3h3)["cbakji"],
       (*Rppphhh)["abcijk"]  += (*Xp3h3)["bcajki"],
-			(*Rppphhh)["abcijk"]  += (*Xp3h3)["bacjik"]
+      (*Rppphhh)["abcijk"]  += (*Xp3h3)["bacjik"]
     )->execute();
+
 
   }
   return residuum;
