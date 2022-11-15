@@ -53,19 +53,16 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
     // no previous amplitudes given
     COMPILE(
       (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
-      (*Rpphh)["abij"] <<= (*Vpphh)["abij"]
-//      (*Rppphhh)["abcijk"] <<= (*Vpphh)["abij"] * (*Rph)["ck"]
-    )->execute();
-		COMPILE(
+      (*Rpphh)["abij"] <<= (*Vpphh)["abij"],
       (*Rppphhh)["abcijk"] <<= (*Vpphh)["abij"] * (*Rph)["ck"]
     )->execute();
-
   } else {
     // TODO: check if given amplitudes contain expected parts
     // get amplitude parts
     auto Tph( amplitudes->get("ph") );
     auto Tpphh( amplitudes->get("pphh") );
     auto Tppphhh( amplitudes->get("ppphhh") );
+
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
     Tppphhh->inspect()->setName("Tppphhh");
     auto Vpppp(coulombIntegrals->get("pppp"));
@@ -188,7 +185,6 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
     //********************************************************************************
     //***********************  T1 amplitude equations  *******************************
     //********************************************************************************
-//    OUT() << "Solving T1 Amplitude Equations" << std::endl;
     COMPILE(
       // Contract Kac and Kki with T1 amplitudes
       (*Rph)["ai"] <<= ( 1.0) * (*Kac)["ac"] * (*Tph)["ci"],
@@ -339,12 +335,8 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Xabie)["abie"]   +=          (*Fphhh)["eimn"] * (*Xpphh)["abnm"],
       (*Xabie)["abie"]   += ( 2.0) * (*Fphpp)["bmef"] * (*Tpphh)["afim"],
       (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmfe"] * (*Tpphh)["afim"],
-      // bug?                                  bmef
       (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmef"] * (*Tpphh)["afmi"],
-      //(*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmfe"] * (*Tpphh)["afmi"],
-      // bug?                                  amfe
       (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["amfe"] * (*Tpphh)["bfmi"],
-      //(*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmef"] * (*Tpphh)["bfmi"],
       (*Xabie)["abie"]   += (-1.0) * (*Fphhp)["amie"] * (*Tph)["bm"],
       (*Xabie)["abie"]   += (-1.0) * (*Fphph)["bmei"] * (*Tph)["am"],
       (*Xabie)["abie"]   += ( 1.0) * (*Vpppp)["abfe"] * (*Tph)["fi"],
@@ -367,9 +359,6 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Xamij)["amij"]   +=          (*Fhpph)["ieam"] * (*Tph)["ej"],
       (*Xamij)["amij"]   +=          (*Fhphp)["jema"] * (*Tph)["ei"],
       (*Xamij)["amij"]   += (-1.0) * (*Vhhhh)["ijnm"] * (*Tph)["an"],
-      // bug? remove
-      //(*Xamij)["amij"]   +=          (*Whhpp)["mnef"] * (*Tph)["fn"],
-      // bug3
       (*Xamij)["amij"]   +=          (*Fhp)["me"] * (*Tpphh)["aeij"],
       (*Xamij)["amij"]   += ( 2.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["aefijn"],
       (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["feaijn"],
@@ -378,14 +367,16 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       // II.3
       // NOTE: we antisymmetrize in place Vhphh
       (*Xim)["im"]      <<= ( 2.0) * (*Vhphh)["iemn"] * (*Tph)["en"],
-      (*Xim)["ii"]       += (*Fepsh)["i"],
+      // We dont need this term as we have 0 on the lhs
+      //      (*Xim)["ii"]       += (*Fepsh)["i"],
       (*Xim)["im"]       += (-1.0) * (*Vhphh)["ienm"] * (*Tph)["en"],
       (*Xim)["im"]       +=          (*Whhpp)["mnef"] * (*Xpphh)["efin"],
 
       // II.4
       // NOTE: we antisymmetrize in place Vphpp
       (*Xae)["ae"]      <<= ( 2.0) * (*Vphpp)["amef"] * (*Tph)["fm"],
-      (*Xae)["aa"]       += (*Fepsp)["a"],
+      // We dont need this term as we have 0 on the lhs
+      //      (*Xae)["aa"]       += (*Fepsp)["a"],
       (*Xae)["ae"]       += (-1.0) * (*Vphpp)["amfe"] * (*Tph)["fm"],
       (*Xae)["ae"]       += (-1.0) * (*Whhpp)["mnef"] * (*Xpphh)["afmn"],
 
