@@ -63,6 +63,14 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
     auto Tpphh( amplitudes->get("pphh") );
     auto Tppphhh( amplitudes->get("ppphhh") );
 
+
+    if (!Tppphhh) {
+      Tppphhh = Tcc<TE>::template tensor<F>("Tppphhh");
+      COMPILE(
+        (*Tppphhh)["abcijk"] <<= (0.0) * (*Vpphh)["abij"] * (*Tph)["ck"]
+      )->execute();
+    }
+
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
     Tppphhh->inspect()->setName("Tppphhh");
     auto Vpppp(coulombIntegrals->get("pppp"));
