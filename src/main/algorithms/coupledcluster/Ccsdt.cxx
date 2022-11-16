@@ -410,7 +410,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
 
       // II.8
       (*Xamie)["amie"]  <<=          (*Vphhp)["amie"],
-      (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Xpphh)["afin"],
+      (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Tpphh)["afin"],
       (*Xamie)["amie"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Xpphh)["fain"],
       (*Xamie)["amie"]   += (-1.0) * (*Vhhhp)["nmie"] * (*Tph)["an"],
       (*Xamie)["amie"]   +=          (*Vppph)["aefm"] * (*Tph)["fi"],
