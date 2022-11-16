@@ -30,7 +30,8 @@ std::shared_ptr<TensorSet<F, TE>>
 template <typename F, typename TE>
 double getDenominator(
  std::shared_ptr<TensorSet<F, TE>> amplitudes,
- Ptr<Tensor<F,TE>> tabcijk
+ Ptr<Tensor<F,TE>> tabcijk,
+ Ptr<Tensor<F,TE>> zabcijk
 );
 
 }

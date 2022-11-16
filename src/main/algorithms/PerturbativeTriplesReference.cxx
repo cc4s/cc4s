@@ -80,6 +80,8 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto Z( Tcc<TE>::template tensor<F>("Z"));
   auto T( Tcc<TE>::template tensor<F>("T"));
   auto S( Tcc<TE>::template tensor<F>("S"));
+  auto D( Tcc<TE>::template tensor<F>("D"));
+  auto R( Tcc<TE>::template tensor<F>("R"));
   auto E( Tcc<TE>::template tensor<F>("E"));
   auto fromReal( [](Real<> x) { return F(x); } );
   auto inverse( [](F x) { return 1.0 / x; } );
@@ -88,13 +90,21 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   // deal with completeRenormalized
   if (completeRenormalized) {
     auto intermediates
-       = cr::getCompleteRenormalized<F, TE>(coulombIntegrals, amplitudes); 
+       = cr::getCompleteRenormalized<F, TE>(coulombIntegrals, amplitudes);
     auto Jppph = intermediates->get("ppph");
     auto Jhphh = intermediates->get("hphh");
     COMPILE(
       (*M)["abcijk"] <<=          (*Jppph)["bcdk"] * (*Tpphh)["adij"],
       (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Jhphh)["lcjk"])
-                                * (*Tpphh)["abil"]
+                                * (*Tpphh)["abil"],
+      (*Z)["abcijk"] <<= (*M)["abcijk"],
+      (*Z)["abcijk"]  += (*M)["bacjik"],
+      (*Z)["abcijk"]  += (*M)["acbikj"],
+      (*Z)["abcijk"]  += (*M)["cbakji"],
+      (*Z)["abcijk"]  += (*M)["cabkij"],
+      (*Z)["abcijk"]  += (*M)["bcajki"],
+
+      (*M)["abcijk"] <<= (*Z)["abcijk"]
     )->execute();
   }
 
@@ -103,44 +113,62 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
 
     (*T)["abcijk"]  <<=          (*Vppph)["bcdk"] * (*Tpphh)["adij"],
     (*T)["abcijk"]   += (-1.0) * map<F>(conj<F>, (*Vhhhp)["jklc"]) * (*Tpphh)["abil"],
-    (*S)["abcijk"]  <<= (*T)["abcijk"],
-    (*S)["abcijk"]   += ( 0.5) * (*Tph)["ai"] * (*Vpphh)["bcjk"],
+    (*Z)["abcijk"]  <<= (*T)["abcijk"],
+    (*Z)["abcijk"]   += (*T)["bacjik"],
+    (*Z)["abcijk"]   += (*T)["acbikj"],
+    (*Z)["abcijk"]   += (*T)["cbakji"],
+    (*Z)["abcijk"]   += (*T)["cabkij"],
+    (*Z)["abcijk"]   += (*T)["bcajki"],
 
-    (*Z)["abcijk"] <<= (+8.0) * (*S)["abcijk"],
-    (*Z)["abcijk"]  += (-4.0) * (*S)["acbijk"],
-    (*Z)["abcijk"]  += (-4.0) * (*S)["bacijk"],
-    (*Z)["abcijk"]  += (+2.0) * (*S)["bcaijk"],
-    (*Z)["abcijk"]  += (+2.0) * (*S)["cabijk"],
-    (*Z)["abcijk"]  += (-4.0) * (*S)["cbaijk"],
+    (*T)["abcijk"]  <<= (*Z)["abcijk"],
 
-    (*S)["abcijk"] <<= ( 1.0) * map<F>(fromReal, (*epsh)["i"]),
-    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsh)["j"]),
-    (*S)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsh)["k"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["a"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["b"]),
-    (*S)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["c"]),
+    (*S)["abcijk"]  <<= (*Z)["abcijk"],
+    (*S)["abcijk"]   += (*Tph)["ai"] * (*Vpphh)["bcjk"],
+    (*S)["abcijk"]   += (*Tph)["bj"] * (*Vpphh)["acik"],
+    (*S)["abcijk"]   += (*Tph)["ck"] * (*Vpphh)["abij"],
+
+    (*Z)["abcijk"] <<= (4.0/3.0) * (*S)["abcijk"],
+    (*Z)["abcijk"]  += (-2.0)    * (*S)["acbijk"],
+    (*Z)["abcijk"]  += (2.0/3.0) * (*S)["bcaijk"],
+
+    //just to tell tcc the dimensions of D
+    (*D)["abcijk"] <<= (*T)["abcijk"],
+    (*D)["abcijk"] <<= ( 1.0) * map<F>(fromReal, (*epsh)["i"]),
+    (*D)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsh)["j"]),
+    (*D)["abcijk"]  += ( 1.0) * map<F>(fromReal, (*epsh)["k"]),
+    (*D)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["a"]),
+    (*D)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["b"]),
+    (*D)["abcijk"]  += (-1.0) * map<F>(fromReal, (*epsp)["c"]),
 
     (*Z)["abcijk"]
-      <<= map<F>(conj<F>, (*Z)["abcijk"]) * map<F>(inverse, (*S)["abcijk"])
+      <<= map<F>(conj<F>, (*Z)["abcijk"]) * map<F>(inverse, (*D)["abcijk"]),
+
+    (*T)["abcijk"]
+      <<= map<F>(conj<F>, (*T)["abcijk"]) * map<F>(inverse, (*D)["abcijk"]),
+
+    (*R)["abcijk"]  <<= (*Tph)["ai"] * (*Vpphh)["bcjk"],
+    (*R)["abcijk"]   += (*Tph)["bj"] * (*Vpphh)["acik"],
+    (*R)["abcijk"]   += (*Tph)["ck"] * (*Vpphh)["abij"],
+
+    (*S)["abcijk"] <<= (4./3) * (*R)["abcijk"],
+    (*S)["abcijk"]  += (-2.0) * (*R)["acbijk"],
+    (*S)["abcijk"]  += (2./3) * (*R)["bcaijk"],
+
+    (*S)["abcijk"]
+      <<= map<F>(conj<F>, (*S)["abcijk"]) * map<F>(inverse, (*D)["abcijk"])
+
+
+
+
   )->execute();
 
   if (completeRenormalized) {
     COMPILE(
-      (*E)[""] <<= (*M)["abcijk"] * (*Z)["abcijk"],
-      (*E)[""]  += (*M)["bacjik"] * (*Z)["abcijk"],
-      (*E)[""]  += (*M)["acbikj"] * (*Z)["abcijk"],
-      (*E)[""]  += (*M)["cbakji"] * (*Z)["abcijk"],
-      (*E)[""]  += (*M)["cabkij"] * (*Z)["abcijk"],
-      (*E)[""]  += (*M)["bcajki"] * (*Z)["abcijk"]
+      (*E)[""] <<= (*M)["abcijk"] * (*Z)["abcijk"]
     )->execute();
   } else {
     COMPILE(
-      (*E)[""] <<= (*T)["abcijk"] * (*Z)["abcijk"],
-      (*E)[""]  += (*T)["bacjik"] * (*Z)["abcijk"],
-      (*E)[""]  += (*T)["acbikj"] * (*Z)["abcijk"],
-      (*E)[""]  += (*T)["cbakji"] * (*Z)["abcijk"],
-      (*E)[""]  += (*T)["cabkij"] * (*Z)["abcijk"],
-      (*E)[""]  += (*T)["bcajki"] * (*Z)["abcijk"]
+      (*E)[""] <<= (*T)["abcijk"] * (*Z)["abcijk"] * (*D)["abcijk"]
     )->execute();
   }
 
@@ -157,10 +185,10 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   F eTriples(E->read());
 
   if (completeRenormalized) {
-    double denominator = cr::getDenominator<F, TE>(amplitudes, T);
+    double denominator = cr::getDenominator<F, TE>(amplitudes, T, S);
     OUT() << "CR-(T) correlation energy: "
           << std::setprecision(10) << std::setw(20)
-          << real(eTriples) << std::endl;
+          << real(eTriples) / denominator << std::endl;
     OUT() << "CR-(T) denominator: "
           << std::setprecision(10) << std::setw(27)
           << denominator << std::endl;

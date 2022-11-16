@@ -120,7 +120,8 @@ cc4s::cr::getCompleteRenormalized(
 template <typename F, typename TE>
 double cc4s::cr::getDenominator(
  std::shared_ptr<TensorSet<F, TE>> amplitudes,
- Ptr<cc4s::Tensor<F,TE>> tabcijk
+ Ptr<cc4s::Tensor<F,TE>> tabcijk,
+ Ptr<cc4s::Tensor<F,TE>> zabcijk
 ) {
 
   auto Tph ( amplitudes->get("ph") );
@@ -161,9 +162,9 @@ double cc4s::cr::getDenominator(
   
   // Build Piecuch Denominator.
   (*D)[""] <<= (2.0) * (*Tph)["ai"] * (*Tph)["ai"],
-  (*D)[""] += (2.0) * (*Tph)["ai"] * (*Tph)["ai"],
   (*D)[""] += (*Wabij)["abij"] * (*Cabij)["abij"],
-  (*D)[""] += (*yabcijk)["abcijk"] * (*btabcijk)["abcijk"]
+  (*D)[""] += (*yabcijk)["abcijk"] * (*btabcijk)["abcijk"],
+  (*D)[""] += (*yabcijk)["abcijk"] * (*zabcijk)["abcijk"]
   
   )->execute();
   
@@ -193,7 +194,8 @@ _INSTANTIATE(cc4s::Complex<64>, cc4s::DefaultTensorEngine)
   double   \
   cc4s::cr::getDenominator< F , TE >( \
       std::shared_ptr<TensorSet<F, TE>> amplitudes, \
-      Ptr<cc4s::Tensor<F,TE>> tabcijk \
+      Ptr<cc4s::Tensor<F,TE>> tabcijk, \
+      Ptr<cc4s::Tensor<F,TE>> zabcijk \
   );
 // Dry tensors
 _INSTANTIATE(cc4s::Real<64>, cc4s::DefaultDryTensorEngine)
