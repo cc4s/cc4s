@@ -369,7 +369,7 @@ namespace cc4s {
 
     ~Tensor() {
       if (allocated())
-        LOG() << "Free tensor with " <<
+        LOG() << "Free tensor " << name << " with " <<
           getElementsCount() << " elements" << std::endl;
     }
 
@@ -419,12 +419,14 @@ namespace cc4s {
           " before its shape has been assumed.",
           SOURCE_LOCATION
         );
+        // wait until allocation is done on all processes
+        Cc4s::world->barrier();
+        LOG() << "Allocate tensor " << name << " with " <<
+          getElementsCount() << " elements" << std::endl;
         // allocate the implementation specific machine tensor upon request
         machineTensor = MT::create(lens, name);
         // wait until allocation is done on all processes
         Cc4s::world->barrier();
-        LOG() << "Allocated tensor with " <<
-          getElementsCount() << " elements" << std::endl;
       }
       return machineTensor;
     }
