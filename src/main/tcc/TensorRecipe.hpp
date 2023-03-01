@@ -86,7 +86,8 @@ namespace cc4s {
         recipe->execute();
       } else {
         LOG_LOCATION(SourceLocation(this->file, this->line)) <<
-          this->getName() << " up-to-date with all sources." << std::endl;
+          this->getName() << " up-to-date with all sources. " <<
+          "Operations: " << this->getFloatingPointOperations() << std::endl;
       }
     }
 
