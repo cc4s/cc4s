@@ -46,6 +46,8 @@ namespace cc4s {
       // execute each operation in turn
       for (auto &operation: operations) {
         operation->execute();
+        LOG_LOCATION(SourceLocation(this->file, this->line)) <<
+          "Operations: " << this->getFloatingPointOperations() << std::endl;
       }
     }
 

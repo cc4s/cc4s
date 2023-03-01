@@ -42,15 +42,16 @@ namespace cc4s {
       const Ptr<IndexedTensorOperation<F,TE>> &right_,
       const Ptr<Tensor<F,TE>> &result_,
       const char *resultIndices_,
-      Costs contractionCosts,
+      Costs contractionCosts_,
       const std::string &file_, const size_t line_,
       const typename Operation<TE>::ProtectedToken &
     ):
       IndexedTensorOperation<F,TE>(
         result_, resultIndices_,
-        contractionCosts, left_->costs + right_->costs,
+        contractionCosts_, left_->costs + right_->costs,
         file_, line_, typename Operation<TE>::ProtectedToken()
       ),
+      contractionCosts(contractionCosts_),
       left(left_), right(right_)
     {
     }
@@ -77,7 +78,7 @@ namespace cc4s {
           this->getResultIndices()
         );
         this->updated();
-        this->accountFlops();
+        this->accountFlops(contractionCosts);
       } else {
           LOG_LOCATION(SourceLocation(this->file, this->line)) <<
           this->getResult()->getName() << " up-to-date with " <<
@@ -124,6 +125,7 @@ namespace cc4s {
       );
     }
 
+    Costs contractionCosts;
     Ptr<IndexedTensorOperation<F,TE>> left;
     Ptr<IndexedTensorOperation<F,TE>> right;
 

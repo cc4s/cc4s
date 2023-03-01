@@ -77,15 +77,18 @@ namespace cc4s {
     Ptr<Tensor<F,TE>> result;
     F alpha, beta;
 
-    void accountFlops() {
+    void accountFlops(const Costs &costs) {
       Operation<TE>::addFloatingPointOperations(
-        this->costs.additionsCount *
+        costs.additionsCount *
         TensorOperationTraits<F>::getFlopsPerAddition()
       );
       Operation<TE>::addFloatingPointOperations(
-        this->costs.multiplicationsCount *
+        costs.multiplicationsCount *
         TensorOperationTraits<F>::getFlopsPerMultiplication()
       );
+    }
+    void accountFlops() {
+      accountFlops(this->costs);
     }
 
     friend class Tensor<F,TE>;
