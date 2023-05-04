@@ -46,9 +46,10 @@
     energy: CcsdEnergy
     amplitudes: Amplitudes
 
-- name: PerturbativeTriples
+- name: PerturbativeTriplesReference
   in:
     coulombIntegrals: CoulombIntegrals
+    cT: 1
     amplitudes: Amplitudes
     slicedEigenEnergies: EigenEnergies
   out:

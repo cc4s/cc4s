@@ -1,5 +1,5 @@
-#ifndef COMPLETE_RENORMALIZED_PIECUCH
-#define COMPLETE_RENORMALIZED_PIECUCH
+#ifndef COMPLETE_TRIPLES
+#define COMPLETE_TRIPLES
 
 #include <map>
 #include <TensorSet.hpp>
@@ -7,7 +7,7 @@
 
 namespace cc4s {
 
-namespace cr {
+namespace ct {
 
 // F = Field Value, double, complex etc.
 // TE = TensorEngine (CTF)
@@ -22,7 +22,7 @@ namespace cr {
  */
 template <typename F, typename TE>
 std::shared_ptr<TensorSet<F, TE>>
- getCompleteRenormalized(
+ getCompleteTriples(
   std::shared_ptr<TensorSet<F, TE>> coulombIntegrals,
   std::shared_ptr<TensorSet<F, TE>> amplitudes
 ); 

@@ -1,6 +1,6 @@
 #include <memory>
 
-#include <algorithms/CompleteRenormalized.hpp>
+#include <algorithms/CompleteTriples.hpp>
 #include <TensorSet.hpp>
 
 using namespace cc4s;
@@ -8,7 +8,7 @@ using namespace cc4s;
 
 template <typename F, typename TE>
 std::shared_ptr<TensorSet<F, TE>>
-cc4s::cr::getCompleteRenormalized(
+cc4s::ct::getCompleteTriples(
   std::shared_ptr<TensorSet<F, TE>> coulombIntegrals,
   std::shared_ptr<TensorSet<F, TE>> amplitudes
 ) {
@@ -118,7 +118,7 @@ cc4s::cr::getCompleteRenormalized(
 }
 
 template <typename F, typename TE>
-double cc4s::cr::getDenominator(
+double cc4s::ct::getDenominator(
  std::shared_ptr<TensorSet<F, TE>> amplitudes,
  Ptr<cc4s::Tensor<F,TE>> tabcijk,
  Ptr<cc4s::Tensor<F,TE>> zabcijk
@@ -176,7 +176,7 @@ double cc4s::cr::getDenominator(
 #define _INSTANTIATE(F, TE) \
   template                  \
   std::shared_ptr< cc4s::TensorSet< F , TE > >   \
-  cc4s::cr::getCompleteRenormalized< F , TE >( \
+  cc4s::ct::getCompleteTriples< F , TE >( \
     std::shared_ptr<cc4s::TensorSet< F , TE > > coulombIntegrals, \
     std::shared_ptr<cc4s::TensorSet< F , TE > > amplitudes \
   );
@@ -192,7 +192,7 @@ _INSTANTIATE(cc4s::Complex<64>, cc4s::DefaultTensorEngine)
 #define _INSTANTIATE(F, TE) \
   template                  \
   double   \
-  cc4s::cr::getDenominator< F , TE >( \
+  cc4s::ct::getDenominator< F , TE >( \
       std::shared_ptr<TensorSet<F, TE>> amplitudes, \
       Ptr<cc4s::Tensor<F,TE>> tabcijk, \
       Ptr<cc4s::Tensor<F,TE>> zabcijk \

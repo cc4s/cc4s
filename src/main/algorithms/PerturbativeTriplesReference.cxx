@@ -15,7 +15,7 @@
 
 #include <algorithms/PerturbativeTriplesStar.hpp>
 #include <algorithms/PerturbativeTriplesReference.hpp>
-#include <algorithms/CompleteRenormalized.hpp>
+#include <algorithms/CompleteTriples.hpp>
 #include <tcc/Tcc.hpp>
 #include <TensorSet.hpp>
 #include <MathFunctions.hpp>
@@ -65,8 +65,8 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto Vppph(coulombIntegrals->get("ppph"));
   auto Vhhhp(coulombIntegrals->get("hhhp"));
 
-  const bool completeRenormalized
-     = arguments->getValue<int>("completeRenormalized", 0) == 1;
+  const bool cT
+     = arguments->getValue<int>("cT", 0) == 1;
 
   auto eigenEnergies(
     arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
@@ -87,10 +87,10 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto inverse( [](F x) { return 1.0 / x; } );
 
 
-  // deal with completeRenormalized
-  if (completeRenormalized) {
+  // deal with cT
+  if (cT) {
     auto intermediates
-       = cr::getCompleteRenormalized<F, TE>(coulombIntegrals, amplitudes);
+       = ct::getCompleteTriples<F, TE>(coulombIntegrals, amplitudes);
     auto Jppph = intermediates->get("ppph");
     auto Jhphh = intermediates->get("hphh");
     COMPILE(
@@ -162,7 +162,7 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
 
   )->execute();
 
-  if (completeRenormalized) {
+  if (cT) {
     COMPILE(
       (*E)[""] <<= (*M)["abcijk"] * (*Z)["abcijk"]
     )->execute();
@@ -184,14 +184,15 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
 
   F eTriples(E->read());
 
-  if (completeRenormalized) {
-    double denominator = cr::getDenominator<F, TE>(amplitudes, T, S);
+  if (cT) {
+    double denominator = ct::getDenominator<F, TE>(amplitudes, T, S);
+    OUT() << "(cT) correlation energy: "
+          << std::setprecision(10) << std::setw(22)
+          << real(eTriples) << std::endl;
+
     OUT() << "CR-(T) correlation energy: "
           << std::setprecision(10) << std::setw(20)
           << real(eTriples) / denominator << std::endl;
-    OUT() << "CR-(T) denominator: "
-          << std::setprecision(10) << std::setw(27)
-          << denominator << std::endl;
   } else {
     OUT() << "(T) correlation energy: "
           << std::setprecision(10) << std::setw(23)
@@ -200,6 +201,7 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correlation", real(eTriples));
+
   energy->setValue("unit", epsh->inspect()->getUnit());
 
   if (arguments->isGiven("mp2PairEnergies")) {
@@ -213,6 +215,7 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
 
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
+
   return result;
 }
 
