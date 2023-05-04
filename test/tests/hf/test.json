@@ -18,5 +18,5 @@
       "uri": "{nwchem-hf}/CoulombVertex.elements"
     }
   ],
-  "tags": "essential nwchem molecule gaussian ccsd ccsd(t)"
+  "tags": "essential nwchem molecule gaussian ccsd ccsd(t) cT"
 }

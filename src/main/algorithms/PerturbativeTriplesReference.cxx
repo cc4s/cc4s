@@ -86,11 +86,11 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto fromReal( [](Real<> x) { return F(x); } );
   auto inverse( [](F x) { return 1.0 / x; } );
 
+  Ptr<TensorSet<F,TE>> intermediates;
 
   // deal with cT
   if (cT) {
-    auto intermediates
-       = ct::getCompleteTriples<F, TE>(coulombIntegrals, amplitudes);
+    intermediates = ct::getCompleteTriples<F, TE>(coulombIntegrals, amplitudes);
     auto Jppph = intermediates->get("ppph");
     auto Jhphh = intermediates->get("hphh");
     COMPILE(
@@ -215,6 +215,8 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
 
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->get("energy") = energy;
+  result->setPtr("cTIntermediate", intermediates);
+
 
   return result;
 }

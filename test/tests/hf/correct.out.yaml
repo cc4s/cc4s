@@ -1,5 +1,5 @@
 executionEnvironment:
-  buildDate: Apr 26 2022 11:37:51
+  buildDate: May  4 2023 12:06:44
   compiler: g++ (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0
   dryRanks: 0
   hosts:
@@ -10,82 +10,83 @@ executionEnvironment:
         1: 1
         2: 2
         3: 3
-  startTime: "Fri Apr 29 16:56:02 2022\n"
+  startTime: "Thu May  4 15:06:59 2023\n"
   totalProcesses: 4
-  version: heads/develop-0-gbff205f8
+  version: heads/develop-0-g983439bb-dirty
 statistics:
-  floatingPointOperations: 199853482
-  flops: 411553942.62260818
-  realtime: 0.485607016
+  floatingPointOperations: 101525754
+  flops: 176157493.14110455
+  realtime: 0.576335143
 steps:
   0:
     in:
       fileName: EigenEnergies.yaml
     name: Read
     out:
-      destination: 0x55f6658c4a00
+      destination: 0x55a6da997b80
     statistics:
       floatingPointOperations: 0
       flops: 0
-      realtime: 0.001446308
+      realtime: 0.001674175
   1:
     in:
       fileName: CoulombVertex.yaml
     name: Read
     out:
-      destination: 0x55f6658d5920
+      destination: 0x55a6da898760
     statistics:
       floatingPointOperations: 0
       flops: 0
-      realtime: 0.008233173
+      realtime: 0.009572627
   2:
     in:
-      eigenEnergies: 0x55f6658c4a00
+      eigenEnergies: 0x55a6da997b80
     name: DefineHolesAndParticles
     out:
-      slicedEigenEnergies: 0x55f665869c40
+      slicedEigenEnergies: 0x55a6da980720
     statistics:
       floatingPointOperations: 0
       flops: 0
-      realtime: 0.000046867
+      realtime: 0.000089618
   3:
     in:
-      operator: 0x55f6658d5920
-      slicedEigenEnergies: 0x55f665869c40
+      operator: 0x55a6da898760
+      slicedEigenEnergies: 0x55a6da980720
     name: SliceOperator
     out:
-      slicedOperator: 0x55f66586dff0
+      slicedOperator: 0x55a6da98cd00
     statistics:
       floatingPointOperations: 0
       flops: 0
-      realtime: 0.009196304
+      realtime: 0.009247152
   4:
     in:
-      slicedCoulombVertex: 0x55f66586dff0
+      slicedCoulombVertex: 0x55a6da98cd00
     name: VertexCoulombIntegrals
     out:
-      coulombIntegrals: 0x55f6658bee10
+      coulombIntegrals: 0x55a6da985310
     statistics:
       floatingPointOperations: 506880
-      flops: 161303410.99051329
-      realtime: 0.003142401
+      flops: 156871046.54045305
+      realtime: 0.003231189
   5:
     in:
       amplitudesConvergence: 1e-08
-      coulombIntegrals: 0x55f6658bee10
+      coulombIntegrals: 0x55a6da985310
       energyConvergence: 1e-08
       integralsSliceSize: 100
       levelShift: 0
+      linearized: 0
       maxIterations: 20
       method: Ccsd
       mixer:
         maxResidua: 4
         type: DiisMixer
-      slicedCoulombVertex: 0x55f66586dff0
-      slicedEigenEnergies: 0x55f665869c40
+      slicedCoulombVertex: 0x55a6da98cd00
+      slicedEigenEnergies: 0x55a6da980720
     name: CoupledCluster
     out:
-      amplitudes: 0x55f6659beb30
+      amplitudes: 0x55a6daa307b0
       convergenceReached: 1
       energy:
         correlation: -0.13669572114878675
@@ -94,22 +95,22 @@ steps:
         secondOrder: -0.13422814192934551
         unit: 1
     statistics:
-      floatingPointOperations: 198746352
-      flops: 448723890.15997547
-      realtime: 0.442914577
+      floatingPointOperations: 86810364
+      flops: 196943141.28115839
+      realtime: 0.440788968
   6:
     in:
-      amplitudes: 0x55f6659beb30
-      coulombIntegrals: 0x55f6658bee10
-      slicedEigenEnergies: 0x55f665869c40
-      tuplesDistribution: group
-      tuplesRoundRobin: node
-    name: PerturbativeTriples
+      amplitudes: 0x55a6daa307b0
+      cT: 1
+      coulombIntegrals: 0x55a6da985310
+      slicedEigenEnergies: 0x55a6da980720
+    name: PerturbativeTriplesReference
     out:
+      cTIntermediate: 0x55a6da9ecaf0
       energy:
-        correlation: -0.0013084707456546723
+        correlation: -0.0011752604354408878
         unit: 1
     statistics:
-      floatingPointOperations: 600250
-      flops: 81541647.235007986
-      realtime: 0.007361269
+      floatingPointOperations: 14208510
+      flops: 146435584.05377027
+      realtime: 0.097029080
