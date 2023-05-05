@@ -23,6 +23,7 @@
 #include <iomanip>
 #include <atrip.hpp>
 #include <atrip/Debug.hpp>
+#include <fstream>
 
 using namespace cc4s;
 ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
@@ -83,7 +84,8 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     rankRoundRobin
       = arguments->getValue<std::string>("tuplesRoundRobin", "node") == "node"
       ? false
-      : true,
+      : true;
+  bool
     use_checkpoint
       = arguments->getValue<int>("useCheckpoint", 1) == 1
       ;
@@ -129,6 +131,30 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     = CTF::Transform<double, F>([](double d, F &f) { f = d; });
   toComplex((*__eps__(h))["i"], epsi["i"]);
   toComplex((*__eps__(p))["a"], epsa["a"]);
+
+  //////////////////////////////////////// CHECKPOINT CHECKER ////////////////////////////////////////
+  auto checkpoint_file_exists
+    = [&checkpoint_path, &use_checkpoint] () {
+      ifstream checkpoint(checkpoint_path.c_str());
+      return checkpoint.good();
+    };
+
+  // print warning if checkpoint file exists
+  if (checkpoint_file_exists() && use_checkpoint) {
+    WARNING_LOCATION(arguments->sourceLocation) <<
+      ("Checkpoint file found. Calculation will be\n"
+       "restarted from the given checkpoint. Make sure that the number\n"
+       "of cores & nodes are the same as in the previous run.")
+      << endl;
+    const YAML::Node checkpoint_node = YAML::LoadFile(checkpoint_path);
+    if (!checkpoint_node["Energy"] || !checkpoint_node["Iteration"]) {
+      WARNING_LOCATION(arguments->sourceLocation) <<
+        "The checkpoint file is corrupted and will be ignored"
+        << endl;
+      use_checkpoint = false;
+    }
+  }
+
 
   // this is a hack so that a CTF::World gets created for sure
   CTF::World _w(MPI_COMM_WORLD);
@@ -191,11 +217,15 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 #undef __T__
 #undef __eps__
 
+
   auto out = atrip::Atrip::run<F>(in);
   OUT() << "(T) correlation energy: "
         << std::setprecision(15) << std::setw(23)
         << out.energy << std::endl;
 
+  // if atrip checkpoint file exists.
+  // Delete it after a successfully finished calculation
+  if (checkpoint_file_exists()) std::remove(checkpoint_path.c_str());
   /* DUPLICATION WARNING:
    * --------------------
    *
