@@ -182,6 +182,7 @@ def get_resource(r):
         data = urllib.request.urlopen(src).read()
         with open(out, 'wb+') as f:
             f.write(data)
+            os.chmod(out, 0o444)
 
 
 def get_resource_storage(r):

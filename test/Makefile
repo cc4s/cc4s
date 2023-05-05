@@ -66,7 +66,7 @@ data:
 clean:
 	-@find . -name '*.testis'   -type d -exec rm -vr {} \;
 	-@find . -name __pycache__  -type d -exec rm -vr {} \;
-	-@rm -v $(TESTIS_LINKS)
+	-@test -n "$(wildcard $(TESTIS_LINKS))" && rm -v $(wildcard $(TESTIS_LINKS))
 
 clean-store:
 	-@find . -name testis-store -type d -exec rm -vr {} \;
