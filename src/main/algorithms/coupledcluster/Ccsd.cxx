@@ -92,6 +92,7 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
     this->arguments->template getPtr<TensorSet<Real<>,TE>>("coulombIntegrals")
   );
   auto Vpphh(coulombIntegrals->get("pphh"));
+  bool ppl(this->arguments->template getValue<bool>("ppl", true));
 
   if (!amplitudes) {
     // no previous amplitudes given
@@ -272,57 +273,63 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
       (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
       // Construct last term
       (*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Xabij)["cdij"],
-      (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]
+      (ppl) ? (
+        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]
+      ) : (
+        (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Xabij)["abkl"]
+      )
     )->execute();
 
-    Natural<> Nv(realDressedGammaGpp->lens[1]);
-    Natural<> NG(realDressedGammaGpp->lens[0]);
-    Natural<> No(Rpphh->inspect()->getLen(2));
-    Natural<> sliceSize(
-      this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
-    );
-    Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
-    std::vector<Ptr<Tensor<Real<>, TE>>> realSlicedGammaGpp;
-    std::vector<Ptr<Tensor<Real<>, TE>>> imagSlicedGammaGpp;
-    //Slice GammaGab and store it in a vector
-    for (Natural<> v(0); v < numberSlices; v++){
-      Natural<> xStart = v*sliceSize;
-      Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
-      auto dummyr( Tcc<TE>::template tensor<Real<>>("dummyr") );
-      auto dummyi( Tcc<TE>::template tensor<Real<>>("dummyi") );
-      COMPILE(
-        (*dummyr)["Gxb"] <<=
-          (*(*realDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"],
-        (*dummyi)["Gxb"] <<=
-          (*(*imagDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"]
-      )->execute();
-      realSlicedGammaGpp.push_back(dummyr);
-      imagSlicedGammaGpp.push_back(dummyi);
-    }
-    // loop over slices
-    for (Natural<> m(0); m < numberSlices; m++)
-    for (Natural<> n(m); n < numberSlices; n++){
-      auto Vxycd( Tcc<TE>::template tensor<Real<>>("Vxycd") );
-      auto Rxyij( Tcc<TE>::template tensor<Real<>>("Rxyij") );
-      auto Ryxji( Tcc<TE>::template tensor<Real<>>("Ryxji") );
-      Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
-      Natural<> Nx(realSlicedGammaGpp[n]->lens[1]);
-      Natural<> Ny(realSlicedGammaGpp[m]->lens[1]);
-      COMPILE(
-        (*Vxycd)["xycd"] <<=
-          (*realSlicedGammaGpp[n])["Gxc"] * (*realSlicedGammaGpp[m])["Gyd"],
-        (*Vxycd)["xycd"]  +=
-          (*imagSlicedGammaGpp[n])["Gxc"] * (*imagSlicedGammaGpp[m])["Gyd"],
-        (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Xabij)["cdij"],
-        (*(*Rpphh)({a, b, 0, 0},{a+Nx, b+Ny, No, No}))["xyij"] += (*Rxyij)["xyij"],
-        // if a>b: add the same slice at (b,a,j,i):
-        (a>b) ? (
-          (*Ryxji)["yxji"] <<= (*Rxyij)["xyij"],
-          (*(*Rpphh)({b, a, 0, 0},{b+Ny, a+Nx, No, No}))["xyij"] += (*Ryxji)["xyij"]
-        ) : (
-          Tcc<TE>::sequence()
-        )
-      )->execute();
+    if (ppl) {
+      Natural<> Nv(realDressedGammaGpp->lens[1]);
+      Natural<> NG(realDressedGammaGpp->lens[0]);
+      Natural<> No(Rpphh->inspect()->getLen(2));
+      Natural<> sliceSize(
+        this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
+      );
+      Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
+      std::vector<Ptr<Tensor<Real<>, TE>>> realSlicedGammaGpp;
+      std::vector<Ptr<Tensor<Real<>, TE>>> imagSlicedGammaGpp;
+      //Slice GammaGab and store it in a vector
+      for (Natural<> v(0); v < numberSlices; v++){
+        Natural<> xStart = v*sliceSize;
+        Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
+        auto dummyr( Tcc<TE>::template tensor<Real<>>("dummyr") );
+        auto dummyi( Tcc<TE>::template tensor<Real<>>("dummyi") );
+        COMPILE(
+          (*dummyr)["Gxb"] <<=
+            (*(*realDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"],
+          (*dummyi)["Gxb"] <<=
+            (*(*imagDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"]
+        )->execute();
+        realSlicedGammaGpp.push_back(dummyr);
+        imagSlicedGammaGpp.push_back(dummyi);
+      }
+      // loop over slices
+      for (Natural<> m(0); m < numberSlices; m++)
+      for (Natural<> n(m); n < numberSlices; n++){
+        auto Vxycd( Tcc<TE>::template tensor<Real<>>("Vxycd") );
+        auto Rxyij( Tcc<TE>::template tensor<Real<>>("Rxyij") );
+        auto Ryxji( Tcc<TE>::template tensor<Real<>>("Ryxji") );
+        Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
+        Natural<> Nx(realSlicedGammaGpp[n]->lens[1]);
+        Natural<> Ny(realSlicedGammaGpp[m]->lens[1]);
+        COMPILE(
+          (*Vxycd)["xycd"] <<=
+            (*realSlicedGammaGpp[n])["Gxc"] * (*realSlicedGammaGpp[m])["Gyd"],
+          (*Vxycd)["xycd"]  +=
+            (*imagSlicedGammaGpp[n])["Gxc"] * (*imagSlicedGammaGpp[m])["Gyd"],
+          (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Xabij)["cdij"],
+          (*(*Rpphh)({a, b, 0, 0},{a+Nx, b+Ny, No, No}))["xyij"] += (*Rxyij)["xyij"],
+          // if a>b: add the same slice at (b,a,j,i):
+          (a>b) ? (
+            (*Ryxji)["yxji"] <<= (*Rxyij)["xyij"],
+            (*(*Rpphh)({b, a, 0, 0},{b+Ny, a+Nx, No, No}))["xyij"] += (*Ryxji)["xyij"]
+          ) : (
+            Tcc<TE>::sequence()
+          )
+        )->execute();
+      }
     }
 
 
@@ -407,7 +414,6 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
     auto Tpphh( amplitudes->get("pphh") );
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
-//    OUT() << "\tSolving T2 Amplitude Equations" << std::endl;
     auto coulombVertex(
       this->arguments->template getPtr<TensorSet<Complex<>,TE>>(
         "slicedCoulombVertex"
@@ -540,56 +546,58 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
       )
     )->execute();
 
-    Natural<> NG(cTGammaGpp->getLen(0));
-    Natural<> Nv(Rpphh->inspect()->getLen(0));
-    Natural<> No(Rpphh->inspect()->getLen(2));
-    Natural<> sliceSize(
-      this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
-    );
-    Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
-    std::vector<Ptr<Tensor<Complex<>, TE>>> cTSlicedGammaGpp;
-    std::vector<Ptr<Tensor<Complex<>, TE>>>   SlicedGammaGpp;
-    COMPILE(
-      (*dressedGammaGpp)["Gab"] <<= (*GammaGpp)["Gab"],
-      (*dressedGammaGpp)["Gab"] += (-1.0) * (*GammaGhp)["Gkb"] * (*Tph)["ak"]
-    )->execute();
-    //Slice GammaGab and store it in a vector
-    for (Natural<> v(0); v < numberSlices; v++){
-      Natural<> xStart = v*sliceSize;
-      Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
-      auto dummy(   Tcc<TE>::template tensor<Complex<>>("dummy")   );
-      auto dummyct( Tcc<TE>::template tensor<Complex<>>("dummyct") );
+    if (ppl) {
+      Natural<> NG(cTGammaGpp->getLen(0));
+      Natural<> Nv(Rpphh->inspect()->getLen(0));
+      Natural<> No(Rpphh->inspect()->getLen(2));
+      Natural<> sliceSize(
+        this->arguments->template getValue<Natural<>>("integralsSliceSize", No)
+      );
+      Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
+      std::vector<Ptr<Tensor<Complex<>, TE>>> cTSlicedGammaGpp;
+      std::vector<Ptr<Tensor<Complex<>, TE>>>   SlicedGammaGpp;
       COMPILE(
-        (*dummy )["Gxb"]  <<=
-          (*(*dressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"],
-        (*dummyct)["Gxb"] <<=
-          (*(*cTDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"]
+        (*dressedGammaGpp)["Gab"] <<= (*GammaGpp)["Gab"],
+        (*dressedGammaGpp)["Gab"] += (-1.0) * (*GammaGhp)["Gkb"] * (*Tph)["ak"]
       )->execute();
-        SlicedGammaGpp.push_back(dummy);
-      cTSlicedGammaGpp.push_back(dummyct);
-    }
-    // loop over slices
-    for (Natural<> m(0); m < numberSlices; m++)
-    for (Natural<> n(m); n < numberSlices; n++){
-      auto Vxycd( Tcc<TE>::template tensor<Complex<>>("Vxycd") );
-      auto Rxyij( Tcc<TE>::template tensor<Complex<>>("Rxyij") );
-      auto Ryxji( Tcc<TE>::template tensor<Complex<>>("Ryxji") );
-      Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
-      Natural<> Nx(cTSlicedGammaGpp[n]->lens[1]);
-      Natural<> Ny(SlicedGammaGpp[m]->lens[1]);
-      COMPILE(
-        (*Vxycd)["xycd"] <<=
-          (*cTSlicedGammaGpp[n])["Gxc"] * (*SlicedGammaGpp[m])["Gyd"],
-        (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Xabij)["cdij"],
-        (*(*Rpphh)({a, b, 0, 0},{a+Nx, b+Ny, No, No}))["xyij"] += (*Rxyij)["xyij"],
-        // if a>b: add the same slice at (b,a,j,i):
-        (a>b) ? (
-          (*Ryxji)["yxji"] <<= (*Rxyij)["xyij"],
-          (*(*Rpphh)({b, a, 0, 0},{b+Ny, a+Nx, No, No}))["xyij"] += (*Ryxji)["xyij"]
-        ) : (
-          Tcc<TE>::sequence()
-        )
-      )->execute();
+      //Slice GammaGab and store it in a vector
+      for (Natural<> v(0); v < numberSlices; v++){
+        Natural<> xStart = v*sliceSize;
+        Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
+        auto dummy(   Tcc<TE>::template tensor<Complex<>>("dummy")   );
+        auto dummyct( Tcc<TE>::template tensor<Complex<>>("dummyct") );
+        COMPILE(
+          (*dummy )["Gxb"]  <<=
+            (*(*dressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"],
+          (*dummyct)["Gxb"] <<=
+            (*(*cTDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"]
+        )->execute();
+          SlicedGammaGpp.push_back(dummy);
+        cTSlicedGammaGpp.push_back(dummyct);
+      }
+      // loop over slices
+      for (Natural<> m(0); m < numberSlices; m++)
+      for (Natural<> n(m); n < numberSlices; n++){
+        auto Vxycd( Tcc<TE>::template tensor<Complex<>>("Vxycd") );
+        auto Rxyij( Tcc<TE>::template tensor<Complex<>>("Rxyij") );
+        auto Ryxji( Tcc<TE>::template tensor<Complex<>>("Ryxji") );
+        Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
+        Natural<> Nx(cTSlicedGammaGpp[n]->lens[1]);
+        Natural<> Ny(SlicedGammaGpp[m]->lens[1]);
+        COMPILE(
+          (*Vxycd)["xycd"] <<=
+            (*cTSlicedGammaGpp[n])["Gxc"] * (*SlicedGammaGpp[m])["Gyd"],
+          (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Xabij)["cdij"],
+          (*(*Rpphh)({a, b, 0, 0},{a+Nx, b+Ny, No, No}))["xyij"] += (*Rxyij)["xyij"],
+          // if a>b: add the same slice at (b,a,j,i):
+          (a>b) ? (
+            (*Ryxji)["yxji"] <<= (*Rxyij)["xyij"],
+            (*(*Rpphh)({b, a, 0, 0},{b+Ny, a+Nx, No, No}))["xyij"] += (*Ryxji)["xyij"]
+          ) : (
+            Tcc<TE>::sequence()
+          )
+        )->execute();
+      }
     }
 
 
