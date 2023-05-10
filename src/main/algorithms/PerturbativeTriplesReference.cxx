@@ -68,6 +68,10 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   const bool cT
      = arguments->getValue<int>("cT", 0) == 1;
 
+  const bool intermediateOnly
+     = arguments->getValue<int>("intermediateOnly", 0) == 1;
+
+
   auto eigenEnergies(
     arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
   );
@@ -87,6 +91,16 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto inverse( [](F x) { return 1.0 / x; } );
 
   Ptr<TensorSet<F,TE>> intermediates;
+
+  if (intermediateOnly) {
+    intermediates = ct::getCompleteTriples<F, TE>(coulombIntegrals, amplitudes);
+    auto result(New<MapNode>(SOURCE_LOCATION));
+    result->setPtr("cTIntermediate", intermediates);
+    return result;
+  }
+
+
+
 
   // deal with cT
   if (cT) {
