@@ -144,7 +144,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     WARNING_LOCATION(arguments->sourceLocation) <<
       ("Checkpoint file found. Calculation will be\n"
        "restarted from the given checkpoint. Make sure that the number\n"
-       "of cores & nodes are the same as in the previous run.")
+       "of ranks & nodes are the same as in the previous run.")
       << endl;
     const YAML::Node checkpoint_node = YAML::LoadFile(checkpoint_path);
     if (!checkpoint_node["Energy"] || !checkpoint_node["Iteration"]) {
@@ -201,7 +201,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
         *fmt_nums = "%-13.0f%-10.0f%-13.3f";
       char out[256];
       if (!firstHeaderPrinted) {
-        sprintf(out, fmt_header, "Progress(%)", "time(s)", "GFLOP/s");
+        sprintf(out, fmt_header, "Progress(%)", "time(s)", "GF/s/rank");
         firstHeaderPrinted = true;
         OUT() << out << "\n";
       }

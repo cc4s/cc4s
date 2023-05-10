@@ -122,7 +122,7 @@ Ptr<MapNode> CoupledCluster::run() {
   F e(0), previousE(0);
   Real<> residuumNorm;
   OUT()
-    << "Iter         Energy         dE           dR         time   GF/s/core"
+    << "Iter         Energy         dE           dR         time   GF/s/rank"
     << endl;
 
   bool isSecondOrder;

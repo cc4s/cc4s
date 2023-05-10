@@ -91,7 +91,7 @@ void Cc4s::runSteps(const bool dry) {
   LOG() << "total operations: " << totalOperations / 1e9 << " GFLOPS, "
     << "speed: "
     << totalOperations/1e9 / totalTime.getFractionalSeconds() / getProcessesCount()
-    << " GFLOP/core/s" << std::endl;
+    << " GF/rank/s" << std::endl;
   if (dry) {
     auto GB(1024.0*1024.0*1024.0);
     auto assumedGflops(10);
@@ -104,7 +104,7 @@ void Cc4s::runSteps(const bool dry) {
     OUT() << totalOperations / 1e9 / getProcessesCount() << " / "
           << totalOperations / 1e9 << " GFLOPS" << std::endl;
     OUT() << "Time estimate with assumed performance of "
-      << assumedGflops << " GFLOPS/core/s: ";
+      << assumedGflops << " GF/rank/s: ";
     OUT() << totalOperations / 1e9 / getProcessesCount() / assumedGflops
           << " s "
           << "(" << totalOperations / 1e9 / getProcessesCount() / assumedGflops / 3600 << " h)\n";
@@ -166,7 +166,7 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
     << ", operations: " << operations / 1e9 << " GFLOP"
     << ", speed: "
     << operations / 1e9 / time.getFractionalSeconds() / getProcessesCount()
-    << " GFLOP/core/s" << std::endl;
+    << " GF/rank/s" << std::endl;
   statistics->setValue("realtime", realtime.str());
   statistics->setValue("floatingPointOperations", operations);
   statistics->setValue("flops", operations / time.getFractionalSeconds());
@@ -222,12 +222,18 @@ void Cc4s::printBanner() {
   buildDate << __DATE__ << " " << __TIME__;
   time_t rawtime;
   time (&rawtime);
+  int nthreads;
+  #pragma omp parallel
+  {
+    nthreads = omp_get_num_threads();
+  }
   OUT() << "version: " << CC4S_VERSION <<
     ", date: " << CC4S_DATE << std::endl;
   OUT() << "build date: " << buildDate.str() << std::endl;
   OUT() << "compiler: " << COMPILER_VERSION << std::endl;
   OUT() << "mpi: " << CC4S_MPI_VERSION << std::endl;
-  OUT() << "total processes: " << world->getProcesses() << std::endl;
+  OUT() << "total ranks: " << world->getProcesses() << std::endl;
+  OUT() << "number of omp threads: " << nthreads << std::endl;
   OUT() << "calculation started on: " << ctime (&rawtime) << std::endl;
   executionEnvironment->setValue("version", std::string(CC4S_VERSION));
   executionEnvironment->setValue("buildDate", buildDate.str());
