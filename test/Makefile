@@ -58,15 +58,20 @@ run:
 		--rx "$(TESTMATCH)" \
 		--tags "$(TAGS)"
 
+list:
+	$(PYTHON) $(TESTIS) . --list-tests \
+		--rx "$(TESTMATCH)" \
+		--tags "$(TAGS)"
+
 data:
 	$(PYTHON) $(TESTIS) . \
 		--rx "$(TESTMATCH)" \
 		--tags "$(TAGS)"
 
 clean:
-	-@find . -name '*.testis'   -type d -exec rm -vr {} \;
-	-@find . -name __pycache__  -type d -exec rm -vr {} \;
-	-@test -n "$(wildcard $(TESTIS_LINKS))" && rm -v $(wildcard $(TESTIS_LINKS))
+	-@find . -name '*.testis'   -type d -exec rm -vfr {} \;
+	-@find . -name __pycache__  -type d -exec rm -vrf {} \;
+	-@test -n "$(wildcard $(TESTIS_LINKS))" && rm -vf $(wildcard $(TESTIS_LINKS))
 
 clean-store:
 	-@find . -name testis-store -type d -exec rm -vr {} \;
@@ -82,6 +87,6 @@ lib/python/yaml:
 	git clone https://github.com/yaml/pyyaml
 	mkdir -p $(@D)
 	ln -rs pyyaml/lib/yaml/ $@
-	
 
-.PHONY: test check all gdb clean data pyyaml clean-all
+
+.PHONY: test check all gdb clean data pyyaml clean-all list

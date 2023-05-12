@@ -34,13 +34,12 @@ def get_store_folder():
 
 sys.path.append(op.join(_get_root_folder(), "lib", "python"))
 
-
 __version__ = "0.0.1"
 __author__ = "Alejandro Gallo"
 __email__ = "aamsgallo@gmail.com"
 __license__ = "GPLv3"
 STORE_FOLDER = get_store_folder()
-DEFAULT_SOURCES_FILE =  os.path.join(_get_root_folder(), "sources.json")
+DEFAULT_SOURCES_FILE = os.path.join(_get_root_folder(), "sources.json")
 INFO_FILE_NAME = "test.json"
 DEFAULT_RUN_SCRIPT = "./run.py"
 DEFAULT_CHECK_SCRIPT = "./check.py"
@@ -50,18 +49,21 @@ GREEN = "\x1b[32m"
 RED = "\x1b[31m"
 MAGENTA = "\x1b[35m"
 
-TestCase = namedtuple("TestCase", "tags name path outpath "
-                                  "description run check resources")
+TestCase = namedtuple(
+    "TestCase", "tags name path outpath "
+    "description run check resources")
 Resource = namedtuple("Resource", "uri out hash")
 Source = namedtuple("Source", "name uri type")
 
 
 class RawSource(Source):
+
     def __repr__(self):
         return self.uri
 
 
 class _ArchiveSource(Source):
+
     def __init__(self, *args, **kwargs):
         self.context_opener = None
         self.get_main_name = None
@@ -79,8 +81,8 @@ class _ArchiveSource(Source):
             main_path = op.join(outdir, main_name)
             logging.info("Extracting archive file %s to %s", f, main_path)
             f.extractall(outdir)
-            logging.debug("%slinking%s %s => %s",
-                          MAGENTA, CLEAR, main_path, result_path)
+            logging.debug("%slinking%s %s => %s", MAGENTA, CLEAR, main_path,
+                          result_path)
             os.symlink(main_path, result_path)
             logging.debug("Removing %s", _archive_file)
             os.unlink(_archive_file)
@@ -88,14 +90,18 @@ class _ArchiveSource(Source):
 
 
 class ZipSource(_ArchiveSource):
+
     def __init__(self, *args, **kwargs):
         self.context_opener = zipfile.ZipFile
         self.get_main_name = lambda f: f.namelist()[0]
 
+
 class TarSource(_ArchiveSource):
+
     def __init__(self, *args, **kwargs):
         self.context_opener = tarfile.open
         self.get_main_name = lambda f: f.getnames()[0]
+
 
 def get_sources(filepath):
     "Get dictionary containing sources"
@@ -121,8 +127,10 @@ def get_sources(filepath):
 
 def get_tests_in_dir(folder):
     assert isinstance(folder, str)
-    return [p for p, _, _ in os.walk(folder)
-              if op.exists(op.join(p, INFO_FILE_NAME))]
+    return [
+        p for p, _, _ in os.walk(folder)
+        if op.exists(op.join(p, INFO_FILE_NAME))
+    ]
 
 
 def folder_to_test(folder, outname, sources):
@@ -136,16 +144,15 @@ def folder_to_test(folder, outname, sources):
     path = op.abspath(folder)
     outpath = op.join(path, outname)
 
-    return TestCase( name=_data.get("name") or os.basename(folder)
-                   , tags=_data.get("tags", "").split(" ")
-                   , path=path
-                   , outpath=outpath
-                   , description=_data.get("description", "")
-                   , run=_data.get("run", DEFAULT_RUN_SCRIPT)
-                   , check=_data.get("check", DEFAULT_CHECK_SCRIPT)
-                   , resources=map(lambda r: make_resource(r, sources),
-                                   _data.get("resources", []))
-                   )
+    return TestCase(name=_data.get("name") or os.basename(folder),
+                    tags=_data.get("tags", "").split(" "),
+                    path=path,
+                    outpath=outpath,
+                    description=_data.get("description", ""),
+                    run=_data.get("run", DEFAULT_RUN_SCRIPT),
+                    check=_data.get("check", DEFAULT_CHECK_SCRIPT),
+                    resources=map(lambda r: make_resource(r, sources),
+                                  _data.get("resources", [])))
 
 
 def make_resource(raw, sources):
@@ -173,12 +180,12 @@ def get_resource(r):
     src = r.uri
     os.makedirs(op.dirname(out), exist_ok=True)
     if op.exists(src):
-        logging.info("%slinking%s %s => %s",
-                     MAGENTA, CLEAR, src, op.relpath(out))
+        logging.info("%slinking%s %s => %s", MAGENTA, CLEAR, src,
+                     op.relpath(out))
         os.symlink(src, out)
     else:
-        logging.info("%sdownlo.%s %s => %s",
-                     MAGENTA, CLEAR, r.out, op.relpath(out))
+        logging.info("%sdownlo.%s %s => %s", MAGENTA, CLEAR, r.out,
+                     op.relpath(out))
         data = urllib.request.urlopen(src).read()
         with open(out, 'wb+') as f:
             f.write(data)
@@ -248,10 +255,9 @@ def run_in_test(test, script_file):
     with sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE) as p:
         p.wait()
         os.chdir(cwd)
-        return dict( stdout=p.stdout.read().decode()
-                   , stderr=p.stderr.read().decode()
-                   , returncode=p.returncode
-                   )
+        return dict(stdout=p.stdout.read().decode(),
+                    stderr=p.stderr.read().decode(),
+                    returncode=p.returncode)
 
 
 def compare_energies(correct_file, test_file, accuracy=1e-7):
@@ -266,8 +272,9 @@ def compare_energies(correct_file, test_file, accuracy=1e-7):
                 cstep = correct_steps[step_idx]
                 tstep = test_steps[step_idx]
                 if cstep["name"] != tstep["name"]:
-                    raise Exception("Name mismatch: {[name]} is not {[name]}"
-                                    .format(cstep, tstep))
+                    raise Exception(
+                        "Name mismatch: {[name]} is not {[name]}".format(
+                            cstep, tstep))
                 out_cstep = cstep["out"]
                 out_tstep = tstep["out"]
                 for energy_name in out_cstep.get("energy", []):
@@ -278,9 +285,9 @@ def compare_energies(correct_file, test_file, accuracy=1e-7):
                         raise Exception("Energy {[name]}.{}\n"
                                         "                   should be {}\n"
                                         "                   but found {}\n"
-                                        "                   Δε = {}"
-                                        .format(cstep, energy_name,
-                                                cenergy, tenergy, diff))
+                                        "                   Δε = {}".format(
+                                            cstep, energy_name, cenergy,
+                                            tenergy, diff))
 
 
 def call(cmd):
@@ -289,8 +296,8 @@ def call(cmd):
         cmd = shlex.split(cmd.format(**os.environ))
     except KeyError as e:
         raise Exception("Environment variable {}{}{} not known,"
-                        " please set it and run the test again"
-                        .format(RED, e, CLEAR))
+                        " please set it and run the test again".format(
+                            RED, e, CLEAR))
 
     with sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE) as p:
         p.wait()
@@ -305,7 +312,7 @@ def call(cmd):
 
 
 def tail(xs, n):
-    return xs[-min(len(xs), n): -1]
+    return xs[-min(len(xs), n):-1]
 
 
 def filter_tags(tests, tags):
@@ -332,20 +339,28 @@ def _get_args():
                         nargs="+")
     parser.add_argument("-d", help="Debug mode", action="store_true")
     parser.add_argument("--list-tags", help="List tags", action="store_true")
-    parser.add_argument("-t", "--tags", default=None, type=str,
+    parser.add_argument("--list-tests", help="List tests", action="store_true")
+    parser.add_argument("-t",
+                        "--tags",
+                        default=None,
+                        type=str,
                         help="Run only tags matching, for instance: "
-                             "--tags 'essential .and. (mem .or. ccsd)'")
-    parser.add_argument("--rx", type=str,
+                        "--tags 'essential .and. (mem .or. ccsd)'")
+    parser.add_argument("--rx",
+                        type=str,
                         help="Run tests matching regular expression",
                         default=None)
-    parser.add_argument("-r", "--run",
+    parser.add_argument("-r",
+                        "--run",
                         help="Just run the 'run' phase",
                         action="store_true",
                         default=None)
-    parser.add_argument("-c", "--check",
+    parser.add_argument("-c",
+                        "--check",
                         help="Just run the 'check' phase",
                         action="store_true")
-    parser.add_argument("-n", "--name",
+    parser.add_argument("-n",
+                        "--name",
                         help="Name for the results folder of the test",
                         default="test-results",
                         type=str)
@@ -361,6 +376,7 @@ def _get_args():
 
 
 class WithSeconds(logging.Formatter):
+
     def format(self, record):
         record.relativeCreated = record.relativeCreated // 1000
         return super().format(record)
@@ -391,10 +407,11 @@ def main():
     logging.info("Finding tests")
     for f in args.folders:
         logging.debug("in %s", f)
-        tests.extend(map(functools.partial(folder_to_test,
-                                           outname=args.name,
-                                           sources=sources),
-                         get_tests_in_dir(f)))
+        tests.extend(
+            map(
+                functools.partial(folder_to_test,
+                                  outname=args.name,
+                                  sources=sources), get_tests_in_dir(f)))
 
     logging.info("Found %s test folders", len(tests))
     all_tags = set(sum([t.tags for t in tests], []))
@@ -413,10 +430,23 @@ def main():
         tests = filter_tags(tests, args.tags)
         logging.info("restrict to %s tests due to tags", len(tests))
 
+    if args.list_tests:
+        for i, t in enumerate(tests):
+            # "tags name path outpath "
+            print(("{green}{}. :: {t.name:5}{clear}\n"
+                   "\t"
+                   "path: {t.path}"
+                   "\n"
+                   "\t"
+                   "tags: {t.tags}"
+                   "\n"
+                   "\t"
+                   "outpath: {t.outpath}"
+                   "\n").format(i + 1, t=t, green=GREEN, clear=CLEAR))
+        return
+
     if args.run: logging.info("will run   %s test", len(tests))
     if args.run: logging.info("will check %s test", len(tests))
-
-
 
     cwd = os.getcwd()
     logging.info("Running tests (in {}{}{})".format(MAGENTA, args.name, CLEAR))
@@ -439,8 +469,10 @@ def main():
             if result["returncode"] != 0:
                 print("{}\t[X]{}".format(RED, CLEAR))
                 for f in ["stdout", "stderr"]:
-                    out = ["\t{}» ({}){}  {}".format(RED, f, CLEAR, l)
-                            for l in result[f].split("\n")]
+                    out = [
+                        "\t{}» ({}){}  {}".format(RED, f, CLEAR, l)
+                        for l in result[f].split("\n")
+                    ]
                     print("\n".join(["\t...."] + tail(out, args.tail)))
                 print("\n\tDirectory to inspect the error:\n"
                       "\n\tcd {}\n".format(test.outpath))
@@ -452,7 +484,6 @@ def main():
                 logging.debug("writing %s", fname)
                 with open(fname, "w+") as f:
                     f.write(result[content])
-
 
         os.chdir(cwd)
 
