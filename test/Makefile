@@ -2,6 +2,24 @@
 PYTHON ?= python3
 CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
+
+define PATH_ERROR
+DEAR USER: Cannot locate the cc4s binary.
+Define the CC4S_PATH environment variable.
+
+export CONFIG=<your-config-name>
+or
+export CC4S_PATH=<path-to-cc4s-binary>
+endef
+
+ifneq ($(MAKECMDGOALS),data)
+ifneq ($(MAKECMDGOALS),pyyaml)
+ifeq ($(CC4S_PATH),)
+$(error $(PATH_ERROR))
+endif
+endif
+endif
+
 NP ?= 1
 CC4S_RUN ?= mpirun -np $(NP) $(CC4S_PATH)
 ifneq ($(MAKECMDGOALS),data)
