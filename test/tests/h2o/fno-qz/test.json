@@ -42,5 +42,5 @@
       "uri": "{nwchem-h2o}/fno-qz/Mp2PairEnergies.elements"
     }
   ],
-  "tags": "essential nwchem molecule gaussian ccsd ccsd(t)"
+  "tags": "essential nwchem molecule gaussian ccsd ccsd(t) basis-set-correction"
 }

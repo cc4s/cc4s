@@ -66,5 +66,5 @@
       "uri": "{r-bn}/gamma/Mp2PairEnergies.elements"
     }
   ],
-  "tags": "essential vasp ppl real"
+  "tags": "essential vasp basis-set-correction finite-size-correction real"
 }

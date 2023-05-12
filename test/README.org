@@ -1,3 +1,18 @@
+* Available tests
+You can run
+#+begin_src sh
+make list CONFIG=<CONFIG>
+#+end_src
+or
+#+begin_src sh
+./testis.py . --list-tests --tags "essential"
+#+end_src
+to see the list of essential tests.
+
+#+begin_src sh
+./testis.py . --list-tests
+#+end_src
+provides a list of all available tests.
 * Running tests
 
 Before using cc4s it is wise to run at least the =essential= tests.

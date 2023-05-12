@@ -66,5 +66,5 @@
       "uri": "{r-bn}/shifted/Mp2PairEnergies.elements"
     }
   ],
-  "tags": "essential vasp ppl complex"
+  "tags": "essential vasp finite-size-correction basis-set-correction complex"
 }
