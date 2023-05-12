@@ -1,3 +1,22 @@
+* Running tests
+
+Before using cc4s it is wise to run at least the =essential= tests.
+
+
+Simply run 
+#+begin_src sh
+make test NP=<number-of-ranks> CONFIG=<CONFIG>
+#+end_src
+if the binary =Cc4s= is located at =${CC4S}/build/<CONFIG>/bin/Cc4s=.
+
+or 
+
+#+begin_src sh
+export CC4S_PATH=<path-to-Cc4s-binary>
+make test NP=<number-of-ranks>
+#+end_src
+if the =Cc4s= binary is located in a custom directory.
+
 * Writing tests
 
 A test case consists of a folder with a =test.json=
