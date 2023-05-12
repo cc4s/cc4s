@@ -5,7 +5,7 @@ import os
 import os.path as op
 import sys
 import logging
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import subprocess as sp
 import shlex
 import urllib.request
@@ -50,7 +50,7 @@ RED = "\x1b[31m"
 MAGENTA = "\x1b[35m"
 
 TestCase = namedtuple(
-    "TestCase", "tags name path outpath "
+    "TestCase", "tags name path outpath success_p "
     "description run check resources")
 Resource = namedtuple("Resource", "uri out hash")
 Source = namedtuple("Source", "name uri type")
@@ -147,6 +147,7 @@ def folder_to_test(folder, outname, sources):
     return TestCase(name=_data.get("name") or os.basename(folder),
                     tags=_data.get("tags", "").split(" "),
                     path=path,
+                    success_p=defaultdict(bool),
                     outpath=outpath,
                     description=_data.get("description", ""),
                     run=_data.get("run", DEFAULT_RUN_SCRIPT),
@@ -446,7 +447,7 @@ def main():
         return
 
     if args.run: logging.info("will run   %s test", len(tests))
-    if args.run: logging.info("will check %s test", len(tests))
+    if args.check: logging.info("will check %s test", len(tests))
 
     cwd = os.getcwd()
     logging.info("Running tests (in {}{}{})".format(MAGENTA, args.name, CLEAR))
@@ -460,7 +461,8 @@ def main():
 
         os.chdir(test.outpath)
 
-        for script, doit in [(test.run, args.run), (test.check, args.check)]:
+        for script, doit, phase in [(test.run, args.run, "run"),
+                                    (test.check, args.check, "check")]:
 
             if not doit:
                 continue
@@ -477,6 +479,7 @@ def main():
                 print("\n\tDirectory to inspect the error:\n"
                       "\n\tcd {}\n".format(test.outpath))
             else:
+                test.success_p[phase] = True
                 print("{}\t[ok]{} ({})".format(GREEN, CLEAR, script))
 
             for content in ["stdout", "stderr"]:
@@ -486,6 +489,26 @@ def main():
                     f.write(result[content])
 
         os.chdir(cwd)
+
+    print("Test Summary\n"
+          "============\n")
+
+    print("\n"
+          "Ran {} tests".format(len(tests)))
+
+    for doit, phase in [(args.run, "run"), (args.check, "check")]:
+        if not doit:
+            continue
+        print("\n>> {} ({} failed)\n".format(
+            phase.upper(), len([t for t in tests if not t.success_p[phase]])))
+        for test in tests:
+            print("- [{r}] {t.name}{rest}".format(
+                r="{green}ok{clear}".format(green=GREEN, clear=CLEAR)
+                if test.success_p[phase] else "{red}X{clear}".format(
+                    red=RED, clear=CLEAR),
+                t=test,
+                rest="" if test.success_p[phase] else "\n\tcd {path}".format(
+                    path=test.outpath)))
 
 
 if __name__ == "__main__":
