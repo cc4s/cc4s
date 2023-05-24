@@ -7,6 +7,22 @@
 
 namespace cc4s {
 
+/**
+ * \brief Caclulates the interemediates for the complete Triples method
+ */
+class CompleteTriples: public Algorithm {
+ public:
+  ALGORITHM_REGISTRAR_DECLARATION(CompleteTriples)
+
+  Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
+ protected:
+  template <typename F, typename TE>
+  Ptr<MapNode> run(const Ptr<MapNode> &arguments);
+
+
+};
+
+
 namespace ct {
 
 // F = Field Value, double, complex etc.
@@ -22,7 +38,7 @@ namespace ct {
  */
 template <typename F, typename TE>
 std::shared_ptr<TensorSet<F, TE>>
- getCompleteTriples(
+ getCompleteTriplesReference(
   std::shared_ptr<TensorSet<F, TE>> coulombIntegrals,
   std::shared_ptr<TensorSet<F, TE>> amplitudes
 ); 
