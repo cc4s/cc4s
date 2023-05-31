@@ -276,9 +276,9 @@ namespace cc4s {
       auto componentsNode(New<MapNode>(SOURCE_LOCATION));
       auto componentsNodePath(nodePath + ".components");
       for (auto component: t->components) {
-        if (component.first == "pppp" |
-            component.first == "pphp" |
-            component.first == "phpp" |
+        if (component.first == "pppp" ||
+            component.first == "pphp" ||
+            component.first == "phpp" ||
             component.first == "hppp" ) {
           continue;
         }
