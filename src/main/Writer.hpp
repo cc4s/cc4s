@@ -24,6 +24,12 @@
 #include <string>
 
 namespace cc4s {
+
+  struct FlagsIO {
+    bool useBinary;
+    bool rowMajor;
+  };
+
   /**
    * \brief Writer for writing entire node states persistently to files,
    * including tensor data.
@@ -33,8 +39,8 @@ namespace cc4s {
   class Writer {
   public:
     Writer(
-      const std::string &fileName_, const bool useBinary_ = false
-    ): fileName(fileName_), useBinary(useBinary_) {
+      const std::string &fileName_, const FlagsIO flagsIO_
+    ): fileName(fileName_), flagsIO(flagsIO_) {
     }
     Ptr<Node> write(const Ptr<Node> &node) {
       // if fileName contains '/' change directory
@@ -71,7 +77,7 @@ namespace cc4s {
 
     typedef std::function<
       Ptr<Node>(
-        const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+        const Ptr<Node> &node, const std::string &nodePath, const FlagsIO flagsIO
       )
     > WriteFunction;
     static int registerWriteFunction(
@@ -117,7 +123,7 @@ namespace cc4s {
     ) {
       for (auto writeFunction: writeFunctions) {
         // try type-specific write function
-        auto writtenNode(writeFunction.second(node, nodePath, useBinary));
+        auto writtenNode(writeFunction.second(node, nodePath, flagsIO));
         if (writtenNode) {
           // if successful, enter respective type
           auto writtenNodeMap(writtenNode->toPtr<MapNode>());
@@ -130,8 +136,9 @@ namespace cc4s {
     }
 
     std::string fileName;
-    bool useBinary;
+    FlagsIO flagsIO;
   };
+
 }
 
 #endif

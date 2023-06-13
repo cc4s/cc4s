@@ -16,8 +16,6 @@ main/mixers/DiisMixer.cxx \
 main/algorithms/Algorithm.cxx \
 main/algorithms/Write.cxx \
 main/algorithms/Read.cxx \
-main/algorithms/TensorReader.cxx \
-main/algorithms/TensorWriter.cxx \
 main/algorithms/DefineHolesAndParticles.cxx \
 main/algorithms/SliceOperator.cxx \
 main/algorithms/DimensionProperty.cxx \
@@ -35,6 +33,7 @@ main/algorithms/FiniteSizeCorrection.cxx \
 main/algorithms/BasisSetCorrection.cxx \
 main/algorithms/UegVertexGenerator.cxx \
 main/algorithms/PerturbativeTriples.cxx \
+main/algorithms/TensorSetToTensor.cxx \
 #main/algorithms/coupledcluster/Ccsdt.cxx \
 
 ifeq ($(ATRIP), no)

@@ -267,7 +267,7 @@ namespace cc4s {
 
   public:
     static Ptr<Node> write(
-      const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+      const Ptr<Node> &node, const std::string &nodePath, const FlagsIO flagsIO
     ) {
       auto pointerNode(node->toPtr<AtomicNode<Ptr<Object>>>());
       if (!pointerNode) return nullptr;
@@ -276,12 +276,6 @@ namespace cc4s {
       auto componentsNode(New<MapNode>(SOURCE_LOCATION));
       auto componentsNodePath(nodePath + ".components");
       for (auto component: t->components) {
-        if (component.first == "pppp" ||
-            component.first == "pphp" ||
-            component.first == "phpp" ||
-            component.first == "hppp" ) {
-          continue;
-        }
         auto tensorNode(
           New<PointerNode<TensorExpression<F,TE>>>(
             component.second, SOURCE_LOCATION
@@ -291,7 +285,7 @@ namespace cc4s {
           TensorIo::write(
             tensorNode,
             componentsNodePath + "." + component.first,
-            useBinary
+            flagsIO
           )
         );
         componentsNode->get(component.first) = componentNode;
@@ -331,21 +325,21 @@ namespace cc4s {
   class TensorSetIo {
   public:
     static Ptr<Node> write(
-      const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+      const Ptr<Node> &node, const std::string &nodePath, const FlagsIO flagsIO
     ) {
       // multiplex different tensor types
       Ptr<Node> writtenNode;
       if (!Cc4s::dryRun) {
         using TE = DefaultTensorEngine;
-        writtenNode = TensorSet<Real<64>,TE>::write(node, nodePath, useBinary);
+        writtenNode = TensorSet<Real<64>,TE>::write(node, nodePath, flagsIO);
         if (writtenNode) return writtenNode;
-        writtenNode = TensorSet<Complex<64>,TE>::write(node, nodePath, useBinary);
+        writtenNode = TensorSet<Complex<64>,TE>::write(node, nodePath, flagsIO);
         if (writtenNode) return writtenNode;
       } else {
         using TE = DefaultDryTensorEngine;
-        writtenNode = TensorSet<Real<64>,TE>::write(node, nodePath, useBinary);
+        writtenNode = TensorSet<Real<64>,TE>::write(node, nodePath, flagsIO);
         if (writtenNode) return writtenNode;
-        writtenNode = TensorSet<Complex<64>,TE>::write(node, nodePath, useBinary);
+        writtenNode = TensorSet<Complex<64>,TE>::write(node, nodePath, flagsIO);
         if (writtenNode) return writtenNode;
       }
       return nullptr;

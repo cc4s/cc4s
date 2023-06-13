@@ -31,8 +31,9 @@ Ptr<MapNode> Write::run(const Ptr<MapNode> &arguments) {
   auto fileName(arguments->getValue<std::string>("fileName"));
   // TODO: use options
   auto useBinary(arguments->getValue<bool>("binary", false));
-
-  auto persistentSource(Writer(fileName, useBinary).write(source));
+  auto rowMajor(arguments->getValue<bool>("rowMajor", false));
+  FlagsIO flagsIO({useBinary, rowMajor});
+  auto persistentSource(Writer(fileName, flagsIO).write(source));
 
   // create result
   auto result(New<MapNode>(source->sourceLocation));

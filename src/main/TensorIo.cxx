@@ -64,21 +64,21 @@ Ptr<TensorDimension> TensorIo::getDimension(const std::string &name) {
 }
 
 Ptr<Node> TensorIo::write(
-  const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+  const Ptr<Node> &node, const std::string &nodePath, const FlagsIO flagsIO
 ) {
   // multiplex different tensor types
   Ptr<Node> writtenNode;
   if (!Cc4s::dryRun) {
     using TE = DefaultTensorEngine;
-    writtenNode = writeTensor<Real<64>,TE>(node, nodePath, useBinary);
+    writtenNode = writeTensor<Real<64>,TE>(node, nodePath, flagsIO);
     if (writtenNode) return writtenNode;
-    writtenNode = writeTensor<Complex<64>,TE>(node, nodePath, useBinary);
+    writtenNode = writeTensor<Complex<64>,TE>(node, nodePath, flagsIO);
     if (writtenNode) return writtenNode;
   } else {
     using TE = DefaultDryTensorEngine;
-    writtenNode = writeTensor<Real<64>,TE>(node, nodePath, useBinary);
+    writtenNode = writeTensor<Real<64>,TE>(node, nodePath, flagsIO);
     if (writtenNode) return writtenNode;
-    writtenNode = writeTensor<Complex<64>,TE>(node, nodePath, useBinary);
+    writtenNode = writeTensor<Complex<64>,TE>(node, nodePath, flagsIO);
     if (writtenNode) return writtenNode;
   }
   // otherwise, not my type ... let another write routine handle this data
@@ -115,7 +115,7 @@ template <typename F, typename TE>
 Ptr<MapNode> TensorIo::writeTensor(
   const Ptr<Node> &node,
   const std::string &nodePath,
-  const bool useBinary
+  const FlagsIO flagsIO
 ) {
   auto pointerNode(node->toPtr<AtomicNode<Ptr<Object>>>());
   if (!pointerNode) return nullptr;
@@ -145,13 +145,30 @@ Ptr<MapNode> TensorIo::writeTensor(
   writtenTensor->setValue("unit", tensor->getUnit());
   writtenTensor->get("metaData") = tensor->getMetaData();
 
+  Ptr<Tensor<F,TE>> rTensor;
+  auto order = tensor->lens.size();
+  if (flagsIO.rowMajor && order > 1) {
+    elementsNode->setValue("rowMajor", true);
+    ASSERT_LOCATION(
+      order < 26, std::string("something wrong with the dimension of ") + tensor->getName(),
+      SOURCE_LOCATION
+    )
+    const std::string albet{"abcdefghijklmnopqrstuvwxyz"};
+    auto s = albet.substr(0, order);
+    auto r(s);
+    std::reverse(r.begin(), r.end());
+    rTensor = Tcc<TE>::template tensor<F>("reverse");
+    EXECUTE( (*rTensor)[s] <<= (*tensor)[r] );
+  }
   // write tensor elements as side effect
-  if (useBinary) {
+  if (flagsIO.useBinary) {
     elementsNode->setValue("type", std::string("IeeeBinaryFile"));
-    writeTensorElementsBinary(tensor, nodePath);
+    if (rTensor) writeTensorElementsBinary(rTensor, nodePath);
+    else         writeTensorElementsBinary(tensor, nodePath);
   } else {
     elementsNode->setValue("type", std::string("TextFile"));
-    writeTensorElementsText(tensor, nodePath);
+    if (rTensor) writeTensorElementsText(rTensor, nodePath);
+    else         writeTensorElementsText(tensor, nodePath);
   }
 
   return writtenTensor;
@@ -324,6 +341,7 @@ void TensorIo::writeTensorElementsBinary(
 
   // write tensor elements with values from file
   tensor->readToFile(file);
+
   LOG() << "Written " << sizeof(F)*tensor->getElementsCount() <<
     " bytes to binary file " << elementsPath << std::endl;
 
