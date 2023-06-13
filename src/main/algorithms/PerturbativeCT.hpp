@@ -1,5 +1,5 @@
-#ifndef COMPLETE_TRIPLES
-#define COMPLETE_TRIPLES
+#ifndef PERTURBATIVE_CT
+#define PERTURBATIVE_CT
 
 #include <map>
 #include <TensorSet.hpp>
@@ -10,9 +10,9 @@ namespace cc4s {
 /**
  * \brief Caclulates the interemediates for the complete Triples method
  */
-class CompleteTriples: public Algorithm {
+class PerturbativeCT: public Algorithm {
  public:
-  ALGORITHM_REGISTRAR_DECLARATION(CompleteTriples)
+  ALGORITHM_REGISTRAR_DECLARATION(PerturbativeCT)
 
   Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
  protected:
@@ -34,14 +34,14 @@ namespace ct {
  *     The R-CCSD[T], R-CCSD(T), CR-CCSD[T], and CR-CCSD(T) approaches
  *
  *     https://doi.org/10.1016/S0010-4655(02)00598-2
- * 
+ *
  */
 template <typename F, typename TE>
 std::shared_ptr<TensorSet<F, TE>>
- getCompleteTriplesReference(
+ getPerturbativeCTReference(
   std::shared_ptr<TensorSet<F, TE>> coulombIntegrals,
   std::shared_ptr<TensorSet<F, TE>> amplitudes
-); 
+);
 
 template <typename F, typename TE>
 double getDenominator(

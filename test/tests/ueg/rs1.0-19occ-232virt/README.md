@@ -6,7 +6,7 @@ https://github.com/alejandrogallo/atrip commit: 282ef27
 It is assumend that the calculation is that large that a reference-(T) calculation is no more feasible.
 
 1.) Run a normal ccsd calculation \
-2.) run the algorithm PerturbativeTriplesReference using the flag:   ```intermediateOnly: 1``` and put ```cTIntermediate: CtIntermediate``` as the algoirthm's output.\
+2.) run the algorithm PerturbativeCT as it is done in the cc4s.in \
 3.) write: CtIntermediate, EigenEnergies, Amplitudes, CoulombIntegrals to disk. ( binary: 1 !!!!)
 
 

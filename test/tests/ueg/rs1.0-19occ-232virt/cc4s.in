@@ -44,24 +44,13 @@
     energy: CcsdEnergy
     amplitudes: Amplitudes
 
-#- name: PerturbativeTriplesReference
-#  in:
-#    coulombIntegrals: CoulombIntegrals
-#    intermediateOnly: 1
-#    amplitudes: Amplitudes
-#    slicedEigenEnergies: EigenEnergies
-#  out:
-#    cTIntermediate: CtIntermediate
-
-- name: CompleteTriples
+- name: PerturbativeCT
   in:
     coulombIntegrals: CoulombIntegrals
     coulombVertex: CoulombVertex
     amplitudes: Amplitudes
   out:
     cTIntermediate: CtIntermediate
-
-
 
 - name: Write
   in:

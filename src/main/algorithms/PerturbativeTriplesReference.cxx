@@ -15,7 +15,7 @@
 
 #include <algorithms/PerturbativeTriplesStar.hpp>
 #include <algorithms/PerturbativeTriplesReference.hpp>
-#include <algorithms/CompleteTriples.hpp>
+#include <algorithms/PerturbativeCT.hpp>
 #include <tcc/Tcc.hpp>
 #include <TensorSet.hpp>
 #include <MathFunctions.hpp>
@@ -68,10 +68,6 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   const bool cT
      = arguments->getValue<int>("cT", 0) == 1;
 
-  const bool intermediateOnly
-     = arguments->getValue<int>("intermediateOnly", 0) == 1;
-
-
   auto eigenEnergies(
     arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
   );
@@ -92,19 +88,10 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
 
   Ptr<TensorSet<F,TE>> intermediates;
 
-  if (intermediateOnly) {
-    intermediates = ct::getCompleteTriplesReference<F, TE>(coulombIntegrals, amplitudes);
-    auto result(New<MapNode>(SOURCE_LOCATION));
-    result->setPtr("cTIntermediate", intermediates);
-    return result;
-  }
-
-
-
 
   // deal with cT
   if (cT) {
-    intermediates = ct::getCompleteTriplesReference<F, TE>(coulombIntegrals, amplitudes);
+    intermediates = ct::getPerturbativeCTReference<F, TE>(coulombIntegrals, amplitudes);
     auto Jppph = intermediates->get("ppph");
     auto Jhphh = intermediates->get("hphh");
     COMPILE(

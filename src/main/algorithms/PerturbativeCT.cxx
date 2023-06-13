@@ -1,13 +1,13 @@
 #include <memory>
 
-#include <algorithms/CompleteTriples.hpp>
+#include <algorithms/PerturbativeCT.hpp>
 #include <TensorSet.hpp>
 
 using namespace cc4s;
 
-ALGORITHM_REGISTRAR_DEFINITION(CompleteTriples)
+ALGORITHM_REGISTRAR_DEFINITION(PerturbativeCT)
 
-Ptr<MapNode> CompleteTriples::run(const Ptr<MapNode> &arguments) {
+Ptr<MapNode> PerturbativeCT::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
   Ptr<MapNode> result;
   if (Cc4s::dryRun) {
@@ -34,7 +34,7 @@ Ptr<MapNode> CompleteTriples::run(const Ptr<MapNode> &arguments) {
 
 
 template <typename F, typename TE>
-Ptr<MapNode> CompleteTriples::run(
+Ptr<MapNode> PerturbativeCT::run(
   const Ptr<MapNode> &arguments
 ) {
 
@@ -93,6 +93,8 @@ Ptr<MapNode> CompleteTriples::run(
   auto dpIbcek( Tcc<TE>::template tensor<F>("dpIbcek") );
   auto dpImcjk( Tcc<TE>::template tensor<F>("dpImcjk") );
 
+  auto Jphpp( Tcc<TE>::template tensor<F>("Jphpp") );
+  auto Jhhhp( Tcc<TE>::template tensor<F>("Jhhhp") );
 
   std::shared_ptr<TensorSet<F, TE>> intermediate =
     std::make_shared<TensorSet<F, TE>>();
@@ -176,7 +178,7 @@ Ptr<MapNode> CompleteTriples::run(
 
 template <typename F, typename TE>
 std::shared_ptr<TensorSet<F, TE>>
-cc4s::ct::getCompleteTriplesReference(
+cc4s::ct::getPerturbativeCTReference(
   std::shared_ptr<TensorSet<F, TE>> coulombIntegrals,
   std::shared_ptr<TensorSet<F, TE>> amplitudes
 ) {
@@ -342,7 +344,7 @@ double cc4s::ct::getDenominator(
 #define _INSTANTIATE(F, TE) \
   template                  \
   std::shared_ptr< cc4s::TensorSet< F , TE > >   \
-  cc4s::ct::getCompleteTriplesReference< F , TE >( \
+  cc4s::ct::getPerturbativeCTReference< F , TE >( \
     std::shared_ptr<cc4s::TensorSet< F , TE > > coulombIntegrals, \
     std::shared_ptr<cc4s::TensorSet< F , TE > > amplitudes \
   );
