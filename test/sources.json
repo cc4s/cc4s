@@ -40,12 +40,12 @@
   },
 
   "ueg-rs1-no7-nv26-real": {
-    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/tree/5716b5b83b0b56790897a7bf70a2c1c3305e6cf9/ueg/rs1.0_7occ_26virt/real",
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/5716b5b83b0b56790897a7bf70a2c1c3305e6cf9/ueg/rs1.0_7occ_26virt/real",
     "type": "raw"
   },
 
   "ueg-rs1-no7-nv26-complex": {
-    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/tree/5716b5b83b0b56790897a7bf70a2c1c3305e6cf9/ueg/rs1.0_7occ_26virt/complex",
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/5716b5b83b0b56790897a7bf70a2c1c3305e6cf9/ueg/rs1.0_7occ_26virt/complex",
     "type": "raw"
   }
 }
