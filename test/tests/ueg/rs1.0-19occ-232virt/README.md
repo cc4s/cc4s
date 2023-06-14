@@ -1,44 +1,34 @@
 This is a hands-on for running (cT) calculations with atrip. \
-Make sure that your atrip version is pretty new:
-https://github.com/alejandrogallo/atrip commit: 282ef27 
+Make sure that your atrip version is pretty new: \
+https://github.com/alejandrogallo/atrip commit: 9739e32916c \
+(Important: it should be later than 14.06.2023 as \
+            we now work with the Jhhhp intermediate)
+
+It is assumend that the calculation is that large that\
+a reference-(T) calculation is no more feasible.
 
 
-It is assumend that the calculation is that large that a reference-(T) calculation is no more feasible.
-
-1.) Run a normal ccsd calculation \
-2.) run the algorithm PerturbativeCT as it is done in the cc4s.in \
-3.) write: CtIntermediate, EigenEnergies, Amplitudes, CoulombIntegrals to disk. ( binary: 1 !!!!)
-
-
-!!!IMPORTANT!!!\
-It is necessary to write the EigenEnergies in the following way (otherwise you will enter the land of pain)
-```
+Use to cc4s.in as a template for your calculation. Some comments:\
+1.) You have to write the (sliced) EigenEnergies in a separate file:\
+    maybe you call it "EigenEnergiesSliced.yaml" 
+2.) you should use the TensorSetToTensor algorithm to obtain the required\
+    slices from the CoulombIntegrals (pphh, ppph, hhhp).
 
 
-- name: Write
-  in:
-    fileName: "EigenEnergiesSliced.yaml"
-    source: EigenEnergies
-    binary: 1
-  out: {}
-```
+Here is an atrip input file you can use as a template:
 
-The run will most probably crash because he tries to write the PPPP integral to disk.\
-If not one should remove CoulombIntegrals which are not needed.
-You just need hhhp pphh ppph for atrip.
+mpirun -np 4 ~/Programs/atrip/build/bench/atrip --no 7 --nv 26    \\
+  --dist group --barrier --nocheckpoint -% 10                     \\
+  --nochrono --ei EigenEnergiesSliced.components.h.elements       \\
+  --ea EigenEnergiesSliced.components.p.elements                  \\
+  --Tpphh Amplitudes.components.pphh.elements                     \\
+  --Tph Amplitudes.components.ph.elements                         \\
+  --Vpphh CoulombIntegralsPPHH.elements                           \\
+  --Vhhhp CoulombIntegralsHHHP.elements                           \\
+  --Vppph CoulombIntegralsPPPH.elements                           \\
+  --Jppph CtIntermediate.components.ppph.elements                 \\
+  --Jhhhp CtIntermediate.components.hhhp.elements
 
-rm CoulombIntegrals.components.hhhh.elements CoulombIntegrals.components.hhpp.elements \
-   CoulombIntegrals.components.hhph.elements CoulombIntegrals.components.hphp.elements \
-   CoulombIntegrals.components.hppp.elements CoulombIntegrals.components.phpp.elements \
-   CoulombIntegrals.components.pphp.elements CoulombIntegrals.components.phhp.elements \
-   CoulombIntegrals.components.phph.elements CoulombIntegrals.components.phhh.elements \
-   CoulombIntegrals.components.hpph.elements CoulombIntegrals.components.hphh.elements
-
- 
-
-
-follow the instructions on
-https://github.com/airmler/atrip_resources
 
 
 ```
