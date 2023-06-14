@@ -2,10 +2,7 @@ This is a hands-on for running (cT) calculations with atrip. \
 Make sure that your atrip version is pretty new: \
 https://github.com/alejandrogallo/atrip commit: 9739e32916c \
 (Important: it should be later than 14.06.2023 as \
-            we now work with the Jhhhp intermediate)
-
-It is assumend that the calculation is that large that\
-a reference-(T) calculation is no more feasible.
+            we work with the Jhhhp intermediate)
 
 
 Use to cc4s.in as a template for your calculation. Some comments:\
@@ -14,22 +11,23 @@ Use to cc4s.in as a template for your calculation. Some comments:\
 2.) you should use the TensorSetToTensor algorithm to obtain the required\
     slices from the CoulombIntegrals (pphh, ppph, hhhp).
 
-
 Here is an atrip input file you can use as a template:
 
-mpirun -np 4 ~/Programs/atrip/build/bench/atrip --no 7 --nv 26    \\
-  --dist group --barrier --nocheckpoint -% 10                     \\
-  --nochrono --ei EigenEnergiesSliced.components.h.elements       \\
-  --ea EigenEnergiesSliced.components.p.elements                  \\
-  --Tpphh Amplitudes.components.pphh.elements                     \\
-  --Tph Amplitudes.components.ph.elements                         \\
-  --Vpphh CoulombIntegralsPPHH.elements                           \\
-  --Vhhhp CoulombIntegralsHHHP.elements                           \\
-  --Vppph CoulombIntegralsPPPH.elements                           \\
-  --Jppph CtIntermediate.components.ppph.elements                 \\
+mpirun -np 4 ~/Programs/atrip/build/bench/atrip --no 7 --nv 26    \\ \
+  --dist group --barrier --nocheckpoint -% 10                     \\ \
+  --nochrono --ei EigenEnergiesSliced.components.h.elements       \\ \
+  --ea EigenEnergiesSliced.components.p.elements                  \\ \
+  --Tpphh Amplitudes.components.pphh.elements                     \\ \
+  --Tph Amplitudes.components.ph.elements                         \\ \
+  --Vpphh CoulombIntegralsPPHH.elements                           \\ \
+  --Vhhhp CoulombIntegralsHHHP.elements                           \\ \
+  --Vppph CoulombIntegralsPPPH.elements                           \\ \
+  --Jppph CtIntermediate.components.ppph.elements                 \\ \
   --Jhhhp CtIntermediate.components.hhhp.elements
 
-
+Below the (old) stdout of the cc4s calculation is given. Furthermore,\
+the energies from the ueg code (author N.Masios) are provided for \
+comparison. Note that these numbers are per electron.
 
 ```
 irmler@andoria01:~/Programs/cc4s-develop/test/tests/ueg/rs1.0-27occ-560virt$ mpirun -np 64 ~/Programs/cc4s-develop/build/gcc-oblas-ompi/bin/Cc4s
