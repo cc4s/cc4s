@@ -93,13 +93,12 @@ Ptr<MapNode> PerturbativeCT::run(
   auto dpIbcek( Tcc<TE>::template tensor<F>("dpIbcek") );
   auto dpImcjk( Tcc<TE>::template tensor<F>("dpImcjk") );
 
-  auto Jphpp( Tcc<TE>::template tensor<F>("Jphpp") );
-  auto Jhhhp( Tcc<TE>::template tensor<F>("Jhhhp") );
+  auto dpIjkmc( Tcc<TE>::template tensor<F>("dpIjkmc") );
 
   std::shared_ptr<TensorSet<F, TE>> intermediate =
     std::make_shared<TensorSet<F, TE>>();
   intermediate->get("ppph") = dpIbcek;
-  intermediate->get("hphh") = dpImcjk;
+  intermediate->get("hhhp") = dpIjkmc;
 
 
   COMPILE(
@@ -165,8 +164,9 @@ Ptr<MapNode> PerturbativeCT::run(
     (*dpImcjk)["mcjk"] += (-1.0) * (*Xijka)["mljf"] * (*Tpphh)["fckl"],
     (*dpImcjk)["mcjk"] += (-1.0) * (*Xijka)["lmjf"] * (*Tpphh)["fclk"],
     (*dpImcjk)["mcjk"] += (-1.0) * (*Tpphh)["cflj"] * (*Xijka)["lmkf"],
-    (*dpImcjk)["mcjk"] += ( 1.0) * (*Tpphh)["dfkj"] * (*Xaibc)["cmdf"]
+    (*dpImcjk)["mcjk"] += ( 1.0) * (*Tpphh)["dfkj"] * (*Xaibc)["cmdf"],
 
+    (*dpIjkmc)["jkmc"] <<= map<F>( conj<F>, (*dpImcjk)["mcjk"])
   )->execute();
 
   auto result( New<MapNode>(SOURCE_LOCATION));
@@ -214,8 +214,10 @@ cc4s::ct::getPerturbativeCTReference(
   std::shared_ptr<TensorSet<F, TE>> result = std::make_shared<TensorSet<F, TE>>();
   auto dpIbcek( Tcc<TE>::template tensor<F>("dpIbcek") );
   auto dpImcjk( Tcc<TE>::template tensor<F>("dpImcjk") );
+
+  auto dpIjkmc( Tcc<TE>::template tensor<F>("dpIjkmc") );
   result->get("ppph") = dpIbcek;
-  result->get("hphh") = dpImcjk;
+  result->get("hhhp") = dpIjkmc;
 
   COMPILE(
 
@@ -277,8 +279,9 @@ cc4s::ct::getPerturbativeCTReference(
     (*dpImcjk)["mcjk"] += (-1.0) * (*Xijka)["mljf"] * (*Tpphh)["fckl"],
     (*dpImcjk)["mcjk"] += (-1.0) * (*Xijka)["lmjf"] * (*Tpphh)["fclk"],
     (*dpImcjk)["mcjk"] += (-1.0) * (*Tpphh)["cflj"] * (*Xijka)["lmkf"],
-    (*dpImcjk)["mcjk"] += ( 1.0) * (*Tpphh)["dfkj"] * (*Xaibc)["cmdf"]
+    (*dpImcjk)["mcjk"] += ( 1.0) * (*Tpphh)["dfkj"] * (*Xaibc)["cmdf"],
 
+    (*dpIjkmc)["jkmc"] <<= map<F>(conj<F>, (*dpImcjk)["mcjk"])
   )->execute();
 
 
@@ -329,10 +332,10 @@ double cc4s::ct::getDenominator(
   (*Wabij)["abij"]   += (-1.0) * (*Tpphh)["baij"],
 
   // Build Piecuch Denominator.
-  (*D)[""] <<= (2.0) * (*Tph)["ai"] * (*Tph)["ai"],
-  (*D)[""] += (*Wabij)["abij"] * (*Cabij)["abij"],
-  (*D)[""] += (*yabcijk)["abcijk"] * (*btabcijk)["abcijk"],
-  (*D)[""] += (*yabcijk)["abcijk"] * (*zabcijk)["abcijk"]
+  (*D)[""] <<= (2.0) * (*Tph)["ai"] * map<F>(conj<F>, (*Tph)["ai"]),
+  (*D)[""] += (*Wabij)["abij"] * map<F>(conj<F>, (*Cabij)["abij"]),
+  (*D)[""] += (*yabcijk)["abcijk"] * map<F>(conj<F>, (*btabcijk)["abcijk"]),
+  (*D)[""] += (*yabcijk)["abcijk"] * map<F>(conj<F>, (*zabcijk)["abcijk"])
 
   )->execute();
 

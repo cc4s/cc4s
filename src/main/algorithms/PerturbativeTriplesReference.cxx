@@ -93,10 +93,10 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   if (cT) {
     intermediates = ct::getPerturbativeCTReference<F, TE>(coulombIntegrals, amplitudes);
     auto Jppph = intermediates->get("ppph");
-    auto Jhphh = intermediates->get("hphh");
+    auto Jhhhp = intermediates->get("hhhp");
     COMPILE(
       (*M)["abcijk"] <<=          (*Jppph)["bcdk"] * (*Tpphh)["adij"],
-      (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Jhphh)["lcjk"])
+      (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Jhhhp)["jklc"])
                                 * (*Tpphh)["abil"],
       (*Z)["abcijk"] <<= (*M)["abcijk"],
       (*Z)["abcijk"]  += (*M)["bacjik"],
@@ -145,7 +145,7 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
       <<= map<F>(conj<F>, (*Z)["abcijk"]) * map<F>(inverse, (*D)["abcijk"]),
 
     (*T)["abcijk"]
-      <<= map<F>(conj<F>, (*T)["abcijk"]) * map<F>(inverse, (*D)["abcijk"]),
+      <<= (*T)["abcijk"] * map<F>(inverse, (*D)["abcijk"]),
 
     (*R)["abcijk"]  <<= (*Tph)["ai"] * (*Vpphh)["bcjk"],
     (*R)["abcijk"]   += (*Tph)["bj"] * (*Vpphh)["acik"],
