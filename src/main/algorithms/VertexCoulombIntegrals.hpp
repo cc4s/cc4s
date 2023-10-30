@@ -34,6 +34,11 @@ namespace cc4s {
     template <typename TE>
     Ptr<MapNode> run(const Ptr<MapNode> &arguments);
     template <typename TE>
+    Ptr<MapNode> calculateIntegrals(
+      const Ptr<TensorSet<Complex<>,TE>> &slicedCoulombVertex,
+      const Ptr<TensorSet<Complex<>,TE>> &slicedLeftCoulombVertex
+    );
+    template <typename TE>
     Ptr<MapNode> calculateRealIntegrals(
       const Ptr<TensorSet<Complex<>,TE>> &slicedCoulombVertex
     );
