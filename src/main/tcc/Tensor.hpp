@@ -367,6 +367,21 @@ namespace cc4s {
       machineTensor = mt;
     }
 
+    /**
+     * \brief Create a tensor from a given machine tensor.
+     * Intended to be used by an external user manipulating the
+     * underlying machine tensors.
+     **/
+    Tensor(
+      const typename MT::T &unadaptedTensor_
+    ): assumedShape(true), version(0) {
+      auto mt(MT::create(unadaptedTensor_));
+      lens = mt->getLens();
+      name = mt->getName();
+      dimensions.resize(lens.size());
+      machineTensor = mt;
+    }
+
     ~Tensor() {
       if (allocated())
         LOG() << "Free tensor " << name << " with " <<
