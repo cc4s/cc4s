@@ -31,9 +31,13 @@ using namespace cc4s;
 
 void Cc4s::run() {
   printBanner();
+  LOG() << "Start dry Run" << std::endl;
   runSteps(true);
+  LOG() << "Finished dry Run" << std::endl;
   if (options->dryRanks > 0) return;
+  LOG() << "Start calculation" << std::endl;
   runSteps(false);
+  LOG() << "Finished calculation" << std::endl;
 }
 
 
@@ -241,7 +245,7 @@ void Cc4s::printBanner() {
   executionEnvironment->setValue("totalProcesses", world->getProcesses());
   executionEnvironment->setValue("startTime", std::string(ctime (&rawtime)));
   executionEnvironment->setValue("dryRanks", options->dryRanks);
-  if (options->dryRanks == 0) {
+  if (options->dryRanks > 0) {
     OUT() << "DRY RUN ONLY - nothing will be calculated" << std::endl;
   }
   executionEnvironment->get("hosts") = getHostList();

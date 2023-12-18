@@ -270,14 +270,12 @@ void CoupledCluster::residuumToAmplitudes(
     auto R( residuum->get(key) );
     auto indices( residuum->generateIndices(key) );
     auto D( calculateEnergyDifferences<F,TE>(R->inspect()->getLens(),indices) );
-
-    // divide by -Delta to get new estimate for T
+    D->sum(
+      F(1.0), indices, indices,
+      [levelShift](F delta) { return F(-1) / (delta + levelShift); }
+    );
     COMPILE(
-      (*D)[indices] <<= map<F>(
-        [levelShift](F delta) { return F(-1) / (delta + levelShift); },
-        (*D)[indices]
-      ),
-      (*R)[indices] <<= (*R)[indices] * (*D)[indices]
+     (*R)[indices] <<= (*R)[indices] * (*D)[indices]
     )->execute();
   }
 }

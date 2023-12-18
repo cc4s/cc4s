@@ -498,6 +498,12 @@ namespace cc4s {
       getMachineTensor()->writeFromFile(file, offset);
     }
 
+    void sum(
+      F a, const std::string &aIdx, const std::string &bIdx,
+      const std::function<F(const F)> &f) {
+      getMachineTensor()->sum(a, getMachineTensor(), aIdx, F(0.0), bIdx, f);
+    }
+
     /**
      * \brief Return index and value of extreme N elements in this tensor
      * according to the given function before, where isBefore(a,b) is true

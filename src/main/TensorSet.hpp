@@ -211,14 +211,20 @@ namespace cc4s {
       auto result( Tcc<TE>::template tensor<F>("dot") );
       for (auto component: components) {
         auto key(component.first);
-        auto tensorExpression(component.second);
+        auto b(component.second);
         auto indices(generateIndices(key));
         // add to result
-        COMPILE(
-          (*result)[""] +=
-            map<F>(cc4s::conj<F>, (*tensorExpression)[indices]) *
-            (*a.get(key))[indices]
-        )->execute();
+        if (typeid(Complex<64>) == typeid(F)) {
+          COMPILE(
+            (*result)[""] +=
+              map<F>(cc4s::conj<F>, (*b)[indices]) *
+              (*a.get(key))[indices]
+          )->execute();
+        } else {
+          COMPILE(
+            (*result)[""] += (*b)[indices] * (*a.get(key))[indices]
+          )->execute();
+        }
       }
       return result->read();
     }
