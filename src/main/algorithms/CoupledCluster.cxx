@@ -135,17 +135,22 @@ Ptr<MapNode> CoupledCluster::run() {
       OperationsCounter operationsCounter(&operations);
       auto residuum( method->getResiduum(amplitudes) );
       residuumToAmplitudes(residuum, amplitudes);
-      auto amplitudesChange( New<TensorSet<F,TE>>(*residuum) );
-      if (amplitudes) {
-        *amplitudesChange -= *amplitudes;
-        isSecondOrder = false;
+      if (mixer->noMix) {
+        amplitudes = residuum;
+        residuumNorm = 0.0;
       } else {
-        isSecondOrder = true;
+        auto amplitudesChange( New<TensorSet<F,TE>>(*residuum) );
+        if (amplitudes) {
+          *amplitudesChange -= *amplitudes;
+          isSecondOrder = false;
+        } else {
+          isSecondOrder = true;
+        }
+        mixer->append(residuum, amplitudesChange);
+        // get mixer's best guess for amplitudes
+        amplitudes = mixer->get();
+        residuumNorm = mixer->getResiduumNorm();
       }
-      mixer->append(residuum, amplitudesChange);
-      // get mixer's best guess for amplitudes
-      amplitudes = mixer->get();
-      residuumNorm = mixer->getResiduumNorm();
       e = getEnergy(amplitudes);
     }
 
