@@ -18,10 +18,6 @@ class PerturbativeCT: public Algorithm {
  protected:
   template <typename F, typename TE>
   Ptr<MapNode> run(const Ptr<MapNode> &arguments);
-  template <typename F, typename TE>
-  Ptr<MapNode> run_tcc(const Ptr<MapNode> &arguments);
-
-
 
 };
 
