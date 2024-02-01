@@ -125,8 +125,9 @@ Ptr<MapNode> CoupledCluster::run() {
     << "Iter         Energy         dE           dR         time   GF/s/core"
     << endl;
 
-  bool isSecondOrder;
+  bool isSecondOrder(true);
   for (; i < maxIterationsCount; ++i) {
+    if (amplitudes) isSecondOrder = false;
     LOG() << "iteration: " << i+1 << endl;
     Time time;
     Natural<128> operations;
@@ -135,17 +136,19 @@ Ptr<MapNode> CoupledCluster::run() {
       OperationsCounter operationsCounter(&operations);
       auto residuum( method->getResiduum(amplitudes) );
       residuumToAmplitudes(residuum, amplitudes);
-      auto amplitudesChange( New<TensorSet<F,TE>>(*residuum) );
-      if (amplitudes) {
-        *amplitudesChange -= *amplitudes;
-        isSecondOrder = false;
+      if (mixer->dontMix) {
+        amplitudes = residuum;
+        residuumNorm = 0.0;
       } else {
-        isSecondOrder = true;
+        auto amplitudesChange( New<TensorSet<F,TE>>(*residuum) );
+        if (amplitudes) {
+          *amplitudesChange -= *amplitudes;
+        }
+        mixer->append(residuum, amplitudesChange);
+        // get mixer's best guess for amplitudes
+        amplitudes = mixer->get();
+        residuumNorm = mixer->getResiduumNorm();
       }
-      mixer->append(residuum, amplitudesChange);
-      // get mixer's best guess for amplitudes
-      amplitudes = mixer->get();
-      residuumNorm = mixer->getResiduumNorm();
       e = getEnergy(amplitudes);
     }
 
@@ -272,11 +275,11 @@ void CoupledCluster::residuumToAmplitudes(
     auto D( calculateEnergyDifferences<F,TE>(R->inspect()->getLens(),indices) );
 
     // divide by -Delta to get new estimate for T
+    D->sum(
+      F(1.0), indices, indices,
+      [levelShift](F delta) { return F(-1) / (delta + levelShift); }
+    );
     COMPILE(
-      (*D)[indices] <<= map<F>(
-        [levelShift](F delta) { return F(-1) / (delta + levelShift); },
-        (*D)[indices]
-      ),
       (*R)[indices] <<= (*R)[indices] * (*D)[indices]
     )->execute();
   }

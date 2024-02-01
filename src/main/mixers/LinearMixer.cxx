@@ -31,6 +31,7 @@ LinearMixer<F,TE>::LinearMixer(
 {
   ratio = arguments->getValue<Real<>>("ratio", 1.0);
   LOG() << "ratio=" << real(ratio) << std::endl;
+  if (std::abs(ratio - 1.0) < 1e-8) this->dontMix = true;
 }
 
 template <typename F, typename TE>
