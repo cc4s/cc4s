@@ -177,7 +177,7 @@ Ptr<MapNode> PerturbativeCT::run(
         (*realDressedGph)["Gai"] <<= map<F>(real<Complex<>>, (*dressedGph)["Gai"] ),
         (*imagDressedGph)["Gai"] <<= map<F>(imag<Complex<>>, (*dressedGph)["Gai"] ),
         (*dpIbcek)["bcek"] += (*realConjGpp)["Gbe"] * (*realDressedGph)["Gck"],
-        (*dpIbcek)["bcek"] += (*imagConjGpp)["Gbe"] * (*imagDressedGph)["Gck"]
+        (*dpIbcek)["bcek"] += (-1.0) * (*imagConjGpp)["Gbe"] * (*imagDressedGph)["Gck"]
       )->execute();
     }
   } else {
