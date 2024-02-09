@@ -62,13 +62,14 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
     auto Tph( amplitudes->get("ph") );
     auto Tpphh( amplitudes->get("pphh") );
     auto Tppphhh( amplitudes->get("ppphhh") );
-
+    bool zeroT3(false);
     if (!Tppphhh) {
       Tppphhh = Tcc<TE>::template tensor<F>("Tppphhh");
       COMPILE(
         (*Tppphhh)["abcijk"] <<= (0.0) * (*Vpphh)["abij"] * (*Tph)["ck"]
       )->execute();
       amplitudes->get("ppphhh") = Tppphhh;
+      zeroT3 = true;
     }
 
     Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
@@ -247,24 +248,27 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Whhhp)["klic"] <<= ( 2.0) * (*Vhhhp)["klic"],
       (*Whhhp)["klic"]  += (-1.0) * (*Vhhhp)["lkic"],
       (*Whhpp)["klcd"] <<= ( 2.0) * (*Vhhpp)["klcd"],
-      (*Whhpp)["klcd"]  += (-1.0) * (*Vhhpp)["lkcd"],
-
-      (*Xpphh)["abij"] <<=          (*Wphpp)["akcd"] * (*Tppphhh)["cbdijk"],
-      (*Xpphh)["abij"]  += (-1.0) * (*Vphpp)["akcd"] * (*Tppphhh)["cdbijk"],
-      (*Xpphh)["abij"]  += (-1.0) * (*Whhhp)["klic"] * (*Tppphhh)["abckjl"],
-      (*Xpphh)["abij"]  +=          (*Vhhhp)["klic"] * (*Tppphhh)["acbkjl"],
-      (*Xpphh)["abij"]  += (*Xpphh)["baji"],
-      (*Rpphh)["abij"]  += (*Xpphh)["abij"],
-      // T1+T3 -> R2
-      (*Xpphh)["abij"] <<=         (*Whhpp)["klcd"] * (*Tppphhh)["abcijk"] * (*Tph)["dl"],
-      (*Xpphh)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbijk"] * (*Tph)["dl"],
-      (*Xpphh)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbikl"] * (*Tph)["dj"],
-      (*Xpphh)["abij"] +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cabikl"] * (*Tph)["dj"],
-      (*Xpphh)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["adcijk"] * (*Tph)["bl"],
-      (*Xpphh)["abij"] +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cdaijk"] * (*Tph)["bl"],
-      (*Xpphh)["abij"] += (*Xpphh)["baji"],
-      (*Rpphh)["abij"] += (*Xpphh)["abij"]
+      (*Whhpp)["klcd"]  += (-1.0) * (*Vhhpp)["lkcd"]
     )->execute();
+    if (!zeroT3) {
+      COMPILE(
+        (*Xpphh)["abij"] <<=          (*Wphpp)["akcd"] * (*Tppphhh)["cbdijk"],
+        (*Xpphh)["abij"]  += (-1.0) * (*Vphpp)["akcd"] * (*Tppphhh)["cdbijk"],
+        (*Xpphh)["abij"]  += (-1.0) * (*Whhhp)["klic"] * (*Tppphhh)["abckjl"],
+        (*Xpphh)["abij"]  +=          (*Vhhhp)["klic"] * (*Tppphhh)["acbkjl"],
+        (*Xpphh)["abij"]  += (*Xpphh)["baji"],
+        (*Rpphh)["abij"]  += (*Xpphh)["abij"],
+        // T1+T3 -> R2
+        (*Xpphh)["abij"] <<=         (*Whhpp)["klcd"] * (*Tppphhh)["abcijk"] * (*Tph)["dl"],
+        (*Xpphh)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbijk"] * (*Tph)["dl"],
+        (*Xpphh)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbikl"] * (*Tph)["dj"],
+        (*Xpphh)["abij"] +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cabikl"] * (*Tph)["dj"],
+        (*Xpphh)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["adcijk"] * (*Tph)["bl"],
+        (*Xpphh)["abij"] +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cdaijk"] * (*Tph)["bl"],
+        (*Xpphh)["abij"] += (*Xpphh)["baji"],
+        (*Rpphh)["abij"] += (*Xpphh)["abij"]
+      )->execute();
+    }
     //T1+T2+T3->R3
     auto Xabie( Tcc<TE>::template tensor<F>("Xabie") );
     auto Xamij( Tcc<TE>::template tensor<F>("Xamij") );
