@@ -30,6 +30,7 @@ namespace cc4s {
     CLI::App app;
     int argc;
     char** argv;
+    bool no_gc;
 
     Options(int _argc, char **_argv)
       : inFile("cc4s.in")
@@ -38,6 +39,7 @@ namespace cc4s {
       , dryRanks(0)
       , persistLog(0)
       , outfiles(1)
+      , no_gc(false)
       , app{"CC4S: Coupled Cluster For Solids"}
       , argc(_argc)
       , argv(_argv)
@@ -69,10 +71,21 @@ namespace cc4s {
                       " 1: Write output.out.yaml but suppress dry-output.out.yaml.\n"
                       " 2: Write ouptut.out.yaml and dry-output.out.yaml.\n"
                     )->default_val(outfiles);
+      app.add_flag("--no-gc",
+                   no_gc,
+                   "Do not use the cc4s garbage collector after every step.")
+        ->default_val(no_gc);
     }
 
     int parse() {
-      CLI11_PARSE(app, argc, argv);
+      try {
+        (app).parse(argc, argv);
+      } catch (const CLI::ParseError &e) {
+        app.exit(e);
+        std::exit(1);
+      }
+      if (app.get_help_ptr()->count()) std::exit(0);
+
       return 0;
     }
 

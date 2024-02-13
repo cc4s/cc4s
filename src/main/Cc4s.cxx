@@ -14,6 +14,7 @@
  */
 
 #include <Cc4s.hpp>
+#include <GC.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <tcc/Tcc.hpp>
 #include <Parser.hpp>
@@ -86,6 +87,8 @@ void Cc4s::runSteps(const bool dry) {
       auto step(steps->getMap(i));
       runStep(i, step);
       executedSteps->get(i) = step;
+      if (!options->no_gc)
+        collect_garbage(i, steps, executedSteps, storage);
       // emit output, overwrite from previous step
       if ( options->outfiles == 2 || ( options->outfiles == 1 && !dry )) {
         std::string stagePrefix(dry ? "dry-" : "");
@@ -176,11 +179,13 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   realtime << time;
   OUT() << "realtime " << realtime.str() << " s" << std::endl;
   OUT() << "--" << std::endl;
-  LOG() << "step: " << (i+1) << ", realtime: " << realtime.str() << " s"
-    << ", operations: " << operations / 1e9 << " GFLOP"
-    << ", speed: "
-    << operations / 1e9 / time.getFractionalSeconds() / getProcessesCount()
-    << " GFLOP/core/s" << std::endl;
+  LOG() << "step: " << (i+1)
+        << ", name: " << algorithmName
+        << ", realtime: " << realtime.str() << " s"
+        << ", operations: " << operations / 1e9 << " GFLOP"
+        << ", speed: "
+        << operations / 1e9 / time.getFractionalSeconds() / getProcessesCount()
+        << " GF/rank/s" << std::endl;
   statistics->setValue("realtime", realtime.str());
   statistics->setValue("floatingPointOperations", operations);
   statistics->setValue("flops", operations / time.getFractionalSeconds());
