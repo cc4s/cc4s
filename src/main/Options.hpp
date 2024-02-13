@@ -27,10 +27,10 @@ namespace cc4s {
     int dryRanks;
     int persistLog;
     int outfiles;
+    bool no_gc;
     CLI::App app;
     int argc;
     char** argv;
-    bool no_gc;
 
     Options(int _argc, char **_argv)
       : inFile("cc4s.in")

@@ -267,7 +267,8 @@ void Cc4s::printEndBanner() {
   OUT() << "Calculation finished at: " << ctime (&rawtime) << std::endl;
   //check if we have to remove the log files
   if (options->persistLog == 0) {
-    std::remove(Log::fileName);
+    Log::closeLogFile();
+    remove(Log::getFileName().c_str());
   }
 }
 
