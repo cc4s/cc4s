@@ -1,5 +1,6 @@
 SRC_FILES += \
 main/Cc4s.cxx \
+main/GC.cxx \
 main/Options.cxx \
 main/Writer.cxx \
 main/Reader.cxx \

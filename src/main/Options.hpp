@@ -28,12 +28,14 @@ namespace cc4s {
     CLI::App app;
     int argc;
     char** argv;
+    bool no_gc;
 
     Options(int _argc, char **_argv)
       : inFile("cc4s.in")
       , logFile("cc4s.log")
       , yamlOutFile("cc4s.out.yaml")
       , dryRanks(0)
+      , no_gc(false)
       , app{"CC4S: Coupled Cluster For Solids"}
       , argc(_argc)
       , argv(_argv)
@@ -51,6 +53,10 @@ namespace cc4s {
                     "If non-zero, specifies number ranks for resource\n"
                     "estimation and do not run after dry run")
          ->default_val(dryRanks);
+      app.add_flag("--no-gc",
+                   no_gc,
+                   "Do not use the cc4s garbage collector after every step.")
+        ->default_val(no_gc);
     }
 
     int parse() {

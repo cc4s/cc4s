@@ -14,6 +14,7 @@
  */
 
 #include <Cc4s.hpp>
+#include <GC.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <tcc/Tcc.hpp>
 #include <Parser.hpp>
@@ -80,6 +81,8 @@ void Cc4s::runSteps(const bool dry) {
       auto step(steps->getMap(i));
       runStep(i, step);
       executedSteps->get(i) = step;
+      if (!options->no_gc)
+        collect_garbage(i, steps, executedSteps, storage);
       // emit output, overwrite from previous step
       std::string stagePrefix(dry ? "dry-" : "");
       Emitter emitter(stagePrefix + options->yamlOutFile);
