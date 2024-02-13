@@ -35,9 +35,15 @@ void Cc4s::run() {
   runSteps(true);
   LOG() << "Finished dry Run" << std::endl;
   if (options->dryRanks > 0) return;
+  //clear log file if demanded
+  if (options->persistLog < 2) {
+    Log::closeLogFile();
+    Log::setRank(Cc4s::world->getRank());
+  }
   LOG() << "Start calculation" << std::endl;
   runSteps(false);
   LOG() << "Finished calculation" << std::endl;
+  printEndBanner();
 }
 
 
@@ -81,9 +87,11 @@ void Cc4s::runSteps(const bool dry) {
       runStep(i, step);
       executedSteps->get(i) = step;
       // emit output, overwrite from previous step
-      std::string stagePrefix(dry ? "dry-" : "");
-      Emitter emitter(stagePrefix + options->yamlOutFile);
-      emitter.emit(output);
+      if ( options->outfiles == 2 || ( options->outfiles == 1 && !dry )) {
+        std::string stagePrefix(dry ? "dry-" : "");
+        Emitter emitter(stagePrefix + options->yamlOutFile);
+        emitter.emit(output);
+      }
     }
   }
   Cc4s::dryRun = false;
@@ -122,9 +130,11 @@ void Cc4s::runSteps(const bool dry) {
   output->get("statistics") = statistics;
 
   // emit final stage output
-  std::string stagePrefix( dry ? "dry-" : "" );
-  Emitter emitter(stagePrefix + options->yamlOutFile);
-  emitter.emit(output);
+  if ( options->outfiles == 2 || ( options->outfiles == 1 && !dry )) {
+    std::string stagePrefix( dry ? "dry-" : "" );
+    Emitter emitter(stagePrefix + options->yamlOutFile);
+    emitter.emit(output);
+  }
 }
 
 void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
@@ -243,6 +253,17 @@ void Cc4s::printBanner() {
     OUT() << "DRY RUN ONLY - nothing will be calculated" << std::endl;
   }
   executionEnvironment->get("hosts") = getHostList();
+}
+
+void Cc4s::printEndBanner() {
+  time_t rawtime;
+  time (&rawtime);
+  OUT() << "Calculation finished successfully.\n";
+  OUT() << "Calculation finished at: " << ctime (&rawtime) << std::endl;
+  //check if we have to remove the log files
+  if (options->persistLog == 0) {
+    std::remove(Log::fileName);
+  }
 }
 
 Natural<> Cc4s::getProcessesCount() {

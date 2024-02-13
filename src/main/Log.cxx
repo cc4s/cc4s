@@ -59,6 +59,12 @@ void Log::setRank(int const rank_) {
   nullStream.setstate(std::ios_base::badbit);
 }
 
+void Log::closeLogFile() {
+  if (rank == 0) {
+    logStream.close();
+  }
+}
+
 int Log::getRank() {
   return rank;
 }
