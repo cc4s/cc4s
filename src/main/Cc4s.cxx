@@ -166,11 +166,13 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   realtime << time;
   OUT() << "realtime " << realtime.str() << " s" << std::endl;
   OUT() << "--" << std::endl;
-  LOG() << "step: " << (i+1) << ", realtime: " << realtime.str() << " s"
-    << ", operations: " << operations / 1e9 << " GFLOP"
-    << ", speed: "
-    << operations / 1e9 / time.getFractionalSeconds() / getProcessesCount()
-    << " GF/rank/s" << std::endl;
+  LOG() << "step: " << (i+1)
+        << ", name: " << algorithmName
+        << ", realtime: " << realtime.str() << " s"
+        << ", operations: " << operations / 1e9 << " GFLOP"
+        << ", speed: "
+        << operations / 1e9 / time.getFractionalSeconds() / getProcessesCount()
+        << " GF/rank/s" << std::endl;
   statistics->setValue("realtime", realtime.str());
   statistics->setValue("floatingPointOperations", operations);
   statistics->setValue("flops", operations / time.getFractionalSeconds());
