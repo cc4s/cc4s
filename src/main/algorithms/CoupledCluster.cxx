@@ -125,7 +125,7 @@ Ptr<MapNode> CoupledCluster::run() {
     << "Iter         Energy         dE           dR         time   GF/s/rank"
     << endl;
 
-  bool isSecondOrder;
+  bool isSecondOrder = true;
   for (; i < maxIterationsCount; ++i) {
     LOG() << "iteration: " << i+1 << endl;
     Time time;
