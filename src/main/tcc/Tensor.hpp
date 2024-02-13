@@ -454,6 +454,10 @@ namespace cc4s {
       return version;
     }
 
+    void invalidate() {
+      version = 0;
+    }
+
     void updated() {
       version = getNextTensorVersion();
     }
