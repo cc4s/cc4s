@@ -54,7 +54,14 @@ namespace cc4s {
     }
 
     int parse() {
-      CLI11_PARSE(app, argc, argv);
+      try {
+        (app).parse(argc, argv);
+      } catch (const CLI::ParseError &e) {
+        app.exit(e);
+        std::exit(1);
+      }
+      if (app.get_help_ptr()->count()) std::exit(0);
+
       return 0;
     }
 
