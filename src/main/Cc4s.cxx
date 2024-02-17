@@ -133,6 +133,8 @@ void Cc4s::runSteps(const bool dry) {
 void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   auto algorithmName(step->getSymbol("name"));
   OUT() << "step: " << (i+1) << ", " << algorithmName << std::endl;
+  LOG() << "begin step: " << (i+1)
+        << ", name: " << algorithmName << std::endl;
 
   // create algorithm
   auto algorithm(AlgorithmFactory::create(algorithmName));
@@ -169,7 +171,7 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
   realtime << time;
   OUT() << "realtime " << realtime.str() << " s" << std::endl;
   OUT() << "--" << std::endl;
-  LOG() << "step: " << (i+1)
+  LOG() << "end step: " << (i+1)
         << ", name: " << algorithmName
         << ", realtime: " << realtime.str() << " s"
         << ", operations: " << operations / 1e9 << " GFLOP"
