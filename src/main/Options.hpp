@@ -35,10 +35,10 @@ namespace cc4s {
       , logFile("cc4s.log")
       , yamlOutFile("cc4s.out.yaml")
       , dryRanks(0)
-      , no_gc(false)
       , app{"CC4S: Coupled Cluster For Solids"}
       , argc(_argc)
       , argv(_argv)
+      , no_gc(false)
     {
       app.add_option("-i,--in", inFile, "Input file path")
          ->default_val(inFile);

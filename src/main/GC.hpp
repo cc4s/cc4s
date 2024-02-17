@@ -5,7 +5,7 @@
 namespace cc4s {
 
 void collect_garbage(size_t const i, Ptr<MapNode> &steps,
-                     Ptr<MapNode> &executed_steps, Ptr<MapNode> &storage);
+                     Ptr<MapNode> &storage);
 
 } // namespace cc4s
 

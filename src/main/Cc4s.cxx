@@ -24,6 +24,8 @@
 #include <Log.hpp>
 #include <Exception.hpp>
 
+#include <TensorSet.hpp>
+
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -41,6 +43,69 @@ void Cc4s::run() {
   LOG() << "Finished calculation" << std::endl;
 }
 
+static std::map<std::string, std::string> check_tensor_type(Ptr<Node> &value) {
+#define _RETURN_IF_IS_(_T, _F, _TE)                                            \
+  do {                                                                         \
+    Ptr<PointerNode<_T<_F, _TE>>> ptr =                                        \
+        value->toPtr<PointerNode<_T<_F, _TE>>>();                              \
+    if (ptr) {                                                                 \
+      auto t = std::dynamic_pointer_cast<_T<_F, _TE>>(ptr->value);             \
+      std::stringstream ptr_name;                                              \
+      ptr_name << t.get();                                                     \
+      return {                                                                 \
+          {"field", #_F},                                                      \
+          {"tensor-engine", #_TE},                                             \
+          {"type", #_T},                                                       \
+          {"pointer", ptr_name.str()},                                         \
+      };                                                                       \
+    }                                                                          \
+  } while (0)
+  _RETURN_IF_IS_(TensorSet, Real<>, DefaultTensorEngine);
+  _RETURN_IF_IS_(TensorSet, Complex<>, DefaultTensorEngine);
+  _RETURN_IF_IS_(Tensor, Real<>, DefaultTensorEngine);
+  _RETURN_IF_IS_(Tensor, Complex<>, DefaultTensorEngine);
+  return {{"type", "none"}};
+#undef _RETURN_IF_IS_
+}
+
+static Ptr<MapNode> make_step_for_output(Ptr<MapNode> const &step) {
+  Ptr<MapNode> result = New<MapNode>(SOURCE_LOCATION);
+  result->get("name") = step->get("name");
+  for (const auto &in_or_out_key : {"in", "out"}) {
+    auto result_in_or_out = New<MapNode>(SOURCE_LOCATION);
+    result->get(in_or_out_key) = result_in_or_out;
+    Ptr<MapNode> in_or_out = step->getMap(in_or_out_key);
+    for (const auto &key : in_or_out->getKeys()) {
+      Ptr<Node> value = in_or_out->get(key);
+      // If it is not an atomic node, it means it might be energy and so on,
+      // or a mixer node information, so let us leave it like it is
+      if (!value->isAtomic()) {
+        result_in_or_out->get(key) = value;
+        continue;
+      } else {
+        // We first check if we have a tensor node, which will
+        // be done using the function check_tensor_type,
+        // if we do have this, then we will just have some information
+        // and will write it in the output
+        auto tensor_info = check_tensor_type(value);
+        if (tensor_info["type"] != "none") {
+          auto _result = New<MapNode>(SOURCE_LOCATION);
+          for (auto const &__pair : tensor_info) {
+            auto __key = __pair.first, __val = __pair.second;
+            _result->get(__key) =
+                New<AtomicNode<std::string>>(__val, SOURCE_LOCATION);
+          }
+          result_in_or_out->get(key) = _result;
+        } else {
+          // if it is not a tensor, just leave it as it was before, this
+          // will be strings, integers, real numbers and so on
+          result_in_or_out->get(key) = value;
+        }
+      }
+    }
+  }
+  return result;
+}
 
 Natural<128> Cc4s::getFloatingPointOperations() {
   return dryRun ?
@@ -80,9 +145,11 @@ void Cc4s::runSteps(const bool dry) {
     for (Natural<> i(0); i < steps->getSize(); ++i) {
       auto step(steps->getMap(i));
       runStep(i, step);
-      executedSteps->get(i) = step;
+      if (Cc4s::dryRun) executedSteps->get(i) = step;
+      else              executedSteps->get(i) = make_step_for_output(step);
+      // executedSteps->get(i) = step;
       if (!options->no_gc)
-        collect_garbage(i, steps, executedSteps, storage);
+        collect_garbage(i, steps, storage);
       // emit output, overwrite from previous step
       std::string stagePrefix(dry ? "dry-" : "");
       Emitter emitter(stagePrefix + options->yamlOutFile);

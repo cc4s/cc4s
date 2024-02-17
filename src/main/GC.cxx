@@ -8,7 +8,7 @@
 namespace cc4s {
 
 void collect_garbage(size_t const i, Ptr<MapNode> &steps,
-                     Ptr<MapNode> &executed_steps, Ptr<MapNode> &storage) {
+                     Ptr<MapNode> &storage) {
 
   std::map<std::string, bool> should_collect;
   // take a look at all the storage and see if there is
@@ -46,19 +46,8 @@ void collect_garbage(size_t const i, Ptr<MapNode> &steps,
                                          ? step->getMap("out")
                                          : New<MapNode>(step->sourceLocation);
 
-      Ptr<MapNode> exec_step = j < executed_steps->getSize()
-                                   ? executed_steps->getMap(j)
-                                   : New<MapNode>(step->sourceLocation);
-      Ptr<MapNode> exec_step_out =
-          exec_step->isGiven("out") ? exec_step->getMap("out")
-                                    : New<MapNode>(exec_step->sourceLocation);
-      Ptr<MapNode> exec_step_in = exec_step->isGiven("in")
-                                      ? exec_step->getMap("in")
-                                      : New<MapNode>(exec_step->sourceLocation);
-
       // remove in all input arguments
-      for (auto args :
-           {inputArguments, outputArguments, exec_step_in, exec_step_out})
+      for (auto args : {inputArguments, outputArguments})
         for (const auto &key_name : args->getKeys()) {
           Ptr<Node> *value_node = &args->get(key_name);
           if (value_node->get() == storage->get(data_name).get()) {
