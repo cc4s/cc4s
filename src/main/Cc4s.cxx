@@ -38,9 +38,15 @@ void Cc4s::run() {
   runSteps(true);
   LOG() << "Finished dry Run" << std::endl;
   if (options->dryRanks > 0) return;
+  //clear log file if demanded
+  if (options->persistLog < 2) {
+    Log::closeLogFile();
+    Log::setRank(Cc4s::world->getRank());
+  }
   LOG() << "Start calculation" << std::endl;
   runSteps(false);
   LOG() << "Finished calculation" << std::endl;
+  printEndBanner();
 }
 
 static std::map<std::string, std::string> check_tensor_type(Ptr<Node> &value) {
@@ -151,9 +157,11 @@ void Cc4s::runSteps(const bool dry) {
       if (!options->no_gc)
         collect_garbage(i, steps, storage);
       // emit output, overwrite from previous step
-      std::string stagePrefix(dry ? "dry-" : "");
-      Emitter emitter(stagePrefix + options->yamlOutFile);
-      emitter.emit(output);
+      if ( options->outfiles == 2 || ( options->outfiles == 1 && !dry )) {
+        std::string stagePrefix(dry ? "dry-" : "");
+        Emitter emitter(stagePrefix + options->yamlOutFile);
+        emitter.emit(output);
+      }
     }
   }
   Cc4s::dryRun = false;
@@ -192,9 +200,11 @@ void Cc4s::runSteps(const bool dry) {
   output->get("statistics") = statistics;
 
   // emit final stage output
-  std::string stagePrefix( dry ? "dry-" : "" );
-  Emitter emitter(stagePrefix + options->yamlOutFile);
-  emitter.emit(output);
+  if ( options->outfiles == 2 || ( options->outfiles == 1 && !dry )) {
+    std::string stagePrefix( dry ? "dry-" : "" );
+    Emitter emitter(stagePrefix + options->yamlOutFile);
+    emitter.emit(output);
+  }
 }
 
 void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
@@ -317,6 +327,18 @@ void Cc4s::printBanner() {
     OUT() << "DRY RUN ONLY - nothing will be calculated" << std::endl;
   }
   executionEnvironment->get("hosts") = getHostList();
+}
+
+void Cc4s::printEndBanner() {
+  time_t rawtime;
+  time (&rawtime);
+  OUT() << "Calculation finished successfully.\n";
+  OUT() << "Calculation finished at: " << ctime (&rawtime) << std::endl;
+  //check if we have to remove the log files
+  if (options->persistLog == 0) {
+    Log::closeLogFile();
+    remove(Log::getFileName().c_str());
+  }
 }
 
 Natural<> Cc4s::getProcessesCount() {

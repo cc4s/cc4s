@@ -25,20 +25,24 @@ namespace cc4s {
 
     std::string inFile, logFile, yamlOutFile;
     int dryRanks;
+    int persistLog;
+    int outfiles;
+    bool no_gc;
     CLI::App app;
     int argc;
     char** argv;
-    bool no_gc;
 
     Options(int _argc, char **_argv)
       : inFile("cc4s.in")
       , logFile("cc4s.log")
       , yamlOutFile("cc4s.out.yaml")
       , dryRanks(0)
+      , persistLog(0)
+      , outfiles(1)
+      , no_gc(false)
       , app{"CC4S: Coupled Cluster For Solids"}
       , argc(_argc)
       , argv(_argv)
-      , no_gc(false)
     {
       app.add_option("-i,--in", inFile, "Input file path")
          ->default_val(inFile);
@@ -53,6 +57,20 @@ namespace cc4s {
                     "If non-zero, specifies number ranks for resource\n"
                     "estimation and do not run after dry run")
          ->default_val(dryRanks);
+      app.add_option("-p, --persist-log",
+                      persistLog,
+                     "Persistence of the log-file:\n"
+                     " 0: Logfile is removed after sucessful run.\n"
+                     " 1: Logfile's dryRun-part is deleted after successful dryRun.\n"
+                     " 2: Logfile is left untouched.\n"
+                    )->default_val(persistLog);
+      app.add_option("-O, --outfiles"
+                    , outfiles
+                    , "Specify the different output files:\n"
+                      " 0: No *out.yaml is written.\n"
+                      " 1: Write output.out.yaml but suppress dry-output.out.yaml.\n"
+                      " 2: Write ouptut.out.yaml and dry-output.out.yaml.\n"
+                    )->default_val(outfiles);
       app.add_flag("--no-gc",
                    no_gc,
                    "Do not use the cc4s garbage collector after every step.")

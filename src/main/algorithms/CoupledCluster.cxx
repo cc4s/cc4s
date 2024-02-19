@@ -152,6 +152,7 @@ Ptr<MapNode> CoupledCluster::run() {
       e = getEnergy(amplitudes);
     }
 
+    std::streamsize ss(std::cout.precision());
     OUT()
       << setw(4) << i+1 << " "
       << scientific
@@ -164,6 +165,7 @@ Ptr<MapNode> CoupledCluster::run() {
       << operations / 1e9 / time.getFractionalSeconds()
         / Cc4s::world->getProcesses()
       << endl;
+    std::cout << std::setprecision(ss) << defaultfloat;
     if (isSecondOrder) {
       energy->setValue("secondOrder", real(e));
     }

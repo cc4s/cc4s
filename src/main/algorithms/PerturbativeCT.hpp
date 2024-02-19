@@ -16,8 +16,10 @@ class PerturbativeCT: public Algorithm {
 
   Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
  protected:
-  template <typename F, typename TE>
-  Ptr<MapNode> run(const Ptr<MapNode> &arguments);
+  template <typename TE>
+  Ptr<MapNode> runReal(const Ptr<MapNode> &arguments);
+  template <typename TE>
+  Ptr<MapNode> runComplex(const Ptr<MapNode> &arguments);
 
 };
 

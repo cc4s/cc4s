@@ -35,6 +35,7 @@ namespace cc4s {
     typedef std::function<std::string(const SourceLocation &)> HeaderFunction;
 
     static void setRank(const int rank);
+    static void closeLogFile();
     static int getRank();
     static std::ostream &getOutStream() {
       if (rank == 0 && !Cc4s::dryRun) return std::cout;
