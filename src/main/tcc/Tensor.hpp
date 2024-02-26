@@ -437,11 +437,12 @@ namespace cc4s {
         // wait until allocation is done on all processes
         Cc4s::world->barrier();
         LOG() << "Allocate tensor " << name << " with " <<
-          getElementsCount() << " elements" << std::endl;
+          getElementsCount() << " elements." << std::flush;
         // allocate the implementation specific machine tensor upon request
         machineTensor = MT::create(lens, name);
         // wait until allocation is done on all processes
         Cc4s::world->barrier();
+        LOG() << " Done." << std::endl;
       }
       return machineTensor;
     }
