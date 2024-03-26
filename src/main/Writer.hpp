@@ -70,7 +70,9 @@ namespace cc4s {
       chdir(currentDirectory);
 
       // finally, write persistent tree to given file
+      if (Cc4s::dryRun)  fileName += "_";
       Emitter(fileName).emit(writtenNode);
+      if (Cc4s::dryRun) remove(fileName.c_str());
 
       return writtenNode;
     }

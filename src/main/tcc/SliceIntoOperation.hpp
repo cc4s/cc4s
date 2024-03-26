@@ -67,12 +67,13 @@ namespace cc4s {
             aBeginsStream.str() << "," << aEndsStream.str() << ") + " <<
           this->beta << " * " << this->getName() << "(" <<
             beginsStream.str() << "," << endsStream.str() <<
-          ")" << std::endl;
+          ")." << std::endl;
 
         this->getResult()->getMachineTensor()->slice(
           F(1), source->getResult()->getMachineTensor(), aBegins, aEnds,
           F(this->beta), begins, ends
         );
+        LOG() << "Slicing Done." << std::endl;
         this->updated();
         this->accountFlops();
       } else {

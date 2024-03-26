@@ -77,6 +77,7 @@ namespace cc4s {
           this->beta,
           this->getResultIndices()
         );
+        LOG() << "Contraction Done. " << std::endl;
         this->updated();
         this->accountFlops(contractionCosts);
       } else {

@@ -73,6 +73,7 @@ namespace cc4s {
           F(1), source->getResult()->getMachineTensor(), begins, ends,
           F(0), bBegins, bEnds
         );
+        LOG() << "Slicing. Done" << std::endl;
         this->updated();
         this->accountFlops();
       } else {

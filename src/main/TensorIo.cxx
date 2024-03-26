@@ -160,6 +160,7 @@ Ptr<MapNode> TensorIo::writeTensor(
     rTensor = Tcc<TE>::template tensor<F>("reverse");
     EXECUTE( (*rTensor)[s] <<= (*tensor)[r] );
   }
+  if (Cc4s::dryRun) return writtenTensor;
   // write tensor elements as side effect
   if (flagsIO.useBinary) {
     elementsNode->setValue("type", std::string("IeeeBinaryFile"));
@@ -293,7 +294,10 @@ void TensorIo::writeTensorElementsText(
   }
 
   Natural<> index(0);
-  LOG() << "indexCount=" << tensor->getElementsCount() << std::endl;
+  LOG() << "Writing " << tensor->getElementsCount() <<
+    " elements to text file " << elementsPath << "." << std::endl;;
+
+
   while (index < tensor->getElementsCount()) {
     Natural<> elementsCount(
       std::min(bufferSize, tensor->getElementsCount()-index)
@@ -313,8 +317,7 @@ void TensorIo::writeTensorElementsText(
     Cc4s::world->barrier();
     index += elementsCount;
   }
-  LOG() << "Written " << tensor->getElementsCount() <<
-    " elements to text file " << elementsPath << std::endl;
+  LOG() << "Writing done." << std::endl;
 }
 
 template <typename F, typename TE>
@@ -322,7 +325,16 @@ void TensorIo::writeTensorElementsBinary(
   const Ptr<Tensor<F,TE>> &tensor, const std::string &nodePath
 ) {
   std::string elementsPath(nodePath + ".elements");
-  // open the file
+  std::ofstream stream(elementsPath);
+  if (stream.fail()) {
+    std::stringstream explanation;
+    explanation << "Failed to open file \"" << elementsPath << "\"";
+    throw New<Exception>(explanation.str(), SOURCE_LOCATION);
+  }
+  // open the file with c++ and remove if present. Seems not be necessary.
+  //stream.open(elementsPath, std::ofstream::out | std::ofstream::trunc);
+  //stream.close();
+
   MPI_File file;
   int mpiError(
     MPI_File_open(
@@ -339,14 +351,25 @@ void TensorIo::writeTensorElementsBinary(
   OUT() << "Writing to binary file " << elementsPath << std::endl;
   if (Cc4s::dryRun) return;
 
+  size_t elWritten(sizeof(F)*tensor->getElementsCount());
+  LOG() << "Writing " << elWritten <<
+    " bytes to binary file " << elementsPath << "." << std::endl;;
+
   // write tensor elements with values from file
   tensor->readToFile(file);
-
-  LOG() << "Written " << sizeof(F)*tensor->getElementsCount() <<
-    " bytes to binary file " << elementsPath << std::endl;
-
-  // done
   MPI_File_close(&file);
+  ifstream ifile(elementsPath, ios::in|ios::binary);
+  ifile.ignore( std::numeric_limits<std::streamsize>::max() );
+  size_t length = ifile.gcount();
+  ifile.close();
+  ASSERT_LOCATION(
+    elWritten == length,
+    std::string("File '") + elementsPath
+    + std::string("' has not the correct size after writing."),
+    SOURCE_LOCATION
+  )
+  LOG() << "Writing Done." << std::endl;
+
 }
 
 template <typename F, typename TE>
@@ -488,6 +511,25 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinaryDense(
   const Ptr<TensorNonZeroConditions> &nonZeroConditions,
   const SourceLocation &sourceLocation
 ) {
+  // create tensor
+  auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
+
+  ifstream ifile(fileName, ios::in|ios::binary);
+  ASSERT_LOCATION(
+    ifile.good(), std::string("Failed to open file '") + fileName + "'",
+    sourceLocation
+  )
+  ifile.ignore( std::numeric_limits<std::streamsize>::max() );
+  size_t length = ifile.gcount();
+  ifile.close();
+
+  ASSERT_LOCATION(
+    length == sizeof(F)*tensor->getElementsCount(),
+    std::string("The data in File '") + fileName +
+    std::string("' is not compatible with the tensor specs in the corresponding yaml File"),
+    sourceLocation
+  )
+
   // open the file
   MPI_File file;
   int mpiError(
@@ -501,8 +543,6 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinaryDense(
     sourceLocation
   )
 
-  // create tensor
-  auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
 
   OUT() << "Reading from binary file " << fileName << std::endl;
   if (Cc4s::dryRun) return tensor;

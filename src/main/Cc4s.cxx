@@ -37,7 +37,13 @@ void Cc4s::run() {
   LOG() << "Start dry Run" << std::endl;
   runSteps(true);
   LOG() << "Finished dry Run" << std::endl;
-  if (options->dryRanks > 0) return;
+  if (options->dryRanks > 0) {
+    if (!options->persistLog) {
+      Log::closeLogFile();
+      remove(Log::getFileName().c_str());
+    }
+    return;
+  }
   //clear log file if demanded
   if (options->persistLog < 2) {
     Log::closeLogFile();

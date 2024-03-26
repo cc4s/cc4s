@@ -69,6 +69,7 @@ namespace cc4s {
           Target(0), this->getResultIndices(),
           f
         );
+        LOG() << "Unary map Done" << std::endl;
         this->updated();
         this->accountFlops();
       } else {
