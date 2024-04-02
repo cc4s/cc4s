@@ -235,7 +235,11 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   OUT() << "(T) correlation energy: "
         << std::setprecision(15) << std::setw(23)
         << out.energy << std::endl;
-
+  if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+     OUT() << "(cT) correlation energy: "
+        << std::setprecision(15) << std::setw(23)
+        << out.ct_energy << std::endl;
+  }
   // if atrip checkpoint file exists.
   // Delete it after a successfully finished calculation
   if (checkpoint_file_exists()) std::remove(checkpoint_path.c_str());
@@ -252,6 +256,9 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correlation", std::real(out.energy));
 
+  if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+    energy->setValue("ctCorrelation", std::real(out.ct_energy));
+  }
   if (arguments->isGiven("mp2PairEnergies")) {
     const F
       triples_star = computeCssdPtStar<F, TE>(arguments, out.energy);
