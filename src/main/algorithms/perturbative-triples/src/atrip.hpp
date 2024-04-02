@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// [[file:../atrip.org::*Include header][Include header:1]]
+// [[file:~/cuda/atrip/atrip.org::*Include%20header][Include header:1]]
 #pragma once
 
 #include <atrip/Atrip.hpp>

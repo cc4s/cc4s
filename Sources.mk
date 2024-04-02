@@ -38,8 +38,11 @@ main/algorithms/TensorSetToTensor.cxx \
 #main/algorithms/coupledcluster/Ccsdt.cxx \
 
 ifeq ($(ATRIP), no)
-SRC_FILES += main/algorithms/perturbative-triples/src/atrip/Atrip.cxx
-CXXFLAGS  += -Isrc/main/algorithms/perturbative-triples/include/
+
+include ./src/main/algorithms/perturbative-triples/Makefile
+
+SRC_FILES += $(patsubst %,main/algorithms/perturbative-triples/%,$(ATRIP_FILES))
+CXXFLAGS  += -Isrc/main/algorithms/perturbative-triples/src/
 endif
 
 TEST_SRC_FILES = \
