@@ -18,6 +18,7 @@
 #include <algorithms/PerturbativeTriplesReference.hpp>
 #include <tcc/Tcc.hpp>
 #include <Cc4s.hpp>
+#include <Keywords.hpp>
 #include <TensorSet.hpp>
 #include <MathFunctions.hpp>
 #include <iomanip>
@@ -121,6 +122,13 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       ->evaluate()                                           \
       ->getMachineTensor()                                   \
       ->tensor)
+#define __CT__(_idx)                            \
+  &(arguments                                   \
+    ->getPtr<TensorSet<F,TE>>(kwd::CT_INTERMEDIATE)            \
+    ->get(_idx)                                 \
+    ->evaluate()                                \
+    ->getMachineTensor()                        \
+    ->tensor)
 
 
   CTF::Tensor<F>
@@ -169,15 +177,20 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     .with_Vabci(__V__(ppph))
     // some options
     .with_barrier(false)
-    .with_percentageMod(print_at_percentage)
-    .with_tuplesDistribution(distribution)
-    .with_rankRoundRobin(rankRoundRobin)
+    .with_percentage_mod(print_at_percentage)
+    .with_tuples_distribution(distribution)
+    .with_rank_round_robin(rankRoundRobin)
     // checkpoint options
-    .with_checkpointAtEveryIteration(checkpoint_at_every_iteration)
-    .with_checkpointAtPercentage(checkpoint_at_percentage)
-    .with_checkpointPath(checkpoint_path)
-    .with_readCheckpointIfExists(use_checkpoint)
+    .with_checkpoint_at_every_iteration(checkpoint_at_every_iteration)
+    .with_checkpoint_at_percentage(checkpoint_at_percentage)
+    .with_checkpoint_path(checkpoint_path)
+    .with_read_checkpoint_if_exists(use_checkpoint)
     ;
+
+  if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+    OUT() << "Using ct" << std::endl;
+    in.with_Jijka(__CT__("hhhp")).with_Jabci(__CT__("ppph"));
+  }
 
   const double _No = *(__eps__(h))->lens
              , _Nv = *(__eps__(p))->lens
@@ -193,7 +206,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   double lastElapsedTime = 0;
   auto const rank = Cc4s::world->getRank();
   bool firstHeaderPrinted = false;
-  atrip::registerIterationDescriptor
+  atrip::register_iteration_descriptor
     ([doublesFlops, &firstHeaderPrinted, rank, &lastElapsedTime]
        (atrip::IterationDescription const& d) {
       const char
@@ -206,10 +219,10 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
         OUT() << out << "\n";
       }
       sprintf(out, fmt_nums,
-              double(d.currentIteration) / double(d.totalIterations) * 100,
-              (d.currentElapsedTime - lastElapsedTime),
-              d.currentIteration * doublesFlops / d.currentElapsedTime);
-      lastElapsedTime = d.currentElapsedTime;
+              double(d.current_iteration) / double(d.total_iterations) * 100,
+              (d.current_elapsed_time - lastElapsedTime),
+              d.current_iteration * doublesFlops / d.current_elapsed_time);
+      lastElapsedTime = d.current_elapsed_time;
       OUT() << out << "\n";
     });
 
