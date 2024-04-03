@@ -258,8 +258,8 @@ def compare_energies(correct_file, test_file, accuracy=1e-7):
     import yaml
     with open(correct_file) as fcorrect:
         with open(test_file) as ftest:
-            correct_yaml = yaml.load(fcorrect)
-            test_yaml = yaml.load(ftest)
+            correct_yaml = yaml.load(fcorrect, Loader=yaml.Loader)
+            test_yaml = yaml.load(ftest, Loader=yaml.Loader)
             correct_steps = correct_yaml["steps"]
             test_steps = test_yaml["steps"]
             for step_idx in correct_steps:
