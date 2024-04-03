@@ -255,9 +255,10 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
   energy->setValue("correlation", std::real(out.energy));
+  energy->setValue("t", std::real(out.energy));
 
   if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
-    energy->setValue("ctCorrelation", std::real(out.ct_energy));
+    energy->setValue("ct", std::real(out.ct_energy));
   }
   if (arguments->isGiven("mp2PairEnergies")) {
     const F
