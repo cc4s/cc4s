@@ -1,3 +1,29 @@
+* Running tests
+
+You can run tests with the Makefile or using directly the
+=testis.py= script.
+
+You can look all possible options by running
+#+begin_src bash
+./testis.py --help
+#+end_src
+
+And for instance, if you want to run all tests with tags matching
+=cT= found in the folder =./tests/=, you can run
+
+#+begin_src bash
+export CC4S_RUN="$PWD/../build/gcc-oblas-ompi/bin/Cc4s"
+./testis.py --run -t cT tests/
+#+end_src
+
+There is also the check phase, which you can run by choosing
+the =--check= flag
+
+#+begin_src bash
+export CC4S_RUN="$PWD/../build/gcc-oblas-ompi/bin/Cc4s"
+./testis.py --check -t cT tests/
+#+end_src
+
 * Writing tests
 
 A test case consists of a folder with a =test.json=
