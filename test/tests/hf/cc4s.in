@@ -46,6 +46,23 @@
     energy: CcsdEnergy
     amplitudes: Amplitudes
 
+- name: PerturbativeCT
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    coulombVertex: CoulombVertex
+  out:
+    cTIntermediate: ctintermediate
+
+- name: PerturbativeTriples
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    cTIntermediate: ctintermediate
+    slicedEigenEnergies: EigenEnergies
+  out:
+    {}
+
 - name: PerturbativeTriplesReference
   in:
     coulombIntegrals: CoulombIntegrals
@@ -54,3 +71,15 @@
     slicedEigenEnergies: EigenEnergies
   out:
     {}
+
+- name: PerturbativeTriplesReference
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    slicedEigenEnergies: EigenEnergies
+  out:
+    {}
+
+# Local Variables:
+# mode: yaml
+# End:
