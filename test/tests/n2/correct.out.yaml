@@ -1,0 +1,173 @@
+executionEnvironment:
+  buildDate: Apr  2 2024 21:18:07
+  compiler: g++ (Ubuntu 9.4.0-1ubuntu1~20.04.2) 9.4.0
+  dryRanks: 0
+  hosts:
+    0:
+      host: cqc05
+      ranks:
+        0: 0
+        1: 1
+        2: 2
+        3: 3
+  startTime: "Thu Apr  4 18:27:27 2024\n"
+  totalProcesses: 4
+  version: heads/handsOn-ct-0-g6a46e263
+statistics:
+  floatingPointOperations: 37612062574
+  flops: 6670914037.7099972
+  realtime: 5.638217246
+steps:
+  0:
+    in:
+      fileName: EigenEnergies.yaml
+    name: Read
+    out:
+      destination: 0x55e3cbf0eb10
+  1:
+    in:
+      fileName: CoulombVertex.yaml
+    name: Read
+    out:
+      destination: 0x55e3cbe71e60
+  2:
+    in:
+      eigenEnergies: 0x55e3cbf0eb10
+    name: DefineHolesAndParticles
+    out:
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55e3cbeb2240
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+  3:
+    in:
+      operator: 0x55e3cbe71e60
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55e3cbeb2240
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: SliceOperator
+    out:
+      slicedOperator:
+        field: Complex<>
+        pointer: 0x55e3cbf05010
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+  4:
+    in:
+      slicedCoulombVertex:
+        field: Complex<>
+        pointer: 0x55e3cbf05010
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: VertexCoulombIntegrals
+    out:
+      coulombIntegrals:
+        field: Complex<>
+        pointer: 0x55e3cbeeb530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+  5:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Complex<>
+        pointer: 0x55e3cbeeb530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 100
+      levelShift: 0
+      linearized: 0
+      maxIterations: 30
+      method: Ccsd
+      mixer:
+        maxResidua: 4
+        type: DiisMixer
+      ppl: 1
+      slicedCoulombVertex:
+        field: Complex<>
+        pointer: 0x55e3cbf05010
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55e3cbeb2240
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Complex<>
+        pointer: 0x55e3cc1b9390
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -9.6074949841936679
+        direct: -15.225393046604244
+        exchange: 5.6178980624105774
+        secondOrder: -9.0449459493784552
+        unit: 0.036749322175638754
+  6:
+    in:
+      amplitudes:
+        field: Complex<>
+        pointer: 0x55e3cc1b9390
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      coulombIntegrals:
+        field: Complex<>
+        pointer: 0x55e3cbeeb530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      coulombVertex:
+        field: Complex<>
+        pointer: 0x55e3cbf05010
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: PerturbativeCT
+    out:
+      cTIntermediate:
+        field: Complex<>
+        pointer: 0x55e3cbfb01f0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+  7:
+    in:
+      amplitudes:
+        field: Complex<>
+        pointer: 0x55e3cc1b9390
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      cTIntermediate:
+        field: Complex<>
+        pointer: 0x55e3cbfb01f0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      checkpointAtEveryIteration: 0
+      checkpointAtPercentage: 1
+      checkpointPath: atrip-checkpoint.yaml
+      coulombIntegrals:
+        field: Complex<>
+        pointer: 0x55e3cbeeb530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      printAtPercentage: 10
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55e3cbeb2240
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      tuplesDistribution: group
+      tuplesRoundRobin: node
+      useCheckpoint: 1
+    name: PerturbativeTriples
+    out:
+      energy:
+        correlation: -0.50592468136369484
+        ct: -0.45376556515304312
+        t: -0.50592468136369484
+        unit: 0.036749322175638782

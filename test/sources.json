@@ -47,5 +47,10 @@
   "ueg-rs1-no7-nv26-complex": {
     "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/5716b5b83b0b56790897a7bf70a2c1c3305e6cf9/ueg/rs1.0_7occ_26virt/complex",
     "type": "raw"
+  },
+
+  "vasp-n2": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/cb07c7f362cf6c084744fc6f498127cf6c258d34/n2",
+    "type": "raw"
   }
 }
