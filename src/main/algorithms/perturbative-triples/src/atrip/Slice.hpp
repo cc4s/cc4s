@@ -158,6 +158,9 @@ public:
 
     static MPI_Datatype usize_dt() { return MPI_UINT64_T; }
 
+// airmler: The following lines contain a memory leak.
+//         However, they are currently not used.
+/*
     static MPI_Datatype slice_info() {
       constexpr int n = 5;
       MPI_Datatype dt;
@@ -170,7 +173,7 @@ public:
           slice_location(),
           vector(sizeof(enum Type), MPI_CHAR)
           // TODO: Why this does not work on intel mpi?
-          /*, MPI_UINT64_T*/
+          //, MPI_UINT64_T //
       };
 
       static_assert(sizeof(enum Type) == 4, "Enum type not 4 bytes long");
@@ -193,14 +196,15 @@ public:
       MPI_Type_commit(&dt);
       return dt;
     }
-
+*/
     static MPI_Datatype local_database_element() {
       constexpr int n = 2;
       MPI_Datatype dt;
       LocalDatabaseElement measure;
       const std::vector<int> lengths(n, 1);
-      const MPI_Datatype types[n] = {vector(sizeof(enum Name), MPI_CHAR),
-                                     slice_info()};
+// airmler: remove memory leaks, unused anyways
+//      const MPI_Datatype types[n] = {vector(sizeof(enum Name), MPI_CHAR),
+//                                     slice_info()};
 
       // measure the displacements in the struct
       size_t j = 0;
@@ -214,11 +218,11 @@ public:
       static_assert(sizeof(LocalDatabaseElement) == sizeof(measure),
                     "Measure has bad size");
 
-      MPI_Type_create_struct(n, lengths.data(), displacements, types, &dt);
-      MPI_Type_commit(&dt);
+//      MPI_Type_create_struct(n, lengths.data(), displacements, types, &dt);
+//      MPI_Type_commit(&dt);
       return vector(sizeof(LocalDatabaseElement), MPI_CHAR);
       // TODO: write tests in order to know if this works
-      return dt;
+//      return dt;
     }
   };
   // MPI Types:1 ends here

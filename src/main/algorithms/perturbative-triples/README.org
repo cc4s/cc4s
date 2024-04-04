@@ -1,5 +1,5 @@
 #+title: Sources of ATRIP algorithm for perturbative triples
-#+current-commit: 9739e32916c61c5827e23e43bec68551619395bb
+#+current-commit: a8d0f0c6824ce99d5895467daaf33057fab985e
 
 * Generalities
 
