@@ -38,6 +38,11 @@ Ptr<MapNode> PerturbativeCT::runReal(
   const Ptr<MapNode> &arguments
 ) {
 
+  bool noRing(
+    arguments->template getValue<bool>("noRing", false)
+  );
+
+
   using TSr = TensorSet<Real<>,TE>;
   using TSc = TensorSet<Complex<>,TE>;
   auto amplitudes( arguments->getPtr<TSr>("amplitudes") );
@@ -148,7 +153,11 @@ Ptr<MapNode> PerturbativeCT::runReal(
      (*dpImcjk)["iajk"] += ( 1.0) * (*dpXiajb)["iaje"] * (*Tph)["ek"],
      (*dpImcjk)["iajk"] += ( 1.0) * (*Tph)["ej"] * (*dpXiabj)["iaek"],
      // Line 19: 5th - 9th term
-     (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"],
+     (noRing) ? (
+       Tcc<TE>::sequence()
+     ) : (
+       (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"]
+     ),
      (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["imje"] * (*Tpphh)["eakm"],
      (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["mije"] * (*Tpphh)["eamk"],
      (*dpImcjk)["iajk"] += (-1.0) * (*Tpphh)["aemj"] * (*Xijka)["mike"]
@@ -219,7 +228,11 @@ Ptr<MapNode> PerturbativeCT::runReal(
 
   COMPILE(
 //    // Line 17: 6th term - 10th term
-    (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"],
+    (noRing) ? (
+      Tcc<TE>::sequence()
+    ) : (
+      (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"]
+    ),
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ceam"] * (*Tpphh)["ebim"],
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ecam"] * (*Tpphh)["ebmi"],
     (*Vppph)["abci"] += (-1.0) * (*Tpphh)["eaim"] * (*Ippph)["ecbm"],
@@ -251,6 +264,11 @@ template <typename TE>
 Ptr<MapNode> PerturbativeCT::runComplex(
   const Ptr<MapNode> &arguments
 ) {
+
+
+  bool noRing(
+    arguments->template getValue<bool>("noRing", false)
+  );
 
   auto amplitudes( arguments->getPtr<TensorSet<Complex<>,TE>>("amplitudes") );
   if (!amplitudes) return nullptr;
@@ -383,7 +401,11 @@ Ptr<MapNode> PerturbativeCT::runComplex(
     (*Vppph)["abci"] += (-1.0) * (*Tph)["am"] * (*pXiabj)["mbci"],
     (*Vppph)["abci"] += (-1.0) * (*Iia)["mc"] * (*Tpphh)["abmi"],
 //    // Line 17: 6th term - 10th term
-    (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"],
+    (noRing) ? (
+      Tcc<TE>::sequence()
+    ) : (
+      (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"]
+    ),
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ceam"] * (*Tpphh)["ebim"],
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ecam"] * (*Tpphh)["ebmi"],
     (*Vppph)["abci"] += (-1.0) * (*Tpphh)["eaim"] * (*Ippph)["ecbm"],
@@ -394,7 +416,11 @@ Ptr<MapNode> PerturbativeCT::runComplex(
     (*dpImcjk)["iajk"] += ( 1.0) * (*dpXiajb)["iaje"] * (*Tph)["ek"],
     (*dpImcjk)["iajk"] += ( 1.0) * (*Tph)["ej"] * (*dpXiabj)["iaek"],
     // Line 19: 5th - 9th term
-    (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"],
+    (noRing) ? (
+      Tcc<TE>::sequence()
+    ) : (
+      (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"]
+    ),
     (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["imje"] * (*Tpphh)["eakm"],
     (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["mije"] * (*Tpphh)["eamk"],
     (*dpImcjk)["iajk"] += (-1.0) * (*Tpphh)["aemj"] * (*Xijka)["mike"],
