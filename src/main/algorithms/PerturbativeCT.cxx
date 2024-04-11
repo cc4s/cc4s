@@ -156,7 +156,8 @@ Ptr<MapNode> PerturbativeCT::runReal(
      (noRing) ? (
        Tcc<TE>::sequence()
      ) : (
-       (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"]
+       (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"],
+       Tcc<TE>::sequence()
      ),
      (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["imje"] * (*Tpphh)["eakm"],
      (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["mije"] * (*Tpphh)["eamk"],
@@ -231,7 +232,8 @@ Ptr<MapNode> PerturbativeCT::runReal(
     (noRing) ? (
       Tcc<TE>::sequence()
     ) : (
-      (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"]
+      (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"],
+      Tcc<TE>::sequence()
     ),
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ceam"] * (*Tpphh)["ebim"],
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ecam"] * (*Tpphh)["ebmi"],
@@ -404,7 +406,8 @@ Ptr<MapNode> PerturbativeCT::runComplex(
     (noRing) ? (
       Tcc<TE>::sequence()
     ) : (
-      (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"]
+      (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"],
+      Tcc<TE>::sequence()
     ),
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ceam"] * (*Tpphh)["ebim"],
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ecam"] * (*Tpphh)["ebmi"],
@@ -419,7 +422,8 @@ Ptr<MapNode> PerturbativeCT::runComplex(
     (noRing) ? (
       Tcc<TE>::sequence()
     ) : (
-      (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"]
+      (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"],
+      Tcc<TE>::sequence()
     ),
     (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["imje"] * (*Tpphh)["eakm"],
     (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["mije"] * (*Tpphh)["eamk"],
