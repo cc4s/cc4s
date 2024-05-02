@@ -35,7 +35,7 @@ main/algorithms/BasisSetCorrection.cxx \
 main/algorithms/UegVertexGenerator.cxx \
 main/algorithms/PerturbativeTriples.cxx \
 main/algorithms/TensorSetToTensor.cxx \
-#main/algorithms/coupledcluster/Ccsdt.cxx \
+main/algorithms/coupledcluster/Ccsdt.cxx \
 
 ifeq ($(ATRIP), no)
 
