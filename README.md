@@ -63,7 +63,7 @@ Building
     not work).
 -   write or edit a `config.<config>` file for your build environment.
 -   the configuration files given in etc/config/ contain
-    predifined retail environments for gnu- and intel-compiler, respectively,
+    predefined retail environments for gnu- and intel-compiler, respectively,
     using full optimization and without debugging info.
 -   for the gcc configuration the following additional libraries are
     required
