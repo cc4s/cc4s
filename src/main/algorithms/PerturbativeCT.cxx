@@ -255,6 +255,11 @@ Ptr<MapNode> PerturbativeCT::runReal(
     COMPILE( (*Vppph)["bcek"] <<= (*Bppph)["bcek"] )->execute();
   }
 
+  if (noRing) OUT() << "Evaluating ct-intermediate without ring contribution" << std::endl;
+  //TODO: give tensor sets meta data.
+  //auto metaData(New<MapNode>(SOURCE_LOCATION));
+  //metaData->setValue("noRing", noRing);
+  //J->metaData = metaData;
   auto result( New<MapNode>(SOURCE_LOCATION));
   result->setPtr("cTIntermediate", J);
   return result;

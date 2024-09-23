@@ -74,6 +74,7 @@ Ptr<MapNode> CoupledCluster::run() {
     OUT() << "Using given initial amplitudes " << amplitudes << endl;
   }
 
+
   energy = New<MapNode>(SOURCE_LOCATION);
 
   // create a method handler, by default Ccsd
@@ -85,12 +86,21 @@ Ptr<MapNode> CoupledCluster::run() {
     method, std::string("Unknown method: '") + methodName + "'",
     arguments->get("method")->sourceLocation
   );
+
   OUT() << "Using method "
     << methodName << ". " << method->describeOptions() << endl;
 
   bool isLinearized(arguments->getValue<bool>("linearized", false));
   if (isLinearized && methodName == "Drccd") OUT() << "Solving linearized equations\n";
 
+  auto ccsdtn(this->arguments->template getValue<string>("ccsdt-n", ""));
+  if (methodName == "Ccsdt" && !ccsdtn.empty()) {
+    OUT() << "Working with " << ccsdtn << " model\n";
+    if (! (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-3") ) {
+      ASSERT_LOCATION(0, "Unknown CCSDT model",
+                      this->arguments->get("ccsdt-n")->sourceLocation);
+    }
+  }
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
   auto mixerType(mixerArguments->getValue<std::string>("type", "DiisMixer"));
