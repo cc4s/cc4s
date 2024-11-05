@@ -249,19 +249,18 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
 
 
 
-  auto D( Tcc<TE>::template tensor<F>(Rppphhh->inspect()->getLens(), "Dppphhh"));
 
   COMPILE(
-    (*D)["abcijk"] += (*Fepsp)["a"],
-    (*D)["abcijk"] += (*Fepsp)["b"],
-    (*D)["abcijk"] += (*Fepsp)["c"],
-    (*D)["abcijk"] -= (*Fepsh)["i"],
-    (*D)["abcijk"] -= (*Fepsh)["j"],
-    (*D)["abcijk"] -= (*Fepsh)["k"]
+    (*Xp3h3)["abcijk"] <<= (*Fepsp)["a"],
+    (*Xp3h3)["abcijk"]  += (*Fepsp)["b"],
+    (*Xp3h3)["abcijk"]  += (*Fepsp)["c"],
+    (*Xp3h3)["abcijk"]  -= (*Fepsh)["i"],
+    (*Xp3h3)["abcijk"]  -= (*Fepsh)["j"],
+    (*Xp3h3)["abcijk"]  -= (*Fepsh)["k"]
   )->execute();
-  D->sum(F(1.0), "abcijk", "abcijk", [] (F delta) { return F(-1) / delta; });
+  Xp3h3->sum(F(1.0), "abcijk", "abcijk", [] (F delta) { return F(-1) / delta; });
   COMPILE(
-    (*Tppphhh)["abcijk"] += (*Rppphhh)["abcijk"] * (*D)["abcijk"]
+    (*Tppphhh)["abcijk"] <<= (*Rppphhh)["abcijk"] * (*Xp3h3)["abcijk"]
   )->execute();
 
   // T3 -> R2
@@ -356,8 +355,23 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
   COMPILE(
     (*Rppphhh)["abcijk"] <<= (*Xp3h3)["abcijk"],
     (*Rppphhh)["abcijk"]  += (*Xp3h3)["bacjik"],
-    (*Rppphhh)["abcijk"]  += (*Xp3h3)["cbakji"],
-    (*Tppphhh)["abcijk"] <<= (*Rppphhh)["abcijk"] * (*D)["abcijk"],
+    (*Rppphhh)["abcijk"]  += (*Xp3h3)["cbakji"]
+  )->execute();
+  COMPILE(
+    (*Xp3h3)["abcijk"] <<= (*Fepsp)["a"],
+    (*Xp3h3)["abcijk"]  += (*Fepsp)["b"],
+    (*Xp3h3)["abcijk"]  += (*Fepsp)["c"],
+    (*Xp3h3)["abcijk"]  -= (*Fepsh)["i"],
+    (*Xp3h3)["abcijk"]  -= (*Fepsh)["j"],
+    (*Xp3h3)["abcijk"]  -= (*Fepsh)["k"]
+  )->execute();
+  Xp3h3->sum(F(1.0), "abcijk", "abcijk", [] (F delta) { return F(-1) / delta; });
+  COMPILE(
+    (*Tppphhh)["abcijk"] <<= (*Rppphhh)["abcijk"] * (*Xp3h3)["abcijk"]
+  )->execute();
+
+  COMPILE(
+    (*Tppphhh)["abcijk"] <<= (*Rppphhh)["abcijk"] * (*Xp3h3)["abcijk"],
     (*Xpphh)["abij"] <<=          (*Wphpp)["akcd"] * (*Tppphhh)["cbdijk"],
     (*Xpphh)["abij"]  += (-1.0) * (*Vphpp)["akcd"] * (*Tppphhh)["cdbijk"],
     (*Xpphh)["abij"]  += (-1.0) * (*Whhhp)["klic"] * (*Tppphhh)["abckjl"],
