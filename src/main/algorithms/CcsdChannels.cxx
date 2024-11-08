@@ -80,6 +80,15 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
   );
   auto Vpphh(coulombIntegrals->get("pphh"));
 
+  auto coulombVertex(
+    arguments->template getPtr<TensorSet<Complex<>,TE>>("slicedCoulombVertex")
+  );
+  ASSERT_LOCATION(
+    coulombVertex, "Missing Coulomb Vertex!",
+    arguments->sourceLocation
+  );
+  auto GammaGpp(coulombVertex->get("pp"));
+  auto GammaGph(coulombVertex->get("ph"));
 
   auto eigenEnergies(
     arguments->template getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
@@ -92,6 +101,17 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
   auto Tph( amplitudes->get("ph") );
   auto Tpphh( amplitudes->get("pphh") );
   Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
+
+  /* Dressing vertex for PPL term */
+  auto realDressedGammaGpp(Tcc<TE>::template tensor<F>("realDressedGammaGpp"));
+  auto imagDressedGammaGpp(Tcc<TE>::template tensor<F>("imagDressedGammaGpp"));
+  COMPILE(
+    (*realDressedGammaGpp)["Gab"] <<= map<F>(real<Complex<>>, (*GammaGpp)["Gab"] ),
+    (*imagDressedGammaGpp)["Gab"] <<= map<F>(imag<Complex<>>, (*GammaGpp)["Gab"] ),
+
+    (*realDressedGammaGpp)["Gac"]  += (-1.0) * map<F>(real<Complex<>>, (*GammaGph)["Gcl"] ) * (*Tph)["al"],
+    (*imagDressedGammaGpp)["Gac"]  += (-1.0) * map<F>(imag<Complex<>>, (*GammaGph)["Gcl"] ) * (*Tph)["al"]
+  )->execute();
 
 
   auto epsh(eigenEnergies->get("h"));
@@ -184,6 +204,7 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
   )->execute();
   accumulate_energy += compute_energy("hhl");
 
+/*
   COMPILE(
     (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
     (*Xabcd)["abcd"] <<= (1.0) * (*Vpppp)["abcd"],
@@ -200,6 +221,71 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
     (*Rpphh)["abij"] <<= (*Xabcd)["abcd"] * (*Tpphh)["cdij"]
   )->execute();
   accumulate_energy += compute_energy("PPL (no singles)");
+*/
+
+
+  COMPILE(
+    (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
+    (*Rpphh)["abij"] <<= (0.0) * (*Vpphh)["abij"]
+  )->execute();
+
+
+  if (std::is_same<F,Real<>>::value) {
+    Natural<> Nv(realDressedGammaGpp->lens[1]);
+    Natural<> NG(realDressedGammaGpp->lens[0]);
+    Natural<> No(Rpphh->inspect()->getLen(2));
+    Natural<> sliceSize(
+      arguments->template getValue<Natural<>>("integralsSliceSize", No)
+    );
+    Natural<> numberSlices(Natural<>(ceil(1.0*Nv/sliceSize)));
+    std::vector<Ptr<Tensor<F, TE>>> realSlicedGammaGpp;
+    std::vector<Ptr<Tensor<F, TE>>> imagSlicedGammaGpp;
+    //Slice GammaGab and store it in a vector
+    for (Natural<> v(0); v < numberSlices; v++){
+      Natural<> xStart = v*sliceSize;
+      Natural<> xEnd = std::min((v+1)*sliceSize,Nv);
+      auto dummyr( Tcc<TE>::template tensor<F>("dummyr") );
+      auto dummyi( Tcc<TE>::template tensor<F>("dummyi") );
+      COMPILE(
+        (*dummyr)["Gxb"] <<=
+          (*(*realDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"],
+        (*dummyi)["Gxb"] <<=
+          (*(*imagDressedGammaGpp)({0, xStart, 0}, {NG, xEnd, Nv}))["Gxb"]
+      )->execute();
+      realSlicedGammaGpp.push_back(dummyr);
+      imagSlicedGammaGpp.push_back(dummyi);
+    }
+    // loop over slices
+    for (Natural<> m(0); m < numberSlices; m++)
+    for (Natural<> n(m); n < numberSlices; n++){
+      auto Vxycd( Tcc<TE>::template tensor<F>("Vxycd") );
+      auto Rxyij( Tcc<TE>::template tensor<F>("Rxyij") );
+      auto Ryxji( Tcc<TE>::template tensor<F>("Ryxji") );
+      Natural<> a(n*sliceSize); Natural<> b(m*sliceSize);
+      Natural<> Nx(realSlicedGammaGpp[n]->lens[1]);
+      Natural<> Ny(realSlicedGammaGpp[m]->lens[1]);
+      COMPILE(
+        (*Vxycd)["xycd"] <<=
+          (*realSlicedGammaGpp[n])["Gxc"] * (*realSlicedGammaGpp[m])["Gyd"],
+        (*Vxycd)["xycd"]  +=
+        (*imagSlicedGammaGpp[n])["Gxc"] * (*imagSlicedGammaGpp[m])["Gyd"],
+        (*Rxyij)["xyij"] <<= (*Vxycd)["xycd"] * (*Tpphh)["cdij"],
+        (*(*Rpphh)({a, b, 0, 0},{a+Nx, b+Ny, No, No}))["xyij"] += (*Rxyij)["xyij"],
+        // if a>b: add the same slice at (b,a,j,i):
+        (a>b) ? (
+          (*Ryxji)["yxji"] <<= (*Rxyij)["xyij"],
+          (*(*Rpphh)({b, a, 0, 0},{b+Ny, a+Nx, No, No}))["xyij"] += (*Ryxji)["xyij"]
+        ) : (
+          Tcc<TE>::sequence()
+        )
+      )->execute();
+    }
+    accumulate_energy += compute_energy("PPL");
+  } else {
+    /* TODO: lazy irmler has not done it for complex case*/
+    accumulate_energy += compute_energy("PPL");
+  }
+
 
   COMPILE(
     (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
@@ -231,7 +317,7 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
 
   COMPILE(
     (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
-    (*Rpphh)["abij"] <<= (2.0) * (*Vhhpp)["ijab"] * (*Tpphh)["acik"] * (*Tpphh)["dblj"]
+    (*Rpphh)["abij"] <<= (4.0) * (*Vhhpp)["klcd"] * (*Tpphh)["acik"] * (*Tpphh)["dblj"]
   )->execute();
   accumulate_energy += compute_energy("qu. Ring");
 
