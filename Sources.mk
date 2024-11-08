@@ -37,6 +37,7 @@ main/algorithms/PerturbativeTriples.cxx \
 main/algorithms/TensorSetToTensor.cxx \
 main/algorithms/coupledcluster/Ccsdt.cxx \
 main/algorithms/CcsdTTT.cxx \
+main/algorithms/CcsdChannels.cxx \
 
 ifeq ($(ATRIP), no)
 
