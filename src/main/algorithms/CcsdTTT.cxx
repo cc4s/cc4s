@@ -85,14 +85,18 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
     arguments->sourceLocation
   );
 
-  auto r3mode( arguments->template getValue<std::string>("r3-mode", "ct-full"));
-  auto t3t3mode( arguments->template getValue<std::string>("t3t3-mode", "full"));
+  //r3-mode: plain, ct-ring, ct-full
+  //t3t3-mode: plain, dressed
+  //t3t3-part: full, ring, ladder, rest
+  auto r3mode( arguments->template getValue<std::string>("r3-mode", "plain"));
+  auto t3t3mode( arguments->template getValue<std::string>("t3t3-mode", "plain"));
+  auto t3t3part( arguments->template getValue<std::string>("t3t3-part", "full"));
 
 
   COMPILE(
     (*Rph)["ai"] <<= 0.0 * (*Vpphh)["aaii"],
-    (*Rpphh)["abij"] <<= (*Vpphh)["abij"],
-    (*Rppphhh)["abcijk"] <<= (*Vpphh)["abij"] * (*Rph)["ck"]
+    (*Rpphh)["abij"] <<= (0.0) * (*Vpphh)["abij"],
+    (*Rppphhh)["abcijk"] <<= (0.0) * (*Vpphh)["abij"] * (*Rph)["ck"]
   )->execute();
 
   // TODO: check if given amplitudes contain expected parts
@@ -124,6 +128,7 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
   auto Whhpp( Tcc<TE>::template tensor<F>("Whhpp") );
   auto Xpphh( Tcc<TE>::template tensor<F>("Xpphh") );
   auto Xabie( Tcc<TE>::template tensor<F>("Xabie") );
+  auto Xjkmn( Tcc<TE>::template tensor<F>("Xjkmn") );
   auto Xamij( Tcc<TE>::template tensor<F>("Xamij") );
   auto Xim  ( Tcc<TE>::template tensor<F>("Xim")   );
   auto Xae  ( Tcc<TE>::template tensor<F>("Xae")   );
@@ -323,30 +328,63 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
 
 
   auto energy( Tcc<TE>::template tensor<F>("E") );
-  // These are the T3-T3 coupling terms which can be of fifth order
-  // we have removed all terms which introduce a higher order in perturbation
-  // TODO: currently they not included as Tppphhh is zero at this point
+
+  COMPILE(
+    (*Xjkmn)["jkmn"]  <<=          (*Vhhhh)["jkmn"],
+    (*Xbcef)["bcef"]  <<=          (*Vpppp)["bcef"],
+    (*Xamei)["amei"]  <<=          (*Vphph)["amei"],
+    (*Xamie)["amie"]  <<=          (*Vphhp)["amie"],
+
+    (t3t3mode == "plain") ? (
+      Tcc<TE>::sequence()
+    ) : (
+      (*Xim)["im"]      <<= ( 2.0) * (*Vhphh)["iemn"] * (*Tph)["en"],
+      (*Xim)["im"]       += (-1.0) * (*Vhphh)["ienm"] * (*Tph)["en"],
+      (*Xim)["im"]       +=          (*Whhpp)["mnef"] * (*Xpphh)["efin"],
+      (*Xae)["ae"]      <<= ( 2.0) * (*Vphpp)["amef"] * (*Tph)["fm"],
+      (*Xae)["ae"]       += (-1.0) * (*Vphpp)["amfe"] * (*Tph)["fm"],
+      (*Xae)["ae"]       += (-1.0) * (*Whhpp)["mnef"] * (*Xpphh)["afmn"],
+
+      (*Xjkmn)["jkmn"]   +=          (*Vhhpp)["mnef"] * (*Xpphh)["efjk"],
+      (*Xjkmn)["jkmn"]   +=          (*Vhphh)["jemn"] * (*Tph)["ek"],
+      (*Xjkmn)["jkmn"]   +=          (*Vphhh)["ekmn"] * (*Tph)["ej"],
+
+      (*Xbcef)["bcef"]   +=          (*Vpphh)["efmn"] * (*Xpphh)["bcmn"],
+      (*Xbcef)["bcef"]   += (-1.0) * (*Vphpp)["bmef"] * (*Tph)["cm"],
+      (*Xbcef)["bcef"]   += (-1.0) * (*Vhppp)["mcef"] * (*Tph)["bm"],
+
+      (*Xamei)["amei"]   += (-1.0) * (*Vhhpp)["mnfe"] * (*Xpphh)["fain"],
+      (*Xamei)["amei"]   += (-1.0) * (*Vhhph)["nmei"] * (*Tph)["an"],
+      (*Xamei)["amei"]   +=          (*Vphpp)["amef"] * (*Tph)["fi"],
+
+      (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Tpphh)["afin"],
+      (*Xamie)["amie"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Xpphh)["fain"],
+      (*Xamie)["amie"]   += (-1.0) * (*Vhhhp)["nmie"] * (*Tph)["an"],
+      (*Xamie)["amie"]   +=          (*Vppph)["aefm"] * (*Tph)["fi"]
+    )
+  )->execute();
+
   COMPILE(
     (*Xp3h3)["abcijk"] <<= (0.0) * (*Tppphhh)["becmjk"],
-    (t3t3mode == "full" || t3t3mode == "ladder") ? (
-      (*Xp3h3)["abcijk"]   <<=          (*Vhhhh)["jkmn"] * (*Tppphhh)["abcimn"],
-      (*Xp3h3)["abcijk"]    +=          (*Vpppp)["bcef"] * (*Tppphhh)["aefijk"],
+    (t3t3part == "full" || t3t3part == "ladder") ? (
+      (*Xp3h3)["abcijk"]   <<=          (*Xjkmn)["jkmn"] * (*Tppphhh)["abcimn"],
+      (*Xp3h3)["abcijk"]    +=          (*Xbcef)["bcef"] * (*Tppphhh)["aefijk"],
       Tcc<TE>::sequence()
     ) : (
       Tcc<TE>::sequence()
     ),
-    (t3t3mode == "full" || t3t3mode == "ring") ? (
-      (*Xp3h3)["abcijk"]    += ( 2.0) * (*Vphhp)["amie"] * (*Tppphhh)["ebcmjk"],
+    (t3t3part == "full" || t3t3part == "ring") ? (
+      (*Xp3h3)["abcijk"]    += ( 2.0) * (*Xamie)["amie"] * (*Tppphhh)["ebcmjk"],
       Tcc<TE>::sequence()
     ) : (
       Tcc<TE>::sequence()
     ),
-    (t3t3mode == "full" || t3t3mode == "rest") ? (
-      (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphhp)["amie"] * (*Tppphhh)["becmjk"],
-      (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphhp)["amie"] * (*Tppphhh)["cbemjk"],
-      (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphph)["amei"] * (*Tppphhh)["ebcmjk"],
-      (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphph)["bmei"] * (*Tppphhh)["aecmjk"],
-      (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphph)["cmei"] * (*Tppphhh)["abemjk"],
+    (t3t3part == "full" || t3t3part == "rest") ? (
+      (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamie)["amie"] * (*Tppphhh)["becmjk"],
+      (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamie)["amie"] * (*Tppphhh)["cbemjk"],
+      (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamei)["amei"] * (*Tppphhh)["ebcmjk"],
+      (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamei)["bmei"] * (*Tppphhh)["aecmjk"],
+      (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamei)["cmei"] * (*Tppphhh)["abemjk"],
       Tcc<TE>::sequence()
     ) : (
       Tcc<TE>::sequence()
@@ -389,7 +427,7 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
     r3string = "(cT)-ring";
   }
 
-  OUT() << "T3-T3 energy ( " << t3t3mode << " / " << r3string << " ) : " << real(E) << std::endl;
+  OUT() << "T3-T3 energy ( " << t3t3part << " / " << r3string << " / " << t3t3mode << " ) : " << real(E) << std::endl;
 
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->setValue("allGood", 1);
