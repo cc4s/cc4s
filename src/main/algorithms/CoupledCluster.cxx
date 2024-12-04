@@ -66,13 +66,6 @@ Ptr<MapNode> CoupledCluster::run() {
   auto epsp(eigenEnergies->get("p"));
 
   Natural<> i(0);
-  Ptr<TensorSet<F,TE>> amplitudes;
-  if (arguments->isGiven("initialAmplitudes")) {
-    amplitudes = arguments->getPtr<TensorSet<F,TE>>(
-      "initialAmplitudes"
-    );
-    OUT() << "Using given initial amplitudes " << amplitudes << endl;
-  }
 
 
   energy = New<MapNode>(SOURCE_LOCATION);
@@ -89,6 +82,21 @@ Ptr<MapNode> CoupledCluster::run() {
 
   OUT() << "Using method "
     << methodName << ". " << method->describeOptions() << endl;
+
+  Ptr<TensorSet<F,TE>> amplitudes;
+  if (arguments->isGiven("initialAmplitudes")) {
+    amplitudes = arguments->getPtr<TensorSet<F,TE>>(
+      "initialAmplitudes"
+    );
+    // Check if the initial Amplitudes have all required orders for
+    // the given method. if not initialize the other orders here
+    // otherwise we have a 'dangling' shared pointer of amplitude
+    // components (can be of size T3 when starting the ccsdt algorithm
+    // from ccsd amplitudes
+    //TODO
+    OUT() << "Using given initial amplitudes " << amplitudes << endl;
+  }
+
 
   bool isLinearized(arguments->getValue<bool>("linearized", false));
   if (isLinearized && methodName == "Drccd") OUT() << "Solving linearized equations\n";
@@ -235,26 +243,36 @@ F CoupledCluster::getEnergy(
   {
     auto direct( Tcc<TE>::template tensor<F>("D") );
     auto exchange( Tcc<TE>::template tensor<F>("X") );
+    auto directSingles( Tcc<TE>::template tensor<F>("D") );
+    auto exchangeSingles( Tcc<TE>::template tensor<F>("X") );
+
     COMPILE(
       (*direct)[""] <<=
         0.5*degeneracy*degeneracy * (*Tabij)["abij"] * (*Vijab)["ijab"],
-      (*direct)[""] +=
+      (*directSingles)[""] <<=
         0.5*degeneracy*degeneracy * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijab"],
       (*exchange)[""] <<=
         -0.5*degeneracy * (*Tabij)["abij"] * (*Vijab)["ijba"],
-      (*exchange)[""]
-        += -0.5*degeneracy * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"]
+      (*exchangeSingles)[""]
+        <<= -0.5*degeneracy * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"]
     )->execute();
     F D(direct->read());
     F X(exchange->read());
-    e = D+X;
+    F Ds(directSingles->read());
+    F Xs(exchangeSingles->read());
+    e = D+X+Ds+Xs;
     if (isFinalReport){
       OUT() << std::endl;
-      OUT() << methodName << " correlation energy:          "
-        << std::setprecision(10) << real(e) << std::endl;
-      if (energy->get("secondOrder")) {
-        OUT() << "2nd-order correlation energy:     " << std::setprecision(10)
+      if (methodName == "LambdaCcsdReference") {
+        OUT() << methodName << " pseudo energy (w/o singles): "
+              << std::setprecision(10) << real(D+X) << std::endl;
+      } else {
+        OUT() << methodName << " correlation energy:          "
+          << std::setprecision(10) << real(e) << std::endl;
+        if (energy->get("secondOrder")) {
+          OUT() << "2nd-order correlation energy:     " << std::setprecision(10)
           << energy->getValue<Real<>>("secondOrder") << std::endl;
+        }
       }
     }
     energy->setValue("correlation", real(e));

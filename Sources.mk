@@ -28,6 +28,7 @@ main/algorithms/coupledcluster/CoupledClusterMethod.cxx \
 main/algorithms/coupledcluster/Ccsd.cxx \
 main/algorithms/coupledcluster/CcsdReference.cxx \
 main/algorithms/coupledcluster/Drccd.cxx \
+main/algorithms/coupledcluster/LambdaCcsdReference.cxx \
 main/algorithms/PerturbativeCT.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/FiniteSizeCorrection.cxx \

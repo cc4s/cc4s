@@ -68,6 +68,18 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   const bool cT
      = arguments->getValue<int>("cT", 0) == 1;
 
+  const bool lambda = arguments->getValue<int>("lambda", 0) == 1;
+  const bool singles = arguments->getValue<int>("singles", 1) == 1;
+
+  Ptr<TensorSet<F,TE>> lAmplitudes
+    = (lambda) ? arguments->getPtr<TensorSet<F,TE>>("lambdaAmplitudes") : nullptr;
+  ASSERT_LOCATION(
+    !lambda || lAmplitudes, "Lambda Amplitudes required but not available",
+    arguments->sourceLocation
+  );
+  Ptr<TensorExpression<F,TE>> Zpphh = (lambda) ? lAmplitudes->get("pphh") : nullptr;
+  Ptr<TensorExpression<F,TE>> Zph   = (lambda) ? lAmplitudes->get("ph") : nullptr;
+
   auto eigenEnergies(
     arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
   );
@@ -86,34 +98,40 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   auto fromReal( [](Real<> x) { return F(x); } );
   auto inverse( [](F x) { return 1.0 / x; } );
 
-  Ptr<TensorSet<F,TE>> intermediates;
-
-
-  // deal with cT
-  if (cT) {
-    intermediates = ct::getPerturbativeCTReference<F, TE>(coulombIntegrals, amplitudes);
-    auto Jppph = intermediates->get("ppph");
-    auto Jhhhp = intermediates->get("hhhp");
-    COMPILE(
-      (*M)["abcijk"] <<=          (*Jppph)["bcdk"] * (*Tpphh)["adij"],
-      (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Jhhhp)["jklc"])
-                                * (*Tpphh)["abil"],
-      (*Z)["abcijk"] <<= (*M)["abcijk"],
-      (*Z)["abcijk"]  += (*M)["bacjik"],
-      (*Z)["abcijk"]  += (*M)["acbikj"],
-      (*Z)["abcijk"]  += (*M)["cbakji"],
-      (*Z)["abcijk"]  += (*M)["cabkij"],
-      (*Z)["abcijk"]  += (*M)["bcajki"],
-
-      (*M)["abcijk"] <<= (*Z)["abcijk"]
-    )->execute();
-  }
+  Ptr<TensorSet<F,TE>> intermediates
+    = (cT) ? ct::getPerturbativeCTReference<F, TE>(coulombIntegrals, amplitudes) : nullptr;
+  Ptr<TensorExpression<F,TE>> Jppph = (cT) ? intermediates->get("ppph") : nullptr;
+  Ptr<TensorExpression<F,TE>> Jhhhp = (cT) ? intermediates->get("hhhp") : nullptr;
 
 
   COMPILE(
+    (cT) ? (
+      (*M)["abcijk"] <<=          (*Jppph)["bcdk"] * (*Tpphh)["adij"],
+      (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Jhhhp)["jklc"])
+                                * (*Tpphh)["abil"]
+    ) : (
+      (*M)["abcijk"] <<=          (*Vppph)["bcdk"] * (*Tpphh)["adij"],
+      (*M)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Vhhhp)["jklc"])
+                                * (*Tpphh)["abil"]
+    ),
+    (*Z)["abcijk"] <<= (*M)["abcijk"],
+    (*Z)["abcijk"]  += (*M)["bacjik"],
+    (*Z)["abcijk"]  += (*M)["acbikj"],
+    (*Z)["abcijk"]  += (*M)["cbakji"],
+    (*Z)["abcijk"]  += (*M)["cabkij"],
+    (*Z)["abcijk"]  += (*M)["bcajki"],
 
-    (*T)["abcijk"]  <<=          (*Vppph)["bcdk"] * (*Tpphh)["adij"],
-    (*T)["abcijk"]   += (-1.0) * map<F>(conj<F>, (*Vhhhp)["jklc"]) * (*Tpphh)["abil"],
+    (*M)["abcijk"] <<= (*Z)["abcijk"]
+  )->execute();
+
+  COMPILE(
+    (lambda) ? (
+      (*T)["abcijk"] <<= (*Vppph)["bcdk"] * (*Zpphh)["adij"],
+      (*T)["abcijk"]  += (-1.0) * map<F>(conj<F>, (*Vhhhp)["jklc"]) * (*Zpphh)["abil"]
+    ) : (
+      (*T)["abcijk"]  <<=          (*Vppph)["bcdk"] * (*Tpphh)["adij"],
+      (*T)["abcijk"]   += (-1.0) * map<F>(conj<F>, (*Vhhhp)["jklc"]) * (*Tpphh)["abil"]
+    ),
     (*Z)["abcijk"]  <<= (*T)["abcijk"],
     (*Z)["abcijk"]   += (*T)["bacjik"],
     (*Z)["abcijk"]   += (*T)["acbikj"],
@@ -124,10 +142,19 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
     (*T)["abcijk"]  <<= (*Z)["abcijk"],
 
     (*S)["abcijk"]  <<= (*Z)["abcijk"],
-    (*S)["abcijk"]   += (*Tph)["ai"] * (*Vpphh)["bcjk"],
-    (*S)["abcijk"]   += (*Tph)["bj"] * (*Vpphh)["acik"],
-    (*S)["abcijk"]   += (*Tph)["ck"] * (*Vpphh)["abij"],
-
+    (singles) ? (
+      (lambda) ? (
+        (*S)["abcijk"]   += (*Zph)["ai"] * (*Vpphh)["bcjk"],
+        (*S)["abcijk"]   += (*Zph)["bj"] * (*Vpphh)["acik"],
+        (*S)["abcijk"]   += (*Zph)["ck"] * (*Vpphh)["abij"]
+      ) : (
+        (*S)["abcijk"]   += (*Tph)["ai"] * (*Vpphh)["bcjk"],
+        (*S)["abcijk"]   += (*Tph)["bj"] * (*Vpphh)["acik"],
+        (*S)["abcijk"]   += (*Tph)["ck"] * (*Vpphh)["abij"]
+      )
+    ) : (
+      Tcc<TE>::sequence()
+    ),
     (*Z)["abcijk"] <<= (4.0/3.0) * (*S)["abcijk"],
     (*Z)["abcijk"]  += (-2.0)    * (*S)["acbijk"],
     (*Z)["abcijk"]  += (2.0/3.0) * (*S)["bcaijk"],
@@ -185,19 +212,24 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
 
   F eTriples(E->read());
 
-  if (cT) {
-    double denominator = ct::getDenominator<F, TE>(amplitudes, T, S);
-    OUT() << "(cT) correlation energy: "
-          << std::setprecision(10) << std::setw(22)
-          << real(eTriples) << std::endl;
+  std::string methodName;
+  if (lambda  &&  cT && singles)  methodName = "(T-2)  correlation energy: ";
+  if (lambda  &&  cT && !singles) methodName = "[T-2]  correlation energy: ";
+  if (lambda  && !cT && singles)  methodName = "Λ(T) correlation energy: ";
+  if (lambda  && !cT && !singles) methodName = "Λ[T] correlation energy: ";
+  if (!lambda && !cT && singles)  methodName = "(T) correlation energy: ";
+  if (!lambda && !cT && !singles) methodName = "[T] correlation energy: ";
+  if (!lambda &&  cT && singles)  methodName = "(cT) correlation energy: ";
+  if (!lambda &&  cT && !singles) methodName = "[cT] correlation energy: ";
 
+  OUT() << methodName << std::setprecision(10) << std::setw(22)
+        << real(eTriples) << std::endl;
+
+  if (cT && !lambda && singles) {
+    double denominator = ct::getDenominator<F, TE>(amplitudes, T, S);
     OUT() << "CR-(T) correlation energy: "
           << std::setprecision(10) << std::setw(20)
           << real(eTriples) / denominator << std::endl;
-  } else {
-    OUT() << "(T) correlation energy: "
-          << std::setprecision(10) << std::setw(23)
-          << real(eTriples) << std::endl;
   }
 
   auto energy(New<MapNode>(SOURCE_LOCATION));
