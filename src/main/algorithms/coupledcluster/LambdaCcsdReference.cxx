@@ -47,6 +47,21 @@ Ptr<TensorSet<F,TE>> LambdaCcsdReference<F,TE>::getResiduum(
   auto tAmplitudes(
     this->arguments->template getPtr<TensorSet<F,TE>>("tAmplitudes")
   );
+
+  auto eigenEnergies(
+    this->arguments->template getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
+  );
+  auto epsh(eigenEnergies->get("h"));
+  auto epsp(eigenEnergies->get("p"));
+  auto Fepsh(Tcc<TE>::template tensor<F>(epsh->inspect()->getLens(), "Fepsh"));
+  auto Fepsp(Tcc<TE>::template tensor<F>(epsp->inspect()->getLens(), "Fepsp"));
+  // convert to type F (either complex or double)
+  auto fromReal( [](Real<> eps) {return F(eps);} );
+  COMPILE(
+    (*Fepsp)["a"] <<= map<F>(fromReal, (*epsp)["a"]),
+    (*Fepsh)["i"] <<= map<F>(fromReal, (*epsh)["i"])
+  )->execute();
+
   auto Tph( tAmplitudes->get("ph") );
   auto Tpphh( tAmplitudes->get("pphh") );
   Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
@@ -89,10 +104,10 @@ Ptr<TensorSet<F,TE>> LambdaCcsdReference<F,TE>::getResiduum(
     (*Rph)["ai"] <<= (0.0) * (*Tph)["ai"],
     (*Rpphh)["abij"] <<= (0.0) * (*Tpphh)["abij"],
     //(*Rph)["ai"] += (1.00) * f["ia"],
-    //(*Rph)["ai"] += (1.00) * (*Zph)["pi"] * f["pa"],
-    //(*Rph)["ai"] += (-1.00) * (*Zph)["aq"] * f["iq"],
-    //(*Rph)["ai"] += (2.00) * (*Zpphh)["apiq"] * f["pq"],
-    //(*Rph)["ai"] += (-1.00) * (*Zpphh)["paiq"] * f["pq"],
+    //(*Rph)["ai"] += (1.00) * (*Zph)["pi"] * f["pa"], - zero left
+    //(*Rph)["ai"] += (-1.00) * (*Zph)["aq"] * f["iq"], - zero left
+    //(*Rph)["ai"] += (2.00) * (*Zpphh)["apiq"] * f["pq"], - zero ia
+    //(*Rph)["ai"] += (-1.00) * (*Zpphh)["paiq"] * f["pq"], - zero ia
     (*Rph)["ai"] += (-1.00) * (*Zph)["ps"] * (*Vhphp)["ipsa"],
     (*Rph)["ai"] += (2.00) * (*Zph)["qs"] * (*Vhpph)["iqas"],
     (*Rph)["ai"] += (2.00) * (*Vhhpp)["ijab"] * (*Tph)["bj"],
@@ -101,12 +116,16 @@ Ptr<TensorSet<F,TE>> LambdaCcsdReference<F,TE>::getResiduum(
     (*Rph)["ai"] += (-1.00) * (*Zpphh)["qpis"] * (*Vhppp)["spqa"],
     (*Rph)["ai"] += (-2.00) * (*Zpphh)["apsr"] * (*Vhhph)["rips"],
     (*Rph)["ai"] += (1.00) * (*Zpphh)["pasr"] * (*Vhhph)["rips"],
-    //(*Rph)["ai"] += (-1.00) * (*Zph)["bi"] * f["ja"] * (*Tph)["bj"],
-    //(*Rph)["ai"] += (-1.00) * (*Zph)["aj"] * f["ib"] * (*Tph)["bj"],
-    //(*Rph)["ai"] += (2.00) * (*Zpphh)["apik"] * f["pc"] * (*Tph)["ck"],
-    //(*Rph)["ai"] += (-1.00) * (*Zpphh)["paik"] * f["pc"] * (*Tph)["ck"],
-    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["aciq"] * f["kq"] * (*Tph)["ck"],
-    //(*Rph)["ai"] += (1.00) * (*Zpphh)["caiq"] * f["kq"] * (*Tph)["ck"],
+    //(*Rph)["ai"] += (-1.00) * (*Zph)["bi"] * f["ja"] * (*Tph)["bj"], - zero ia
+    //(*Rph)["ai"] += (-1.00) * (*Zph)["aj"] * f["ib"] * (*Tph)["bj"], - zero ia
+    //(*Rph)["ai"] += (2.00) * (*Zpphh)["apik"] *  (*fpp)["pc"] * (*Tph)["ck"], // nonzero
+    (*Rph)["ai"] += (2.00) * (*Zpphh)["acik"] *  (*Fepsp)["c"] * (*Tph)["ck"], // nonzero
+    //(*Rph)["ai"] += (-1.00) * (*Zpphh)["paik"] * (*fpp)["pc"] * (*Tph)["ck"], // nonzero
+    (*Rph)["ai"] += (-1.00) * (*Zpphh)["caik"] * (*Fepsp)["c"] * (*Tph)["ck"], // nonzero
+    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["aciq"] * (*fhh)["kq"] * (*Tph)["ck"], // nonzero
+    (*Rph)["ai"] += (-2.00) * (*Zpphh)["acik"] * (*Fepsh)["k"] * (*Tph)["ck"], // nonzero
+    //(*Rph)["ai"] += (1.00) * (*Zpphh)["caiq"] *  (*fhh)["kq"] * (*Tph)["ck"], // - nonzero
+    (*Rph)["ai"] += (1.00) * (*Zpphh)["caik"] *  (*Fepsh)["k"] * (*Tph)["ck"], // - nonzero
     (*Rph)["ai"] += (2.00) * (*Zph)["pi"] * (*Vhppp)["jpba"] * (*Tph)["bj"],
     (*Rph)["ai"] += (-1.00) * (*Zph)["pi"] * (*Vhppp)["jpab"] * (*Tph)["bj"],
     (*Rph)["ai"] += (-1.00) * (*Zph)["pj"] * (*Vhppp)["ipba"] * (*Tph)["bj"],
@@ -115,14 +134,14 @@ Ptr<TensorSet<F,TE>> LambdaCcsdReference<F,TE>::getResiduum(
     (*Rph)["ai"] += (-2.00) * (*Zph)["as"] * (*Vhhph)["jibs"] * (*Tph)["bj"],
     (*Rph)["ai"] += (-2.00) * (*Zph)["bs"] * (*Vhhph)["ijas"] * (*Tph)["bj"],
     (*Rph)["ai"] += (1.00) * (*Zph)["bs"] * (*Vhhph)["jias"] * (*Tph)["bj"],
-    //(*Rph)["ai"] += (1.00) * (*Zpphh)["daik"] * f["lc"] * (*Tpphh)["cdkl"],
-    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["dcik"] * f["la"] * (*Tpphh)["cdkl"],
+    //(*Rph)["ai"] += (1.00) * (*Zpphh)["daik"] * f["lc"] * (*Tpphh)["cdkl"],  - zero ia
+    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["dcik"] * f["la"] * (*Tpphh)["cdkl"], - zero ia
     (*Rph)["ai"] += (-1.00) * (*Zpphh)["qpik"] * (*Vpppp)["pqac"] * (*Tph)["ck"],
     (*Rph)["ai"] += (2.00) * (*Zpphh)["qpik"] * (*Vpppp)["pqca"] * (*Tph)["ck"],
-    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["acil"] * f["kd"] * (*Tpphh)["cdkl"],
-    //(*Rph)["ai"] += (4.00) * (*Zpphh)["adil"] * f["kc"] * (*Tpphh)["cdkl"],
-    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["dail"] * f["kc"] * (*Tpphh)["cdkl"],
-    //(*Rph)["ai"] += (1.00) * (*Zpphh)["dcil"] * f["ka"] * (*Tpphh)["cdkl"],
+    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["acil"] * f["kd"] * (*Tpphh)["cdkl"], - zero ia
+    //(*Rph)["ai"] += (4.00) * (*Zpphh)["adil"] * f["kc"] * (*Tpphh)["cdkl"], - zero ia
+    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["dail"] * f["kc"] * (*Tpphh)["cdkl"], - zero ia
+    //(*Rph)["ai"] += (1.00) * (*Zpphh)["dcil"] * f["ka"] * (*Tpphh)["cdkl"], - zero ia
     (*Rph)["ai"] += (-2.00) * (*Zpphh)["apis"] * (*Vhphp)["kpsc"] * (*Tph)["ck"],
     (*Rph)["ai"] += (4.00) * (*Zpphh)["aqis"] * (*Vhpph)["kqcs"] * (*Tph)["ck"],
     (*Rph)["ai"] += (1.00) * (*Zpphh)["cpis"] * (*Vhphp)["kpsa"] * (*Tph)["ck"],
@@ -143,8 +162,8 @@ Ptr<TensorSet<F,TE>> LambdaCcsdReference<F,TE>::getResiduum(
     (*Rph)["ai"] += (-2.00) * (*Zpphh)["aqks"] * (*Vhpph)["iqcs"] * (*Tph)["ck"],
     (*Rph)["ai"] += (-2.00) * (*Zpphh)["paks"] * (*Vhphp)["ipsc"] * (*Tph)["ck"],
     (*Rph)["ai"] += (1.00) * (*Zpphh)["qaks"] * (*Vhpph)["iqcs"] * (*Tph)["ck"],
-    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["aclk"] * f["id"] * (*Tpphh)["cdkl"],
-    //(*Rph)["ai"] += (1.00) * (*Zpphh)["adlk"] * f["ic"] * (*Tpphh)["cdkl"],
+    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["aclk"] * f["id"] * (*Tpphh)["cdkl"], - zero ia
+    //(*Rph)["ai"] += (1.00) * (*Zpphh)["adlk"] * f["ic"] * (*Tpphh)["cdkl"], - zero ia
     (*Rph)["ai"] += (-1.00) * (*Zpphh)["acsr"] * (*Vhhhh)["ikrs"] * (*Tph)["ck"],
     (*Rph)["ai"] += (2.00) * (*Zpphh)["acsr"] * (*Vhhhh)["kirs"] * (*Tph)["ck"],
     (*Rph)["ai"] += (1.00) * (*Zpphh)["dpik"] * (*Vhppp)["lpca"] * (*Tpphh)["cdkl"],
@@ -183,8 +202,8 @@ Ptr<TensorSet<F,TE>> LambdaCcsdReference<F,TE>::getResiduum(
     (*Rph)["ai"] += (-4.00) * (*Zpphh)["dals"] * (*Vhhph)["kics"] * (*Tpphh)["cdkl"],
     (*Rph)["ai"] += (-4.00) * (*Zpphh)["dcls"] * (*Vhhph)["ikas"] * (*Tpphh)["cdkl"],
     (*Rph)["ai"] += (2.00) * (*Zpphh)["dcls"] * (*Vhhph)["kias"] * (*Tpphh)["cdkl"],
-    //(*Rph)["ai"] += (1.00) * (*Zpphh)["daik"] * f["lc"] * (*Tph)["ck"] * (*Tph)["dl"],
-    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["acil"] * f["kd"] * (*Tph)["ck"] * (*Tph)["dl"],
+    //(*Rph)["ai"] += (1.00) * (*Zpphh)["daik"] * f["lc"] * (*Tph)["ck"] * (*Tph)["dl"], - zero ia
+    //(*Rph)["ai"] += (-2.00) * (*Zpphh)["acil"] * f["kd"] * (*Tph)["ck"] * (*Tph)["dl"], - zero ia
     (*Rph)["ai"] += (-2.00) * (*Zph)["bi"] * (*Vhhpp)["jkac"] * (*Tph)["ck"] * (*Tph)["bj"],
     (*Rph)["ai"] += (1.00) * (*Zph)["bi"] * (*Vhhpp)["jkca"] * (*Tph)["ck"] * (*Tph)["bj"],
     (*Rph)["ai"] += (-2.00) * (*Zph)["aj"] * (*Vhhpp)["ikbc"] * (*Tph)["ck"] * (*Tph)["bj"],
@@ -272,13 +291,13 @@ Ptr<TensorSet<F,TE>> LambdaCcsdReference<F,TE>::getResiduum(
     (*Rph)["ai"] += (2.00) * (*Zpphh)["adkm"] * (*Vhhpp)["ilce"] * (*Tph)["dl"] * (*Tph)["em"] * (*Tph)["ck"],
     (*Rph)["ai"] += (-1.00) * (*Zpphh)["adkm"] * (*Vhhpp)["ilec"] * (*Tph)["dl"] * (*Tph)["em"] * (*Tph)["ck"],
     (*Rpphh)["abij"] += (1.00) * (*Vhhpp)["ijab"],
-    //(*Rpphh)["abij"] += (1.00) * (*Zph)["ai"] * f["jb"],
-    //(*Rpphh)["abij"] += (1.00) * (*Zph)["bj"] * f["ia"],
-    //(*Rpphh)["abij"] += (1.00) * (*Zpphh)["apij"] * f["pb"],
-    //(*Rpphh)["abij"] += (1.00) * (*Zpphh)["pbij"] * f["pa"],
-    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["abiq"] * f["jq"],
+    //(*Rpphh)["abij"] += (1.00) * (*Zph)["ai"] * f["jb"], zero - ia
+    //(*Rpphh)["abij"] += (1.00) * (*Zph)["bj"] * f["ia"], zero - ia
+    //(*Rpphh)["abij"] += (1.00) * (*Zpphh)["apij"] * f["pb"], zero - left
+    //(*Rpphh)["abij"] += (1.00) * (*Zpphh)["pbij"] * f["pa"], zero - left
+    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["abiq"] * f["jq"], zero - left
     (*Rpphh)["abij"] += (1.00) * (*Zph)["pi"] * (*Vhppp)["jpba"],
-    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["bajq"] * f["iq"],
+    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["bajq"] * f["iq"], zero - left
     (*Rpphh)["abij"] += (1.00) * (*Zph)["pj"] * (*Vhppp)["ipab"],
     (*Rpphh)["abij"] += (-1.00) * (*Zph)["as"] * (*Vhhph)["jibs"],
     (*Rpphh)["abij"] += (-1.00) * (*Zph)["bs"] * (*Vhhph)["ijas"],
@@ -292,13 +311,13 @@ Ptr<TensorSet<F,TE>> LambdaCcsdReference<F,TE>::getResiduum(
     (*Rpphh)["abij"] += (-1.00) * (*Zpphh)["pajs"] * (*Vhphp)["ipsb"],
     (*Rpphh)["abij"] += (-1.00) * (*Zpphh)["qbjs"] * (*Vhpph)["iqas"],
     (*Rpphh)["abij"] += (1.00) * (*Zpphh)["absr"] * (*Vhhhh)["jirs"],
-    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["acij"] * f["kb"] * (*Tph)["ck"],
-    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["cbij"] * f["ka"] * (*Tph)["ck"],
-    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["abik"] * f["jc"] * (*Tph)["ck"],
+    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["acij"] * f["kb"] * (*Tph)["ck"], zero - ia
+    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["cbij"] * f["ka"] * (*Tph)["ck"], zero - ia
+    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["abik"] * f["jc"] * (*Tph)["ck"], zero - ia
     (*Rpphh)["abij"] += (2.00) * (*Zph)["ai"] * (*Vhhpp)["jlbd"] * (*Tph)["dl"],
     (*Rpphh)["abij"] += (-1.00) * (*Zph)["ai"] * (*Vhhpp)["jldb"] * (*Tph)["dl"],
     (*Rpphh)["abij"] += (-1.00) * (*Zph)["di"] * (*Vhhpp)["jlba"] * (*Tph)["dl"],
-    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["bajk"] * f["ic"] * (*Tph)["ck"],
+    //(*Rpphh)["abij"] += (-1.00) * (*Zpphh)["bajk"] * f["ic"] * (*Tph)["ck"], zero - ia
     (*Rpphh)["abij"] += (2.00) * (*Zph)["bj"] * (*Vhhpp)["ilad"] * (*Tph)["dl"],
     (*Rpphh)["abij"] += (-1.00) * (*Zph)["bj"] * (*Vhhpp)["ilda"] * (*Tph)["dl"],
     (*Rpphh)["abij"] += (-1.00) * (*Zph)["dj"] * (*Vhhpp)["ilab"] * (*Tph)["dl"],
