@@ -34,6 +34,26 @@ namespace cc4s {
     ALGORITHM_REGISTRAR_DECLARATION(CcsdTTT)
 
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
+
+    template <typename F, typename TE>
+    void getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>>,
+                   Ptr<Tensor<F,TE>> Rppphhh,
+                   Ptr<Tensor<F,TE>> Xppphhh,
+                   std::string name);
+
+    template <typename F, typename TE>
+    void getAmplitudes(std::map<std::string, Ptr<TensorExpression<F,TE>>>,
+                       Ptr<Tensor<F,TE>> Rppphhh,
+                       Ptr<Tensor<F,TE>> Tppphhh);
+
+    template <typename F, typename TE>
+    void r3_VT3T2_b(std::map<std::string, Ptr<TensorExpression<F,TE>>> intermediates,
+                    Ptr<Tensor<F,TE>> Tph,
+                    Ptr<Tensor<F,TE>> Tpphh,
+                    Ptr<Tensor<F,TE>> Tppphhh,
+                    Ptr<Tensor<F,TE>> Xp3h3,
+                    Ptr<Tensor<F,TE>> Rppphhh);
+
   protected:
     template <typename F, typename TE>
     Ptr<MapNode> run(const Ptr<MapNode> &arguments);
