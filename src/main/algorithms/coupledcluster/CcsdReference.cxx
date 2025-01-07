@@ -52,6 +52,11 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
   );
   auto Vpphh(coulombIntegrals->get("pphh"));
 
+  bool distinguishable(
+    this->arguments->template getValue<bool>("distinguishable", false)
+  );
+
+
   auto onlyPpl(this->arguments->template getValue<size_t>("onlyPpl", 0) );
 
 
@@ -114,10 +119,13 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
     auto Xakci( Tcc<TE>::template tensor<F>("Xakci") );
     auto Xakic( Tcc<TE>::template tensor<F>("Xakic") );
     auto Xabcd( Tcc<TE>::template tensor<F>("Xabcd") );
+    auto Yabij( Tcc<TE>::template tensor<F>("Yabij") );
 
 //    OUT() << "Solving T2 Amplitude Equations" << std::endl;
 
     COMPILE(
+      (*Yabij)["abij"] <<= (*Tpphh)["abij"],
+      (*Yabij)["abij"]  += (2.0) * (*Tph)["ai"] * (*Tph)["bj"],
       // Build Kac
       (*Kac)["ac"] <<= (-2.0) * (*Vhhpp)["klcd"] * (*Tpphh)["adkl"],
       (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Tpphh)["adkl"],
@@ -125,7 +133,14 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
       (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Tph)["ak"] * (*Tph)["dl"],
 
       // Build Lac
-      (*Lac)["ac"] <<= (*Kac)["ac"],
+      (!distinguishable) ? (
+        (*Lac)["ac"] <<= (*Kac)["ac"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Lac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Yabij)["adkl"],
+        (*Lac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Yabij)["adkl"],
+        Tcc<TE>::sequence()
+      ),
       (*Lac)["ac"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tph)["dk"],
       (*Lac)["ac"] += (-1.0) * (*Vphpp)["akdc"] * (*Tph)["dk"],
 
@@ -136,7 +151,14 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
       (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Tph)["ci"] * (*Tph)["dl"],
 
       // Build Lki
-      (*Lki)["ki"] <<= (*Kki)["ki"],
+      (!distinguishable) ? (
+        (*Lki)["ki"] <<= (*Kki)["ki"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Lki)["ki"] <<=          (*Vpphh)["cdkl"] * (*Yabij)["cdil"],
+        (*Lki)["ki"]  += (-0.5) * (*Vpphh)["dckl"] * (*Yabij)["cdil"],
+        Tcc<TE>::sequence()
+      ),
       (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tph)["cl"],
       (*Lki)["ki"] += (-1.0) * (*Vhhph)["klci"] * (*Tph)["cl"],
 
@@ -159,7 +181,12 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
       (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkdc"] * (*Tpphh)["dail"],
       (*Xakic)["akic"] += (-1.0) * (*Vhhpp)["lkdc"] * (*Tph)["di"] * (*Tph)["al"],
       (*Xakic)["akic"] += ( 1.0) * (*Vhhpp)["lkdc"] * (*Tpphh)["adil"],
-      (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["adil"],
+      (!distinguishable) ? (
+        (*Xakic)["akic"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["adil"],
+        Tcc<TE>::sequence()
+      ) : (
+        Tcc<TE>::sequence()
+      ),
       (*Rpphh)["abij"] += ( 2.0) * (*Xakic)["akic"] * (*Tpphh)["cbkj"],
       (*Rpphh)["abij"] += (-1.0) * (*Xakic)["akic"] * (*Tpphh)["bckj"],
 
@@ -167,7 +194,12 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
       (*Xakci)["akci"] <<= (*Vphph)["akci"],
       (*Xakci)["akci"] += (-1.0) * (*Vhhph)["lkci"] * (*Tph)["al"],
       (*Xakci)["akci"] += ( 1.0) * (*Vphpp)["akcd"] * (*Tph)["di"],
-      (*Xakci)["akci"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["dail"],
+      (!distinguishable) ? (
+        (*Xakci)["akci"] += (-0.5) * (*Vhhpp)["lkcd"] * (*Tpphh)["dail"],
+        Tcc<TE>::sequence()
+      ) : (
+        Tcc<TE>::sequence()
+      ),
       (*Xakci)["akci"] += (-1.0) * (*Vhhpp)["lkcd"] * (*Tph)["di"] * (*Tph)["al"],
       (*Rpphh)["abij"] += (-1.0) * (*Xakci)["akci"] * (*Tpphh)["cbkj"],
       (*Rpphh)["abij"] += (-1.0) * (*Xakci)["bkci"] * (*Tpphh)["ackj"],
@@ -187,7 +219,12 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
       (*Xklij)["klij"] <<= (*Vhhhh)["klij"],
       (*Xklij)["klij"] += (*Vhhhp)["klic"] * (*Tph)["cj"],
       (*Xklij)["klij"] += (*Vhhph)["klcj"] * (*Tph)["ci"],
-      (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tpphh)["cdij"],
+      (!distinguishable) ? (
+        (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tpphh)["cdij"],
+        Tcc<TE>::sequence()
+      ) : (
+        Tcc<TE>::sequence()
+      ),
       (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tph)["ci"] * (*Tph)["dj"],
 
       // Contract Xklij with T2 Amplitudes

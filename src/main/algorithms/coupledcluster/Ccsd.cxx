@@ -87,6 +87,9 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
       )
     )
   );
+  bool distinguishable(
+    this->arguments->template getValue<bool>("distinguishable", false)
+  );
 
   auto coulombIntegrals(
     this->arguments->template getPtr<TensorSet<Real<>,TE>>("coulombIntegrals")
@@ -170,14 +173,34 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         // Build Kki
         (*Kki)["ki"] <<= ( 2.0) * (*Vpphh)["cdkl"] * (*Xabij)["cdil"],
         (*Kki)["ki"] +=  (-1.0) * (*Vpphh)["dckl"] * (*Xabij)["cdil"],
+        (distinguishable) ? (
+          (*Xakic)["aibj"] <<= (*Tpphh)["abij"],
+          (*Xakic)["aibj"]  += (2.0) * (*Tph)["ai"] * (*Tph)["bj"],
+          Tcc<TE>::sequence()
+        ) : (
+          Tcc<TE>::sequence()
+        ),
         // Build Lki
-        (*Lki)["ki"] <<= (*Kki)["ki"],
+        (!distinguishable) ? (
+          (*Lki)["ki"] <<= (*Kki)["ki"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Lki)["ki"] <<=          (*Vpphh)["cdkl"] * (*Xakic)["cidl"],
+          (*Lki)["ki"]  += (-0.5) * (*Vpphh)["dckl"] * (*Xakic)["cidl"],
+          Tcc<TE>::sequence()
+        ),
         //Build Kac
         (*Kac)["ac"] <<= (-2.0) * (*Vpphh)["cdkl"] * (*Xabij)["adkl"],
         (*Kac)["ac"]  += ( 1.0) * (*Vpphh)["dckl"] * (*Xabij)["adkl"],
         // Lac
-        (*Lac)["ac"] <<= (*Kac)["ac"],
-
+        (!distinguishable) ? (
+          (*Lac)["ac"] <<= (*Kac)["ac"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Lac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Xakic)["akdl"],
+          (*Lac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Xakic)["akdl"],
+          Tcc<TE>::sequence()
+        ),
         (*Lac)["ac"] +=
           ( 2.0) * (*realGammaGpp)["Gca"] * (*realGammaGph)["Gdk"] * (*Tph)["dk"],
         (*Lac)["ac"] +=
@@ -214,7 +237,12 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         (*Xabij)["abij"] += (*Tph)["ai"] * (*Tph)["bj"],
         (*Xakic)["akic"] <<= (-0.5) * (*Vpphh)["dclk"] * (*Xabij)["dail"],
         (*Xakic)["akic"] += ( 1.0) * (*Vpphh)["dclk"] * (*Tpphh)["adil"],
-        (*Xakic)["akic"] += (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["adil"],
+        (!distinguishable) ? (
+          (*Xakic)["akic"] += (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["adil"],
+          Tcc<TE>::sequence()
+        ) : (
+          Tcc<TE>::sequence()
+        ),
         // Add further dressing to dressed Vertex
         (*realDressedGammaGph)["Gai"] += (*realGammaGpp)["Gad"] * (*Tph)["di"],
         (*imagDressedGammaGph)["Gai"] += (*imagGammaGpp)["Gad"] * (*Tph)["di"],
@@ -231,11 +259,12 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
 
     {
       auto Xakci( Tcc<TE>::template tensor<Real<>>("Xakci") );
+      Real<> fac = (distinguishable) ? 0.0 : -0.5;
       COMPILE(
         ////////
         // Xakci
         ////////
-        (*Xakci)["akci"] <<= (-0.5) * (*Vpphh)["cdlk"] * (*Tpphh)["dail"],
+        (*Xakci)["akci"] <<= fac * (*Vpphh)["cdlk"] * (*Tpphh)["dail"],
         (*realDressedGammaGpp)["Gab"] <<= (*realGammaGpp)["Gab"],
         (*imagDressedGammaGpp)["Gab"] <<= (*imagGammaGpp)["Gab"],
         (*realDressedGammaGpp)["Gac"]  += (-1.0) * (*realGammaGph)["Gcl"] * (*Tph)["al"],
@@ -271,7 +300,11 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
       // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
       (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
       // Construct last term
-      (*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Xabij)["cdij"],
+      (!distinguishable) ? (
+        (*Xklij)["klij"] <<= (*Vpphh)["cdkl"] * (*Xabij)["cdij"]
+      ) : (
+        (*Xklij)["klij"] <<= (*Tph)["ci"] * (*Vpphh)["cdkl"] * (*Tph)["dj"]
+      ),
       (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]
     )->execute();
 
@@ -393,7 +426,14 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
   );
   auto Vpphh(coulombIntegrals->get("pphh"));
   bool ppl(this->arguments->template getValue<bool>("ppl", true));
+  bool distinguishable(
+    this->arguments->template getValue<bool>("distinguishable", false)
+  );
 
+  ASSERT_LOCATION(
+    distinguishable, "distinguishable not supported for complex amplitudes",
+    this->arguments->sourceLocation
+  );
   if (!amplitudes) {
     // no previous amplitudes given
     COMPILE(
@@ -459,7 +499,14 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
         (*Kac)["ac"] <<= (-2.0) * (*Vhhpp)["klcd"] * (*Xabij)["adkl"],
         (*Kac)["ac"] += ( 1.0) * (*Vhhpp)["kldc"] * (*Xabij)["adkl"],
         // Build Lac
-        (*Lac)["ac"] <<= (*Kac)["ac"],
+        (!distinguishable) ? (
+          (*Lac)["ac"] <<= (*Kac)["ac"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Lac)["ac"] <<= (-1.0) * (*Vhhpp)["klcd"] * (*Yabij)["adkl"],
+          (*Lac)["ac"]  += ( 0.5) * (*Vhhpp)["kldc"] * (*Yabij)["adkl"],
+          Tcc<TE>::sequence()
+        ),
         (*Lac)["ac"] +=  (2.0) * (*cTGammaGpp)["Gac"] * (*GammaGhp)["Gkd"] * (*Tph)["dk"],
         (*Lac)["ac"] += (-1.0) * (*cTGammaGpp)["Gad"] * (*GammaGhp)["Gkc"] * (*Tph)["dk"],
         // Build Kki
@@ -467,7 +514,14 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
         (*Kki)["ki"] += (-1.0) * (*Vhhpp)["kldc"] * (*Xabij)["cdil"],
 
         // Build Lki
-        (*Lki)["ki"] <<= (*Kki)["ki"],
+        (!distinguishable) ? (
+          (*Lki)["ki"] <<= (*Kki)["ki"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Lki)["ki"] <<= ( 1.0) * (*Vhhpp)["klcd"] * (*Yabij)["cdil"],
+          (*Lki)["ki"]  += (-0.5) * (*Vhhpp)["kldc"] * (*Yabij)["cdil"],
+          Tcc<TE>::sequence()
+        ),
         (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tph)["cl"],
         (*Lki)["ki"] += (-1.0) * (*Vhhhp)["lkic"] * (*Tph)["cl"],
 
@@ -531,7 +585,6 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
       // Contract Xklij with T2+T1*T1 Amplitudes via Xabij
       (*Rpphh)["abij"]  += (*Xklij)["klij"] * (*Xabij)["abkl"],
       // Construct last term
-      //TODO if (!distinguishable) {
       (*Xklij)["klij"] <<= (*Vhhpp)["klcd"] * (*Xabij)["cdij"],
       (ppl) ? (
         (*Rpphh)["abij"] +=  (*Xklij)["klij"] * (*Tpphh)["abkl"]

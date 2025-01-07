@@ -109,6 +109,9 @@ Ptr<MapNode> CoupledCluster::run() {
                       this->arguments->get("ccsdt-n")->sourceLocation);
     }
   }
+
+  bool distinguishable(arguments->getValue<bool>("distinguishable", false));
+  if (distinguishable) OUT() << "Distinguishable CCSD\n";
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
   auto mixerType(mixerArguments->getValue<std::string>("type", "DiisMixer"));
