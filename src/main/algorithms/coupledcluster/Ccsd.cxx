@@ -174,8 +174,8 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
         (*Kki)["ki"] <<= ( 2.0) * (*Vpphh)["cdkl"] * (*Xabij)["cdil"],
         (*Kki)["ki"] +=  (-1.0) * (*Vpphh)["dckl"] * (*Xabij)["cdil"],
         (distinguishable) ? (
-          (*Xakic)["aibj"] <<= (*Tpphh)["abij"],
-          (*Xakic)["aibj"]  += (2.0) * (*Tph)["ai"] * (*Tph)["bj"],
+          (*Xakic)["aijb"] <<= (*Tpphh)["abij"],
+          (*Xakic)["aijb"]  += (2.0) * (*Tph)["ai"] * (*Tph)["bj"],
           Tcc<TE>::sequence()
         ) : (
           Tcc<TE>::sequence()
@@ -185,8 +185,8 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
           (*Lki)["ki"] <<= (*Kki)["ki"],
           Tcc<TE>::sequence()
         ) : (
-          (*Lki)["ki"] <<=          (*Vpphh)["cdkl"] * (*Xakic)["cidl"],
-          (*Lki)["ki"]  += (-0.5) * (*Vpphh)["dckl"] * (*Xakic)["cidl"],
+          (*Lki)["ki"] <<=          (*Vpphh)["cdkl"] * (*Xakic)["cild"],
+          (*Lki)["ki"]  += (-0.5) * (*Vpphh)["dckl"] * (*Xakic)["cild"],
           Tcc<TE>::sequence()
         ),
         //Build Kac
@@ -197,8 +197,8 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
           (*Lac)["ac"] <<= (*Kac)["ac"],
           Tcc<TE>::sequence()
         ) : (
-          (*Lac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Xakic)["akdl"],
-          (*Lac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Xakic)["akdl"],
+          (*Lac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Xakic)["akld"],
+          (*Lac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Xakic)["akld"],
           Tcc<TE>::sequence()
         ),
         (*Lac)["ac"] +=

@@ -104,7 +104,7 @@ Ptr<MapNode> CoupledCluster::run() {
   auto ccsdtn(this->arguments->template getValue<string>("ccsdt-n", ""));
   if (methodName == "Ccsdt" && !ccsdtn.empty()) {
     OUT() << "Working with " << ccsdtn << " model\n";
-    if (! (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-3") ) {
+    if (! (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-3" || ccsdtn == "3CC") ) {
       ASSERT_LOCATION(0, "Unknown CCSDT model",
                       this->arguments->get("ccsdt-n")->sourceLocation);
     }

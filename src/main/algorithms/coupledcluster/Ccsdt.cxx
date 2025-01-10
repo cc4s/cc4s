@@ -276,6 +276,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
 
     ///////////////////////
     // NOGA PAPER EQUATIONS
+    // 3CC notation from JCP 151, 064102 (2019)
     ///////////////////////
     COMPILE(
       (ccsdtn == "ccsdt-nos") ? (
@@ -336,17 +337,17 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         Tcc<TE>::sequence()
       ),
 
-      (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-1x" || ccsdtn == "ccsdt-3" || ccsdtn == "ccsdt-3x") ? (
+      (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-1x" || ccsdtn == "ccsdt-3" || ccsdtn == "ccsdt-3x" || ccsdtn == "3CC") ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT3T2] | coupling in line L460
+        // 3CC: C2
         (*Xabie)["abie"]   += (-2.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfimn"],
         (*Xabie)["abie"]   += ( 1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfnmi"],
         (*Xabie)["abie"]   += ( 1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfinm"],
         Tcc<TE>::sequence()
       ),
 
-      // II.2
       // T3 <-- [VT2] || coupling in line L461
       (*Xamij)["amij"]  <<=          (*Vphhh)["amij"],
       (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-1x") ? (
@@ -354,13 +355,9 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       ) : (
         // T3 <-- [VT2T2] + [VT2T1] + [VT2T2T1] + [VT2T1T1] + [VT2T1T1T1[
         (*Xamij)["amij"]   +=          (*Fphpp)["amef"] * (*Xpphh)["efij"],
-        // ERRATUM
         (*Xamij)["amij"]   += ( 2.0) * (*Fphhh)["ejnm"] * (*Tpphh)["aein"],
-        // ERRATUM
         (*Xamij)["amij"]   += (-1.0) * (*Fphhh)["ejmn"] * (*Tpphh)["aein"],
-        // ERRATUM
         (*Xamij)["amij"]   += (-1.0) * (*Fphhh)["ejnm"] * (*Tpphh)["eain"],
-        // ERRATUM
         (*Xamij)["amij"]   += (-1.0) * (*Fphhh)["eimn"] * (*Tpphh)["eajn"],
         (*Xamij)["amij"]   +=          (*Fhpph)["ieam"] * (*Tph)["ej"],
         (*Xamij)["amij"]   +=          (*Fhphp)["jema"] * (*Tph)["ei"],
@@ -392,7 +389,14 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       // We dont need this term as we have 0 on the lhs
       //      (*Xae)["aa"]       += (*Fepsp)["a"],
       (*Xae)["ae"]       += (-1.0) * (*Vphpp)["amfe"] * (*Tph)["fm"],
-      (*Xae)["ae"]       += (-1.0) * (*Whhpp)["mnef"] * (*Xpphh)["afmn"],
+      // 3CC: T2 term of C1
+      (ccsdtn == "3CC") ? (
+        (*Xae)["ae"]   += (-1.0) * (*Whhpp)["mnef"] * (*Tph)["am"] * (*Tph)["fn"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xae)["ae"]   += (-1.0) * (*Whhpp)["mnef"] * (*Xpphh)["afmn"],
+        Tcc<TE>::sequence()
+      ),
 
       // II.5
       (*Xjkmn)["jkmn"]  <<=          (*Vhhhh)["jkmn"],
@@ -409,15 +413,29 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Xbcef)["bcef"]   += (-1.0) * (*Vhppp)["mcef"] * (*Tph)["bm"],
 
       // II.7
+      // 3CC: remove the T2T3 term D1
       (*Xamei)["amei"]  <<=          (*Vphph)["amei"],
-      (*Xamei)["amei"]   += (-1.0) * (*Vhhpp)["mnfe"] * (*Xpphh)["fain"],
+      (ccsdtn == "3CC") ? (
+        (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Tph)["fi"] * (*Tph)["an"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Xpphh)["fain"],
+        Tcc<TE>::sequence()
+      ),
       (*Xamei)["amei"]   += (-1.0) * (*Vhhph)["nmei"] * (*Tph)["an"],
       (*Xamei)["amei"]   +=          (*Vphpp)["amef"] * (*Tph)["fi"],
 
       // II.8
+      // 3CC: remove the T2T3 term D1
       (*Xamie)["amie"]  <<=          (*Vphhp)["amie"],
-      (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Tpphh)["afin"],
-      (*Xamie)["amie"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Xpphh)["fain"],
+      (ccsdtn == "3CC") ? (
+        (*Xamie)["amie"] += (-1.0) * (*Vhhpp)["mnef"] * (*Tph)["fi"] * (*Tph)["an"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Tpphh)["afin"],
+        (*Xamie)["amie"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Xpphh)["fain"],
+        Tcc<TE>::sequence()
+      ),
       (*Xamie)["amie"]   += (-1.0) * (*Vhhhp)["nmie"] * (*Tph)["an"],
       (*Xamie)["amie"]   +=          (*Vppph)["aefm"] * (*Tph)["fi"],
 
@@ -426,15 +444,19 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT3] + [VT3T2] + [VT3T1] + [VT3T1T1]
+        // 3CC: B1 and B2
         (*Xp3h3)["abcijk"]   <<=          (*Xjkmn)["jkmn"] * (*Tppphhh)["abcimn"],
         (*Xp3h3)["abcijk"]    +=          (*Xbcef)["bcef"] * (*Tppphhh)["aefijk"],
+        // 3CC: D1
         (*Xp3h3)["abcijk"]    += ( 2.0) * (*Xamie)["amie"] * (*Tppphhh)["ebcmjk"],
         (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamie)["amie"] * (*Tppphhh)["becmjk"],
         (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamie)["amie"] * (*Tppphhh)["cbemjk"],
         (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamei)["amei"] * (*Tppphhh)["ebcmjk"],
         (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamei)["bmei"] * (*Tppphhh)["aecmjk"],
         (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamei)["cmei"] * (*Tppphhh)["abemjk"],
+        // 3CC: C1
         (*Xp3h3)["abcijk"]    +=          (*Xae)["ae"]     * (*Tppphhh)["ebcijk"],
+        // 3CC: A1
         (*Xp3h3)["abcijk"]    += (-1.0) * (*Xim)["im"]     * (*Tppphhh)["abcmjk"],
 
         // Permute I.3 until I.10 through P(ia/jb, kc)

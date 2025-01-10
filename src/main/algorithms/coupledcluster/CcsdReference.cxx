@@ -223,6 +223,7 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
         (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tpphh)["cdij"],
         Tcc<TE>::sequence()
       ) : (
+        (*Rpphh)["abij"] += (*Vhhpp)["klcd"] * (*Tpphh)["cdij"] * (*Tph)["ak"] * (*Tph)["bl"],
         Tcc<TE>::sequence()
       ),
       (*Xklij)["klij"] += (*Vhhpp)["klcd"] * (*Tph)["ci"] * (*Tph)["dj"],
