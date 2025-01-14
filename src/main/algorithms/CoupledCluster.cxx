@@ -165,9 +165,31 @@ Ptr<MapNode> CoupledCluster::run() {
         if (amplitudes) {
           *amplitudesChange -= *amplitudes;
         }
-        mixer->append(residuum, amplitudesChange);
+
+        bool ccsdt_ccsd_submixing_p = false;
+        Ptr<TensorSet<F, TE>>
+          ccsd_residuum,
+          ccsd_amplitudesChange,
+          ccsd_amplitudes;
+        if (ccsdt_ccsd_submixing_p) {
+          ccsd_residuum->get("ph") = residuum->get("ph");
+          ccsd_residuum->get("pphh") = residuum->get("pphh");
+          ccsd_amplitudesChange->get("ph") = amplitudesChange->get("ph");
+          ccsd_amplitudesChange->get("pphh") = amplitudesChange->get("pphh");
+        } else {
+          ccsd_residuum = residuum;
+          ccsd_amplitudesChange = amplitudesChange;
+        }
+        mixer->append(ccsd_residuum, ccsd_amplitudesChange);
         // get mixer's best guess for amplitudes
-        amplitudes = mixer->get();
+        ccsd_amplitudes = mixer->get();
+        if (ccsdt_ccsd_submixing_p) {
+          amplitudes->get("ph") = ccsd_amplitudes->get("ph");
+          amplitudes->get("pphh") = ccsd_amplitudes->get("pphh");
+          amplitudes->get("ppphhh") = residuum->get("ppphhh");
+        } else {
+          amplitudes = ccsd_amplitudes;
+        }
         residuumNorm = mixer->getResiduumNorm();
       }
       e = getEnergy(amplitudes);
