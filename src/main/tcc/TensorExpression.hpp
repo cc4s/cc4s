@@ -77,6 +77,16 @@ namespace cc4s {
       );
     }
 
+    virtual void sum(
+      F a, const std::string &aIdx, const std::string &bIdx,
+      const std::function<F(const F)> &f) {
+      throw New<Exception>(
+          "Only Tensor are supported for sum",
+          SOURCE_LOCATION
+      );
+    }
+
+
     /**
      * \brief Specify named indices of this tensor to be used in a
      * tensor expression. Indexed tensors are atomic types of tensor

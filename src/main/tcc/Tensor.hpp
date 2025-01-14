@@ -519,9 +519,9 @@ namespace cc4s {
       getMachineTensor()->writeFromFile(file, offset);
     }
 
-    void sum(
+    void sum (
       F a, const std::string &aIdx, const std::string &bIdx,
-      const std::function<F(const F)> &f) {
+      const std::function<F(const F)> &f) override {
       getMachineTensor()->sum(a, getMachineTensor(), aIdx, F(0.0), bIdx, f);
     }
 
