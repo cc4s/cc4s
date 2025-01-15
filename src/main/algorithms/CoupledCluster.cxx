@@ -16,6 +16,7 @@
 #include <algorithms/CoupledCluster.hpp>
 #include <algorithms/coupledcluster/CoupledClusterMethod.hpp>
 #include <mixers/Mixer.hpp>
+#include <mixers/DiisMixer.hpp>
 #include <MathFunctions.hpp>
 #include <SharedPointer.hpp>
 #include <Log.hpp>
@@ -141,6 +142,7 @@ Ptr<MapNode> CoupledCluster::run() {
   OUT() << "Unless reaching energy convergence dE: " << energyConvergence << endl;
   OUT() << "and amplitudes convergence dR: " << amplitudesConvergence << endl;
   F e(0), previousE(0);
+
   Real<> residuumNorm;
   OUT()
     << "Iter         Energy         dE           dR         time   GF/s/core"
@@ -166,29 +168,33 @@ Ptr<MapNode> CoupledCluster::run() {
           *amplitudesChange -= *amplitudes;
         }
 
-        bool ccsdt_ccsd_submixing_p = false;
-        Ptr<TensorSet<F, TE>>
-          ccsd_residuum,
-          ccsd_amplitudesChange,
-          ccsd_amplitudes;
-        if (ccsdt_ccsd_submixing_p) {
+        // TODO: this is only valid for DiisMixer, clean up
+        using _Diis = DiisMixer<F,TE>;
+        _Diis *diis;
+        if (mixerType == "DiisMixer") diis = static_cast<_Diis*>(mixer.get());
+
+        bool t3_p = false;
+        for (auto key: residuum->getKeys()) if (key == "ppphhh") t3_p = true;
+        if (mixerType == "DiisMixer" && t3_p && !diis->t3Mixing) {
+
+          Ptr<TensorSet<F, TE>>
+            ccsd_residuum = New<TensorSet<F, TE>>(),
+            ccsd_amplitudesChange = New<TensorSet<F, TE>>(),
+            ccsd_amplitudes = New<TensorSet<F, TE>>();
+          if (!amplitudes) amplitudes = New<TensorSet<F, TE>>();
           ccsd_residuum->get("ph") = residuum->get("ph");
           ccsd_residuum->get("pphh") = residuum->get("pphh");
           ccsd_amplitudesChange->get("ph") = amplitudesChange->get("ph");
           ccsd_amplitudesChange->get("pphh") = amplitudesChange->get("pphh");
-        } else {
-          ccsd_residuum = residuum;
-          ccsd_amplitudesChange = amplitudesChange;
-        }
-        mixer->append(ccsd_residuum, ccsd_amplitudesChange);
-        // get mixer's best guess for amplitudes
-        ccsd_amplitudes = mixer->get();
-        if (ccsdt_ccsd_submixing_p) {
+
+          mixer->append(ccsd_residuum, ccsd_amplitudesChange);
+          ccsd_amplitudes = mixer->get();
           amplitudes->get("ph") = ccsd_amplitudes->get("ph");
           amplitudes->get("pphh") = ccsd_amplitudes->get("pphh");
           amplitudes->get("ppphhh") = residuum->get("ppphhh");
         } else {
-          amplitudes = ccsd_amplitudes;
+          mixer->append(residuum, amplitudesChange);
+          amplitudes = mixer->get();
         }
         residuumNorm = mixer->getResiduumNorm();
       }

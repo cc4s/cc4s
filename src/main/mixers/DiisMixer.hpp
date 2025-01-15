@@ -63,7 +63,7 @@ namespace cc4s {
     Real<64> residuumNorm;
     std::vector<Real<64>> inverse(std::vector<Real<64>> matrix, size_t N);
     std::vector<Complex<64>> inverse(std::vector<Complex<64>> matrix, size_t N);
-
+    bool t3Mixing;
   };
 }
 
