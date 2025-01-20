@@ -36,9 +36,9 @@ namespace cc4s {
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
 
     template <typename F, typename TE>
-    void getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>>,
-                   Ptr<Tensor<F,TE>> Rppphhh,
-                   std::string name);
+    std::vector<Real<>> getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>>,
+                                  Ptr<Tensor<F,TE>> Rppphhh,
+                                  std::string name);
 
     template <typename F, typename TE>
     void getAmplitudes(std::map<std::string, Ptr<TensorExpression<F,TE>>>,
@@ -58,7 +58,8 @@ namespace cc4s {
                     Ptr<Tensor<F,TE>> Tph,
                     Ptr<Tensor<F,TE>> Tpphh,
                     Ptr<Tensor<F,TE>> Tppphhh,
-                    Ptr<Tensor<F,TE>> Rppphhh);
+                    Ptr<Tensor<F,TE>> Rppphhh,
+                    std::string &t3mode);
 
     template <typename F, typename TE>
     void r3_VT2T1(std::map<std::string, Ptr<TensorExpression<F,TE>>> intermediates,

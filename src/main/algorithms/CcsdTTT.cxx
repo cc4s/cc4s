@@ -121,10 +121,12 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
 
   //t3-mode: plain, ring, ct-full
   //t3t3-mode: plain, dressed
-  auto t3mode( arguments->template getValue<std::string>("t3mode", "dressed"));
+
+  // t3t3mode: "3CC-C2" "3CC-C1" "3CC-D1" "3CC-T2"
+//  auto t3mode( arguments->template getValue<std::string>("t3mode", "dressed"));
   auto t3t3mode( arguments->template getValue<std::string>("t3t3mode", "dressed"));
   bool singles = arguments->template getValue<int>("singles", 1) == 1;
-  OUT() << "T3-mode: " << t3mode << std::endl;
+//  OUT() << "T3-mode: " << t3mode << std::endl;
   OUT() << "T3T3-mode: " << t3t3mode << std::endl;
   OUT() << "Singles: " << singles << std::endl;
 
@@ -258,68 +260,68 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
   intermediates["Vpphp"] = Vpphp;
 
 
-  r3_VT2T1(intermediates, Tph, Tpphh, Rppphhh, t3mode);
+  r3_VT2T1(intermediates, Tph, Tpphh, Rppphhh, t3t3mode);
 
   /* (cT) (T-2) energy contributions */
-  getEnergy(intermediates, Rppphhh, "T3-abdghj");
+  auto Et2 = getEnergy(intermediates, Rppphhh, "T3-abdghj");
   /* get the first order t3 amplitudes */
   getAmplitudes(intermediates, Rppphhh, Tppphhh);
 
-  //This is the 2nd order T1 and T2 amplitude for (T-4)(relax) II
-  COMPILE(
-    // Pure T3->R2
-    (*T2pphh)["abij"] <<=          (*Wphpp)["akcd"] * (*Tppphhh)["cbdijk"],
-    (*T2pphh)["abij"]  += (-1.0) * (*Vphpp)["akcd"] * (*Tppphhh)["cdbijk"],
-    (*T2pphh)["abij"]  += (-1.0) * (*Whhhp)["klic"] * (*Tppphhh)["abckjl"],
-    (*T2pphh)["abij"]  +=          (*Vhhhp)["klic"] * (*Tppphhh)["acbkjl"],
-    (*T2pphh)["abij"]  +=          (*Whhpp)["klcd"] * (*Tppphhh)["abcijk"] * (*Tph)["dl"],
-    (*T2pphh)["abij"]  += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbijk"] * (*Tph)["dl"],
-    (*T2pphh)["abij"]  += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbikl"] * (*Tph)["dj"],
-    (*T2pphh)["abij"]  +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cabikl"] * (*Tph)["dj"],
-    (*T2pphh)["abij"]  += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["adcijk"] * (*Tph)["bl"],
-    (*T2pphh)["abij"]  +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cdaijk"] * (*Tph)["bl"],
-    (*T2pphh)["abij"]  += (*T2pphh)["baji"],
-    (*T2ph)["ai"]     <<= (-2.0) * (*Vhhpp)["jkbc"] * (*Tppphhh)["bacjki"],
-    (*T2ph)["ai"]      += (+2.0) * (*Vhhpp)["jkbc"] * (*Tppphhh)["bcajki"],
-    (*T2ph)["ai"]      += (+1.0) * (*Vhhpp)["jkcb"] * (*Tppphhh)["bacjki"],
-    (*T2ph)["ai"]      += (-1.0) * (*Vhhpp)["jkcb"] * (*Tppphhh)["bcajki"],
-    (*Dpphh)["abij"]  <<= (0.0) * (*Tpphh)["abij"],
-    (*Dpphh)["abij"]   += (*Fepsp)["a"],
-    (*Dpphh)["abij"]   += (*Fepsp)["b"],
-    (*Dpphh)["abij"]   -= (*Fepsh)["i"],
-    (*Dpphh)["abij"]   -= (*Fepsh)["j"],
-    (*Dph)["ai"]  <<= (0.0) * (*Tph)["ai"],
-    (*Dph)["ai"]   += (*Fepsp)["a"],
-    (*Dph)["ai"]   -= (*Fepsh)["i"]
-  )->execute();
-  Dpphh->sum(F(1.0), "abij", "abij", [] (F delta) { return F(-1) / delta; });
-  Dph->sum(F(1.0), "ai", "ai", [] (F delta) { return F(-1) / delta; });
-  COMPILE(
-    (*T2pphh)["abij"] <<= (*T2pphh)["abij"] * (*Dpphh)["abij"],
-    (*T2ph)["ai"] <<= (*T2ph)["ai"] * (*Dph)["ai"]
-  )->execute();
-
-  r3_VT2T1(intermediates, Tph, T2pphh, Rppphhh, t3mode);
-  /* (cT) (T-2) energy contributions */
-  getEnergy(intermediates, Rppphhh, "watT4-abdghj");
-
-  auto E4a( Tcc<TE>::template tensor<F>("E") );
-  auto R4a( Tcc<TE>::template tensor<F>("E") );
-
-  // THIS IS THE T-4 story
-  COMPILE(
-    (*R4a)["abij"] <<=         (*Whhpp)["klcd"] * (*Tppphhh)["abcijk"] * (*T2ph)["dl"],
-    (*R4a)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbijk"] * (*T2ph)["dl"],
-    (*R4a)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbikl"] * (*T2ph)["dj"],
-    (*R4a)["abij"] +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cabikl"] * (*T2ph)["dj"],
-    (*R4a)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["adcijk"] * (*T2ph)["bl"],
-    (*R4a)["abij"] +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cdaijk"] * (*T2ph)["bl"],
-    (*R4a)["abij"] += (*R4a)["baji"],
-
-    (*E4a)[""] <<= 2.0 * (*R4a)["abij"] * (*Zpphh)["abij"],
-    (*E4a)[""]  -= 1.0 * (*R4a)["abij"] * (*Zpphh)["baij"]
-  )->execute();
-  OUT() << "This is a wild guess for T4 singles term: " << real(E4a->read()) << std::endl;
+//  //This is the 2nd order T1 and T2 amplitude for (T-4)(relax) II
+//  COMPILE(
+//    // Pure T3->R2
+//    (*T2pphh)["abij"] <<=          (*Wphpp)["akcd"] * (*Tppphhh)["cbdijk"],
+//    (*T2pphh)["abij"]  += (-1.0) * (*Vphpp)["akcd"] * (*Tppphhh)["cdbijk"],
+//    (*T2pphh)["abij"]  += (-1.0) * (*Whhhp)["klic"] * (*Tppphhh)["abckjl"],
+//    (*T2pphh)["abij"]  +=          (*Vhhhp)["klic"] * (*Tppphhh)["acbkjl"],
+//    (*T2pphh)["abij"]  +=          (*Whhpp)["klcd"] * (*Tppphhh)["abcijk"] * (*Tph)["dl"],
+//    (*T2pphh)["abij"]  += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbijk"] * (*Tph)["dl"],
+//    (*T2pphh)["abij"]  += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbikl"] * (*Tph)["dj"],
+//    (*T2pphh)["abij"]  +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cabikl"] * (*Tph)["dj"],
+//    (*T2pphh)["abij"]  += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["adcijk"] * (*Tph)["bl"],
+//    (*T2pphh)["abij"]  +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cdaijk"] * (*Tph)["bl"],
+//    (*T2pphh)["abij"]  += (*T2pphh)["baji"],
+//    (*T2ph)["ai"]     <<= (-2.0) * (*Vhhpp)["jkbc"] * (*Tppphhh)["bacjki"],
+//    (*T2ph)["ai"]      += (+2.0) * (*Vhhpp)["jkbc"] * (*Tppphhh)["bcajki"],
+//    (*T2ph)["ai"]      += (+1.0) * (*Vhhpp)["jkcb"] * (*Tppphhh)["bacjki"],
+//    (*T2ph)["ai"]      += (-1.0) * (*Vhhpp)["jkcb"] * (*Tppphhh)["bcajki"],
+//    (*Dpphh)["abij"]  <<= (0.0) * (*Tpphh)["abij"],
+//    (*Dpphh)["abij"]   += (*Fepsp)["a"],
+//    (*Dpphh)["abij"]   += (*Fepsp)["b"],
+//    (*Dpphh)["abij"]   -= (*Fepsh)["i"],
+//    (*Dpphh)["abij"]   -= (*Fepsh)["j"],
+//    (*Dph)["ai"]  <<= (0.0) * (*Tph)["ai"],
+//    (*Dph)["ai"]   += (*Fepsp)["a"],
+//    (*Dph)["ai"]   -= (*Fepsh)["i"]
+//  )->execute();
+//  Dpphh->sum(F(1.0), "abij", "abij", [] (F delta) { return F(-1) / delta; });
+//  Dph->sum(F(1.0), "ai", "ai", [] (F delta) { return F(-1) / delta; });
+//  COMPILE(
+//    (*T2pphh)["abij"] <<= (*T2pphh)["abij"] * (*Dpphh)["abij"],
+//    (*T2ph)["ai"] <<= (*T2ph)["ai"] * (*Dph)["ai"]
+//  )->execute();
+//
+//  r3_VT2T1(intermediates, Tph, T2pphh, Rppphhh, t3mode);
+//  /* (cT) (T-2) energy contributions */
+//  getEnergy(intermediates, Rppphhh, "watT4-abdghj");
+//
+//  auto E4a( Tcc<TE>::template tensor<F>("E") );
+//  auto R4a( Tcc<TE>::template tensor<F>("E") );
+//
+//  // THIS IS THE T-4 story
+//  COMPILE(
+//    (*R4a)["abij"] <<=         (*Whhpp)["klcd"] * (*Tppphhh)["abcijk"] * (*T2ph)["dl"],
+//    (*R4a)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbijk"] * (*T2ph)["dl"],
+//    (*R4a)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["acbikl"] * (*T2ph)["dj"],
+//    (*R4a)["abij"] +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cabikl"] * (*T2ph)["dj"],
+//    (*R4a)["abij"] += (-1.0) * (*Whhpp)["klcd"] * (*Tppphhh)["adcijk"] * (*T2ph)["bl"],
+//    (*R4a)["abij"] +=          (*Vhhpp)["klcd"] * (*Tppphhh)["cdaijk"] * (*T2ph)["bl"],
+//    (*R4a)["abij"] += (*R4a)["baji"],
+//
+//    (*E4a)[""] <<= 2.0 * (*R4a)["abij"] * (*Zpphh)["abij"],
+//    (*E4a)[""]  -= 1.0 * (*R4a)["abij"] * (*Zpphh)["baij"]
+//  )->execute();
+//  OUT() << "This is a wild guess for T4 singles term: " << real(E4a->read()) << std::endl;
 
   /* R3 <--- [VT3T2] contributions. T5afg */
   r3_VT3T1_a(intermediates, Tph, Tpphh, Tppphhh, Rppphhh, t3t3mode);
@@ -329,26 +331,42 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
     (*Ippphhh)["abcijk"] <<= (*Rppphhh)["abcijk"]
   )->execute();
   /* T3T3 coupling or (T-3) contributions */
-  getEnergy(intermediates, Rppphhh, "T3-cfi");
+  auto Et3a = getEnergy(intermediates, Rppphhh, "T3-cfi");
 
   /* R3 <--- [VT3T2] contributions. T5b-T5e */
-  r3_VT3T2_b(intermediates, Tph, Tpphh, Tppphhh, Rppphhh);
+  r3_VT3T2_b(intermediates, Tph, Tpphh, Tppphhh, Rppphhh, t3t3mode);
 
   // prepare for T4 (trip)
   COMPILE(
     (*Ippphhh)["abcijk"] += (*Rppphhh)["abcijk"]
   )->execute();
   /* T3T3 coupling or (T-3) contributions */
-  getEnergy(intermediates, Rppphhh, "T3-e");
+  auto Et3b = getEnergy(intermediates, Rppphhh, "T3-e");
+
+  std::streamsize ss(std::cout.precision());
+  OUT() << std::setprecision(10);
+  if (t3t3mode == "3CC") {
+    OUT() << "3CC-non-iterative correlation energy: " << Et2[0] + Et3a[0] + Et3b[0] << '\n';
+    OUT() << "3CCλ-non-iterative correlation energy: " << Et2[1] + Et3a[1] + Et3b[1] << '\n';
+  } else if (t3t3mode == "3CC-C1" || t3t3mode == "3CC-C2" || t3t3mode == "3CC-D1" || t3t3mode == "3CC-T2") {
+    OUT() << t3t3mode << " correlation energy: " << Et2[0] + Et3a[0] + Et3b[0] << '\n';
+  } else {
+    OUT() << "(T-2)_T correlation energy: " << Et2[0] << '\n';
+    OUT() << "(T-3)_T correlation energy: " << Et2[0] + Et3a[0] + Et3b[0] << '\n';
+
+    OUT() << "(T-2)_λ correlation energy: " << Et2[1] << '\n';
+    OUT() << "(T-3)_λ correlation energy: " << Et2[1] + Et3a[1] + Et3b[1] << '\n';
+  }
+  OUT() << std::setprecision(ss) << defaultfloat;
 
   // T3[2]
-  getAmplitudes(intermediates, Ippphhh, Tppphhh);
-
-  r3_VT3T1_a(intermediates, Tph, Tpphh, Tppphhh, Rppphhh, t3t3mode);
-  getEnergy(intermediates, Rppphhh, "T4-cfi");
-
-  r3_VT3T2_b(intermediates, Tph, Tpphh, Tppphhh, Rppphhh);
-  getEnergy(intermediates, Rppphhh, "T4-e");
+//  getAmplitudes(intermediates, Ippphhh, Tppphhh);
+//
+//  r3_VT3T1_a(intermediates, Tph, Tpphh, Tppphhh, Rppphhh, t3t3mode);
+//  getEnergy(intermediates, Rppphhh, "T4-cfi");
+//
+//  r3_VT3T2_b(intermediates, Tph, Tpphh, Tppphhh, Rppphhh, t3t3mode);
+//  getEnergy(intermediates, Rppphhh, "T4-e");
 
 
   auto result(New<MapNode>(SOURCE_LOCATION));
@@ -361,16 +379,28 @@ Ptr<MapNode> CcsdTTT::run(const Ptr<MapNode> &arguments) {
 
 
 template <typename F, typename TE>
-void CcsdTTT::getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
-                        Ptr<Tensor<F,TE>> Rppphhh,
-                        std::string name) {
+std::vector<Real<>> CcsdTTT::getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
+                                       Ptr<Tensor<F,TE>> Rppphhh,
+                                       std::string name) {
 
+  double _tenergy(0.0), _lenergy(0.0);
+  auto Dph( Tcc<TE>::template tensor<F>("Dph") );
+  auto Dpphh( Tcc<TE>::template tensor<F>("Dpphh") );
   auto Xpphh( Tcc<TE>::template tensor<F>("Xpphh") );
   auto Xph( Tcc<TE>::template tensor<F>("Xph") );
   auto tenergy( Tcc<TE>::template tensor<F>("Et") );
   auto lenergy( Tcc<TE>::template tensor<F>("El") );
+  auto venergy( Tcc<TE>::template tensor<F>("Ev") );
 
   COMPILE(
+    (*Dph)["ai"] <<= 0.0 * (*ints["Tpphh"])["aaii"],
+    (*Dpphh)["abij"] <<= 0.0 * (*ints["Tpphh"])["abij"],
+    (*Dph)["ai"]  += (*ints["Fepsp"])["a"],
+    (*Dph)["ai"]  -= (*ints["Fepsh"])["i"],
+    (*Dpphh)["abij"]  += (*ints["Fepsp"])["a"],
+    (*Dpphh)["abij"]  += (*ints["Fepsp"])["b"],
+    (*Dpphh)["abij"]  -= (*ints["Fepsh"])["i"],
+    (*Dpphh)["abij"]  -= (*ints["Fepsh"])["j"],
     (*ints["Xp3h3"])["abcijk"] <<= (*ints["Fepsp"])["a"],
     (*ints["Xp3h3"])["abcijk"]  += (*ints["Fepsp"])["b"],
     (*ints["Xp3h3"])["abcijk"]  += (*ints["Fepsp"])["c"],
@@ -379,6 +409,8 @@ void CcsdTTT::getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
     (*ints["Xp3h3"])["abcijk"]  -= (*ints["Fepsh"])["k"]
   )->execute();
   ints["Xp3h3"]->sum(F(1.0), "abcijk", "abcijk", [] (F delta) { return F(-1) / delta; });
+  Dpphh->sum(F(1.0), "abij", "abij", [](F delta) { return F(-1) / delta; });
+  Dph->sum(F(1.0), "ai", "ai", [](F delta) { return F(-1) / delta; });
   COMPILE(
     (*ints["Xp3h3"])["abcijk"] <<= (*Rppphhh)["abcijk"] * (*ints["Xp3h3"])["abcijk"]
   )->execute();
@@ -395,11 +427,18 @@ void CcsdTTT::getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
     (*tenergy)[""] <<=  2.0 * (*Xpphh)["abij"] * (*ints["Tpphh"])["abij"],
     (*tenergy)[""]  += -1.0 * (*Xpphh)["abij"] * (*ints["Tpphh"])["baij"],
     (*lenergy)[""] <<=  2.0 * (*Xpphh)["abij"] * (*ints["Zpphh"])["abij"],
-    (*lenergy)[""]  += -1.0 * (*Xpphh)["abij"] * (*ints["Zpphh"])["baij"]
+    (*lenergy)[""]  += -1.0 * (*Xpphh)["abij"] * (*ints["Zpphh"])["baij"],
+    (*venergy)[""] <<=  2.0 * (*Xpphh)["abij"] * (*ints["Vpphh"])["abij"] * (*Dpphh)["abij"],
+    (*venergy)[""]  += -1.0 * (*Xpphh)["abij"] * (*ints["Vpphh"])["baij"] * (*Dpphh)["abij"]
   )->execute();
 
-  OUT() << name << "-T2a (T2/L2): " << real(tenergy->read()) << " " << real(lenergy->read()) << std::endl;
-
+  _tenergy += real(tenergy->read());
+  _lenergy += real(lenergy->read());
+  if (0) {
+  OUT() << name << "-T2a (T2/L2/V2): "
+        << real(tenergy->read()) << " " << real(lenergy->read()) << " " << real(venergy->read())
+        << std::endl;
+  }
   COMPILE(
     // T1+T3 -> R2
     (*Xpphh)["abij"] <<=         (*ints["Whhpp"])["klcd"] * (*ints["Xp3h3"])["abcijk"] * (*ints["Tph"])["dl"],
@@ -412,10 +451,18 @@ void CcsdTTT::getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
     (*tenergy)[""] <<=  2.0 * (*Xpphh)["abij"] * (*ints["Tpphh"])["abij"],
     (*tenergy)[""]  += -1.0 * (*Xpphh)["abij"] * (*ints["Tpphh"])["baij"],
     (*lenergy)[""] <<=  2.0 * (*Xpphh)["abij"] * (*ints["Zpphh"])["abij"],
-    (*lenergy)[""]  += -1.0 * (*Xpphh)["abij"] * (*ints["Zpphh"])["baij"]
+    (*lenergy)[""]  += -1.0 * (*Xpphh)["abij"] * (*ints["Zpphh"])["baij"],
+    (*venergy)[""] <<=  2.0 * (*Xpphh)["abij"] * (*ints["Vpphh"])["abij"] * (*Dpphh)["abij"],
+    (*venergy)[""]  += -1.0 * (*Xpphh)["abij"] * (*ints["Vpphh"])["baij"] * (*Dpphh)["abij"]
   )->execute();
 
-  OUT() << name << "-T2b (T2/L2): " << real(tenergy->read()) << " " << real(lenergy->read()) << std::endl;
+  _tenergy += real(tenergy->read());
+  _lenergy += real(lenergy->read());
+  if (0) {
+  OUT() << name << "-T2b (T2/L2/V2): "
+        << real(tenergy->read()) << " " << real(lenergy->read()) << " " << real(venergy->read())
+        << std::endl;
+  }
   // T3 -> R1
   COMPILE(
     (*Xph)["ai"] += (-2.0) * (*ints["Vhhpp"])["jkbc"] * (*ints["Xp3h3"])["bacjki"],
@@ -423,12 +470,21 @@ void CcsdTTT::getEnergy(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
     (*Xph)["ai"] += (+1.0) * (*ints["Vhhpp"])["jkcb"] * (*ints["Xp3h3"])["bacjki"],
     (*Xph)["ai"] += (-1.0) * (*ints["Vhhpp"])["jkcb"] * (*ints["Xp3h3"])["bcajki"],
     (*tenergy)[""] <<=  2.0 * (*Xph)["ai"] * (*ints["Tph"])["ai"],
-    (*lenergy)[""] <<=  2.0 * (*Xph)["ai"] * (*ints["Zph"])["ai"]
+    (*lenergy)[""] <<=  2.0 * (*Xph)["ai"] * (*ints["Zph"])["ai"],
+    (*venergy)[""] <<=  2.0 * (*Xph)["ai"] * (*Dph)["ai"] * (*Xph)["bj"] * (*Dph)["bj"] * (*ints["Vpphh"])["abij"],
+    (*venergy)[""]  += -1.0 * (*Xph)["ai"] * (*Dph)["ai"] * (*Xph)["bj"] * (*Dph)["bj"] * (*ints["Vpphh"])["baij"]
   )->execute();
 
-  OUT() << name << "-T1 (T1/L1): " << real(tenergy->read()) << " " << real(lenergy->read()) << std::endl;
+  _tenergy += real(tenergy->read());
+  _lenergy += real(lenergy->read());
 
+  if (0) {
+  OUT() << name << "-T1 (T1/L1/V1): "
+        << real(tenergy->read()) << " " << real(lenergy->read()) << " " << real(venergy->read())
+        << std::endl;
+  }
 
+  return {_tenergy, _lenergy};
 }
 
 
@@ -456,7 +512,8 @@ void CcsdTTT::r3_VT3T2_b(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints
                 Ptr<Tensor<F,TE>> Tph,
                 Ptr<Tensor<F,TE>> Tpphh,
                 Ptr<Tensor<F,TE>> Tppphhh,
-                Ptr<Tensor<F,TE>> Rppphhh) {
+                Ptr<Tensor<F,TE>> Rppphhh,
+                std::string &t3t3mode) {
 
   auto Xabie( Tcc<TE>::template tensor<F>("Xabie") );
   auto Xamij( Tcc<TE>::template tensor<F>("Xamij") );
@@ -464,9 +521,15 @@ void CcsdTTT::r3_VT3T2_b(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints
   auto Xae( Tcc<TE>::template tensor<F>("Xae") );
   COMPILE(
     //  T3 <-- [VT3T2]
-    (*Xabie)["abie"]  <<= (-2.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["abfimn"],
-    (*Xabie)["abie"]   += ( 1.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["abfnmi"],
-    (*Xabie)["abie"]   += ( 1.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["abfinm"],
+    (t3t3mode == "3CC" || t3t3mode == "3CC-C2") ? (
+      (*Xabie)["abie"]  <<= ( 0.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["abfimn"],
+      Tcc<TE>::sequence()
+    ) : (
+      (*Xabie)["abie"]  <<= (-2.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["abfimn"],
+      (*Xabie)["abie"]   += ( 1.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["abfnmi"],
+      (*Xabie)["abie"]   += ( 1.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["abfinm"],
+      Tcc<TE>::sequence()
+    ),
     (*Xamij)["amij"]  <<= ( 2.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["aefijn"],
     (*Xamij)["amij"]   += (-1.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["feaijn"],
     (*Xamij)["amij"]   += (-1.0) * (*ints["Vhhpp"])["mnef"] * (*Tppphhh)["afeijn"],
@@ -486,7 +549,12 @@ void CcsdTTT::r3_VT3T2_b(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints
     (*Xim)["im"]         +=          (*ints["Whhpp"])["mnef"] * (*Tph)["ei"] * (*Tph)["fn"],
     (*Xae)["ae"]        <<= ( 2.0) * (*ints["Vphpp"])["amef"] * (*Tph)["fm"],
     (*Xae)["ae"]         += (-1.0) * (*ints["Vphpp"])["amfe"] * (*Tph)["fm"],
-    (*Xae)["ae"]         += (-1.0) * (*ints["Whhpp"])["mnef"] * (*Tpphh)["afmn"],
+    (t3t3mode == "3CC" || t3t3mode == "3CC-C1") ? (
+      Tcc<TE>::sequence()
+    ) : (
+      (*Xae)["ae"]         += (-1.0) * (*ints["Whhpp"])["mnef"] * (*Tpphh)["afmn"],
+      Tcc<TE>::sequence()
+    ),
     (*Xae)["ae"]         += (-1.0) * (*ints["Whhpp"])["mnef"] * (*Tph)["am"] * (*Tph)["fn"],
     (*ints["Xp3h3"])["abcijk"]  <<=          (*Xae)["ae"]     * (*Tppphhh)["ebcijk"],
     (*ints["Xp3h3"])["abcijk"]   += (-1.0) * (*Xim)["im"]     * (*Tppphhh)["abcmjk"],
@@ -531,14 +599,23 @@ void CcsdTTT::r3_VT3T1_a(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints
       (*Xbcef)["bcef"]   +=          (*ints["Vpphh"])["efmn"] * (*Tph)["bm"] * (*Tph)["cn"],
       (*Xbcef)["bcef"]   += (-1.0) * (*ints["Vphpp"])["bmef"] * (*Tph)["cm"],
       (*Xbcef)["bcef"]   += (-1.0) * (*ints["Vhppp"])["mcef"] * (*Tph)["bm"],
-
-      (*Xamei)["amei"]   += (-1.0) * (*ints["Vhhpp"])["mnfe"] * (*Tpphh)["fain"],
+      (t3t3mode == "3CC" || t3t3mode == "3CC-D1") ? (
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xamei)["amei"]   += (-1.0) * (*ints["Vhhpp"])["mnfe"] * (*Tpphh)["fain"],
+        Tcc<TE>::sequence()
+      ),
       (*Xamei)["amei"]   += (-1.0) * (*ints["Vhhpp"])["mnfe"] * (*Tph)["fi"] * (*Tph)["an"],
       (*Xamei)["amei"]   += (-1.0) * (*ints["Vhhph"])["nmei"] * (*Tph)["an"],
       (*Xamei)["amei"]   +=          (*ints["Vphpp"])["amef"] * (*Tph)["fi"],
 
       (*Xamie)["amie"]   +=          (*ints["Whhpp"])["mnef"] * (*Tpphh)["afin"],
-      (*Xamie)["amie"]   += (-1.0) * (*ints["Vhhpp"])["mnef"] * (*Tpphh)["fain"],
+      (t3t3mode == "3CC" || t3t3mode == "3CC-D1") ? (
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xamie)["amie"]   += (-1.0) * (*ints["Vhhpp"])["mnef"] * (*Tpphh)["fain"],
+        Tcc<TE>::sequence()
+      ),
       (*Xamie)["amie"]   += (-1.0) * (*ints["Vhhpp"])["mnef"] * (*Tph)["fi"] * (*Tph)["an"],
       (*Xamie)["amie"]   += (-1.0) * (*ints["Vhhhp"])["nmie"] * (*Tph)["an"],
       (*Xamie)["amie"]   +=          (*ints["Vppph"])["aefm"] * (*Tph)["fi"]
@@ -563,7 +640,7 @@ void CcsdTTT::r3_VT2T1(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
                 Ptr<Tensor<F,TE>> Tph,
                 Ptr<Tensor<F,TE>> Tpphh,
                 Ptr<Tensor<F,TE>> Rppphhh,
-                std::string &t3mode) {
+                std::string &t3t3mode) {
 
   auto Fphpp( Tcc<TE>::template tensor<F>("Fphpp") );
   auto Fphhh( Tcc<TE>::template tensor<F>("Fphhh") );
@@ -596,7 +673,7 @@ void CcsdTTT::r3_VT2T1(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
   COMPILE(
     (*Xabie)["abie"]  <<=          (*ints["Vpphp"])["abie"],
     (*Xamij)["amij"]  <<=          (*ints["Vphhh"])["amij"],
-    (t3mode == "ring") ? (
+    (t3t3mode == "ring") ? (
       (*Xabie)["abie"]   += ( 2.0) * (*Fphpp)["bmef"] * (*ints["Tpphh"])["afim"],
       (*Xamij)["amij"]   += ( 2.0) * (*Fphhh)["ejnm"] * (*ints["Tpphh"])["aein"]
     ) : (
@@ -604,13 +681,24 @@ void CcsdTTT::r3_VT2T1(std::map<std::string, Ptr<TensorExpression<F,TE>>> ints,
     )
   )->execute();
 
-  if (t3mode == "dressed") {
+  if (t3t3mode == "dressed" || t3t3mode == "3CC" || t3t3mode == "3CC-T2" || t3t3mode == "3CC-D1" || t3t3mode == "3CC-C1" || t3t3mode == "3CC-C2") {
     COMPILE(
       (*Xabie)["abie"]   +=          (*Fphhh)["eimn"] * (*ints["Xpphh"])["abnm"],
-      (*Xabie)["abie"]   += ( 2.0) * (*Fphpp)["bmef"] * (*ints["Tpphh"])["afim"],
-      (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmfe"] * (*ints["Tpphh"])["afim"],
-      (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmef"] * (*ints["Tpphh"])["afmi"],
-      (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["amfe"] * (*ints["Tpphh"])["bfmi"],
+      ( t3t3mode == "3CC" || t3t3mode == "3CC-T2" ) ? (
+        (*Fphpp)["amef"]  <<= (-1.0) * (*ints["Vhhpp"])["nmef"] * (*Tph)["an"],
+        (*Xabie)["abie"]   += ( 2.0) * (*Fphpp)["bmef"] * (*Tpphh)["afim"],
+        (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmfe"] * (*Tpphh)["afim"],
+        (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmef"] * (*Tpphh)["afmi"],
+        (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["amfe"] * (*Tpphh)["bfmi"],
+        (*Fphpp)["amef"]   += (*ints["Vphpp"])["amef"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xabie)["abie"]   += ( 2.0) * (*Fphpp)["bmef"] * (*ints["Tpphh"])["afim"],
+        (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmfe"] * (*ints["Tpphh"])["afim"],
+        (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["bmef"] * (*ints["Tpphh"])["afmi"],
+        (*Xabie)["abie"]   += (-1.0) * (*Fphpp)["amfe"] * (*ints["Tpphh"])["bfmi"],
+        Tcc<TE>::sequence()
+      ),
       (*Xabie)["abie"]   += (-1.0) * (*Fphhp)["amie"] * (*ints["Tph"])["bm"],
       (*Xabie)["abie"]   += (-1.0) * (*Fphph)["bmei"] * (*ints["Tph"])["am"],
       (*Xabie)["abie"]   += ( 1.0) * (*ints["Vpppp"])["abfe"] * (*ints["Tph"])["fi"],
