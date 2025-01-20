@@ -213,8 +213,8 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   F eTriples(E->read());
 
   std::string methodName;
-  if (lambda  &&  cT && singles)  methodName = "(T-2)  correlation energy: ";
-  if (lambda  &&  cT && !singles) methodName = "[T-2]  correlation energy: ";
+  if (lambda  &&  cT && singles)  methodName = "Λ(cT)  correlation energy: ";
+  if (lambda  &&  cT && !singles) methodName = "Λ[cT]  correlation energy: ";
   if (lambda  && !cT && singles)  methodName = "Λ(T) correlation energy: ";
   if (lambda  && !cT && !singles) methodName = "Λ[T] correlation energy: ";
   if (!lambda && !cT && singles)  methodName = "(T) correlation energy: ";
