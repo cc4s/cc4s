@@ -28,7 +28,6 @@ main/algorithms/coupledcluster/CoupledClusterMethod.cxx \
 main/algorithms/coupledcluster/Ccsd.cxx \
 main/algorithms/coupledcluster/CcsdReference.cxx \
 main/algorithms/coupledcluster/Drccd.cxx \
-main/algorithms/coupledcluster/LambdaCcsdReference.cxx \
 main/algorithms/PerturbativeCT.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/FiniteSizeCorrection.cxx \
@@ -39,6 +38,9 @@ main/algorithms/TensorSetToTensor.cxx \
 main/algorithms/coupledcluster/Ccsdt.cxx \
 main/algorithms/CcsdTTT.cxx \
 main/algorithms/CcsdChannels.cxx \
+main/algorithms/MrccReader.cxx \
+
+#main/algorithms/coupledcluster/LambdaCcsdReference.cxx \
 
 ifeq ($(ATRIP), no)
 

@@ -431,7 +431,7 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
   );
 
   ASSERT_LOCATION(
-    distinguishable, "distinguishable not supported for complex amplitudes",
+    !distinguishable, "distinguishable not supported for complex amplitudes",
     this->arguments->sourceLocation
   );
   if (!amplitudes) {

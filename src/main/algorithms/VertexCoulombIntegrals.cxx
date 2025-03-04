@@ -42,7 +42,8 @@ Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   Ptr<MapNode> metaData(
     slicedCoulombVertex->get("hh")->inspect()->getMetaData()
   );
-  auto halfGrid(metaData->getValue<bool>("halfGrid", 0));
+  bool halfGrid(false);
+  if (metaData) halfGrid = metaData->getValue<bool>("halfGrid", 0);
   if (halfGrid) {
     OUT() << "Using real Coulomb integrals" << std::endl;
     return calculateRealIntegrals<TE>(slicedCoulombVertex);

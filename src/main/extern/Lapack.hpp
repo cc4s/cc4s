@@ -154,6 +154,52 @@ extern "C" {
     const int *workSize,
     int *info
   );
+
+  void dgemm_(
+    const char *transa,
+    const char *transb,
+    const int *m,
+    const int *n,
+    const int *k,
+    const cc4s::Real<64> *alpha,
+    const cc4s::Real<64> *a,
+    const int *lda,
+    const cc4s::Real<64> *b,
+    const int *ldb,
+    cc4s::Real<64> *beta,
+    cc4s::Real<64> *c,
+    const int *ldc
+  );
+
+  void dsymm_(
+    const char *side,
+    const char *uplo,
+    const int *m,
+    const int *n,
+    const cc4s::Real<64> *alpha,
+    const cc4s::Real<64> *A,
+    const int *lda,
+    const cc4s::Real<64> *B,
+    const int *ldb,
+    const cc4s::Real<64> *beta,
+    cc4s::Real<64> *c,
+    const int *ldc
+  );
+
+  void dsyev_(
+    const char *,
+    const char *,
+    const int *,
+    cc4s::Real<64> *,
+    const int *,
+    cc4s::Real<64> *,
+    cc4s::Real<64> *,
+    const int *,
+    const int *
+  );
+
+
+
 }
 
 #endif
