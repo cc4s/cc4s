@@ -22,6 +22,7 @@
 #include <Exception.hpp>
 #include <Cc4s.hpp>
 #include <extern/Lapack.hpp>
+#include <lapack/LapackWrapper.hpp>
 #include <TensorSet.hpp>
 
 
@@ -52,102 +53,108 @@ Ptr<MapNode> MrccReader::run(
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
 
-/*
-cpr(i) is just the largest element of MO(i,mu) for all mu
+  size_t nocc(arguments->template getValue<Natural<>>("nocc"));
+  size_t nvir(arguments->template getValue<Natural<>>("nvir"));
+  size_t ncore(arguments->template getValue<Natural<>>("ncore"));
+  size_t ndfbasis(arguments->template getValue<Natural<>>("ndfbasis"));
 
-*/
+  size_t fnoFactor(arguments->template getValue<Natural<>>("fnoFactor"));
 
-  // map of fock matrix elements in AO basis
-  auto _fockAO  = fileRead<Data2>("FOCK");
-  // map of MO-Coefficients
-  auto _fullMos = fileRead<Data2>("MOCOEF");
+//  size_t nocc = 4;
+//  size_t nvir = 64;
+//  size_t ncore = 1;
+//  size_t ndfbasis = 152;
+  size_t nbasis = nocc + nvir;
+  size_t nbf = nbasis + ncore; //28
+  size_t nFno = std::min(fnoFactor*nocc, nvir);
+
+  std::vector<Real<>> mos_occ(nbf*nocc), mos_vir_fno(nFno*nbf);
+  std::vector<Real<>> mos_vir, epsp, epsh;
+
   // index map needed for sparse AO CoulombVertex
   auto intpos   = fileRead<Data3>("TEDAT");
-  // We have to change the indices from
-
-//  if (Cc4s::dryRun) return result;
-  auto rank(Cc4s::world->getRank());
-
-  int ii(0);
   for (auto &i: intpos) {
     i.index1--;
     i.index2--;
   }
-  for (auto &d: _fockAO) {
-    d.index1--;
-    d.index2--;
-  }
-  for (auto &d: _fullMos) {
-    d.index1--;
-    d.index2--;
-  }
+
+  auto rank(Cc4s::world->getRank());
+  auto np(Cc4s::world->getProcesses());
+  std::cout << "NUMBER OF PROCESSES " << np << std::endl;
+  if (!rank) {
+
+    // map of fock matrix elements in AO basis
+    auto _fockAO  = fileRead<Data2>("FOCK");
+    // map of MO-Coefficients
+    auto _fullMos = fileRead<Data2>("MOCOEF");
+
+    // We have to change the indices from fortran to C
+    int ii(0);
+    for (auto &d: _fockAO) {
+      d.index1--;
+      d.index2--;
+    }
+    for (auto &d: _fullMos) {
+      d.index1--;
+      d.index2--;
+    }
 
 
-  // we need to have access to these numbers
-  size_t nocc = 4;
-  size_t nvir = 64;
-  size_t ncore = 1;
-  size_t nbasis = nocc + nvir;
-  size_t nbf = nbasis + ncore; //28
-  size_t ndfbasis = 152;
-  std::vector<Real<>> fockAO(nbf*nbf), fockMO(nbasis*nbasis);
-  std::vector<Real<>> mos(nbasis*nbf), tmp(nbasis*nbf);
-  std::vector<Real<>> eps(nbasis), epsp(nvir), epsh(nocc);
-  std::vector<Real<>> mos_occ(nbf*nocc), mos_vir(nbf*nvir);
+    // we need to have access to these numbers
+    std::vector<Real<>> fockAO(nbf*nbf), fockMO(nbasis*nbasis);
+    std::vector<Real<>> mos(nbasis*nbf), tmp(nbasis*nbf);
+    std::vector<Real<>> eps(nbasis);
+    epsp.resize(nvir);
+    epsh.resize(nocc);
+    mos_vir.resize(nvir*nbf);
+    for (auto &f: _fockAO) {
+      fockAO[f.index1 + nbf * f.index2] = f.value;
+      fockAO[f.index2 + nbf * f.index1] = f.value;
+    }
 
-  for (auto &f: _fockAO) {
-    fockAO[f.index1 + nbf * f.index2] = f.value;
-    fockAO[f.index2 + nbf * f.index1] = f.value;
-  }
+    size_t jjj(0);
+    for (auto &m: _fullMos) {
+      if (m.index2 < ncore) continue;
+      mos[m.index1 + nbf * (m.index2 - ncore)] = m.value;
+      if (m.index2 < ncore+nocc) {
+        mos_occ[m.index1 + nbf * (m.index2 - ncore)] = m.value;
+      } else {
+        mos_vir[m.index1 + nbf * (m.index2 - ncore - nocc)] = m.value;
+      }
+    }
 
-  size_t jjj(0);
-  for (auto &m: _fullMos) {
-    if (m.index2 < ncore) continue;
-    mos[m.index1 + nbf * (m.index2 - ncore)] = m.value;
-    if (m.index2 < ncore+nocc) {
-      mos_occ[m.index1 + nbf * (m.index2 - ncore)] = m.value;
-    } else {
-      mos_vir[m.index1 + nbf * (m.index2 - ncore - nocc)] = m.value;
+
+
+    cc4s::Real<64> alpha = 1.0, beta = 0.0;
+    dsymm_("l",
+           "l",
+           (int const *) &nbf,
+           (int const *) &nbasis,
+           &alpha,
+           fockAO.data(),
+           (int const *) &nbf,
+           mos.data(),
+           (int const *) &nbf,
+           &beta,
+           tmp.data(),
+           (int const *) &nbf);
+
+//    matmul(fockAO, mos, tmp, nbf, nbf, nbasis);
+
+    matmul(mos, tmp, fockMO, nbasis, nbasis, nbf, true, false);
+
+    size_t p(0), h(0);
+    for (size_t i(0); i < nbasis; i++) {
+      eps[i] = fockMO[i + nbasis*i];
+      if (i <  nocc) epsh[h++] = fockMO[i + nbasis*i];
+      if (i >= nocc) epsp[p++] = fockMO[i + nbasis*i];
     }
   }
+  MPI_Bcast(mos_occ.data(), nbf*nocc, MPI_DOUBLE, 0, Cc4s::world->getComm());
 
-
-
-  cc4s::Real<64> alpha = 1.0, beta = 0.0;
-  dsymm_("l",
-         "l",
-         (int const *) &nbf,
-         (int const *) &nbasis,
-         &alpha,
-         fockAO.data(),
-         (int const *) &nbf,
-         mos.data(),
-         (int const *) &nbf,
-         &beta,
-         tmp.data(),
-         (int const *) &nbf);
-
-  dgemm_("t",
-         "n",
-         (int const *) &nbasis,
-         (int const *) &nbasis,
-         (int const *) &nbf,
-         &alpha,
-         mos.data(),
-         (int const *) &nbf,
-         tmp.data(),
-         (int const *) &nbf,
-         &beta,
-         fockMO.data(),
-         (int const *) &nbasis);
-
-  size_t p(0), h(0);
-  for (size_t i(0); i < nbasis; i++) {
-    eps[i] = fockMO[i + nbasis*i];
-    if (i <  nocc) epsh[h++] = fockMO[i + nbasis*i];
-    if (i >= nocc) epsp[p++] = fockMO[i + nbasis*i];
-  }
-
+  // we have to distribute mos_occ over the different ranks
+  // right now only rank 0 is used
+  //auto halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis)
   auto halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis);
 
   auto Mos_vir(Tcc<TE>::template tensor<Real<>>({nbf, nvir}, "Mos_vir") );
@@ -155,64 +162,80 @@ cpr(i) is just the largest element of MO(i,mu) for all mu
   auto Epsp(Tcc<TE>::template tensor<Real<>>({nvir}, "epsp") );
   auto Epsh(Tcc<TE>::template tensor<Real<>>({nocc}, "epsh") );
 
-  size_t el = (rank) ? 0 : halfVertexh.size();
-  // Note: we use the 'large' index map for all tensors. watch out!
+  //size_t el = (rank) ? 0 : halfVertexh.size();
+  //std::iota(idx.begin(), idx.end(), 0);
+  size_t el = halfVertexh.size();
   std::vector<size_t> idx(el);
-  std::iota(idx.begin(), idx.end(), 0);
+  auto nbf_loc = nbf / np + (rank < nbf % np);
+  for (size_t m(0); m < nbf_loc; m++)
+  for (size_t g(0); g < ndfbasis; g++)
+  for (size_t i(0); i < nocc; i++) {
+    auto m_global = m * np + rank;
+    idx[i + g*nocc + m * nocc * ndfbasis] = i + g*nocc + m_global * nocc * ndfbasis;
+  }
+
   Gamma_igm->write(el, idx.data(), halfVertexh.data());
 
+
   el = (rank) ? 0 : mos_vir.size();
+  idx.resize(el);
+  std::iota(idx.begin(), idx.end(), 0);
   Mos_vir->write(el, idx.data(), mos_vir.data());
   el = (rank) ? 0 : nvir;
   Epsp->write(el, idx.data(), epsp.data());
   el = (rank) ? 0 : nocc;
   Epsh->write(el, idx.data(), epsh.data());
 
-  auto _vrtx = Gamma_igm->readAll();
-
   auto gamma_ab = eval_mp2(Gamma_igm, Epsp, Epsh, Mos_vir, true);
 
-  int lwork(3*nvir), info;
-  std::vector<Real<>> w(nvir), work(lwork);
+  std::vector<Real<>> w(nvir);
+  if (!Cc4s::dryRun) {
+    if (!rank) {
+      int lwork(3*nvir), info;
+      std::vector<Real<>> work(lwork);
 
-  dsyev_("V",
-         "L",
-         (int const *) &nvir,
-         gamma_ab.data(),
-         (int const *) &nvir,
-         w.data(),
-         work.data(),
-         (int const *) &lwork,
-         (int const *) &info);
-  if (info != 0) throw "problem diagonalization (1), naturalOrbitals\n";
+      compute_eigen(gamma_ab, nvir, w);
+      // zero out the elements beyond nFno
+      for (size_t a(0); a < nvir - nFno; a++)
+      for (size_t b(0); b < nvir; b++) {
+        gamma_ab[b + a * nvir] = 0.0;
+      }
 
-  size_t fnoFactor(arguments->template getValue<Natural<>>("fnoFactor"));
-  size_t nFno = std::min(fnoFactor*nocc, nvir);
 
-  for (size_t a(0); a < nvir - nFno; a++)
-  for (size_t b(0); b < nvir; b++) {
-    gamma_ab[b + a * nvir] = 0.0;
+      std::vector<Real<>> fock_ab(nvir*nvir), scratch(nvir*nvir), rot_ab(nFno*nvir);
+      //construct new fock matrix using the truncated density matrix
+      for (size_t c(0); c < nvir; c++)
+      for (size_t b(0); b < nvir; b++)
+      for (size_t a(0); a < nvir; a++) {
+        fock_ab[a + b * nvir] += gamma_ab[c + a * nvir] * gamma_ab[c + b * nvir] * epsp[c];
+      }
+
+      compute_eigen(fock_ab, nvir, w);
+
+      for (size_t b(0); b < nvir; b++)
+      for (size_t a(0); a < nvir; a++)
+      for (size_t c(0); c < nvir; c++) {
+        scratch[a + b * nvir] += gamma_ab[a + c * nvir] * fock_ab[c + b * nvir];
+      }
+      for (size_t a(0); a < nvir; a++) {
+        size_t c(0);
+        for (size_t b(nvir-nFno); b < nvir; b++) {
+          rot_ab[a+ nvir*c++ ] = scratch[a+b*nvir];
+        }
+      }
+
+
+      // ~C[mu,b] = R[a,b] * C[mu,a]
+      for (size_t b(0); b < nFno; b++)
+      for (size_t m(0); m < nbf; m++)
+      for (size_t a(0); a < nvir; a++) {
+        mos_vir_fno[m + b * nbf] += mos_vir[m + a * nbf] * rot_ab[a + b * nvir];
+      }
+//      matmul(mos_vir_fno, mos_vir, rot_ab, nbf, nFno, nvir);
+    }
+    // we have to distribute to all ranks for the AO->MO transform
+    MPI_Bcast(mos_vir_fno.data(), nbf*nFno, MPI_DOUBLE, 0, Cc4s::world->getComm());
   }
-
-
-  std::vector<Real<>> fock_ab(nvir*nvir), scratch(nvir*nvir), rot_ab(nFno*nvir);
-  //construct new fock matrix using the truncated density matrix
-  for (size_t c(0); c < nvir; c++)
-  for (size_t b(0); b < nvir; b++)
-  for (size_t a(0); a < nvir; a++) {
-    fock_ab[a + b * nvir] += gamma_ab[c + a * nvir] * gamma_ab[c + b * nvir] * epsp[c];
-  }
-
-  dsyev_("V",
-         "L",
-         (int const *) &nvir,
-         fock_ab.data(),
-         (int const *) &nvir,
-         w.data(),
-         work.data(),
-         (int const *) &lwork,
-         (int const *) &info);
-  if (info != 0) throw "problem diagonalization (4), naturalOrbitals\n";
 
 
   el = (rank) ? 0 : nFno;
@@ -220,37 +243,34 @@ cpr(i) is just the largest element of MO(i,mu) for all mu
   auto Mos_vir_fno( Tcc<TE>::template tensor<Real<>>({nbf, nFno}, "Mos_vir_fno"));
   Epsf->write(el, idx.data(), &w[nvir-nFno]);
 
-  for (size_t b(0); b < nvir; b++)
-  for (size_t a(0); a < nvir; a++)
-  for (size_t c(0); c < nvir; c++) {
-    scratch[a + b * nvir] += gamma_ab[a + c * nvir] * fock_ab[c + b * nvir];
-  }
-  for (size_t a(0); a < nvir; a++) {
-    size_t c(0);
-    for (size_t b(nvir-nFno); b < nvir; b++) {
-      rot_ab[a+ nvir*c++ ] = scratch[a+b*nvir];
-    }
-  }
-
-  // ~C[mu,b] = R[a,b] * C[mu,a]
-  std::vector<Real<>> mos_vir_fno(nFno*nbf);
-  for (size_t b(0); b < nFno; b++)
-  for (size_t m(0); m < nbf; m++)
-  for (size_t a(0); a < nvir; a++) {
-    mos_vir_fno[m + b * nbf] += mos_vir[m + a * nbf] * rot_ab[a + b * nvir];
-  }
-
   el = (rank) ? 0 : nFno*nbf;
   Mos_vir_fno->write(el, idx.data(), mos_vir_fno.data());
 
+
+
   eval_mp2(Gamma_igm, Epsf, Epsh, Mos_vir_fno, false);
 
+  // right now every one is doing that
   auto halfVertexp = halfTransform(mos_vir_fno, intpos, nFno, nbf, ndfbasis);
 
+
+
   auto Gamma_agm(Tcc<TE>::template tensor<Real<>>({nFno, ndfbasis, nbf}, "halfVertexp"));
-  el = (rank) ? 0 : halfVertexp.size();
-  idx.resize(el);
-  std::iota(idx.begin(), idx.end(), 0);
+
+// Version without mpi
+//  el = (rank) ? 0 : halfVertexp.size();
+//  idx.resize(el);
+//  std::iota(idx.begin(), idx.end(), 0);
+  if (!Cc4s::dryRun) {
+    el = halfVertexp.size();
+    idx.resize(el);
+    for (size_t m(0); m < nbf_loc; m++)
+    for (size_t g(0); g < ndfbasis; g++)
+    for (size_t a(0); a < nFno; a++) {
+      auto m_global = m * np + rank;
+      idx[a + g*nFno + m * nFno * ndfbasis] = a + g*nFno + m_global * nFno * ndfbasis;
+    }
+  }
   Gamma_agm->write(el, idx.data(), halfVertexp.data());
 
 
@@ -320,6 +340,12 @@ std::vector<T> MrccReader::fileRead(const std::string& filename, size_t nint) {
   return data;
 }
 
+std::pair<bool,bool> isForMe(int64_t m, int64_t n) {
+  auto rank(Cc4s::world->getRank());
+  auto np(Cc4s::world->getProcesses());
+  return { m % np == rank, n % np == rank};
+}
+
 std::vector<Real<>> MrccReader::halfTransform(
   const std::vector<Real<>> &mos,
   const std::vector<Data3>  &intpos,
@@ -327,10 +353,18 @@ std::vector<Real<>> MrccReader::halfTransform(
   const size_t nbf,
   const size_t ndfbasis
 ) {
+  MPI_File fh;
+  MPI_Status status;
+  MPI_File_open(MPI_COMM_WORLD, "TEINT", MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+//  std::ifstream iffile("TEINT", std::ios::binary);
+//  iffile.seekg(0, std::ios::beg);
 
-  std::ifstream iffile("TEINT", std::ios::binary);
-  iffile.seekg(0, std::ios::beg);
-  std::vector<Real<>> halfVertex(norb*nbf*ndfbasis);
+  auto rank(Cc4s::world->getRank());
+  auto np(Cc4s::world->getProcesses());
+  auto nbf_loc = nbf / np + (rank< nbf % np);
+
+  std::vector<Real<>> halfVertex(norb*nbf_loc*ndfbasis);
+  //std::vector<Real<>> halfVertex(norb*nbf*ndfbasis);
   std::vector<Real<>> motr(norb*nbf);
   std::vector<Real<>> kvec(ndfbasis);
 
@@ -338,16 +372,23 @@ std::vector<Real<>> MrccReader::halfTransform(
   for (size_t m(0); m < nbf; m++) {
     motr[i + m*norb] = mos[m + i* nbf];
   }
+  MPI_Offset offset = 0;
   for (auto &ipos: intpos) {
     std::fill(kvec.begin(), kvec.end(), 0);
     auto m(ipos.index1);
     auto n(ipos.index2);
     auto nn(ipos.index3);
+    auto b(isForMe(m,n));
+    // is this rank does not any data we still have to update the offset
+    if (!b.first && !b.second) {
+      offset += nn*sizeof(Data1);
+      continue;
+    }
     //read n elements from the file
     std::vector<Data1> line(nn);
-
-
-    iffile.read(reinterpret_cast<char*>(line.data()), sizeof(Data1) * nn);
+    MPI_File_read_at(fh, offset, line.data(), nn * sizeof(Data1), MPI_BYTE, &status);
+    offset += nn*sizeof(Data1);
+    //iffile.read(reinterpret_cast<char*>(line.data()), sizeof(Data1) * nn);
     for (auto &k: line) {
       // fotran to C index shift
       kvec[k.index-1] = k.value;
@@ -356,18 +397,20 @@ std::vector<Real<>> MrccReader::halfTransform(
     for (size_t i(0); i < norb; i++) {
       // \Gamma["iG\nu"] = C["i\mu"] * kvec["G"]
       // \Gamma["iG\mu"] = C["i\nu"] * kvec["G"]
+/* this is the non-MPI version
       halfVertex[i + g* norb + n*norb*ndfbasis] += motr[i + m*norb] * kvec[g];
       if (m == n) continue;
       halfVertex[i + g* norb + m*norb*ndfbasis] += motr[i + n*norb] * kvec[g];
+*/
+      size_t m_loc = m / np, n_loc = n /np;
+      if (b.first) {
+        halfVertex[i + g* norb + m_loc*norb*ndfbasis] += motr[i + n*norb] * kvec[g];
+      }
+      if (b.second && m != n) {
+        halfVertex[i + g* norb + n_loc*norb*ndfbasis] += motr[i + m*norb] * kvec[g];
+      }
     }
   }
-
-//  for (size_t n(0); n < dims.nbf; n++)
-//  for (size_t g(0); g < dims.ndfbasis; g++) {
-//    auto idx = g* dims.nocc + n*dims.nocc*dims.ndfbasis;
-//    if (halfVertex[idx] * halfVertex[idx] > 1e-15)
-//      OUT() << n << " " << g << " | " << halfVertex[idx] << std::endl;
-//  }
 
   return halfVertex;
 }
@@ -401,13 +444,12 @@ std::vector<Real<>> MrccReader::eval_mp2(Ptr<Tensor<Real<>,TE>> Gamma_igm,
   )->execute();
   Dpphh->sum(1.0, "abij", "abij", [] (Real<> delta) { return 1.0 / delta; });
   COMPILE(
-    //(*energy)[""] <<= 2.0 * (*Vpphh)["abij"] * (*Vpphh)["abij"]
     (*Energy)[""] <<= 2.0 * (*Vpphh)["abij"] * (*Vpphh)["abij"] * (*Dpphh)["abij"],
     (*Energy)[""]  -= 1.0 * (*Vpphh)["abij"] * (*Vpphh)["baij"] * (*Dpphh)["abij"],
     // Now we evaluate the Mp2 density matrix //
-    (*Tpphh)["abij"]  <<= 2.0 * (*Vpphh)["abij"] * (*Dpphh)["abij"],
-    (*Tpphh)["abij"]   -= 0.5 * (*Tpphh)["baij"],
     (eval_gamma_ab) ? (
+      (*Tpphh)["abij"]  <<= 2.0 * (*Vpphh)["abij"] * (*Dpphh)["abij"],
+      (*Tpphh)["abij"]   -= 0.5 * (*Tpphh)["baij"],
       (*Gamma_ab)["ab"] <<= (*Tpphh)["caij"] * (*Vpphh)["cbij"] * (*Dpphh)["cbij"],
       Tcc<TE>::sequence()
     ) : (
@@ -415,12 +457,11 @@ std::vector<Real<>> MrccReader::eval_mp2(Ptr<Tensor<Real<>,TE>> Gamma_igm,
     )
   )->execute();
 
-  auto E(Energy->read());
-  std::cout.precision(10);
-  OUT() <<   E << std::endl;
-
   if (!eval_gamma_ab) return std::vector<Real<>>();
 
+  auto E(Energy->read());
+  std::cout.precision(10);
+  OUT() << "Mp2 correlation energy(full basis): " <<   E << std::endl;
   auto el = (!Cc4s::world->getRank()) ? nvir*nvir : 0;
   std::vector<size_t> idx(el);
   std::iota(idx.begin(), idx.end(), 0);
