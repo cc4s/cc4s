@@ -88,7 +88,7 @@ Ptr<TensorSet<Real<>,TE>> Ccsd<Real<>,TE>::getResiduum(
     )
   );
   bool distinguishable(
-    this->arguments->template getValue<bool>("distinguishable", false)
+    this->arguments->template getValue<int>("distinguishable", 0) == 1
   );
 
   auto coulombIntegrals(
@@ -427,7 +427,7 @@ Ptr<TensorSet<Complex<>,TE>> Ccsd<Complex<>,TE>::getResiduum(
   auto Vpphh(coulombIntegrals->get("pphh"));
   bool ppl(this->arguments->template getValue<bool>("ppl", true));
   bool distinguishable(
-    this->arguments->template getValue<bool>("distinguishable", false)
+    this->arguments->template getValue<int>("distinguishable", 0) == 1
   );
 
   ASSERT_LOCATION(

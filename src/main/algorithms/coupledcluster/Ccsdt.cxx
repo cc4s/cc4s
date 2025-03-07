@@ -227,7 +227,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
 
       // T2 <-- [VT1T3]
       // the following would only apply for ccsdt-1a
-      //(ccsdtn == "ccsdt-1") ? (
+      //(ccsdtn == "ccsdt-1a") ? (
       //  Tcc<TE>::sequence()
       //) : (
         (*Xpphh)["abij"] <<=         (*Whhpp)["klcd"] * (*Tppphhh)["abcijk"] * (*Tph)["dl"],
@@ -279,50 +279,25 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
     // 3CC notation from JCP 151, 064102 (2019)
     ///////////////////////
     COMPILE(
-      (ccsdtn == "ccsdt-nos") ? (
-        (*Tph)["ai"] <<= (0.0) * (*Tph)["ai"],
-        Tcc<TE>::sequence()
-      ) : (
-        Tcc<TE>::sequence()
-      ),
-      // II.16
       (*Xpphh)["abij"]  <<= (*Tpphh)["abij"],
       (*Xpphh)["abij"]   += (*Tph)["ai"] * (*Tph)["bj"],
-
-      // II.9
       (*Fphpp)["amef"]  <<= (*Vphpp)["amef"],
       (*Fphpp)["amef"]   += (-1.0) * (*Vhhpp)["nmef"] * (*Tph)["an"],
-
-      // II.10
       (*Fphhh)["eimn"]  <<= (*Vphhh)["eimn"],
       (*Fphhh)["eimn"]   += (*Vhhpp)["mnef"] * (*Tph)["fi"],
-
-      // II.11
       (*Fphhp)["amie"]  <<= (*Vphhp)["amie"],
       (*Fphhp)["amie"]   += (*Vphpp)["amfe"] * (*Tph)["fi"],
-
-      // II.12
       (*Fphph)["amei"]  <<= (*Vphph)["amei"],
       (*Fphph)["amei"]   += (*Vphpp)["amef"] * (*Tph)["fi"],
-
-      // II.13
       (*Fhpph)["ieam"]  <<= (*Vhpph)["ieam"],
-      // ERRATUM
       (*Fhpph)["ieam"]   += (-1.0) * (*Vhphh)["ienm"] * (*Tph)["an"],
-
-      // II.14
       (*Fhphp)["iema"]  <<= (*Vhphp)["iema"],
-      // ERRATUM
       (*Fhphp)["iema"]   += (-1.0) * (*Vhhhp)["inme"] * (*Tph)["an"],
-
-      // II.15
-      // bug 3
       (*Fhp)["me"] <<= (*Whhpp)["mnef"] * (*Tph)["fn"],
-
       // II.1
       // T3 <-- [VT2]  | coupling in line L460
       (*Xabie)["abie"]  <<=          (*Vpphp)["abie"],
-      (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-1x") ? (
+      (ccsdtn == "ccsdt-1b" ) ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT2T2] + [VT2T1] + [VT2T2T1] + [VT2T1T1] + [VT2T1T1T1]
@@ -348,7 +323,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         Tcc<TE>::sequence()
       ),
 
-      (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-1x" || ccsdtn == "ccsdt-3" || ccsdtn == "ccsdt-3x" || ccsdtn == "3CC") ? (
+      (ccsdtn == "ccsdt-1b" || ccsdtn == "ccsdt-3" || ccsdtn == "3CC") ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT3T2] | coupling in line L460
@@ -361,7 +336,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
 
       // T3 <-- [VT2] || coupling in line L461
       (*Xamij)["amij"]  <<=          (*Vphhh)["amij"],
-      (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-1x") ? (
+      (ccsdtn == "ccsdt-1b" ) ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT2T2] + [VT2T1] + [VT2T2T1] + [VT2T1T1] + [VT2T1T1T1[
@@ -377,7 +352,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         Tcc<TE>::sequence()
       ),
 
-      (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-1x" || ccsdtn == "ccsdt-3" || ccsdtn == "ccsdt-3x") ? (
+      (ccsdtn == "ccsdt-1b" || ccsdtn == "ccsdt-3" ) ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT3T2] | coupling in line L461
@@ -386,16 +361,13 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["afeijn"],
         Tcc<TE>::sequence()
       ),
-      // II.3
-      // NOTE: we antisymmetrize in place Vhphh
+
       (*Xim)["im"]      <<= ( 2.0) * (*Vhphh)["iemn"] * (*Tph)["en"],
       // We dont need this term as we have 0 on the lhs
       //      (*Xim)["ii"]       += (*Fepsh)["i"],
       (*Xim)["im"]       += (-1.0) * (*Vhphh)["ienm"] * (*Tph)["en"],
       (*Xim)["im"]       +=          (*Whhpp)["mnef"] * (*Xpphh)["efin"],
 
-      // II.4
-      // NOTE: we antisymmetrize in place Vphpp
       (*Xae)["ae"]      <<= ( 2.0) * (*Vphpp)["amef"] * (*Tph)["fm"],
       // We dont need this term as we have 0 on the lhs
       //      (*Xae)["aa"]       += (*Fepsp)["a"],
@@ -409,49 +381,35 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         Tcc<TE>::sequence()
       ),
 
-      // II.5
       (*Xjkmn)["jkmn"]  <<=          (*Vhhhh)["jkmn"],
-      // ERRATUM
       (*Xjkmn)["jkmn"]   +=          (*Vhhpp)["mnef"] * (*Xpphh)["efjk"],
       (*Xjkmn)["jkmn"]   +=          (*Vhphh)["jemn"] * (*Tph)["ek"],
       (*Xjkmn)["jkmn"]   +=          (*Vphhh)["ekmn"] * (*Tph)["ej"],
 
-      // II.6
       (*Xbcef)["bcef"]  <<=          (*Vpppp)["bcef"],
-      // ERRATUM
       (*Xbcef)["bcef"]   +=          (*Vpphh)["efmn"] * (*Xpphh)["bcmn"],
       (*Xbcef)["bcef"]   += (-1.0) * (*Vphpp)["bmef"] * (*Tph)["cm"],
       (*Xbcef)["bcef"]   += (-1.0) * (*Vhppp)["mcef"] * (*Tph)["bm"],
 
-      // II.7
       // 3CC: remove the T2T3 term D1
       (*Xamei)["amei"]  <<=          (*Vphph)["amei"],
-      (ccsdtn == "3CC") ? (
-        (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Tph)["fi"] * (*Tph)["an"],
-        Tcc<TE>::sequence()
-      ) : (
-        (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Xpphh)["fain"],
-        Tcc<TE>::sequence()
-      ),
-      (*Xamei)["amei"]   += (-1.0) * (*Vhhph)["nmei"] * (*Tph)["an"],
-      (*Xamei)["amei"]   +=          (*Vphpp)["amef"] * (*Tph)["fi"],
-
-      // II.8
-      // 3CC: remove the T2T3 term D1
       (*Xamie)["amie"]  <<=          (*Vphhp)["amie"],
       (ccsdtn == "3CC") ? (
+        (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Tph)["fi"] * (*Tph)["an"],
         (*Xamie)["amie"] += (-1.0) * (*Vhhpp)["mnef"] * (*Tph)["fi"] * (*Tph)["an"],
         Tcc<TE>::sequence()
       ) : (
+        (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Xpphh)["fain"],
         (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Tpphh)["afin"],
         (*Xamie)["amie"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Xpphh)["fain"],
         Tcc<TE>::sequence()
       ),
+      (*Xamei)["amei"]   += (-1.0) * (*Vhhph)["nmei"] * (*Tph)["an"],
+      (*Xamei)["amei"]   +=          (*Vphpp)["amef"] * (*Tph)["fi"],
       (*Xamie)["amie"]   += (-1.0) * (*Vhhhp)["nmie"] * (*Tph)["an"],
       (*Xamie)["amie"]   +=          (*Vppph)["aefm"] * (*Tph)["fi"],
 
-      // I.3 until I.10 (numbers are counting terms)
-      (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-1x" || ccsdtn == "ccsdt-3" || ccsdtn == "ccsdt-3x") ? (
+      (ccsdtn == "ccsdt-1b" || ccsdtn == "ccsdt-3" ) ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT3] + [VT3T2] + [VT3T1] + [VT3T1T1]
@@ -470,31 +428,11 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         // 3CC: A1
         (*Xp3h3)["abcijk"]    += (-1.0) * (*Xim)["im"]     * (*Tppphhh)["abcmjk"],
 
-        // Permute I.3 until I.10 through P(ia/jb, kc)
         (*Rppphhh)["abcijk"] <<= (*Xp3h3)["abcijk"],
         (*Rppphhh)["abcijk"]  += (*Xp3h3)["bacjik"],
         (*Rppphhh)["abcijk"]  += (*Xp3h3)["cbakji"],
         Tcc<TE>::sequence()
       ),
-      // in the ccsdt-nx methods we just add the 'linear' VT3 coupling
-      (ccsdtn == "ccsdt-1x" || ccsdtn == "ccsdt-3x" ) ? (
-        // T3 <-- [VT3]
-        (*Xp3h3)["abcijk"]   <<=          (*Vhhhh)["jkmn"] * (*Tppphhh)["abcimn"],
-        (*Xp3h3)["abcijk"]    +=          (*Vpppp)["bcef"] * (*Tppphhh)["aefijk"],
-        (*Xp3h3)["abcijk"]    += ( 2.0) * (*Vphhp)["amie"] * (*Tppphhh)["ebcmjk"],
-        (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphhp)["amie"] * (*Tppphhh)["becmjk"],
-        (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphhp)["amie"] * (*Tppphhh)["cbemjk"],
-        (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphph)["amei"] * (*Tppphhh)["ebcmjk"],
-        (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphph)["bmei"] * (*Tppphhh)["aecmjk"],
-        (*Xp3h3)["abcijk"]    += (-1.0) * (*Vphph)["cmei"] * (*Tppphhh)["abemjk"],
-        (*Rppphhh)["abcijk"] <<= (*Xp3h3)["abcijk"],
-        (*Rppphhh)["abcijk"]  += (*Xp3h3)["bacjik"],
-        (*Rppphhh)["abcijk"]  += (*Xp3h3)["cbakji"],
-        Tcc<TE>::sequence()
-      ) : (
-        Tcc<TE>::sequence()
-      ),
-      // I.1 and I.2
       // T3 <-- [VT2] ( + [VT2T2] + [VT2T1] + [VT2T2T1] + [VT2T1T1] + [VT2T1T1T1] )
       // L460 & L461
       (*Xp3h3)["abcijk"]   <<= ( 1.0) * (*Xabie)["abie"] * (*Tpphh)["cekj"],

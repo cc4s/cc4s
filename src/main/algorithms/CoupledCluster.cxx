@@ -105,13 +105,13 @@ Ptr<MapNode> CoupledCluster::run() {
   auto ccsdtn(this->arguments->template getValue<string>("ccsdt-n", ""));
   if (methodName == "Ccsdt" && !ccsdtn.empty()) {
     OUT() << "Working with " << ccsdtn << " model\n";
-    if (! (ccsdtn == "ccsdt-1" || ccsdtn == "ccsdt-3" || ccsdtn == "3CC") ) {
+    if (! (ccsdtn == "ccsdt-1b" || ccsdtn == "ccsdt-3" || ccsdtn == "3CC") ) {
       ASSERT_LOCATION(0, "Unknown CCSDT model",
                       this->arguments->get("ccsdt-n")->sourceLocation);
     }
   }
 
-  bool distinguishable(arguments->getValue<bool>("distinguishable", false));
+  bool distinguishable(arguments->getValue<int>("distinguishable", 0) == 1);
   if (distinguishable) OUT() << "Distinguishable CCSD\n";
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
@@ -144,6 +144,7 @@ Ptr<MapNode> CoupledCluster::run() {
   F e(0), previousE(0);
 
   Real<> residuumNorm;
+  Real<> triplesResiduumNorm(0.0);
   OUT()
     << "Iter         Energy         dE           dR         time   GF/s/core"
     << endl;
@@ -192,11 +193,30 @@ Ptr<MapNode> CoupledCluster::run() {
           amplitudes->get("ph") = ccsd_amplitudes->get("ph");
           amplitudes->get("pphh") = ccsd_amplitudes->get("pphh");
           amplitudes->get("ppphhh") = residuum->get("ppphhh");
+          // in this case we have to add the amplitudes change of the T3 block
+          if (t3_p) {
+            auto dot( Tcc<TE>::template tensor<F>("dot") );
+            // add to result
+            if (typeid(Complex<64>) == typeid(F)) {
+              COMPILE(
+                (*dot)[""] +=
+                  map<F>(cc4s::conj<F>, (*amplitudesChange->get("ppphhh"))["abcijk"]) *
+                  (*amplitudesChange->get("ppphhh"))["abcijk"]
+              )->execute();
+            } else {
+              COMPILE(
+                (*dot)[""] += (*amplitudesChange->get("ppphhh"))["abcijk"] *
+                (*amplitudesChange->get("ppphhh"))["abcijk"]
+              )->execute();
+            }
+            triplesResiduumNorm = real(dot->read());
+          }
         } else {
           mixer->append(residuum, amplitudesChange);
           amplitudes = mixer->get();
         }
         residuumNorm = mixer->getResiduumNorm();
+        residuumNorm += triplesResiduumNorm;
       }
       e = getEnergy(amplitudes);
     }
