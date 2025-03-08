@@ -102,7 +102,6 @@ Ptr<MapNode> MrccReader::run(
     auto _fullMos = fileRead<Data2>("MOCOEF");
 
     // We have to change the indices from fortran to C
-    int ii(0);
     for (auto &d: _fockAO) {
       d.index1--;
       d.index2--;
@@ -125,35 +124,17 @@ Ptr<MapNode> MrccReader::run(
       fockAO[f.index2 + nbf * f.index1] = f.value;
     }
 
-    size_t jjj(0);
     for (auto &m: _fullMos) {
-      if (m.index2 < ncore) continue;
+      if ((size_t) m.index2 < ncore) continue;
       mos[m.index1 + nbf * (m.index2 - ncore)] = m.value;
-      if (m.index2 < ncore+nocc) {
+      if ((size_t) m.index2 < ncore+nocc) {
         mos_occ[m.index1 + nbf * (m.index2 - ncore)] = m.value;
       } else {
         mos_vir[m.index1 + nbf * (m.index2 - ncore - nocc)] = m.value;
       }
     }
 
-
-
-    cc4s::Real<64> alpha = 1.0, beta = 0.0;
-    dsymm_("l",
-           "l",
-           (int const *) &nbf,
-           (int const *) &nbasis,
-           &alpha,
-           fockAO.data(),
-           (int const *) &nbf,
-           mos.data(),
-           (int const *) &nbf,
-           &beta,
-           tmp.data(),
-           (int const *) &nbf);
-
-//    matmul(fockAO, mos, tmp, nbf, nbf, nbasis);
-
+    matmul(fockAO, mos, tmp, nbf, nbasis, nbf);
     matmul(mos, tmp, fockMO, nbasis, nbasis, nbf, true, false);
 
     size_t p(0), h(0);
@@ -168,27 +149,28 @@ Ptr<MapNode> MrccReader::run(
   // we have to distribute mos_occ over the different ranks
   // right now only rank 0 is used
   //auto halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis)
-  auto halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis);
+  std::vector<Real<>> halfVertexh;
+  if (!Cc4s::dryRun) halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis);
 
   auto Mos_vir(Tcc<TE>::template tensor<Real<>>({nbf, nvir}, "Mos_vir") );
   auto Gamma_igm(Tcc<TE>::template tensor<Real<>>({nocc, ndfbasis, nbf}, "halfVertexh"));
   auto Epsp(Tcc<TE>::template tensor<Real<>>({nvir}, "epsp") );
   auto Epsh(Tcc<TE>::template tensor<Real<>>({nocc}, "epsh") );
 
-  //size_t el = (rank) ? 0 : halfVertexh.size();
-  //std::iota(idx.begin(), idx.end(), 0);
-  size_t el = halfVertexh.size();
-  std::vector<size_t> idx(el);
-  auto nbf_loc = nbf / np + (rank < nbf % np);
-  for (size_t m(0); m < nbf_loc; m++)
-  for (size_t g(0); g < ndfbasis; g++)
-  for (size_t i(0); i < nocc; i++) {
-    auto m_global = m * np + rank;
-    idx[i + g*nocc + m * nocc * ndfbasis] = i + g*nocc + m_global * nocc * ndfbasis;
+  size_t el;
+  std::vector<size_t> idx;
+  if (!Cc4s::dryRun) {
+    el = halfVertexh.size();
+    idx.resize(el);
+    auto nbf_loc = nbf / np + (rank < nbf % np);
+    for (size_t m(0); m < nbf_loc; m++)
+    for (size_t g(0); g < ndfbasis; g++)
+    for (size_t i(0); i < nocc; i++) {
+      auto m_global = m * np + rank;
+      idx[i + g*nocc + m * nocc * ndfbasis] = i + g*nocc + m_global * nocc * ndfbasis;
+    }
+    Gamma_igm->write(el, idx.data(), halfVertexh.data());
   }
-
-  Gamma_igm->write(el, idx.data(), halfVertexh.data());
-
 
   el = (rank) ? 0 : mos_vir.size();
   idx.resize(el);
@@ -204,8 +186,6 @@ Ptr<MapNode> MrccReader::run(
   std::vector<Real<>> w(nvir);
   if (!Cc4s::dryRun) {
     if (!rank) {
-      int lwork(3*nvir), info;
-      std::vector<Real<>> work(lwork);
 
       compute_eigen(gamma_ab, nvir, w);
       // zero out the elements beyond nFno
@@ -230,6 +210,8 @@ Ptr<MapNode> MrccReader::run(
       for (size_t c(0); c < nvir; c++) {
         scratch[a + b * nvir] += gamma_ab[a + c * nvir] * fock_ab[c + b * nvir];
       }
+      //matmul(scratch, gamma_ab, fock_ab, nvir, nvir, nvir);
+
       for (size_t a(0); a < nvir; a++) {
         size_t c(0);
         for (size_t b(nvir-nFno); b < nvir; b++) {
@@ -244,7 +226,8 @@ Ptr<MapNode> MrccReader::run(
       for (size_t a(0); a < nvir; a++) {
         mos_vir_fno[m + b * nbf] += mos_vir[m + a * nbf] * rot_ab[a + b * nvir];
       }
-//      matmul(mos_vir_fno, mos_vir, rot_ab, nbf, nFno, nvir);
+      //matmul(mos_vir_fno, mos_vir, rot_ab, nbf, nFno, nvir, true, true);
+
     }
     // we have to distribute to all ranks for the AO->MO transform
     MPI_Bcast(mos_vir_fno.data(), nbf*nFno, MPI_DOUBLE, 0, Cc4s::world->getComm());
@@ -263,20 +246,16 @@ Ptr<MapNode> MrccReader::run(
 
   eval_mp2(Gamma_igm, Epsf, Epsh, Mos_vir_fno, false);
 
-  // right now every one is doing that
-  auto halfVertexp = halfTransform(mos_vir_fno, intpos, nFno, nbf, ndfbasis);
+  std::vector<Real<>> halfVertexp;
 
-
+  if (!Cc4s::dryRun) halfVertexp = halfTransform(mos_vir_fno, intpos, nFno, nbf, ndfbasis);
 
   auto Gamma_agm(Tcc<TE>::template tensor<Real<>>({nFno, ndfbasis, nbf}, "halfVertexp"));
 
-// Version without mpi
-//  el = (rank) ? 0 : halfVertexp.size();
-//  idx.resize(el);
-//  std::iota(idx.begin(), idx.end(), 0);
   if (!Cc4s::dryRun) {
     el = halfVertexp.size();
     idx.resize(el);
+    auto nbf_loc = nbf / np + (rank< nbf % np);
     for (size_t m(0); m < nbf_loc; m++)
     for (size_t g(0); g < ndfbasis; g++)
     for (size_t a(0); a < nFno; a++) {
@@ -285,7 +264,6 @@ Ptr<MapNode> MrccReader::run(
     }
   }
   Gamma_agm->write(el, idx.data(), halfVertexp.data());
-
 
   auto Mos_occ(Tcc<TE>::template tensor<Real<>>({nbf, nocc}, "Mos_occ"));
   el = (rank) ? 0 : nocc*nbf;
@@ -314,11 +292,8 @@ Ptr<MapNode> MrccReader::run(
   energies->get("h") = Epsh;
   energies->get("p") = Epsf;
 
-
   result->setPtr("coulombVertex", vertex);
   result->setPtr("eigenEnergies", energies);
-
-
 
   return result;
 
