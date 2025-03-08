@@ -16,6 +16,7 @@
 #ifndef MRCC_READER_DEFINED
 #define MRCC_READER_DEFINED
 
+#include <string>
 #include <algorithms/Algorithm.hpp>
 #include <tcc/TensorExpression.hpp>
 
@@ -58,6 +59,14 @@ namespace cc4s {
     };
     #pragma pack()
 
+    struct SystemDimensions {
+        int conventionalBasis;
+        int scf_fitting;
+        int correlation_fitting;
+        int electrons;
+        int core_electrons;
+    };
+
 
     std::vector<Real<>> halfTransform(
       const std::vector<Real<>> &mos,
@@ -67,6 +76,8 @@ namespace cc4s {
       const size_t ndfbasis
     );
 
+
+    SystemDimensions extractSystemDimensions(const std::string filename);
 
 
   };

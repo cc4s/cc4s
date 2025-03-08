@@ -24,6 +24,7 @@
 #include <extern/Lapack.hpp>
 #include <lapack/LapackWrapper.hpp>
 #include <TensorSet.hpp>
+#include <string>
 
 
 using namespace cc4s;
@@ -53,19 +54,27 @@ Ptr<MapNode> MrccReader::run(
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
 
-  size_t nocc(arguments->template getValue<Natural<>>("nocc"));
-  size_t nvir(arguments->template getValue<Natural<>>("nvir"));
-  size_t ncore(arguments->template getValue<Natural<>>("ncore"));
-  size_t ndfbasis(arguments->template getValue<Natural<>>("ndfbasis"));
 
+  size_t nocc, nvir, ncore, ndfbasis, nbasis, nbf;
+  if (arguments->isGiven("mrccStdOut")) {
+    auto mrccOut(arguments->template getValue<std::string>("mrccStdOut"));
+    auto systemDimensions = extractSystemDimensions(mrccOut);
+    ncore = systemDimensions.core_electrons /2;
+    nocc = systemDimensions.electrons / 2 - ncore;
+    ndfbasis = systemDimensions.correlation_fitting;
+    nbf = systemDimensions.conventionalBasis;
+    nbasis = nbf - ncore;
+    nvir = nbasis - nocc;
+  } else {
+    nocc = arguments->template getValue<Natural<>>("nocc");
+    nvir = arguments->template getValue<Natural<>>("nvir");
+    ncore = arguments->template getValue<Natural<>>("ncore");
+    ndfbasis = arguments->template getValue<Natural<>>("ndfbasis");
+    nbasis = nocc + nvir;
+    nbf = nbasis + ncore;
+  }
   size_t fnoFactor(arguments->template getValue<Natural<>>("fnoFactor"));
 
-//  size_t nocc = 4;
-//  size_t nvir = 64;
-//  size_t ncore = 1;
-//  size_t ndfbasis = 152;
-  size_t nbasis = nocc + nvir;
-  size_t nbf = nbasis + ncore; //28
   size_t nFno = std::min(fnoFactor*nocc, nvir);
 
   std::vector<Real<>> mos_occ(nbf*nocc), mos_vir_fno(nFno*nbf);
@@ -80,7 +89,11 @@ Ptr<MapNode> MrccReader::run(
 
   auto rank(Cc4s::world->getRank());
   auto np(Cc4s::world->getProcesses());
-  std::cout << "NUMBER OF PROCESSES " << np << std::endl;
+  OUT() << "nocc: " << nocc;
+  OUT() << " nvir: " << nvir;
+  OUT() << " nbf: "  << nbf;
+  OUT() << " ndf: "  << ndfbasis << std::endl;
+
   if (!rank) {
 
     // map of fock matrix elements in AO basis
@@ -471,4 +484,94 @@ std::vector<Real<>> MrccReader::eval_mp2(Ptr<Tensor<Real<>,TE>> Gamma_igm,
   return gamma_ab;
 }
 
+
+// Extract a number from a string like "Total number of basis functions:  xxx"
+int extractNumberFromLine(const std::string& line) {
+    size_t colonPos = line.find(':');
+    if (colonPos == std::string::npos) return 0;
+
+    std::string numberPart = line.substr(colonPos + 1);
+    // Remove all whitespace
+    numberPart.erase(
+        std::remove_if(numberPart.begin(), numberPart.end(),
+                      [](unsigned char c) { return std::isspace(c); }),
+        numberPart.end());
+
+    // Convert to integer
+    return std::stoi(numberPart);
+}
+
+MrccReader::SystemDimensions MrccReader::extractSystemDimensions(const std::string filename) {
+    std::ifstream infile(filename);
+
+    std::string line;
+    MrccReader::SystemDimensions result = {0, 0, 0, 0, -1};
+
+    // Track which section we're in
+    enum Section { NONE, CONVENTIONAL, SCF_FITTING, CORRELATION_FITTING };
+    Section currentSection = NONE;
+
+    // Track which block we're in
+    int blockCount = 0;
+    //bool inTargetBlock = useFirstBlock; // If true, use first block; otherwise wait for second
+    bool useFirstBlock = false;
+    bool inTargetBlock = useFirstBlock; // If true, use first block; otherwise wait for second
+
+    while (std::getline(infile, line)) {
+        // Detect section changes
+        if (line.find("Conventional basis set:") != std::string::npos) {
+            currentSection = CONVENTIONAL;
+            if (currentSection == CONVENTIONAL && blockCount == 0) {
+                blockCount++;
+                inTargetBlock = useFirstBlock;
+            } else if (currentSection == CONVENTIONAL && blockCount == 1) {
+                blockCount++;
+                inTargetBlock = !useFirstBlock;
+            }
+        } else if (line.find("Fitting basis set for the SCF calculation:") != std::string::npos) {
+            currentSection = SCF_FITTING;
+        } else if (line.find("Fitting basis set for the correlation calculation:") != std::string::npos) {
+            currentSection = CORRELATION_FITTING;
+        }
+
+        // Check if this is the line with basis function count
+        if (inTargetBlock && line.find("Total number of basis functions:") != std::string::npos) {
+            int value = extractNumberFromLine(line);
+
+            switch (currentSection) {
+                case CONVENTIONAL:
+                    result.conventionalBasis = value;
+                    break;
+                case SCF_FITTING:
+                    result.scf_fitting = value;
+                    break;
+                case CORRELATION_FITTING:
+                    result.correlation_fitting = value;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (line.find(" Number of electrons:") != std::string::npos) {
+          result.electrons = extractNumberFromLine(line);
+        }
+        if (line.find("umber of core electrons:") != std::string::npos) {
+          result.core_electrons = extractNumberFromLine(line);
+        }
+
+
+        // If we've filled all values and we're in the target block, we can stop
+        if (inTargetBlock &&
+            result.conventionalBasis != 0 &&
+            result.scf_fitting != 0 &&
+            result.correlation_fitting != 0 &&
+            result.electrons != 0 &&
+            result.core_electrons >= 0) {
+            break;
+        }
+
+    }
+
+    return result;
+}
 
