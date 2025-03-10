@@ -150,8 +150,15 @@ Ptr<MapNode> MrccReader::run(
   // right now only rank 0 is used
   //auto halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis)
   std::vector<Real<>> halfVertexh;
-  if (!Cc4s::dryRun) halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis);
-
+  if (Cc4s::dryRun) {
+    std::ifstream iffile("TEINT", std::ios::binary);
+    ASSERT_LOCATION(
+      iffile, "File TEINT not present",
+      SOURCE_LOCATION
+    );
+  } else {
+    halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis);
+  }
   auto Mos_vir(Tcc<TE>::template tensor<Real<>>({nbf, nvir}, "Mos_vir") );
   auto Gamma_igm(Tcc<TE>::template tensor<Real<>>({nocc, ndfbasis, nbf}, "halfVertexh"));
   auto Epsp(Tcc<TE>::template tensor<Real<>>({nvir}, "epsp") );
@@ -303,10 +310,10 @@ Ptr<MapNode> MrccReader::run(
 template <typename T>
 std::vector<T> MrccReader::fileRead(const std::string& filename, size_t nint) {
   std::ifstream iffile(filename, std::ios::binary);
-  if (!iffile) {
-    // TODO we have to cc4s assert this
-    //throw std::runtime_error("Failed to open file: " + filename);
-  }
+  ASSERT_LOCATION(
+    iffile, "File " + filename + " not present",
+    SOURCE_LOCATION
+  );
 
   // Skip Fortran 4-byte record marker at the beginning
   iffile.seekg(4, std::ios::beg);
@@ -319,11 +326,11 @@ std::vector<T> MrccReader::fileRead(const std::string& filename, size_t nint) {
   std::vector<T> data(nint);
   iffile.read(reinterpret_cast<char*>(data.data()), sizeof(T) * nint);
 
-  // Ensure we read the expected amount
-  if (iffile.gcount() != static_cast<std::streamsize>(sizeof(T) * nint)) {
-    // TODO we have to cc4s assert this
-    //throw std::runtime_error("Error reading binary file: " + filename);
-  }
+  ASSERT_LOCATION(
+    iffile.gcount() == static_cast<std::streamsize>(sizeof(T) * nint),
+    "File " + filename + " not present",
+    SOURCE_LOCATION
+  );
 
   return data;
 }
