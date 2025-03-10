@@ -75,6 +75,7 @@ Ptr<MapNode> MrccReader::run(
   }
   size_t fnoFactor(arguments->template getValue<Natural<>>("fnoFactor"));
 
+  LOG() << "Parameter read. Constructing Fock matrix in MO basis" << std::endl;
   size_t nFno = std::min(fnoFactor*nocc, nvir);
 
   std::vector<Real<>> mos_occ(nbf*nocc), mos_vir_fno(nFno*nbf);
@@ -89,10 +90,10 @@ Ptr<MapNode> MrccReader::run(
 
   auto rank(Cc4s::world->getRank());
   auto np(Cc4s::world->getProcesses());
-  OUT() << "nocc: " << nocc;
-  OUT() << " nvir: " << nvir;
-  OUT() << " nbf: "  << nbf;
-  OUT() << " ndf: "  << ndfbasis << std::endl;
+  OUT() << "nocc: " << nocc << " nvir: " << nvir
+        << " nbf: " << nbf << " ndf: " << ndfbasis << std::endl;
+  LOG() << "nocc: " << nocc << " nvir: " << nvir
+        << " nbf: " << nbf << " ndf: " << ndfbasis << std::endl;
 
   if (!rank) {
 
@@ -144,11 +145,11 @@ Ptr<MapNode> MrccReader::run(
       if (i >= nocc) epsp[p++] = fockMO[i + nbasis*i];
     }
   }
-  MPI_Bcast(mos_occ.data(), nbf*nocc, MPI_DOUBLE, 0, Cc4s::world->getComm());
 
   // we have to distribute mos_occ over the different ranks
   // right now only rank 0 is used
   //auto halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis)
+  LOG() << "Reading and transforming three center integrals" << std::endl;
   std::vector<Real<>> halfVertexh;
   if (Cc4s::dryRun) {
     std::ifstream iffile("TEINT", std::ios::binary);
@@ -157,6 +158,7 @@ Ptr<MapNode> MrccReader::run(
       SOURCE_LOCATION
     );
   } else {
+    MPI_Bcast(mos_occ.data(), nbf*nocc, MPI_DOUBLE, 0, Cc4s::world->getComm());
     halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis);
   }
   auto Mos_vir(Tcc<TE>::template tensor<Real<>>({nbf, nvir}, "Mos_vir") );
@@ -485,7 +487,12 @@ int extractNumberFromLine(const std::string& line) {
 
 MrccReader::SystemDimensions MrccReader::extractSystemDimensions(const std::string filename) {
     std::ifstream infile(filename);
+    ASSERT_LOCATION(
+      infile, "Mrcc Stdout not present. File " + filename ,
+      SOURCE_LOCATION
+    );
 
+    LOG() << "Start reading the Mrcc StdOut." << std::endl;
     std::string line;
     MrccReader::SystemDimensions result = {0, 0, 0, 0, -1};
 
@@ -553,7 +560,14 @@ MrccReader::SystemDimensions MrccReader::extractSystemDimensions(const std::stri
         }
 
     }
-
+    ASSERT_LOCATION(
+      result.conventionalBasis &&
+      result.scf_fitting &&
+      result.correlation_fitting &&
+      result.electrons,
+      "Mrcc Stdout not read sucessfully",
+      SOURCE_LOCATION
+    );
     return result;
 }
 
