@@ -304,6 +304,15 @@ Ptr<MapNode> MrccReader::run(
   result->setPtr("coulombVertex", vertex);
   result->setPtr("eigenEnergies", energies);
 
+
+  OUT() << "Finished constructing FNO from Mrcc-AO-Vertex\n";
+
+  OUT() << "number of holes     No: " << nocc;
+  OUT() << "\nnumber of particles Nv: " << nFno;
+  OUT() << "\nnumber of states    Np: " << nocc+nFno << std::endl;
+
+
+
   return result;
 
 }
