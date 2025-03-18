@@ -30,7 +30,7 @@ Ptr<MapNode> Write::run(const Ptr<MapNode> &arguments) {
   ASSERT_LOCATION(source, "expecting key 'source'", arguments->sourceLocation);
   auto fileName(arguments->getValue<std::string>("fileName"));
   // TODO: use options
-  auto useBinary(arguments->getValue<bool>("binary", false));
+  auto useBinary(arguments->getValue<bool>("binary", true));
   auto rowMajor(arguments->getValue<bool>("rowMajor", false));
   FlagsIO flagsIO({useBinary, rowMajor});
   auto persistentSource(Writer(fileName, flagsIO).write(source));
