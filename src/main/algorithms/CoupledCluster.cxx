@@ -63,6 +63,10 @@ Ptr<MapNode> CoupledCluster::run() {
   auto eigenEnergies(
     arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
   );
+  ASSERT_LOCATION(
+    eigenEnergies, std::string("Failed to load TensorSet slicedEigenEnergies"),
+    arguments->get("slicedEigenEnergies")->sourceLocation
+  );
   auto epsh(eigenEnergies->get("h"));
   auto epsp(eigenEnergies->get("p"));
 
