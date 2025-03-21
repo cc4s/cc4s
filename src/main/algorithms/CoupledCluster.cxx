@@ -63,10 +63,6 @@ Ptr<MapNode> CoupledCluster::run() {
   auto eigenEnergies(
     arguments->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
   );
-  ASSERT_LOCATION(
-    eigenEnergies, std::string("Failed to load TensorSet slicedEigenEnergies"),
-    arguments->get("slicedEigenEnergies")->sourceLocation
-  );
   auto epsh(eigenEnergies->get("h"));
   auto epsp(eigenEnergies->get("p"));
 
@@ -331,8 +327,9 @@ F CoupledCluster::getEnergy(
       }
     }
     energy->setValue("correlation", real(e));
-    energy->setValue("direct", real(D));
-    energy->setValue("exchange", real(X));
+    energy->setValue("direct", real(D+Ds));
+    energy->setValue("singles", real(Ds+Xs));
+    energy->setValue("exchange", real(X+Xs));
     energy->setValue("unit", Vijab->inspect()->getUnit());
   }
   std::cout << std::setprecision(ss);
