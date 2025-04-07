@@ -520,8 +520,10 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinaryDense(
       ifile.good(), std::string("Failed to open file '") + fileName + "'",
       sourceLocation
     )
-    ifile.ignore( std::numeric_limits<std::streamsize>::max() );
-    size_t length = ifile.gcount();
+    ifile.seekg(0, std::ios::end);
+    size_t length = ifile.tellg();
+    //ifile.ignore( std::numeric_limits<std::streamsize>::max() );
+    //size_t length = ifile.gcount();
     ifile.close();
 
     ASSERT_LOCATION(
