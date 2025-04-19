@@ -291,6 +291,13 @@ Ptr<MapNode> MrccReader::run(
     (*Gamma_gab)["Gab"] <<= map<Complex<>>(toComplex<Real<>>, (*Gamma_agm)["aGm"] * (*Mos_vir_fno)["mb"])
   )->execute();
 
+  auto metaCoulomb( New<MapNode>(SOURCE_LOCATION) );
+  metaCoulomb->setValue("halfGrid", 1);
+  Gamma_gij->getMetaData() = metaCoulomb;
+  Gamma_gia->getMetaData() = metaCoulomb;
+  Gamma_gai->getMetaData() = metaCoulomb;
+  Gamma_gab->getMetaData() = metaCoulomb;
+
   std::shared_ptr<TensorSet<Complex<>,TE>> vertex = std::make_shared<TensorSet<Complex<>,TE>>();
   vertex->get("hh") = Gamma_gij;
   vertex->get("hp") = Gamma_gia;
