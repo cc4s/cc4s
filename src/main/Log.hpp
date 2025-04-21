@@ -24,6 +24,7 @@
 #include <streambuf>
 #include <fstream>
 #include <functional>
+#include <chrono>
 
 namespace cc4s {
   /**
@@ -32,58 +33,43 @@ namespace cc4s {
    */
   class Log {
   public:
+    // type alias 'HeaderFunction' for a function that takes a
+    // SourceLocation and returns a string.
     typedef std::function<std::string(const SourceLocation &)> HeaderFunction;
 
-    static void setRank(const int rank);
-    static void closeLogFile();
-    static int getRank();
-    static std::ostream &getOutStream() {
-      if (rank == 0 && !Cc4s::dryRun) return std::cout;
-      else return nullStream;
-    }
-    static std::ostream &getErrorStream() {
-      if (rank == 0) return std::cerr;
-      else return nullStream;
-    }
-    static std::ostream &getWarningStream() {
-      if (rank == 0) return std::cout;
-      else return nullStream;
-    }
-    static void setFileName(const std::string &fileName);
-    static std::string getFileName();
-    static std::ofstream &getLogStream() {
-      if (rank == 0) return logStream;
-      else return nullStream;
-    }
-    static void setOutHeaderFunction(const HeaderFunction &f) {
-      outHeaderFunction = f;
-    }
-    static HeaderFunction getOutHeaderFunction() {
-      return outHeaderFunction;
-    }
-    static void setErrorHeaderFunction(const HeaderFunction &f) {
-      errorHeaderFunction = f;
-    }
-    static HeaderFunction getErrorHeaderFunction() {
-      return errorHeaderFunction;
-    }
-    static void setWarningHeaderFunction(const HeaderFunction &f) {
-      warningHeaderFunction = f;
-    }
-    static HeaderFunction getWarningHeaderFunction() {
-      return warningHeaderFunction;
-    }
-    static void setLogHeaderFunction(const HeaderFunction &f) {
-      logHeaderFunction = f;
-    }
-    static HeaderFunction getLogHeaderFunction() {
-      return logHeaderFunction;
-    }
+    using Clock = std::chrono::high_resolution_clock;
+    using Event = std::chrono::time_point<Clock>;
+    using Duration = std::chrono::duration<double>;
+
+    static void setRank(const int rank) noexcept;
+    static void closeLogFile() noexcept;
+    static int getRank() noexcept;
+    static std::ostream &getOutStream() noexcept;
+    static std::ostream &getErrorStream() noexcept;
+    static std::ostream &getWarningStream() noexcept;
+    static void setFileName(const std::string &fileName) noexcept;
+    static std::string getFileName() noexcept;
+    static std::ostream &getLogStream() noexcept;
+    static void setOutHeaderFunction(const HeaderFunction &f) noexcept;
+    static HeaderFunction getOutHeaderFunction() noexcept;
+    static void setErrorHeaderFunction(const HeaderFunction &f) noexcept;
+    static HeaderFunction getErrorHeaderFunction() noexcept;
+    static void setWarningHeaderFunction(const HeaderFunction &f) noexcept;
+    static HeaderFunction getWarningHeaderFunction() noexcept;
+    static void setLogHeaderFunction(const HeaderFunction &f) noexcept;
+    static HeaderFunction getLogHeaderFunction() noexcept;
+    static void flushLogBuffer() noexcept;
+    static size_t flush_log_after_seconds;
 
   protected:
+    static Duration log_time_since_last_flush;
+    static Event log_last_now;
+    static std::stringstream log_buffer;
     static int rank;
     static std::string fileName;
     static std::ofstream logStream;
+    // nullStream discards output from non-rank 0 processes, ensuring
+    // only rank 0 logs.
     static std::ofstream nullStream;
     static HeaderFunction
       outHeaderFunction, errorHeaderFunction, warningHeaderFunction,
@@ -113,4 +99,3 @@ namespace cc4s {
   (Log::getLogStream() << Log::getLogHeaderFunction()(LOCATION))
 
 #endif
-

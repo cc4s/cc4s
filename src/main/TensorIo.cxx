@@ -514,22 +514,25 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinaryDense(
   // create tensor
   auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
 
-  ifstream ifile(fileName, ios::in|ios::binary);
-  ASSERT_LOCATION(
-    ifile.good(), std::string("Failed to open file '") + fileName + "'",
-    sourceLocation
-  )
-  ifile.ignore( std::numeric_limits<std::streamsize>::max() );
-  size_t length = ifile.gcount();
-  ifile.close();
+  if (Cc4s::world->getRank() == 0) {
+    ifstream ifile(fileName, ios::in|ios::binary);
+    ASSERT_LOCATION(
+      ifile.good(), std::string("Failed to open file '") + fileName + "'",
+      sourceLocation
+    )
+    ifile.seekg(0, std::ios::end);
+    size_t length = ifile.tellg();
+    //ifile.ignore( std::numeric_limits<std::streamsize>::max() );
+    //size_t length = ifile.gcount();
+    ifile.close();
 
-  ASSERT_LOCATION(
-    length == sizeof(F)*tensor->getElementsCount(),
-    std::string("The data in File '") + fileName +
-    std::string("' is not compatible with the tensor specs in the corresponding yaml File"),
-    sourceLocation
-  )
-
+    ASSERT_LOCATION(
+      length == sizeof(F)*tensor->getElementsCount(),
+      std::string("The data in File '") + fileName +
+      std::string("' is not compatible with the tensor specs in the corresponding yaml File"),
+      sourceLocation
+    )
+  }
   // open the file
   MPI_File file;
   int mpiError(

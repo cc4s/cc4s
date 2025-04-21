@@ -20,6 +20,7 @@
 #include <Emitter.hpp>
 #include <Cc4s.hpp>
 #include <SharedPointer.hpp>
+#include <Log.hpp>
 
 #include <string>
 
@@ -95,10 +96,14 @@ namespace cc4s {
     // translate into persistent node tree
     Ptr<Node> write(const Ptr<Node> &node, const std::string &nodePath) {
       auto mapNode(node->toPtr<MapNode>());
-      if (mapNode) return writeMap(mapNode, nodePath);
+      if (mapNode) {
+        return writeMap(mapNode, nodePath);
+      }
       auto symbolNode(node->toPtr<SymbolNode>());
       if (symbolNode) {
         // symbols are already in persistent form
+        ASSERT_LOCATION(0, std::string("unassigned object ") + symbolNode->value,
+                        symbolNode->sourceLocation);
         return symbolNode;
       } else {
         return writeAtom(node, nodePath);

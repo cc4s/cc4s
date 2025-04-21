@@ -327,8 +327,9 @@ F CoupledCluster::getEnergy(
       }
     }
     energy->setValue("correlation", real(e));
-    energy->setValue("direct", real(D));
-    energy->setValue("exchange", real(X));
+    energy->setValue("direct", real(D+Ds));
+    energy->setValue("singles", real(Ds+Xs));
+    energy->setValue("exchange", real(X+Xs));
     energy->setValue("unit", Vijab->inspect()->getUnit());
   }
   std::cout << std::setprecision(ss);
