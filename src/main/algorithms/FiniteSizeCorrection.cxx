@@ -265,14 +265,11 @@ void FiniteSizeCorrection::interpolation(
   }
 
 
-  MpiCommunicator communicator(
-    Cc4s::world->getRank(), Cc4s::world->getProcesses(), Cc4s::world->getComm()
-  );
-  communicator.barrier();
+  Cc4s::world->barrier();
   for (int a(-int(N)); a < int(N); ++a)
   for (int b(-int(N)); b < int(N); ++b)
   for (int c(-int(N)); c < int(N); ++c) {
-    if ((a+b+c) % Cc4s::world->getProcesses() != Cc4s::world->getRank()) continue;
+    if ((a+b+c+3*int(N)) % Cc4s::world->getProcesses() != Cc4s::world->getRank()) continue;
     Vector<Real<>> ga(((B[0]/Real<>(N*2))*Real<>(a)));
     Vector<Real<>> gb(((B[1]/Real<>(N*2))*Real<>(b)));
     Vector<Real<>> gc(((B[2]/Real<>(N*2))*Real<>(c)));
@@ -291,7 +288,7 @@ void FiniteSizeCorrection::interpolation(
     }
   }
   Real<> totalInter3D(0.0);
-  communicator.allReduce(inter3D, totalInter3D);
+  Cc4s::world->allReduce(inter3D, totalInter3D);
 
 //  OUT() << "Uncorrected correlation energy:   " << std::setprecision(10) << sum3D << "\n";
   OUT() << "Finite-size energy correction:    " << std::setprecision(10) << totalInter3D/N/N/N/8.0-sum3D << "\n";

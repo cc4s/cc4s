@@ -432,7 +432,7 @@ void Cc4s::getClusterInfo() {
   // Node information
   std::string model;
   int physical_cores;
-  FILE* pipecpu = popen("lscpu", "r");
+  FILE* pipecpu = popen("lscpu 2> /dev/null", "r");
   if (pipecpu) {
     std::map<std::string, std::string> cpu_info;
     char buffer[256];
@@ -511,7 +511,7 @@ void Cc4s::getClusterInfo() {
   // Try to get the infiniband information
   std::string ibinfo("Network information: ");
   std::string best_result;
-  FILE* pipenet = popen("ibstatus", "r");
+  FILE* pipenet = popen("ibstatus 2>/dev/null", "r");
   if (pipenet) {
     std::string line, current_block;
     char buffer[512];
