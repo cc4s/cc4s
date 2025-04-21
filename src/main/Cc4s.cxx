@@ -29,6 +29,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <omp.h>
 
 using namespace cc4s;
 
@@ -199,6 +200,8 @@ void Cc4s::runSteps(const bool dry) {
     OUT() << "--" << std::endl;
     LOG() << "memory estimate: " << DryMemory::maxTotalSize / GB << " GB"
       << std::endl;
+    if (options->dryRanks == 0 )
+      OUT() << "\nStart calculation\n--" << std::endl;
   }
   statistics->setValue("realtime", totalRealtime.str());
   statistics->setValue("floatingPointOperations", totalOperations);
@@ -321,8 +324,22 @@ void Cc4s::printBanner() {
   OUT() << "build date: " << buildDate.str() << std::endl;
   OUT() << "compiler: " << COMPILER_VERSION << std::endl;
   OUT() << "mpi: " << CC4S_MPI_VERSION << std::endl;
-  OUT() << "total processes: " << world->getProcesses() << std::endl;
-  OUT() << "calculation started on: " << ctime (&rawtime) << std::endl;
+  OUT() << std::endl;
+  if (options->dryRanks == 0) {
+    getClusterInfo();
+    OUT() << std::endl;
+    executionEnvironment->get("hosts") = getHostList();
+    OUT() << "total processes: " << world->getProcesses() << std::endl;
+    OUT() << "number of nodes: " << world->getNodes() << std::endl;
+    if (world->getRanksPerNode() < 0) {
+      OUT() << "ranks per node are unbalanced" << std::endl;
+    } else {
+      OUT() << "ranks per node: " << world->getRanksPerNode() << std::endl;
+    }
+    OUT() << "Number of OpenMP threads: " << omp_get_max_threads() << std::endl;
+    OUT() << std::endl;
+    OUT() << "calculation started at: " << ctime (&rawtime) << std::endl;
+  }
   executionEnvironment->setValue("version", std::string(CC4S_VERSION));
   executionEnvironment->setValue("buildDate", buildDate.str());
   executionEnvironment->setValue("compiler", std::string(COMPILER_VERSION));
@@ -332,7 +349,6 @@ void Cc4s::printBanner() {
   if (options->dryRanks > 0) {
     OUT() << "DRY RUN ONLY - nothing will be calculated" << std::endl;
   }
-  executionEnvironment->get("hosts") = getHostList();
 }
 
 void Cc4s::printEndBanner() {
@@ -366,7 +382,7 @@ Ptr<MapNode> Cc4s::getHostList() {
       ranksOfHosts[ownName].push_back(0);
       // receive all names but own name from remote ranks
       for (
-        Natural<> remoteRank(1);
+        int remoteRank(1);
         remoteRank < world->getProcesses();
         ++remoteRank
       ) {
@@ -395,10 +411,157 @@ Ptr<MapNode> Cc4s::getHostList() {
         0, 0, MPI_COMM_WORLD
       );
     }
+    Cc4s::world->setNodes(ranksOfHosts.size());
+    int ranksPerNode = ranksOfHosts.begin()->second.size();
+    for (const auto& pair : ranksOfHosts) {
+      if (pair.second.size() != ranksPerNode) {
+        ranksPerNode = -1;
+        break;
+      }
+    }
+    Cc4s::world->setRanksPerNode(ranksPerNode);
   } else {
     // TODO: list planned execution environment from options
   }
   return hosts;
+}
+
+void Cc4s::getClusterInfo() {
+
+  // Node information
+  std::string model;
+  int physical_cores;
+  FILE* pipecpu = popen("lscpu", "r");
+  if (pipecpu) {
+    std::map<std::string, std::string> cpu_info;
+    char buffer[256];
+
+    while (fgets(buffer, sizeof(buffer), pipecpu)) {
+      std::string line(buffer);
+      auto sep_pos = line.find(':');
+      if (sep_pos != std::string::npos) {
+        std::string key = line.substr(0, sep_pos);
+        std::string value = line.substr(sep_pos + 1);
+        // Trim
+        key.erase(key.find_last_not_of(" \t\n\r") + 1);
+        value.erase(0, value.find_first_not_of(" \t\n\r"));
+        value.erase(value.find_last_not_of(" \t\n\r") + 1);
+        cpu_info[key] = value;
+      }
+    }
+
+    pclose(pipecpu);
+
+    // Extract and print desired info
+    int sockets = std::stoi(cpu_info["Socket(s)"]);
+    int cores_per_socket = std::stoi(cpu_info["Core(s) per socket"]);
+    physical_cores = sockets * cores_per_socket;
+    model = cpu_info["Model name"];
+
+    OUT() << "Model Name: " << model << "\n";
+    OUT() << physical_cores << " physical cores across " << sockets << " socket(s)" << std::endl;
+  }
+  // Check that every rank has the same node.
+  if (options->dryRanks == 0) {
+    constexpr int MODEL_NAME_LEN = 128;
+    char model_buf[MODEL_NAME_LEN] = {0};
+    std::strncpy(model_buf, model.c_str(), MODEL_NAME_LEN - 1);
+    char* all_models = nullptr;
+    if (world->getRank() == 0) all_models = new char[Cc4s::world->getProcesses() * MODEL_NAME_LEN];
+    MPI_Gather(model_buf,
+               MODEL_NAME_LEN,
+               MPI_CHAR,
+               all_models,
+               MODEL_NAME_LEN,
+               MPI_CHAR,
+               0,
+               MPI_COMM_WORLD);
+    if (world->getRank() == 0) {
+      std::string ref_model(all_models); // model from rank 0
+
+      for (int i = 1; i < Cc4s::world->getProcesses(); ++i) {
+        std::string model_i(&all_models[i * MODEL_NAME_LEN]);
+        if (model_i != ref_model) {
+          OUT() << "Inconsistent CPU model name: rank 0 has \"" << ref_model
+                << "\", but rank " << i << " has \"" << model_i << "\"\n";
+          break;
+        }
+      }
+    }
+    delete[] all_models;
+  }
+  // Memory information
+  std::ifstream meminfo("/proc/meminfo");
+  std::string line;
+  long mem_kb = 0;
+
+  while (std::getline(meminfo, line)) {
+    if (line.find("MemTotal:") == 0) {
+      sscanf(line.c_str(), "MemTotal: %ld kB", &mem_kb);
+      break;
+    }
+  }
+  if (mem_kb > 0) {
+    double mem_gb = mem_kb / (1024.0 * 1024.0);
+    // Round up to nearest 8 GB block (or whatever your vendor installs per DIMM)
+    int approx_installed = std::ceil(mem_gb / 8.0) * 8;
+    OUT() << "Memory: " << approx_installed << " GB/node" << std::endl;
+  }
+  // Try to get the infiniband information
+  std::string ibinfo("Network information: ");
+  std::string best_result;
+  FILE* pipenet = popen("ibstatus", "r");
+  if (pipenet) {
+    std::string line, current_block;
+    char buffer[512];
+
+    while (fgets(buffer, sizeof(buffer), pipenet) != nullptr) {
+      line = buffer;
+
+      // Start of a new block
+      if (line.find("Infiniband device") != std::string::npos) {
+        current_block.clear();
+      }
+
+      current_block += line;
+
+      // When both "rate" and "link_layer" are in the current block, try to parse
+      if (line.find("link_layer:") != std::string::npos) {
+        std::string rate, link_layer;
+        std::istringstream iss(current_block);
+        std::string l;
+        while (std::getline(iss, l)) {
+          if (l.find("rate:") != std::string::npos) {
+            rate = l.substr(l.find("rate:") + 5);
+            rate.erase(0, rate.find_first_not_of(" \t"));
+          }
+          if (l.find("link_layer:") != std::string::npos) {
+            link_layer = l.substr(l.find("link_layer:") + 11);
+            link_layer.erase(0, link_layer.find_first_not_of(" \t"));
+          }
+        }
+
+        std::string result = link_layer + " " + rate;
+        if (link_layer == "InfiniBand") {
+          best_result = result; // prefer InfiniBand
+          break;
+        } else if (best_result.empty()) {
+          best_result = result; // fallback to Ethernet
+        }
+      }
+    }
+
+    pclose(pipenet);
+  }
+  if (best_result.empty()) {
+    ibinfo += "ibstatus not available.";
+  } else {
+    ibinfo += best_result;
+  }
+  OUT() << ibinfo << std::endl;
+
+
+  return;
 }
 
 bool isDebugged() {

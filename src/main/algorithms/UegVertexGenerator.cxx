@@ -250,8 +250,8 @@ Ptr<MapNode> UegVertexGenerator::run(
   // Writing CoulombVertex to buffer
   // We have to do it mpi-able...otherwise we will
   // not be able to write it to a ctf tensor
-  Natural<> np = Cc4s::world->getProcesses();
-  Natural<> rank = Cc4s::world->getRank();
+  int np = Cc4s::world->getProcesses();
+  int rank = Cc4s::world->getRank();
   // We slice the number of states for all the mpi processes
   Natural<> slices(Np/np);
   std::vector<Natural<>> slicePerRank(np);

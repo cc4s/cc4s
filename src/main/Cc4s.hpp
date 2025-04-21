@@ -46,6 +46,7 @@ namespace cc4s {
     void printBanner();
     void printEndBanner();
     Ptr<MapNode> getHostList();
+    void getClusterInfo();
 
     Ptr<MapNode> executionEnvironment, storage;
   };
