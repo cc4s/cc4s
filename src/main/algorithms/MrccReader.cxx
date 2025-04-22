@@ -88,7 +88,7 @@ Ptr<MapNode> MrccReader::run(
     i.index2--;
   }
 
-  auto rank(Cc4s::world->getRank());
+  size_t rank(Cc4s::world->getRank());
   auto np(Cc4s::world->getProcesses());
   OUT() << "nocc: " << nocc << " nvir: " << nvir
         << " nbf: " << nbf << " ndf: " << ndfbasis << std::endl;
@@ -373,7 +373,7 @@ std::vector<Real<>> MrccReader::halfTransform(
 //  std::ifstream iffile("TEINT", std::ios::binary);
 //  iffile.seekg(0, std::ios::beg);
 
-  auto rank(Cc4s::world->getRank());
+  size_t rank(Cc4s::world->getRank());
   auto np(Cc4s::world->getProcesses());
   auto nbf_loc = nbf / np + (rank< nbf % np);
 
@@ -525,7 +525,7 @@ std::vector<Real<>> MrccReader::eval_mp2_approx_ref(Ptr<Tensor<Real<>,TE>> Gamma
   Dpphh->sum(1.0, "abij", "abij", [] (Real<> delta) { return 1.0 / delta; });
   COMPILE(
     (*Dpphh)["abij"]  <<= (*Vpphh)["abij"] * (*Dpphh)["abij"],
-    (*Gamma_ab)["ab"] <<= (*Dpphh)["cbii"] * (*Dpphh)["caii"],
+    (*Gamma_ab)["ab"] <<= (*Dpphh)["cbii"] * (*Dpphh)["caii"]
   )->execute();
 
   auto el = (!Cc4s::world->getRank()) ? nvir*nvir : 0;
