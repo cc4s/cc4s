@@ -229,6 +229,9 @@ def link_inputfiles_to_outputpath(test):
         # as a test
         if op.basename(f) == INFO_FILE_NAME:
             continue
+        # do not link the directory otherwise we have a recursion
+        if op.basename(test.outpath) == op.basename(f):
+          continue
         out = op.join(test.outpath, op.basename(f))
         inf = op.join(test.path, op.basename(f))
         if not op.exists(out):
