@@ -298,6 +298,7 @@ Ptr<MapNode> MrccReader::run(
   Gamma_gai->getMetaData() = metaCoulomb;
   Gamma_gab->getMetaData() = metaCoulomb;
 
+  //TODO: still the final vertex is a complex object with pure real entries!
   std::shared_ptr<TensorSet<Complex<>,TE>> vertex = std::make_shared<TensorSet<Complex<>,TE>>();
   vertex->get("hh") = Gamma_gij;
   vertex->get("hp") = Gamma_gia;
@@ -445,7 +446,7 @@ std::vector<Real<>> MrccReader::eval_mp2(Ptr<Tensor<Real<>,TE>> Gamma_igm,
 
   auto Vpphh(Tcc<TE>::template tensor<Real<>>("Vpphh"));
   auto Dpphh(Tcc<TE>::template tensor<Real<>>({nvir, nvir, nocc, nocc}, "Dpphh"));
-  auto Tpphh(Tcc<TE>::template tensor<Real<>>("Tpphh"));
+  //auto Tpphh(Tcc<TE>::template tensor<Real<>>("Tpphh"));
   auto Gamma_gia(Tcc<TE>::template tensor<Real<>>({ndfbasis, nocc, nvir}, "Vertex_ph"));
   COMPILE(
     (*Gamma_gia)["Gia"] <<= (*Gamma_igm)["iGm"] * (*Mos_vir)["ma"],
@@ -457,6 +458,18 @@ std::vector<Real<>> MrccReader::eval_mp2(Ptr<Tensor<Real<>,TE>> Gamma_igm,
   )->execute();
   Dpphh->sum(1.0, "abij", "abij", [] (Real<> delta) { return 1.0 / delta; });
   COMPILE(
+    // D = V/\Delta
+    (*Dpphh)["abij"] <<= (*Vpphh)["abij"] * (*Dpphh)["abij"],
+    (*Energy)[""] <<= 2.0 * (*Vpphh)["abij"] * (*Dpphh)["abij"],
+    (*Energy)[""]  -= 1.0 * (*Vpphh)["abij"] * (*Dpphh)["baij"],
+    (eval_gamma_ab) ? (
+      (*Gamma_ab)["ab"] <<= 2.0 * (*Dpphh)["caij"] * (*Dpphh)["cbij"],
+      (*Gamma_ab)["ab"]  -= 1.0 * (*Dpphh)["caij"] * (*Dpphh)["cbji"],
+      Tcc<TE>::sequence()
+    ) : (
+      Tcc<TE>::sequence()
+    )
+/*
     (*Energy)[""] <<= 2.0 * (*Vpphh)["abij"] * (*Vpphh)["abij"] * (*Dpphh)["abij"],
     (*Energy)[""]  -= 1.0 * (*Vpphh)["abij"] * (*Vpphh)["baij"] * (*Dpphh)["abij"],
     // Now we evaluate the Mp2 density matrix //
@@ -468,6 +481,7 @@ std::vector<Real<>> MrccReader::eval_mp2(Ptr<Tensor<Real<>,TE>> Gamma_igm,
     ) : (
       Tcc<TE>::sequence()
     )
+*/
   )->execute();
 
   if (!eval_gamma_ab) return std::vector<Real<>>();
