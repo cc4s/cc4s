@@ -498,6 +498,45 @@ std::vector<Real<>> MrccReader::eval_mp2(Ptr<Tensor<Real<>,TE>> Gamma_igm,
   return gamma_ab;
 }
 
+template <typename TE>
+std::vector<Real<>> MrccReader::eval_mp2_approx_ref(Ptr<Tensor<Real<>,TE>> Gamma_igm,
+                                                    Ptr<Tensor<Real<>,TE>> Epsp,
+                                                    Ptr<Tensor<Real<>,TE>> Epsh,
+                                                    Ptr<Tensor<Real<>,TE>> Mos_vir) {
+
+  auto Gamma_ab(Tcc<TE>::template tensor<Real<>>("gamma_ab"));
+
+  auto _lens(Gamma_igm->getLens());
+  auto ndfbasis(_lens[1]);
+  auto nocc(_lens[0]);
+  auto nvir(Epsp->getLen(0));
+
+  auto Vpphh(Tcc<TE>::template tensor<Real<>>("Vpphh"));
+  auto Dpphh(Tcc<TE>::template tensor<Real<>>({nvir, nvir, nocc, nocc}, "Dpphh"));
+  auto Gamma_gia(Tcc<TE>::template tensor<Real<>>({ndfbasis, nocc, nvir}, "Vertex_ph"));
+  COMPILE(
+    (*Gamma_gia)["Gia"] <<= (*Gamma_igm)["iGm"] * (*Mos_vir)["ma"],
+    (*Vpphh)["abij"] <<= (*Gamma_gia)["Gia"] * (*Gamma_gia)["Gjb"],
+    (*Dpphh)["abij"]  -= (*Epsp)["a"],
+    (*Dpphh)["abij"]  -= (*Epsp)["b"],
+    (*Dpphh)["abij"]  += (*Epsh)["i"],
+    (*Dpphh)["abij"]  += (*Epsh)["j"]
+  )->execute();
+  Dpphh->sum(1.0, "abij", "abij", [] (Real<> delta) { return 1.0 / delta; });
+  COMPILE(
+    (*Dpphh)["abij"]  <<= (*Vpphh)["abij"] * (*Dpphh)["abij"],
+    (*Gamma_ab)["ab"] <<= (*Dpphh)["cbii"] * (*Dpphh)["caii"],
+  )->execute();
+
+  auto el = (!Cc4s::world->getRank()) ? nvir*nvir : 0;
+  std::vector<size_t> idx(el);
+  std::iota(idx.begin(), idx.end(), 0);
+  std::vector<Real<>> gamma_ab(el);
+  Gamma_ab->read(el, idx.data(), gamma_ab.data());
+
+  return gamma_ab;
+}
+
 
 // Extract a number from a string like "Total number of basis functions:  xxx"
 int extractNumberFromLine(const std::string& line) {

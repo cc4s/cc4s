@@ -40,6 +40,14 @@ namespace cc4s {
                                  Ptr<Tensor<Real<>,TE>> Mos_vir,
                                  bool eval_gamma_ab = false);
 
+    template <typename TE>
+    std::vector<Real<>> eval_mp2_approx_ref(Ptr<Tensor<Real<>,TE>> Gamma_igm,
+                                            Ptr<Tensor<Real<>,TE>> Epsp,
+                                            Ptr<Tensor<Real<>,TE>> Epsh,
+                                            Ptr<Tensor<Real<>,TE>> Mos_vir);
+
+
+
     #pragma pack(1)
     struct Data1 {
       Real<> value;
