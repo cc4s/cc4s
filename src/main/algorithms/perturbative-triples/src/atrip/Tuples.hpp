@@ -18,6 +18,7 @@
 #include <vector>
 #include <array>
 #include <numeric>
+#include <sstream>
 
 // TODO: remove some
 #include <stdio.h>
@@ -28,7 +29,7 @@
 #include <chrono>
 #include <climits>
 
-#include <atrip/mpi.hpp>
+#include <atrip/Mpi.hpp>
 #include <atrip/Utils.hpp>
 #include <atrip/Debug.hpp>
 
@@ -42,6 +43,28 @@ using ABCTuples = std::vector<ABCTuple>;
 
 constexpr ABCTuple FAKE_TUPLE = {0, 0, 0};
 constexpr ABCTuple INVALID_TUPLE = {1, 1, 1};
+
+template <typename F, long unsigned N>
+std::string array_to_string(std::array<F, N> const &v) {
+  std::stringstream s;
+  s << "{ ";
+  for (auto const &i : v) s << i << ", ";
+  s << "}";
+  return s.str();
+}
+
+template <typename F, long unsigned N>
+std::ostream &operator<<(std::ostream &out, std::array<F, N> const &i) {
+  out << array_to_string<F, N>(i);
+  return out;
+}
+
+template <typename F>
+std::ostream &operator<<(std::ostream &out, std::vector<F> const &i) {
+  for (auto const &v : i) out << v << " ";
+  return out;
+}
+
 // Tuples types:1 ends here
 
 // [[file:~/cuda/atrip/atrip.org::*Distributing%20the%20tuples][Distributing the
@@ -59,13 +82,16 @@ std::vector<std::string> get_node_names(MPI_Comm comm);
 // [[file:~/cuda/atrip/atrip.org::*Node%20information][Node information:2]]
 struct RankInfo {
   const std::string name;
-  const size_t node_id;
-  const size_t global_rank;
-  const size_t local_rank;
-  const size_t ranks_per_node;
+  const int node_id;
+  const int global_rank;
+  const int local_rank;
+  const int ranks_per_node;
 };
 
-std::vector<RankInfo> get_node_infos(std::vector<string> const &node_names);
+std::vector<RankInfo>
+get_node_infos(std::vector<std::string> const &node_names);
+
+std::tuple<int,int,int,int> get_mpi_info(MPI_Comm comm);
 
 struct ClusterInfo {
   const size_t n_nodes, np, ranks_per_node;
@@ -104,8 +130,8 @@ inline size_t is_on_node(size_t tuple, size_t n_nodes);
 std::vector<size_t> get_tuple_nodes(ABCTuple const &t, size_t n_nodes);
 
 struct Info {
-  size_t n_nodes;
-  size_t node_id;
+  int n_nodes;
+  int node_id;
 };
 // Utils:1 ends here
 

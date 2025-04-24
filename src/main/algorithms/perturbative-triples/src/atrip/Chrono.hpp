@@ -13,6 +13,13 @@
     __VA_ARGS__                                                                \
     Atrip::chrono[__chrono_name].stop();                                       \
     nvtxRangePop();
+#elif defined(HAVE_HIP) || defined(HAVE_OMNITRACE)
+#  define WITH_CHRONO(__chrono_name, ...)                                      \
+    omnitrace_user_push_region(__chrono_name);                                 \
+    Atrip::chrono[__chrono_name].start();                                      \
+    __VA_ARGS__                                                                \
+    Atrip::chrono[__chrono_name].stop();                                       \
+    omnitrace_user_pop_region(__chrono_name);
 #else
 #  define WITH_CHRONO(__chrono_name, ...)                                      \
     Atrip::chrono[__chrono_name].start();                                      \

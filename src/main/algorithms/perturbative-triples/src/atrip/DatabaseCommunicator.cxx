@@ -152,7 +152,7 @@ build_local_database_fake(ABCTuple const &abc_prev,
   for (auto const &pair : needed) {
     auto const type = pair.first;
     auto const tuple = pair.second;
-    auto const from = u->rank_map.find(abc, type);
+    auto const from = u->rank_map.find_location(abc, type);
 
     // Try to find in the previously needed slices
     // one that exactly matches the tuple.
@@ -237,6 +237,12 @@ naive_database(Unions<F> &unions, size_t nv, size_t np, size_t iteration) {
 
   return db;
 }
+
+template typename Slice<float>::Database
+naive_database<float>(Unions<float> &unions,
+                      size_t nv,
+                      size_t np,
+                      size_t iteration);
 
 template typename Slice<double>::Database
 naive_database<double>(Unions<double> &unions,

@@ -56,7 +56,7 @@
 /* #undef HAVE_BLAS */
 
 /* Use CTF library */
-/* #undef HAVE_CTF */
+#define HAVE_CTF
 
 /* AMD CUDA support flag */
 /* #undef HAVE_CUDA */

@@ -17,7 +17,8 @@
 
 #include <complex>
 
-#include <atrip/mpi.hpp>
+#include <atrip/Acc.hpp>
+#include <atrip/Mpi.hpp>
 
 #include "config.h"
 #if defined(HAVE_CUDA)
@@ -30,10 +31,6 @@ using Complex = std::complex<double>;
 
 template <typename F>
 F maybe_conjugate(const F);
-
-#if defined(HAVE_CUDA)
-cuDoubleComplex &operator+=(cuDoubleComplex &lz, cuDoubleComplex const &rz);
-#endif
 
 namespace traits {
 

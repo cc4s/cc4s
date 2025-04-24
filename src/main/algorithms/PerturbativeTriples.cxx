@@ -38,12 +38,12 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
-  const auto
-    distribution
-      = arguments->getValue<std::string>("tuplesDistribution", "group") == "group"
-      ? atrip::Atrip::Input<F>::TuplesDistribution::GROUP_AND_SORT
-      : atrip::Atrip::Input<F>::TuplesDistribution::NAIVE
-      ;
+  const bool
+    single_precision = arguments->getValue<int>("singlePrecision", 0) == 1;
+
+  const size_t
+    omp_granularity = arguments->getValue<int>("ompGranularity", 1);
+
 
   /*
     This should be added to the manual for CCSD(T).
@@ -108,6 +108,19 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
             ->getMachineTensor()                               \
             ->tensor);                                         \
     })()
+#define __delete_V__(_idx)                                \
+  ([&arguments]() {                                       \
+    COMPILE(arguments                                     \
+            ->getPtr<TensorSet<F,TE>>("coulombIntegrals") \
+            ->get(#_idx)                                  \
+            )->execute();                                 \
+    return                                                \
+      arguments                                           \
+      ->getPtr<TensorSet<F,TE>>("coulombIntegrals")       \
+      ->get(#_idx)                                        \
+      ->evaluate()                                        \
+      ->deleteMachineTensor();                            \
+  })()
 #define __T__(_idx)                                          \
    &(arguments                                               \
       ->getPtr<TensorSet<F,TE>>("amplitudes")                \
@@ -115,6 +128,14 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       ->evaluate()                                           \
       ->getMachineTensor()                                   \
       ->tensor)
+#define __delete_T__(_idx)                      \
+  do {                                          \
+    arguments                                   \
+      ->getPtr<TensorSet<F,TE>>("amplitudes")   \
+      ->get(_idx)                               \
+      ->evaluate()                              \
+      ->deleteMachineTensor();                  \
+      } while (0)
 #define __eps__(_idx)                                        \
    &(arguments                                               \
       ->getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")  \
@@ -129,6 +150,14 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     ->evaluate()                                \
     ->getMachineTensor()                        \
     ->tensor)
+#define __delete_CT__(_idx)                           \
+  do {                                                \
+    arguments                                         \
+      ->getPtr<TensorSet<F,TE>>(kwd::CT_INTERMEDIATE) \
+      ->get(#_idx)                                     \
+      ->evaluate()                                    \
+      ->deleteMachineTensor();                        \
+  } while (0)
 
 
   CTF::Tensor<F>
@@ -139,6 +168,17 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     = CTF::Transform<double, F>([](double d, F &f) { f = d; });
   toComplex((*__eps__(h))["i"], epsi["i"]);
   toComplex((*__eps__(p))["a"], epsa["a"]);
+
+
+  const auto _no = *(epsi.lens), _nv = *(epsa.lens);
+  std::vector<F>
+    epsi_v(_no),
+    epsa_v(_nv),
+    Tai_v(_no * _nv);
+  epsi.read_all(epsi_v.data());
+  epsa.read_all(epsa_v.data());
+  (__T__("ph"))->read_all(Tai_v.data());
+
 
   //////////////////////////////////////// CHECKPOINT CHECKER ////////////////////////////////////////
   auto checkpoint_file_exists
@@ -163,75 +203,240 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     }
   }
 
+  {
+    // Register printing function
+    const double _No = *(__eps__(h))->lens
+               , _Nv = *(__eps__(p))->lens
+               , doublesFlops = _No * _No * _No
+                              * (_No + _Nv)
+                              * double(sizeof(F) / sizeof(double))
+                              * 2.0
+                              * 6.0
+                              / 1.0e9
+                              ;
 
-  // this is a hack so that a CTF::World gets created for sure
-  CTF::World _w(MPI_COMM_WORLD);
-  in
-    // setup tensors
-    .with_epsilon_i(&epsi)
-    .with_epsilon_a(&epsa)
-    .with_Tai(__T__("ph"))
-    .with_Tabij(__T__("pphh"))
-    .with_Vabij(__V__(pphh))
-    .with_Vijka(__V__(hhhp))
-    .with_Vabci(__V__(ppph))
-    // some options
-    .with_barrier(false)
-    .with_percentage_mod(print_at_percentage)
-    .with_tuples_distribution(distribution)
-    .with_rank_round_robin(rankRoundRobin)
-    // checkpoint options
-    .with_checkpoint_at_every_iteration(checkpoint_at_every_iteration)
-    .with_checkpoint_at_percentage(checkpoint_at_percentage)
-    .with_checkpoint_path(checkpoint_path)
-    .with_read_checkpoint_if_exists(use_checkpoint)
-    ;
 
-  if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
-    OUT() << "Using ct" << std::endl;
-    in.with_Jijka(__CT__("hhhp")).with_Jabci(__CT__("ppph"));
+    double lastElapsedTime = 0;
+    auto const rank = Cc4s::world->getRank();
+    bool firstHeaderPrinted = false;
+    atrip::register_iteration_descriptor
+      ([doublesFlops, &firstHeaderPrinted, rank, &lastElapsedTime]
+        (atrip::IterationDescription const& d) {
+        const char
+          *fmt_header = "%-13s%-10s%-13s",
+          *fmt_nums = "%-13.0f%-10.0f%-13.3f";
+        char out[256];
+        if (!firstHeaderPrinted) {
+          sprintf(out, fmt_header, "Progress(%)", "time(s)", "GFLOP/s");
+          firstHeaderPrinted = true;
+          OUT() << out << "\n";
+        }
+        sprintf(out, fmt_nums,
+                double(d.current_iteration) / double(d.total_iterations) * 100,
+                (d.current_elapsed_time - lastElapsedTime),
+                d.current_iteration * doublesFlops / d.current_elapsed_time);
+        lastElapsedTime = d.current_elapsed_time;
+        OUT() << out << "\n";
+      });
   }
 
-  const double _No = *(__eps__(h))->lens
-             , _Nv = *(__eps__(p))->lens
-             , doublesFlops = _No * _No * _No
-                            * (_No + _Nv)
-                            * double(sizeof(F) / sizeof(double))
-                            * 2.0
-                            * 6.0
-                            / 1.0e9
-                            ;
+  atrip::Atrip::Output out;
+
+  MPI_Comm atrip_comm = atrip::create_comm(Cc4s::world->getComm(), omp_granularity, rankRoundRobin);
+  //atrip::print_comm_mapping(comm, atrip_comm);
+  if (atrip_comm != MPI_COMM_NULL) {
+    atrip::Atrip::init(atrip_comm, omp_granularity);
+  }
+  if (! single_precision) {
+
+    const auto
+      distribution
+      = arguments->getValue<std::string>("tuplesDistribution", "group") == "group"
+      ? atrip::Atrip::Input<F>::TuplesDistribution::GROUP_AND_SORT
+      : atrip::Atrip::Input<F>::TuplesDistribution::NAIVE
+      ;
+
+    size_t nv(_nv), no(_no);
+    auto sVabph = atrip::ctfReader<F>(*(__V__(ppph)), {nv, nv, nv, no}, {1, 1, 0, 0});
+    auto sVabhh = atrip::ctfReader<F>(*(__V__(pphh)), {nv, nv, no, no}, {1, 1, 0, 0});
+    auto sTabhh = atrip::ctfReader<F>(*(__T__("pphh")), {nv, nv, no, no}, {1, 1, 0, 0});
+    auto sTaphh = atrip::ctfReader<F>(*(__T__("pphh")), {nv, nv, no, no}, {1, 0, 0, 0});
+    auto sVhhha = atrip::ctfReader<F>(*(__V__(hhhp)), {no, no, no, nv}, {0, 0, 0, 1});
 
 
-  double lastElapsedTime = 0;
-  auto const rank = Cc4s::world->getRank();
-  bool firstHeaderPrinted = false;
-  atrip::register_iteration_descriptor
-    ([doublesFlops, &firstHeaderPrinted, rank, &lastElapsedTime]
-       (atrip::IterationDescription const& d) {
-      const char
-        *fmt_header = "%-13s%-10s%-13s",
-        *fmt_nums = "%-13.0f%-10.0f%-13.3f";
-      char out[256];
-      if (!firstHeaderPrinted) {
-        sprintf(out, fmt_header, "Progress(%)", "time(s)", "GFLOP/s");
-        firstHeaderPrinted = true;
-        OUT() << out << "\n";
-      }
-      sprintf(out, fmt_nums,
-              double(d.current_iteration) / double(d.total_iterations) * 100,
-              (d.current_elapsed_time - lastElapsedTime),
-              d.current_iteration * doublesFlops / d.current_elapsed_time);
-      lastElapsedTime = d.current_elapsed_time;
-      OUT() << out << "\n";
-    });
+    atrip::Atrip::Input<F> in;
+    in
+      // setup tensors
+      .with_epsilon_i(&epsi_v)
+      .with_epsilon_a(&epsa_v)
+      .with_Tph(&Tai_v)
+      .with_sVabph(&sVabph)
+      .with_sVabhh(&sVabhh)
+      .with_sTabhh(&sTabhh)
+      .with_sTaphh(&sTaphh)
+      .with_sVhhha(&sVhhha)
+      // some options
+      .with_barrier(false)
+      .with_percentage_mod(print_at_percentage)
+      .with_tuples_distribution(distribution)
+      .with_rank_round_robin(rankRoundRobin)
+      // checkpoint options
+      .with_checkpoint_at_every_iteration(checkpoint_at_every_iteration)
+      .with_checkpoint_at_percentage(checkpoint_at_percentage)
+      .with_checkpoint_path(checkpoint_path)
+      .with_read_checkpoint_if_exists(use_checkpoint)
+      .with_cT(arguments->isGiven(kwd::CT_INTERMEDIATE))
+      ;
 
-#undef __V__
-#undef __T__
-#undef __eps__
+    atrip::Sources<F> *sJabph = nullptr, *sJhhha = nullptr;
+    if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+      OUT() << "Using ct" << std::endl;
+      std::vector<size_t> vvvo{nv, nv, nv, no}, ooov{no, no, no, nv};
+      sJabph = new atrip::Sources<F>(atrip::ctfReader<F>(*(__CT__("ppph")), vvvo, {1, 1, 0, 0}));
+      sJhhha = new atrip::Sources<F>(atrip::ctfReader<F>(*(__CT__("hhhp")), ooov, {0, 0, 0, 1}));
+      in.with_sJabph(sJabph);
+      in.with_sJhhha(sJhhha);
+    }
+    OUT() << "All tensors loaded; starting main loop." << std::endl;
+    out = atrip::Atrip::run<F>(in);
+  } else {
+
+    const bool
+      delete_ptrs
+      = arguments->getValue<int>("deleteDoubles", 1) == 1
+      ;
 
 
-  auto out = atrip::Atrip::run<F>(in);
+    const auto
+      distribution
+      = arguments->getValue<std::string>("tuplesDistribution", "group") == "group"
+      ? atrip::Atrip::Input<float>::TuplesDistribution::GROUP_AND_SORT
+      : atrip::Atrip::Input<float>::TuplesDistribution::NAIVE
+      ;
+    atrip::Atrip::Input<float> in;
+
+    std::vector<float>
+      epsi_f(epsi_v.size()),
+      epsa_f(epsa_v.size()),
+      Tai_f(Tai_v.size());
+
+    std::transform(epsi_v.begin(), epsi_v.end(), epsi_f.begin(),
+                   [](const F &from) { return std::real(from); });
+    std::transform(epsa_v.begin(), epsa_v.end(), epsa_f.begin(),
+                   [](const F &from) { return std::real(from); });
+    std::transform(Tai_v.begin(), Tai_v.end(), Tai_f.begin(),
+                   [](const F &from) { return std::real(from); });
+
+    const auto to_float
+      = CTF::Transform<F, float>([](F from, float &to) { to = std::real(from); });
+
+    // source tensors
+    CTF::Tensor<F>
+      &F_T = *(__T__("pphh")),
+      &F_Vpphh = *(__V__(pphh)),
+      &F_Vhhhp = *(__V__(hhhp)),
+      &F_Vppph = *(__V__(ppph));
+
+    // deal with Tabij
+    CTF::Tensor<float>
+      T(F_T.order, F_T.lens, F_T.sym, *F_T.wrld);
+    to_float(F_T["abij"], T["abij"]);
+    Cc4s::world->barrier();
+    if (delete_ptrs) __delete_T__("pphh");
+
+    // deal with Vpphh
+    CTF::Tensor<float>
+      Vpphh(F_Vpphh.order, F_Vpphh.lens, F_Vpphh.sym, *F_Vpphh.wrld);
+    to_float(F_Vpphh["abij"], Vpphh["abij"]);
+    Cc4s::world->barrier();
+    if (delete_ptrs) __delete_V__(pphh);
+
+    // deal with Vhhhp
+    CTF::Tensor<float>
+      Vhhhp(F_Vhhhp.order, F_Vhhhp.lens, F_Vhhhp.sym, *F_Vhhhp.wrld);
+    to_float(F_Vhhhp["abij"], Vhhhp["abij"]);
+    Cc4s::world->barrier();
+    if (delete_ptrs) __delete_V__(hhhp);
+
+    // deal with Vppph
+    CTF::Tensor<float>
+      Vppph(F_Vppph.order, F_Vppph.lens, F_Vppph.sym, *F_Vppph.wrld);
+    to_float(F_Vppph["abij"], Vppph["abij"]);
+    Cc4s::world->barrier();
+    if (delete_ptrs) __delete_V__(ppph);
+
+    size_t nv(_nv), no(_no);
+    auto sVabph = atrip::ctfReader<float>(Vppph, {nv, nv, nv, no}, {1, 1, 0, 0});
+    auto sVabhh = atrip::ctfReader<float>(Vpphh, {nv, nv, no, no}, {1, 1, 0, 0});
+    auto sTabhh = atrip::ctfReader<float>(T, {nv, nv, no, no}, {1, 1, 0, 0});
+    auto sTaphh = atrip::ctfReader<float>(T, {nv, nv, no, no}, {1, 0, 0, 0});
+    auto sVhhha = atrip::ctfReader<float>(Vhhhp, {no, no, no, nv}, {0, 0, 0, 1});
+
+
+    in
+      // setup tensors
+      .with_epsilon_i(&epsi_f)
+      .with_epsilon_a(&epsa_f)
+      .with_Tph(&Tai_f)
+      .with_sVabph(&sVabph)
+      .with_sVabhh(&sVabhh)
+      .with_sTabhh(&sTabhh)
+      .with_sTaphh(&sTaphh)
+      .with_sVhhha(&sVhhha)
+      // some options
+      .with_barrier(false)
+      .with_percentage_mod(print_at_percentage)
+      .with_tuples_distribution(distribution)
+      .with_rank_round_robin(rankRoundRobin)
+      // checkpoint options
+      .with_checkpoint_at_every_iteration(checkpoint_at_every_iteration)
+      .with_checkpoint_at_percentage(checkpoint_at_percentage)
+      .with_checkpoint_path(checkpoint_path)
+      .with_read_checkpoint_if_exists(use_checkpoint)
+      .with_cT(arguments->isGiven(kwd::CT_INTERMEDIATE))
+      ;
+
+    OUT() << "using single precision" << std::endl;
+    if (delete_ptrs)
+    OUT() << "WARNING: all double precision tensors will be deleted"
+          << std::endl;
+    std::shared_ptr<CTF::Tensor<float>> Jhhhp, Jppph;
+    atrip::Sources<float> *sJabph = nullptr, *sJhhha = nullptr;
+
+    if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+      OUT() << "Using ct" << std::endl;
+
+      // Deal with Jhhhp
+      CTF::Tensor<F> &F_Jhhhp = *(__CT__("hhhp")), F_Jppph = *(__CT__("ppph"));
+      Jhhhp = std::make_shared<CTF::Tensor<float>>(F_Jhhhp.order,
+                                                   F_Jhhhp.lens,
+                                                   F_Jhhhp.sym,
+                                                   *F_Jhhhp.wrld);
+      to_float(F_Jhhhp["abij"], (*Jhhhp)["abij"]);
+      Cc4s::world->barrier();
+      if (delete_ptrs) __delete_CT__(hhhp);
+
+      // Deal with Jppph
+      Jppph = std::make_shared<CTF::Tensor<float>>(F_Jppph.order,
+                                                   F_Jppph.lens,
+                                                   F_Jppph.sym,
+                                                   *F_Jppph.wrld);
+      to_float(F_Jppph["abij"], (*Jppph)["abij"]);
+      Cc4s::world->barrier();
+      if (delete_ptrs) __delete_CT__(ppph);
+
+      std::vector<size_t> vvvo{nv, nv, nv, no}, ooov{no, no, no, nv};
+      sJabph = new atrip::Sources<float>(atrip::ctfReader<float>(*Jppph, vvvo, {1, 1, 0, 0}));
+      sJhhha = new atrip::Sources<float>(atrip::ctfReader<float>(*Jhhhp, ooov, {0, 0, 0, 1}));
+      in.with_sJabph(sJabph);
+      in.with_sJhhha(sJhhha);
+
+    }
+
+    OUT() << "All tensors loaded; starting main loop." << std::endl;
+    out = atrip::Atrip::run<float>(in);
+  }
+
   OUT() << "(T) correlation energy: "
         << std::setprecision(15) << std::setw(23)
         << out.energy << std::endl;
@@ -354,4 +559,5 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
 
   return result;
 }
+
 

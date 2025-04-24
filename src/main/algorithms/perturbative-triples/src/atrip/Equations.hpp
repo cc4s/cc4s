@@ -18,12 +18,7 @@
 #include <atrip/Atrip.hpp>
 #include <atrip/Blas.hpp>
 #include <atrip/Utils.hpp>
-
-#if defined(HAVE_CUDA)
-#  include <thrust/device_vector.h>
-#endif
-
-#include <atrip/CUDA.hpp>
+#include <atrip/Acc.hpp>
 
 namespace atrip {
 using ABCTuple = std::array<size_t, 3>;
@@ -38,7 +33,7 @@ __MAYBE_GLOBAL__ void get_energy_distinct(F const epsabc,
                                           F *const epsi,
                                           F *const Tijk,
                                           F *const Zijk,
-                                          double *energy);
+                                          EnergyType<F> *energy);
 
 template <typename F = double>
 __MAYBE_GLOBAL__ void get_energy_same(F const epsabc,
@@ -46,26 +41,22 @@ __MAYBE_GLOBAL__ void get_energy_same(F const epsabc,
                                       F *const epsi,
                                       F *const Tijk,
                                       F *const Zijk,
-                                      double *energy);
+                                      EnergyType<F> *energy);
 // Energy:1 ends here
 
 // [[file:~/cuda/atrip/atrip.org::*Singles%20contribution][Singles
 // contribution:1]]
 template <typename F = double>
-#ifdef HAVE_CUDA
-__global__
-#endif
-    void
-    singles_contribution(size_t No,
-                         size_t Nv,
-                         size_t a,
-                         size_t b,
-                         size_t c,
-                         DataFieldType<F> *const Tph,
-                         DataFieldType<F> *const VABij,
-                         DataFieldType<F> *const VACij,
-                         DataFieldType<F> *const VBCij,
-                         DataFieldType<F> *Zijk);
+__MAYBE_GLOBAL__ void singles_contribution(size_t No,
+                                           size_t Nv,
+                                           size_t a,
+                                           size_t b,
+                                           size_t c,
+                                           DataFieldType<F> *const Tph,
+                                           DataFieldType<F> *const VABij,
+                                           DataFieldType<F> *const VACij,
+                                           DataFieldType<F> *const VBCij,
+                                           DataFieldType<F> *Zijk);
 // Singles contribution:1 ends here
 
 // [[file:~/cuda/atrip/atrip.org::*Doubles%20contribution][Doubles

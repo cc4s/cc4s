@@ -16,4 +16,5 @@
 #pragma once
 
 #include <atrip/Atrip.hpp>
+#include <atrip/Reader.hpp>
 // Include header:1 ends here

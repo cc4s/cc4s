@@ -427,6 +427,11 @@ namespace cc4s {
       return name;
     }
 
+    void deleteMachineTensor() {
+      machineTensor = nullptr;
+    }
+
+
     Ptr<MT> getMachineTensor() {
       if (!machineTensor) {
         ASSERT_LOCATION(assumedShape,

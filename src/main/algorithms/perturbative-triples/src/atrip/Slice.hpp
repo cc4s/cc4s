@@ -18,11 +18,11 @@
 #include <algorithm>
 #include <vector>
 
-#include <atrip/mpi.hpp>
+#include <atrip/Mpi.hpp>
 #include <atrip/Types.hpp>
 #include <atrip/Tuples.hpp>
 #include <atrip/Utils.hpp>
-#include <atrip/CUDA.hpp>
+#include <atrip/Acc.hpp>
 
 namespace atrip {
 
@@ -33,8 +33,8 @@ public:
 
   // [[file:~/cuda/atrip/atrip.org::*Location][Location:1]]
   struct Location {
-    size_t rank;
-    size_t source;
+    int rank;
+    int source;
   };
   // Location:1 ends here
 
@@ -130,100 +130,23 @@ public:
       return dt;
     }
 
-    static MPI_Datatype slice_location() {
-      constexpr int n = 2;
-      // create a slice_location to measure in the current architecture
-      // the packing of the struct
-      Slice<F>::Location measure;
-      MPI_Datatype dt;
-      const std::vector<int> lengths(n, 1);
-      const MPI_Datatype types[n] = {usize_dt(), usize_dt()};
-
-      static_assert(sizeof(Slice<F>::Location) == 2 * sizeof(size_t),
-                    "The Location packing is wrong in your compiler");
-
-      // measure the displacements in the struct
-      size_t j = 0;
-      MPI_Aint base_address, displacements[n];
-      MPI_Get_address(&measure, &base_address);
-      MPI_Get_address(&measure.rank, &displacements[j++]);
-      MPI_Get_address(&measure.source, &displacements[j++]);
-      for (size_t i = 0; i < n; i++)
-        displacements[i] = MPI_Aint_diff(displacements[i], base_address);
-
-      MPI_Type_create_struct(n, lengths.data(), displacements, types, &dt);
-      MPI_Type_commit(&dt);
-      return dt;
-    }
-
     static MPI_Datatype usize_dt() { return MPI_UINT64_T; }
 
-// airmler: The following lines contain a memory leak.
-//         However, they are currently not used.
-/*
-    static MPI_Datatype slice_info() {
-      constexpr int n = 5;
-      MPI_Datatype dt;
-      Slice<F>::Info measure;
-      const std::vector<int> lengths(n, 1);
-      const MPI_Datatype types[n] = {
-          vector(2, usize_dt()),
-          vector(sizeof(enum Type), MPI_CHAR),
-          vector(sizeof(enum State), MPI_CHAR),
-          slice_location(),
-          vector(sizeof(enum Type), MPI_CHAR)
-          // TODO: Why this does not work on intel mpi?
-          //, MPI_UINT64_T //
-      };
-
-      static_assert(sizeof(enum Type) == 4, "Enum type not 4 bytes long");
-      static_assert(sizeof(enum State) == 4, "Enum State not 4 bytes long");
-      static_assert(sizeof(enum Name) == 4, "Enum Name not 4 bytes long");
-
-      // create the displacements from the info measurement struct
-      size_t j = 0;
-      MPI_Aint base_address, displacements[n];
-      MPI_Get_address(&measure, &base_address);
-      MPI_Get_address(&measure.tuple[0], &displacements[j++]);
-      MPI_Get_address(&measure.type, &displacements[j++]);
-      MPI_Get_address(&measure.state, &displacements[j++]);
-      MPI_Get_address(&measure.from, &displacements[j++]);
-      MPI_Get_address(&measure.recycling, &displacements[j++]);
-      for (size_t i = 0; i < n; i++)
-        displacements[i] = MPI_Aint_diff(displacements[i], base_address);
-
-      MPI_Type_create_struct(n, lengths.data(), displacements, types, &dt);
-      MPI_Type_commit(&dt);
-      return dt;
-    }
-*/
     static MPI_Datatype local_database_element() {
-      constexpr int n = 2;
-      MPI_Datatype dt;
-      LocalDatabaseElement measure;
-      const std::vector<int> lengths(n, 1);
-// airmler: remove memory leaks, unused anyways
-//      const MPI_Datatype types[n] = {vector(sizeof(enum Name), MPI_CHAR),
-//                                     slice_info()};
-
-      // measure the displacements in the struct
-      size_t j = 0;
-      MPI_Aint base_address, displacements[n];
-      MPI_Get_address(&measure, &base_address);
-      MPI_Get_address(&measure.name, &displacements[j++]);
-      MPI_Get_address(&measure.info, &displacements[j++]);
-      for (size_t i = 0; i < n; i++)
-        displacements[i] = MPI_Aint_diff(displacements[i], base_address);
-
-      static_assert(sizeof(LocalDatabaseElement) == sizeof(measure),
-                    "Measure has bad size");
-
-//      MPI_Type_create_struct(n, lengths.data(), displacements, types, &dt);
-//      MPI_Type_commit(&dt);
       return vector(sizeof(LocalDatabaseElement), MPI_CHAR);
-      // TODO: write tests in order to know if this works
+
+//      static MPI_Datatype dt = vector(sizeof(LocalDatabaseElement), MPI_CHAR);
 //      return dt;
     }
+
+//    static void free_local_database_element() {
+//      static bool freed = false;
+//      if (!freed) {
+//        static MPI_Datatype dt = local_database_element();  // Store reference
+//        MPI_Type_free(&dt);
+//        freed = true;
+//      }
+//    }
   };
   // MPI Types:1 ends here
 
@@ -264,7 +187,7 @@ public:
 
   // [[file:~/cuda/atrip/atrip.org::*Attributes][Attributes:2]]
   DataPtr<F> data;
-#if defined(HAVE_CUDA) && !defined(ATRIP_SOURCES_IN_GPU)
+#if defined(HAVE_ACC) && !defined(ATRIP_SOURCES_IN_GPU)
   F *mpi_data;
 #endif
   // Attributes:2 ends here
@@ -321,12 +244,12 @@ std::ostream &operator<<(std::ostream &out,
   return out;
 }
 
+template <typename F>
+std::string info_to_string(typename Slice<F>::Info const &t);
+
 template <typename F = double>
 std::ostream &operator<<(std::ostream &out, typename Slice<F>::Info const &i) {
-  out << "«" << i.type << ", " << i.state << "»"
-      << " ⊙ {" << i.from.rank << ", " << i.from.source << "}"
-      << " ∴ {" << i.tuple[0] << ", " << i.tuple[1] << "}"
-      << " ♲" << i.recycling;
+  out << info_to_string<F>(i);
   return out;
 }
 

@@ -2,7 +2,6 @@
 #include <atrip/Utils.hpp>
 #include <atrip/Equations.hpp>
 #include <atrip/SliceUnion.hpp>
-#include <atrip/Unions.hpp>
 
 namespace atrip {
 

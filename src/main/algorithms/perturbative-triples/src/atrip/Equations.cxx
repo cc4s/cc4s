@@ -17,13 +17,13 @@
 
 #include <atrip/Equations.hpp>
 
-#include <atrip/CUDA.hpp>
+#include <atrip/Acc.hpp>
 #include <atrip/Operations.hpp>
 
 namespace atrip {
 // Prolog:2 ends here
 
-#if defined(HAVE_CUDA)
+#if defined(HAVE_ACC)
 #  define FOR_K()                                                              \
     const size_t k = blockIdx.x * blockDim.x + threadIdx.x;                    \
     size_t idx = k * size * size;
@@ -44,7 +44,7 @@ namespace atrip {
     IGNORABLE(p);                                                              \
     _REORDER_BODY_(__VA_ARGS__)                                                \
   }
-#if defined(HAVE_CUDA)
+#if defined(HAVE_ACC)
 #  define GO(__TO, __FROM) acc::sum_in_place<F>(&__TO, &__FROM);
 #else
 #  define GO(__TO, __FROM) __TO += __FROM;
@@ -88,12 +88,13 @@ _MAKE_REORDER_(KJI, GO(to[idx], from[_IJK_(k, j, i)]))
 #undef _IJK_
 #undef GO
 
-#if defined(HAVE_CUDA)
+#if defined(HAVE_ACC)
 #  define MIN(a, b) min((a), (b))
 #else
 #  define MIN(a, b) std::min((a), (b))
 #endif
 
+//#define ATRIP_NEW_ENERGY
 #if defined(ATRIP_NEW_ENERGY)
 
 // [[file:~/cuda/atrip/atrip.org::*Energy][Energy:2]]
@@ -103,9 +104,10 @@ __MAYBE_GLOBAL__ void get_energy_distinct(F const epsabc,
                                           F *const epsi,
                                           F *const Tijk,
                                           F *const Zijk,
-                                          double *energy) {
+                                          EnergyType<F> *energy) {
   constexpr size_t block_size = 16;
-  F _energy = {0.};
+  // TODO: zero this number generically and implement in Operations
+  F _energy = F{0.};
   for (size_t kk = 0; kk < No; kk += block_size) {
     const size_t kend(MIN(No, kk + block_size));
     for (size_t jj(kk); jj < No; jj += block_size) {
@@ -148,22 +150,23 @@ __MAYBE_GLOBAL__ void get_energy_distinct(F const epsabc,
                   UXY = acc::add(U, acc::add(X, Y)),
                   VWZ = acc::add(V, acc::add(W, Z)),
                   ADE = acc::add(A, acc::add(D, E)),
-                  BCF = acc::add(B, acc::add(C, _F))
-                  // I just might as well write this in CL
-                  ,
+                  BCF = acc::add(B, acc::add(C, _F)),
                   _first = acc::add(
                       AU,
                       acc::add(BV,
                                acc::add(CW, acc::add(DX, acc::add(EY, FZ))))),
                   _second =
-                      acc::prod(acc::sub(UXY, acc::prod(F{-2.0}, VWZ)), ADE),
+                      acc::prod(acc::sub(UXY, acc::prod(F{+2.0}, VWZ)), ADE),
                   _third =
-                      acc::prod(acc::sub(VWZ, acc::prod(F{-2.0}, UXY)), BCF),
+                      acc::prod(acc::sub(VWZ, acc::prod(F{+2.0}, UXY)), BCF),
                   value = acc::add(acc::prod(F{3.0}, _first),
                                    acc::add(_second, _third)),
                   _loop_energy =
-                      acc::prod(acc::prod(F{2.0}, value),
-                                acc::div(acc::prod(facjk, facij), denominator));
+                      acc::prod(acc::div(acc::prod(F{2.0}, value), denominator),
+                                acc::prod(facjk, facij));
+              // _loop_energy =
+              // acc::prod(acc::prod(F{2.0}, value),
+              // acc::div(acc::prod(facjk, facij), denominator));
               acc::sum_in_place(&_energy, &_loop_energy);
             } // i
           }   // j
@@ -172,7 +175,8 @@ __MAYBE_GLOBAL__ void get_energy_distinct(F const epsabc,
     }         // jj
   }           // kk
   const double real_part = acc::real(_energy);
-  acc::sum_in_place(energy, &real_part);
+  *energy = real_part;
+  // acc::sum_in_place(energy, &real_part);
 }
 
 template <typename F>
@@ -181,8 +185,9 @@ __MAYBE_GLOBAL__ void get_energy_same(F const epsabc,
                                       F *const epsi,
                                       F *const Tijk,
                                       F *const Zijk,
-                                      double *energy) {
+                                      EnergyType<F> *energy) {
   constexpr size_t block_size = 16;
+  // TODO: zero this number generically and implement in Operations
   F _energy = F{0.};
   for (size_t kk = 0; kk < No; kk += block_size) {
     const size_t kend(MIN(kk + block_size, No));
@@ -217,8 +222,8 @@ __MAYBE_GLOBAL__ void get_energy_same(F const epsabc,
                   value = acc::sub(acc::prod(F{3.0}, AU_and_BV_and_CW),
                                    acc::prod(ABC, UVW)),
                   _loop_energy =
-                      acc::prod(acc::prod(F{2.0}, value),
-                                acc::div(acc::prod(facjk, facij), denominator));
+                      acc::prod(acc::div(acc::prod(F{2.0}, value), denominator),
+                                acc::prod(facjk, facij));
 
               acc::sum_in_place(&_energy, &_loop_energy);
             } // i
@@ -228,11 +233,14 @@ __MAYBE_GLOBAL__ void get_energy_same(F const epsabc,
     }         // jj
   }           // kk
   const double real_part = acc::real(_energy);
-  acc::sum_in_place(energy, &real_part);
+  *energy = real_part;
+  // acc::sum_in_place(energy, &real_part);
 }
 // Energy:2 ends here
 
 #else
+
+#pragma omp declare reduction(+:Complex:omp_out += omp_in) initializer(omp_priv = omp_orig)
 
 // [[file:~/cuda/atrip/atrip.org::*Energy][Energy:2]]
 template <typename F>
@@ -241,14 +249,15 @@ __MAYBE_GLOBAL__ void get_energy_distinct(F const epsabc,
                                           F *const epsi,
                                           F *const Tijk,
                                           F *const Zijk,
-                                          double *_energy) {
+                                          EnergyType<F> *_energy) {
   constexpr size_t block_size = 16;
   F energy(0.);
+  #pragma omp parallel for reduction(+:energy)
   for (size_t kk = 0; kk < No; kk += block_size) {
-    const size_t kend(MIN(No, kk + block_size));
-    for (size_t jj(kk); jj < No; jj += block_size) {
-      const size_t jend(MIN(No, jj + block_size));
-      for (size_t ii(jj); ii < No; ii += block_size) {
+    for (size_t jj = kk; jj < No; jj += block_size) {
+      for (size_t ii = jj; ii < No; ii += block_size) {
+        const size_t kend(MIN(No, kk + block_size));
+        const size_t jend(MIN(No, jj + block_size));
         const size_t iend(MIN(No, ii + block_size));
         for (size_t k(kk); k < kend; k++) {
           const F ek(epsi[k]);
@@ -298,14 +307,15 @@ __MAYBE_GLOBAL__ void get_energy_same(F const epsabc,
                                       F *const epsi,
                                       F *const Tijk,
                                       F *const Zijk,
-                                      double *_energy) {
+                                      EnergyType<F> *_energy) {
   constexpr size_t block_size = 16;
   F energy = F(0.);
+  #pragma omp parallel for reduction(+:energy)
   for (size_t kk = 0; kk < No; kk += block_size) {
-    const size_t kend(MIN(kk + block_size, No));
-    for (size_t jj(kk); jj < No; jj += block_size) {
-      const size_t jend(MIN(jj + block_size, No));
-      for (size_t ii(jj); ii < No; ii += block_size) {
+    for (size_t jj = kk; jj < No; jj += block_size) {
+      for (size_t ii = jj; ii < No; ii += block_size) {
+        const size_t kend(MIN(kk + block_size, No));
+        const size_t jend(MIN(jj + block_size, No));
         const size_t iend(MIN(ii + block_size, No));
         for (size_t k(kk); k < kend; k++) {
           const F ek(epsi[k]);
@@ -341,6 +351,23 @@ __MAYBE_GLOBAL__ void get_energy_same(F const epsabc,
 #endif /* defined(ATRIP_NEW_ENERGY) */
 
 // [[file:~/cuda/atrip/atrip.org::*Energy][Energy:3]]
+// instantiate float
+template __MAYBE_GLOBAL__ void
+get_energy_distinct(DataFieldType<float> const epsabc,
+                    size_t const No,
+                    DataFieldType<float> *const epsi,
+                    DataFieldType<float> *const Tijk,
+                    DataFieldType<float> *const Zijk,
+                    EnergyType<float> *energy);
+
+template __MAYBE_GLOBAL__ void
+get_energy_same(DataFieldType<float> const epsabc,
+                size_t const No,
+                DataFieldType<float> *const epsi,
+                DataFieldType<float> *const Tijk,
+                DataFieldType<float> *const Zijk,
+                EnergyType<float> *energy);
+
 // instantiate double
 template __MAYBE_GLOBAL__ void
 get_energy_distinct(DataFieldType<double> const epsabc,
@@ -348,7 +375,7 @@ get_energy_distinct(DataFieldType<double> const epsabc,
                     DataFieldType<double> *const epsi,
                     DataFieldType<double> *const Tijk,
                     DataFieldType<double> *const Zijk,
-                    DataFieldType<double> *energy);
+                    EnergyType<double> *energy);
 
 template __MAYBE_GLOBAL__ void
 get_energy_same(DataFieldType<double> const epsabc,
@@ -356,7 +383,7 @@ get_energy_same(DataFieldType<double> const epsabc,
                 DataFieldType<double> *const epsi,
                 DataFieldType<double> *const Tijk,
                 DataFieldType<double> *const Zijk,
-                DataFieldType<double> *energy);
+                EnergyType<double> *energy);
 
 // instantiate Complex
 template __MAYBE_GLOBAL__ void
@@ -365,7 +392,7 @@ get_energy_distinct(DataFieldType<Complex> const epsabc,
                     DataFieldType<Complex> *const epsi,
                     DataFieldType<Complex> *const Tijk,
                     DataFieldType<Complex> *const Zijk,
-                    DataFieldType<double> *energy);
+                    EnergyType<double> *energy);
 
 template __MAYBE_GLOBAL__ void
 get_energy_same(DataFieldType<Complex> const epsabc,
@@ -373,7 +400,7 @@ get_energy_same(DataFieldType<Complex> const epsabc,
                 DataFieldType<Complex> *const epsi,
                 DataFieldType<Complex> *const Tijk,
                 DataFieldType<Complex> *const Zijk,
-                DataFieldType<double> *energy);
+                EnergyType<double> *energy);
 // Energy:3 ends here
 
 // [[file:~/cuda/atrip/atrip.org::*Singles%20contribution][Singles
@@ -396,7 +423,7 @@ __MAYBE_GLOBAL__ void singles_contribution(size_t No,
       for (size_t j = 0; j < No; j++) {
         const size_t ijk = i + j * No + k * NoNo;
 
-#if defined(HAVE_CUDA)
+#if defined(HAVE_ACC)
 
 #  define GO(__TPH, __VABIJ)                                                   \
     do {                                                                       \
@@ -409,7 +436,7 @@ __MAYBE_GLOBAL__ void singles_contribution(size_t No,
 
 #  define GO(__TPH, __VABIJ) Zijk[ijk] += (__TPH) * (__VABIJ)
 
-#endif // HAVE_CUDA
+#endif // HAVE_ACC
 
         GO(Tph[a + i * Nv], VBCij[j + k * No]);
         GO(Tph[b + j * Nv], VACij[i + k * No]);
@@ -420,6 +447,17 @@ __MAYBE_GLOBAL__ void singles_contribution(size_t No,
 }
 
 // instantiate
+template __MAYBE_GLOBAL__ void singles_contribution<float>(size_t No,
+                                                           size_t Nv,
+                                                           size_t a,
+                                                           size_t b,
+                                                           size_t c,
+                                                           float *const Tph,
+                                                           float *const VABij,
+                                                           float *const VACij,
+                                                           float *const VBCij,
+                                                           float *Zijk);
+
 template __MAYBE_GLOBAL__ void singles_contribution<double>(size_t No,
                                                             size_t Nv,
                                                             size_t a,
@@ -484,7 +522,7 @@ void doubles_contribution(size_t const No,
   DataFieldType<F> *Tijk = (DataFieldType<F> *)Tijk_;
 
 #if defined(ATRIP_USE_DGEMM)
-#  if defined(HAVE_CUDA)
+#  if defined(HAVE_ACC)
 #    define REORDER(__II, __JJ, __KK)                                          \
       reorder<<<1, No>>>(reorder_proxy<DataFieldType<F>, __II##__JJ##__KK>{},  \
                          No,                                                   \
@@ -525,12 +563,12 @@ void doubles_contribution(size_t const No,
                                        NoNoNo);                                \
       } while (0)
 
-  // END CUDA
+  // END ACC
   // ////////////////////////////////////////////////////////////////////
 
 #  else
 
-  // NONCUDA
+  // NONACC
   // /////////////////////////////////////////////////////////////////////
 
 #    define REORDER(__II, __JJ, __KK)                                          \
@@ -576,21 +614,21 @@ void doubles_contribution(size_t const No,
   const size_t NoNoNo = No * NoNo;
 
 // !!!! Zeroing vectors Tijk, _t_buffer and _vhhh
-#  if defined(HAVE_CUDA)
+#  if defined(HAVE_ACC)
 
 #    if !defined(ATRIP_ONLY_DGEMM)
   {
     const size_t elements = NoNoNo * sizeof(DataFieldType<F>) / 4;
-    WITH_CHRONO(
-        "double:zeroing",
-        _CHECK_CUDA_SUCCESS("Zeroing Tijk",
-                            cuMemsetD32_v2((CUdeviceptr)Tijk, 0x00, elements));
-        _CHECK_CUDA_SUCCESS(
-            "Zeroing t buffer",
-            cuMemsetD32_v2((CUdeviceptr)_t_buffer, 0x00, elements));
-        _CHECK_CUDA_SUCCESS(
-            "Zeroing vhhh buffer",
-            cuMemsetD32_v2((CUdeviceptr)_vhhh, 0x00, elements));)
+    WITH_CHRONO("double:zeroing",
+                ACC_CHECK_SUCCESS(
+                    "Zeroing Tijk",
+                    ACC_MEM_SET_D32((ACC_DEVICE_PTR)Tijk, 0x00, elements));
+                ACC_CHECK_SUCCESS(
+                    "Zeroing t buffer",
+                    ACC_MEM_SET_D32((ACC_DEVICE_PTR)_t_buffer, 0x00, elements));
+                ACC_CHECK_SUCCESS(
+                    "Zeroing vhhh buffer",
+                    ACC_MEM_SET_D32((ACC_DEVICE_PTR)_vhhh, 0x00, elements));)
   }
 #    endif
 
@@ -598,7 +636,7 @@ void doubles_contribution(size_t const No,
   std::memset((void *)_t_buffer, 0x00, NoNoNo * sizeof(DataFieldType<F>));
   std::memset((void *)_vhhh, 0x00, NoNoNo * sizeof(DataFieldType<F>));
   std::memset((void *)Tijk, 0x00, NoNoNo * sizeof(DataFieldType<F>));
-#  endif /* HAVE_CUDA */
+#  endif /* HAVE_ACC */
 
 #  if defined(ATRIP_ONLY_DGEMM)
 #    undef MAYBE_CONJ
@@ -722,6 +760,38 @@ void doubles_contribution(size_t const No,
 }
 
 // instantiate templates
+template void doubles_contribution<float>(size_t const No,
+                                          size_t const Nv
+                                          // -- VABCI
+                                          ,
+                                          DataPtr<float> const VABph,
+                                          DataPtr<float> const VACph,
+                                          DataPtr<float> const VBCph,
+                                          DataPtr<float> const VBAph,
+                                          DataPtr<float> const VCAph,
+                                          DataPtr<float> const VCBph
+                                          // -- VHHHA
+                                          ,
+                                          DataPtr<float> const VhhhA,
+                                          DataPtr<float> const VhhhB,
+                                          DataPtr<float> const VhhhC
+                                          // -- TA
+                                          ,
+                                          DataPtr<float> const TAphh,
+                                          DataPtr<float> const TBphh,
+                                          DataPtr<float> const TCphh
+                                          // -- TABIJ
+                                          ,
+                                          DataPtr<float> const TABhh,
+                                          DataPtr<float> const TAChh,
+                                          DataPtr<float> const TBChh
+                                          // -- TIJK
+                                          ,
+                                          DataFieldType<float> *Tijk,
+                                          // -- tmp buffers
+                                          DataFieldType<float> *_t_buffer,
+                                          DataFieldType<float> *_vhhh);
+
 template void doubles_contribution<double>(size_t const No,
                                            size_t const Nv
                                            // -- VABCI

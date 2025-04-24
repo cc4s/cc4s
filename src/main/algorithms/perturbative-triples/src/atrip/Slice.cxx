@@ -1,4 +1,5 @@
 #include <atrip/Slice.hpp>
+#include <atrip/Utils.hpp>
 
 namespace atrip {
 
@@ -79,7 +80,7 @@ Slice<F> &Slice<F>::find_one_by_type(std::vector<Slice<F>> &slices,
 
 template <typename F>
 Slice<F> &Slice<F>::find_recycled_source(std::vector<Slice<F>> &slices,
-                                         Slice<F>::Info info) {
+                                         typename Slice<F>::Info info) {
   const auto slice_it =
       std::find_if(slices.begin(), slices.end(), [&info](Slice<F> const &s) {
         return info.recycling == s.info.type && info.tuple == s.info.tuple
@@ -87,12 +88,12 @@ Slice<F> &Slice<F>::find_recycled_source(std::vector<Slice<F>> &slices,
       });
 
   WITH_CRAZY_DEBUG
-  WITH_RANK << "__slice__:find: recycling source of " << pretty_print(info)
+  WITH_RANK << "__slice__:find: recycling source of " << info_to_string<F>(info)
             << "\n";
   if (slice_it == slices.end())
-    throw std::domain_error("Recycled source not found: " + pretty_print(info)
-                            + " rank: " + pretty_print(Atrip::rank));
-  WITH_RANK << "__slice__:find: " << pretty_print(slice_it->info) << "\n";
+    throw std::domain_error(
+        _FORMAT("Recycled source not found: %s rank: %d", info, Atrip::rank));
+  WITH_RANK << "__slice__:find: " << info_to_string<F>(slice_it->info) << "\n";
   return *slice_it;
 }
 
@@ -108,12 +109,12 @@ Slice<F> &Slice<F>::find_type_abc(std::vector<Slice<F>> &slices,
                      return type == s.info.type && tuple == s.info.tuple;
                    });
   WITH_CRAZY_DEBUG
-  WITH_RANK << "__slice__:find:" << type << " and tuple " << pretty_print(tuple)
-            << "\n";
+  WITH_RANK << "__slice__:find:" << type << " and tuple " << tuple << "\n";
   if (slice_it == slices.end())
-    throw std::domain_error("Slice by type not found: " + pretty_print(tuple)
-                            + ", " + std::to_string(type)
-                            + " rank: " + std::to_string(Atrip::rank));
+    throw std::domain_error(_FORMAT("Slice by type not found: %s, %s rank: %d",
+                                    tuple,
+                                    std::to_string(type),
+                                    std::to_string(Atrip::rank)));
   return *slice_it;
 }
 
@@ -128,9 +129,10 @@ Slice<F> &Slice<F>::find_by_info(std::vector<Slice<F>> &slices,
             && info.from.source == s.info.from.source;
       });
   WITH_CRAZY_DEBUG
-  WITH_RANK << "__slice__:find:looking for " << pretty_print(info) << "\n";
+  WITH_RANK << "__slice__:find:looking for " << info_to_string<F>(info) << "\n";
   if (slice_it == slices.end())
-    throw std::domain_error("Slice by info not found: " + pretty_print(info));
+    throw std::domain_error("Slice by info not found: "
+                            + info_to_string<F>(info));
   return *slice_it;
 }
 
@@ -164,23 +166,17 @@ void Slice<F>::unwrap_and_mark_ready() {
   WITH_RANK << "__slice__:mpi: waiting "
             << "\n";
 #endif
+
   const int error_code = MPI_Wait(&request, &status);
-
-  // FIXME: it appears not to work to free
-  // this request, investigate if this is necessary or not
-  // const auto _mpi_request_free = MPI_Request_free(&request);
-
-  // if (MPI_SUCCESS != _mpi_request_free)
-  // throw "Atrip: Error freeing MPI request";
-
   if (error_code != MPI_SUCCESS) throw "Atrip: Unexpected error MPI ERROR";
 
-#if defined(HAVE_CUDA) && !defined(ATRIP_SOURCES_IN_GPU)
+#if defined(HAVE_ACC) && !defined(ATRIP_SOURCES_IN_GPU)
   // copy the retrieved mpi data to the device
-  WITH_CHRONO("cuda:memcpy",
-              _CHECK_CUDA_SUCCESS(
-                  "copying mpi data to device",
-                  cuMemcpyHtoD(data, (void *)mpi_data, sizeof(F) * size));)
+  WITH_CHRONO(
+      "cuda:memcpy",
+      ACC_CHECK_SUCCESS(
+          "copying mpi data to device",
+          ACC_MEMCPY_HOST_TO_DEV(data, (void *)mpi_data, sizeof(F) * size));)
   std::free(mpi_data);
 #endif
 
@@ -201,13 +197,23 @@ template <typename F>
 Slice<F>::Slice(size_t size_)
     : info({})
     , data(DataNullPtr)
-#if defined(HAVE_CUDA) && !defined(ATRIP_SOURCES_IN_GPU)
+#if defined(HAVE_ACC) && !defined(ATRIP_SOURCES_IN_GPU)
     , mpi_data(nullptr)
 #endif
     , size(size_) {
 }
 
 // utility functions
+
+template <typename F>
+std::string info_to_string(typename Slice<F>::Info const &i) {
+  std::stringstream out;
+  out << "«" << type_to_string<F>(i.type) << ", " << i.state << "»"
+      << " ⊙ {" << i.from.rank << ", " << i.from.source << "}"
+      << " ∴ {" << i.tuple[0] << ", " << i.tuple[1] << "}"
+      << " ♲" << i.recycling;
+  return out.str();
+}
 
 template <typename F>
 std::string type_to_string(typename Slice<F>::Type t) {
@@ -267,17 +273,23 @@ std::string state_to_string(typename Slice<F>::State t) {
   }
 }
 
+template std::string state_to_string<float>(typename Slice<float>::State t);
 template std::string state_to_string<double>(typename Slice<double>::State t);
 template std::string state_to_string<Complex>(typename Slice<Complex>::State t);
+template size_t
+name_to_size<float>(typename Slice<float>::Name t, size_t No, size_t Nv);
 template size_t
 name_to_size<double>(typename Slice<double>::Name t, size_t No, size_t Nv);
 template size_t
 name_to_size<Complex>(typename Slice<Complex>::Name t, size_t No, size_t Nv);
+template std::string name_to_string<float>(typename Slice<float>::Name t);
 template std::string name_to_string<double>(typename Slice<double>::Name t);
 template std::string name_to_string<Complex>(typename Slice<Complex>::Name t);
+template std::string type_to_string<float>(typename Slice<float>::Type t);
 template std::string type_to_string<double>(typename Slice<double>::Type t);
 template std::string type_to_string<Complex>(typename Slice<Complex>::Type t);
 
+template class Slice<float>;
 template class Slice<double>;
 template class Slice<Complex>;
 

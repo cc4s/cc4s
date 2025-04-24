@@ -14,6 +14,7 @@
 
 // [[file:~/cuda/atrip/atrip.org::*Data%20pointer][Data pointer:1]]
 #pragma once
+#include <atrip/Acc.hpp>
 #include <atrip/Complex.hpp>
 #include <atrip/Atrip.hpp>
 
@@ -23,19 +24,24 @@ template <typename F>
 struct DataField;
 
 template <>
+struct DataField<float> {
+  using type = float;
+};
+
+template <>
 struct DataField<double> {
   using type = double;
 };
 
-#if defined(HAVE_CUDA)
+#if defined(HAVE_ACC)
 
 template <typename F>
-using DataPtr = CUdeviceptr;
+using DataPtr = ACC_DEVICE_PTR;
 #  define DataNullPtr 0x00
 
 template <>
 struct DataField<Complex> {
-  using type = cuDoubleComplex;
+  using type = ACC_DOUBLE_COMPLEX;
 };
 
 #else
@@ -53,6 +59,29 @@ struct DataField<Complex> {
 
 template <typename F>
 using DataFieldType = typename DataField<F>::type;
+
+/// Energy type
+
+template <typename F>
+struct EnergyTypeProxy;
+
+#define DEF_ENERGY_TYPE(__F, __type)                                           \
+  template <>                                                                  \
+  struct EnergyTypeProxy<__F> {                                                \
+    using type = __type;                                                       \
+  }
+
+DEF_ENERGY_TYPE(float, double);
+DEF_ENERGY_TYPE(double, double);
+DEF_ENERGY_TYPE(Complex, double);
+
+template <typename F>
+using EnergyType = typename EnergyTypeProxy<F>::type;
+
+template <typename F>
+using PrecisionType = EnergyType<F>;
+
+#undef DEF_ENERGY_TYPE
 
 } // namespace atrip
 // Data pointer:1 ends here

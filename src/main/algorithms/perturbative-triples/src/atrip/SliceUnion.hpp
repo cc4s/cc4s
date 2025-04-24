@@ -38,13 +38,11 @@ namespace atrip {
 template <typename F = double>
 class SliceUnion {
 public:
-  using Tensor = CTF::Tensor<F>;
-
-  const RankMap<F> rank_map;
-  const MPI_Comm world;
-  const MPI_Comm universe;
-  const std::vector<size_t> slice_length;
-  const size_t slice_size;
+  RankMap<F> rank_map;
+  MPI_Comm world;
+  MPI_Comm universe;
+  std::vector<size_t> slice_length;
+  size_t slice_size;
 #if defined(ATRIP_SOURCES_IN_GPU)
   std::vector<DataPtr<F>> sources;
 #else
@@ -52,13 +50,9 @@ public:
 #endif
   std::vector<Slice<F>> slices;
   typename Slice<F>::Name name;
-  const std::vector<typename Slice<F>::Type> slice_types;
+  std::vector<typename Slice<F>::Type> slice_types;
   std::vector<DataPtr<F>> slice_buffers;
   std::set<DataPtr<F>> free_pointers;
-#if defined(ATRIP_MPI_STAGING_BUFFERS)
-  std::unordered_set<StagingBufferInfo, StagingBufferInfoHash>
-      mpi_staging_buffers;
-#endif
 
 #if defined(ATRIP_MPI_STAGING_BUFFERS)
   struct StagingBufferInfo {
@@ -81,10 +75,11 @@ public:
       return (size_t)i.data;
     }
   };
-#endif /* defined(ATRIP_MPI_STAGING_BUFFERS) */
 
-  virtual void
-  slice_into_buffer(size_t iteration, Tensor &to, Tensor const &from) = 0;
+  std::unordered_set<StagingBufferInfo, StagingBufferInfoHash>
+      mpi_staging_buffers;
+
+#endif /* defined(ATRIP_MPI_STAGING_BUFFERS) */
 
   /*
    * This function should enforce an important property of a SliceUnion.
@@ -144,7 +139,7 @@ public:
              MPI_Comm global_world,
              typename Slice<F>::Name name_,
              size_t n_slice_buffers = 4)
-      : rank_map(param_length, np)
+      : rank_map(param_length)
       , world(child_world)
       , universe(global_world)
       , slice_length(slice_length_)
@@ -167,9 +162,9 @@ public:
       , slice_types(slice_types_)
       , slice_buffers(n_slice_buffers) { // constructor begin
 
-#if defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_CUDA)
+#if defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_ACC)
     for (auto &ptr : sources) {
-      MALLOC_DATA_POINTER("SOURCES", &ptr, sizeof(F) * slice_size);
+      MALLOC_DATA_PTR("SOURCES", &ptr, sizeof(F) * slice_size);
     }
 #endif
 
@@ -189,7 +184,7 @@ public:
 #if defined(HAVE_CUDA)
     LOG(1, "Atrip") << "warming communication up " << slices.size() << "\n";
     WITH_CHRONO(
-        "cuda:warmup", int n_ranks = Atrip::np, request_count = 0;
+        "acc:warmup", int n_ranks = Atrip::np, request_count = 0;
         int n_sends = slice_buffers.size() * n_ranks;
         MPI_Request *requests =
             (MPI_Request *)malloc(n_sends * 2 * sizeof(MPI_Request));
@@ -217,19 +212,53 @@ public:
         free(statuses);)
 #endif
 
-    LOG(1, "Atrip") << "#slices " << slices.size() << "\n";
-    WITH_RANK << "#slices[0] " << slices[0].size << "\n";
-    LOG(1, "Atrip") << "#sources " << sources.size() << "\n";
-    WITH_RANK << "#sources[0] " << slice_size << "\n";
-    WITH_RANK << "#free_pointers " << free_pointers.size() << "\n";
-    LOG(1, "Atrip") << "#slice_buffers " << slice_buffers.size() << "\n";
-    LOG(1, "Atrip") << "GB*" << np << " "
+    LOG(1, "Atrip") << "Initializing " << name_to_string<F>(name) << "\n";
+    LOG(1, "Atrip") << "\t#slices " << slices.size() << "\n";
+    WITH_RANK << "\t#slices[0] " << slices[0].size << "\n";
+    LOG(1, "Atrip") << "\t#sources " << sources.size() << "\n";
+    WITH_RANK << "\t#sources[0] " << slice_size << "\n";
+    WITH_RANK << "\t#free_pointers " << free_pointers.size() << "\n";
+    LOG(1, "Atrip") << "\t#slice_buffers " << slice_buffers.size() << "\n";
+    LOG(1, "Atrip") << "\tGB*" << np << " "
                     << double(sources.size() + slice_buffers.size())
                            * slice_size * 8 * np / 1073741824.0
                     << "\n";
   } // constructor ends
 
-  void init(Tensor const &source_tensor);
+  SliceUnion(std::vector<typename Slice<F>::Type> slice_types_,
+             typename Slice<F>::Name name_,
+             Sources<F> &sources_,
+             std::vector<size_t> slice_dimension,
+             size_t n_slice_buffers)
+      : slice_size(sources_.s_sources)
+      , slice_types(slice_types_)
+      , name(name_)
+      , sources(sources_.sources)
+      , rank_map(slice_dimension)
+      , slice_buffers(n_slice_buffers) {
+
+    universe = Atrip::communicator;
+    for (auto &ptr : slice_buffers) {
+      MALLOC_DATA_PTR("Slice Buffer", &ptr, sizeof(F) * slice_size);
+    }
+    slices = std::vector<Slice<F>>(2 * slice_types.size(), {slice_size});
+    // initialize the free_pointers with the pointers to the buffers
+    std::transform(slice_buffers.begin(),
+                   slice_buffers.end(),
+                   std::inserter(free_pointers, free_pointers.begin()),
+                   [](DataPtr<F> ptr) { return ptr; });
+
+    LOG(1, "Atrip") << "Initializing " << name_to_string<F>(name) << "|"
+                    << " #slices " << slices.size() << "|"
+                    << " #sources " << sources.size() << "|"
+                    << " #slice_buffers " << slice_buffers.size() << "\n";
+    WITH_RANK << "\n\t#slices[0] " << slices[0].size << "|";
+    WITH_RANK << "\t#sources[0] " << slice_size << "|";
+    WITH_RANK << "\t#free_pointers " << free_pointers.size() << "|";
+
+  }
+
+
 
   /*
    */
@@ -249,6 +278,8 @@ public:
    * \brief Receive asynchronously only if the state is Fetch
    */
   void receive(typename Slice<F>::Info const &info, size_t tag) noexcept;
+
+
 }; // class SliceUnion
 
 template <typename F>

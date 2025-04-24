@@ -31,7 +31,6 @@
 #  pragma message(                                                             \
       "WARNING: You have OCD debugging ABC triples "                           \
       "expect GB of output and consult your therapist")
-#  include <dbg.h>
 #  define HAVE_OCD
 #  define OCD_Barrier(com) MPI_Barrier(com)
 #  define WITH_OCD
@@ -45,7 +44,6 @@
 #  pragma message(                                                             \
       "WARNING: You have crazy debugging ABC triples,"                         \
       " expect GB of output")
-#  include <dbg.h>
 #  define OCD_Barrier(com)
 #  define WITH_OCD if (false)
 #  define WITH_ROOT if (atrip::Atrip::rank == 0)

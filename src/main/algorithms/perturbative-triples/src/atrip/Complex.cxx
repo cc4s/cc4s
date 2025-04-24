@@ -14,10 +14,13 @@
 
 // [[file:~/cuda/atrip/atrip.org::*Complex%20numbers][Complex numbers:2]]
 #include <atrip/Complex.hpp>
-#include <atrip/CUDA.hpp>
 
 namespace atrip {
 
+template <>
+float maybe_conjugate(const float a) {
+  return a;
+}
 template <>
 double maybe_conjugate(const double a) {
   return a;
@@ -33,6 +36,10 @@ bool is_complex() {
   return false;
 }
 template <>
+bool is_complex<float>() {
+  return false;
+}
+template <>
 bool is_complex<double>() {
   return false;
 }
@@ -41,6 +48,10 @@ bool is_complex<Complex>() {
   return true;
 }
 namespace mpi {
+template <>
+MPI_Datatype datatype_of<float>() {
+  return MPI_FLOAT;
+}
 template <>
 MPI_Datatype datatype_of<double>() {
   return MPI_DOUBLE;

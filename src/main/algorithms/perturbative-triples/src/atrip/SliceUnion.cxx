@@ -1,6 +1,7 @@
 #include <atrip/SliceUnion.hpp>
 #include <atrip/Types.hpp>
 #include <atrip/Chrono.hpp>
+#include <atrip/Tuples.hpp>
 
 namespace atrip {
 
@@ -40,7 +41,8 @@ SliceUnion<F>::build_local_database(ABCTuple const &abc) {
 
   auto const needed = needed_slices_for_tuple(abc);
 
-  WITH_RANK << "__db__:needed:" << pretty_print(needed) << "\n";
+  // TODO#C: write this needed for debug output
+  // WITH_RANK << "__db__:needed:" << pretty_print(needed) << "\n";
   // BUILD THE DATABASE
   // we need to loop over all slice_types that this TensorUnion
   // is representing and find out how we will get the corresponding
@@ -48,10 +50,14 @@ SliceUnion<F>::build_local_database(ABCTuple const &abc) {
   for (auto const &pair : needed) {
     auto const type = pair.first;
     auto const tuple = pair.second;
-    auto const from = rank_map.find(abc, type);
+    auto const from = rank_map.find_location(abc, type);
 
 #ifdef HAVE_OCD
-    WITH_RANK << "__db__:want:" << pretty_print(pair) << "\n";
+    WITH_RANK << "__db__:want:"
+              << " {" << pair.first  /**/
+              << ", " << pair.second /**/
+              << " }"
+              << "\n";
     for (auto const &s : slices)
       WITH_RANK << "__db__:guts:ocd " << s.info << " pt " << s.data << "\n";
 #endif
@@ -110,10 +116,10 @@ SliceUnion<F>::build_local_database(ABCTuple const &abc) {
       blank.info.from = from;
       blank.info.recycling = recycle_it->info.type;
       result.push_back({name, blank.info});
-      WITH_RANK << "__db__: RECYCLING: n" << name << " " << pretty_print(abc)
-                << " get " << pretty_print(blank.info) << " from "
-                << pretty_print(recycle_it->info) << " ptr " << recycle_it->data
-                << "\n";
+      WITH_RANK << "__db__: RECYCLING: n" << name << " " << abc << " get "
+                << info_to_string<F>(blank.info) << " from "
+                << info_to_string<F>(recycle_it->info) << " ptr "
+                << recycle_it->data << "\n";
       continue;
     }
 
@@ -138,17 +144,18 @@ SliceUnion<F>::build_local_database(ABCTuple const &abc) {
       blank.info.state =
           Atrip::rank == from.rank ? Slice<F>::SelfSufficient : Slice<F>::Fetch;
       if (blank.info.state == Slice<F>::SelfSufficient) {
-#if defined(HAVE_CUDA) && !defined(ATRIP_SOURCES_IN_GPU)
+#if defined(HAVE_ACC) && !defined(ATRIP_SOURCES_IN_GPU)
         const size_t _size = sizeof(F) * slice_size;
         blank.data = pop_free_pointers();
-        WITH_CHRONO("cuda:memcpy",
-                    WITH_CHRONO("cuda:memcpy:self-sufficient",
-                                _CHECK_CUDA_SUCCESS(
-                                    "copying mpi data to device",
-                                    cuMemcpyHtoD(blank.data,
-                                                 (void *)SOURCES_DATA(
-                                                     sources[from.source]),
-                                                 sizeof(F) * slice_size));))
+        WITH_CHRONO(
+            "acc:memcpy",
+            WITH_CHRONO("cuda:memcpy:self-sufficient",
+                        ACC_CHECK_SUCCESS(
+                            "copying mpi data to device",
+                            ACC_MEMCPY_HOST_TO_DEV(
+                                blank.data,
+                                (void *)SOURCES_DATA(sources[from.source]),
+                                sizeof(F) * slice_size));))
 #else
         blank.data = SOURCES_DATA(sources[from.source]);
 #endif
@@ -202,9 +209,11 @@ void SliceUnion<F>::clear_unused_slices_for_next_tuple(ABCTuple const &abc) {
       // if we have a Fetch slice then something has gone very wrong.
       if (!slice.is_unwrapped() && slice.info.state != Slice<F>::Recycled)
         throw std::domain_error(
-            "Trying to garbage collect "
-            " a non-unwrapped slice! "
-            + pretty_print(&slice) + pretty_print(slice.info));
+            _FORMAT("Trying to garbage collect "
+                    " a non-unwrapped slice! "
+                    "%p", // %s
+                    &slice));
+                    //info_to_string<F>(slice.info).c_str()));
 
       // it can be that our slice is ready, but it has some hanging
       // references lying around in the form of a recycled slice.
@@ -229,8 +238,8 @@ void SliceUnion<F>::clear_unused_slices_for_next_tuple(ABCTuple const &abc) {
           Slice<F> *new_ready = recycled[0];
           WITH_OCD WITH_RANK << "__gc__:"
                              << "swaping recycled "
-                             << pretty_print(new_ready->info) << " and "
-                             << pretty_print(slice.info) << "\n";
+                             << info_to_string<F>(new_ready->info) << " and "
+                             << info_to_string<F>(slice.info) << "\n";
           new_ready->mark_ready();
           assert(new_ready->data == slice.data);
           free_slice_pointer = false;
@@ -240,12 +249,12 @@ void SliceUnion<F>::clear_unused_slices_for_next_tuple(ABCTuple const &abc) {
             new_recycled->info.recycling = new_ready->info.type;
             WITH_OCD WITH_RANK << "__gc__:"
                                << "updating recycled "
-                               << pretty_print(new_recycled->info) << "\n";
+                               << info_to_string<F>(new_recycled->info) << "\n";
           }
         }
       }
 
-#if defined(HAVE_CUDA) && !defined(ATRIP_SOURCES_IN_GPU)
+#if defined(HAVE_ACC) && !defined(ATRIP_SOURCES_IN_GPU)
       // In cuda, SelfSufficient slices have an ad-hoc pointer
       // since it is a pointer on the device and has to be
       // brought back to the free pointer bucket of the SliceUnion.
@@ -269,9 +278,6 @@ void SliceUnion<F>::clear_unused_slices_for_next_tuple(ABCTuple const &abc) {
       // to
       if (free_slice_pointer) {
         free_pointers.insert(slice.data);
-        WITH_RANK << "~~~:cl(" << name << ")"
-                  << " added to freePointer " << pretty_print(free_pointers)
-                  << "\n";
       } else {
         WITH_OCD WITH_RANK << "__gc__:not touching the free Pointer\n";
       }
@@ -279,61 +285,17 @@ void SliceUnion<F>::clear_unused_slices_for_next_tuple(ABCTuple const &abc) {
       // at this point, let us blank the slice
       WITH_RANK << "~~~:cl(" << name << ")"
                 << " freeing up slice "
-                // TODO: make this possible because of Templates
-                // TODO: there is a deduction error here
-                // << " info " << slice.info
-                << "\n";
+                << " info " << info_to_string<F>(slice.info) << "\n";
       slice.free();
     } // we did not find the slice
   }
 }
 
-// template <typename F>
-// size_t SliceUnion<F>::get_size(const std::vector<size_t> slice_length,
-//                                const std::vector<size_t> param_length,
-//                                const size_t np) {
-//   const RankMap<F> rank_map(param_length, np);
-//   const size_t n_sources = rank_map.n_sources(),
-//                slice_size = std::accumulate(slice_length.begin(),
-//                                             slice_length.end(),
-//                                             1UL,
-//                                             std::multiplies<size_t>());
-//   return n_sources * slice_size;
-// }
-
-template <typename F>
-void SliceUnion<F>::init(Tensor const &source_tensor) {
-
-  CTF::World w(world);
-  const int rank = Atrip::rank;
-#if defined(ATRIP_DRY)
-  const int order = 0;
-#else
-  const int order = slice_length.size();
-#endif /* defined(ATRIP_DRY) */
-  std::vector<int> const syms(order, NS);
-  std::vector<int> __slice_length(slice_length.begin(), slice_length.end());
-  Tensor to_slice_into(order, __slice_length.data(), syms.data(), w);
-
-  WITH_OCD WITH_RANK << "slicing... \n";
-
-  // setUp sources
-  size_t last_source = 0;
-  for (size_t it(0); it < rank_map.n_sources(); ++it) {
-    const size_t source =
-        rank_map.is_source_padding(rank, last_source) ? 0 : it;
-    WITH_OCD
-    WITH_RANK << "Init:to_slice_into it-" << it << " :: source " << source
-              << "\n";
-    slice_into_buffer(source, to_slice_into, source_tensor);
-    last_source = source;
-  }
-}
 
 template <typename F>
 void SliceUnion<F>::allocate_free_buffer() {
   DataPtr<F> new_pointer;
-#if defined(HAVE_CUDA) && defined(ATRIP_SOURCES_IN_GPU)
+#if defined(HAVE_ACC) && defined(ATRIP_SOURCES_IN_GPU)
   MALLOC_DATA_PTR("Additional free buffer",
                   &new_pointer,
                   sizeof(DataFieldType<F>) * slice_size);
@@ -376,7 +338,7 @@ void SliceUnion<F>::send(size_t other_rank,
   if (other_rank == info.from.rank) send_data_p = false;
   if (!send_data_p) return;
 
-#if defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_CUDA)
+#if defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_ACC)
   DataPtr<const F> source_buffer = SOURCES_DATA(sources[info.from.source]);
 #else
   F *source_buffer = SOURCES_DATA(sources[info.from.source]);
@@ -390,25 +352,28 @@ void SliceUnion<F>::send(size_t other_rank,
   // Only a staging buffer will be allocated if the communication
   // is to happen in an INTER-node manner.
 
-  size_t target_node = Atrip::cluster_info->rank_infos[other_rank].node_id,
-         from_node = Atrip::cluster_info->rank_infos[info.from.rank].node_id;
+  size_t target_node = Atrip::node_ids[other_rank],
+         from_node = Atrip::node_ids[info.from.rank];
   const bool inter_node_communication = target_node == from_node;
+
+  DataPtr<F> isend_buffer;
 
   if (inter_node_communication) { goto no_mpi_staging; }
 
-#if defined(ATRIP_MPI_STAGING_BUFFERS)
-  DataPtr<F> isend_buffer = pop_free_pointers();
 
-#  if defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_CUDA)
+#if defined(ATRIP_MPI_STAGING_BUFFERS)
+
+  isend_buffer = pop_free_pointers();
+#  if defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_ACC)
   WITH_CHRONO(
       "cuda:memcpy",
-      WITH_CHRONO(
-          "cuda:memcpy:staging",
-          _CHECK_CUDA_SUCCESS(
-              "copying to staging buffer",
-              cuMemcpy(isend_buffer, source_buffer, sizeof(F) * slice_size));))
+      WITH_CHRONO("cuda:memcpy:staging",
+                  ACC_CHECK_SUCCESS("copying to staging buffer",
+                                    ACC_MEMCPY(isend_buffer,
+                                               source_buffer,
+                                               sizeof(F) * slice_size));))
 
-#  elif !defined(HAVE_CUDA)
+#  elif !defined(HAVE_ACC)
   // do cpu mpi memory staging
   WITH_CHRONO(
       "memcpy",
@@ -417,7 +382,7 @@ void SliceUnion<F>::send(size_t other_rank,
 
 #  else
 #    pragma error("Not possible to do MPI_STAGING_BUFFERS with your config.h")
-#  endif /* defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_CUDA) */
+#  endif /* defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_ACC) */
 
   goto mpi_staging_done;
 
@@ -430,20 +395,22 @@ void SliceUnion<F>::send(size_t other_rank,
 
 no_mpi_staging:
 
-#if defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_CUDA)
-  DataPtr<F> isend_buffer = source_buffer;
-#else
-  F *isend_buffer = source_buffer;
-#endif /* defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_CUDA) */
+  isend_buffer = source_buffer;
 
-  goto mpi_staging_done; // do not complain that is not used, it is used when
-                         // MPI_STAGING_BUFFERS is on
+#if defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_ACC)
+  // DataPtr<F> isend_buffer = source_buffer;
+#else
+  // F *isend_buffer = source_buffer;
+#endif /* defined(ATRIP_SOURCES_IN_GPU) && defined(HAVE_ACC) */
+
+// goto mpi_staging_done; // do not complain that is not used, it is used when
+//  MPI_STAGING_BUFFERS is on
 mpi_staging_done:
 
   // We count network sends only for the largest buffers
   switch (el.name) {
   case Slice<F>::Name::TA:
-    if (other_rank / Atrip::ppn == Atrip::rank / Atrip::ppn) {
+    if (Atrip::node_ids[other_rank] == Atrip::node_id) {
       Atrip::local_send++;
     } else {
       Atrip::network_send++;
@@ -451,6 +418,8 @@ mpi_staging_done:
   default:;
   }
   Atrip::bytes_sent += slice_size * sizeof(F);
+  assert(isend_buffer != nullptr);
+
   MPI_Isend((void *)isend_buffer,
             slice_size,
             traits::mpi::datatype_of<F>(),
@@ -487,7 +456,7 @@ void SliceUnion<F>::receive(typename Slice<F>::Info const &info,
 #    error "You need CUDA aware MPI to have slices on the GPU"
 #  endif
     MPI_Irecv((void *)slice.data,
-#elif defined(HAVE_CUDA) && !defined(ATRIP_SOURCES_IN_GPU)
+#elif defined(HAVE_ACC) && !defined(ATRIP_SOURCES_IN_GPU)
     slice.mpi_data = (F *)malloc(sizeof(F) * slice.size);
     MPI_Irecv(slice.mpi_data,
 #else
@@ -511,30 +480,30 @@ template <typename F>
 DataPtr<F> SliceUnion<F>::unwrap_slice(typename Slice<F>::Type type,
                                        ABCTuple const &abc) {
   WITH_CRAZY_DEBUG
-  WITH_RANK << "__unwrap__:slice " << type << " w n " << name << " abc"
-            << pretty_print(abc) << "\n";
+  WITH_RANK << "__unwrap__:slice " << type << " w n " << name << " abc" << abc
+            << "\n";
   auto &slice = Slice<F>::find_type_abc(slices, type, abc);
   // WITH_RANK << "__unwrap__:info " << slice.info << "\n";
   switch (slice.info.state) {
   case Slice<F>::Dispatched:
     WITH_RANK << "__unwrap__:Fetch: " << &slice << " info "
-              << pretty_print(slice.info) << "\n";
+              << info_to_string<F>(slice.info) << "\n";
     slice.unwrap_and_mark_ready();
     return slice.data;
     break;
   case Slice<F>::SelfSufficient:
     WITH_RANK << "__unwrap__:SelfSufficient: " << &slice << " info "
-              << pretty_print(slice.info) << "\n";
+              << info_to_string<F>(slice.info) << "\n";
     return slice.data;
     break;
   case Slice<F>::Ready:
     WITH_RANK << "__unwrap__:READY: UNWRAPPED ALREADY" << &slice << " info "
-              << pretty_print(slice.info) << "\n";
+              << info_to_string<F>(slice.info) << "\n";
     return slice.data;
     break;
   case Slice<F>::Recycled:
     WITH_RANK << "__unwrap__:RECYCLED " << &slice << " info "
-              << pretty_print(slice.info) << "\n";
+              << info_to_string<F>(slice.info) << "\n";
     return unwrap_slice(slice.info.recycling, abc);
     break;
   case Slice<F>::Fetch:
@@ -550,17 +519,13 @@ DataPtr<F> SliceUnion<F>::unwrap_slice(typename Slice<F>::Type type,
 
 template <typename F>
 SliceUnion<F>::~SliceUnion() {
-  for (auto &ptr : slice_buffers)
-#if defined(HAVE_CUDA)
-    cuMemFree(ptr);
-#else
-    std::free(ptr);
-#endif
+  for (auto &ptr : slice_buffers) ACC_FREE(ptr);
 }
 
 // instantiate SliceUnion
 template class SliceUnion<Complex>;
 template class SliceUnion<double>;
+template class SliceUnion<float>;
 
 template <typename F>
 SliceUnion<F> &union_by_name(std::vector<SliceUnion<F> *> const &unions,
@@ -578,6 +543,9 @@ SliceUnion<F> &union_by_name(std::vector<SliceUnion<F> *> const &unions,
 }
 
 // instantiate union_by_name
+template SliceUnion<float> &
+union_by_name(std::vector<SliceUnion<float> *> const &,
+              typename Slice<float>::Name);
 template SliceUnion<double> &
 union_by_name(std::vector<SliceUnion<double> *> const &,
               typename Slice<double>::Name);

@@ -21,8 +21,22 @@
 
 namespace atrip {
 
-#if !defined(HAVE_CUDA)
+#if !defined(HAVE_ACC)
 extern "C" {
+void sgemm_(const char *transa,
+            const char *transb,
+            const int *m,
+            const int *n,
+            const int *k,
+            float *alpha,
+            const float *a,
+            const int *lda,
+            const float *b,
+            const int *ldb,
+            float *beta,
+            float *c,
+            const int *ldc);
+
 void dgemm_(const char *transa,
             const char *transb,
             const int *m,
@@ -50,6 +64,8 @@ void zgemm_(const char *transa,
             Complex *beta,
             Complex *C,
             const int *ldc);
+
+void scopy_(int *n, const float *x, int *incx, float *y, int *incy);
 
 void dcopy_(int *n, const double *x, int *incx, double *y, int *incy);
 

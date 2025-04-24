@@ -26,14 +26,12 @@ namespace atrip {
 template <typename F = double>
 class RankMap {
 public:
-  static bool RANK_ROUND_ROBIN;
   std::vector<size_t> const lengths;
-  size_t const np, size;
-  ClusterInfo const cluster_info;
+  size_t const size, np;
 
-  RankMap(std::vector<size_t> lens, size_t np_);
+  RankMap(std::vector<size_t> lens);
 
-  size_t find(typename Slice<F>::Location const &p) const noexcept;
+  size_t find_element(typename Slice<F>::Location const &p) const noexcept;
 
   size_t n_sources() const noexcept;
 
@@ -41,8 +39,8 @@ public:
 
   bool is_source_padding(const size_t rank, const size_t source) const noexcept;
 
-  typename Slice<F>::Location find(ABCTuple const &abc,
-                                   typename Slice<F>::Type slice_type) const;
+  typename Slice<F>::Location find_location(ABCTuple const &abc,
+                                            typename Slice<F>::Type slice_type) const;
 };
 
 } // namespace atrip
