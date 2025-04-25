@@ -169,7 +169,8 @@ static std::vector<int> largest_factors(int N) {
 template <typename F>
 Sources<F> ctfReader(CTF::Tensor<F>& tensor,
                      std::vector<size_t> tensor_dimension,
-                     std::vector<size_t> slice_mapping) {
+                     std::vector<size_t> slice_mapping,
+                     bool delete_tensor_data) {
 
   size_t Nv = [&]{
       size_t v = 0;
@@ -279,6 +280,9 @@ Sources<F> ctfReader(CTF::Tensor<F>& tensor,
 
   CTF::Tensor<F> ptensor(order, lens.data(), tensor.sym, *tensor.wrld, s3.c_str(), part[s1.c_str()]);
   ptensor[s2.c_str()] = tensor[s1.c_str()];
+
+  // we destroy the ctf tensor without destroying the object tensor
+  if (delete_tensor_data) tensor.free_self();
 
   ptensor.set_name("pVpphh");
 
@@ -415,6 +419,18 @@ Sources<F> ctfReader(CTF::Tensor<F>& tensor,
   return {n_sources, s_sources, sources};
 }
 
+/*
+Sources<F> vertexReader(std::vector<size_t> tensor_dimension,
+                        std::vector<size_t> slice_mapping,
+                        CTF::Tensor<F>* hhVertex,
+                        CTF::Tensor<F>* phVertex,
+                        CTF::Tensor<F>* hpVertex,
+                        CTF::Tensor<F>* ppVertex) {
+
+
+
+}
+*/
 
 #endif /* defined(HAVE_CTF) */
 
@@ -474,7 +490,8 @@ INSTANTIATE_DISK_READER(float)
 #define INSTANTIATE_CTF_READER(T) \
 template Sources<T> ctfReader<T>(CTF::Tensor<T>&, \
                                  std::vector<size_t>, \
-                                 std::vector<size_t>);
+                                 std::vector<size_t>, \
+                                 bool);
 
 
 INSTANTIATE_CTF_READER(double)

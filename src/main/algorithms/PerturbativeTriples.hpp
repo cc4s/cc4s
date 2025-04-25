@@ -17,7 +17,7 @@
 #define _PERTURBATIVE_TRIPLES_HEADER_FILE
 
 #include <algorithms/Algorithm.hpp>
-
+#include <TensorSet.hpp>
 namespace cc4s {
   struct PerturbativeTriples: public Algorithm {
     ALGORITHM_REGISTRAR_DECLARATION(PerturbativeTriples)
@@ -26,6 +26,22 @@ namespace cc4s {
      */
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   };
+
+template <typename F, typename TE>
+CTF::Tensor<F> &getTensor(
+  Ptr<TensorSet<F, TE>> tensorSet,
+  const std::string &key) {
+    // Get the tensor expression from the TensorSet by key
+    auto tensorExpression = tensorSet->get(key);
+
+    if (!tensorExpression) {
+        throw std::runtime_error("Tensor with key " + key + " not found.");
+    }
+    // Evaluate the tensor expression (this will return a Tensor)
+    auto evaluatedTensor = tensorExpression->evaluate();
+    return evaluatedTensor->getMachineTensor()->tensor;
+}
+
 }
 
 #endif

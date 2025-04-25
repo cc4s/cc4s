@@ -60,6 +60,7 @@
     amplitudes: Amplitudes
     cTIntermediate: ctintermediate
     slicedEigenEnergies: EigenEnergies
+    deleteTensors: 0
   out:
     {}
 

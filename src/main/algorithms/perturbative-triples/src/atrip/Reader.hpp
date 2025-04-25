@@ -14,10 +14,27 @@ Sources<F> diskReader(const std::string &file_path,
                       bool rowMajor);
 
 #if defined(HAVE_CTF)
+/* Note: in the current version the ctf tensor data can only be
+ *       deleted when calling directly the ctfReader (see below
+ *       the implementation of the reader). This should be only
+ *       a minor constraint because when we call atrip as a stand
+ *       alone program it is not wise to use the ctf reader at all
+ */
 template <typename F>
 Sources<F> ctfReader(CTF::Tensor<F>& tensor,
                      std::vector<size_t> tensor_dimension,
-                     std::vector<size_t> slice_mapping);
+                     std::vector<size_t> slice_mapping,
+                     bool delete_tensor_data = false);
+
+/*
+template <typename F>
+Sources<F> vertexReader(std::vector<size_t> tensor_dimension,
+                        std::vector<size_t> slice_mapping,
+                        CTF::Tensor<F>* hhVertex,
+                        CTF::Tensor<F>* phVertex,
+                        CTF::Tensor<F>* hpVertex,
+                        CTF::Tensor<F>* ppVertex);
+*/
 #endif
 
 template <typename F>

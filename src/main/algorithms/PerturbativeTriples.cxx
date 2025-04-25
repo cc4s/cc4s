@@ -31,10 +31,9 @@ ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
 
 template <typename F, typename TE>
 Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
-  {
-    auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
-    if (!amplitudes) return nullptr;
-  }
+  auto amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
+  if (!amplitudes) return nullptr;
+
 
   auto result(New<MapNode>(SOURCE_LOCATION));
 
@@ -44,7 +43,14 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   const size_t
     omp_granularity = arguments->getValue<int>("ompGranularity", 1);
 
+  const bool
+    delete_tnsr = arguments->getValue<int>("deleteTensors", 1) == 1;
 
+  if (delete_tnsr) {
+    OUT() << "Warning: All tensors will be deleted. Ensure this is"
+          << " the final algorithm accessing the tensor data."
+          << std::endl;
+  }
   /*
     This should be added to the manual for CCSD(T).
 
@@ -256,11 +262,12 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       : atrip::Atrip::Input<F>::TuplesDistribution::NAIVE
       ;
 
+    auto& Tpphh = getTensor<F,TE>(amplitudes, "pphh");
     size_t nv(_nv), no(_no);
-    auto sVabph = atrip::ctfReader<F>(*(__V__(ppph)), {nv, nv, nv, no}, {1, 1, 0, 0});
+    auto sVabph = atrip::ctfReader<F>(*(__V__(ppph)), {nv, nv, nv, no}, {1, 1, 0, 0}, delete_tnsr);
     auto sVabhh = atrip::ctfReader<F>(*(__V__(pphh)), {nv, nv, no, no}, {1, 1, 0, 0});
-    auto sTabhh = atrip::ctfReader<F>(*(__T__("pphh")), {nv, nv, no, no}, {1, 1, 0, 0});
-    auto sTaphh = atrip::ctfReader<F>(*(__T__("pphh")), {nv, nv, no, no}, {1, 0, 0, 0});
+    auto sTabhh = atrip::ctfReader<F>(Tpphh, {nv, nv, no, no}, {1, 1, 0, 0});
+    auto sTaphh = atrip::ctfReader<F>(Tpphh, {nv, nv, no, no}, {1, 0, 0, 0}, delete_tnsr);
     auto sVhhha = atrip::ctfReader<F>(*(__V__(hhhp)), {no, no, no, nv}, {0, 0, 0, 1});
 
 
@@ -292,8 +299,8 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
       OUT() << "Using ct" << std::endl;
       std::vector<size_t> vvvo{nv, nv, nv, no}, ooov{no, no, no, nv};
-      sJabph = new atrip::Sources<F>(atrip::ctfReader<F>(*(__CT__("ppph")), vvvo, {1, 1, 0, 0}));
-      sJhhha = new atrip::Sources<F>(atrip::ctfReader<F>(*(__CT__("hhhp")), ooov, {0, 0, 0, 1}));
+      sJabph = new atrip::Sources<F>(atrip::ctfReader<F>(*(__CT__("ppph")), vvvo, {1, 1, 0, 0}, delete_tnsr));
+      sJhhha = new atrip::Sources<F>(atrip::ctfReader<F>(*(__CT__("hhhp")), ooov, {0, 0, 0, 1}, delete_tnsr));
       in.with_sJabph(sJabph);
       in.with_sJhhha(sJhhha);
     }
@@ -301,10 +308,6 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     out = atrip::Atrip::run<F>(in);
   } else {
 
-    const bool
-      delete_ptrs
-      = arguments->getValue<int>("deleteDoubles", 1) == 1
-      ;
 
 
     const auto
@@ -342,35 +345,35 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       T(F_T.order, F_T.lens, F_T.sym, *F_T.wrld);
     to_float(F_T["abij"], T["abij"]);
     Cc4s::world->barrier();
-    if (delete_ptrs) __delete_T__("pphh");
+    if (delete_tnsr) __delete_T__("pphh");
 
     // deal with Vpphh
     CTF::Tensor<float>
       Vpphh(F_Vpphh.order, F_Vpphh.lens, F_Vpphh.sym, *F_Vpphh.wrld);
     to_float(F_Vpphh["abij"], Vpphh["abij"]);
     Cc4s::world->barrier();
-    if (delete_ptrs) __delete_V__(pphh);
+    if (delete_tnsr) __delete_V__(pphh);
 
     // deal with Vhhhp
     CTF::Tensor<float>
       Vhhhp(F_Vhhhp.order, F_Vhhhp.lens, F_Vhhhp.sym, *F_Vhhhp.wrld);
     to_float(F_Vhhhp["abij"], Vhhhp["abij"]);
     Cc4s::world->barrier();
-    if (delete_ptrs) __delete_V__(hhhp);
+    if (delete_tnsr) __delete_V__(hhhp);
 
     // deal with Vppph
     CTF::Tensor<float>
       Vppph(F_Vppph.order, F_Vppph.lens, F_Vppph.sym, *F_Vppph.wrld);
     to_float(F_Vppph["abij"], Vppph["abij"]);
     Cc4s::world->barrier();
-    if (delete_ptrs) __delete_V__(ppph);
+    if (delete_tnsr) __delete_V__(ppph);
 
     size_t nv(_nv), no(_no);
-    auto sVabph = atrip::ctfReader<float>(Vppph, {nv, nv, nv, no}, {1, 1, 0, 0});
+    auto sVabph = atrip::ctfReader<float>(Vppph, {nv, nv, nv, no}, {1, 1, 0, 0}, delete_tnsr);
     auto sVabhh = atrip::ctfReader<float>(Vpphh, {nv, nv, no, no}, {1, 1, 0, 0});
     auto sTabhh = atrip::ctfReader<float>(T, {nv, nv, no, no}, {1, 1, 0, 0});
-    auto sTaphh = atrip::ctfReader<float>(T, {nv, nv, no, no}, {1, 0, 0, 0});
-    auto sVhhha = atrip::ctfReader<float>(Vhhhp, {no, no, no, nv}, {0, 0, 0, 1});
+    auto sTaphh = atrip::ctfReader<float>(T, {nv, nv, no, no}, {1, 0, 0, 0}, delete_tnsr);
+    auto sVhhha = atrip::ctfReader<float>(Vhhhp, {no, no, no, nv}, {0, 0, 0, 1}, delete_tnsr);
 
 
     in
@@ -397,9 +400,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       ;
 
     OUT() << "using single precision" << std::endl;
-    if (delete_ptrs)
-    OUT() << "WARNING: all double precision tensors will be deleted"
-          << std::endl;
+
     std::shared_ptr<CTF::Tensor<float>> Jhhhp, Jppph;
     atrip::Sources<float> *sJabph = nullptr, *sJhhha = nullptr;
 
@@ -414,7 +415,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
                                                    *F_Jhhhp.wrld);
       to_float(F_Jhhhp["abij"], (*Jhhhp)["abij"]);
       Cc4s::world->barrier();
-      if (delete_ptrs) __delete_CT__(hhhp);
+      if (delete_tnsr) __delete_CT__(hhhp);
 
       // Deal with Jppph
       Jppph = std::make_shared<CTF::Tensor<float>>(F_Jppph.order,
@@ -423,11 +424,11 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
                                                    *F_Jppph.wrld);
       to_float(F_Jppph["abij"], (*Jppph)["abij"]);
       Cc4s::world->barrier();
-      if (delete_ptrs) __delete_CT__(ppph);
+      if (delete_tnsr) __delete_CT__(ppph);
 
       std::vector<size_t> vvvo{nv, nv, nv, no}, ooov{no, no, no, nv};
-      sJabph = new atrip::Sources<float>(atrip::ctfReader<float>(*Jppph, vvvo, {1, 1, 0, 0}));
-      sJhhha = new atrip::Sources<float>(atrip::ctfReader<float>(*Jhhhp, ooov, {0, 0, 0, 1}));
+      sJabph = new atrip::Sources<float>(atrip::ctfReader<float>(*Jppph, vvvo, {1, 1, 0, 0}, delete_tnsr));
+      sJhhha = new atrip::Sources<float>(atrip::ctfReader<float>(*Jhhhp, ooov, {0, 0, 0, 1}, delete_tnsr));
       in.with_sJabph(sJabph);
       in.with_sJhhha(sJhhha);
 
