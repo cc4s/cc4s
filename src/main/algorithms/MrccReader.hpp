@@ -46,6 +46,11 @@ namespace cc4s {
                                             Ptr<Tensor<Real<>,TE>> Epsh,
                                             Ptr<Tensor<Real<>,TE>> Mos_vir);
 
+    template <typename TE>
+    std::vector<Real<>> eval_mp2_approx(Ptr<Tensor<Real<>,TE>> Gamma_igm,
+                                        Ptr<Tensor<Real<>,TE>> Epsp,
+                                        Ptr<Tensor<Real<>,TE>> Epsh,
+                                        Ptr<Tensor<Real<>,TE>> Mos_vir);
 
 
     #pragma pack(1)

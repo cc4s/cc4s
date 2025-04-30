@@ -7,7 +7,7 @@ CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
 CXXFLAGS += \
--fopenmp -std=c++11 \
+-fopenmp -std=c++17 \
 -Wall -pedantic --all-warnings -fmax-errors=1 \
 -Wno-vla \
 -Wno-int-in-bool-context \

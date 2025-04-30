@@ -6,7 +6,7 @@ CXX = mpicxx
 
 # general and language options (for preprocessing, compiling and linking)
 CXXFLAGS += \
--mkl -lpthread  -std=c++11 \
+-mkl -lpthread  -std=c++17 \
 -Wall -pedantic -fmax-errors=3 \
 -qopenmp \
 -qoverride-limits -DINTEL_COMPILER \

@@ -74,6 +74,8 @@ Ptr<MapNode> MrccReader::run(
     nbf = nbasis + ncore;
   }
   size_t fnoFactor(arguments->template getValue<Natural<>>("fnoFactor"));
+  bool fnoApprox(arguments->template getValue<int>("fnoApprox", 0) == 1);
+  OUT() << "Using approximated Frozen Natural Orbitals (FNOs)\n";
 
   LOG() << "Parameter read. Constructing Fock matrix in MO basis" << std::endl;
   size_t nFno = std::min(fnoFactor*nocc, nvir);
@@ -190,7 +192,8 @@ Ptr<MapNode> MrccReader::run(
   el = (rank) ? 0 : nocc;
   Epsh->write(el, idx.data(), epsh.data());
 
-  auto gamma_ab = eval_mp2(Gamma_igm, Epsp, Epsh, Mos_vir, true);
+  auto gamma_ab = (fnoApprox) ? eval_mp2_approx(Gamma_igm, Epsp, Epsh, Mos_vir)
+                              : eval_mp2(Gamma_igm, Epsp, Epsh, Mos_vir, true);
 
   std::vector<Real<>> w(nvir);
   if (!Cc4s::dryRun) {
@@ -252,9 +255,9 @@ Ptr<MapNode> MrccReader::run(
   Mos_vir_fno->write(el, idx.data(), mos_vir_fno.data());
 
 
-
-  eval_mp2(Gamma_igm, Epsf, Epsh, Mos_vir_fno, false);
-
+  if (!fnoApprox) {
+    eval_mp2(Gamma_igm, Epsf, Epsh, Mos_vir_fno, false);
+  }
   std::vector<Real<>> halfVertexp;
 
   if (!Cc4s::dryRun) halfVertexp = halfTransform(mos_vir_fno, intpos, nFno, nbf, ndfbasis);
@@ -504,6 +507,8 @@ std::vector<Real<>> MrccReader::eval_mp2_approx_ref(Ptr<Tensor<Real<>,TE>> Gamma
                                                     Ptr<Tensor<Real<>,TE>> Epsh,
                                                     Ptr<Tensor<Real<>,TE>> Mos_vir) {
 
+
+
   auto Gamma_ab(Tcc<TE>::template tensor<Real<>>("gamma_ab"));
 
   auto _lens(Gamma_igm->getLens());
@@ -535,6 +540,97 @@ std::vector<Real<>> MrccReader::eval_mp2_approx_ref(Ptr<Tensor<Real<>,TE>> Gamma
   Gamma_ab->read(el, idx.data(), gamma_ab.data());
 
   return gamma_ab;
+}
+
+template <typename TE>
+std::vector<Real<>> MrccReader::eval_mp2_approx(Ptr<Tensor<Real<>,TE>> Gamma_igm,
+                                                Ptr<Tensor<Real<>,TE>> Epsp,
+                                                Ptr<Tensor<Real<>,TE>> Epsh,
+                                                Ptr<Tensor<Real<>,TE>> Mos_vir) {
+
+  auto Gamma_ab(Tcc<TE>::template tensor<Real<>>("gamma_ab"));
+
+  auto _lens(Gamma_igm->getLens());
+  auto ndfbasis(_lens[1]);
+  auto nocc(_lens[0]);
+  auto nvir(Epsp->getLen(0));
+
+  auto epsp = Epsp->readAll();
+  auto epsh = Epsh->readAll();
+  auto Vpphh(Tcc<TE>::template tensor<Real<>>("Vpphh"));
+  auto Dpphh(Tcc<TE>::template tensor<Real<>>({nvir, nvir, nocc, nocc}, "Dpphh"));
+  auto Gamma_gia(Tcc<TE>::template tensor<Real<>>({ndfbasis, nocc, nvir}, "Vertex_ph"));
+  COMPILE(
+    (*Gamma_gia)["Gia"] <<= (*Gamma_igm)["iGm"] * (*Mos_vir)["ma"]
+  )->execute();
+  std::vector<double> gamma_ab_glb;
+  if constexpr (std::is_same<TE, DefaultDryTensorEngine>::value) {
+    double _mem(sizeof(double) * ndfbasis * nocc * nvir);
+    DryMemory::allocate(_mem, SOURCE_LOCATION);
+    DryMemory::free(_mem);
+    return std::vector<double>();
+  } else {
+    // this is a CTF::Tensor now
+    auto _Gamma_gia = Gamma_gia->evaluate()->getMachineTensor()->tensor;
+    // we want to evaluate:
+    // \gamma_ab = \sum_i [ \sum_c ( \sum_g \Gamma[gci] * \Gamma[gbi] / \Delta_bc^ii)
+    //                           * ( \sum_g \Gamma[gci] * \Gamma[gai] / \Delta_ac^ii) ]
+    // for each i: buf_ga = \Gamma[gci]
+    // buf_pp = \sum_g \Gamma[gci] * \Gamma[gbi]
+    //
+    // 1.) we distribute Gamma over the last index and calculate different i on
+    //     different processors (some processors can hold more than one occupied index
+    // 2.) we evaluate a local result of \gamma_ab and accumulate the result in the end
+
+
+    int np(Cc4s::world->getProcesses()), rank(Cc4s::world->getRank());
+    std::vector<int64_t> lens{static_cast<int64_t>(ndfbasis),
+                              static_cast<int64_t>(nvir),
+                              static_cast<int64_t>(nocc)};
+    std::vector<int> sym(3, NS);
+    std::vector<int> plens(3, 1);
+    plens[2] = np;
+    CTF::Partition part(3, plens.data());
+    CTF::Tensor<> G_gai(3, lens.data(), sym.data(), *_Gamma_gia.wrld, "Gai", part["Gai"]);
+
+    G_gai["Gai"] = _Gamma_gia["Gia"];
+
+    std::vector<double> gamma_ab(nvir*nvir, 0.0);
+
+    size_t localOcc = nocc / np + size_t( rank < nocc % np);
+    size_t b_size(nvir*ndfbasis);
+    std::vector<double> Dabii(nvir*nvir), buf_ga(b_size), buf_pp(nvir*nvir);
+    for (size_t ii(0UL); ii < localOcc; ii++) {
+      size_t occ(ii*np + rank);
+      double epsi(epsh[occ]);
+      for (size_t v(0UL); v < nvir; v++) {
+        for (size_t w(0UL); w < nvir; w++) {
+          Dabii[v * nvir + w] = 2*epsi - epsp[w] - epsp[v];
+        }
+      }
+      double a(1.0), b(0.0);
+      int inc(1), v(nvir), g(ndfbasis);
+      size_t offset = ii * b_size * sizeof(double);
+      std::memcpy(buf_ga.data(), G_gai.data + offset, b_size*sizeof(double));
+      dgemm_("T", "N", &v, &v, &g, &a, buf_ga.data(), &g, buf_ga.data(), &g, &b, buf_pp.data(), &v);
+      for (size_t v(0UL); v < buf_pp.size(); v++) buf_pp[v] /= Dabii[v];
+      dgemm_("N", "T", &v, &v, &v, &a, buf_pp.data(), &v, buf_pp.data(), &v, &a, gamma_ab.data(), &v);
+    }
+    MPI_Barrier(Cc4s::world->getComm());
+    // accumulate the result to rank 0 who carries the full density matrix
+    gamma_ab_glb.resize(nvir*nvir, 0.0);
+    MPI_Reduce(
+      gamma_ab.data(),
+      gamma_ab_glb.data(),
+      nvir * nvir,
+      MPI_DOUBLE,
+      MPI_SUM,
+      0,
+      Cc4s::world->getComm()
+    );
+  }
+
+  return gamma_ab_glb;
 }
 
 
