@@ -17,8 +17,10 @@
 #define MRCC_READER_DEFINED
 
 #include <string>
+#include <tcc/Tcc.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <tcc/TensorExpression.hpp>
+#include <DryRun.hpp>
 
 namespace cc4s {
   class MrccReader: public Algorithm {
@@ -27,7 +29,21 @@ namespace cc4s {
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
 
   protected:
+
+    // Tensor wrapper to be able to write a real tensor
+    // irrespective of the TensorEngine easier
+    // TODO: maybe we want to adapt such a concept in the whole code
     template <typename TE>
+    using ___tensor_wrapper = Ptr<Tensor<Real<>, TE>>;
+
+    template <typename TE, enum DryMode dry_mode>
+    std::vector<Real<>> get_gamma_ab(bool fnoApprox,
+                                     ___tensor_wrapper<TE> Gamma_igm,
+                                     ___tensor_wrapper<TE> Epsp,
+                                     ___tensor_wrapper<TE> Epsh,
+                                     ___tensor_wrapper<TE> Mos_vir);
+
+    template <typename TE, enum DryMode dry_mode>
     Ptr<MapNode> run(const Ptr<MapNode> &arguments);
 
     template <typename T>
@@ -51,6 +67,12 @@ namespace cc4s {
                                         Ptr<Tensor<Real<>,TE>> Epsp,
                                         Ptr<Tensor<Real<>,TE>> Epsh,
                                         Ptr<Tensor<Real<>,TE>> Mos_vir);
+
+    template <typename TE>
+    std::vector<Real<>> eval_mp2_approx_dry(Ptr<Tensor<Real<>,TE>> Gamma_igm,
+                                            Ptr<Tensor<Real<>,TE>> Epsp,
+                                            Ptr<Tensor<Real<>,TE>> Epsh,
+                                            Ptr<Tensor<Real<>,TE>> Mos_vir);
 
 
     #pragma pack(1)
@@ -97,4 +119,3 @@ namespace cc4s {
 }
 
 #endif
-
