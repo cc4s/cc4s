@@ -1,0 +1,155 @@
+- name: MrccReader
+  in:
+    # number of FNO per occupied
+    # 0 just means: all virtuals 
+    fnoFactor: 0
+    mrccStdOut: mrcc.stdout 
+    fnoApprox: 0
+  out:
+    coulombVertex: CoulombVertex
+    eigenEnergies: EigenEnergies
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method: Ccsd
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
+    integralsSliceSize: 100
+    maxIterations: 25
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+
+- name: PerturbativeCT
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    coulombVertex: CoulombVertex
+  out:
+    cTIntermediate: ctintermediate
+
+- name: PerturbativeTriples
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    cTIntermediate: ctintermediate
+    slicedEigenEnergies: EigenEnergies
+  out:
+    {}
+
+
+- name: MrccReader
+  in:
+    # number of FNO per occupied
+    fnoFactor: 4
+    mrccStdOut: mrcc.stdout 
+    fnoApprox: 0
+  out:
+    coulombVertex: CoulombVertex
+    eigenEnergies: EigenEnergies
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method: Ccsd
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
+    integralsSliceSize: 100
+    maxIterations: 25
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+
+- name: PerturbativeCT
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    coulombVertex: CoulombVertex
+  out:
+    cTIntermediate: ctintermediate
+
+- name: PerturbativeTriples
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    cTIntermediate: ctintermediate
+    slicedEigenEnergies: EigenEnergies
+  out:
+    {}
+
+- name: MrccReader
+  in:
+    # number of FNO per occupied
+    fnoFactor: 4
+    mrccStdOut: mrcc.stdout 
+    fnoApprox: 1
+  out:
+    coulombVertex: CoulombVertex
+    eigenEnergies: EigenEnergies
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method: Ccsd
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
+    integralsSliceSize: 100
+    maxIterations: 25
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+
+- name: PerturbativeCT
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    coulombVertex: CoulombVertex
+  out:
+    cTIntermediate: ctintermediate
+
+- name: PerturbativeTriples
+  in:
+    coulombIntegrals: CoulombIntegrals
+    amplitudes: Amplitudes
+    cTIntermediate: ctintermediate
+    slicedEigenEnergies: EigenEnergies
+  out:
+    {}
+

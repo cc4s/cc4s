@@ -113,12 +113,14 @@ Ptr<MapNode> MrccReader::run(
     nbasis = nocc + nvir;
     nbf = nbasis + ncore;
   }
-  size_t fnoFactor(arguments->template getValue<Natural<>>("fnoFactor"));
+  size_t fnoFactor(arguments->template getValue<Natural<>>("fnoFactor", 0));
   bool fnoApprox(arguments->template getValue<int>("fnoApprox", 0) == 1);
-  OUT() << "Using approximated Frozen Natural Orbitals (FNOs)\n";
+  if (fnoApprox) {
+    OUT() << "Using approximated Frozen Natural Orbitals (FNOs)\n";
+  }
 
-  LOG() << "Parameter read. Constructing Fock matrix in MO basis" << std::endl;
   size_t nFno = std::min(fnoFactor*nocc, nvir);
+  if (fnoFactor == 0) nFno = nvir;
 
   std::vector<Real<>> mos_occ(nbf*nocc), mos_vir_fno(nFno*nbf);
   std::vector<Real<>> mos_vir, epsp, epsh;

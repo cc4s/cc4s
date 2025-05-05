@@ -52,5 +52,10 @@
   "vasp-n2": {
     "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/cb07c7f362cf6c084744fc6f498127cf6c258d34/n2",
     "type": "raw"
+  },
+
+  "mrcc-h2o2": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/e3b3be638f361e0ed38a02a5629dcbb03f83548a/h2o2",
+    "type": "raw"
   }
 }
