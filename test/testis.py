@@ -459,6 +459,13 @@ def main():
 
         os.chdir(cwd)
 
+    # cleanup pycache
+    for root, dirs, files in os.walk(directory, topdown=False):
+        for name in dirs:
+            if name == "__pycache__":
+                pycache_dir = os.path.join(root, name)
+                print(f"Removing {pycache_dir}")
+                shutil.rmtree(pycache_dir)
 
 if __name__ == "__main__":
     main()
