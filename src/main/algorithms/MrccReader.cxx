@@ -195,7 +195,7 @@ Ptr<MapNode> MrccReader::run(
   std::vector<Real<>> w(nvir);
   if (!Cc4s::dryRun) {
     if (!rank) {
-
+      LOG() << "eval FNO: Diagonalize density matrix" << std::endl;
       compute_eigen(gamma_ab, nvir, w);
       // zero out the elements beyond nFno
       for (size_t a(0); a < nvir - nFno; a++)
@@ -212,6 +212,7 @@ Ptr<MapNode> MrccReader::run(
         fock_ab[a + b * nvir] += gamma_ab[c + a * nvir] * gamma_ab[c + b * nvir] * epsp[c];
       }
 
+      LOG() << "eval FNO: Diagonalize Fock matrix" << std::endl;
       compute_eigen(fock_ab, nvir, w);
 
       for (size_t b(0); b < nvir; b++)
@@ -239,6 +240,7 @@ Ptr<MapNode> MrccReader::run(
 
     }
     // we have to distribute to all ranks for the AO->MO transform
+    LOG() << "Distribute AO->MO transform among all ranks" << std::endl;
     MPI_Bcast(mos_vir_fno.data(), nbf*nFno, MPI_DOUBLE, 0, Cc4s::world->getComm());
   }
 
@@ -257,6 +259,7 @@ Ptr<MapNode> MrccReader::run(
 
   std::vector<Real<>> halfVertexp;
 
+  LOG() << "Half transform virtual-virtual Vertex" << std::endl;
   if (!Cc4s::dryRun) halfVertexp = halfTransform(mos_vir_fno, intpos, nFno, nbf, ndfbasis);
 
   auto Gamma_agm(Tcc<TE>::template tensor<Real<>>({nFno, ndfbasis, nbf}, "halfVertexp"));
