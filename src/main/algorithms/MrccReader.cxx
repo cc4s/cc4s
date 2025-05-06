@@ -157,6 +157,13 @@ Ptr<MapNode> MrccReader::run(
       iffile, "File TEINT not present",
       SOURCE_LOCATION
     );
+    // check the file length of TEINT
+    int64_t te_size(0);
+    for (auto ipos: intpos) {
+      auto nn(ipos.index3);
+      te_size += nn * sizeof(Data1);
+    }
+    LOG() << "FILE SIZE OF TEINT IS " << te_size <<  " BYTES" << std::endl;
   } else {
     MPI_Bcast(mos_occ.data(), nbf*nocc, MPI_DOUBLE, 0, Cc4s::world->getComm());
     halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis);
