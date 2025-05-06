@@ -384,8 +384,8 @@ namespace cc4s {
 
     ~Tensor() {
       if (allocated())
-        LOG() << "Free tensor " << name << " with " <<
-          getElementsCount() << " elements" << std::endl;
+        LOG() << "Free tensor " << name << " with " << getElementsCount()
+          << " elements; " << sizeof(F) << " bytes each" << std::endl;
     }
 
 
@@ -443,7 +443,7 @@ namespace cc4s {
         Cc4s::world->barrier();
         LOG() <<
           "Allocate tensor " << name << " with " <<
-          getElementsCount() << " elements." << std::endl;
+          getElementsCount() << " elements; " << sizeof(F) << " bytes each" << std::endl;
         // allocate the implementation specific machine tensor upon request
         machineTensor = MT::create(lens, name);
         // wait until allocation is done on all processes

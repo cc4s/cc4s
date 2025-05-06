@@ -35,9 +35,10 @@ using namespace cc4s;
 
 void Cc4s::run() {
   printBanner();
-  LOG() << "Start dry Run" << std::endl;
+  LOG() << "Start dry-Run - employing " << getProcessesCount() << " ranks" << std::endl;
+
   runSteps(true);
-  LOG() << "Finished dry Run" << std::endl;
+  LOG() << "Finished dry-Run" << std::endl;
   if (options->dryRanks > 0) {
     if (!options->persistLog) {
       Log::closeLogFile();
@@ -50,7 +51,7 @@ void Cc4s::run() {
     Log::closeLogFile();
     Log::setRank(Cc4s::world->getRank());
   }
-  LOG() << "Start calculation" << std::endl;
+  LOG() << "Start calculation - employing " << getProcessesCount() << " ranks" << std::endl;
   runSteps(false);
   LOG() << "Finished calculation" << std::endl;
   printEndBanner();

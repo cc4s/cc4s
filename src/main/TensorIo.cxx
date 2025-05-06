@@ -459,8 +459,11 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinary(
   auto tensor( Tcc<TE>::template tensor<F>(lens, fileName) );
   tensor->nonZeroConditions = nonZeroConditions;
   OUT() << "Reading from binary file " << fileName << std::endl;
-  if (Cc4s::dryRun) return tensor;
 
+  if (Cc4s::dryRun) {
+    tensor->getMachineTensor();
+    return tensor;
+  }
   LOG() << "#non-zero conditions: " << nonZeroConditions->all.size() << std::endl;
   TensorNonZeroBlockIterator blockIterator(nonZeroConditions);
   while (!blockIterator.atEnd()) {
@@ -548,7 +551,10 @@ Ptr<Tensor<F,TE>> TensorIo::readTensorElementsBinaryDense(
 
 
   OUT() << "Reading from binary file " << fileName << std::endl;
-  if (Cc4s::dryRun) return tensor;
+  if (Cc4s::dryRun) {
+    tensor->getMachineTensor();
+    return tensor;
+  }
   // write tensor elements with values from file
   tensor->writeFromFile(file);
   LOG() << "Read " << sizeof(F)*tensor->getElementsCount() <<
