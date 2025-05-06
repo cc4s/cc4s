@@ -274,6 +274,8 @@ def compare_energies(correct_file, test_file, accuracy=1e-7):
                 out_cstep = cstep["out"]
                 out_tstep = tstep["out"]
                 for energy_name in out_cstep.get("energy", []):
+                    if energy_name == "unit":
+                        continue
                     cenergy = float(out_cstep["energy"][energy_name])
                     tenergy = float(out_tstep["energy"][energy_name])
                     diff = abs(cenergy - tenergy)
@@ -459,13 +461,6 @@ def main():
 
         os.chdir(cwd)
 
-    # cleanup pycache
-    for root, dirs, files in os.walk(directory, topdown=False):
-        for name in dirs:
-            if name == "__pycache__":
-                pycache_dir = os.path.join(root, name)
-                print(f"Removing {pycache_dir}")
-                shutil.rmtree(pycache_dir)
 
 if __name__ == "__main__":
     main()
