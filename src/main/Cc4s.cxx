@@ -357,10 +357,9 @@ void Cc4s::printEndBanner() {
   time (&rawtime);
   OUT() << "Calculation finished successfully.\n";
   OUT() << "Calculation finished at: " << ctime (&rawtime) << std::endl;
-  // always close the log file
-  Log::closeLogFile();
   //check if we have to remove the log files
   if (options->persistLog == 0) {
+    Log::closeLogFile();
     remove(Log::getFileName().c_str());
   }
 }
@@ -600,7 +599,6 @@ int main(int argumentCount, char **arguments) {
 
   Log::setFileName(Cc4s::options->logFile);
   Log::setRank(Cc4s::world->getRank());
-  Log::flush_log_after_seconds = Cc4s::options->flush_log_after_n_seconds;
   Time startTime(Time::getCurrentRealTime());
   Log::setLogHeaderFunction(
     [startTime](const SourceLocation &location) {
