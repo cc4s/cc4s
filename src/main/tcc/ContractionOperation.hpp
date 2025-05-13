@@ -22,7 +22,7 @@
 #include <tcc/Tensor.hpp>
 #include <SharedPointer.hpp>
 #include <tcc/Tcc.hpp>
-#include <tcc/tensor_flags.hpp>
+#include <tcc/Tensor_flags.hpp>
 
 #include <string>
 

@@ -146,6 +146,7 @@ namespace cc4s {
       const double time_memory_weight
 //      const std::function<F(const F, const F)> &g
     ) {
+#ifdef CTF_LOWMEM_CONTRACTION
       tensor.contract(
         alpha,
         A->tensor, aIndices.c_str(),
@@ -154,6 +155,7 @@ namespace cc4s {
         cIndices.c_str(),
         time_memory_weight
       );
+#endif
     }
 
     void slice(

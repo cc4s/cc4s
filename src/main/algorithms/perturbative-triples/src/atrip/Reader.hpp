@@ -21,6 +21,14 @@ Sources<F> diskReader(const std::string &file_path,
  *       a minor constraint because when we call atrip as a stand
  *       alone program it is not wise to use the ctf reader at all
  */
+#if defined(CTF_SWITCH_REDISTRIBUTION)
+template <typename F>
+Sources<F> ctfReader(CTF::Tensor<F>& tensor,
+                     std::vector<size_t> tensor_dimension,
+                     std::vector<size_t> slice_mapping,
+                     bool delete_tensor_data = false);
+
+#else
 template <typename F>
 Sources<F> ctfReader_fallback(CTF::Tensor<F>& tensor,
                               std::vector<size_t> tensor_dimension,
@@ -31,7 +39,15 @@ template <typename F>
 Sources<F> ctfReader(CTF::Tensor<F>& tensor,
                      std::vector<size_t> tensor_dimension,
                      std::vector<size_t> slice_mapping,
-                     bool delete_tensor_data = false);
+                     bool delete_tensor_data = false) {
+  return ctfReader_fallback(tensor,
+                            tensor_dimension,
+                            slice_mapping,
+                            delete_tensor_data);
+}
+
+#endif /* HAVE CTF_SWITCH_REDISTRIBUTION */
+
 
 /*
 template <typename F>
@@ -42,7 +58,7 @@ Sources<F> vertexReader(std::vector<size_t> tensor_dimension,
                         CTF::Tensor<F>* hpVertex,
                         CTF::Tensor<F>* ppVertex);
 */
-#endif
+#endif  /* HAVE CTF */
 
 template <typename F>
 Sources<F> reader(void* tensor_,
