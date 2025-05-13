@@ -31,7 +31,7 @@ int Atrip::np = 0;
 int Atrip::omp_threads;
 int Atrip::omp_granularity;
 bool Atrip::rank_round_robin;
-
+bool Atrip::useSwitchRedistribution = true;
 #if defined(HAVE_ACC)
 typename Atrip::CudaContext Atrip::cuda;
 typename Atrip::KernelDimensions Atrip::kernel_dimensions;
@@ -709,7 +709,8 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
 
     // write checkpoints
     // TODO: ENABLE THIS
-    if (!checkpoint_mod || iteration % checkpoint_mod == 0 && false) {
+    //if (f!checkpoint_mod || iteration % checkpoint_mod == 0 && false) {
+    if (false) {
       EnergyType<F> global_energy = 0;
       MPI_Reduce(&local_output.energy,
                  &global_energy,

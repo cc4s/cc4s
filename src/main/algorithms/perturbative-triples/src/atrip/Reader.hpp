@@ -2,6 +2,7 @@
 #define READER_HPP_
 
 #include <string>
+#include <atrip/Atrip.hpp>
 #include <atrip/RankMap.hpp>
 #include <atrip/Complex.hpp>
 
@@ -20,6 +21,12 @@ Sources<F> diskReader(const std::string &file_path,
  *       a minor constraint because when we call atrip as a stand
  *       alone program it is not wise to use the ctf reader at all
  */
+template <typename F>
+Sources<F> ctfReader_fallback(CTF::Tensor<F>& tensor,
+                              std::vector<size_t> tensor_dimension,
+                              std::vector<size_t> slice_mapping,
+                              bool delete_tensor_data = false);
+
 template <typename F>
 Sources<F> ctfReader(CTF::Tensor<F>& tensor,
                      std::vector<size_t> tensor_dimension,
@@ -57,9 +64,18 @@ Sources<F> reader(void* tensor_,
     throw std::invalid_argument("Invalid tensor pointer, failed dynamic_cast");
   }
   LOG(0, "Atrip") << "Loading tensor from CTF. Tensor name: " << tensor->name << std::endl;
-  return ctfReader<F>(*tensor,
-                      tensor_dimension,
-                      slice_mapping);
+#if defined(CTF_SWITCH_REDISTRIBUTION)
+  if (Atrip::useSwitchRedistribution) {
+    return ctfReader<F>(*tensor,
+                        tensor_dimension,
+                        slice_mapping);
+  }
+#endif
+  return ctfReader_fallback<F>(*tensor,
+                               tensor_dimension,
+                               slice_mapping);
+
+
 #endif
   if (!Atrip::rank) std::cout << "CTF not available. Abort!" << std::endl;
   assert(0);

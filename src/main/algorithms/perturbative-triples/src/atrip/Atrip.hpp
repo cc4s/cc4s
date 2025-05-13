@@ -58,6 +58,7 @@ struct Atrip {
   static int node_id;
   static int local_rank;
   static std::vector<int> node_ids;
+  static bool useSwitchRedistribution;
 #if defined(HAVE_ACC)
   struct CudaContext {
     ACC_BLAS_STATUS status;
@@ -113,6 +114,7 @@ struct Atrip {
     ADD_ATTRIBUTE(std::string, Jppph_path, "");
     ADD_ATTRIBUTE(std::string, Jhhhp_path, "");
 
+    ADD_ATTRIBUTE(bool, useSwitchRedistribution, true)
     // Miscellaneous options
     ADD_ATTRIBUTE(bool, cT, false)
     ADD_ATTRIBUTE(bool, delete_Vppph, false)
