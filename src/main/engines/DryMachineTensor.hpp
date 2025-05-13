@@ -101,7 +101,8 @@ namespace cc4s {
       // TODO: allocate intermediates for memory estimation
     }
 
-    // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
+    // low memory variant of the previous function
+    // this[cIndices] = alpha * A[aIndices],B[bIndices] + beta*this[cIndices]
     void contract(
       F alpha,
       const Ptr<DryMachineTensor<F,ETE>> &A,
@@ -110,7 +111,8 @@ namespace cc4s {
       const std::string &bIndices,
       F beta,
       const std::string &cIndices,
-      const std::function<F(const F, const F)> &g
+      const double time_memory_weight
+      //const std::function<F(const F, const F)> &g
     ) {
       // TODO: allocate intermediates for memory estimation
     }

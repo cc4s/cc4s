@@ -14,6 +14,7 @@
  */
 
 #include <tcc/Tensor.hpp>
+#include <tcc/Tensor_flags.hpp>
 #include <Cc4s.hpp>
 
 namespace cc4s {
@@ -32,4 +33,37 @@ namespace cc4s {
   }
 
   std::map<std::string, Ptr<TensorDimension>> TensorDimension::dimensions;
+
+#ifdef CTF_LOWMEM_CONTRACTION
+
+  static bool use_lowmem = false;
+
+  void enable_lowmem(bool value) {
+    if (value)
+      LOG() << "Switch on low-memory contraction mode\n";
+    else
+      LOG() << "Switch off low-memory contraction mode\n";
+
+    use_lowmem = value;
+  }
+
+  bool is_lowmem_enabled() {
+    return use_lowmem;
+  }
+
+  #else
+
+  void enable_lowmem(bool value) {
+    if (value) {
+      LOG() << "[lowmem] Warning: low-memory mode requested, "
+            << "but not supported in this build. Using default mode.\n";
+    }
+  }
+
+  bool is_lowmem_enabled() {
+    return false;
+  }
+
+
+  #endif
 }

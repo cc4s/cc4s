@@ -21,6 +21,8 @@
 #include <tcc/Costs.hpp>
 #include <tcc/Tensor.hpp>
 #include <SharedPointer.hpp>
+#include <tcc/Tcc.hpp>
+#include <tcc/tensor_flags.hpp>
 
 #include <string>
 
@@ -63,20 +65,33 @@ namespace cc4s {
         this->template isOlderThan<F>(left) ||
         this->template isOlderThan<F>(right)
       ) {
+        std::string s_contr = (cc4s::is_lowmem_enabled())
+                            ? "exexuting: lowmem contraction "
+                            : "executing: contraction ";
         LOG_LOCATION(SourceLocation(this->file, this->line)) <<
-          "executing: contraction " <<
+          s_contr <<
           this->getName() << " <<= " <<
           this->alpha << " * " <<
           left->getName() << " * " << right->getName() << " + " <<
           this->beta << " * " << this->getName() << std::endl;
-
-        this->getResult()->getMachineTensor()->contract(
-          this->alpha,
-          left->getResult()->getMachineTensor(), left->getResultIndices(),
-          right->getResult()->getMachineTensor(), right->getResultIndices(),
-          this->beta,
-          this->getResultIndices()
-        );
+        if (cc4s::is_lowmem_enabled()) {
+          this->getResult()->getMachineTensor()->contract(
+            this->alpha,
+            left->getResult()->getMachineTensor(), left->getResultIndices(),
+            right->getResult()->getMachineTensor(), right->getResultIndices(),
+            this->beta,
+            this->getResultIndices(),
+            0.1
+          );
+        } else {
+          this->getResult()->getMachineTensor()->contract(
+            this->alpha,
+            left->getResult()->getMachineTensor(), left->getResultIndices(),
+            right->getResult()->getMachineTensor(), right->getResultIndices(),
+            this->beta,
+            this->getResultIndices()
+          );
+        }
         LOG() << "Contraction Done. " << std::endl;
         this->updated();
         this->accountFlops(contractionCosts);

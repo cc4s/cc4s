@@ -227,6 +227,7 @@ Ptr<MapNode> PerturbativeCT::runReal(
     )->execute();
   }
 
+  cc4s::enable_lowmem(true);
   COMPILE(
 //    // Line 17: 6th term - 10th term
     (noRing) ? (
@@ -237,7 +238,10 @@ Ptr<MapNode> PerturbativeCT::runReal(
     ),
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ceam"] * (*Tpphh)["ebim"],
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ecam"] * (*Tpphh)["ebmi"],
-    (*Vppph)["abci"] += (-1.0) * (*Tpphh)["eaim"] * (*Ippph)["ecbm"],
+    (*Vppph)["abci"] += (-1.0) * (*Tpphh)["eaim"] * (*Ippph)["ecbm"]
+  )->execute();
+  cc4s::enable_lowmem(false);
+  COMPILE(
     (*Vppph)["abci"] += ( 1.0) * (*Tpphh)["bamn"] * (*Xijka)["mnic"],
     // Line 19: 9th term
     (*dpImcjk)["iajk"] += ( 1.0) * (*Tpphh)["efkj"] * (*Ippph)["efai"],
@@ -406,7 +410,10 @@ Ptr<MapNode> PerturbativeCT::runComplex(
     // Line 17: 3rd term - 5th term
     (*Vppph)["abci"] += (-1.0) * (*pXiajb)["maic"] * (*Tph)["bm"],
     (*Vppph)["abci"] += (-1.0) * (*Tph)["am"] * (*pXiabj)["mbci"],
-    (*Vppph)["abci"] += (-1.0) * (*Iia)["mc"] * (*Tpphh)["abmi"],
+    (*Vppph)["abci"] += (-1.0) * (*Iia)["mc"] * (*Tpphh)["abmi"]
+  )->execute();
+  cc4s::enable_lowmem(true);
+  COMPILE(
 //    // Line 17: 6th term - 10th term
     (noRing) ? (
       Tcc<TE>::sequence()
@@ -416,7 +423,10 @@ Ptr<MapNode> PerturbativeCT::runComplex(
     ),
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ceam"] * (*Tpphh)["ebim"],
     (*Vppph)["abci"] += (-1.0) * (*Ippph)["ecam"] * (*Tpphh)["ebmi"],
-    (*Vppph)["abci"] += (-1.0) * (*Tpphh)["eaim"] * (*Ippph)["ecbm"],
+    (*Vppph)["abci"] += (-1.0) * (*Tpphh)["eaim"] * (*Ippph)["ecbm"]
+  )->execute();
+  cc4s::enable_lowmem(false);
+  COMPILE(
     (*Vppph)["abci"] += ( 1.0) * (*Tpphh)["bamn"] * (*Xijka)["mnic"],
     // Line 19: 1st to 4th term
     (*dpImcjk)["iajk"] <<= (*Vhphh)["iajk"],
