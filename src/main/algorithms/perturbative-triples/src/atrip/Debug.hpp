@@ -104,5 +104,23 @@ struct IterationDescription {
 
 void register_iteration_descriptor(IterationDescriptor);
 
+// a further logger. usage:
+// in the main program
+//  atrip::getLogger() = [](const std::string& s){
+//    yourFavoriteLogStream << s << "\n";
+//  };
+
+inline std::function<void(const std::string&)>& getLogger() {
+    static std::function<void(const std::string&)> instance = nullptr;
+    return instance;
+}
+
+/// Convenience wrapper so you can write:
+///   log("something happened");
+inline void log(const std::string& msg) {
+    if (getLogger()) getLogger()(msg);
+}
+
+
 } // namespace atrip
 // IterationDescriptor ends here

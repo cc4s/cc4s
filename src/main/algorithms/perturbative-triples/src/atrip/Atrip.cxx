@@ -23,6 +23,7 @@
 #include <atrip/DatabaseCommunicator.hpp>
 #include <atrip/Malloc.hpp>
 #include <atrip/Acc.hpp>
+#include <atrip/Debug.hpp>
 
 using namespace atrip;
 
@@ -375,6 +376,7 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
   // get tuples for the current rank
   TuplesDistribution *distribution;
 
+  log("sources ready. building tuple list");
   if (in.tuples_distribution == Atrip::Input<F>::TuplesDistribution::NAIVE) {
     LOG(0, "Atrip") << "Using the naive distribution\n";
     distribution = new NaiveDistribution();
@@ -397,6 +399,7 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
                                  : in.iteration_mod,
                iteration1Percent = n_iterations * 0.01;
 
+  const size_t iteration_log = in.iteration_log;
   auto const is_fake_tuple = [&tuples_list, distribution](size_t const i) {
     return distribution->tuple_is_fake(tuples_list[i]);
   };
@@ -577,6 +580,7 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
 
   // START MAIN LOOP ======================================================{{{1
 
+  log("Start iterations.");
   MPI_Barrier(Atrip::communicator);
   LocalOutput<EnergyType<F>> local_output = {0, 0};
   Output global_output = {0, 0};
@@ -615,7 +619,16 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
       LOG(0, "Atrip") << "iteration from checkpoint " << first_iteration
                       << "\n";
     }
+    if (in.first_iteration)
+      throw std::domain_error("Not allowed to use first_iteration >0 AND checkpointing!");
   }
+
+  if (in.first_iteration) {
+    first_iteration = in.first_iteration;
+    LOG(0, "Atrip") << "Starting atrip from iteration: " << first_iteration << std::endl;
+    log("Starting atrip from iteration: " + std::to_string(first_iteration));
+  }
+
 
   const auto compute_local_energy =
       [Tijk, Zijk, No, epsi, &_epsa](ABCTuple const &abc,
@@ -730,6 +743,35 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
       if (Atrip::rank == 0) write_checkpoint(out, in.checkpoint_path);
     }
 
+    if (iteration_log && i % iteration_log == 0) {
+      std::ostringstream sst;
+      EnergyType<F> global_energy = 0;
+      MPI_Reduce(&local_output.energy,
+                 &global_energy,
+                 1,
+                 traits::mpi::datatype_of<EnergyType<F>>(),
+                 MPI_SUM,
+                 0,
+                 Atrip::communicator);
+      std::string log_out("energy log. iteration " + std::to_string(i) + " , (T): ");
+      sst << std::setprecision(15) << -global_energy;
+      log_out += sst.str();
+      if (in.cT) {
+        std::ostringstream ssct;
+        EnergyType<F> ct_energy = 0;
+        MPI_Reduce(&local_output.ct_energy,
+                   &ct_energy,
+                   1,
+                   traits::mpi::datatype_of<EnergyType<F>>(),
+                   MPI_SUM,
+                   0,
+                   Atrip::communicator);
+        log_out += " , (cT): ";
+        ssct << std::setprecision(15) << -ct_energy;
+        log_out += ssct.str();
+      }
+      log(log_out);
+    }
     // write reporting
     if (!iteration_mod || iteration % iteration_mod == 0 || iteration == iteration1Percent) {
 
@@ -1055,6 +1097,7 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
   }
   // END OF MAIN LOOP
 
+  log("Finished iterations.");
 #if defined(HAVE_ACC)
   ACC_FREE(Tai);
   ACC_FREE(epsi);

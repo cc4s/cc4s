@@ -29,6 +29,23 @@ namespace cc4s {
   public:
     typedef std::pair<size_t, SourceLocation> ExtendingResource;
 
+    static void allocate(size_t size,
+                         size_t el_size,
+                         std::string name,
+                         SourceLocation const &location) {
+      LOG_LOCATION(location) << "Allocate object " << name << " with "
+                             << size << " elements; " << el_size
+                             << " bytes each" << std::endl;
+      currentTotalSize += size*el_size;
+      if (currentTotalSize > maxTotalSize) {
+        maxTotalSize = currentTotalSize;
+        extendingResources.push_back(
+          ExtendingResource(maxTotalSize, location)
+        );
+        LOG_LOCATION(location) << "extending memory size to " << currentTotalSize << std::endl;
+      }
+    }
+
     static void allocate(
       size_t size, SourceLocation const &location
     ) {
@@ -38,7 +55,7 @@ namespace cc4s {
         extendingResources.push_back(
           ExtendingResource(maxTotalSize, location)
         );
-        LOG_LOCATION(location) << "extending memory size to " << size << std::endl;
+        LOG_LOCATION(location) << "extending memory size to " << currentTotalSize << std::endl;
       } else {
 /*
         LOG_LOCATION(location) << "memory size " << size << std::endl;
@@ -46,7 +63,27 @@ namespace cc4s {
       }
     }
     static void free(size_t size) {
-      currentTotalSize -= size;
+      if (size > currentTotalSize) {
+        LOG() << "We free " << size << " bytes of memory. This is more than we have allocated:"
+              << currentTotalSize << " ! We set current memory to zero!" << endl;
+        currentTotalSize = 0;
+      } else {
+        currentTotalSize -= size;
+      }
+    }
+
+    static void free(size_t size, size_t el_size, std::string name) {
+      if (size*el_size > currentTotalSize) {
+        LOG() << "We free " << size*el_size
+              << " bytes of memory. This is more than we have allocated:"
+              << currentTotalSize << " ! We set current memory to zero!" << endl;
+        currentTotalSize = 0;
+      } else {
+        currentTotalSize -= size*el_size;
+      }
+      LOG() << "Free object " << name << " with " << size
+          << " elements; " << el_size << " bytes each" << std::endl;
+
     }
     static size_t currentTotalSize, maxTotalSize;
     static std::vector<ExtendingResource> extendingResources;

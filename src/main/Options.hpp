@@ -37,7 +37,7 @@ namespace cc4s {
       , logFile("cc4s.log")
       , yamlOutFile("cc4s.out.yaml")
       , dryRanks(0)
-      , persistLog(0)
+      , persistLog(2)
       , outfiles(1)
       , no_gc(false)
       , app{"CC4S: Coupled Cluster For Solids"}

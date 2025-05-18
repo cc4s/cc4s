@@ -25,6 +25,7 @@
 #include <atrip.hpp>
 #include <atrip/Debug.hpp>
 #include <fstream>
+#include <Log.hpp>
 
 using namespace cc4s;
 ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
@@ -94,8 +95,11 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       : true;
   bool
     use_checkpoint
-      = arguments->getValue<int>("useCheckpoint", 1) == 1
+      = arguments->getValue<int>("useCheckpoint", 0) == 1
       ;
+
+  size_t first_iteration = arguments->getValue<int>("firstIteration", 0);
+  if (first_iteration) OUT() << "Starting atrip from iteration: " << first_iteration << std::endl;
 
   atrip::Atrip::init(MPI_COMM_WORLD);
   atrip::Atrip::Input<F> in;
@@ -211,15 +215,17 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
   {
     // Register printing function
-    const double _No = *(__eps__(h))->lens
-               , _Nv = *(__eps__(p))->lens
-               , doublesFlops = _No * _No * _No
-                              * (_No + _Nv)
-                              * double(sizeof(F) / sizeof(double))
-                              * 2.0
-                              * 6.0
-                              / 1.0e9
-                              ;
+    double _No = *(__eps__(h))->lens
+         , _Nv = *(__eps__(p))->lens
+         , doublesFlops = _No * _No * _No
+                        * (_No + _Nv)
+                        * 2.0
+                        * 6.0
+                        / 1.0e9
+                        ;
+    if (arguments->isGiven(kwd::CT_INTERMEDIATE)) doublesFlops *= 2.0;
+    // this is not working if we have single prec complex!!
+    if (typeid(F) == typeid(Complex<>)) doublesFlops *= 4.0;
 
 
     double lastElapsedTime = 0;
@@ -235,16 +241,24 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
         if (!firstHeaderPrinted) {
           sprintf(out, fmt_header, "Progress(%)", "time(s)", "GFLOP/s");
           firstHeaderPrinted = true;
-          OUT() << out << "\n";
+          OUT() << out << std::endl;
         }
         sprintf(out, fmt_nums,
                 double(d.current_iteration) / double(d.total_iterations) * 100,
                 (d.current_elapsed_time - lastElapsedTime),
                 d.current_iteration * doublesFlops / d.current_elapsed_time);
         lastElapsedTime = d.current_elapsed_time;
-        OUT() << out << "\n";
+        OUT() << out << std::endl;
       });
   }
+  // atrip's logger which writes into the cc4s logstream
+  atrip::getLogger() = [](const std::string& s){
+    Log::getLogStream() << Log::getLogHeaderFunction()(SourceLocation()) << "[ATRIP]:" << s << "\n";
+  };
+
+  // currently we will log 500 times. should be in the minutes to couple of minutes range!
+  size_t log_iterations = _nv*(_nv+1)*(_nv+2)/6/Cc4s::getProcessesCount()/500;
+  LOG_LOCATION(SOURCE_LOCATION) << "Atrip will write a log every " << log_iterations << " iterations\n";
 
   atrip::Atrip::Output out;
 
@@ -293,6 +307,8 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       .with_checkpoint_path(checkpoint_path)
       .with_read_checkpoint_if_exists(use_checkpoint)
       .with_cT(arguments->isGiven(kwd::CT_INTERMEDIATE))
+      .with_first_iteration(first_iteration)
+      .with_iteration_log(log_iterations)
       ;
 
     atrip::Sources<F> *sJabph = nullptr, *sJhhha = nullptr;
@@ -397,6 +413,8 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       .with_checkpoint_path(checkpoint_path)
       .with_read_checkpoint_if_exists(use_checkpoint)
       .with_cT(arguments->isGiven(kwd::CT_INTERMEDIATE))
+      .with_first_iteration(first_iteration)
+      .with_iteration_log(log_iterations)
       ;
 
     OUT() << "using single precision" << std::endl;
@@ -437,6 +455,9 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     OUT() << "All tensors loaded; starting main loop." << std::endl;
     out = atrip::Atrip::run<float>(in);
   }
+
+  if (first_iteration)
+    OUT() << "WARNING: the provided energy is NOT the energy of ALL iterations\n";
 
   OUT() << "(T) correlation energy: "
         << std::setprecision(15) << std::setw(23)
@@ -499,41 +520,71 @@ Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
   Natural<128>
       no = epsh->inspect()->getLen(0)
     , nv = epsp->inspect()->getLen(0)
-    , nranks = Cc4s::getProcessesCount()
+    , np = Cc4s::getProcessesCount()
     , f = sizeof(F)
-    , n_tuples = nv * (nv + 1) * (nv + 2) / 6 - nv
-    , atrip_memory
-        = /* tuples_memory */ 3 * sizeof(size_t) * n_tuples
-          //
-          // one dimensional slices (all ranks)
-          //
-        + /* taphh */ f * nranks * 6 * nv * no * no
-        + /* hhha  */ f * nranks * 6 * no * no * no
-          //
-          // two dimensional slices (all ranks)
-          //
-        + /* abph  */ f * nranks * 12 * nv * no
-        + /* abhh  */ f * nranks *  6 * no * no
-        + /* tabhh */ f * nranks *  6 * no * no
-          //
-          // distributed sources (all ranks)
-          //
-        + /* tpphh */ f * nv * nv * no * no
-        + /* vhhhp */ f * no * no * no * nv
-        + /* vppph */ f * nv * nv * nv * no
-        + /* vpphh */ f * nv * nv * no * no
-        + /* tpphh2 */ f * nv * nv * no * no
-          //
-          // tensors in every rank
-          //
-        + /* tijk */ f * nranks * no * no * no
-        + /* zijk */ f * nranks * no * no * no
-        + /* epsp */ f * nranks * (no + nv)
-        + /* tai  */ f * nranks * no * nv
-    ;
-  DryMemory::allocate(atrip_memory, SOURCE_LOCATION);
-  DryMemory::free(atrip_memory);
-  Operation<TE>::addFloatingPointOperations(no*no*no*nv*nv*nv*(no+nv)*2);
+    , n_tuples = nv * (nv + 1) * (nv + 2) / 6 - nv;
+
+  // Note: what is detected by the tcc memory stuff is: Tpphh and Jppph+Jhhhp
+  //       in normal operation Vppph is still a recipe and will first be created
+  DryMemory::allocate(nv*nv*no*no, f, "tpphh2", SOURCE_LOCATION);
+  DryMemory::allocate(nv*nv*nv*no, f, "vppph", SOURCE_LOCATION);
+  // this will be done before the main algorithm of atrip starts....
+  DryMemory::allocate(nv*nv*nv*no, f, "vppph - hwm", SOURCE_LOCATION);
+  DryMemory::free(    nv*nv*nv*no, f, "vppph - hwm");
+
+  DryMemory::allocate(n_tuples, sizeof(size_t), "tuples", SOURCE_LOCATION);
+  DryMemory::allocate(n_tuples*2, sizeof(size_t), "createTuples", SOURCE_LOCATION);
+  DryMemory::free(n_tuples*2, sizeof(size_t), "createTuples");
+  // these buffers are allocated for the main loop of atrip
+  DryMemory::allocate(np*no*no*no, f, "tijk", SOURCE_LOCATION);
+  DryMemory::allocate(np*no*no*no, f, "zijk", SOURCE_LOCATION);
+  DryMemory::allocate(np*(no+nv),  f, "epsp", SOURCE_LOCATION);
+  DryMemory::allocate(np*no*nv,    f, "tai", SOURCE_LOCATION);
+
+  DryMemory::allocate(6*np*nv*no*no, f, "taphh", SOURCE_LOCATION);
+  DryMemory::allocate(6*np*no*no*no, f, "vhhha", SOURCE_LOCATION);
+  DryMemory::allocate(12*np*nv*no,   f, "vabph", SOURCE_LOCATION);
+  DryMemory::allocate(6*np*no*no,    f, "vabhh", SOURCE_LOCATION);
+  DryMemory::allocate(6*np*no*no,    f, "tabhh", SOURCE_LOCATION);
+
+  if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+    DryMemory::allocate(6*np*no*no*no, f, "jhhha", SOURCE_LOCATION);
+    DryMemory::allocate(12*np*nv*no,   f, "jabph", SOURCE_LOCATION);
+  }
+
+
+  // Deallocate
+  DryMemory::free(n_tuples, sizeof(size_t), "tuples");
+
+  DryMemory::free(nv*nv*no*no, f, "tpphh2");
+  DryMemory::free(nv*nv*nv*no, f, "vppph");
+
+  DryMemory::free(np*no*no*no, f, "tijk");
+  DryMemory::free(np*no*no*no, f, "zijk");
+  DryMemory::free(np*(no+nv),  f, "epsp");
+  DryMemory::free(np*no*nv,    f, "tai");
+
+  DryMemory::free(6*np*nv*no*no, f, "taphh");
+  DryMemory::free(6*np*no*no*no, f, "vhhha");
+  DryMemory::free(12*np*nv*no,   f, "vabph");
+  DryMemory::free(6*np*no*no,    f, "vabhh");
+  DryMemory::free(6*np*no*no,    f, "tabhh");
+
+  if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+    DryMemory::free(6*np*no*no*no, f, "jhhha");
+    DryMemory::free(12*np*nv*no,   f, "jabph");
+  }
+
+
+
+//  DryMemory::allocate(atrip_memory, f, "Atrip-memory", SOURCE_LOCATION);
+//  DryMemory::free(atrip_memory, f, "Atrip-memory");
+  double flopsPer = (typeid(F) == typeid(Complex<>)) ? 8.0 : 2.0;
+  Operation<TE>::addFloatingPointOperations(no*no*no*nv*nv*nv*(no+nv)*flopsPer);
+  if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+    Operation<TE>::addFloatingPointOperations(no*no*no*nv*nv*nv*(no+nv)*flopsPer);
+  }
+
 
   return result;
 }

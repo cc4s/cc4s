@@ -133,7 +133,7 @@ Ptr<MapNode> MrccReader::run(
   }
 
   size_t rank(Cc4s::world->getRank());
-  auto np(Cc4s::world->getProcesses());
+  auto np(Cc4s::getProcessesCount());
   OUT() << "nocc: " << nocc << " nvir: " << nvir
         << " nbf: " << nbf << " ndf: " << ndfbasis << std::endl;
   LOG() << "nocc: " << nocc << " nvir: " << nvir
@@ -194,6 +194,7 @@ Ptr<MapNode> MrccReader::run(
   // right now only rank 0 is used
   //auto halfVertexh = halfTransform(mos_occ, intpos, nocc, nbf, ndfbasis)
   LOG() << "Reading and transforming three center integrals" << std::endl;
+  DryMemory::allocate(ndfbasis*nbf*nocc, sizeof(double), "halfVertexh", SOURCE_LOCATION);
   std::vector<Real<>> halfVertexh;
   if (Cc4s::dryRun) {
     std::ifstream iffile("TEINT", std::ios::binary);
@@ -218,6 +219,7 @@ Ptr<MapNode> MrccReader::run(
   auto Epsh(Tcc<TE>::template tensor<Real<>>({nocc}, "epsh") );
 
   size_t el;
+  DryMemory::allocate(ndfbasis*nbf*nocc, sizeof(size_t), "halfVertexh_idx", SOURCE_LOCATION);
   std::vector<size_t> idx;
   if (!Cc4s::dryRun) {
     el = halfVertexh.size();
@@ -231,6 +233,11 @@ Ptr<MapNode> MrccReader::run(
     }
     Gamma_igm->write(el, idx.data(), halfVertexh.data());
   }
+  // clear std::vector
+  halfVertexh = std::vector<Real<>>();
+  idx = std::vector<size_t>();
+  DryMemory::free(ndfbasis*nbf*nocc, sizeof(double), "halfVertexh");
+  DryMemory::free(ndfbasis*nbf*nocc, sizeof(double), "halfVertexh_idx");
 
   el = (rank) ? 0 : mos_vir.size();
   idx.resize(el);
@@ -241,6 +248,8 @@ Ptr<MapNode> MrccReader::run(
   el = (rank) ? 0 : nocc;
   Epsh->write(el, idx.data(), epsh.data());
 
+
+  DryMemory::allocate(np*nvir*nvir, sizeof(double), "gamma_ab_glb", SOURCE_LOCATION);
   auto gamma_ab = get_gamma_ab< TE, dry_mode >(fnoApprox, Gamma_igm, Epsp, Epsh, Mos_vir);
 
 
@@ -296,13 +305,18 @@ Ptr<MapNode> MrccReader::run(
     MPI_Bcast(mos_vir_fno.data(), nbf*nFno, MPI_DOUBLE, 0, Cc4s::world->getComm());
   }
 
+  gamma_ab = std::vector<Real<>>();
+  DryMemory::free(np*nvir*nvir, sizeof(double), "gamma_ab_glb");
 
   el = (rank) ? 0 : nFno;
+
   auto Epsf( Tcc<TE>::template tensor<Real<>>({nFno}, "Epsf"));
   auto Mos_vir_fno( Tcc<TE>::template tensor<Real<>>({nbf, nFno}, "Mos_vir_fno"));
   Epsf->write(el, idx.data(), &w[nvir-nFno]);
 
   el = (rank) ? 0 : nFno*nbf;
+  idx.resize(el);
+  std::iota(idx.begin(), idx.end(), 0);
   Mos_vir_fno->write(el, idx.data(), mos_vir_fno.data());
 
 
@@ -311,11 +325,14 @@ Ptr<MapNode> MrccReader::run(
   }
   std::vector<Real<>> halfVertexp;
 
+  DryMemory::allocate(nFno*ndfbasis*nbf, sizeof(double), "halfVertexp", SOURCE_LOCATION);
+
   LOG() << "Half transform virtual-virtual Vertex" << std::endl;
   if (!Cc4s::dryRun) halfVertexp = halfTransform(mos_vir_fno, intpos, nFno, nbf, ndfbasis);
 
   auto Gamma_agm(Tcc<TE>::template tensor<Real<>>({nFno, ndfbasis, nbf}, "halfVertexp"));
 
+  DryMemory::allocate(nFno*ndfbasis*nbf, sizeof(size_t), "halfVertexp_idx", SOURCE_LOCATION);
   if (!Cc4s::dryRun) {
     el = halfVertexp.size();
     idx.resize(el);
@@ -329,8 +346,17 @@ Ptr<MapNode> MrccReader::run(
   }
   Gamma_agm->write(el, idx.data(), halfVertexp.data());
 
+  DryMemory::free(nFno*ndfbasis*nbf, sizeof(double), "halfVertexp");
+  halfVertexp = std::vector<Real<>>();
+  DryMemory::free(nFno*ndfbasis*nbf, sizeof(size_t), "halfVertexp_idx");
+  idx = std::vector<size_t>();
+
+
   auto Mos_occ(Tcc<TE>::template tensor<Real<>>({nbf, nocc}, "Mos_occ"));
   el = (rank) ? 0 : nocc*nbf;
+  idx.resize(el);
+  std::iota(idx.begin(), idx.end(), 0);
+
   Mos_occ->write(el, idx.data(), mos_occ.data());
 
 
@@ -431,7 +457,6 @@ std::vector<Real<>> MrccReader::halfTransform(
   size_t rank(Cc4s::world->getRank());
   auto np(Cc4s::world->getProcesses());
   auto nbf_loc = nbf / np + (rank< nbf % np);
-
   std::vector<Real<>> halfVertex(norb*nbf_loc*ndfbasis);
   //std::vector<Real<>> halfVertex(norb*nbf*ndfbasis);
   std::vector<Real<>> motr(norb*nbf);
@@ -698,9 +723,22 @@ std::vector<Real<>> MrccReader::eval_mp2_approx_dry(Ptr<Tensor<Real<>,TE>> Gamma
   COMPILE(
     (*Gamma_gia)["Gia"] <<= (*Gamma_igm)["iGm"] * (*Mos_vir)["ma"]
   )->execute();
-  double _mem(sizeof(double) * ndfbasis * nocc * nvir);
-  DryMemory::allocate(_mem, SOURCE_LOCATION);
-  DryMemory::free(_mem);
+
+  size_t np(Cc4s::getProcessesCount());
+
+  DryMemory::allocate(ndfbasis*nocc*nvir, sizeof(double), "Gamma_gia_partitioned", SOURCE_LOCATION);
+  DryMemory::allocate(np*nvir*nvir, sizeof(double), "gamma_ab", SOURCE_LOCATION);
+  DryMemory::allocate(np*nvir*nvir, sizeof(double), "Dabii", SOURCE_LOCATION);
+  DryMemory::allocate(np*nvir*nvir, sizeof(double), "buf_pp", SOURCE_LOCATION);
+  DryMemory::allocate(np*nvir*ndfbasis, sizeof(double), "buf_ga", SOURCE_LOCATION);
+
+  DryMemory::free(ndfbasis*nocc*nvir, sizeof(double), "Gamma_gia_partitioned");
+  DryMemory::free(np*nvir*nvir, sizeof(double), "gamma_ab");
+  DryMemory::free(np*nvir*nvir, sizeof(double), "Dabii");
+  DryMemory::free(np*nvir*nvir, sizeof(double), "buf_pp");
+  DryMemory::free(np*nvir*ndfbasis, sizeof(double), "buf_ga");
+
+
   return std::vector<double>();
 }
 

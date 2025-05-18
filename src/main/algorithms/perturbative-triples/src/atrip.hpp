@@ -17,4 +17,5 @@
 
 #include <atrip/Atrip.hpp>
 #include <atrip/Reader.hpp>
+#include <atrip/Debug.hpp>
 // Include header:1 ends here

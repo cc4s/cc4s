@@ -115,6 +115,8 @@ struct Atrip {
     ADD_ATTRIBUTE(std::string, Jhhhp_path, "");
 
     ADD_ATTRIBUTE(bool, useSwitchRedistribution, true)
+    ADD_ATTRIBUTE(size_t, first_iteration, 0)
+    ADD_ATTRIBUTE(size_t, iteration_log, 0)
     // Miscellaneous options
     ADD_ATTRIBUTE(bool, cT, false)
     ADD_ATTRIBUTE(bool, delete_Vppph, false)
