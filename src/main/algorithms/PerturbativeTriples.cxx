@@ -253,7 +253,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   }
   // atrip's logger which writes into the cc4s logstream
   atrip::getLogger() = [](const std::string& s){
-    Log::getLogStream() << Log::getLogHeaderFunction()(SourceLocation()) << "[ATRIP]:" << s << "\n";
+    Log::getLogStream() << Log::getLogHeaderFunction()(SourceLocation()) << "[ATRIP]:" << s << std::endl;
   };
 
   // currently we will log 500 times. should be in the minutes to couple of minutes range!
