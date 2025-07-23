@@ -52,8 +52,9 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
   );
   auto Vpphh(coulombIntegrals->get("pphh"));
 
+//    this->arguments->template getValue<bool>("distinguishable", false)
   bool distinguishable(
-    this->arguments->template getValue<bool>("distinguishable", false)
+    this->arguments->template getValue<std::string>("method", "Ccsd") == "Dcsd"
   );
 
 

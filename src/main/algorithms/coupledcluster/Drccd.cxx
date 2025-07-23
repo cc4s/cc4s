@@ -53,10 +53,10 @@ Ptr<TensorSet<F,TE>> Drccd<F,TE>::getResiduum(
   );
 
   bool linearized(
-    this->arguments->template getValue<bool>("linearized", false)
+    this->arguments->template getValue<std::string>("method", "") == "Ldrccd"
   );
   bool adjacentPairsExchange(
-    this->arguments->template getValue<bool>("adjacentPairsExchange", false)
+    this->arguments->template getValue<std::string>("method","") == "ApxRpa"
   );
 
   if (!amplitudes) {

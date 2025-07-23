@@ -48,7 +48,11 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
   );
   auto Vpphh(coulombIntegrals->get("pphh"));
 
-  auto ccsdtn(this->arguments->template getValue<string>("ccsdt-n", ""));
+  bool distinguishable(
+    this->arguments->template getValue<std::string>("method", "Ccsdt") == "Dcsdt"
+  );
+
+  auto ccsdtn(this->arguments->template getValue<string>("method", ""));
 
   if (!amplitudes) {
     // no previous amplitudes given
@@ -295,9 +299,9 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Fhphp)["iema"]   += (-1.0) * (*Vhhhp)["inme"] * (*Tph)["an"],
       (*Fhp)["me"] <<= (*Whhpp)["mnef"] * (*Tph)["fn"],
       // II.1
-      // T3 <-- [VT2]  | coupling in line L460
+      // T3 <-- [VT2]  | coupling in line L442
       (*Xabie)["abie"]  <<=          (*Vpphp)["abie"],
-      (ccsdtn == "ccsdt-1b" ) ? (
+      (ccsdtn == "Ccsdt-1b" ) ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT2T2] + [VT2T1] + [VT2T2T1] + [VT2T1T1] + [VT2T1T1T1]
@@ -323,20 +327,29 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         Tcc<TE>::sequence()
       ),
 
-      (ccsdtn == "ccsdt-1b" || ccsdtn == "ccsdt-3" || ccsdtn == "3CC") ? (
+      (ccsdtn == "Ccsdt-1b" || ccsdtn == "Ccsdt-3" || ccsdtn == "3CC") ? (
         Tcc<TE>::sequence()
       ) : (
-        // T3 <-- [VT3T2] | coupling in line L460
+        // T3 <-- [VT3T2] | coupling in line L443
         // 3CC: C2
-        (*Xabie)["abie"]   += (-2.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfimn"],
-        (*Xabie)["abie"]   += ( 1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfnmi"],
-        (*Xabie)["abie"]   += ( 1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfinm"],
+        // DCSDT: C2 take a factor 0.5
+        (distinguishable) ? (
+          (*Xabie)["abie"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfimn"],
+          (*Xabie)["abie"]   += ( 0.5) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfnmi"],
+          (*Xabie)["abie"]   += ( 0.5) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfinm"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Xabie)["abie"]   += (-2.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfimn"],
+          (*Xabie)["abie"]   += ( 1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfnmi"],
+          (*Xabie)["abie"]   += ( 1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["abfinm"],
+          Tcc<TE>::sequence()
+        ),
         Tcc<TE>::sequence()
       ),
 
-      // T3 <-- [VT2] || coupling in line L461
+      // T3 <-- [VT2] || coupling in line L442
       (*Xamij)["amij"]  <<=          (*Vphhh)["amij"],
-      (ccsdtn == "ccsdt-1b" ) ? (
+      (ccsdtn == "Ccsdt-1b" ) ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT2T2] + [VT2T1] + [VT2T2T1] + [VT2T1T1] + [VT2T1T1T1[
@@ -352,13 +365,22 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         Tcc<TE>::sequence()
       ),
 
-      (ccsdtn == "ccsdt-1b" || ccsdtn == "ccsdt-3" ) ? (
+      (ccsdtn == "Ccsdt-1b" || ccsdtn == "Ccsdt-3" ) ? (
         Tcc<TE>::sequence()
       ) : (
-        // T3 <-- [VT3T2] | coupling in line L461
-        (*Xamij)["amij"]   += ( 2.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["aefijn"],
-        (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["feaijn"],
-        (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["afeijn"],
+        // T3 <-- [VT3T2] | coupling in line L443
+        // DCSDT: A2 most probably
+        (distinguishable) ? (
+          (*Xamij)["amij"]   += ( 1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["aefijn"],
+          (*Xamij)["amij"]   += (-0.5) * (*Vhhpp)["mnef"] * (*Tppphhh)["feaijn"],
+          (*Xamij)["amij"]   += (-0.5) * (*Vhhpp)["mnef"] * (*Tppphhh)["afeijn"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Xamij)["amij"]   += ( 2.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["aefijn"],
+          (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["feaijn"],
+          (*Xamij)["amij"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Tppphhh)["afeijn"],
+          Tcc<TE>::sequence()
+        ),
         Tcc<TE>::sequence()
       ),
 
@@ -366,7 +388,15 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       // We dont need this term as we have 0 on the lhs
       //      (*Xim)["ii"]       += (*Fepsh)["i"],
       (*Xim)["im"]       += (-1.0) * (*Vhphh)["ienm"] * (*Tph)["en"],
-      (*Xim)["im"]       +=          (*Whhpp)["mnef"] * (*Xpphh)["efin"],
+      //DCSDT: A1: 0.5 times for the T2 part
+      (distinguishable) ? (
+        (*Xim)["im"]       += (0.5) *  (*Whhpp)["mnef"] * (*Xpphh)["efin"],
+        (*Xim)["im"]       += (0.5) *  (*Whhpp)["mnef"] * (*Tph)["ei"] * (*Tph)["fn"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xim)["im"]       +=          (*Whhpp)["mnef"] * (*Xpphh)["efin"],
+        Tcc<TE>::sequence()
+      ),
 
       (*Xae)["ae"]      <<= ( 2.0) * (*Vphpp)["amef"] * (*Tph)["fm"],
       // We dont need this term as we have 0 on the lhs
@@ -377,17 +407,38 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         (*Xae)["ae"]   += (-1.0) * (*Whhpp)["mnef"] * (*Tph)["am"] * (*Tph)["fn"],
         Tcc<TE>::sequence()
       ) : (
-        (*Xae)["ae"]   += (-1.0) * (*Whhpp)["mnef"] * (*Xpphh)["afmn"],
+      // DCSDT: C1: take 0.5 times the doubles guy
+        (distinguishable) ? (
+          (*Xae)["ae"]   += (-0.5) * (*Whhpp)["mnef"] * (*Xpphh)["afmn"],
+          (*Xae)["ae"]   += (-0.5) * (*Whhpp)["mnef"] * (*Tph)["am"] * (*Tph)["fn"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Xae)["ae"]   += (-1.0) * (*Whhpp)["mnef"] * (*Xpphh)["afmn"],
+          Tcc<TE>::sequence()
+        ),
         Tcc<TE>::sequence()
       ),
 
+      //DCSDT: These are B1 and B2....we have to remove the T2 parts
       (*Xjkmn)["jkmn"]  <<=          (*Vhhhh)["jkmn"],
-      (*Xjkmn)["jkmn"]   +=          (*Vhhpp)["mnef"] * (*Xpphh)["efjk"],
+      (distinguishable) ? (
+        (*Xjkmn)["jkmn"]   +=          (*Vhhpp)["mnef"] * (*Tph)["ej"] * (*Tph)["fk"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xjkmn)["jkmn"]   +=          (*Vhhpp)["mnef"] * (*Xpphh)["efjk"],
+        Tcc<TE>::sequence()
+      ),
       (*Xjkmn)["jkmn"]   +=          (*Vhphh)["jemn"] * (*Tph)["ek"],
       (*Xjkmn)["jkmn"]   +=          (*Vphhh)["ekmn"] * (*Tph)["ej"],
 
       (*Xbcef)["bcef"]  <<=          (*Vpppp)["bcef"],
-      (*Xbcef)["bcef"]   +=          (*Vpphh)["efmn"] * (*Xpphh)["bcmn"],
+      (distinguishable) ? (
+        (*Xbcef)["bcef"]   +=          (*Vpphh)["efmn"] * (*Tph)["bm"] * (*Tph)["cn"],
+        Tcc<TE>::sequence()
+      ) : (
+        (*Xbcef)["bcef"]   +=          (*Vpphh)["efmn"] * (*Xpphh)["bcmn"],
+        Tcc<TE>::sequence()
+      ),
       (*Xbcef)["bcef"]   += (-1.0) * (*Vphpp)["bmef"] * (*Tph)["cm"],
       (*Xbcef)["bcef"]   += (-1.0) * (*Vhppp)["mcef"] * (*Tph)["bm"],
 
@@ -399,8 +450,23 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         (*Xamie)["amie"] += (-1.0) * (*Vhhpp)["mnef"] * (*Tph)["fi"] * (*Tph)["an"],
         Tcc<TE>::sequence()
       ) : (
-        (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Xpphh)["fain"],
-        (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Tpphh)["afin"],
+        //DCSDT: we have to identtify D1c and D1x to neglect the latter one.
+        //DCSDT TODO: this is most probably the problem. we have not correctly identified the exchange objects
+        //unclear
+        (distinguishable) ? (
+          (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Tph)["fi"] * (*Tph)["an"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Xamei)["amei"] += (-1.0) * (*Vhhpp)["mnfe"] * (*Xpphh)["fain"],
+          Tcc<TE>::sequence()
+        ),
+        (distinguishable) ? (
+          (*Xamie)["amie"]   +=  (2.0) * (*Vhhpp)["mnef"] * (*Tpphh)["afin"],
+          Tcc<TE>::sequence()
+        ) : (
+          (*Xamie)["amie"]   +=          (*Whhpp)["mnef"] * (*Tpphh)["afin"],
+          Tcc<TE>::sequence()
+        ),
         (*Xamie)["amie"]   += (-1.0) * (*Vhhpp)["mnef"] * (*Xpphh)["fain"],
         Tcc<TE>::sequence()
       ),
@@ -409,7 +475,7 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
       (*Xamie)["amie"]   += (-1.0) * (*Vhhhp)["nmie"] * (*Tph)["an"],
       (*Xamie)["amie"]   +=          (*Vppph)["aefm"] * (*Tph)["fi"],
 
-      (ccsdtn == "ccsdt-1b" || ccsdtn == "ccsdt-3" ) ? (
+      (ccsdtn == "Ccsdt-1b" || ccsdtn == "Ccsdt-3" ) ? (
         Tcc<TE>::sequence()
       ) : (
         // T3 <-- [VT3] + [VT3T2] + [VT3T1] + [VT3T1T1]
@@ -428,13 +494,14 @@ Ptr<TensorSet<F,TE>> Ccsdt<F,TE>::getResiduum(
         // 3CC: A1
         (*Xp3h3)["abcijk"]    += (-1.0) * (*Xim)["im"]     * (*Tppphhh)["abcmjk"],
 
+
         (*Rppphhh)["abcijk"] <<= (*Xp3h3)["abcijk"],
         (*Rppphhh)["abcijk"]  += (*Xp3h3)["bacjik"],
         (*Rppphhh)["abcijk"]  += (*Xp3h3)["cbakji"],
         Tcc<TE>::sequence()
       ),
       // T3 <-- [VT2] ( + [VT2T2] + [VT2T1] + [VT2T2T1] + [VT2T1T1] + [VT2T1T1T1] )
-      // L460 & L461
+      // L442 & L443
       (*Xp3h3)["abcijk"]   <<= ( 1.0) * (*Xabie)["abie"] * (*Tpphh)["cekj"],
       (*Xp3h3)["abcijk"]    += (-1.0) * (*Xamij)["amij"] * (*Tpphh)["bcmk"],
       (*Rppphhh)["abcijk"]  += (*Xp3h3)["abcijk"],

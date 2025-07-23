@@ -36,11 +36,10 @@ main/algorithms/UegVertexGenerator.cxx \
 main/algorithms/PerturbativeTriples.cxx \
 main/algorithms/TensorSetToTensor.cxx \
 main/algorithms/coupledcluster/Ccsdt.cxx \
-main/algorithms/CcsdTTT.cxx \
+main/algorithms/CcsdtNonit.cxx \
 main/algorithms/CcsdChannels.cxx \
 main/algorithms/MrccReader.cxx \
-
-#main/algorithms/coupledcluster/LambdaCcsdReference.cxx \
+main/algorithms/coupledcluster/LambdaCcsdReference.cxx \
 
 ifeq ($(ATRIP), no)
 

@@ -73,16 +73,31 @@ Ptr<MapNode> CoupledCluster::run() {
 
   // create a method handler, by default Ccsd
   auto methodName( arguments->getValue<std::string>("method", "Ccsd") );
-  Ptr<CoupledClusterMethod<F,TE>> method(
-    CoupledClusterMethodFactory<F,TE>::create(methodName, arguments)
+  // hardcoding: map the method to the algorithm
+  // ccsd -> ccsd; ccsdt -> ccsdt; drccd -> drccd
+  auto algoName(methodName);
+  if (!arguments->isGiven("slicedCoulombVertex") && methodName == "Ccsd") algoName = "CcsdReference";
+  if (methodName == "Ldrccd") algoName = "Drccd";
+  if (methodName == "ApxRpa") algoName = "Drccd";
+  if ( methodName == "Dcsd") algoName = "CcsdReference";
+  if ( methodName == "Dcsdt" || methodName == "Ccsdt-1b"
+    || methodName == "Ccsdt-3" || methodName == "3CC" ) algoName = "Ccsdt";
+
+  if ( methodName == "LambdaCcsd") algoName == "LambdaCcsdReference";
+
+  Ptr<CoupledClusterMethod<F,TE>> algo(
+    CoupledClusterMethodFactory<F,TE>::create(algoName, arguments)
   );
+  // We cannot match the provided method with an available algorithm
   ASSERT_LOCATION(
-    method, std::string("Unknown method: '") + methodName + "'",
+    algo, std::string("Unknown method: '") + methodName + "'",
     arguments->get("method")->sourceLocation
   );
 
-  OUT() << "Using method "
-    << methodName << ". " << method->describeOptions() << endl;
+  OUT() << "Method: " << methodName << "\n";
+  OUT() << "Using algorithm in "
+    << algoName << ".cxx\n"; // << method->describeOptions() << endl;
+
 
   Ptr<TensorSet<F,TE>> amplitudes;
   if (arguments->isGiven("initialAmplitudes")) {
@@ -99,20 +114,6 @@ Ptr<MapNode> CoupledCluster::run() {
   }
 
 
-  bool isLinearized(arguments->getValue<bool>("linearized", false));
-  if (isLinearized && methodName == "Drccd") OUT() << "Solving linearized equations\n";
-
-  auto ccsdtn(this->arguments->template getValue<string>("ccsdt-n", ""));
-  if (methodName == "Ccsdt" && !ccsdtn.empty()) {
-    OUT() << "Working with " << ccsdtn << " model\n";
-    if (! (ccsdtn == "ccsdt-1b" || ccsdtn == "ccsdt-3" || ccsdtn == "3CC") ) {
-      ASSERT_LOCATION(0, "Unknown CCSDT model",
-                      this->arguments->get("ccsdt-n")->sourceLocation);
-    }
-  }
-
-  bool distinguishable(arguments->getValue<int>("distinguishable", 0) == 1);
-  if (distinguishable) OUT() << "Distinguishable CCSD\n";
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
   auto mixerType(mixerArguments->getValue<std::string>("type", "DiisMixer"));
@@ -158,7 +159,7 @@ Ptr<MapNode> CoupledCluster::run() {
     {
       Timer timer(&time);
       OperationsCounter operationsCounter(&operations);
-      auto residuum( method->getResiduum(amplitudes) );
+      auto residuum( algo->getResiduum(amplitudes) );
       residuumToAmplitudes(residuum, amplitudes);
       if (mixer->dontMix) {
         amplitudes = residuum;
@@ -312,9 +313,12 @@ F CoupledCluster::getEnergy(
     F Ds(directSingles->read());
     F Xs(exchangeSingles->read());
     e = D+X+Ds+Xs;
+
+
+
     if (isFinalReport){
       OUT() << std::endl;
-      if (methodName == "LambdaCcsdReference") {
+      if (methodName == "LambdaCcsd") {
         OUT() << methodName << " pseudo energy (w/o singles): "
               << std::setprecision(10) << real(D+X) << std::endl;
       } else {
