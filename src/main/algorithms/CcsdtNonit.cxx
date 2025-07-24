@@ -378,28 +378,47 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
   //OUT() << "<0|L3^[1][H,T3^[2]]|0>: " << T4b1[1] + T4b2[1] << '\n';
 
   OUT() << std::setprecision(10);
+  auto energy = New<MapNode>(SOURCE_LOCATION);
+
 
   if (t3t3mode == "3CC") {
-    OUT() << "3CC-non-iterative correlation energy: " << Et2[0] + Et3a[0] + Et3b[0] << '\n';
-    OUT() << "3CCλ-non-iterative correlation energy: " << Et2[1] + Et3a[1] + Et3b[1] << '\n';
+    auto e3cc(Et2[0] + Et3a[0] + Et3b[0]);
+    auto e3ccl(Et2[1] + Et3a[1] + Et3b[1]);
+    OUT() << "3CC-non-iterative correlation energy: " << e3cc << '\n';
+    OUT() << "3CCλ-non-iterative correlation energy: " << e3ccl << '\n';
+    energy->setValue("(3CC)_nonit", e3cc);
+    energy->setValue("(3CC)_λnonit", e3ccl);
   } else if (t3t3mode == "3CC-C1" || t3t3mode == "3CC-C2" || t3t3mode == "3CC-D1" || t3t3mode == "3CC-T2") {
-    OUT() << t3t3mode << " correlation energy: " << Et2[0] + Et3a[0] + Et3b[0] << '\n';
+    auto e3cc(Et2[0] + Et3a[0] + Et3b[0]);
+    OUT() << t3t3mode << " correlation energy: " << e3cc << '\n';
+    energy->setValue("(3CC)_nonit", e3cc);
   } else {
-    OUT() << "(T-2)_T correlation energy: " << Et2[0] << '\n';
-    OUT() << "(T-3)_T correlation energy: " << Et2[0] + Et3a[0] + Et3b[0] << '\n';
-    OUT() << "(T-4)_T correlation energy: " << Et2[0] + Et3a[0] + Et3b[0]
-                                             + E4x[0] + real(X4a->read()) + T4b1[0] + T4b2[0] << '\n';
+    auto et2(Et2[0]);
+    auto et3(et2 + Et3a[0] + Et3b[0]);
+    auto et4(et3 + E4x[0] + real(X4a->read()) + T4b1[0] + T4b2[0]);
+    OUT() << "(T-2)_T correlation energy: " << et2 << '\n';
+    OUT() << "(T-3)_T correlation energy: " << et3 << '\n';
+    OUT() << "(T-4)_T correlation energy: " << et4 << '\n';
+    auto et2l(Et2[1]);
+    auto et3l(et2 + Et3a[1] + Et3b[1]);
+    auto et4l(et3 + E4x[1] + real(E4a->read()) + T4b1[1] + T4b2[1]);
 
-    OUT() << "(T-2)_λ correlation energy: " << Et2[1] << '\n';
-    OUT() << "(T-3)_λ correlation energy: " << Et2[1] + Et3a[1] + Et3b[1] << '\n';
-    OUT() << "(T-4)_λ correlation energy: " << Et2[1] + Et3a[1] + Et3b[1]
-                                             + E4x[1] + real(E4a->read()) + T4b1[1] + T4b2[1] << std::endl;
+    OUT() << "(T-2)_λ correlation energy: " << et2l << '\n';
+    OUT() << "(T-3)_λ correlation energy: " << et3l << '\n';
+    OUT() << "(T-4)_λ correlation energy: " << et4l << std::endl;
+
+    energy->setValue("(T-2)_T", et2);
+    energy->setValue("(T-3)_T", et3);
+    energy->setValue("(T-4)_T", et4);
+    energy->setValue("(T-2)_λ", et2l);
+    energy->setValue("(T-3)_λ", et3l);
+    energy->setValue("(T-4)_λ", et4l);
   }
 
   OUT() << std::setprecision(ss) << defaultfloat;
 
   auto result(New<MapNode>(SOURCE_LOCATION));
-  result->setValue("allGood", 1);
+  result->get("energy") = energy;
   return result;
 
 

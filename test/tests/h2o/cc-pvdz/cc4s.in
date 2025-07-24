@@ -1,0 +1,71 @@
+- name: Read
+  in:
+    fileName: "EigenEnergies.yaml"
+  out:
+    destination: EigenEnergies
+
+- name: Read
+  in:
+    fileName: "CoulombIntegrals.yaml"
+  out:
+    destination: CoulombIntegrals
+
+- name: DefineHolesAndParticles
+  in:
+    eigenEnergies: EigenEnergies
+  out:
+    slicedEigenEnergies: EigenEnergies
+
+- name: CoupledCluster
+  in:
+    method: CcsdReference
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 50
+    energyConvergence: 1.0E-10
+    amplitudesConvergence: 1.0E-10
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+
+- name: CoupledCluster
+  in:
+    method: LambdaCcsdReference
+    tAmplitudes: Amplitudes
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+    amplitudes: LambdaAmplitudes
+ 
+- name: CcsdtNonit
+  in:
+    slicedEigenEnergies: EigenEnergies
+    amplitudes: Amplitudes
+    coulombIntegrals: CoulombIntegrals
+    lambdaAmplitudes: LambdaAmplitudes
+  out:
+    {}
+
+- name: CcsdtNonit
+  in:
+    slicedEigenEnergies: EigenEnergies
+    amplitudes: Amplitudes
+    coulombIntegrals: CoulombIntegrals
+    lambdaAmplitudes: LambdaAmplitudes
+    t3t3mode: "3CC"
+  out:
+    {}
+

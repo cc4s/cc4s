@@ -1,0 +1,307 @@
+executionEnvironment:
+  buildDate: Jul 17 2025 11:25:06
+  compiler: g++ (Ubuntu 9.4.0-1ubuntu1~20.04.2) 9.4.0
+  dryRanks: 0
+  hosts:
+    0:
+      host: cqc05
+      ranks:
+        0: 0
+        1: 1
+        2: 2
+        3: 3
+  startTime: "Wed Jul 23 23:29:17 2025\n"
+  totalProcesses: 4
+  version: heads/handsOn-ct-0-g642a45dd-dirty
+statistics:
+  floatingPointOperations: 183924151100
+  flops: 3453762463.0875082
+  realtime: 53.253271777
+steps:
+  0:
+    in:
+      fileName: EigenEnergies.yaml
+    name: Read
+    out:
+      destination: 0x55ec94ff7280
+  1:
+    in:
+      fileName: CoulombIntegrals.yaml
+    name: Read
+    out:
+      destination:
+        field: Real<>
+        pointer: 0x55ec94fcf410
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+  2:
+    in:
+      eigenEnergies: 0x55ec94ff7280
+    name: DefineHolesAndParticles
+    out:
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55ec95247530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+  3:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x55ec94fcf410
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 50
+      levelShift: 0
+      maxIterations: 20
+      method: Ccsd
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      onlyPpl: 0
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55ec95247530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x55ec9526d530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.31449295920604464
+        direct: -0.49406103172226418
+        exchange: 0.17956807251621956
+        secondOrder: -0.31338508054251807
+        singles: 0.00015102339701923194
+        unit: 1
+  4:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x55ec94fcf410
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 50
+      levelShift: 0
+      maxIterations: 20
+      method: Dcsd
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      onlyPpl: 0
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55ec95247530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x55ec9539eb90
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.32759118363806727
+        direct: -0.51311435992949994
+        exchange: 0.18552317629143258
+        secondOrder: -0.31338508054251807
+        singles: 0.00017296783163097527
+        unit: 1
+  5:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x55ec94fcf410
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 50
+      levelShift: 0
+      maxIterations: 20
+      method: Ccsdt
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55ec95247530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x55ec953b8db0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.3271218388111099
+        direct: -0.51426635817372335
+        exchange: 0.18714451936261353
+        secondOrder: -0.31338508054251807
+        singles: 9.6315868333709761e-05
+        unit: 1
+  6:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x55ec94fcf410
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 50
+      levelShift: 0
+      maxIterations: 20
+      method: Ccsdt-1b
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55ec95247530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x55ec953a2850
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.32767611688771353
+        direct: -0.51413066156944531
+        exchange: 0.18645454468173175
+        secondOrder: -0.31338508054251807
+        singles: 8.3763869067569771e-05
+        unit: 1
+  7:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x55ec94fcf410
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 50
+      levelShift: 0
+      maxIterations: 20
+      method: Ccsdt-3
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55ec95247530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x55ec954bf550
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.32620580371865726
+        direct: -0.51217199675329628
+        exchange: 0.18596619303463896
+        secondOrder: -0.31338508054251807
+        singles: 9.0994730853823129e-05
+        unit: 1
+  8:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x55ec94fcf410
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 50
+      levelShift: 0
+      maxIterations: 20
+      method: 3CC
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55ec95247530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x55ec953c5ed0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.32853300251218992
+        direct: -0.51603681399229706
+        exchange: 0.18750381148010717
+        secondOrder: -0.31338508054251807
+        singles: 6.4228166346146963e-05
+        unit: 1
+  9:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x55ec94fcf410
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 50
+      levelShift: 0
+      maxIterations: 20
+      method: Dcsdt
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x55ec95247530
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x55ec9539d830
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.32776008443461974
+        direct: -0.51519670826802655
+        exchange: 0.18743662383340673
+        secondOrder: -0.31338508054251807
+        singles: 9.1257214890875016e-05
+        unit: 1

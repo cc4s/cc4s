@@ -1,0 +1,188 @@
+executionEnvironment:
+  buildDate: Jul 17 2025 11:25:06
+  compiler: g++ (Ubuntu 9.4.0-1ubuntu1~20.04.2) 9.4.0
+  dryRanks: 0
+  hosts:
+    0:
+      host: cqc05
+      ranks:
+        0: 0
+        1: 1
+        2: 2
+        3: 3
+  startTime: "Thu Jul 24 10:06:25 2025\n"
+  totalProcesses: 4
+  version: heads/handsOn-ct-0-g642a45dd-dirty
+statistics:
+  floatingPointOperations: 5891157684
+  flops: 933743249.03572392
+  realtime: 6.309183697
+steps:
+  0:
+    in:
+      fileName: EigenEnergies.yaml
+    name: Read
+    out:
+      destination: 0x56342f172ae0
+  1:
+    in:
+      fileName: CoulombIntegrals.yaml
+    name: Read
+    out:
+      destination:
+        field: Real<>
+        pointer: 0x56342ed4f1b0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+  2:
+    in:
+      eigenEnergies: 0x56342f172ae0
+    name: DefineHolesAndParticles
+    out:
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x56342ef7d780
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+  3:
+    in:
+      amplitudesConvergence: 1e-10
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x56342ed4f1b0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-10
+      integralsSliceSize: 100
+      levelShift: 0
+      maxIterations: 50
+      method: CcsdReference
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      onlyPpl: 0
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x56342ef7d780
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x56342f17a0f0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.21120854625120641
+        direct: -0.33179657984401828
+        exchange: 0.12058803359281185
+        secondOrder: -0.20164518073818108
+        singles: 1.6106928193377883e-05
+        unit: 1
+  4:
+    in:
+      amplitudesConvergence: 1e-08
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x56342ed4f1b0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      energyConvergence: 1e-08
+      integralsSliceSize: 100
+      levelShift: 0
+      maxIterations: 20
+      method: LambdaCcsdReference
+      mixer:
+        maxResidua: 4
+        t3Mixing: 0
+        type: DiisMixer
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x56342ef7d780
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      tAmplitudes:
+        field: Real<>
+        pointer: 0x56342f17a0f0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+    name: CoupledCluster
+    out:
+      amplitudes:
+        field: Real<>
+        pointer: 0x56342f33b430
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      convergenceReached: 1
+      energy:
+        correlation: -0.20815188245977795
+        direct: -0.32678648067836596
+        exchange: 0.11863459821858799
+        secondOrder: -0.20851996479929927
+        singles: 9.0442196162799704e-06
+        unit: 1
+  5:
+    in:
+      amplitudes:
+        field: Real<>
+        pointer: 0x56342f17a0f0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x56342ed4f1b0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      lambdaAmplitudes:
+        field: Real<>
+        pointer: 0x56342f33b430
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      singles: 1
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x56342ef7d780
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      t3t3mode: dressed
+    name: CcsdtNonit
+    out:
+      energy:
+        (T-2)_T: -0.0028309330969172597
+        (T-2)_λ: -0.0027939849202607268
+        (T-3)_T: -0.0030855364538857526
+        (T-3)_λ: -0.0030809335645798071
+        (T-4)_T: -0.0032101694847107409
+        (T-4)_λ: -0.0032086217031111787
+  6:
+    in:
+      amplitudes:
+        field: Real<>
+        pointer: 0x56342f17a0f0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      coulombIntegrals:
+        field: Real<>
+        pointer: 0x56342ed4f1b0
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      lambdaAmplitudes:
+        field: Real<>
+        pointer: 0x56342f33b430
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      singles: 1
+      slicedEigenEnergies:
+        field: Real<>
+        pointer: 0x56342ef7d780
+        tensor-engine: DefaultTensorEngine
+        type: TensorSet
+      t3t3mode: 3CC
+    name: CcsdtNonit
+    out:
+      energy:
+        (3CC)_nonit: -0.0032974451040454862
+        (3CC)_λnonit: -0.0032321676019446744

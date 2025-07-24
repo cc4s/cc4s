@@ -57,5 +57,20 @@
   "mrcc-h2o2": {
     "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/e3b3be638f361e0ed38a02a5629dcbb03f83548a/h2o2",
     "type": "raw"
+  },
+
+  "heat-n2": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/8841a89a6a4709f61def756333c88e563a2255a0/n2/cc-pvdz_heat",
+    "type": "raw"
+  },
+
+  "chan-n2": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/8841a89a6a4709f61def756333c88e563a2255a0/n2/cc-pvdz_chan",
+    "type": "raw"
+  },
+  "cc-pvdz-h2o": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/cc9a8135fb2fa93d646055978f6578e7542aa0ce/h2o/cc-pvdz",
+    "type": "raw"
   }
+
 }
