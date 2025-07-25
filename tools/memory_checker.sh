@@ -79,16 +79,16 @@ BEGIN {
 
   split($3, msg, " ");
 
+  # if we are already in a dry run and hit Start calculaton we exit
+  if (msg[1] == "Start" && (msg[2] == "calculation")  && running) {
+    exit;
+  }
+
   # Determine the number of processes.
-  # If we start the calculation (and have read the dry-Run) - we zero the HWM
   if (msg[1] == "Start" && (msg[2] ~ /^(calculation|dry-Run)$/)) {
     running = 1
     n_ranks = msg[5]
     next
-  }
-  # if we have a dry-Run and start reading the calculation part we will have the same data
-  if (msg[1] == "Start" && (msg[2] == "calculation")  && running) {
-    exit;
   }
   if (msg[1] == "Allocate" || msg[1] == "Free") {
     tensor_name = msg[3];
@@ -129,9 +129,7 @@ awk '{
   }
 }' $tmpfile
 
-echo "huhu"
 nsteps=$(grep "=== Step" $tmpfile | wc -l)
-echo "huhu $nsteps"
 
 #TODO:
 # We want to let the user decide what to do now...
