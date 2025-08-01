@@ -306,19 +306,9 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
     (*T2ph)["ai"] <<= (*T2ph)["ai"] * (*Dph)["ai"]
   )->execute();
 
-//  r3_VT2T1(intermediates, Tph, T2pphh, Rppphhh, t3t3mode);
-//  auto E4c = getEnergy(intermediates, Rppphhh, "T4-abdghj | <0|L3^[1][H,T2^[2]]|0> ");
-//  OUT() << "<0|L3^[1][H,T2^[2]]|0>: " << E4c[1] << '\n';
-//  r3_VT2delT1(intermediates, T2ph, Tpphh, Rppphhh, t3t3mode);
-//  auto E4d = getEnergy(intermediates, Rppphhh, "T4-abdghj | <0|L3^[1][H,T1^[2]]|0> ");
-//  OUT() << "<0|L3^[1][H,T1^[2]]|0>: " << E4d[1] << '\n';
-//  r3_VT2T1_clean(intermediates, Tph, T2pphh, Rppphhh, t3t3mode);
-//  auto E4e = getEnergy(intermediates, Rppphhh, "T4-abdghj | <0|L3^[1][H,TX^[2]]|0> ");
-//  OUT() << "<0|L3^[1][H,TX^[2]]|0>: " << E4e[1] << '\n';
 
   r3_VT2T1_2nd(intermediates, T2ph, T2pphh, Rppphhh, t3t3mode);
   auto E4x = getEnergy(intermediates, Rppphhh, "T4-abdghj | <0|L3^[1][H,T1^[2]+T2^[2]]|0> ");
-  //OUT() << "<0|L3^[1][H,T1^[2]+T2^[2]]|0>: " << E4x[1] << '\n';
 
 
 
@@ -384,14 +374,14 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
   if (t3t3mode == "3CC") {
     auto e3cc(Et2[0] + Et3a[0] + Et3b[0]);
     auto e3ccl(Et2[1] + Et3a[1] + Et3b[1]);
-    OUT() << "3CC-non-iterative correlation energy: " << e3cc << '\n';
-    OUT() << "3CCλ-non-iterative correlation energy: " << e3ccl << '\n';
-    energy->setValue("(3CC)_nonit", e3cc);
-    energy->setValue("(3CC)_λnonit", e3ccl);
+    OUT() << "(3CC)_T correlation energy: " << e3cc << '\n';
+    OUT() << "(3CC) correlation energy: " << e3ccl << '\n';
+    energy->setValue("(3CC)_T", e3cc);
+    energy->setValue("(3CC)", e3ccl);
   } else if (t3t3mode == "3CC-C1" || t3t3mode == "3CC-C2" || t3t3mode == "3CC-D1" || t3t3mode == "3CC-T2") {
     auto e3cc(Et2[0] + Et3a[0] + Et3b[0]);
     OUT() << t3t3mode << " correlation energy: " << e3cc << '\n';
-    energy->setValue("(3CC)_nonit", e3cc);
+    energy->setValue("partial-(3CC)_nonit", e3cc);
   } else {
     auto et2(Et2[0]);
     auto et3(et2 + Et3a[0] + Et3b[0]);
@@ -403,16 +393,16 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
     auto et3l(et2 + Et3a[1] + Et3b[1]);
     auto et4l(et3 + E4x[1] + real(E4a->read()) + T4b1[1] + T4b2[1]);
 
-    OUT() << "(T-2)_λ correlation energy: " << et2l << '\n';
-    OUT() << "(T-3)_λ correlation energy: " << et3l << '\n';
-    OUT() << "(T-4)_λ correlation energy: " << et4l << std::endl;
+    OUT() << "(T-2) correlation energy: " << et2l << '\n';
+    OUT() << "(T-3) correlation energy: " << et3l << '\n';
+    OUT() << "(T-4) correlation energy: " << et4l << std::endl;
 
     energy->setValue("(T-2)_T", et2);
     energy->setValue("(T-3)_T", et3);
     energy->setValue("(T-4)_T", et4);
-    energy->setValue("(T-2)_λ", et2l);
-    energy->setValue("(T-3)_λ", et3l);
-    energy->setValue("(T-4)_λ", et4l);
+    energy->setValue("(T-2)", et2l);
+    energy->setValue("(T-3)", et3l);
+    energy->setValue("(T-4)", et4l);
   }
 
   OUT() << std::setprecision(ss) << defaultfloat;
