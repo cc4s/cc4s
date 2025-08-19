@@ -360,27 +360,19 @@ Ptr<MapNode> MrccReader::run(
   Mos_occ->write(el, idx.data(), mos_occ.data());
 
 
-  auto Gamma_gij(Tcc<TE>::template tensor<Complex<>>({ndfbasis, nocc, nocc}, "gamma_gij"));
-  auto Gamma_gia(Tcc<TE>::template tensor<Complex<>>({ndfbasis, nocc, nFno}, "gamma_gia"));
-  auto Gamma_gai(Tcc<TE>::template tensor<Complex<>>({ndfbasis, nFno, nocc}, "gamma_gai"));
-  auto Gamma_gab(Tcc<TE>::template tensor<Complex<>>({ndfbasis, nFno, nFno}, "gamma_gab"));
+  auto Gamma_gij(Tcc<TE>::template tensor<Real<>>({ndfbasis, nocc, nocc}, "gamma_gij"));
+  auto Gamma_gia(Tcc<TE>::template tensor<Real<>>({ndfbasis, nocc, nFno}, "gamma_gia"));
+  auto Gamma_gai(Tcc<TE>::template tensor<Real<>>({ndfbasis, nFno, nocc}, "gamma_gai"));
+  auto Gamma_gab(Tcc<TE>::template tensor<Real<>>({ndfbasis, nFno, nFno}, "gamma_gab"));
 
   COMPILE(
-    (*Gamma_gij)["Gij"] <<= map<Complex<>>(toComplex<Real<>>, (*Gamma_igm)["iGm"] * (*Mos_occ)["mj"]),
-    (*Gamma_gia)["Gia"] <<= map<Complex<>>(toComplex<Real<>>, (*Gamma_igm)["iGm"] * (*Mos_vir_fno)["ma"]),
+    (*Gamma_gij)["Gij"] <<= (*Gamma_igm)["iGm"] * (*Mos_occ)["mj"],
+    (*Gamma_gia)["Gia"] <<= (*Gamma_igm)["iGm"] * (*Mos_vir_fno)["ma"],
     (*Gamma_gai)["Gai"] <<= (*Gamma_gia)["Gia"],
-    (*Gamma_gab)["Gab"] <<= map<Complex<>>(toComplex<Real<>>, (*Gamma_agm)["aGm"] * (*Mos_vir_fno)["mb"])
+    (*Gamma_gab)["Gab"] <<= (*Gamma_agm)["aGm"] * (*Mos_vir_fno)["mb"]
   )->execute();
 
-  auto metaCoulomb( New<MapNode>(SOURCE_LOCATION) );
-  metaCoulomb->setValue("halfGrid", 1);
-  Gamma_gij->getMetaData() = metaCoulomb;
-  Gamma_gia->getMetaData() = metaCoulomb;
-  Gamma_gai->getMetaData() = metaCoulomb;
-  Gamma_gab->getMetaData() = metaCoulomb;
-
-  //TODO: still the final vertex is a complex object with pure real entries!
-  std::shared_ptr<TensorSet<Complex<>,TE>> vertex = std::make_shared<TensorSet<Complex<>,TE>>();
+  std::shared_ptr<TensorSet<Real<>,TE>> vertex = std::make_shared<TensorSet<Real<>,TE>>();
   vertex->get("hh") = Gamma_gij;
   vertex->get("hp") = Gamma_gia;
   vertex->get("ph") = Gamma_gai;

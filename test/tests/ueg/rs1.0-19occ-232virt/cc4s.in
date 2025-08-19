@@ -2,7 +2,7 @@
   in: 
     No: 19
     Nv: 232
-    halfGrid: 0
+    complexAmplitudes: 1
     rs: 1
   out: 
     eigenEnergies: EigenEnergies

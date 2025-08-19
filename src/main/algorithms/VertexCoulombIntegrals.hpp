@@ -31,16 +31,10 @@ namespace cc4s {
 
     Ptr<MapNode> run(const Ptr<MapNode> &arguments) override;
   protected:
-    template <typename TE>
-    Ptr<MapNode> run(const Ptr<MapNode> &arguments);
-    template <typename TE>
-    Ptr<MapNode> calculateRealIntegrals(
-      const Ptr<TensorSet<Complex<>,TE>> &slicedCoulombVertex
-    );
-    template <typename TE>
-    Ptr<MapNode> calculateComplexIntegrals(
-      const Ptr<TensorSet<Complex<>,TE>> &slicedCoulombVertex
-    );
+
+    template <typename F, typename TE>
+    Ptr<MapNode> run(const Ptr<MapNode>& arguments);
+
   };
 }
 

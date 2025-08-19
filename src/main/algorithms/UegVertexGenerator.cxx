@@ -71,7 +71,7 @@ Ptr<MapNode> UegVertexGenerator::run(const Ptr<MapNode> &arguments) {
       || (result = run<Complex<>,TE>(arguments));
   }
   ASSERT_LOCATION(
-    result, "unsupported tensor type as 'operator'",
+    result, "This should not happen!",
     arguments->sourceLocation
   );
   return result;
@@ -86,13 +86,21 @@ Ptr<MapNode> UegVertexGenerator::run(
   bool lclosed(true);
   No = arguments->getValue<Natural<>>("No");
   Nv = arguments->getValue<Natural<>>("Nv");
-  rs = arguments->getValue<Real<>> ("rs");
+  rs = arguments->getValue<Real<>> ("rs", 2);
   NF = arguments->getValue<Natural<>>("NF",0);
-  halfGrid = arguments->getValue<bool>("halfGrid",0);
+  complexAmplitudes = arguments->getValue<int>("complexAmplitudes", 0);
   madelung = arguments->getValue<Real<>> ("madelung", -1.0);
   Natural<> Np(No+Nv);
   if (!No) THROW("No larger zero please");
   if (rs <= 0.0) THROW("Invalid rs");
+
+
+  bool isReal = std::is_same<F, Real<>>::value;
+  bool isComplex = std::is_same<F, Complex<>>::value;
+
+  if ((isReal && complexAmplitudes) || (isComplex && !complexAmplitudes)) {
+    return nullptr;
+  }
 
   // setup the integer Grid.
   //  1) gather more than enough candidates
@@ -109,7 +117,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   if (iGrid.size() < Np ) THROW("BUG related to Np & maxG\n");
   if (sL(iGrid[No]) == sL(iGrid[No-1])){
     OUT() << "WARNING: occupied orbitals form not a closed shell\n";
-    if (!lhfref) 
+    if (!lhfref)
       THROW("Zero gap system! Either change No or use Hartree-Fock!");
     lclosed = false;
   }
@@ -194,18 +202,19 @@ Ptr<MapNode> UegVertexGenerator::run(
   }
   if (NF == 0) NF = momMap.size();
 
-  if (NF != momMap.size() || halfGrid || !lclosed)
+  if (NF != momMap.size() || !complexAmplitudes || !lclosed)
     OUT() << "WARNING: the Vertex will not be correct! Just for profiling!\n";
 
   Real<> fac(4.0*Pi<>()/v);
 
+  // if real we have to double the field variable
+  if (std::is_same<F,Real<>>::value) {
+    NF *= 2;
+  }
   auto coulombVertex(
-    Tcc<TE>::template tensor<Complex<>>({NF,Np,Np}, "CoulombVertex")
+    Tcc<TE>::template tensor<F>({NF,Np,Np}, "CoulombVertex")
    );
 
-  auto metaCoulomb( New<MapNode>(SOURCE_LOCATION) );
-  metaCoulomb->setValue("halfGrid", halfGrid);
-  coulombVertex->getMetaData() = metaCoulomb;
 
   OUT() << "System Information:\n";
   OUT() << std::setprecision(3) << "  rs " << rs
@@ -255,7 +264,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   // We slice the number of states for all the mpi processes
   Natural<> slices(Np/np);
   std::vector<Natural<>> slicePerRank(np);
-  for (Natural<> r(0); r < np; r++){
+  for (int r(0); r < np; r++){
     Natural<> lslice(slices);
     for (Natural<> i(0); i < Np - slices*np; i++) if (r == i){
       lslice++;
@@ -264,7 +273,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   }
   slices = slicePerRank[rank];
   //allocate only a buffer of needed size
-  std::vector< Complex<> > out(NF*Np*slices,{0,0});
+  std::vector<F> out(NF*Np*slices,F(0));
   // determine begin and end of the rank's slices
   auto sbegin( std::accumulate( slicePerRank.begin()
                               , slicePerRank.begin() + rank
@@ -285,7 +294,7 @@ Ptr<MapNode> UegVertexGenerator::run(
     Natural<> ii = momMap[d] % NF;
     Real<> res;
     (sL(d)) ? res = fac/( b*b*sL(d) ) : res = evalMadelung(v);
-    out[ii+q*NF+s*NF*Np] = { sqrt(res), 0.0};
+    out[ii+q*NF+s*NF*Np] = F(sqrt(res));
   }
 
   idx.resize(out.size());

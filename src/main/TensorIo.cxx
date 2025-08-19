@@ -89,6 +89,14 @@ Ptr<Node> TensorIo::read(
   const Ptr<MapNode> &node, const std::string &nodePath
 ) {
   auto scalarType(node->getValue<std::string>("scalarType"));
+  // provide backwards compatibality:
+  // halfGrid: 1 --> realVertex written in Complex64
+  if (node->isGiven("metaData")) {
+    auto metaData(node->getMap("metaData"));
+    bool halfGrid = metaData->getValue<int>("halfGrid", 0) == 1;
+    if (halfGrid) scalarType = TypeTraits<Real<64>>::getName();
+  }
+
   // multiplex different tensor types
   if (!Cc4s::dryRun) {
     using TE = DefaultTensorEngine;
@@ -194,6 +202,17 @@ Ptr<PointerNode<Object>> TensorIo::readTensor(
   auto sourceLocation(node->sourceLocation);
   auto dimensionsMap(node->getMap("dimensions"));
 
+
+  // if halfGrid: 1 file stores Real data in Complex64
+  bool halfGrid(false), transformed(false);
+
+  if (node->isGiven("metaData")) {
+    auto metaData = node->getMap("metaData");
+    // IRAN: crazy side effect that halfGrid is written to metaData now!
+    halfGrid = metaData->getValue<int>("halfGrid", 0) == 1;
+  }
+
+
   std::vector<Natural<>> lens;
   std::vector<Ptr<TensorDimension>> dimensions;
   for (auto key: dimensionsMap->getKeys()) {
@@ -201,6 +220,13 @@ Ptr<PointerNode<Object>> TensorIo::readTensor(
     lens.push_back(dimensionMap->getValue<Natural<>>("length"));
     // get dimension properties, if given
     if (dimensionMap->isGiven("type")) {
+      // if halfGrid == 1: we double the lens of the dimension in order to store real-values data
+      if (halfGrid && dimensionMap->getValue<std::string>("type") == "AuxiliaryField") {
+        // only one dimension should be of type Auxiliary Field
+        ASSERT_LOCATION(!transformed, "Found inconsistent input file", sourceLocation);
+        lens.back() = 2 * lens.back();
+        transformed = true;
+      }
       dimensions.push_back(
         TensorIo::getDimension(
           dimensionsMap->getMap(key)->getValue<std::string>("type")
@@ -208,7 +234,7 @@ Ptr<PointerNode<Object>> TensorIo::readTensor(
       );
     }
   }
-
+  ASSERT_LOCATION(!halfGrid || transformed, "Found inconsistency in input file", sourceLocation);
   // check if tensor is given in block sparse format
   auto nonZeroConditions(New<TensorNonZeroConditions>());
   auto nonZeroConditionsNode(node->get("nonZeroCondition"));
@@ -257,7 +283,16 @@ Ptr<PointerNode<Object>> TensorIo::readTensor(
   tensor->dimensions = dimensions;
   tensor->getUnit() = node->getValue<Real<>>("unit");
   if (node->isGiven("metaData")) {
-    tensor->metaData = node->getMap("metaData");
+    //remove halfGrid metaData because it is invalid now
+    Ptr<MapNode> metaData(node->getMap("metaData"));
+    auto writtenMetaData(New<MapNode>(SOURCE_LOCATION));
+
+    for (auto metaDataKey: metaData->getKeys()) {
+      if (metaDataKey != "halfGrid") {
+        writtenMetaData->get(metaDataKey) = metaData->get(metaDataKey);
+      }
+    }
+    tensor->metaData = writtenMetaData;
   }
 
   return New<PointerNode<Object>>(tensor, SourceLocation(nodePath,1));

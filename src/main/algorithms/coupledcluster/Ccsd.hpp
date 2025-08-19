@@ -25,56 +25,22 @@ namespace cc4s {
    * amplitudes \f$T_{ab}^{ij}\f$ from the Coulomb Integrals \f$V_{ij}^{ab}\f$
    * in a \f$ \mathcal{O}(N^{6}) \f$ implementation.
    */
+
   template <typename F, typename TE>
-  class Ccsd {};
-
-  template <typename TE>
-  class Ccsd<Real<>,TE>: public CoupledClusterMethod<Real<>,TE> {
+  class Ccsd : public CoupledClusterMethod<F, TE> {
   public:
-    Ccsd(
-      const Ptr<MapNode> &arguments
-    ): CoupledClusterMethod<Real<>,TE>(arguments) {
-    }
-    std::string getName() override { return "Ccsd"; } \
-    static CoupledClusterMethodRegistrar<
-      Real<>,TE,Ccsd<Real<>,TE>
-    > registrar_;
+    Ccsd(const Ptr<MapNode> &arguments)
+      : CoupledClusterMethod<F, TE>(arguments) {}
+
+    std::string getName() override { return "Ccsd"; }
+
+    static CoupledClusterMethodRegistrar<F, TE, Ccsd<F, TE>> registrar_;
 
     std::string describeOptions() override;
 
-    /**
-     * \brief Implements the iterate method with the CCSD iteration.
-     * \param[in] amplitudes the current guess for the singles and doubles
-     * amplitudes.
-     */
-    Ptr<TensorSet<Real<>,TE>> getResiduum(
-      const Ptr<TensorSet<Real<>,TE>> &amplitudes
-    ) override;
+    Ptr<TensorSet<F, TE>> getResiduum(const Ptr<TensorSet<F, TE>> &amplitudes) override;
   };
 
-  template <typename TE>
-  class Ccsd<Complex<>,TE>: public CoupledClusterMethod<Complex<>,TE> {
-  public:
-    Ccsd(
-      const Ptr<MapNode> &arguments
-    ): CoupledClusterMethod<Complex<>,TE>(arguments) {
-    }
-    std::string getName() override { return "Ccsd"; } \
-    static CoupledClusterMethodRegistrar<
-      Complex<>,TE,Ccsd<Complex<>,TE>
-    > registrar_;
-
-    std::string describeOptions() override;
-
-    /**
-     * \brief Implements the iterate method with the CCSD iteration.
-     * \param[in] amplitudes the current guess for the singles and doubles
-     * amplitudes.
-     */
-    Ptr<TensorSet<Complex<>,TE>> getResiduum(
-      const Ptr<TensorSet<Complex<>,TE>> &amplitudes
-    ) override;
-  };
 }
 
 #endif

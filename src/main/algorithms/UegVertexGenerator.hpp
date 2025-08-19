@@ -39,7 +39,7 @@ namespace cc4s {
     Real<> evalMadelung(double volume);
     Real<> Vijji(const dvec a, const dvec b, const Real<> v);
 
-    bool halfGrid;
+    bool complexAmplitudes;
     Natural<> No, Nv, NF;
     Real<> rs, madelung;
   };

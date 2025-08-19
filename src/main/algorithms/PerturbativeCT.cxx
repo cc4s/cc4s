@@ -1,7 +1,9 @@
 #include <memory>
 
+
 #include <algorithms/PerturbativeCT.hpp>
 #include <TensorSet.hpp>
+
 
 
 using namespace cc4s;
@@ -13,18 +15,10 @@ Ptr<MapNode> PerturbativeCT::run(const Ptr<MapNode> &arguments) {
   Ptr<MapNode> result;
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
-    (
-      result = runReal<TE>(arguments)
-    ) || (
-      result = runComplex<TE>(arguments)
-    );
+    (result = run<Real<>, TE>(arguments)) || ( result = run<Complex<>,TE>(arguments));
   } else {
     using TE = DefaultTensorEngine;
-    (
-      result = runReal<TE>(arguments)
-    ) || (
-      result = runComplex<TE>(arguments)
-    );
+    (result = run<Real<>, TE>(arguments)) || ( result = run<Complex<>,TE>(arguments));
   }
   ASSERT_LOCATION(
     result, "unsupported tensor type as 'coulombIntegrals'",
@@ -33,25 +27,20 @@ Ptr<MapNode> PerturbativeCT::run(const Ptr<MapNode> &arguments) {
   return result;
 }
 
-template <typename TE>
-Ptr<MapNode> PerturbativeCT::runReal(
+template <typename F, typename TE>
+Ptr<MapNode> PerturbativeCT::run(
   const Ptr<MapNode> &arguments
 ) {
 
-  bool noRing(
-    arguments->template getValue<bool>("noRing", false)
-  );
+  bool noRing(arguments->template getValue<bool>("noRing", false));
 
-
-  using TSr = TensorSet<Real<>,TE>;
-  using TSc = TensorSet<Complex<>,TE>;
-  auto amplitudes( arguments->getPtr<TSr>("amplitudes") );
+  auto amplitudes( arguments->getPtr<TensorSet<F,TE>>("amplitudes") );
   if (!amplitudes) return nullptr;
 
   auto Tph ( amplitudes->get("ph") );
   auto Tpphh( amplitudes->get("pphh") );
 
-  auto coulombIntegrals( arguments->getPtr<TSr>("coulombIntegrals") );
+  auto coulombIntegrals( arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals") );
 
   auto Vpppp( coulombIntegrals->get("pppp") );
   auto Vhhhh( coulombIntegrals->get("hhhh") );
@@ -64,43 +53,35 @@ Ptr<MapNode> PerturbativeCT::runReal(
   auto Vpphh( coulombIntegrals->get("pphh") );
 
 
+
   // if Vppph is a real tensor we store a backup of it in Bppph
   // and restore it at the end of the routine
   // If it is a recipe, we simply construct Vppph in this routine
-  auto Bppph( Tcc<TE>::template tensor<Real<>>("Bppph") );
-  auto Vppph( Tcc<TE>::template tensor<Real<>>("Vppph") );
-  auto dressedGph( Tcc<TE>::template tensor<Complex<>>("dressedGph") );
+  auto Bppph( Tcc<TE>::template tensor<F>("Bppph") );
+  auto Vppph( Tcc<TE>::template tensor<F>("Vppph") );
+  auto dressedGph( Tcc<TE>::template tensor<F>("dressedGph") );
 
 
   if (arguments->isGiven("coulombVertex")) {
-    auto coulombVertex( arguments->getPtr<TSc>("coulombVertex") );
+    auto coulombVertex( arguments->getPtr<TensorSet<F,TE>>("coulombVertex") );
     auto GammaGpp( coulombVertex->get("pp") );
     auto GammaGph( coulombVertex->get("ph") );
 
-    COMPILE(
-//      (*conjGpp)["Gqr"] <<=
-//        cc4s::map<Complex<>>(conj<Complex<>>, (*GammaGpp)["Grq"]),
-      (*dressedGph)["Gck"] <<=
-        (*GammaGpp)["Gcf"] * map<Complex<>>(toComplex<Real<>>, (*Tph)["fk"])
-    )->execute();
-
-    auto realGammaGpp( Tcc<TE>::template tensor<Real<>>("realGammaGpp") );
-    auto imagGammaGpp( Tcc<TE>::template tensor<Real<>>("imagGammaGpp") );
-    auto realGammaGph( Tcc<TE>::template tensor<Real<>>("realGammaGph") );
-    auto imagGammaGph( Tcc<TE>::template tensor<Real<>>("imagGammaGph") );
-    COMPILE(
-      (*realGammaGpp)["Gab"] <<= map<Real<>>(real<Complex<>>, (*GammaGpp)["Gab"] ),
-      (*imagGammaGpp)["Gab"] <<= map<Real<>>(imag<Complex<>>, (*GammaGpp)["Gab"] ),
-      (*realGammaGph)["Gai"] <<= map<Real<>>(real<Complex<>>, (*GammaGph)["Gai"] ),
-      (*imagGammaGph)["Gai"] <<= map<Real<>>(imag<Complex<>>, (*GammaGph)["Gai"] ),
-      (*Vppph)["bcek"] <<= (*realGammaGpp)["Geb"] * (*realGammaGph)["Gck"],
-      (*Vppph)["bcek"]  += (*imagGammaGpp)["Geb"] * (*imagGammaGph)["Gck"]
-    )->execute();
-
+    if (std::is_same<F,Complex<>>::value) {
+      EXECUTE(
+        (*dressedGph)["Gck"] <<= (*GammaGpp)["Gcf"] * (*Tph)["fk"],
+        (*Vppph)["bcek"] <<= cc4s::map<F>(conj<F>, (*GammaGpp)["Geb"]) * (*GammaGph)["Gck"]
+      );
+    } else {
+      COMPILE(
+        (*dressedGph)["Gck"] <<= (*GammaGpp)["Gcf"] * (*Tph)["fk"],
+        (*Vppph)["bcek"] <<= (*GammaGpp)["Geb"] * (*GammaGph)["Gck"]
+      )->execute();
+    }
   } else {
     // now coulombIntegrals is a tensor (not a recipe)
     auto whatever(coulombIntegrals->get("ppph"));
-    auto recipe(dynamicPtrCast<TensorRecipe<Real<>,TE>>(whatever));
+    auto recipe(dynamicPtrCast<TensorRecipe<F,TE>>(whatever));
     if (recipe) {
       std::string msg("No CoulombVertex given but Integrals appear as Recipe. Abort!");
       ASSERT_LOCATION(false, msg, SOURCE_LOCATION);
@@ -111,17 +92,15 @@ Ptr<MapNode> PerturbativeCT::runReal(
     )->execute();
   }
 
-  auto Xijka( Tcc<TE>::template tensor<Real<>>("Xijka") );
-  auto Iia( Tcc<TE>::template tensor<Real<>>("Iia") );
-  auto Ippph( Tcc<TE>::template tensor<Real<>>("Ippph") );
-  auto dpImcjk( Tcc<TE>::template tensor<Real<>>("dpImcjk") );
-  auto dpIjkmc( Tcc<TE>::template tensor<Real<>>("dpIjkmc") );
+  auto Xijka( Tcc<TE>::template tensor<F>("Xijka") );
+  auto Iia( Tcc<TE>::template tensor<F>("Iia") );
+  auto Ippph( Tcc<TE>::template tensor<F>("Ippph") );
+  auto dpImcjk( Tcc<TE>::template tensor<F>("dpImcjk") );
+  auto dpIjkmc( Tcc<TE>::template tensor<F>("dpIjkmc") );
 
-  std::shared_ptr<TSr> J = std::make_shared<TSr>();
+  std::shared_ptr<TensorSet<F, TE>> J = std::make_shared<TensorSet<F, TE>>();
   J->get("ppph") = Ippph;
   J->get("hhhp") = dpIjkmc;
-
-
 
   // Implementing the equations from Piecuch, Computer Physics Communications 149, 71 (2002)
   // Equations in Table 1: we will write the corresponding line number
@@ -129,9 +108,15 @@ Ptr<MapNode> PerturbativeCT::runReal(
 
   // We contract the ppXiajb && ppXiabj right away. This reduces the overall
   // memory high water mark
+
+  // we use Vpphh tensor for Vhhpp. if complex -> conj
+  if (std::is_same<F,Complex<>>::value) {
+    Vpphh->evaluate()->sum( F(1.0), "abij", "abij", conj<F>);
+  }
+
   {
-   auto dpXiajb( Tcc<TE>::template tensor<Real<>>("dpXiajb") );
-   auto dpXiabj( Tcc<TE>::template tensor<Real<>>("dpXiabj") );
+   auto dpXiajb( Tcc<TE>::template tensor<F>("dpXiajb") );
+   auto dpXiabj( Tcc<TE>::template tensor<F>("dpXiabj") );
    COMPILE(
      // Line 7: Xijka
      (*Xijka)["ijka"] <<= (*Vhhhp)["ijka"],
@@ -143,8 +128,11 @@ Ptr<MapNode> PerturbativeCT::runReal(
      //(*dpXiajb)["iajb"] += ( 0.5) * (*Tph)["ej"] * (*Ippph)["beai"],
 
      // Line 15: ppXiabj
-     //(*dpXiabj)["iabj"] <<= (*Vhpph)["iabj"],
-     (*dpXiabj)["iabj"] <<= (*Vpphh)["baij"],
+     (std::is_same<F,Complex<>>::value) ? (
+      (*dpXiabj)["iabj"] <<= (*Vhpph)["iabj"]
+     ) : (
+       (*dpXiabj)["iabj"] <<= (*Vpphh)["baij"]
+     ),
      (*dpXiabj)["iabj"] += (-1.0) * (*Vhhph)["imbj"] * (*Tph)["am"],
      //(*dpXiabj)["iabj"] += ( 0.5) * (*Ippph)["ebai"] * (*Tph)["ej"]
      // Line 19: 1st to 4th term
@@ -167,11 +155,15 @@ Ptr<MapNode> PerturbativeCT::runReal(
 
   }
   {
-  auto pXiajb( Tcc<TE>::template tensor<Real<>>("pXiajb") );
-  auto pXiabj( Tcc<TE>::template tensor<Real<>>("pXiabj") );
+  auto pXiajb( Tcc<TE>::template tensor<F>("pXiajb") );
+  auto pXiabj( Tcc<TE>::template tensor<F>("pXiabj") );
+  // Line 6: pXaibc (we store it in a ppph object for memory reasons)
+  EXECUTE((*Ippph)["bcai"] <<= (*Vppph)["bcai"]);
+  if (std::is_same<F,Complex<>>::value) {
+    Ippph->sum( F(1.0), "bcai", "bcai", conj<F>);
+  }
+
   COMPILE(
-    // Line 6: pXaibc (we store it in a ppph object for memory reasons)
-    (*Ippph)["bcai"] <<= (*Vppph)["bcai"],
     // Line 6: pXaibc
     (*Ippph)["bcai"] += (-0.5) * (*Tph)["am"] * (*Vpphh)["bcmi"],
     // Line 1: Iia
@@ -185,8 +177,11 @@ Ptr<MapNode> PerturbativeCT::runReal(
     (*pXiajb)["iajb"] += ( 1.0) * (*Tph)["ej"] * (*Ippph)["beai"],
 
     // Line 14: pXiabj
-    //(*pXiabj)["iabj"] <<= (*Vhpph)["iabj"],
-    (*pXiabj)["iabj"] <<= (*Vpphh)["baij"],
+    (std::is_same<F,Complex<>>::value) ? (
+      (*pXiabj)["iabj"] <<= (*Vhpph)["iabj"]
+    ) : (
+      (*pXiabj)["iabj"] <<= (*Vpphh)["baij"]
+    ),
     (*pXiabj)["iabj"] += (-0.5) * (*Vhhph)["imbj"] * (*Tph)["am"],
     (*pXiabj)["iabj"] += ( 1.0) * (*Ippph)["ebai"] * (*Tph)["ej"],
 
@@ -202,24 +197,14 @@ Ptr<MapNode> PerturbativeCT::runReal(
   }
   // Line 17: we use Vppph as scratch for ppIabci
   if (arguments->isGiven("coulombVertex")) {
-    auto coulombVertex( arguments->getPtr<TSc>("coulombVertex") );
+    auto coulombVertex( arguments->getPtr<TensorSet<F,TE>>("coulombVertex") );
     auto GammaGpp( coulombVertex->get("pp") );
     auto GammaGph( coulombVertex->get("ph") );
-    auto realGammaGpp( Tcc<TE>::template tensor<Real<>>("realGammaGpp") );
-    auto imagGammaGpp( Tcc<TE>::template tensor<Real<>>("imagGammaGpp") );
-    auto realDressedGph( Tcc<TE>::template tensor<Real<>>("realDressedGph") );
-    auto imagDressedGph( Tcc<TE>::template tensor<Real<>>("imagDressedGph") );
-    COMPILE(
-      (*realGammaGpp)["Gab"] <<= map<Real<>>(real<Complex<>>, (*GammaGpp)["Gab"] ),
-      (*imagGammaGpp)["Gab"] <<= map<Real<>>(imag<Complex<>>, (*GammaGpp)["Gab"] ),
-      (*realDressedGph)["Gai"] <<= map<Real<>>(real<Complex<>>, (*dressedGph)["Gai"] ),
-      (*imagDressedGph)["Gai"] <<= map<Real<>>(imag<Complex<>>, (*dressedGph)["Gai"] ),
-      //(*dpIbcek)["bcek"] += (*realConjGpp)["Gbe"] * (*realDressedGph)["Gck"],
-      //(*dpIbcek)["bcek"] += (-1.0) * (*imagConjGpp)["Gbe"] * (*imagDressedGph)["Gck"]
-      (*Vppph)["bcek"] += (*realGammaGpp)["Geb"] * (*realDressedGph)["Gck"],
-      (*Vppph)["bcek"] += (*imagGammaGpp)["Geb"] * (*imagDressedGph)["Gck"]
-    )->execute();
-
+    if (std::is_same<F,Complex<>>::value) {
+      EXECUTE((*Vppph)["bcek"] += cc4s::map<F>(conj<F>, (*GammaGpp)["Geb"]) * (*dressedGph)["Gck"]);
+    } else {
+      EXECUTE((*Vppph)["bcek"] += (*GammaGpp)["Geb"] * (*dressedGph)["Gck"]);
+    }
   } else {
     COMPILE(
       //(*dpIbcek)["bcek"] += ( 1.0) * (*Vpppp)["bcef"] * (*Tph)["fk"]
@@ -250,7 +235,7 @@ Ptr<MapNode> PerturbativeCT::runReal(
     (*dpImcjk)["iajk"] += ( 0.5) * (*Tph)["fj"] * (*Ippph)["efai"] * (*Tph)["ek"],
     (*dpImcjk)["iajk"] += ( 0.5) * (*Tph)["ej"] * (*Ippph)["feai"] * (*Tph)["fk"],
     // For technical reasons we want the result in the form Vhhhp
-    (*dpIjkmc)["jkmc"] <<= (*dpImcjk)["mcjk"],
+    (*dpIjkmc)["jkmc"] <<= map<F>(conj<F>, (*dpImcjk)["mcjk"]),
     (*Ippph)["bcek"] <<= (*Vppph)["bcek"]
   )->execute();
 
@@ -258,6 +243,12 @@ Ptr<MapNode> PerturbativeCT::runReal(
   if (!arguments->isGiven("coulombVertex")) {
     COMPILE( (*Vppph)["bcek"] <<= (*Bppph)["bcek"] )->execute();
   }
+
+  // restore the Vpphh integrals by back-conj
+  if (std::is_same<F,Complex<>>::value) {
+    Vpphh->evaluate()->sum( F(1.0), "abij", "abij", conj<F>);
+  }
+
 
   if (noRing) OUT() << "Evaluating ct-intermediate without ring contribution" << std::endl;
   //TODO: give tensor sets meta data.
@@ -270,196 +261,6 @@ Ptr<MapNode> PerturbativeCT::runReal(
 
 }
 
-// The complex code is not yet memory optimized.
-template <typename TE>
-Ptr<MapNode> PerturbativeCT::runComplex(
-  const Ptr<MapNode> &arguments
-) {
-
-
-  bool noRing(
-    arguments->template getValue<bool>("noRing", false)
-  );
-
-  auto amplitudes( arguments->getPtr<TensorSet<Complex<>,TE>>("amplitudes") );
-  if (!amplitudes) return nullptr;
-
-  auto Tph ( amplitudes->get("ph") );
-  auto Tpphh( amplitudes->get("pphh") );
-
-  auto coulombIntegrals( arguments->getPtr<TensorSet<Complex<>,TE>>("coulombIntegrals") );
-
-  auto Vpppp( coulombIntegrals->get("pppp") );
-  auto Vhhhh( coulombIntegrals->get("hhhh") );
-  auto Vhhhp( coulombIntegrals->get("hhhp") );
-  auto Vhhpp( coulombIntegrals->get("hhpp") );
-  auto Vhphp( coulombIntegrals->get("hphp") );
-  auto Vhhph( coulombIntegrals->get("hhph") );
-  auto Vhpph( coulombIntegrals->get("hpph") );
-  auto Vhphh( coulombIntegrals->get("hphh") );
-
-
-  // if Vppph is a real tensor we store a backup of it in Bppph
-  // and restore it at the end of the routine
-  // If it is a recipe, we simply construct Vppph in this routine
-  auto Bppph( Tcc<TE>::template tensor<Complex<>>("Bppph") );
-  auto Vppph( Tcc<TE>::template tensor<Complex<>>("Vppph") );
-  auto dressedGph( Tcc<TE>::template tensor<Complex<>>("dressedGph") );
-  auto conjGpp( Tcc<TE>::template tensor<Complex<>>("conjGpp") );
-
-
-  if (arguments->isGiven("coulombVertex")) {
-    auto coulombVertex( arguments->getPtr<TensorSet<Complex<>,TE>>("coulombVertex") );
-    auto GammaGpp( coulombVertex->get("pp") );
-    auto GammaGph( coulombVertex->get("ph") );
-
-    COMPILE(
-      (*conjGpp)["Gqr"] <<=
-        cc4s::map<Complex<>>(conj<Complex<>>, (*GammaGpp)["Grq"]),
-      (*dressedGph)["Gck"] <<= (*GammaGpp)["Gcf"] * (*Tph)["fk"],
-      (*Vppph)["bcek"] <<= (*conjGpp)["Gbe"] * (*GammaGph)["Gck"]
-    )->execute();
-  } else {
-    // now coulombIntegrals is a tensor (not a recipe)
-    auto whatever(coulombIntegrals->get("ppph"));
-    auto recipe(dynamicPtrCast<TensorRecipe<Complex<>,TE>>(whatever));
-    if (recipe) {
-      std::string msg("No CoulombVertex given but Integrals appear as Recipe. Abort!");
-      ASSERT_LOCATION(false, msg, SOURCE_LOCATION);
-    }
-    COMPILE(
-      (*Vppph)["bcek"] <<= (*whatever)["bcek"],
-      (*Bppph)["bcek"] <<= (*Vppph)["bcek"]
-    )->execute();
-  }
-
-  auto pXiajb( Tcc<TE>::template tensor<Complex<>>("pXiajb") );
-  auto pXiabj( Tcc<TE>::template tensor<Complex<>>("pXiabj") );
-  auto Xijka( Tcc<TE>::template tensor<Complex<>>("Xijka") );
-  auto dpXiajb( Tcc<TE>::template tensor<Complex<>>("dpXiajb") );
-  auto dpXiabj( Tcc<TE>::template tensor<Complex<>>("dpXiabj") );
-  auto Iia( Tcc<TE>::template tensor<Complex<>>("Iia") );
-  auto Ippph( Tcc<TE>::template tensor<Complex<>>("Ippph") );
-  auto dpImcjk( Tcc<TE>::template tensor<Complex<>>("dpImcjk") );
-  auto dpIjkmc( Tcc<TE>::template tensor<Complex<>>("dpIjkmc") );
-
-  std::shared_ptr<TensorSet<Complex<>, TE>> J = std::make_shared<TensorSet<Complex<>, TE>>();
-  J->get("ppph") = Vppph;
-  J->get("hhhp") = dpIjkmc;
-
-
-
-  // Implementing the equations from Piecuch, Computer Physics Communications 149, 71 (2002)
-  // Equations in Table 1: we will write the corresponding line number
-  // Note that we need only half of the Equations for the intermediates Jppph and Jhhhp
-  COMPILE(
-    // Line 7: Xijka
-    (*Xijka)["ijka"] <<= (*Vhhhp)["ijka"],
-    (*Xijka)["ijka"] += (1.0) * (*Tph)["ek"] * (*Vhhpp)["ijea"],
-    // Line 6: pXaibc (we store it in a ppph object for memory reasons)
-    (*Ippph)["bcai"] <<= (*Vppph)["bcai"]
-  )->execute();
-  Ippph->sum( Complex<>(1.0), "bcai", "bcai", conj<Complex<>>);
-
-  COMPILE(
-    // Line 6: pXaibc
-    (*Ippph)["bcai"] += (-0.5) * (*Tph)["am"] * (*Vhhpp)["mibc"],
-    // Line 1: Iia
-    (*Iia)["ia"] <<= ( 2.0) * (*Vhhpp)["imae"] * (*Tph)["em"],
-    (*Iia)["ia"]  += (-1.0) * (*Vhhpp)["imea"] * (*Tph)["em"],
-    // (*Iia)["ia"] += Fia["ia"], // TODO: use non-canonical orbitals
-
-    // Line 10: pXiajb
-    (*pXiajb)["iajb"] <<= (*Vhphp)["iajb"],
-    (*pXiajb)["iajb"] += (-0.5) * (*Vhhhp)["imjb"] * (*Tph)["am"],
-    (*pXiajb)["iajb"] += ( 1.0) * (*Tph)["ej"] * (*Ippph)["beai"],
-
-    // Line 14: pXiabj
-    (*pXiabj)["iabj"] <<= (*Vhpph)["iabj"],
-    (*pXiabj)["iabj"] += (-0.5) * (*Vhhph)["imbj"] * (*Tph)["am"],
-    (*pXiabj)["iabj"] += ( 1.0) * (*Ippph)["ebai"] * (*Tph)["ej"],
-
-    // Line 5: Xaibc (store it in the same object to safe memory)
-    (*Ippph)["bcai"] += (-0.5) * (*Tph)["am"] * (*Vhhpp)["mibc"],
-
-    // Line 11: ppXiajb
-    (*dpXiajb)["iajb"] <<= (*Vhphp)["iajb"],
-    (*dpXiajb)["iajb"] += (-1.0) * (*Vhhhp)["imjb"] * (*Tph)["am"],
-    (*dpXiajb)["iajb"] += ( 0.5) * (*Tph)["ej"] * (*Ippph)["beai"],
-
-    // Line 15: ppXiabj
-    (*dpXiabj)["iabj"] <<= (*Vhpph)["iabj"],
-    (*dpXiabj)["iabj"] += (-1.0) * (*Vhhph)["imbj"] * (*Tph)["am"],
-    (*dpXiabj)["iabj"] += ( 0.5) * (*Ippph)["ebai"] * (*Tph)["ej"]
-
-  )->execute();
-
-  // Line 17: we use Vppph as scratch for ppIabci
-  if (arguments->isGiven("coulombVertex")) {
-    COMPILE(
-      (*Vppph)["bcek"] += (*conjGpp)["Gbe"] * (*dressedGph)["Gck"]
-    )->execute();
-  } else {
-    COMPILE(
-      //(*dpIbcek)["bcek"] += ( 1.0) * (*Vpppp)["bcef"] * (*Tph)["fk"]
-      (*Vppph)["bcek"] += ( 1.0) * (*Vpppp)["bcef"] * (*Tph)["fk"]
-    )->execute();
-  }
-
-  COMPILE(
-    // Line 17: 3rd term - 5th term
-    (*Vppph)["abci"] += (-1.0) * (*pXiajb)["maic"] * (*Tph)["bm"],
-    (*Vppph)["abci"] += (-1.0) * (*Tph)["am"] * (*pXiabj)["mbci"],
-    (*Vppph)["abci"] += (-1.0) * (*Iia)["mc"] * (*Tpphh)["abmi"]
-  )->execute();
-  cc4s::enable_lowmem(true);
-  COMPILE(
-//    // Line 17: 6th term - 10th term
-    (noRing) ? (
-      Tcc<TE>::sequence()
-    ) : (
-      (*Vppph)["abci"] += ( 2.0) * (*Ippph)["ceam"] * (*Tpphh)["beim"],
-      Tcc<TE>::sequence()
-    ),
-    (*Vppph)["abci"] += (-1.0) * (*Ippph)["ceam"] * (*Tpphh)["ebim"],
-    (*Vppph)["abci"] += (-1.0) * (*Ippph)["ecam"] * (*Tpphh)["ebmi"],
-    (*Vppph)["abci"] += (-1.0) * (*Tpphh)["eaim"] * (*Ippph)["ecbm"]
-  )->execute();
-  cc4s::enable_lowmem(false);
-  COMPILE(
-    (*Vppph)["abci"] += ( 1.0) * (*Tpphh)["bamn"] * (*Xijka)["mnic"],
-    // Line 19: 1st to 4th term
-    (*dpImcjk)["iajk"] <<= (*Vhphh)["iajk"],
-    (*dpImcjk)["iajk"] += (-1.0) * (*Vhhhh)["imjk"] * (*Tph)["am"],
-    (*dpImcjk)["iajk"] += ( 1.0) * (*dpXiajb)["iaje"] * (*Tph)["ek"],
-    (*dpImcjk)["iajk"] += ( 1.0) * (*Tph)["ej"] * (*dpXiabj)["iaek"],
-    // Line 19: 5th - 9th term
-    (noRing) ? (
-      Tcc<TE>::sequence()
-    ) : (
-      (*dpImcjk)["iajk"] += ( 2.0) * (*Xijka)["imje"] * (*Tpphh)["aekm"],
-      Tcc<TE>::sequence()
-    ),
-    (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["imje"] * (*Tpphh)["eakm"],
-    (*dpImcjk)["iajk"] += (-1.0) * (*Xijka)["mije"] * (*Tpphh)["eamk"],
-    (*dpImcjk)["iajk"] += (-1.0) * (*Tpphh)["aemj"] * (*Xijka)["mike"],
-    (*dpImcjk)["iajk"] += ( 1.0) * (*Tpphh)["efkj"] * (*Ippph)["efai"],
-    // For technical reasons we want the result in the form Vhhhp
-    (*dpIjkmc)["jkmc"] <<= map<Complex<>>( conj<Complex<>>, (*dpImcjk)["mcjk"]),
-    (*Ippph)["bcek"] <<= (*Vppph)["bcek"]
-  )->execute();
-
-  // If Vppph was given as a tensor we have to restore the original result
-  if (!arguments->isGiven("coulombVertex")) {
-    COMPILE( (*Vppph)["bcek"] <<= (*Bppph)["bcek"] )->execute();
-  }
-
-
-  auto result( New<MapNode>(SOURCE_LOCATION));
-  result->setPtr("cTIntermediate", J);
-  return result;
-
-}
 
 template <typename F, typename TE>
 std::shared_ptr<TensorSet<F, TE>>

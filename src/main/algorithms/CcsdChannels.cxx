@@ -62,6 +62,12 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
 template <typename F, typename TE>
 Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
 
+  ASSERT_LOCATION(
+    0, "Error. This algorithm is not ready for the new vertex!",
+    arguments->sourceLocation
+  );
+
+
   auto Rph( Tcc<TE>::template tensor<F>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
 

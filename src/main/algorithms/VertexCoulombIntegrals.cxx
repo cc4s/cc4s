@@ -25,175 +25,77 @@ using namespace cc4s;
 
 ALGORITHM_REGISTRAR_DEFINITION(VertexCoulombIntegrals)
 
+template<typename F, typename TE>
+using TensorMap = std::map<std::string, Ptr<TensorExpression<F, TE>>>;
+
+
 Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
   // multiplex calls to template methods
+  Ptr<MapNode> result;
   if (Cc4s::dryRun) {
-    return run<DefaultDryTensorEngine>(arguments);
+    using TE = DefaultDryTensorEngine;
+    (result = run<Real<>,TE>(arguments)) || (result = run<Complex<>, TE>(arguments));
   } else {
-    return run<DefaultTensorEngine>(arguments);
+    using TE = DefaultTensorEngine;
+    (result = run<Real<>,TE>(arguments)) || (result = run<Complex<>, TE>(arguments));
   }
+  ASSERT_LOCATION(
+    result, "unsupported tensor type for CoulombVertex",
+    arguments->sourceLocation
+  );
+  return result;
+
 }
 
-template <typename TE>
-Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode> &arguments) {
-  auto slicedCoulombVertex(
-    arguments->getPtr<TensorSet<Complex<>,TE>>("slicedCoulombVertex")
-  );
-  Ptr<MapNode> metaData(
-    slicedCoulombVertex->get("hh")->inspect()->getMetaData()
-  );
-  bool halfGrid(false);
-  if (metaData) halfGrid = metaData->getValue<bool>("halfGrid", 0);
-  if (halfGrid) {
-    OUT() << "Using real Coulomb integrals" << std::endl;
-    return calculateRealIntegrals<TE>(slicedCoulombVertex);
-  } else {
-    OUT() << "Using complex Coulomb integrals" << std::endl;
-    return calculateComplexIntegrals<TE>(slicedCoulombVertex);
+template <typename F, typename TE>
+Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode>& arguments) {
+  auto slicedCoulombVertex = arguments->getPtr<TensorSet<F, TE>>("slicedCoulombVertex");
+  if (!slicedCoulombVertex) return nullptr;
+  TensorMap<F,TE> gammaG;
+  TensorMap<F,TE> conjTG;
+  auto coulombIntegrals = New<TensorSet<F,TE>>();
+
+  std::vector<std::string> keys = {"pp","ph","hp","hh"};
+  for (auto& key : keys) {
+    gammaG[key] = slicedCoulombVertex->get(key);
   }
-}
 
-template <typename TE>
-Ptr<MapNode> VertexCoulombIntegrals::calculateRealIntegrals(
-  const Ptr<TensorSet<Complex<>,TE>> &slicedCoulombVertex
-) {
-  // get input recipes
-  auto GammaGhh(slicedCoulombVertex->get("hh"));
-  auto GammaGhp(slicedCoulombVertex->get("hp"));
-  auto GammaGph(slicedCoulombVertex->get("ph"));
-  auto GammaGpp(slicedCoulombVertex->get("pp"));
-
-  auto NF(GammaGhh->inspect()->lens[0]);
-  OUT() << "number of field variables NF: " << NF << std::endl;
-
-#define DEFINE_VERTEX_PART(PART, SLICE) \
-  auto PART##GammaG##SLICE(Tcc<TE>::template tensor<Real<>>( \
-    std::string(#PART) + "GammaG" + #SLICE) \
-  ); \
-  COMPILE( \
-    (*PART##GammaG##SLICE)["Gqr"] <<= \
-      map<Real<>>(PART<Complex<>>, (*GammaG##SLICE)["Gqr"]) \
-  )->execute(); \
-  // define intermediate recipes
-  DEFINE_VERTEX_PART(real, pp)
-  DEFINE_VERTEX_PART(real, ph)
-  DEFINE_VERTEX_PART(real, hp)
-  DEFINE_VERTEX_PART(real, hh)
-  DEFINE_VERTEX_PART(imag, pp)
-  DEFINE_VERTEX_PART(imag, ph)
-  DEFINE_VERTEX_PART(imag, hp)
-  DEFINE_VERTEX_PART(imag, hh)
-#undef DEFINE_VERTEX_PART
-
-#define DEFINE_REAL_INTEGRALS_SLICE(LO,RO,LI,RI) \
-  { \
-    auto sliceName(std::string(#LO) + #RO + #LI + #RI); \
-    auto result( \
-      Tcc<TE>::template tensor<Real<>>(std::string("V") + sliceName) \
-    ); \
-    result->getUnit() = pow(GammaGhh->inspect()->getUnit(),2.0); \
-    coulombIntegrals->get(sliceName) = \
-      COMPILE_RECIPE(result, ( \
-        (*result)["pqsr"] <<= \
-          (*realGammaG##LO##LI)["Gps"] * (*realGammaG##RO##RI)["Gqr"], \
-        (*result)["pqsr"] += \
-          (*imagGammaG##LO##LI)["Gps"] * (*imagGammaG##RO##RI)["Gqr"] \
-        ) \
-      ); \
+  //TODO: dont conj when we are use real integrals
+  for (auto& key : keys) {
+    auto t = Tcc<TE>::template tensor<F>(std::string("conjTGammaG") + key);
+    std::string rKey{key[1], key[0]};  // reversed order
+    EXECUTE(
+        (*t)["Gqr"] <<= map<F>(conj<F>, (*gammaG.at(rKey))["Grq"])
+    );
+    conjTG[key] = t;
   }
-  // define recipes for basic integral slices
-  auto coulombIntegrals(New<TensorSet<Real<>,TE>>());
-  // TODO: symmetry considerations
-  DEFINE_REAL_INTEGRALS_SLICE(h,h,h,h);
-  DEFINE_REAL_INTEGRALS_SLICE(p,h,h,h);
-  DEFINE_REAL_INTEGRALS_SLICE(h,p,h,h);
-  DEFINE_REAL_INTEGRALS_SLICE(p,p,h,h);
-  DEFINE_REAL_INTEGRALS_SLICE(h,h,p,h);
-  DEFINE_REAL_INTEGRALS_SLICE(p,h,p,h);
-  DEFINE_REAL_INTEGRALS_SLICE(h,p,p,h);
-  DEFINE_REAL_INTEGRALS_SLICE(p,p,p,h);
-  DEFINE_REAL_INTEGRALS_SLICE(h,h,h,p);
-  DEFINE_REAL_INTEGRALS_SLICE(p,h,h,p);
-  DEFINE_REAL_INTEGRALS_SLICE(h,p,h,p);
-  DEFINE_REAL_INTEGRALS_SLICE(p,p,h,p);
-  DEFINE_REAL_INTEGRALS_SLICE(h,h,p,p);
-  DEFINE_REAL_INTEGRALS_SLICE(p,h,p,p);
-  DEFINE_REAL_INTEGRALS_SLICE(h,p,p,p);
-  DEFINE_REAL_INTEGRALS_SLICE(p,p,p,p);
-#undef DEFINE_REAL_INTEGRALS_SLICE
+
+  const char ckeys[] = {'p', 'h'};
+  for (char LO : ckeys) {
+    for (char RO : ckeys) {
+      for (char LI : ckeys) {
+        for (char RI : ckeys) {
+          std::string leftKey = {LO, LI};
+          std::string rightKey = {RO, RI};
+          std::string sliceName = {LO, RO, LI, RI};
+          LOG() << leftKey << " " << rightKey << " " << sliceName << std::endl;
+          auto result = Tcc<TE>::template tensor<F>("V" + sliceName);
+          result->getUnit() = pow(gammaG["hh"]->inspect()->getUnit(), 2.0);
+
+          auto recipe = COMPILE_RECIPE(result, (
+            (*result)["pqsr"] <<= (*conjTG.at(leftKey))["Gps"] * (*gammaG.at(rightKey))["Gqr"]
+          ));
+          coulombIntegrals->get(sliceName) = recipe;
+        }
+      }
+    }
+  }
 
   // create result
   auto result(New<MapNode>(SOURCE_LOCATION));
   result->setPtr("coulombIntegrals", coulombIntegrals);
   return result;
+
 }
 
-template <typename TE>
-Ptr<MapNode> VertexCoulombIntegrals::calculateComplexIntegrals(
-  const Ptr<TensorSet<Complex<>,TE>> &slicedCoulombVertex
-) {
-  // get input recipes
-  auto GammaGhh(slicedCoulombVertex->get("hh"));
-  auto GammaGhp(slicedCoulombVertex->get("hp"));
-  auto GammaGph(slicedCoulombVertex->get("ph"));
-  auto GammaGpp(slicedCoulombVertex->get("pp"));
-
-  auto NF(GammaGhh->inspect()->lens[0]);
-  OUT() << "number of field variables NF: " << NF << std::endl;
-
-#define DEFINE_VERTEX_CONJT(O,I) \
-  auto conjTGammaG##O##I(Tcc<TE>::template tensor<Complex<>>( \
-    std::string("conjTGammaG") + #O + #I) \
-  ); \
-  COMPILE( \
-    (*conjTGammaG##O##I)["Gqr"] <<= \
-      map<Complex<>>(conj<Complex<>>, (*GammaG##I##O)["Grq"]) \
-  )->execute(); \
-  // define intermediate recipes
-  DEFINE_VERTEX_CONJT(p,p)
-  DEFINE_VERTEX_CONJT(p,h)
-  DEFINE_VERTEX_CONJT(h,p)
-  DEFINE_VERTEX_CONJT(h,h)
-#undef DEFINE_VERTEX_CONJT
-
-#define DEFINE_COMPLEX_INTEGRALS_SLICE(LO,RO,LI,RI) \
-  { \
-    auto sliceName(std::string(#LO) + #RO + #LI + #RI); \
-    auto result( \
-      Tcc<TE>::template tensor<Complex<>>(std::string("V") + sliceName) \
-    ); \
-    result->getUnit() = pow(GammaGhh->inspect()->getUnit(),2.0); \
-    coulombIntegrals->get(sliceName) = \
-      COMPILE_RECIPE(result, (\
-        (*result)["pqsr"] <<= \
-          (*conjTGammaG##LO##LI)["Gps"] * (*GammaG##RO##RI)["Gqr"] \
-        ) \
-      ); \
-  }
-  // define recipes for integral slices
-  auto coulombIntegrals(New<TensorSet<Complex<>,TE>>());
-  // TODO: symmetry considerations
-  DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,h,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,h,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,h,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,p,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,p,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,p,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,p,h);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,h,p);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,h,p);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,h,p);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,h,p);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(h,h,p,p);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,h,p,p);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(h,p,p,p);
-  DEFINE_COMPLEX_INTEGRALS_SLICE(p,p,p,p);
-#undef DEFINE_COMPLEX_INTEGRALS_SLICE
-
-  // create result
-  auto result(New<MapNode>(SOURCE_LOCATION));
-  result->setPtr("coulombIntegrals", coulombIntegrals);
-  return result;
-}
 
