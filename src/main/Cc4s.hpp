@@ -21,6 +21,7 @@
 #include <Integer.hpp>
 #include <Options.hpp>
 #include <Node.hpp>
+#include <Yaml.hpp>
 
 int main(int argumentCount, char **arguments);
 
@@ -28,6 +29,9 @@ namespace cc4s {
   class Cc4s {
   public:
     void run();
+
+    using Contexts = std::vector<YAML::Node>;
+    Contexts contexts;
 
     // static properties, accessible from everywhere
     static Ptr<MpiCommunicator> world;
@@ -40,7 +44,9 @@ namespace cc4s {
 
   protected:
     void runSteps(const bool dry = false);
-    void runStep(const Natural<> i, const Ptr<MapNode> &step);
+    void runStep(const Natural<> i,
+                 const Ptr<MapNode> &step,
+                 Contexts &contexts);
     void fetchSymbols(const Ptr<MapNode> &arguments);
     void storeSymbols(const Ptr<MapNode> &result,const Ptr<MapNode> &variables);
     void printBanner();

@@ -16,6 +16,7 @@
 #ifndef ALGORITHM_DEFINED
 #define ALGORITHM_DEFINED
 
+#include <Yaml.hpp>
 #include <Node.hpp>
 
 // tensor engine selection
@@ -30,6 +31,7 @@ namespace cc4s {
   class Algorithm {
   public:
     Algorithm();
+    YAML::Node context;
     virtual ~Algorithm();
     virtual std::string getName() = 0;
     virtual Ptr<MapNode> run(const Ptr<MapNode> &arguments) = 0;

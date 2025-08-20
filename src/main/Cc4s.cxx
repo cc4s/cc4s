@@ -158,7 +158,8 @@ void Cc4s::runSteps(const bool dry) {
 
     for (Natural<> i(0); i < steps->getSize(); ++i) {
       auto step(steps->getMap(i));
-      runStep(i, step);
+      runStep(i, step, contexts);
+      auto algorithmName(step->getSymbol("name"));
       if (Cc4s::dryRun) executedSteps->get(i) = step;
       else              executedSteps->get(i) = make_step_for_output(step);
       // executedSteps->get(i) = step;
@@ -172,7 +173,38 @@ void Cc4s::runSteps(const bool dry) {
       }
     }
   }
+
   Cc4s::dryRun = false;
+
+  // Print contexts
+  if (dry) {
+    // Here be sure that the dryRun = false so that OUT() works
+    // as expected
+    const bool old_dry_run = Cc4s::dryRun;
+    Cc4s::dryRun = false;
+    std::map<std::string, std::string> seen_contexts;
+    for (Natural<> i(0); i < steps->getSize(); ++i) {
+      auto step(steps->getMap(i));
+      auto const algorithmName = step->getSymbol("name");
+      OUT() << "- " << algorithmName << std::endl;
+      const auto &context = contexts[i];
+      for (const auto &iterator : context) {
+        const auto &key = iterator.first.as<string>(),
+                   &value = iterator.second.as<string>();
+        if (seen_contexts.find(key) != seen_contexts.end()) {
+          // if we have already seen this kind of variable
+          // do not print again
+          if (seen_contexts[key] == value)
+            continue;
+        }
+        seen_contexts[key] = value;
+        OUT() << key << ": " << value << std::endl;
+      }
+    }
+    Cc4s::dryRun = old_dry_run;
+    // TODO: think about how do we want to report the algorithms that are going
+    // to be performed.
+  }
 
   auto statistics(New<MapNode>(SOURCE_LOCATION));
   std::stringstream totalRealtime;
@@ -217,7 +249,9 @@ void Cc4s::runSteps(const bool dry) {
   }
 }
 
-void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
+void Cc4s::runStep(Natural<> i,
+                   const Ptr<MapNode> &step,
+                   Cc4s::Contexts& contexts) {
   auto algorithmName(step->getSymbol("name"));
   OUT() << "step: " << (i+1) << ", " << algorithmName << std::endl;
   LOG() << "begin step: " << (i+1)
@@ -243,6 +277,8 @@ void Cc4s::runStep(Natural<> i, const Ptr<MapNode> &step) {
     OperationsCounter operationsCounter(&operations);
     Timer timer(&time);
     output = algorithm->run(inputArguments);
+    YAML::Node context = YAML::Clone(algorithm->context);
+    contexts.push_back(std::move(YAML::Clone(algorithm->context)));
   }
 
   // get output variables, if given
