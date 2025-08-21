@@ -3,7 +3,7 @@
     No: 123
     Nv: 1114
     NF: 2000
-    halfGrid: 1
+    complexAmplitudes: 0
     rs: 2
   out: 
     eigenEnergies: EigenEnergies

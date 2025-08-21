@@ -20,10 +20,17 @@
 #include <Emitter.hpp>
 #include <Cc4s.hpp>
 #include <SharedPointer.hpp>
+#include <Log.hpp>
 
 #include <string>
 
 namespace cc4s {
+
+  struct FlagsIO {
+    bool useBinary;
+    bool rowMajor;
+  };
+
   /**
    * \brief Writer for writing entire node states persistently to files,
    * including tensor data.
@@ -33,8 +40,8 @@ namespace cc4s {
   class Writer {
   public:
     Writer(
-      const std::string &fileName_, const bool useBinary_ = false
-    ): fileName(fileName_), useBinary(useBinary_) {
+      const std::string &fileName_, const FlagsIO flagsIO_
+    ): fileName(fileName_), flagsIO(flagsIO_) {
     }
     Ptr<Node> write(const Ptr<Node> &node) {
       // if fileName contains '/' change directory
@@ -64,14 +71,16 @@ namespace cc4s {
       chdir(currentDirectory);
 
       // finally, write persistent tree to given file
+      if (Cc4s::dryRun)  fileName += "_";
       Emitter(fileName).emit(writtenNode);
+      if (Cc4s::dryRun) remove(fileName.c_str());
 
       return writtenNode;
     }
 
     typedef std::function<
       Ptr<Node>(
-        const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+        const Ptr<Node> &node, const std::string &nodePath, const FlagsIO flagsIO
       )
     > WriteFunction;
     static int registerWriteFunction(
@@ -87,10 +96,14 @@ namespace cc4s {
     // translate into persistent node tree
     Ptr<Node> write(const Ptr<Node> &node, const std::string &nodePath) {
       auto mapNode(node->toPtr<MapNode>());
-      if (mapNode) return writeMap(mapNode, nodePath);
+      if (mapNode) {
+        return writeMap(mapNode, nodePath);
+      }
       auto symbolNode(node->toPtr<SymbolNode>());
       if (symbolNode) {
         // symbols are already in persistent form
+        ASSERT_LOCATION(0, std::string("unassigned object ") + symbolNode->value,
+                        symbolNode->sourceLocation);
         return symbolNode;
       } else {
         return writeAtom(node, nodePath);
@@ -117,7 +130,7 @@ namespace cc4s {
     ) {
       for (auto writeFunction: writeFunctions) {
         // try type-specific write function
-        auto writtenNode(writeFunction.second(node, nodePath, useBinary));
+        auto writtenNode(writeFunction.second(node, nodePath, flagsIO));
         if (writtenNode) {
           // if successful, enter respective type
           auto writtenNodeMap(writtenNode->toPtr<MapNode>());
@@ -130,8 +143,9 @@ namespace cc4s {
     }
 
     std::string fileName;
-    bool useBinary;
+    FlagsIO flagsIO;
   };
+
 }
 
 #endif

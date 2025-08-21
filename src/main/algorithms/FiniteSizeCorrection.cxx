@@ -29,6 +29,7 @@ Ptr<MapNode> FiniteSizeCorrection::run(
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
 
+
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
     calculateTransitionStructureFactor<Real<>, TE>(arguments, result)
@@ -38,7 +39,9 @@ Ptr<MapNode> FiniteSizeCorrection::run(
     using TE = DefaultTensorEngine;
     calculateTransitionStructureFactor<Real<>, TE>(arguments, result)
       || calculateTransitionStructureFactor<Complex<>, TE>(arguments, result);
-    interpolation<TE>(arguments, result);
+
+    interpolation<Real<>, TE>(arguments, result)
+      || interpolation<Complex<>, TE>(arguments, result);
   }
   return result;
 }
@@ -47,97 +50,184 @@ Ptr<MapNode> FiniteSizeCorrection::run(
 // - undo the SVD of the CoulombVertex and bring it back to reciprocal mesh
 // - divide te CoulombVertex by the Coulomb potential to obtain the codensities
 
+
+template<typename F, typename TE>
+typename std::enable_if<std::is_same<Complex<>,F>::value>::type
+rotateVertices(
+  Ptr<Tensor<Complex<>,TE>> GammaGph,
+  Ptr<TensorExpression<F,TE>> GammaFph,
+  Ptr<TensorExpression<Complex<>,TE>> singularVectors
+) {
+  EXECUTE((*GammaGph)["Gai"] <<= (*GammaFph)["Fai"] * (*singularVectors)["GF"]);
+}
+
+// helper for non-Complex case (do nothing)
+template<typename F, typename TE>
+typename std::enable_if<!std::is_same<Complex<>,F>::value>::type
+rotateVertices(
+  Ptr<Tensor<Complex<>,TE>> /*GammaGph*/,
+  Ptr<TensorExpression<F,TE>> /*GammaFph*/,
+  Ptr<TensorExpression<Complex<>,TE>> /*singularVectors*/
+) {
+  // nothing to do
+}
+
+
+
 template <typename F, typename TE>
 bool FiniteSizeCorrection::calculateTransitionStructureFactor(
   const Ptr<MapNode> &arguments, Ptr<MapNode> &result
 ) {
-  using Tc = TensorExpression<Complex<>, TE>;
-  using Tr = TensorExpression<Real<>, TE>;
-  using TSc = TensorSet<Complex<>, TE>;
 
   // READ input to compute structure factors
   auto amplitudes(arguments->getPtr<TensorSet<F,TE>>("amplitudes"));
   if (!amplitudes) return false;
 
   auto singularVectors(
-    arguments->getPtr<Tc>("coulombVertexSingularVectors")
+    arguments->getPtr<TensorExpression<Complex<>,TE>>("coulombVertexSingularVectors")
   );
+  ASSERT_LOCATION(singularVectors, "singular Vectors are of wrong type", arguments->sourceLocation);
 
-  auto coulombVertex(arguments->getPtr<TSc>("slicedCoulombVertex"));
-  // get input tensor expression
+  auto coulombVertex(arguments->getPtr<TensorSet<F,TE>>("slicedCoulombVertex"));
+  // get input tensor expression: in auxiliary basis
   auto GammaFph(coulombVertex->get("ph"));
   auto GammaFhp(coulombVertex->get("hp"));
-  auto GammaFhh(coulombVertex->get("hh"));
-  auto GammaGph( Tcc<TE>::template tensor<Complex<>>("Gph"));
-  auto GammaGhp( Tcc<TE>::template tensor<Complex<>>("Ghp"));
-  auto GammaGhh( Tcc<TE>::template tensor<Complex<>>("Ghh"));
-  COMPILE(
-    (*GammaGph)["Gai"] <<= (*GammaFph)["Fai"] * (*singularVectors)["GF"],
-    (*GammaGhp)["Gia"] <<= (*GammaFhp)["Fia"] * (*singularVectors)["GF"],
-    (*GammaGhh)["Gij"] <<= (*GammaFhh)["Fij"] * (*singularVectors)["GF"]
-  )->execute();
+  //These are the rotated vertices (in reciprocal mesh basis)
 
+  auto no = GammaFhp->evaluate()->lens[1];
+  auto nv = GammaFhp->evaluate()->lens[2];
+  auto ng = singularVectors->evaluate()->lens[0];
+  auto nf = singularVectors->evaluate()->lens[1];
+
+  //we have to provide the length of these objects for the Real<> version
+  auto GammaGph( Tcc<TE>::template tensor<Complex<>>({ng, nv, no}, "Gph"));
+  auto GammaGhp( Tcc<TE>::template tensor<Complex<>>({ng, no, nv}, "Ghp"));
+
+
+  // If F is complex, everything is straighforward and we can just rotate the vertex
+
+  if (std::is_same<Complex<>,F>::value) {
+    // as long as we dont have constexpr we have to do it the hard way
+    rotateVertices<F,TE>(GammaGph, GammaFph, singularVectors);
+    rotateVertices<F,TE>(GammaGhp, GammaFhp, singularVectors);
+  } else {
+
+    // Now, the CoulombVertex is of same type as the amplitudes. This means that we
+    // have to transform it into complex in order to perform the unitary rotation
+    // with the (complex) singular Vectors
+
+    auto np = Cc4s::getProcessesCount();
+    auto rank = Cc4s::world->getRank();
+
+    GammaGhp->getMachineTensor();
+    auto cGammaFhp( Tcc<TE>::template tensor<Complex<>>({nf, no, nv}, "cGammaFhp"));
+
+    size_t els = nf * no;
+    std::vector<size_t> idx(2*els), c_idx(els);
+    std::vector<F> data(els*2);
+    std::vector<Complex<>> c_data(els);
+
+    size_t rounds = (nv + np - 1) / np; // this is a nice ceil()
+    for (size_t r(0); r < rounds; r++) {
+      size_t a = r * np + rank;
+      if (a >= nv) els = 0;
+      std::iota(idx.begin(), idx.end(), a*els*2);
+      GammaFhp->evaluate()->read(els*2, idx.data(), data.data());
+      // Intentional bitwise copy: interpret pairs of doubles as std::complex<double>
+      // Warning -Wclass-memaccess is safe to ignore here.
+      std::memcpy(c_data.data(), data.data(), c_data.size() * sizeof(Complex<>));
+      std::iota(c_idx.begin(), c_idx.end(), a * els);
+      cGammaFhp->write(els, c_idx.data(), c_data.data());
+    }
+    EXECUTE((*GammaGhp)["Gia"] <<= (*cGammaFhp)["Fia"] * (*singularVectors)["GF"]);
+
+    // i think we need another conj to undo to conj, performed later
+    // however, we are only taking the real value of the strucutre factor.....
+    //EXECUTE((*GammaGph)["Gai"] <<= map<Complex<>>(conj<Complex<>>, (*GammaGhp)["Gia"]));
+    EXECUTE((*GammaGph)["Gai"] <<= (*GammaGhp)["Gia"]);
+
+// The following shows an optimized version which does not need read/write
+/*
+#if !defined(CTF_SWITCH_REDISTRIBUTION)
+#error "CTF_SWITCH_REDISTRIBUTION must be defined to compile this code"
+#endif
+
+    // store the partition of the orginal vertex
+    auto partFph = GammaFph->evaluate()->getPartition();
+    auto partFhp = GammaFhp->evaluate()->getPartition();
+
+    // We just look for a distribution where we distribute the vertex NOT
+    // with respect to the auxiliary field variable. --> all aux field entries
+    // are consecutive on each rank
+    std::vector<int> part(4, 0);
+    auto np = Cc4s::getProcessesCount();
+    int i, j=1;
+    for (i = 1; i < np; i++) {
+      if (np % i == 0) {
+        j = np / i;
+        if ( j < i ) break;
+      }
+    }
+    part[1] = 1; part[2] = i; part[3] = j;
+    LOG() << "Custom Partition: " << part[1] <<  " " << part[2] << " " << part[3] << '\n';
+
+    GammaFph->evaluate()->switchDistribution(part);
+    GammaFhp->evaluate()->switchDistribution(part);
+
+    // now we can work with the ctf data pointer - because the raw data is corretly aligned
+*/
+  }
 
   //We have to calculate the overlap coefficients Cpq(G) from Γpq(G) by dividing
   //by the reciprocal Coulomb kernel
   //Finally the TransitionStructureFactor reads: S(G)=Cai(G) (Cjb(G))^(*) ( Tabij + Tia Tjb )
-  auto CGhp   = ( Tcc<TE>::template tensor<Complex<>>("CGhp"));
-  auto cTCGhp = ( Tcc<TE>::template tensor<Complex<>>("cTCGhp"));
 
-  //units of Coulomb potential [Energy*Volume]
-  auto VofG(arguments->getPtr<Tr>("coulombPotential"));
-  auto invSqrtCoulombPotential(
-    Tcc<TE>::template tensor<Complex<>>("invSqrtCoulombPotential")
-  );
+  auto VofG(arguments->getPtr<Tensor<Real<>, TE>>("coulombPotential"));
+  auto iVofG( Tcc<TE>::template tensor<Complex<>>("inverseCoulombPotential"));
+  auto inverse( [](const Real<> x) { return 1.0 / Complex<>(x); } );
 
-  auto inverseSqrt( [](const Real<> x) { return 1.0 / Complex<>(sqrt(x)); } );
   COMPILE(
-    (*invSqrtCoulombPotential)["G"] <<=
-      map<Complex<>>(inverseSqrt, (*VofG)["G"]),
+    (*iVofG)["G"] <<= map<Complex<>>(inverse, (*VofG)["G"]),
     // PH codensities
-    (*CGhp)["Gia"]    <<= (*GammaGhp)["Gia"] * (*invSqrtCoulombPotential)["G"],
-    (*cTCGhp)["Gia"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGph)["Gai"]),
-    (*cTCGhp)["Gia"]  <<= (*cTCGhp)["Gia"] * (*invSqrtCoulombPotential)["G"]
+    (*GammaGhp)["Gia"]  <<= (*GammaGhp)["Gia"] * (*iVofG)["G"],
+    (*GammaGph)["Gai"]  <<= map<Complex<>>(conj<Complex<>>, (*GammaGph)["Gai"])
   )->execute();
 
-  auto TransitionStructureFactor( Tcc<TE>::template tensor<Real<>>("TransitionStructureFactor"));
   //prepare T amplitudes
 
   auto Tph( amplitudes->get("ph") );
   auto Tpphh( amplitudes->get("pphh") );
-  auto Tabij( Tcc<TE>::template tensor<Complex<>>("Tabij"));
-  auto Tai( Tcc<TE>::template tensor<Complex<>>("Tai"));
-
+  auto Xpphh( Tcc<TE>::template tensor<Complex<>>("Xpphh"));
 
   auto toComplex( [](F x) { return Complex<>(x); } );
   COMPILE(
-//    (*Tpphh)["abij"]  += (*Tph)["ai"] * (*Tph)["bj"],
-    (*Tabij)["abij"] <<= map<Complex<>>(toComplex, (*Tpphh)["abij"]),
-    (*Tai)["ai"] <<= map<Complex<>>(toComplex, (*Tph)["ai"]),
-    (*Tabij)["abij"] += (*Tai)["ai"] * (*Tai)["bj"]
+    (*Xpphh)["abij"] <<= map<Complex<>>(toComplex, (*Tpphh)["abij"]),
+    (*Xpphh)["abij"]  += map<Complex<>>(toComplex, (*Tph)["ai"] * (*Tph)["bj"])
   )->execute();
 
+  auto TransitionStructureFactor( Tcc<TE>::template tensor<Real<>>("TransitionStructureFactor"));
   auto SofG( Tcc<TE>::template tensor<Complex<>>("SofG"));
   COMPILE(
-    (*SofG)["G"] <<= ( 2.0) * (*cTCGhp)["Gia"] * (*CGhp)["Gjb"] * (*Tabij)["abij"],
-    (*SofG)["G"]  += (-1.0) * (*cTCGhp)["Gja"] * (*CGhp)["Gib"] * (*Tabij)["abij"],
+    (*SofG)["G"] <<= ( 2.0) * (*GammaGph)["Gai"] * (*GammaGhp)["Gjb"] * (*Xpphh)["abij"],
+    (*SofG)["G"]  += (-1.0) * (*GammaGph)["Gaj"] * (*GammaGhp)["Gib"] * (*Xpphh)["abij"],
     (*TransitionStructureFactor)["G"] <<= map<Real<>>(real<Complex<>>, (*SofG)["G"])
   )->execute();
 
-  // TODO: determinde unit in tcc
   TransitionStructureFactor->getUnit() = 1.0;
-//  auto result(New<MapNode>(SOURCE_LOCATION));
-
   result->setPtr("transitionStructureFactor", TransitionStructureFactor);
   return true;
 }
 
-template <typename TE>
-void FiniteSizeCorrection::interpolation(
+template <typename F, typename TE>
+bool FiniteSizeCorrection::interpolation(
   const Ptr<MapNode> &arguments,
   Ptr<MapNode> &result
 ) {
   using T = TensorExpression<Real<>, TE>;
+  auto coulombVertex(
+    arguments->getPtr<TensorSet<F,TE>>("slicedCoulombVertex")
+  );
+  if (!coulombVertex) return false;
 
   Real<> sum3D(0.0), inter3D(0.0);
   Natural<> countNO(0), countNOg(0);
@@ -201,9 +291,6 @@ void FiniteSizeCorrection::interpolation(
   A[1] = B[2].cross(B[0])/Omega;
   A[2] = B[0].cross(B[1])/Omega;
 
-  auto coulombVertex(
-    arguments->getPtr<TensorSet<Complex<>,TE>>("slicedCoulombVertex")
-  );
   auto GammaFhh(coulombVertex->get("hh"));
   auto coulombPotential(arguments->getPtr<T>("coulombPotential"));
 // convert all computed emergies to units used for CoulombVertex
@@ -265,14 +352,11 @@ void FiniteSizeCorrection::interpolation(
   }
 
 
-  MpiCommunicator communicator(
-    Cc4s::world->getRank(), Cc4s::world->getProcesses(), Cc4s::world->getComm()
-  );
-  communicator.barrier();
+  Cc4s::world->barrier();
   for (int a(-int(N)); a < int(N); ++a)
   for (int b(-int(N)); b < int(N); ++b)
   for (int c(-int(N)); c < int(N); ++c) {
-    if ((a+b+c) % Cc4s::world->getProcesses() != Cc4s::world->getRank()) continue;
+    if ((a+b+c+3*int(N)) % Cc4s::world->getProcesses() != Cc4s::world->getRank()) continue;
     Vector<Real<>> ga(((B[0]/Real<>(N*2))*Real<>(a)));
     Vector<Real<>> gb(((B[1]/Real<>(N*2))*Real<>(b)));
     Vector<Real<>> gc(((B[2]/Real<>(N*2))*Real<>(c)));
@@ -291,7 +375,7 @@ void FiniteSizeCorrection::interpolation(
     }
   }
   Real<> totalInter3D(0.0);
-  communicator.allReduce(inter3D, totalInter3D);
+  Cc4s::world->allReduce(inter3D, totalInter3D);
 
 //  OUT() << "Uncorrected correlation energy:   " << std::setprecision(10) << sum3D << "\n";
   OUT() << "Finite-size energy correction:    " << std::setprecision(10) << totalInter3D/N/N/N/8.0-sum3D << "\n";
@@ -308,4 +392,5 @@ void FiniteSizeCorrection::interpolation(
   );
   result->get("energy") = energy;
 
+  return true;
 }

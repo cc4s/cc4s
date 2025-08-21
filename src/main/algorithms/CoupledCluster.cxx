@@ -16,6 +16,7 @@
 #include <algorithms/CoupledCluster.hpp>
 #include <algorithms/coupledcluster/CoupledClusterMethod.hpp>
 #include <mixers/Mixer.hpp>
+#include <mixers/DiisMixer.hpp>
 #include <MathFunctions.hpp>
 #include <SharedPointer.hpp>
 #include <Log.hpp>
@@ -66,30 +67,52 @@ Ptr<MapNode> CoupledCluster::run() {
   auto epsp(eigenEnergies->get("p"));
 
   Natural<> i(0);
-  Ptr<TensorSet<F,TE>> amplitudes;
-  if (arguments->isGiven("initialAmplitudes")) {
-    amplitudes = arguments->getPtr<TensorSet<F,TE>>(
-      "initialAmplitudes"
-    );
-    OUT() << "Using given initial amplitudes " << amplitudes << endl;
-  }
+
 
   energy = New<MapNode>(SOURCE_LOCATION);
 
   // create a method handler, by default Ccsd
   auto methodName( arguments->getValue<std::string>("method", "Ccsd") );
-  Ptr<CoupledClusterMethod<F,TE>> method(
-    CoupledClusterMethodFactory<F,TE>::create(methodName, arguments)
+  // hardcoding: map the method to the algorithm
+  // ccsd -> ccsd; ccsdt -> ccsdt; drccd -> drccd
+  auto algoName(methodName);
+  if (!arguments->isGiven("slicedCoulombVertex") && methodName == "Ccsd") algoName = "CcsdReference";
+  if (methodName == "Ldrccd") algoName = "Drccd";
+  if (methodName == "ApxRpa") algoName = "Drccd";
+  if ( methodName == "Dcsd") algoName = "CcsdReference";
+  if ( methodName == "Dcsdt" || methodName == "Ccsdt-1b"
+    || methodName == "Ccsdt-3" || methodName == "3CC" ) algoName = "Ccsdt";
+
+  if ( methodName == "LambdaCcsd") algoName == "LambdaCcsdReference";
+
+  Ptr<CoupledClusterMethod<F,TE>> algo(
+    CoupledClusterMethodFactory<F,TE>::create(algoName, arguments)
   );
+  // We cannot match the provided method with an available algorithm
   ASSERT_LOCATION(
-    method, std::string("Unknown method: '") + methodName + "'",
+    algo, std::string("Unknown method: '") + methodName + "'",
     arguments->get("method")->sourceLocation
   );
-  OUT() << "Using method "
-    << methodName << ". " << method->describeOptions() << endl;
 
-  bool isLinearized(arguments->getValue<bool>("linearized", false));
-  if (isLinearized && methodName == "Drccd") OUT() << "Solving linearized equations\n";
+  OUT() << "Method: " << methodName << "\n";
+  OUT() << "Using algorithm in "
+    << algoName << ".cxx\n"; // << method->describeOptions() << endl;
+
+
+  Ptr<TensorSet<F,TE>> amplitudes;
+  if (arguments->isGiven("initialAmplitudes")) {
+    amplitudes = arguments->getPtr<TensorSet<F,TE>>(
+      "initialAmplitudes"
+    );
+    // Check if the initial Amplitudes have all required orders for
+    // the given method. if not initialize the other orders here
+    // otherwise we have a 'dangling' shared pointer of amplitude
+    // components (can be of size T3 when starting the ccsdt algorithm
+    // from ccsd amplitudes
+    //TODO
+    OUT() << "Using given initial amplitudes " << amplitudes << endl;
+  }
+
 
   // create a mixer, by default use the linear one
   auto mixerArguments(arguments->getMap("mixer"));
@@ -120,40 +143,86 @@ Ptr<MapNode> CoupledCluster::run() {
   OUT() << "Unless reaching energy convergence dE: " << energyConvergence << endl;
   OUT() << "and amplitudes convergence dR: " << amplitudesConvergence << endl;
   F e(0), previousE(0);
+
   Real<> residuumNorm;
+  Real<> triplesResiduumNorm(0.0);
   OUT()
     << "Iter         Energy         dE           dR         time   GF/s/rank"
     << endl;
 
   bool isSecondOrder = true;
   for (; i < maxIterationsCount; ++i) {
+    if (amplitudes) isSecondOrder = false;
     LOG() << "iteration: " << i+1 << endl;
     Time time;
     Natural<128> operations;
     {
       Timer timer(&time);
       OperationsCounter operationsCounter(&operations);
-      auto residuum( method->getResiduum(amplitudes) );
+      auto residuum( algo->getResiduum(amplitudes) );
       residuumToAmplitudes(residuum, amplitudes);
-      if (mixer->noMix) {
+      if (mixer->dontMix) {
         amplitudes = residuum;
         residuumNorm = 0.0;
       } else {
         auto amplitudesChange( New<TensorSet<F,TE>>(*residuum) );
         if (amplitudes) {
           *amplitudesChange -= *amplitudes;
-          isSecondOrder = false;
-        } else {
-          isSecondOrder = true;
         }
-        mixer->append(residuum, amplitudesChange);
-        // get mixer's best guess for amplitudes
-        amplitudes = mixer->get();
+
+        // TODO: this is only valid for DiisMixer, clean up
+        using _Diis = DiisMixer<F,TE>;
+        _Diis *diis;
+        if (mixerType == "DiisMixer") diis = static_cast<_Diis*>(mixer.get());
+
+        bool t3_p = false;
+        for (auto key: residuum->getKeys()) if (key == "ppphhh") t3_p = true;
+        if (mixerType == "DiisMixer" && t3_p && !diis->t3Mixing) {
+
+          Ptr<TensorSet<F, TE>>
+            ccsd_residuum = New<TensorSet<F, TE>>(),
+            ccsd_amplitudesChange = New<TensorSet<F, TE>>(),
+            ccsd_amplitudes = New<TensorSet<F, TE>>();
+          if (!amplitudes) amplitudes = New<TensorSet<F, TE>>();
+          ccsd_residuum->get("ph") = residuum->get("ph");
+          ccsd_residuum->get("pphh") = residuum->get("pphh");
+          ccsd_amplitudesChange->get("ph") = amplitudesChange->get("ph");
+          ccsd_amplitudesChange->get("pphh") = amplitudesChange->get("pphh");
+
+          mixer->append(ccsd_residuum, ccsd_amplitudesChange);
+          ccsd_amplitudes = mixer->get();
+          amplitudes->get("ph") = ccsd_amplitudes->get("ph");
+          amplitudes->get("pphh") = ccsd_amplitudes->get("pphh");
+          amplitudes->get("ppphhh") = residuum->get("ppphhh");
+          // in this case we have to add the amplitudes change of the T3 block
+          if (t3_p) {
+            auto dot( Tcc<TE>::template tensor<F>("dot") );
+            // add to result
+            if (typeid(Complex<64>) == typeid(F)) {
+              COMPILE(
+                (*dot)[""] +=
+                  map<F>(cc4s::conj<F>, (*amplitudesChange->get("ppphhh"))["abcijk"]) *
+                  (*amplitudesChange->get("ppphhh"))["abcijk"]
+              )->execute();
+            } else {
+              COMPILE(
+                (*dot)[""] += (*amplitudesChange->get("ppphhh"))["abcijk"] *
+                (*amplitudesChange->get("ppphhh"))["abcijk"]
+              )->execute();
+            }
+            triplesResiduumNorm = real(dot->read());
+          }
+        } else {
+          mixer->append(residuum, amplitudesChange);
+          amplitudes = mixer->get();
+        }
         residuumNorm = mixer->getResiduumNorm();
+        residuumNorm += triplesResiduumNorm;
       }
       e = getEnergy(amplitudes);
     }
 
+    std::streamsize ss(std::cout.precision());
     OUT()
       << setw(4) << i+1 << " "
       << scientific
@@ -166,6 +235,7 @@ Ptr<MapNode> CoupledCluster::run() {
       << operations / 1e9 / time.getFractionalSeconds()
         / Cc4s::world->getProcesses()
       << endl;
+    std::cout << std::setprecision(ss) << defaultfloat;
     if (isSecondOrder) {
       energy->setValue("secondOrder", real(e));
     }
@@ -225,31 +295,45 @@ F CoupledCluster::getEnergy(
   {
     auto direct( Tcc<TE>::template tensor<F>("D") );
     auto exchange( Tcc<TE>::template tensor<F>("X") );
+    auto directSingles( Tcc<TE>::template tensor<F>("D") );
+    auto exchangeSingles( Tcc<TE>::template tensor<F>("X") );
+
     COMPILE(
       (*direct)[""] <<=
         0.5*degeneracy*degeneracy * (*Tabij)["abij"] * (*Vijab)["ijab"],
-      (*direct)[""] +=
+      (*directSingles)[""] <<=
         0.5*degeneracy*degeneracy * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijab"],
       (*exchange)[""] <<=
         -0.5*degeneracy * (*Tabij)["abij"] * (*Vijab)["ijba"],
-      (*exchange)[""]
-        += -0.5*degeneracy * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"]
+      (*exchangeSingles)[""]
+        <<= -0.5*degeneracy * (*Tai)["ai"] * (*Tai)["bj"] * (*Vijab)["ijba"]
     )->execute();
     F D(direct->read());
     F X(exchange->read());
-    e = D+X;
+    F Ds(directSingles->read());
+    F Xs(exchangeSingles->read());
+    e = D+X+Ds+Xs;
+
+
+
     if (isFinalReport){
       OUT() << std::endl;
-      OUT() << methodName << " correlation energy:          "
-        << std::setprecision(10) << real(e) << std::endl;
-      if (energy->get("secondOrder")) {
-        OUT() << "2nd-order correlation energy:     " << std::setprecision(10)
+      if (methodName == "LambdaCcsd") {
+        OUT() << methodName << " pseudo energy (w/o singles): "
+              << std::setprecision(10) << real(D+X) << std::endl;
+      } else {
+        OUT() << methodName << " correlation energy:          "
+          << std::setprecision(10) << real(e) << std::endl;
+        if (energy->get("secondOrder")) {
+          OUT() << "2nd-order correlation energy:     " << std::setprecision(10)
           << energy->getValue<Real<>>("secondOrder") << std::endl;
+        }
       }
     }
     energy->setValue("correlation", real(e));
-    energy->setValue("direct", real(D));
-    energy->setValue("exchange", real(X));
+    energy->setValue("direct", real(D+Ds));
+    energy->setValue("singles", real(Ds+Xs));
+    energy->setValue("exchange", real(X+Xs));
     energy->setValue("unit", Vijab->inspect()->getUnit());
   }
   std::cout << std::setprecision(ss);
@@ -275,12 +359,13 @@ void CoupledCluster::residuumToAmplitudes(
     auto R( residuum->get(key) );
     auto indices( residuum->generateIndices(key) );
     auto D( calculateEnergyDifferences<F,TE>(R->inspect()->getLens(),indices) );
+    // divide by -Delta to get new estimate for T
     D->sum(
       F(1.0), indices, indices,
       [levelShift](F delta) { return F(-1) / (delta + levelShift); }
     );
     COMPILE(
-     (*R)[indices] <<= (*R)[indices] * (*D)[indices]
+      (*R)[indices] <<= (*R)[indices] * (*D)[indices]
     )->execute();
   }
 }

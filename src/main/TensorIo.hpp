@@ -38,7 +38,7 @@ namespace cc4s {
      * a tensor pointer.
      **/
     static Ptr<Node> write(
-      const Ptr<Node> &node, const std::string &nodePath, const bool useBinary
+      const Ptr<Node> &node, const std::string &nodePath, const FlagsIO flagsIO
     );
 
     static Ptr<Node> read(
@@ -57,7 +57,7 @@ namespace cc4s {
     static Ptr<MapNode> writeTensor(
       const Ptr<Node> &node,
       const std::string &nodePath,
-      const bool useBinary
+      const FlagsIO flagsIO
     );
 
     template <typename F, typename TE>

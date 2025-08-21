@@ -1,0 +1,82 @@
+{
+  "name": "h2o molecule nwchem cc-pvdz",
+  "resources": [
+    {
+      "out": "EigenEnergies.yaml",
+      "uri": "{cc-pvdz-h2o}/EigenEnergies.yaml"
+    },
+    {
+      "out": "EigenEnergies.elements",
+      "uri": "{cc-pvdz-h2o}/EigenEnergies.elements"
+    },
+    {
+      "out": "CoulombIntegrals.yaml",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.yaml"
+    },
+    {
+      "out": "CoulombIntegrals.components.hhhh.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.hhhh.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.hhhp.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.hhhp.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.hhph.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.hhph.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.hhpp.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.hhpp.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.hphh.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.hphh.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.hphp.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.hphp.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.hpph.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.hpph.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.hppp.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.hppp.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.phhh.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.phhh.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.phhp.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.phhp.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.phph.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.phph.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.phpp.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.phpp.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.pphh.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.pphh.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.pphp.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.pphp.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.ppph.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.ppph.elements"
+    },
+    {
+      "out": "CoulombIntegrals.components.pppp.elements",
+      "uri": "{cc-pvdz-h2o}/CoulombIntegrals.components.pppp.elements"
+    }
+  ],
+  "tags": "essential molecule nwchem gto ccsd lambda-ccsd (t-2) (t-3) (t-4) (3cc)_nonit"
+}

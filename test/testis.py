@@ -237,6 +237,9 @@ def link_inputfiles_to_outputpath(test):
         # as a test
         if op.basename(f) == INFO_FILE_NAME:
             continue
+        # do not link the directory otherwise we have a recursion
+        if op.basename(test.outpath) == op.basename(f):
+          continue
         out = op.join(test.outpath, op.basename(f))
         inf = op.join(test.path, op.basename(f))
         if not op.exists(out):
@@ -265,8 +268,8 @@ def compare_energies(correct_file, test_file, accuracy=1e-7):
     import yaml
     with open(correct_file) as fcorrect:
         with open(test_file) as ftest:
-            correct_yaml = yaml.load(fcorrect)
-            test_yaml = yaml.load(ftest)
+            correct_yaml = yaml.load(fcorrect, Loader=yaml.Loader)
+            test_yaml = yaml.load(ftest, Loader=yaml.Loader)
             correct_steps = correct_yaml["steps"]
             test_steps = test_yaml["steps"]
             for step_idx in correct_steps:
@@ -279,6 +282,8 @@ def compare_energies(correct_file, test_file, accuracy=1e-7):
                 out_cstep = cstep["out"]
                 out_tstep = tstep["out"]
                 for energy_name in out_cstep.get("energy", []):
+                    if energy_name == "unit":
+                        continue
                     cenergy = float(out_cstep["energy"][energy_name])
                     tenergy = float(out_tstep["energy"][energy_name])
                     diff = abs(cenergy - tenergy)

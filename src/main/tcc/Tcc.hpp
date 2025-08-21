@@ -24,6 +24,8 @@
 #include <tcc/Slice.hpp>
 #include <tcc/TensorRecipe.hpp>
 #include <tcc/Tensor.hpp>
+#include <tcc/Tensor_flags.hpp>
+
 #include <SharedPointer.hpp>
 
 // TODO: binary function application

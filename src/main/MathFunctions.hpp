@@ -135,6 +135,29 @@ namespace cc4s {
     return fromComplex128(cpowq(toComplex128(x),toComplex128(e)));
   }
 
+  // from Complex to template type
+  template <typename F>
+  inline F fromComplex(const Complex<> x); // { return F(0); }
+
+  template<>
+  inline Real<> fromComplex(const Complex<> x) { return std::real(x);}
+
+  template<>
+  inline Complex<> fromComplex(const Complex<> x) { return x; }
+
+  // from template type to Complex
+  template <typename F>
+  inline Complex<> toComplex(const F x); // { return F(0); }
+
+  template<>
+  inline Complex<> toComplex(const Real<> x) { return Complex<>(x);}
+
+  template<>
+  inline Complex<> toComplex(const Complex<> x) { return x; }
+
+
+
+
 #define COMPLEX_AND_REAL_FUNCTION_DEFINITION(NAME) \
   template <typename F> \
   inline F NAME(const F x) { \

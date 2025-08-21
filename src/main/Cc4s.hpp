@@ -44,7 +44,9 @@ namespace cc4s {
     void fetchSymbols(const Ptr<MapNode> &arguments);
     void storeSymbols(const Ptr<MapNode> &result,const Ptr<MapNode> &variables);
     void printBanner();
+    void printEndBanner();
     Ptr<MapNode> getHostList();
+    void getClusterInfo();
 
     Ptr<MapNode> executionEnvironment, storage;
   };

@@ -1,0 +1,22 @@
+{
+  "name": "n2 molecule vasp",
+  "resources": [
+    {
+      "out": "EigenEnergies.yaml",
+      "uri": "{vasp-n2}/EigenEnergies.yaml"
+    },
+    {
+      "out": "EigenEnergies.elements",
+      "uri": "{vasp-n2}/EigenEnergies.elements"
+    },
+    {
+      "out": "CoulombVertex.yaml",
+      "uri": "{vasp-n2}/CoulombVertex.yaml"
+    },
+    {
+      "out": "CoulombVertex.elements",
+      "uri": "{vasp-n2}/CoulombVertex.elements"
+    }
+  ],
+  "tags": "essential molecule vasp ccsd ccsd(t) cT"
+}

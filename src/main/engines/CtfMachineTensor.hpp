@@ -132,7 +132,9 @@ namespace cc4s {
       );
     }
 
-    // this[cIndices] = alpha * g(A[aIndices],B[bIndices]) + beta*this[cIndices]
+    // we dont need this anyways
+    // instead this will be the low memory variant of provided
+    // this[cIndices] = alpha * A[aIndices],B[bIndices] + beta*this[cIndices]
     void contract(
       F alpha,
       const Ptr<CtfMachineTensor<F>> &A,
@@ -141,16 +143,19 @@ namespace cc4s {
       const std::string &bIndices,
       F beta,
       const std::string &cIndices,
-      const std::function<F(const F, const F)> &g
+      const double time_memory_weight
+//      const std::function<F(const F, const F)> &g
     ) {
+#ifdef CTF_LOWMEM_CONTRACTION
       tensor.contract(
         alpha,
         A->tensor, aIndices.c_str(),
         B->tensor, bIndices.c_str(),
         beta,
         cIndices.c_str(),
-        CTF::Bivar_Function<F>(g)
+        time_memory_weight
       );
+#endif
     }
 
     void slice(

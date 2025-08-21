@@ -32,6 +32,8 @@ DiisMixer<F,TE>::DiisMixer(
 {
   N = arguments->getValue<size_t>("maxResidua", 4);
   LOG() << "maxResidua=" << N << std::endl;
+  t3Mixing = arguments->getValue<int>("t3Mixing", 0) == 1;
+  LOG() << "Include T3 amplitudes to Diis Mixer: " << t3Mixing << std::endl;
 
   amplitudes.resize(N);
   residua.resize(N);
@@ -93,15 +95,12 @@ void DiisMixer<F,TE>::append(
   *next *= F(0);
   nextResiduum = New<TensorSet<F,TE>>(*R);
   *nextResiduum *= F(0);
-//  OUT() << "\tDiis: ";
   for (size_t j(0); j < count; ++j) {
     size_t i( (nextIndex+N-j) % N );
     LOG() << "w^(-" << (j+1) << ")=" << column[i+1] << std::endl;
-//    OUT() << "w^(-" << (j+1) << ")=" << column[i+1] << ", ";
     *next += column[i+1] * *amplitudes[i];
     *nextResiduum += column[i+1] * *residua[i];
   }
-//  OUT() << std::endl;
   nextIndex = (nextIndex+1) % N;
   residuumNorm = sqrt(real(nextResiduum->dot(*nextResiduum)));
 }

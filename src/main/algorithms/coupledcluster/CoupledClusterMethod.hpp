@@ -44,6 +44,14 @@ namespace cc4s {
     }
 
     /**
+     * \brief Returns a vector with all orders of the cluster operator for
+     * the given approximation. I.e. Ccsd: {1,2}, Drccd: {2}, Ccsdt: {1,2,3} etc
+     **/
+    virtual std::vector<std::string> clusterOrder() {
+      return {};
+    }
+
+    /**
      * \brief Computes and returns the residuum of the given amplitudes.
      **/
     virtual Ptr<TensorSet<F,TE>> getResiduum(

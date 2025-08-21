@@ -33,8 +33,44 @@
     "uri": "https://github.com/cc4s/ppl-supporting-information/archive/refs/tags/v1.2.tar.gz",
     "type": "tar"
   },
+
   "nwchem-hf": {
     "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/3dd5d876b8e2d914f06de6b072ec28f30f463f53/hf",
     "type": "raw"
+  },
+
+  "ueg-rs1-no7-nv26-real": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/5716b5b83b0b56790897a7bf70a2c1c3305e6cf9/ueg/rs1.0_7occ_26virt/real",
+    "type": "raw"
+  },
+
+  "ueg-rs1-no7-nv26-complex": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/5716b5b83b0b56790897a7bf70a2c1c3305e6cf9/ueg/rs1.0_7occ_26virt/complex",
+    "type": "raw"
+  },
+
+  "vasp-n2": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/cb07c7f362cf6c084744fc6f498127cf6c258d34/n2",
+    "type": "raw"
+  },
+
+  "mrcc-h2o2": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/e3b3be638f361e0ed38a02a5629dcbb03f83548a/h2o2",
+    "type": "raw"
+  },
+
+  "heat-n2": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/8841a89a6a4709f61def756333c88e563a2255a0/n2/cc-pvdz_heat",
+    "type": "raw"
+  },
+
+  "chan-n2": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/8841a89a6a4709f61def756333c88e563a2255a0/n2/cc-pvdz_chan",
+    "type": "raw"
+  },
+  "cc-pvdz-h2o": {
+    "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/cc9a8135fb2fa93d646055978f6578e7542aa0ce/h2o/cc-pvdz",
+    "type": "raw"
   }
+
 }

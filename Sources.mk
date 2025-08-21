@@ -1,5 +1,6 @@
 SRC_FILES += \
 main/Cc4s.cxx \
+main/GC.cxx \
 main/Options.cxx \
 main/Writer.cxx \
 main/Reader.cxx \
@@ -16,8 +17,6 @@ main/mixers/DiisMixer.cxx \
 main/algorithms/Algorithm.cxx \
 main/algorithms/Write.cxx \
 main/algorithms/Read.cxx \
-main/algorithms/TensorReader.cxx \
-main/algorithms/TensorWriter.cxx \
 main/algorithms/DefineHolesAndParticles.cxx \
 main/algorithms/SliceOperator.cxx \
 main/algorithms/DimensionProperty.cxx \
@@ -29,17 +28,25 @@ main/algorithms/coupledcluster/CoupledClusterMethod.cxx \
 main/algorithms/coupledcluster/Ccsd.cxx \
 main/algorithms/coupledcluster/CcsdReference.cxx \
 main/algorithms/coupledcluster/Drccd.cxx \
-main/algorithms/CompleteTriples.cxx \
+main/algorithms/PerturbativeCT.cxx \
 main/algorithms/PerturbativeTriplesReference.cxx \
 main/algorithms/FiniteSizeCorrection.cxx \
 main/algorithms/BasisSetCorrection.cxx \
 main/algorithms/UegVertexGenerator.cxx \
 main/algorithms/PerturbativeTriples.cxx \
-#main/algorithms/coupledcluster/Ccsdt.cxx \
+main/algorithms/TensorSetToTensor.cxx \
+main/algorithms/coupledcluster/Ccsdt.cxx \
+main/algorithms/CcsdtNonit.cxx \
+main/algorithms/CcsdChannels.cxx \
+main/algorithms/MrccReader.cxx \
+main/algorithms/coupledcluster/LambdaCcsdReference.cxx \
 
 ifeq ($(ATRIP), no)
-SRC_FILES += main/algorithms/perturbative-triples/src/atrip/Atrip.cxx
-CXXFLAGS  += -Isrc/main/algorithms/perturbative-triples/include/
+
+include ./src/main/algorithms/perturbative-triples/Makefile
+
+SRC_FILES += $(patsubst %,main/algorithms/perturbative-triples/%,$(ATRIP_FILES))
+CXXFLAGS  += -Isrc/main/algorithms/perturbative-triples/src/
 endif
 
 TEST_SRC_FILES = \

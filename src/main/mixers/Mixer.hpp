@@ -69,7 +69,7 @@ namespace cc4s {
     virtual Real<> getResiduumNorm() = 0;
 
     Ptr<MapNode> arguments;
-    bool noMix = false;
+    bool dontMix = false;
   };
 
   template <typename F, typename TE>

@@ -1,0 +1,117 @@
+- name: UegVertexGenerator
+  in: 
+    No: 19
+    Nv: 232
+    complexAmplitudes: 1
+    rs: 1
+  out: 
+    eigenEnergies: EigenEnergies
+    coulombVertex: CoulombVertex
+
+- name: DefineHolesAndParticles
+  in:
+    eigenEnergies: EigenEnergies
+  out:
+    slicedEigenEnergies: EigenEnergies
+
+- name: SliceOperator
+  in:
+    slicedEigenEnergies: EigenEnergies
+    operator: CoulombVertex
+  out:
+    slicedOperator: CoulombVertex
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: CoulombVertex
+  out:
+    coulombIntegrals: CoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method: Ccsd
+    integralsSliceSize: 50
+    slicedEigenEnergies: EigenEnergies
+    coulombIntegrals: CoulombIntegrals
+    slicedCoulombVertex: CoulombVertex
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: CcsdEnergy
+    amplitudes: Amplitudes
+
+- name: PerturbativeCT
+  in:
+    coulombIntegrals: CoulombIntegrals
+    coulombVertex: CoulombVertex
+    amplitudes: Amplitudes
+  out:
+    cTIntermediate: CtIntermediate
+
+- name: Write
+  in:
+    fileName: "CtIntermediate.yaml"
+    source: CtIntermediate
+    binary: 1
+  out: {}
+
+- name: Write
+  in:
+    fileName: "Amplitudes.yaml"
+    source: Amplitudes
+    binary: 1
+  out: {}
+
+- name: Write
+  in:
+    fileName: "EigenEnergiesSliced.yaml"
+    source: EigenEnergies
+    binary: 1
+  out: {}
+
+- name: TensorSetToTensor
+  in:
+    tensorSet: CoulombIntegrals
+    component: "pphh"
+  out:
+    tensor: CoulombIntegralsPPHH
+
+- name: Write
+  in:
+    fileName: "CoulombIntegralsPPHH.yaml"
+    source: CoulombIntegralsPPHH
+    binary: 1
+  out: {}
+
+- name: TensorSetToTensor
+  in:
+    tensorSet: CoulombIntegrals
+    component: "ppph"
+  out:
+    tensor: CoulombIntegralsPPPH
+
+- name: Write
+  in:
+    fileName: "CoulombIntegralsPPPH.yaml"
+    source: CoulombIntegralsPPPH
+    binary: 1
+  out: {}
+
+- name: TensorSetToTensor
+  in:
+    tensorSet: CoulombIntegrals
+    component: "hhhp"
+  out:
+    tensor: CoulombIntegralsHHHP
+
+- name: Write
+  in:
+    fileName: "CoulombIntegralsHHHP.yaml"
+    source: CoulombIntegralsHHHP
+    binary: 1
+  out: {}
+

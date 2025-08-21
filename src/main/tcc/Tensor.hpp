@@ -367,10 +367,25 @@ namespace cc4s {
       machineTensor = mt;
     }
 
+    /**
+     * \brief Create a tensor from a given machine tensor.
+     * Intended to be used by an external user manipulating the
+     * underlying machine tensors.
+     **/
+    Tensor(
+      const typename MT::T &unadaptedTensor_
+    ): assumedShape(true), version(0) {
+      auto mt(MT::create(unadaptedTensor_));
+      lens = mt->getLens();
+      name = mt->getName();
+      dimensions.resize(lens.size());
+      machineTensor = mt;
+    }
+
     ~Tensor() {
       if (allocated())
-        LOG() << "Free tensor " << name << " with " <<
-          getElementsCount() << " elements" << std::endl;
+        LOG() << "Free tensor " << name << " with " << getElementsCount()
+          << " elements; " << sizeof(F) << " bytes each" << std::endl;
     }
 
 
@@ -412,6 +427,11 @@ namespace cc4s {
       return name;
     }
 
+    void deleteMachineTensor() {
+      machineTensor = nullptr;
+    }
+
+
     Ptr<MT> getMachineTensor() {
       if (!machineTensor) {
         ASSERT_LOCATION(assumedShape,
@@ -421,12 +441,14 @@ namespace cc4s {
         );
         // wait until allocation is done on all processes
         Cc4s::world->barrier();
-        LOG() << "Allocate tensor " << name << " with " <<
-          getElementsCount() << " elements" << std::endl;
+        LOG() <<
+          "Allocate tensor " << name << " with " <<
+          getElementsCount() << " elements; " << sizeof(F) << " bytes each" << std::endl;
         // allocate the implementation specific machine tensor upon request
         machineTensor = MT::create(lens, name);
         // wait until allocation is done on all processes
         Cc4s::world->barrier();
+        LOG() << "Allocation Done." << std::endl;
       }
       return machineTensor;
     }
@@ -502,11 +524,12 @@ namespace cc4s {
       getMachineTensor()->writeFromFile(file, offset);
     }
 
-    void sum(
+    void sum (
       F a, const std::string &aIdx, const std::string &bIdx,
-      const std::function<F(const F)> &f) {
+      const std::function<F(const F)> &f) override {
       getMachineTensor()->sum(a, getMachineTensor(), aIdx, F(0.0), bIdx, f);
     }
+
 
     /**
      * \brief Return index and value of extreme N elements in this tensor

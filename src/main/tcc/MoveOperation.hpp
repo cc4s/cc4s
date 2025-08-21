@@ -68,6 +68,7 @@ namespace cc4s {
           this->beta,
           this->resultIndices
         );
+        LOG() << "Sum Done." << std::endl;
         this->updated();
         this->accountFlops();
       } else {

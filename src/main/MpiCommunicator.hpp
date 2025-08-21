@@ -33,13 +33,13 @@ namespace cc4s {
   public:
     MpiCommunicator(
       MPI_Comm comm_ = MPI_COMM_WORLD
-    ): rank(0), processes(0), comm(comm_) {
-      MPI_Comm_rank(comm, reinterpret_cast<int *>(&rank));
-      MPI_Comm_size(comm, reinterpret_cast<int *>(&processes));
+    ): rank(0), processes(0), nodes(0), ranksPerNode(0), comm(comm_) {
+      MPI_Comm_rank(comm, &rank);
+      MPI_Comm_size(comm, &processes);
     }
     MpiCommunicator(
-      Natural<> rank_, Natural<> processes_, MPI_Comm comm_ = MPI_COMM_WORLD
-    ): rank(rank_), processes(processes_), comm(comm_) {
+      int rank_, int processes_, MPI_Comm comm_ = MPI_COMM_WORLD
+    ): rank(rank_), processes(processes_), nodes(0), ranksPerNode(0), comm(comm_) {
     }
     ~MpiCommunicator() {
     }
@@ -49,7 +49,7 @@ namespace cc4s {
     }
 
     template <typename F>
-    void reduce(const F &src, F &dst, Natural<> rootRank = 0) {
+    void reduce(const F &src, F &dst, int rootRank = 0) {
       MPI_Reduce(
         &src, &dst,
         MpiTypeTraits<F>::elementCount(), MpiTypeTraits<F>::elementType(),
@@ -72,7 +72,7 @@ namespace cc4s {
      **/
     template <typename F>
     void gather(
-      const std::vector<F> &src, std::vector<F> &dst, Natural<> rootRank = 0
+      const std::vector<F> &src, std::vector<F> &dst, int rootRank = 0
     ) {
       if (rank == rootRank) {
         dst.resize(src.size() * processes);
@@ -108,7 +108,7 @@ namespace cc4s {
 
     template <typename F>
     void broadcast(
-      std::vector<F> &dst, Natural<> rootRank = 0
+      std::vector<F> &dst, int rootRank = 0
     ) {
       MPI_Bcast(
         dst.data(), dst.size() * MpiTypeTraits<F>::elementCount(),
@@ -118,18 +118,30 @@ namespace cc4s {
       );
     }
 
-    Natural<> getRank() const {
+    int getRank() const {
       return rank;
     }
-    Natural<> getProcesses() const {
+    int getProcesses() const {
       return processes;
+    }
+    int getNodes() const {
+      return nodes;
+    }
+    int getRanksPerNode() const {
+      return ranksPerNode;
     }
     MPI_Comm getComm() const {
       return comm;
     }
+    void setNodes(int n) {
+      nodes = n;
+    }
+    void setRanksPerNode(int n) {
+      ranksPerNode = n;
+    }
 
   protected:
-    Natural<> rank, processes;
+    int rank, processes, nodes, ranksPerNode;
     MPI_Comm comm;
   };
 

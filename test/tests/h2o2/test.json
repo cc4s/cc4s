@@ -1,0 +1,26 @@
+{
+  "name": "h2o2 molecule mrcc",
+  "resources": [
+    {
+      "out": "FOCK",
+      "uri": "{mrcc-h2o2}/FOCK"
+    },
+    {
+      "out": "MOCOEF",
+      "uri": "{mrcc-h2o2}/MOCOEF"
+    },
+    {
+      "out": "TEDAT",
+      "uri": "{mrcc-h2o2}/TEDAT"
+    },
+    {
+      "out": "TEINT",
+      "uri": "{mrcc-h2o2}/TEINT"
+    },
+    {
+      "out": "mrcc.stdout",
+      "uri": "{mrcc-h2o2}/mrcc.stdout"
+    }
+  ],
+  "tags": "essential molecule mrcc ccsd ccsd(t) fno"
+}
