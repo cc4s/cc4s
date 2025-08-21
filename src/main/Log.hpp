@@ -37,8 +37,10 @@ namespace cc4s {
     static void setRank(const int rank);
     static void closeLogFile();
     static int getRank();
-    static std::ostream &getOutStream() {
-      if (rank == 0 && !Cc4s::dryRun) return std::cout;
+
+    static std::ostream &getOutStream(bool force = false) {
+      if (force && rank == 0) return std::cout;
+      else if (rank == 0 && !Cc4s::dryRun) return std::cout;
       else return nullStream;
     }
     static std::ostream &getErrorStream() {
@@ -97,6 +99,8 @@ namespace cc4s {
  */
 #define OUT() \
   (Log::getOutStream() << Log::getOutHeaderFunction()(SOURCE_LOCATION))
+#define OUT_FORCE() \
+  (Log::getOutStream(true) << Log::getOutHeaderFunction()(SOURCE_LOCATION))
 #define OUT_LOCATION(LOCATION) \
   (Log::getOutStream() << Log::getOutHeaderFunction()(LOCATION))
 #define ERROR() \

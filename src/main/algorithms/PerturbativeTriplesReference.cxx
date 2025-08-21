@@ -68,6 +68,12 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   const bool cT
      = arguments->getValue<int>("cT", 0) == 1;
 
+  if (cT) {
+    context["method"] = "(T)-ref + (cT)-ref";
+  } else {
+    context["method"] = "(T)-ref";
+  }
+
   const bool lambda = arguments->getValue<int>("lambda", 0) == 1;
   const bool singles = arguments->getValue<int>("singles", 1) == 1;
 

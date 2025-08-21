@@ -79,6 +79,7 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
 template <typename F, typename TE>
 Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
 
+  context["method"] = "CcsdtNonit";
   auto Rph( Tcc<TE>::template tensor<F>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
   auto Rppphhh ( Tcc<TE>::template tensor<F>("Rppphhh") );

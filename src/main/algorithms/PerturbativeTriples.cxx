@@ -586,6 +586,12 @@ Ptr<MapNode> atripDryRun(const Ptr<MapNode> &arguments) {
 
 Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
 
+  if (arguments->isGiven(kwd::CT_INTERMEDIATE)) {
+    context["method"] = "(T) + (cT)";
+  } else {
+    context["method"] = "(T)";
+  }
+
   Ptr<MapNode> result;
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;

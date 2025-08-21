@@ -56,6 +56,7 @@ Ptr<MapNode> SecondOrderPerturbationTheory::run(
 ) {
   auto coulombIntegrals(arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals"));
   if (!coulombIntegrals) return nullptr;
+  context["method"] = "MP2";
   auto Vpphh(coulombIntegrals->get("pphh"));
 
   auto stateDimension(

@@ -134,9 +134,9 @@ Ptr<MapNode> MrccReader::run(
 
   size_t rank(Cc4s::world->getRank());
   auto np(Cc4s::getProcessesCount());
-  OUT() << "nocc: " << nocc << " nvir: " << nvir
+  OUT() << "Mrcc full vertex: nocc: " << nocc << " nvir: " << nvir
         << " nbf: " << nbf << " ndf: " << ndfbasis << std::endl;
-  LOG() << "nocc: " << nocc << " nvir: " << nvir
+  LOG() << "Mrcc full vertex: nocc: " << nocc << " nvir: " << nvir
         << " nbf: " << nbf << " ndf: " << ndfbasis << std::endl;
 
   if (!rank) {
@@ -386,11 +386,9 @@ Ptr<MapNode> MrccReader::run(
   result->setPtr("eigenEnergies", energies);
 
 
-  OUT() << "Finished constructing FNO from Mrcc-AO-Vertex\n";
-
-  OUT() << "number of holes     No: " << nocc;
-  OUT() << "\nnumber of particles Nv: " << nFno;
-  OUT() << "\nnumber of states    Np: " << nocc+nFno << std::endl;
+  context["occ"] = nocc;
+  context["vir"] = nFno;
+  context["NF"]  = ndfbasis;
 
 
 

@@ -85,6 +85,12 @@ Ptr<MapNode> CoupledCluster::run() {
 
   if ( methodName == "LambdaCcsd") algoName == "LambdaCcsdReference";
 
+  if (!arguments->isGiven("slicedCoulombVertex") && methodName == "Ccsd") {
+    context["method"] = "Ccsd-ref";
+  } else {
+    context["method"] = methodName;
+  }
+
   Ptr<CoupledClusterMethod<F,TE>> algo(
     CoupledClusterMethodFactory<F,TE>::create(algoName, arguments)
   );

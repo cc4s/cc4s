@@ -29,6 +29,7 @@ Ptr<MapNode> FiniteSizeCorrection::run(
 ) {
   auto result(New<MapNode>(SOURCE_LOCATION));
 
+  context["method"] = "Finite-size correction";
 
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;

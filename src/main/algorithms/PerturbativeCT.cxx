@@ -37,6 +37,8 @@ Ptr<MapNode> PerturbativeCT::run(
   auto amplitudes( arguments->getPtr<TensorSet<F,TE>>("amplitudes") );
   if (!amplitudes) return nullptr;
 
+  context["method"] = "(cT)-intermediate";
+
   auto Tph ( amplitudes->get("ph") );
   auto Tpphh( amplitudes->get("pphh") );
 

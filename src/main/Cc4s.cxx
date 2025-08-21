@@ -178,33 +178,64 @@ void Cc4s::runSteps(const bool dry) {
 
   // Print contexts
   if (dry) {
-    // Here be sure that the dryRun = false so that OUT() works
-    // as expected
-    const bool old_dry_run = Cc4s::dryRun;
-    Cc4s::dryRun = false;
-    std::map<std::string, std::string> seen_contexts;
-    for (Natural<> i(0); i < steps->getSize(); ++i) {
-      auto step(steps->getMap(i));
-      auto const algorithmName = step->getSymbol("name");
-      OUT() << "- " << algorithmName << std::endl;
-      const auto &context = contexts[i];
-      for (const auto &iterator : context) {
-        const auto &key = iterator.first.as<string>(),
-                   &value = iterator.second.as<string>();
-        if (seen_contexts.find(key) != seen_contexts.end()) {
-          // if we have already seen this kind of variable
-          // do not print again
-          if (seen_contexts[key] == value)
-            continue;
+
+    int last_occ = 0, last_vir = 0, last_NF = 0;
+    std::vector<std::string> methods;
+    std::vector<std::string> out;
+
+    auto appendFused = [&]() {
+      if (!methods.empty()) {
+        std::string line = "occ: " + std::to_string(last_occ)
+                         + ", vir: " + std::to_string(last_vir)
+                         + ", NF: "  + std::to_string(last_NF)
+                         + ": ";
+
+        std::vector<std::string> fused;
+        for (auto &m : methods) {
+          if (m == "(T) + (cT)") {
+            if (!fused.empty() && fused.back() == "(cT)-intermediate") {
+              fused.pop_back();  // remove redundant "(cT)-intermediate" if (cT) is evaluated
+            }
+          }
+          fused.push_back(m);
         }
-        seen_contexts[key] = value;
-        OUT() << key << ": " << value << std::endl;
+        // concatenate with " + "
+        for (size_t i = 0; i < fused.size(); ++i) {
+          if (i > 0) line += " + ";
+          line += fused[i];
+        }
+
+        out.push_back(line);
+      }
+    };
+
+    for (const auto &ctx : contexts) {
+      int occ = last_occ, vir = last_vir, NF = last_NF;
+      if (ctx["occ"] && ctx["occ"].IsDefined()) occ = ctx["occ"].as<int>();
+      if (ctx["vir"] && ctx["vir"].IsDefined()) vir = ctx["vir"].as<int>();
+      if (ctx["NF"]  && ctx["NF"].IsDefined())  NF  = ctx["NF"].as<int>();
+
+      // if base values changed, append previous batch
+      if (occ != last_occ || vir != last_vir || NF != last_NF) {
+        appendFused();
+        methods.clear();
+        last_occ = occ;
+        last_vir = vir;
+        last_NF = NF;
+      }
+
+      if (ctx["method"] && ctx["method"].IsDefined()) {
+        methods.push_back(ctx["method"].as<std::string>());
       }
     }
-    Cc4s::dryRun = old_dry_run;
-    // TODO: think about how do we want to report the algorithms that are going
-    // to be performed.
+
+    appendFused(); // append final batch
+
+    for (auto &line: out)
+      OUT_FORCE() << line << std::endl;
+    OUT_FORCE() << "--" << std::endl;
   }
+
 
   auto statistics(New<MapNode>(SOURCE_LOCATION));
   std::stringstream totalRealtime;

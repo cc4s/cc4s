@@ -70,6 +70,8 @@ Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode>& arguments) {
     conjTG[key] = t;
   }
 
+  auto NF(conjTG["pp"]->inspect()->lens[0]);
+  context["NF"] = NF;
   const char ckeys[] = {'p', 'h'};
   for (char LO : ckeys) {
     for (char RO : ckeys) {

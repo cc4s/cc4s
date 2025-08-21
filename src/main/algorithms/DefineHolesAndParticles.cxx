@@ -58,10 +58,8 @@ Ptr<MapNode> DefineHolesAndParticles::run(
   );
 
   auto Nv(Np-No);
-  context["number of holes"] = No;
-  context["number of particles"] = Nv;
-  context["number of states"] = Np;
-  context["fermi energy"] = fermiEnergy;
+  context["occ"] = No;
+  context["vir"] = Nv;
 
   auto epsh(Tcc<TE>::template tensor<Real<>>("epsh"));
   auto epshRecipe(

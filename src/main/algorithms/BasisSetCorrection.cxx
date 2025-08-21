@@ -60,6 +60,7 @@ bool BasisSetCorrection::run(
   if (!amplitudes) return false;
   auto Tph( amplitudes->get("ph") );
   auto Tpphh( amplitudes->get("pphh") );
+  context["method"] = "Basis-set correction";
 
   auto Dabij(arguments->getPtr<T>("deltaIntegralsPPHH"));
   auto nij(arguments->getPtr<T>("deltaIntegralsHH"));
