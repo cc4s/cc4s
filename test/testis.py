@@ -321,21 +321,38 @@ def tail(xs, n):
     return xs[-min(len(xs), n):-1]
 
 
-def filter_tags(tests, tags):
-    assert isinstance(tests, list)
-    assert isinstance(tests[0], TestCase)
-    assert isinstance(tags, str)
-    tags_code = tags
-    tags_code = re.sub(r".and.", r"&", tags_code)
-    tags_code = re.sub(r".or.", r"|", tags_code)
-    tags_code = re.sub(r"(\w+)", r"('\1' in __x_)", tags_code)
-    tags_code = re.sub(r"\&", r"and", tags_code)
-    tags_code = re.sub(r"\|", r"or", tags_code)
-    tags_code = re.sub(r"^", r"lambda __x_: ", tags_code)
-    tags_lambda = eval(tags_code)
-    logging.info("tags λ: %s", tags_code)
+def filter_tags(tests, tags_expr: str):
+    """
+    Filter a list of TestCase-like objects based on a tag expression.
 
+    Args:
+        tests (list): list of objects with a `.tags` attribute (string)
+        tags_expr (str): tag filter expression, e.g. "ueg and ct-atrip or ccsd(t)"
+
+    Returns:
+        list: filtered tests
+    """
+    assert isinstance(tests, list)
+    assert hasattr(tests[0], "tags"), "Each test must have a .tags attribute"
+    assert isinstance(tags_expr, str)
+
+    # Convert .and./.or. to Python operators
+    code = tags_expr
+    code = code.replace(".and.", "and").replace(".or.", "or")
+
+    # Wrap each tag in a check for presence in __x_
+    # This regex matches sequences of non-space, non-operator characters
+    code = re.sub(r"([^\s&|()]+)", r"('\1' in __x_)", code)
+
+    # Build the lambda
+    code = f"lambda __x_: {code}"
+    tags_lambda = eval(code)
+
+    logging.info("tags λ: %s", code)
+
+    # Filter tests
     return [t for t in tests if tags_lambda(t.tags)]
+
 
 
 def _get_args():
