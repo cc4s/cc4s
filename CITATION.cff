@@ -1,0 +1,42 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Cc4s
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Felix
+    family-names: Hummel
+  - given-names: Andreas
+    family-names: Irmler
+  - given-names: Alejandro
+    family-names: Gallo
+  - given-names: Ke
+    family-names: Liao
+  - family-names: Tsatsoulis
+    given-names: Theodoros
+  - given-names: Tobias
+    family-names: Schäfer
+  - given-names: Andreas
+    family-names: Grüneis
+identifiers:
+  - type: url
+    value: 'https://gitlab.cc4s.org/cc4s/cc4s'
+repository-code: 'https://gitlab.cc4s.org/cc4s/cc4s'
+url: 'https://manuals.cc4s.org/user-manual/index.html'
+abstract: >-
+  Cc4s is a high-performance open-source coupled cluster
+  simulation code.
+
+  The main application of cc4s is to study the electronic
+  properties of solid-state systems. Solving the coupled
+  cluster equations for these systems is computationally
+  extremely demanding. Therefore we make use of
+  state-of-the-art high-performance libraries such as CTF,
+  an efficient parallel tensor contraction engine, and
+  leverage computational paradigms such as MPI and OpenMP
+  based parallelization.
+license: Apache-2.0
