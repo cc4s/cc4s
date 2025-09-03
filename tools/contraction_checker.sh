@@ -1,14 +1,30 @@
 #!/bin/bash
 
-#TODO: need two modes. dry and calculation mode
-# we work only on the calculation mode
-
 
 SCANDRY=0
 MODE=summary
 STEP=
 ALGO=
 logfile=cc4s.log
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [options]
+
+Options:
+  --dry             Scan the dry run's log.
+  --algo <name>     Select algorithm to investigate
+  --mode=<mode>     Set mode (default: summary)
+  --step=<step>     Specify step to execute
+  --file=<file>     Log file name (default: cc4s.log)
+  -h, --help        Show this help message and exit
+
+Examples:
+  $(basename "$0") --mode=full --step=2 --file=run.log
+  $(basename "$0") --dry --algo myalgo
+EOF
+}
+
 # Parse command line arguments
 for arg in "$@"; do
   case $arg in
@@ -29,8 +45,13 @@ for arg in "$@"; do
     --file=*)
       logfile="${arg#--file=}"
       ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
     *)
       echo "Unknown option: $arg"
+      usage
       exit 1
       ;;
   esac
