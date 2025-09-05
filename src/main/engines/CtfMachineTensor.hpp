@@ -20,12 +20,14 @@
 
 #include <ctf.hpp>
 #include <string>
+#include <tcc/MemoryTracker.hpp>
 
 // TODO: specify MPI communicator when creating CtfTensorEngine
 namespace cc4s {
   template <typename F,typename TE> class Tensor;
   class CtfTensorEngine;
 
+  class MemoryTracker;
   /**
    * \brief MachineTensor adapter for a CTF::Tensor
    **/
@@ -55,8 +57,9 @@ namespace cc4s {
     }
 
     // copy constructor from CTF tensor
-    CtfMachineTensor(const T &t, const ProtectedToken &): tensor(t) {
-    }
+    //   CtfMachineTensor(const T &t, const ProtectedToken &): tensor(t) {
+    //   }
+    CtfMachineTensor(const T &t, const ProtectedToken &) = delete;
 
     ~CtfMachineTensor() {
     }
@@ -237,6 +240,97 @@ namespace cc4s {
 
     friend class Tensor<F,CtfTensorEngine>;
   };
+
+#if defined(CTF_MEMORY_LOGGER)
+
+  class CtfMemoryTracker : public MemoryTracker {
+  public:
+    CtfMemoryTracker() : is_valid(true) {
+      CTF::Logger::instance().set_sink(
+        [this](const CTF::MemEvent& ev) { if (is_valid) consume(ev); });
+    }
+
+    ~CtfMemoryTracker() override {
+      is_valid = false;
+      // Make CTF stop calling back into us during late deallocs
+      CTF::Logger::instance().set_sink(nullptr);
+    }
+    // Forward size threshold to the CTF logger
+    void set_size_threshold(size_t threshold) {
+      CTF::Logger::instance().set_size_threshold(threshold);
+    }
+
+    // Local reset: resets only the local snapshot counters
+    size_t reset() override {
+      local_start_bytes = current_bytes;
+      local_peak_bytes = current_bytes;
+      local_allocs = 0;
+      local_deallocs = 0;
+      return current_bytes;
+    }
+
+    // Global reset: resets everything
+    void global_reset() {
+      current_bytes = 0;
+      high_watermark = 0;
+      global_allocs = 0;
+      global_deallocs = 0;
+    }
+
+    // Accessors
+    size_t current_bytes_allocated() const override { return current_bytes; }
+    size_t high_watermark_bytes() const override { return high_watermark; }
+    size_t number_of_allocations() const override { return global_allocs; }
+    size_t number_of_deallocations() const override { return global_deallocs; }
+
+    // Local high-watermark inside a measured region
+    size_t local_high_watermark() const {
+      return local_peak_bytes - local_start_bytes;
+    }
+    size_t local_allocations() const { return local_allocs; }
+    size_t local_deallocations() const { return local_deallocs; }
+
+    private:
+    void consume(const CTF::MemEvent& ev) {
+      // This is extremely verbose
+      //LOG() << ev.to_string() << std::endl;
+      if (ev.type == CTF::EventType::AlignAlloc || ev.type == CTF::EventType::Alloc) {
+        current_bytes += ev.size;
+        if (current_bytes > high_watermark)
+          high_watermark = current_bytes;
+        global_allocs++;
+        local_allocs++;
+        if (current_bytes > local_peak_bytes)
+          local_peak_bytes = current_bytes;
+
+      } else { // Dealloc
+         current_bytes -= ev.size;
+         global_deallocs++;
+         local_deallocs++;
+      }
+    }
+
+    // Global counters
+    size_t current_bytes{0};
+    size_t high_watermark{0};
+    size_t global_allocs{0};
+    size_t global_deallocs{0};
+
+    // Local snapshot counters
+    size_t local_start_bytes{0};
+    size_t local_peak_bytes{0};
+    size_t local_allocs{0};
+    size_t local_deallocs{0};
+
+    bool is_valid;
+  };
+
+
+  inline std::unique_ptr<MemoryTracker> createCtfMemoryTracker() {
+    return std::unique_ptr<MemoryTracker>(new CtfMemoryTracker());
+  }
+
+#endif //CTF_MEMORY_LOGGER
 }
 
 #endif

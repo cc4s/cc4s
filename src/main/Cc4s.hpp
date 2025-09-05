@@ -22,6 +22,7 @@
 #include <Options.hpp>
 #include <Node.hpp>
 #include <Yaml.hpp>
+#include <tcc/MemoryTracker.hpp>
 
 int main(int argumentCount, char **arguments);
 
@@ -42,6 +43,7 @@ namespace cc4s {
     static void addFloatingPointOperations(const Natural<128> ops);
     static Natural<> getProcessesCount();
 
+    static std::unique_ptr<MemoryTracker> memoryTracker;
   protected:
     void runSteps(const bool dry = false);
     void runStep(const Natural<> i,

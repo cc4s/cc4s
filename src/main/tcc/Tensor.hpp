@@ -360,6 +360,7 @@ namespace cc4s {
       const typename MT::T &unadaptedTensor_,
       const ProtectedToken &
     ): assumedShape(true), version(0) {
+      assert(false && "This constructor is not intended to be used. If you use it - add Tracker");
       auto mt(MT::create(unadaptedTensor_));
       lens = mt->getLens();
       name = mt->getName();
@@ -375,6 +376,7 @@ namespace cc4s {
     Tensor(
       const typename MT::T &unadaptedTensor_
     ): assumedShape(true), version(0) {
+      assert(false && "This constructor is not intended to be used. If you use it - add Tracker");
       auto mt(MT::create(unadaptedTensor_));
       lens = mt->getLens();
       name = mt->getName();
@@ -444,10 +446,18 @@ namespace cc4s {
         LOG() <<
           "Allocate tensor " << name << " with " <<
           getElementsCount() << " elements; " << sizeof(F) << " bytes each" << std::endl;
+
         // allocate the implementation specific machine tensor upon request
+        auto old_bytes = Cc4s::memoryTracker->reset();
         machineTensor = MT::create(lens, name);
         // wait until allocation is done on all processes
         Cc4s::world->barrier();
+        auto new_bytes = Cc4s::memoryTracker->current_bytes_allocated();
+        if (Cc4s::dryRun == false) {
+          LOG() << "[MemTrack] Allocated: " << new_bytes - old_bytes << std::endl;
+          LOG() << "[MemTrack] peak during create: " << Cc4s::memoryTracker->local_high_watermark()
+                << " bytes per rank" << std::endl;
+        }
         LOG() << "Allocation Done." << std::endl;
       }
       return machineTensor;
@@ -725,6 +735,8 @@ namespace cc4s {
       return getName();
     }
   };
+
+
 }
 
 #endif

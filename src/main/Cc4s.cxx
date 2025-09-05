@@ -33,7 +33,14 @@
 
 using namespace cc4s;
 
+std::unique_ptr<cc4s::MemoryTracker> Cc4s::memoryTracker = nullptr;
+
 void Cc4s::run() {
+
+  Cc4s::memoryTracker = createMemoryTracker();
+  // we use a small threshold. otherwise we track CTF allocations of a few byte
+  Cc4s::memoryTracker->set_size_threshold(1024*10);
+
   printBanner();
   LOG() << "Start dry-Run - employing " << getProcessesCount() << " ranks" << std::endl;
 
