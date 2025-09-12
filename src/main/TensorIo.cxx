@@ -15,6 +15,7 @@
 
 #include <TensorIo.hpp>
 #include <Reader.hpp>
+#include <Writer.hpp>
 
 using namespace cc4s;
 
