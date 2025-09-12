@@ -818,7 +818,6 @@ MrccReader::SystemDimensions MrccReader::extractSystemDimensions(const std::stri
         // If we've filled all values and we're in the target block, we can stop
         if (inTargetBlock &&
             result.conventionalBasis != 0 &&
-            result.scf_fitting != 0 &&
             result.correlation_fitting != 0 &&
             result.electrons != 0 &&
             result.core_electrons >= 0) {
@@ -828,7 +827,6 @@ MrccReader::SystemDimensions MrccReader::extractSystemDimensions(const std::stri
     }
     ASSERT_LOCATION(
       result.conventionalBasis &&
-      result.scf_fitting &&
       result.correlation_fitting &&
       result.electrons,
       "Mrcc Stdout not read sucessfully",
