@@ -8,6 +8,18 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+
+# Add external dependencies
+find_package(OpenMP REQUIRED)
+
+find_package(MPI REQUIRED)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    message(STATUS "Using Intel C++ (classic icpc)")
+else()
+    message(STATUS "Using C++ ${CMAKE_CXX_COMPILER_ID}")
+endif()
+
 if (CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -27,18 +39,43 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ctf)
 
-# Add external dependencies
-find_package(OpenMP REQUIRED)
-
-find_package(MPI REQUIRED)
-set(CMAKE_CXX_COMPILER mpicxx)
 
 find_package(LAPACK REQUIRED)
-find_library(SCALAPACK_LIB
-    NAMES scalapack
-    HINTS /usr/local/lib/
-    REQUIRED)
 
+################################################################################
+# MKL and ScaLAPACK
+
+# If MKL_DIR is not set by the user, but MKLROOT exists, use it
+if(NOT MKL_DIR AND DEFINED ENV{MKLROOT})
+    set(MKL_DIR "$ENV{MKLROOT}/lib/cmake/mkl")
+endif()
+
+if(NOT DEFINED ENV{MKLROOT})
+  find_library(SCALAPACK_LIB
+      NAMES scalapack
+      HINTS /usr/local/lib/
+      REQUIRED)
+  set(CC4S_SCALAPACK ${SCALAPACK_LIB})
+else()
+  set(CC4S_SCALAPACK)
+endif()
+
+# set(MKL_DIR MKLROOT)
+# find_package(MKL CONFIG)
+# set(CC4S_SCALAPACK MKL::ScaLAPACK)
+
+# if (MKL_FOUND)
+#   set(CC4S_SCALAPACK MKL::ScaLAPACK)
+# else()
+#   find_library(SCALAPACK_LIB
+#       NAMES scalapack
+#       HINTS /usr/local/lib/
+#       REQUIRED)
+#   set(CC4S_SCALAPACK ${SCALAPACK_LIB})
+# endif()
+
+################################################################################
+# Executable
 
 # Main executable
 add_executable(Cc4s
@@ -95,7 +132,6 @@ add_executable(Cc4s
   src/main/algorithms/UegVertexGenerator.cxx
   src/main/algorithms/VertexCoulombIntegrals.cxx
   src/main/algorithms/Write.cxx
-  src/main/algorithms/WriteLog.cxx
 )
 
 
@@ -103,7 +139,9 @@ add_executable(Cc4s
 target_include_directories(Cc4s PRIVATE ${CMAKE_SOURCE_DIR}/src/main)
 target_include_directories(Cc4s PRIVATE ${CMAKE_SOURCE_DIR}/src/main/algorithms/perturbative-triples/src/)
 
+################################################################################
 # Several versions and compilation date
+
 string(TIMESTAMP CC4S_DATE)
 execute_process(COMMAND bash -c "mpirun --version | head -n1"
   OUTPUT_VARIABLE CC4S_MPI_VERSION
@@ -116,44 +154,60 @@ execute_process(COMMAND bash -c "${CMAKE_CXX_COMPILER} --version | head -n1"
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 target_compile_definitions(Cc4s
-PRIVATE
-COMPILER_VERSION="${CC4S_COMPILER_VERSION}"
-CC4S_MPI_VERSION="${CC4S_MPI_VERSION}"
-CC4S_DATE="${CC4S_DATE}"
-CC4S_VERSION="${CC4S_VERSION}"
+  PRIVATE
+  COMPILER_VERSION="${CC4S_COMPILER_VERSION}"
+  CC4S_MPI_VERSION="${CC4S_MPI_VERSION}"
+  CC4S_DATE="${CC4S_DATE}"
+  CC4S_VERSION="${CC4S_VERSION}"
 
-_POSIX_C_SOURCE=200112L
-__STDC_LIMIT_MACROS
-FTN_UNDERSCORE=1
+  _POSIX_C_SOURCE=200112L
+  __STDC_LIMIT_MACROS
+  FTN_UNDERSCORE=1
 )
 
 target_compile_options(Cc4s
-PRIVATE
--g
-$<$<CONFIG:Debug>:-O0>
-$<$<CONFIG:Release>:-O3>
--Wall
--pedantic
---all-warnings
--fmax-errors=1
--Wno-vla
--Wno-int-in-bool-context
+  PRIVATE
+  -g
+  $<$<CONFIG:Debug>:-O0>
+  $<$<CONFIG:Release>:-O3>
+  -Wall
+  -pedantic
+  --all-warnings
+  -fmax-errors=1
 )
+
+if (CMAKE_BUILD_TYPE EQUAL Debug)
+  target_compile_options(Cc4s
+    PRIVATE
+    -O0
+  )
+else()
+  target_compile_options(Cc4s
+    PRIVATE
+    -O3
+  )
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(Cc4s PRIVATE
+    -Wno-vla -Wno-int-in-bool-context)
+endif()
 
 # Link against external dependencies
 target_link_libraries(Cc4s
   PRIVATE
   yaml-cpp ctf
   OpenMP::OpenMP_CXX
-  ${SCALAPACK_LIB}
+  ${CC4S_SCALAPACK}
   ${LAPACK_LIBRARIES}
   quadmath
 )
 
 
+message("CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 message("CMAKE_BUILD_TYPE   = ${CMAKE_BUILD_TYPE}")
 message("yaml-cpp           = ${yaml-cpp}")
 message("ctf                = ${ctf}")
 message("CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
-message("SCALAPACK_LIB      = ${SCALAPACK_LIB}")
+message("SCALAPACK_LIB      = ${CC4S_SCALAPACK}")
 message("LAPACK_LIBRARIES   = ${LAPACK_LIBRARIES}")
