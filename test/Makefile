@@ -1,7 +1,15 @@
 -include config.mk
 PYTHON ?= python3
+
+CC4S ?=
+ifdef CC4S
+CONFIG = cmake
+CC4S_PATH := $(realpath $(CC4S))
+else
 CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
+endif
+
 NP ?= 1
 CC4S_RUN ?= mpirun -np $(NP) $(CC4S_PATH)
 ifneq ($(MAKECMDGOALS),data)
