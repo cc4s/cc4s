@@ -95,7 +95,6 @@ add_executable(Cc4s
   src/main/algorithms/UegVertexGenerator.cxx
   src/main/algorithms/VertexCoulombIntegrals.cxx
   src/main/algorithms/Write.cxx
-  src/main/algorithms/WriteLog.cxx
 )
 
 
