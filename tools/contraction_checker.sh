@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 SCANDRY=0
 MODE=summary
 STEP=
@@ -24,36 +23,35 @@ Examples:
   $(basename "$0") --dry --algo myalgo
 EOF
 }
-
 # Parse command line arguments
 for arg in "$@"; do
   case $arg in
-    --dry)
-      SCANDRY=true
-      shift
-      ;;
-    --algo)
-      ALGO=algo
-      shift
-      ;;
-    --mode=*)
-      MODE="${arg#--mode=}"
-      ;;
-    --step=*)
-      STEP="${arg#--step=}"
-      ;;
-    --file=*)
-      logfile="${arg#--file=}"
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $arg"
-      usage
-      exit 1
-      ;;
+  --dry)
+    SCANDRY=true
+    shift
+    ;;
+  --algo)
+    ALGO=algo
+    shift
+    ;;
+  --mode=*)
+    MODE="${arg#--mode=}"
+    ;;
+  --step=*)
+    STEP="${arg#--step=}"
+    ;;
+  --file=*)
+    logfile="${arg#--file=}"
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $arg"
+    usage
+    exit 1
+    ;;
   esac
 done
 
@@ -66,8 +64,6 @@ ranks=$(grep -m1 -E 'Start calculation|Start dry-Run' $logfile | awk '
     exit
   }
 ')
-
-
 
 log_extract=$(
   if [ "$SCANDRY" = true ]; then
@@ -106,7 +102,6 @@ if [ "$ALGO" = "algo" ]; then
   printf("\n")
 }'
 
-
   log_base="$log_extract"
   [ -z "$STEP" ] && read -p "Enter step number to analyze (e.g., 1; 0 or return to choose all algos): " STEP
 
@@ -122,11 +117,7 @@ if [ "$ALGO" = "algo" ]; then
   fi
 fi
 
-
-
-
-
-echo "$log_extract" | grep "Contraction:" | awk  -F'Contraction:' '{print $2}' |
+echo "$log_extract" | grep "Contraction:" | awk -F'Contraction:' '{print $2}' |
   awk -v ranks="$ranks" -v mode="$MODE" -F'\\|' '
 function _sqrt(x) { return x<0 ? 0 : sqrt(x) }
 {
@@ -195,4 +186,3 @@ END {
   }
 
 }' | sort -nk1 | cut -d' ' -f2-
-

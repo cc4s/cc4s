@@ -1,23 +1,13 @@
 -include config.mk
 PYTHON ?= python3
+
+CC4S ?=
+ifdef CC4S
+CONFIG = cmake
+CC4S_PATH := $(realpath $(CC4S))
+else
 CONFIG ?= gcc-debug
 CC4S_PATH ?= $(realpath ../build/$(CONFIG)/bin/Cc4s)
-
-define PATH_ERROR
-DEAR USER: Cannot locate the cc4s binary.
-Define the CC4S_PATH environment variable.
-
-export CONFIG=<your-config-name>
-or
-export CC4S_PATH=<path-to-cc4s-binary>
-endef
-
-ifneq ($(MAKECMDGOALS),data)
-ifneq ($(MAKECMDGOALS),pyyaml)
-ifeq ($(CC4S_PATH),)
-$(error $(PATH_ERROR))
-endif
-endif
 endif
 
 NP ?= 1
