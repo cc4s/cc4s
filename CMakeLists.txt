@@ -91,21 +91,32 @@ add_executable(Cc4s
   src/main/TensorSet.cxx
   src/main/tcc/Tcc.cxx
   src/main/engines/DryTensor.cxx
+
+  # Mixers (don't change the order)
   src/main/mixers/Mixer.cxx
   src/main/mixers/LinearMixer.cxx
   src/main/mixers/DiisMixer.cxx
+
+  #
+  # Put Algorithm.cxx as the first file of all algorithms
+  #
   src/main/algorithms/Algorithm.cxx
   src/main/algorithms/BasisSetCorrection.cxx
   src/main/algorithms/CcsdChannels.cxx
   src/main/algorithms/CcsdtNonit.cxx
   src/main/algorithms/CcsdTTT.cxx
+  # Warning:
+  # Always put CoupledClusterMethod.cxx before all other
+  # files that depend on it to declare statically the methods!
+  # Otherwise the intel linker will not find it.
+  src/main/algorithms/coupledcluster/CoupledClusterMethod.cxx
   src/main/algorithms/coupledcluster/Ccsd.cxx
   src/main/algorithms/coupledcluster/CcsdReference.cxx
   src/main/algorithms/coupledcluster/Ccsdt.cxx
-  src/main/algorithms/coupledcluster/CoupledClusterMethod.cxx
   src/main/algorithms/CoupledCluster.cxx
   src/main/algorithms/coupledcluster/Drccd.cxx
   src/main/algorithms/coupledcluster/LambdaCcsdReference.cxx
+
   src/main/algorithms/DefineHolesAndParticles.cxx
   src/main/algorithms/DimensionProperty.cxx
   src/main/algorithms/FiniteSizeCorrection.cxx
@@ -125,12 +136,13 @@ add_executable(Cc4s
   src/main/algorithms/perturbative-triples/src/atrip/Slice.cxx
   src/main/algorithms/perturbative-triples/src/atrip/SliceUnion.cxx
   src/main/algorithms/perturbative-triples/src/atrip/Tuples.cxx
-  src/main/algorithms/Read.cxx
   src/main/algorithms/SecondOrderPerturbationTheory.cxx
   src/main/algorithms/SliceOperator.cxx
   src/main/algorithms/TensorSetToTensor.cxx
   src/main/algorithms/UegVertexGenerator.cxx
   src/main/algorithms/VertexCoulombIntegrals.cxx
+
+  src/main/algorithms/Read.cxx
   src/main/algorithms/Write.cxx
 )
 
@@ -176,17 +188,17 @@ target_compile_options(Cc4s
   -fmax-errors=1
 )
 
-if (CMAKE_BUILD_TYPE EQUAL Debug)
-  target_compile_options(Cc4s
-    PRIVATE
-    -O0
-  )
-else()
-  target_compile_options(Cc4s
-    PRIVATE
-    -O3
-  )
-endif()
+# if (CMAKE_BUILD_TYPE EQUAL Debug)
+#   target_compile_options(Cc4s
+#     PRIVATE
+#     -O0
+#   )
+# else()
+#   target_compile_options(Cc4s
+#     PRIVATE
+#     -O3
+#   )
+# endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(Cc4s PRIVATE
