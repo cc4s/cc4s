@@ -194,6 +194,7 @@ target_compile_definitions(Cc4s
   CTF_SWITCH_REDISTRIBUTION
   CTF_LOWMEM_CONTRACTION
   CTF_MEMORY_LOGGER
+  ATRIP_NO_OUTPUT
 )
 
 target_compile_options(Cc4s
