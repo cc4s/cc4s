@@ -88,7 +88,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
       arguments->getValue<std::string>("tuplesRoundRobin", "node") == "node"
           ? false
           : true;
-  bool use_checkpoint = arguments->getValue<int>("useCheckpoint", 1) == 1;
+  bool use_checkpoint = arguments->getValue<int>("useCheckpoint", 0) == 1;
 
   size_t first_iteration = arguments->getValue<int>("firstIteration", 0);
   if (first_iteration)
