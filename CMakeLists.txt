@@ -26,18 +26,19 @@ else()
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-
+set(YAML_CPP_GIT_TAG "c9460110e072df84b7dee3eb651f2ec5df75fb18")
 FetchContent_Declare(
   yaml-cpp
   GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/yaml-cpp
-  GIT_TAG        c9460110e072df84b7dee3eb651f2ec5df75fb18
+  GIT_TAG        ${YAML_CPP_GIT_TAG}
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
+set(CTF_GIT_TAG "01ea778f8883f872fc009dee5872069a3ffebe50")
 FetchContent_Declare(
   ctf
   GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/ctf
-  GIT_TAG        01ea778f8883f872fc009dee5872069a3ffebe50
+  GIT_TAG        ${CTF_GIT_TAG}
 )
 FetchContent_MakeAvailable(ctf)
 
@@ -235,8 +236,8 @@ target_link_libraries(Cc4s
 
 
 message("CMAKE_BUILD_TYPE   = ${CMAKE_BUILD_TYPE}")
-message("yaml-cpp           = ${yaml-cpp}")
-message("ctf                = ${ctf}")
+message(STATUS "Using CTF at GIT_TAG ${CTF_GIT_TAG}")
+message(STATUS "Using yaml-cpp at GIT_TAG ${YAML_CPP_GIT_TAG}")
 message("CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 message("SCALAPACK_LIB      = ${CC4S_SCALAPACK}")
 message("LAPACK_LIBRARIES   = ${LAPACK_LIBRARIES}")
