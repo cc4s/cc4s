@@ -84,13 +84,17 @@ add_executable(Cc4s
   src/main/Cc4s.cxx
   src/main/GC.cxx
   src/main/Options.cxx
+
+  # Set writer and reader in front of all files that use its
+  # functionality (TensorIO)
   src/main/Writer.cxx
   src/main/Reader.cxx
+  src/main/TensorIo.cxx
+  src/main/TensorSet.cxx
+
   src/main/Setting.cxx
   src/main/Log.cxx
   src/main/Timer.cxx
-  src/main/TensorIo.cxx
-  src/main/TensorSet.cxx
   src/main/tcc/Tcc.cxx
   src/main/engines/DryTensor.cxx
 
@@ -148,6 +152,11 @@ add_executable(Cc4s
   src/main/algorithms/Write.cxx
 )
 
+set_source_files_properties(
+    src/main/algorithms/coupledcluster/LambdaCcsdReference.cxx
+    PROPERTIES
+    COMPILE_FLAGS "-O0"
+)
 
 # Include directories within the source code
 target_include_directories(Cc4s PRIVATE ${CMAKE_SOURCE_DIR}/src/main)
@@ -177,6 +186,9 @@ target_compile_definitions(Cc4s
   _POSIX_C_SOURCE=200112L
   __STDC_LIMIT_MACROS
   FTN_UNDERSCORE=1
+  CTF_SWITCH_REDISTRIBUTION
+  CTF_LOWMEM_CONTRACTION
+  CTF_MEMORY_LOGGER
 )
 
 target_compile_options(Cc4s
@@ -218,7 +230,6 @@ target_link_libraries(Cc4s
 )
 
 
-message("CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 message("CMAKE_BUILD_TYPE   = ${CMAKE_BUILD_TYPE}")
 message("yaml-cpp           = ${yaml-cpp}")
 message("ctf                = ${ctf}")
