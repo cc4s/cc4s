@@ -95,7 +95,8 @@ namespace atrip {
 
 struct IterationDescription;
 using IterationDescriptor = std::function<void(IterationDescription const &)>;
-struct IterationDescription {
+class IterationDescription {
+public:
   static IterationDescriptor descriptor;
   size_t current_iteration;
   size_t total_iterations;

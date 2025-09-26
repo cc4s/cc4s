@@ -28,7 +28,10 @@ struct Checkpoint {
   size_t no, nv;
   size_t nranks;
   size_t nnodes;
-  double energy;
+  double global_energy;
+  double iteration_energy;
+  double global_ct_energy;
+  double iteration_ct_energy;
   size_t iteration;
   // TODO
   // Input<F>::TuplesDistribution distribution(GROUP_AND_SORT);
@@ -37,46 +40,14 @@ struct Checkpoint {
 // checkpoint-definition ends here
 
 // [[file:~/cuda/atrip/atrip.org::*Input%20and%20output][Input and output:1]]
-void write_checkpoint(Checkpoint const &c, std::string const &filepath) {
-  std::ofstream out(filepath);
-  out << "No: " << c.no << "\n"
-      << "Nv: " << c.nv << "\n"
-      << "Nranks: " << c.nranks << "\n"
-      << "Nnodes: " << c.nnodes << "\n"
-      << "Energy: " << std::setprecision(19) << c.energy << "\n"
-      << "Iteration: " << c.iteration << "\n"
-      << "RankRoundRobin: " << (c.rank_round_robin ? "true" : "false") << "\n";
-}
 
-Checkpoint read_checkpoint(std::ifstream &in) {
-  Checkpoint c;
-  // trim chars from the string, to be more sure and not use regexes
-  auto trim = [](std::string &s, std::string const &chars) {
-    s.erase(0, s.find_first_not_of(chars));
-    s.erase(s.find_last_not_of(chars) + 1);
-    return s;
-  };
-  for (std::string header, value; std::getline(in, header, ':');) {
-    std::getline(in, value, '\n');
-    trim(value, " \t"); // trim all whitespaces
-    trim(header, " \t");
+void write_checkpoint_header(std::string const &filepath);
 
-    /**/ if (header == "No")
-      c.no = std::atoi(value.c_str());
-    else if (header == "Nv") c.nv = std::atoi(value.c_str());
-    else if (header == "Nranks") c.nranks = std::atoi(value.c_str());
-    else if (header == "Nnodes") c.nnodes = std::atoi(value.c_str());
-    else if (header == "Energy") c.energy = std::atof(value.c_str());
-    else if (header == "Iteration") c.iteration = std::atoi(value.c_str());
-    else if (header == "RankRoundRobin") c.rank_round_robin = (value[0] == 't');
-  }
-  return c;
-}
+void write_checkpoint(Checkpoint const &c, std::string const &filepath);
 
-Checkpoint read_checkpoint(std::string const &filepath) {
-  std::ifstream in(filepath);
-  return read_checkpoint(in);
-}
+Checkpoint read_checkpoint(std::ifstream &in);
+
+Checkpoint read_checkpoint(std::string const &filepath);
 // Input and output:1 ends here
 
 // [[file:~/cuda/atrip/atrip.org::*Epilog][Epilog:1]]

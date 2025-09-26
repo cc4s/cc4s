@@ -131,17 +131,6 @@ add_executable(Cc4s
   src/main/algorithms/PerturbativeCT.cxx
   src/main/algorithms/PerturbativeTriples.cxx
   src/main/algorithms/PerturbativeTriplesReference.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/Atrip.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/Blas.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/Complex.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/DatabaseCommunicator.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/Equations.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/Mpi.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/RankMap.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/Reader.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/Slice.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/SliceUnion.cxx
-  src/main/algorithms/perturbative-triples/src/atrip/Tuples.cxx
   src/main/algorithms/SecondOrderPerturbationTheory.cxx
   src/main/algorithms/SliceOperator.cxx
   src/main/algorithms/TensorSetToTensor.cxx
@@ -150,6 +139,21 @@ add_executable(Cc4s
 
   src/main/algorithms/Read.cxx
   src/main/algorithms/Write.cxx
+
+  # atrip source
+  src/main/algorithms/perturbative-triples/src/atrip/Atrip.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/Blas.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/Complex.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/Checkpoint.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/DatabaseCommunicator.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/Equations.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/Mpi.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/RankMap.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/Reader.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/Slice.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/SliceUnion.cxx
+  src/main/algorithms/perturbative-triples/src/atrip/Tuples.cxx
+
 )
 
 set_source_files_properties(

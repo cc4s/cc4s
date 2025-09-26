@@ -58,6 +58,8 @@ template <typename F>
 struct LocalOutput {
   F energy;
   F ct_energy;
+  F iteration_energy;
+  F iteration_ct_energy;
 };
 
 void Atrip::init(MPI_Comm atrip_world, int omp_granularity_) {
@@ -77,14 +79,19 @@ void Atrip::init(MPI_Comm atrip_world, int omp_granularity_) {
            Atrip::n_nodes,
            Atrip::ranks_per_node) = get_mpi_info(atrip_world);
 
-  //WATCH OUT: this is the node_id in the default rank distribution!
+  // WATCH OUT: this is the node_id in the default rank distribution!
   Atrip::node_ids.resize(Atrip::np);
-  MPI_Allgather(&Atrip::node_id, 1, MPI_INT, Atrip::node_ids.data(), 1, MPI_INT, Atrip::communicator);
+  MPI_Allgather(&Atrip::node_id,
+                1,
+                MPI_INT,
+                Atrip::node_ids.data(),
+                1,
+                MPI_INT,
+                Atrip::communicator);
 }
 
 template <typename F>
 Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
-
 
   const size_t No = in.epsilon_i->size();
   const size_t Nv = in.epsilon_a->size();
@@ -246,15 +253,20 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
 
   // const std::vector<size_t> total_source_sizes = {
   //     // ABPH
-  //     SliceUnion<F>::get_size({Nv, No}, {Nv, Nv}, (size_t)np, Atrip::communicator),
+  //     SliceUnion<F>::get_size({Nv, No}, {Nv, Nv}, (size_t)np,
+  //     Atrip::communicator),
   //     // ABHH
-  //     SliceUnion<F>::get_size({No, No}, {Nv, Nv}, (size_t)np, Atrip::communicator),
+  //     SliceUnion<F>::get_size({No, No}, {Nv, Nv}, (size_t)np,
+  //     Atrip::communicator),
   //     // TABHH
-  //     SliceUnion<F>::get_size({No, No}, {Nv, Nv}, (size_t)np, Atrip::communicator),
+  //     SliceUnion<F>::get_size({No, No}, {Nv, Nv}, (size_t)np,
+  //     Atrip::communicator),
   //     // TAPHH
-  //     SliceUnion<F>::get_size({Nv, No, No}, {Nv}, (size_t)np, Atrip::communicator),
+  //     SliceUnion<F>::get_size({Nv, No, No}, {Nv}, (size_t)np,
+  //     Atrip::communicator),
   //     // HHHA
-  //     SliceUnion<F>::get_size({No, No, No}, {Nv}, (size_t)np, Atrip::communicator),
+  //     SliceUnion<F>::get_size({No, No, No}, {Nv}, (size_t)np,
+  //     Atrip::communicator),
   // };
 
   // const size_t total_source_size = sizeof(DataFieldType<F>)
@@ -277,24 +289,28 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
       // DataPtr<F> offseted_pointer = all_sources_pointer
       //                             * total_source_sizes[_source_pointer_idx++];
 
-    SliceUnion<F> abph({Slice<F>::AB, Slice<F>::BC, Slice<F>::AC, Slice<F>::BA, Slice<F>::CB, Slice<F>::CA},
-                       Slice<F>::Name::VABCI,
-                       *in.sVabph,
-                       {Nv, Nv},
-                       12
-                      );
+      SliceUnion<F> abph({Slice<F>::AB,
+                          Slice<F>::BC,
+                          Slice<F>::AC,
+                          Slice<F>::BA,
+                          Slice<F>::CB,
+                          Slice<F>::CA},
+                         Slice<F>::Name::VABCI,
+                         *in.sVabph,
+                         {Nv, Nv},
+                         12);
 
-    SliceUnion<F> abhh({Slice<F>::AB, Slice<F>::BC, Slice<F>::AC},
-                        Slice<F>::Name::VABIJ,
-                        *in.sVabhh,
-                        {Nv, Nv},
-                        6);
+      SliceUnion<F> abhh({Slice<F>::AB, Slice<F>::BC, Slice<F>::AC},
+                         Slice<F>::Name::VABIJ,
+                         *in.sVabhh,
+                         {Nv, Nv},
+                         6);
 
-    SliceUnion<F> tabhh({Slice<F>::AB, Slice<F>::BC, Slice<F>::AC},
-                        Slice<F>::Name::TABIJ,
-                        *in.sTabhh,
-                        {Nv, Nv},
-                        6);
+      SliceUnion<F> tabhh({Slice<F>::AB, Slice<F>::BC, Slice<F>::AC},
+                          Slice<F>::Name::TABIJ,
+                          *in.sTabhh,
+                          {Nv, Nv},
+                          6);
 
   )
 
@@ -304,17 +320,19 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
       // TODO
       // DataPtr<F> offseted_pointer = all_sources_pointer
       //                             * total_source_sizes[_source_pointer_idx++];
-    SliceUnion<F> taphh({Slice<F>::Type::A, Slice<F>::Type::B, Slice<F>::Type::C},
-                        Slice<F>::Name::TA,
-                        *in.sTaphh,
-                        {Nv},
-                        6);
+      SliceUnion<F> taphh(
+          {Slice<F>::Type::A, Slice<F>::Type::B, Slice<F>::Type::C},
+          Slice<F>::Name::TA,
+          *in.sTaphh,
+          {Nv},
+          6);
 
-    SliceUnion<F> hhha({Slice<F>::Type::A, Slice<F>::Type::B, Slice<F>::Type::C},
-                       Slice<F>::Name::VIJKA,
-                       *in.sVhhha,
-                       {Nv},
-                       6);
+      SliceUnion<F> hhha(
+          {Slice<F>::Type::A, Slice<F>::Type::B, Slice<F>::Type::C},
+          Slice<F>::Name::VIJKA,
+          *in.sVhhha,
+          {Nv},
+          6);
 
   )
 
@@ -322,19 +340,20 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
   std::vector<SliceUnion<F> *> unions = {&taphh, &hhha, &abph, &abhh, &tabhh};
 
   // IF (cT) IS USED: HANDLE TWO FURTHER SLICES==========================={{{1
-  ///HHHA<F> *jhhha = nullptr;
+  /// HHHA<F> *jhhha = nullptr;
   SliceUnion<F> *jhhha = nullptr;
   SliceUnion<F> *jabph = nullptr;
-  //ABPH<F> *jabph = nullptr;
+  // ABPH<F> *jabph = nullptr;
   if (in.cT) {
     WITH_CHRONO("Jhhha-slice",
                 /**/ LOG(0, "Atrip") << "slicing Jijka" << std::endl;
 
-      jhhha = new SliceUnion<F>({Slice<F>::Type::A, Slice<F>::Type::B, Slice<F>::Type::C},
-                                Slice<F>::Name::JIJKA,
-                                *in.sJhhha,
-                                {Nv},
-                                6);
+                jhhha = new SliceUnion<F>(
+                    {Slice<F>::Type::A, Slice<F>::Type::B, Slice<F>::Type::C},
+                    Slice<F>::Name::JIJKA,
+                    *in.sJhhha,
+                    {Nv},
+                    6);
 
     )
     unions.push_back(jhhha);
@@ -344,13 +363,16 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
     WITH_CHRONO("Jabph-slice",
                 /**/ LOG(0, "Atrip") << "slicing Jabci" << std::endl;
 
-      jabph = new SliceUnion<F>({Slice<F>::AB, Slice<F>::BC, Slice<F>::AC, Slice<F>::BA, Slice<F>::CB, Slice<F>::CA},
-                                Slice<F>::Name::JABCI,
-                                *in.sJabph,
-                                {Nv, Nv},
-                                12);
-    )
-
+                jabph = new SliceUnion<F>({Slice<F>::AB,
+                                           Slice<F>::BC,
+                                           Slice<F>::AC,
+                                           Slice<F>::BA,
+                                           Slice<F>::CB,
+                                           Slice<F>::CA},
+                                          Slice<F>::Name::JABCI,
+                                          *in.sJabph,
+                                          {Nv, Nv},
+                                          12);)
 
     unions.push_back(jabph);
   }
@@ -387,7 +409,8 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
 
   LOG(0, "Atrip") << "BUILDING TUPLE LIST\n";
   WITH_CHRONO("tuples:build",
-              auto const tuples_list = distribution->get_tuples(Nv, Atrip::communicator);)
+              auto const tuples_list =
+                  distribution->get_tuples(Nv, Atrip::communicator);)
   const size_t n_iterations = tuples_list.size();
   {
     LOG(0, "Atrip") << "#iterations: " << n_iterations << "/"
@@ -407,10 +430,9 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
   double db_last_iteration_time = 0.0;
 
   using Database = typename Slice<F>::Database;
-  auto communicate_database =
-      [&unions, &in, Nv](ABCTuple const &abc,
-                                    MPI_Comm const &c,
-                                    size_t iteration) -> Database {
+  auto communicate_database = [&unions, &in, Nv](ABCTuple const &abc,
+                                                 MPI_Comm const &c,
+                                                 size_t iteration) -> Database {
     if (in.tuples_distribution == Atrip::Input<F>::TuplesDistribution::NAIVE) {
 
       WITH_CHRONO("db:comm:naive",
@@ -448,20 +470,21 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
                                     MPI_LDB_ELEMENT,
                                     c);))
 
-      MPI_Barrier(c); // we need a barrier - otherwise mpi oject gets free'd while in use!
+      MPI_Barrier(c); // we need a barrier - otherwise mpi oject gets free'd
+                      // while in use!
       WITH_CHRONO("db:comm:type:free", MPI_Type_free(&MPI_LDB_ELEMENT);)
 
-//      WITH_CHRONO("db:comm:type:free", Slice<F>::mpi::free_local_database_element();)
+      //      WITH_CHRONO("db:comm:type:free",
+      //      Slice<F>::mpi::free_local_database_element();)
 
       return db;
     }
   };
 
   auto do_io_phase =
-      [&unions, No, Nv, &db_last_iteration_time](
-          Database const &db,
-          ABCTuple const abc,
-          size_t iteration) {
+      [&unions, No, Nv, &db_last_iteration_time](Database const &db,
+                                                 ABCTuple const abc,
+                                                 size_t iteration) {
         IGNORABLE(iteration); // iteration used to print database
         const size_t localDBLength = db.size() / Atrip::np;
 
@@ -477,15 +500,15 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
             auto const &el = *it;
             auto &u = union_by_name(unions, el.name);
 
-            WITH_DBG std::cout << Atrip::rank << ":r"
-                               << "♯" << recv_tag << " =>"
-                               << " «n" << el.name << ", t" << el.info.type
-                               << ", s" << el.info.state << "»"
-                               << " ⊙ {" << Atrip::rank << "⇐" << el.info.from.rank
-                               << ", " << el.info.from.source << "}"
-                               << " ∴ {" << el.info.tuple[0] << ", "
-                               << el.info.tuple[1] << "}"
-                               << "\n";
+            WITH_DBG std::cout
+                << Atrip::rank << ":r"
+                << "♯" << recv_tag << " =>"
+                << " «n" << el.name << ", t" << el.info.type << ", s"
+                << el.info.state << "»"
+                << " ⊙ {" << Atrip::rank << "⇐" << el.info.from.rank << ", "
+                << el.info.from.source << "}"
+                << " ∴ {" << el.info.tuple[0] << ", " << el.info.tuple[1] << "}"
+                << "\n";
 
             WITH_CHRONO("db:io:recv", u.receive(el.info, recv_tag);)
 
@@ -578,11 +601,10 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
       double(No) * double(No) * double(No) * (double(No) + double(Nv)) * 2.0
       * (traits::is_complex<F>() ? 4.0 : 1.0) * 6.0 / 1e9;
 
-  // START MAIN LOOP ======================================================{{{1
-
-  log("Start iterations.");
+  //  Reading checkpoint
+  //////////////////////////////////////////////////
   MPI_Barrier(Atrip::communicator);
-  LocalOutput<EnergyType<F>> local_output = {0, 0};
+  LocalOutput<EnergyType<F>> local_output = {0, 0, 0};
   Output global_output = {0, 0};
   size_t first_iteration = 0;
   Checkpoint c;
@@ -591,44 +613,73 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
           ? in.checkpoint_at_every_iteration
           : n_iterations * in.checkpoint_at_percentage / 100;
   if (in.read_checkpoint_if_exists) {
+    bool checkpoint_failure = false;
     std::ifstream fin(in.checkpoint_path);
     if (fin.is_open()) {
       LOG(0, "Atrip") << "Reading checkpoint from " << in.checkpoint_path
                       << "\n";
       c = read_checkpoint(fin);
-      first_iteration = (size_t)c.iteration;
       if (first_iteration > n_iterations) {
         // TODO: throw an error here
         // first_iteration is bigger than n_iterations,
         // you probably started the program with a different number
         // of cores
+        checkpoint_failure = true;
+        LOG(0, "Atrip") << "Checkpoint discarded: First iteration is higher "
+                           "than the total number of iterations\n";
       }
-      if (No != c.no) { /* TODO: write warning */
-      }
-      if (Nv != c.nv) { /* TODO: write warning */
-      }
+
+#define CHECK_CHECKPOINT_(name, check_a, a)                                    \
+  do {                                                                         \
+    if (a != check_a) {                                                        \
+      checkpoint_failure = true;                                               \
+      LOG(0, "Atrip") << "Checkpoint discarded: Invalid " << name << "\n";     \
+      LOG(0, "Atrip") << "  ⤷ Checkpoint file has: " << check_a                \
+                      << " while the correct value is " << a << "\n";          \
+    }                                                                          \
+  } while (0)
+      CHECK_CHECKPOINT_("No", c.no, No);
+      CHECK_CHECKPOINT_("Nv", c.nv, Nv);
+      CHECK_CHECKPOINT_("number of ranks", c.nranks, Atrip::ranks_per_node);
+      CHECK_CHECKPOINT_("number of nodes", c.nnodes, Atrip::n_nodes);
+#undef CHECK_CHECKPOINT_
+
       // TODO write warnings for nrank and so on
-      if (Atrip::rank == 0) {
-        // take the negative of the energy to correct for the
-        // negativity of the equations, the energy in the checkpoint
-        // should always be the correct physical one.
-        local_output.energy = -EnergyType<F>(c.energy);
+      if (!checkpoint_failure) {
+        first_iteration = (size_t)c.iteration;
+        if (Atrip::rank == 0) {
+          // take the negative of the energy to correct for the
+          // negativity of the equations, the energy in the checkpoint
+          // should always be the correct physical one.
+          local_output.energy = -EnergyType<F>(c.global_energy);
+          local_output.ct_energy = -EnergyType<F>(c.global_ct_energy);
+          local_output.iteration_energy = -EnergyType<F>(c.iteration_energy);
+          local_output.iteration_ct_energy =
+              -EnergyType<F>(c.iteration_ct_energy);
+          LOG(0, "Atrip") << "energy from checkpoint " << local_output.energy
+                          << "\n";
+          LOG(0, "Atrip") << "iteration energy from checkpoint "
+                          << local_output.iteration_energy << "\n";
+          LOG(0, "Atrip") << "ct energy from checkpoint "
+                          << local_output.ct_energy << "\n";
+          LOG(0, "Atrip") << "iteration ct energy from checkpoint "
+                          << local_output.iteration_ct_energy << "\n";
+          LOG(0, "Atrip") << "iteration from checkpoint " << first_iteration
+                          << "\n";
+        }
       }
-      LOG(0, "Atrip") << "energy from checkpoint " << local_output.energy
-                      << "\n";
-      LOG(0, "Atrip") << "iteration from checkpoint " << first_iteration
-                      << "\n";
     }
     if (in.first_iteration)
-      throw std::domain_error("Not allowed to use first_iteration >0 AND checkpointing!");
+      throw std::domain_error(
+          "Not allowed to use first_iteration >0 AND checkpointing!");
   }
 
   if (in.first_iteration) {
     first_iteration = in.first_iteration;
-    LOG(0, "Atrip") << "Starting atrip from iteration: " << first_iteration << std::endl;
+    LOG(0, "Atrip") << "Starting atrip from iteration: " << first_iteration
+                    << std::endl;
     log("Starting atrip from iteration: " + std::to_string(first_iteration));
   }
-
 
   const auto compute_local_energy =
       [Tijk, Zijk, No, epsi, &_epsa](ABCTuple const &abc,
@@ -695,7 +746,16 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
 
   // Swich number of omp threads
   omp_set_num_threads(Atrip::omp_threads);
-  LOG(0, "atrip") << "number of omp threads " << Atrip::omp_threads << std::endl;
+  LOG(0, "atrip") << "number of omp threads " << Atrip::omp_threads
+                  << std::endl;
+
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  //  Main Iteration Loop
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+
+  log("Start iterations.");
   for (size_t i = first_iteration, iteration = first_iteration + 1;
        i < tuples_list.size();
        i++, iteration++) {
@@ -716,31 +776,54 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
     WITH_CHRONO("start:stop", {})
 
     // check overhead of doing a barrier at the beginning
-    WITH_CHRONO(
-        "oneshot-mpi:barrier",
-        WITH_CHRONO("mpi:barrier", if (in.barrier) MPI_Barrier(Atrip::communicator);))
+    WITH_CHRONO("oneshot-mpi:barrier",
+                WITH_CHRONO("mpi:barrier",
+                            if (in.barrier) MPI_Barrier(Atrip::communicator);))
 
     // write checkpoints
-    // TODO: ENABLE THIS
-    //if (f!checkpoint_mod || iteration % checkpoint_mod == 0 && false) {
-    if (false) {
-      EnergyType<F> global_energy = 0;
-      MPI_Reduce(&local_output.energy,
-                 &global_energy,
-                 1,
-                 traits::mpi::datatype_of<EnergyType<F>>(),
-                 MPI_SUM,
-                 0,
-                 Atrip::communicator);
-      Checkpoint out = {No,
-                        Nv,
-                        Atrip::ranks_per_node,
-                        Atrip::n_nodes,
-                        -global_energy,
-                        iteration - 1,
-                        in.rank_round_robin};
-      LOG(0, "Atrip") << "Writing checkpoint\n";
-      if (Atrip::rank == 0) write_checkpoint(out, in.checkpoint_path);
+    if (in.writeCheckpoint
+        && (!checkpoint_mod // Checkpoint_mod is not 0
+            || iteration % checkpoint_mod == 0
+            || iteration == n_iterations // write the checkpoint at the
+                                         // last iteration if we get there
+            )) {
+      // if (iteration_log && i % iteration_log == 0) {
+      EnergyType<F> global_energy = 0, global_ct_energy = 0, iteration_energy,
+                    iteration_ct_energy;
+      const auto gather_energies = [&](EnergyType<F> *local,
+                                       EnergyType<F> *global) {
+        MPI_Reduce(local,
+                   global,
+                   1,
+                   traits::mpi::datatype_of<EnergyType<F>>(),
+                   MPI_SUM,
+                   0,
+                   Atrip::communicator);
+      };
+      gather_energies(&local_output.energy, &global_energy);
+      gather_energies(&local_output.ct_energy, &global_ct_energy);
+      gather_energies(&local_output.iteration_energy, &iteration_energy);
+      gather_energies(&local_output.iteration_ct_energy, &iteration_ct_energy);
+
+      Checkpoint out;
+      { // build checkpoint
+        out.no = No;
+        out.nv = Nv;
+        out.nranks = Atrip::ranks_per_node;
+        out.nnodes = Atrip::n_nodes;
+        out.iteration = iteration - 1;
+        out.global_energy = -global_energy;
+        out.global_ct_energy = -global_ct_energy;
+        out.iteration_energy = -iteration_energy;       // todo
+        out.iteration_ct_energy = -iteration_ct_energy; // todo
+        out.rank_round_robin = in.rank_round_robin;
+      }
+      if (Atrip::rank == 0) {
+        if (i == first_iteration) {
+          write_checkpoint_header(in.checkpoint_path);
+        }
+        write_checkpoint(out, in.checkpoint_path);
+      };
     }
 
     if (iteration_log && i % iteration_log == 0) {
@@ -753,7 +836,8 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
                  MPI_SUM,
                  0,
                  Atrip::communicator);
-      std::string log_out("energy log. iteration " + std::to_string(i) + " , (T): ");
+      std::string log_out("energy log. iteration " + std::to_string(i)
+                          + " , (T): ");
       sst << std::setprecision(15) << -global_energy;
       log_out += sst.str();
       if (in.cT) {
@@ -773,7 +857,8 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
       log(log_out);
     }
     // write reporting
-    if (!iteration_mod || iteration % iteration_mod == 0 || iteration == iteration1Percent) {
+    if (!iteration_mod || iteration % iteration_mod == 0
+        || iteration == iteration1Percent) {
 
       if (IterationDescription::descriptor) {
         IterationDescription::descriptor(
@@ -863,7 +948,8 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
     if (abc_next) {
       WITH_RANK << "__comm__:" << iteration << "th communicating database\n";
       WITH_CHRONO("db:comm",
-                  const auto db = communicate_database(*abc_next, Atrip::communicator, i);)
+                  const auto db =
+                      communicate_database(*abc_next, Atrip::communicator, i);)
       WITH_CHRONO("db:io", do_io_phase(db, abc, i + 1);)
       WITH_RANK << "__comm__:" << iteration << "th database io phase DONE\n";
     }
@@ -963,7 +1049,8 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
                 (DataFieldType<F> *)Zijk);)
       }
 
-    local_output.energy += compute_local_energy(abc, is_fake_tuple(i));
+    local_output.iteration_energy = compute_local_energy(abc, is_fake_tuple(i));
+    local_output.energy += local_output.iteration_energy;
 
     // COMPUTE (cT) DOUBLES WITH THE J-INTERMEDIATE%%%%%%%%%%%%%%%%%%%%%
     if (!is_fake_tuple(i) && in.cT) {
@@ -1001,7 +1088,9 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
                               WITH_RANK << iteration << "-th doubles done\n";))
     }
 
-    local_output.ct_energy += compute_local_energy(abc, is_fake_tuple(i));
+    local_output.iteration_ct_energy =
+        compute_local_energy(abc, is_fake_tuple(i));
+    local_output.ct_energy += local_output.iteration_ct_energy;
 
     // TODO: remove this
     if (is_fake_tuple(i)) {
@@ -1167,11 +1256,9 @@ Atrip::Output Atrip::run(Atrip::Input<F> const &in) {
           << pair.first << " " << pair.second.count() << std::endl;
   size_t _it = (in.max_iterations) ? in.max_iterations : n_iterations;
   LOG(0, "atrip:flops(doubles)")
-      << _it * doubles_flops / Atrip::chrono["doubles"].count()
-      << "\n";
+      << _it * doubles_flops / Atrip::chrono["doubles"].count() << "\n";
   LOG(0, "atrip:flops(iterations)")
-      << _it * doubles_flops / Atrip::chrono["iterations"].count()
-      << "\n";
+      << _it * doubles_flops / Atrip::chrono["iterations"].count() << "\n";
 
   // TODO: change the sign in  the getEnergy routines
   return global_output;

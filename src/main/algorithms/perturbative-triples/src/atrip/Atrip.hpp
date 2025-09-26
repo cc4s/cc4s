@@ -128,7 +128,9 @@ struct Atrip {
     ADD_ATTRIBUTE(int, iteration_mod, -1)
     ADD_ATTRIBUTE(int, percentage_mod, -1)
     ADD_ATTRIBUTE(TuplesDistribution, tuples_distribution, NAIVE)
-    ADD_ATTRIBUTE(std::string, checkpoint_path, "atrip-checkpoint.yaml")
+    ADD_ATTRIBUTE(std::string,
+                  checkpoint_path,
+                  "PerturbativeTriples.checkpoint")
     ADD_ATTRIBUTE(bool, read_checkpoint_if_exists, true)
     ADD_ATTRIBUTE(bool, writeCheckpoint, true)
     ADD_ATTRIBUTE(float, checkpoint_at_percentage, 10)
@@ -148,14 +150,12 @@ struct Atrip {
   static Output run(Input<F> const &in);
 };
 
-
-//Later we want better control over the mapping between
-// el (generic atrip index) and the virtual orbtials a and b
-inline size_t orbitalMap(const size_t el) { return el;}
-inline std::pair<size_t,size_t> orbitalMap(const size_t el, const size_t Nv) {
+// Later we want better control over the mapping between
+//  el (generic atrip index) and the virtual orbtials a and b
+inline size_t orbitalMap(const size_t el) { return el; }
+inline std::pair<size_t, size_t> orbitalMap(const size_t el, const size_t Nv) {
   return {el % Nv, el / Nv};
 }
-
 
 } // namespace atrip
 #undef ADD_ATTRIBUTE

@@ -239,8 +239,6 @@ Sources<F> ctfReader_fallback(CTF::Tensor<F>& tensor,
   if (ctf_rank == 0)  assert(atrip_np);
   MPI_Bcast(&atrip_np, 1, MPI_INT, 0, world);
 
-  // TODO: right now the logic works only for more than one core
-  assert(ctf_np > 1);
   auto order(tensor_dimension.size());
 
   std::vector<size_t> slice_dimension, source_dimension, ptensor_dimension(tensor_dimension);
@@ -490,7 +488,13 @@ Sources<F> ctfReader(CTF::Tensor<F>& tensor,
   MPI_Bcast(&atrip_np, 1, MPI_INT, 0, world);
 
   // TODO: right now the logic works only for more than one core
-  assert(ctf_np > 1);
+  if (ctf_np == 1) {
+    return ctfReader_fallback(tensor,
+                              tensor_dimension,
+                              slice_mapping,
+                              delete_tensor_data);
+  }
+
   auto order(tensor_dimension.size());
 
   std::vector<size_t> slice_dimension, source_dimension, ptensor_dimension(tensor_dimension);
