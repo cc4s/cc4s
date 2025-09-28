@@ -242,3 +242,83 @@ message(STATUS "Using yaml-cpp at GIT_TAG ${YAML_CPP_GIT_TAG}")
 message("CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 message("SCALAPACK_LIB      = ${CC4S_SCALAPACK}")
 message("LAPACK_LIBRARIES   = ${LAPACK_LIBRARIES}")
+
+
+
+# Enable testing
+option(ENABLE_TESTING "Enable building/running tests" ON)
+if(ENABLE_TESTING)
+    # User can optionally override number of processes
+    set(NP 4 CACHE STRING "Number of MPI processes")
+    set(CC4S_RUN "${CMAKE_BINARY_DIR}/Cc4s")
+    set(FULL_RUN_CMD "mpirun -np ${NP} ${CC4S_RUN}" CACHE STRING "Command to run CC4S")
+    message(STATUS "Full run command for tests: ${FULL_RUN_CMD}")
+
+    enable_testing()
+
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    message(STATUS "Using Python3 = ${Python3_EXECUTABLE}")
+    execute_process(
+        COMMAND ${Python3_EXECUTABLE} -c "import yaml"
+        RESULT_VARIABLE PY_YAML_FOUND
+        OUTPUT_QUIET
+        ERROR_QUIET
+    )
+
+    if(NOT PY_YAML_FOUND EQUAL 0)
+        message(WARNING "PyYAML is not installed for Python3 (${Python3_EXECUTABLE}). "
+                        "testis.py requires PyYAML to check test outputs. "
+                        "Tests may fail unless you install it via pip or your package manager.")
+    endif()
+
+    set(TEST_BUILD_DIR ${CMAKE_BINARY_DIR}/test/tests)
+    file(MAKE_DIRECTORY ${TEST_BUILD_DIR})
+
+    # copy testis script and global sources
+    file(COPY "${CMAKE_SOURCE_DIR}/test/testis.py" DESTINATION "${CMAKE_BINARY_DIR}/test")
+    file(COPY "${CMAKE_SOURCE_DIR}/test/sources.json" DESTINATION "${CMAKE_BINARY_DIR}/test")
+
+    file(GLOB_RECURSE TEST_JSON_FILES ${CMAKE_SOURCE_DIR}/test/tests/*/test.json)
+
+    foreach(TEST_FILE IN LISTS TEST_JSON_FILES)
+        # Get source directory of the test
+        get_filename_component(TEST_SRC_DIR ${TEST_FILE} DIRECTORY)
+        get_filename_component(TEST_NAME ${TEST_SRC_DIR} NAME)
+
+        # Destination folder in the build tree
+        set(TEST_DST_DIR ${TEST_BUILD_DIR}/${TEST_NAME})
+        file(MAKE_DIRECTORY ${TEST_DST_DIR})
+
+        # Copy only files in the source directory (non-recursive)
+        file(GLOB TEST_FILES "${TEST_SRC_DIR}/*")
+        foreach(f IN LISTS TEST_FILES)
+            if(EXISTS "${f}" AND NOT IS_DIRECTORY "${f}" AND NOT IS_SYMLINK "${f}")
+                file(COPY "${f}" DESTINATION "${TEST_DST_DIR}")
+            endif()
+        endforeach()
+        set(TESTIS_SRC "${CMAKE_BINARY_DIR}/test/testis.py")
+        set(TESTIS_LINK "${TEST_DST_DIR}/testis.py")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E create_symlink ${TESTIS_SRC} ${TESTIS_LINK}
+        )
+
+    endforeach()
+    # Register the test
+    message("what now ${CMAKE_BINARY_DIR}")
+    set(CC4S_PATH "${CMAKE_BINARY_DIR}/Cc4s")
+    string(MD5 CC4S_HASH "${CC4S_PATH}")
+    set(OUTPUT_NAME "${CMAKE_BUILD_TYPE}-${CC4S_HASH}")
+    add_test(
+        NAME run-testis
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test
+        COMMAND ${Python3_EXECUTABLE} testis.py
+                -rc .
+                -n ${OUTPUT_NAME}
+                --rx ".*"
+                --tags "essential"
+    )
+    set_tests_properties(run-testis PROPERTIES
+        ENVIRONMENT "CC4S_RUN=${FULL_RUN_CMD}"
+    )
+
+endif()
