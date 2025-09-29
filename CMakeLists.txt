@@ -236,28 +236,30 @@ target_link_libraries(Cc4s
 )
 
 
-message("CMAKE_BUILD_TYPE   = ${CMAKE_BUILD_TYPE}")
-message(STATUS "Using CTF at GIT_TAG ${CTF_GIT_TAG}")
-message(STATUS "Using yaml-cpp at GIT_TAG ${YAML_CPP_GIT_TAG}")
-message("CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
-message("SCALAPACK_LIB      = ${CC4S_SCALAPACK}")
-message("LAPACK_LIBRARIES   = ${LAPACK_LIBRARIES}")
+message(STATUS "CMAKE_BUILD_TYPE          = ${CMAKE_BUILD_TYPE}")
+message(STATUS "Using CTF at GIT_TAG      = ${CTF_GIT_TAG}")
+message(STATUS "Using yaml-cpp at GIT_TAG = ${YAML_CPP_GIT_TAG}")
+message(STATUS "CMAKE_CXX_COMPILER        = ${CMAKE_CXX_COMPILER}")
+message(STATUS "SCALAPACK_LIB             = ${CC4S_SCALAPACK}")
+message(STATUS "LAPACK_LIBRARIES          = ${LAPACK_LIBRARIES}")
 
 
 
 # Enable testing
 option(ENABLE_TESTING "Enable building/running tests" ON)
+set(CTEST_OUTPUT_ON_FAILURE ON)
 if(ENABLE_TESTING)
     # User can optionally override number of processes
     set(NP 4 CACHE STRING "Number of MPI processes")
     set(CC4S_RUN "${CMAKE_BINARY_DIR}/Cc4s")
-    set(FULL_RUN_CMD "mpirun -np ${NP} ${CC4S_RUN}" CACHE STRING "Command to run CC4S")
-    message(STATUS "Full run command for tests: ${FULL_RUN_CMD}")
+    set(FULL_RUN_CMD "mpirun -np ${NP} ${CC4S_RUN}"
+      CACHE STRING "Command to run CC4S")
+    message(STATUS "CC4S for integration tests = ${FULL_RUN_CMD}")
 
     enable_testing()
 
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
-    message(STATUS "Using Python3 = ${Python3_EXECUTABLE}")
+    message(STATUS "Using Python3              = ${Python3_EXECUTABLE}")
     execute_process(
         COMMAND ${Python3_EXECUTABLE} -c "import yaml"
         RESULT_VARIABLE PY_YAML_FOUND
@@ -293,7 +295,8 @@ if(ENABLE_TESTING)
         file(GLOB TEST_FILES "${TEST_SRC_DIR}/*")
         foreach(f IN LISTS TEST_FILES)
             if(EXISTS "${f}" AND NOT IS_DIRECTORY "${f}" AND NOT IS_SYMLINK "${f}")
-                file(COPY "${f}" DESTINATION "${TEST_DST_DIR}")
+                get_filename_component(fname ${f} NAME)
+                file(CREATE_LINK "${f}" "${TEST_DST_DIR}/${fname}" SYMBOLIC)
             endif()
         endforeach()
         set(TESTIS_SRC "${CMAKE_BINARY_DIR}/test/testis.py")
@@ -304,7 +307,7 @@ if(ENABLE_TESTING)
 
     endforeach()
     # Register the test
-    message("what now ${CMAKE_BINARY_DIR}")
+    # message("what now ${CMAKE_BINARY_DIR}")
     set(CC4S_PATH "${CMAKE_BINARY_DIR}/Cc4s")
     string(MD5 CC4S_HASH "${CC4S_PATH}")
     set(OUTPUT_NAME "${CMAKE_BUILD_TYPE}-${CC4S_HASH}")
@@ -320,5 +323,6 @@ if(ENABLE_TESTING)
     set_tests_properties(run-testis PROPERTIES
         ENVIRONMENT "CC4S_RUN=${FULL_RUN_CMD}"
     )
+    message(STATUS "Run tests with `make test` or `ctest -V` for verbose output")
 
 endif()
