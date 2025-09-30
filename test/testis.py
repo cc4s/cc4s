@@ -518,11 +518,14 @@ def main():
     print("\n"
           "Ran {} tests".format(len(tests)))
 
+    some_test_failed = False
     for doit, phase in [(args.run, "run"), (args.check, "check")]:
         if not doit:
             continue
+        failed_tests = [t for t in tests if not t.success_p[phase]]
+        some_test_failed |= len(failed_tests) > 0
         print("\n>> {} ({} failed)\n".format(
-            phase.upper(), len([t for t in tests if not t.success_p[phase]])))
+            phase.upper(), len(failed_tests)))
         for test in tests:
             print("- [{r}] {t.name}{rest}".format(
                 r="{green}ok{clear}".format(green=GREEN, clear=CLEAR)
@@ -532,6 +535,11 @@ def main():
                 rest="" if test.success_p[phase] else "\n\tcd {path}".format(
                     path=test.outpath)))
 
+    if some_test_failed:
+        return 1
+    else:
+        return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
