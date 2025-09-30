@@ -311,18 +311,32 @@ if(ENABLE_TESTING)
     set(CC4S_PATH "${CMAKE_BINARY_DIR}/Cc4s")
     string(MD5 CC4S_HASH "${CC4S_PATH}")
     set(OUTPUT_NAME "${CMAKE_BUILD_TYPE}-${CC4S_HASH}")
+
     add_test(
-        NAME run-testis
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test
-        COMMAND ${Python3_EXECUTABLE} testis.py
-                -rc .
-                -n ${OUTPUT_NAME}
-                --rx ".*"
-                --tags "essential"
-    )
-    set_tests_properties(run-testis PROPERTIES
-        ENVIRONMENT "CC4S_RUN=${FULL_RUN_CMD}"
-    )
+      NAME integration-tests
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test
+      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests)
+
+    set_tests_properties(integration-tests PROPERTIES
+        ENVIRONMENT "CC4S_RUN=${FULL_RUN_CMD}")
+
+      configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/run-integration-tests.in
+        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests)
+
+      configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/run-integration-tests-check.in
+        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests-check)
+
+      configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/run-integration-tests-run.in
+        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests-run)
+
+      configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/run.in
+        ${CMAKE_CURRENT_BINARY_DIR}/test/run
+      @ONLY)
+
     message(STATUS "Run tests with `make test` or `ctest -V` for verbose output")
 
 endif()

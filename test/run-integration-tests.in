@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+export CC4S_RUN="@FULL_RUN_CMD@"
+
+@Python3_EXECUTABLE@ testis.py \
+  -rc . \
+  -n @OUTPUT_NAME@ \
+  --rx ".*" \
+  --tags "essential"
+
+exit $?
