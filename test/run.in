@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 export CC4S_RUN="@FULL_RUN_CMD@"
+export PYTHONPATH=@CMAKE_CURRENT_BINARY_DIR@/test/:$PYTHONPATH
 
 rx=${1:?Give a regex matching the titles of the tests to run}
 tags=${2:?Give tags to be ran, like 'essential and vasp' for instance}

@@ -329,20 +329,23 @@ if(ENABLE_TESTING)
 
       configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/test/run-integration-tests.in
-        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests)
+        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests
+        @ONLY)
 
       configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/test/run-integration-tests-check.in
-        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests-check)
+        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests-check
+        @ONLY)
 
       configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/test/run-integration-tests-run.in
-        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests-run)
+        ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests-run
+        @ONLY)
 
       configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/test/run.in
         ${CMAKE_CURRENT_BINARY_DIR}/test/run
-      @ONLY)
+        @ONLY)
 
     message(STATUS "Run tests with `make test` or `ctest -V` for verbose output")
 
