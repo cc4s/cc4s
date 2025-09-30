@@ -268,9 +268,16 @@ if(ENABLE_TESTING)
     )
 
     if(NOT PY_YAML_FOUND EQUAL 0)
-        message(WARNING "PyYAML is not installed for Python3 (${Python3_EXECUTABLE}). "
-                        "testis.py requires PyYAML to check test outputs. "
-                        "Tests may fail unless you install it via pip or your package manager.")
+      message(WARNING
+        "PyYAML is not installed for Python3 (${Python3_EXECUTABLE}). "
+        "CC4S will build the pyyaml from source")
+
+      execute_process(
+        COMMAND bash -c
+        "git clone https://github.com/yaml/pyyaml ${CMAKE_BINARY_DIR}/test/pyyaml &&
+         mkdir -p ${CMAKE_BINARY_DIR}/test/lib/python/ &&
+         ln -rs ${CMAKE_BINARY_DIR}/test/pyyaml/lib/yaml/ ${CMAKE_BINARY_DIR}/test/lib/python/"
+        RESULT_VARIABLE PY_YAML_BUILT)
     endif()
 
     set(TEST_BUILD_DIR ${CMAKE_BINARY_DIR}/test/tests)
