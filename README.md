@@ -9,6 +9,22 @@ Coupled Cluster for Solids
 
 These dependencies are built automatically by the cmake program.
 
+Super Quick start
+-----------------
+
+Load the relevant modules in your computer, you'll need
+- BLAS
+- lapack
+- Scalapack
+
+run the build script,
+
+```sh
+./build.sh
+```
+
+This will build by default the project in the directory `build`.
+
 Building the project
 --------------------
 
@@ -48,40 +64,14 @@ Testing
 
 ### Running tests
 
-- Run the main Makefile with
+- Once you have built the project, you can run the tests by issuing the cmake test command
   ```
-  make test CONFIG=gcc CC4S=build/Cc4s
+  ctest -V
   ```
-- this issues all tests of the given type for local build binary of the given
-  build environment.
+- The test scripts are found in the test directory inside the build directory,
+  you can edit them to have more fine control on which tests to run:
 
-### Writing tests
-
-TODO
-
-Update dependencies
--------------------
-
-If any of the dependencies are updated by their respective maintainer, you
-can incorporate the latest version into cc4s. Note that this may lead to
-incompatabilities and it must therefore be done with good care.
-
-- if you intent to update the master, create a branch from the master.
-  In case anything goes wrong the damage is controlled
-- update the dependency at the top level of the cc4s directory structure:
-  by editing the `CMakeLists.txt` file and replacing the commit hash
-  by the new commit hash in the dependency's repository.
-- run the `cc4s` `essental` tests for all configurations supported
-- fix all bugs that emerged from advancing to the new version in `cc4s` or
-  let them be fixed in the modules.
-
-If all tests pass, `cc4s` may be advanced to the new dependency's  versions
-by
-```
-git commit -m "Update dependency to version {...}"
-```
-
-- if you want to advance the master branch, merge your branch into it.
-
-Note that you may commit changes to the your branch even if things do
-not work. However, each commit will be visible in the history.
+  - test/run -> A general script to run tests
+  - test/run-integration-tests -> Run all the essential tests
+  - test/run-integration-tests-run -> only run the tests, do not check the results
+  - test/run-integration-tests-check -> only check the results of the test runs.
