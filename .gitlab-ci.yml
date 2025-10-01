@@ -1,10 +1,10 @@
 variables:
-  CONFIG: "gcc-oblas-ompi"
   NP: 4
 
 stages:
   - build
   - test
+  - dist
 
 build:
   stage: build
@@ -28,7 +28,7 @@ test:
   script:
     - salloc -N1 -n$NP "cd build; ctest -V"
 
-build:
+dist:
   stage: dist
   only:
     - master
