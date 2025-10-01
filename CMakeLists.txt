@@ -26,22 +26,38 @@ else()
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-set(YAML_CPP_GIT_TAG "c9460110e072df84b7dee3eb651f2ec5df75fb18")
-FetchContent_Declare(
-  yaml-cpp
-  GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/yaml-cpp
-  GIT_TAG        ${YAML_CPP_GIT_TAG}
-)
-message(STATUS "==== About to fetch YAML_CPP from gitlab.cc4s.org ====")
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/yaml-cpp")
+  message(STATUS "Using local fallback for yaml-cpp")
+  FetchContent_Declare(
+    yaml-cpp
+    SOURCE_DIR "${CMAKE_SOURCE_DIR}/thirdparty/yaml-cpp"
+  )
+else()
+  message(STATUS "Cloning yaml-cpp from the internet")
+  set(YAML_CPP_GIT_TAG "c9460110e072df84b7dee3eb651f2ec5df75fb18")
+  FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/yaml-cpp
+    GIT_TAG        ${YAML_CPP_GIT_TAG}
+  )
+endif()
 FetchContent_MakeAvailable(yaml-cpp)
 
-set(CTF_GIT_TAG "01ea778f8883f872fc009dee5872069a3ffebe50")
-FetchContent_Declare(
-  ctf
-  GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/ctf
-  GIT_TAG        ${CTF_GIT_TAG}
-)
-message(STATUS "==== About to fetch ctf from gitlab.cc4s.org ====")
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/ctf")
+  message(STATUS "Using local fallback for CTF")
+  FetchContent_Declare(
+    ctf
+    SOURCE_DIR "${CMAKE_SOURCE_DIR}/thirdparty/ctf"
+  )
+else()
+  message(STATUS "Cloning CTF from the internet")
+  set(CTF_GIT_TAG "01ea778f8883f872fc009dee5872069a3ffebe50")
+  FetchContent_Declare(
+    ctf
+    GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/ctf
+    GIT_TAG        ${CTF_GIT_TAG}
+  )
+endif()
 FetchContent_MakeAvailable(ctf)
 
 
