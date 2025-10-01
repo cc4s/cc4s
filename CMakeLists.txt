@@ -300,9 +300,7 @@ if(ENABLE_TESTING)
           "
           RESULT_VARIABLE PY_YAML_BUILT)
       else()
-        message(STATUS
-          "Locak version of pyyaml will be used"
-          "CC4S will build the pyyaml from source")
+        message(STATUS "Locak version of pyyaml will be used")
       endif()
     endif()
 
