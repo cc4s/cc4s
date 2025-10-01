@@ -42,6 +42,14 @@ git clone https://gitlab.cc4s.org/cc4s/yaml-cpp ${YAML_CPP_DIR}
   git checkout ${YAML_CPP_GIT_TAG}
 )
 
+##################################################
+# testis-store
+#
+(
+  cd ${DIST_DIR}/test
+  make data
+)
+
 # Create the tarball
 tar -czvf "${DIST_ROOT}/$PACKAGE_NAME.tar.gz" "${DIST_DIR}"
 

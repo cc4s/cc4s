@@ -304,6 +304,10 @@ if(ENABLE_TESTING)
     # copy testis script and global sources
     file(COPY "${CMAKE_SOURCE_DIR}/test/testis.py" DESTINATION "${CMAKE_BINARY_DIR}/test")
     file(COPY "${CMAKE_SOURCE_DIR}/test/sources.json" DESTINATION "${CMAKE_BINARY_DIR}/test")
+    file(CREATE_LINK
+      "${CMAKE_SOURCE_DIR}/test/testis-store"
+      "${CMAKE_BINARY_DIR}/test/testis-store"
+      SYMBOLIC)
 
     file(GLOB_RECURSE TEST_JSON_FILES ${CMAKE_SOURCE_DIR}/test/tests/*/test.json)
 
