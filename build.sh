@@ -34,6 +34,6 @@ cmake .. \
 make -j $(nproc --all)
 
 # run the tests
-if [[ ! ${notest} = no ]]; then
+if [[ ${notest} = no ]]; then
   ctest -V
 fi
