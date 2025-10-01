@@ -32,6 +32,7 @@ FetchContent_Declare(
   GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/yaml-cpp
   GIT_TAG        ${YAML_CPP_GIT_TAG}
 )
+message(STATUS "==== About to fetch YAML_CPP from gitlab.cc4s.org ====")
 FetchContent_MakeAvailable(yaml-cpp)
 
 set(CTF_GIT_TAG "01ea778f8883f872fc009dee5872069a3ffebe50")
@@ -40,6 +41,7 @@ FetchContent_Declare(
   GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/ctf
   GIT_TAG        ${CTF_GIT_TAG}
 )
+message(STATUS "==== About to fetch ctf from gitlab.cc4s.org ====")
 FetchContent_MakeAvailable(ctf)
 
 
