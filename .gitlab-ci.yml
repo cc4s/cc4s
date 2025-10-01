@@ -28,7 +28,7 @@ test:
   script:
     - salloc -N1 -n$NP "cd build; ctest -V"
 
-dist:
+build:
   stage: dist
   only:
     - master
