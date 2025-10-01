@@ -285,17 +285,25 @@ if(ENABLE_TESTING)
         ERROR_QUIET
     )
 
+    set(CC4S_PYTHONPATH "${CMAKE_SOURCE_DIR}/test/:${CMAKE_SOURCE_DIR}/thirdparty/pyyaml/lib/")
     if(NOT PY_YAML_FOUND EQUAL 0)
-      message(WARNING
-        "PyYAML is not installed for Python3 (${Python3_EXECUTABLE}). "
-        "CC4S will build the pyyaml from source")
+      if(NOT EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/pyyaml")
+        message(STATUS
+          "PyYAML is not installed for Python3 (${Python3_EXECUTABLE}). "
+          "CC4S will build the pyyaml from source")
 
-      execute_process(
-        COMMAND bash -c
-        "git clone https://github.com/yaml/pyyaml ${CMAKE_BINARY_DIR}/test/pyyaml &&
-         mkdir -p ${CMAKE_BINARY_DIR}/test/lib/python/ &&
-         ln -rs ${CMAKE_BINARY_DIR}/test/pyyaml/lib/yaml/ ${CMAKE_BINARY_DIR}/test/lib/python/"
-        RESULT_VARIABLE PY_YAML_BUILT)
+        execute_process(
+          COMMAND bash -c
+          "
+          mkdir -p ${CMAKE_SOURCE_DIR}/thirdparty/ &&
+          git clone https://github.com/yaml/pyyaml ${CMAKE_SOURCE_DIR}/thirdparty/pyyaml
+          "
+          RESULT_VARIABLE PY_YAML_BUILT)
+      else()
+        message(STATUS
+          "Locak version of pyyaml will be used"
+          "CC4S will build the pyyaml from source")
+      endif()
     endif()
 
     set(TEST_BUILD_DIR ${CMAKE_BINARY_DIR}/test/tests)

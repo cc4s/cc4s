@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export CC4S_RUN="@FULL_RUN_CMD@"
-export PYTHONPATH=@CMAKE_CURRENT_BINARY_DIR@/test/:$PYTHONPATH
+export PYTHONPATH=@CC4S_PYTHONPATH@:$PYTHONPATH
 
 @Python3_EXECUTABLE@ testis.py \
   -rc . \

@@ -31,9 +31,6 @@ def _get_root_folder():
 def get_store_folder():
     return op.join(_get_root_folder(), "testis-store")
 
-
-sys.path.append(op.join(_get_root_folder(), "lib", "python"))
-
 __version__ = "0.0.1"
 __author__ = "Alejandro Gallo"
 __email__ = "aamsgallo@gmail.com"

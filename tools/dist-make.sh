@@ -42,6 +42,9 @@ git clone https://gitlab.cc4s.org/cc4s/yaml-cpp ${YAML_CPP_DIR}
   git checkout ${YAML_CPP_GIT_TAG}
 )
 
+PYYAML_DIR=${DIST_DIR}/thirdparty/pyyaml
+git clone https://github.com/yaml/pyyaml ${PYYAML_DIR}
+
 ##################################################
 # testis-store
 #
