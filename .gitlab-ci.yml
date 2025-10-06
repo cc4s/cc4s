@@ -13,9 +13,9 @@ build:
     - develop
   script:
     - salloc -N1 -n$NP ./build.sh build Release notest
-  artifacts:
-    paths:
-      - "build/*"
+  # artifacts:
+  #   paths:
+  #     - "build/*"
 
 test:
   stage: test
@@ -24,7 +24,7 @@ test:
     - develop
   needs:
     - job: build
-      artifacts: true
+      # artifacts: true
   script:
     - salloc -N1 -n$NP "cd build; ctest -V"
 
