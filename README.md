@@ -71,7 +71,14 @@ Testing
 - The test scripts are found in the test directory inside the build directory,
   you can edit them to have more fine control on which tests to run:
 
-  - test/run -> A general script to run tests
-  - test/run-integration-tests -> Run all the essential tests
-  - test/run-integration-tests-run -> only run the tests, do not check the results
-  - test/run-integration-tests-check -> only check the results of the test runs.
+  - `test/run`: A general script to run tests
+  - `test/run-integration-tests`: Run all the essential tests
+  - `test/run-integration-tests-run`: only run the tests, do not check the results
+  - `test/run-integration-tests-check`: only check the results of the test runs.
+- By default the tests are ran using `4` processes and `mpirun`.
+  If want to run the tests using more cores, you can run any of the above scripts
+  with the first argument being the number of cores, e.g.,
+  ```sh
+  ./test/run-integration-tests-run 8
+  ```
+  You may also edit the test scripts at will in order to run more tailored workflows.
