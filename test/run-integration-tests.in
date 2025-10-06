@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
+set -eu
 
-export CC4S_RUN="@FULL_RUN_CMD@"
-export PYTHONPATH=@CC4S_PYTHONPATH@:$PYTHONPATH
+cd @TEST_DIR@
 
-@Python3_EXECUTABLE@ testis.py \
-  -rc . \
-  -n @OUTPUT_NAME@ \
+./run "${1:?Number of processes}" \
+  --run \
+  --check \
   --rx ".*" \
   --tags "essential"
 

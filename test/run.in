@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
+set -eu
 
-export CC4S_RUN="@FULL_RUN_CMD@"
+export CC4S_PATH=@CC4S_PATH@
 export PYTHONPATH=@CC4S_PYTHONPATH@:$PYTHONPATH
 
-rx=${1:?Give a regex matching the titles of the tests to run}
-tags=${2:?Give tags to be ran, like 'essential and vasp' for instance}
+np=${1:?Give the ranks to run Cc4s on}
+shift
 
+export CC4S_RUN="mpirun -np ${np} ${CC4S_PATH}"
+
+cd @TEST_DIR@
 @Python3_EXECUTABLE@ testis.py \
-  -rc . \
+  . \
   -n @OUTPUT_NAME@ \
-  --rx "${rx}" \
-  --tags "${tags}"
+  "$@"
 
 exit $?

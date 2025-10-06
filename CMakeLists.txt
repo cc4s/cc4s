@@ -269,9 +269,10 @@ set(CTEST_OUTPUT_ON_FAILURE ON)
 if(ENABLE_TESTING)
     # User can optionally override number of processes
     set(NP 4 CACHE STRING "Number of MPI processes")
-    set(CC4S_RUN "${CMAKE_BINARY_DIR}/Cc4s")
-    set(FULL_RUN_CMD "mpirun -np ${NP} ${CC4S_RUN}"
+    set(CC4S_PATH "${CMAKE_BINARY_DIR}/Cc4s")
+    set(FULL_RUN_CMD "mpirun -np ${NP} ${CC4S_PATH}"
       CACHE STRING "Command to run CC4S")
+    set(TEST_DIR ${CMAKE_BINARY_DIR}/test)
     message(STATUS "CC4S for integration tests = ${FULL_RUN_CMD}")
 
     enable_testing()
@@ -343,14 +344,13 @@ if(ENABLE_TESTING)
     endforeach()
     # Register the test
     # message("what now ${CMAKE_BINARY_DIR}")
-    set(CC4S_PATH "${CMAKE_BINARY_DIR}/Cc4s")
     string(MD5 CC4S_HASH "${CC4S_PATH}")
     set(OUTPUT_NAME "${CMAKE_BUILD_TYPE}-${CC4S_HASH}")
 
     add_test(
       NAME integration-tests
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test
-      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests)
+      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test/run-integration-tests 4)
 
     set_tests_properties(integration-tests PROPERTIES
         ENVIRONMENT "CC4S_RUN=${FULL_RUN_CMD}")
