@@ -1,11 +1,6 @@
 variables:
   NP: 4
 
-stages:
-  - build
-  - test
-  - dist
-
 build:
   stage: build
   only:
@@ -13,9 +8,17 @@ build:
     - develop
   script:
     - salloc -N1 -n$NP ./build.sh build Release notest
-  # artifacts:
-  #   paths:
-  #     - "build/*"
+  artifacts:
+    paths:
+      - "build/"
+
+dist:
+  stage: build
+  only:
+    - master
+    - develop
+  script:
+    - ./tools/dist-make.sh
 
 test:
   stage: test
@@ -24,16 +27,8 @@ test:
     - develop
   needs:
     - job: build
-      # artifacts: true
+      artifacts: true
   script:
     - ls
     - ls build
     - salloc -N1 -n$NP bash -c "cd build; ctest -V"
-
-dist:
-  stage: dist
-  only:
-    - master
-    - develop
-  script:
-    - ./tools/dist-make.sh
