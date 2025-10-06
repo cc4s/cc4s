@@ -26,7 +26,7 @@ test:
     - job: build
       # artifacts: true
   script:
-    - salloc -N1 -n$NP "cd build; ctest -V"
+    - salloc -N1 -n$NP bash -c "cd build; ctest -V"
 
 dist:
   stage: dist
