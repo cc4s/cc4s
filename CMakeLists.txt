@@ -4,6 +4,7 @@ project(Cc4s LANGUAGES CXX)
 include(FetchContent)
 
 # Set C++ standard
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -102,6 +103,7 @@ endif()
 add_executable(Cc4s
   src/main/Cc4s.cxx
   src/main/GC.cxx
+  src/main/StepCheck.cxx
   src/main/Options.cxx
 
   # Set writer and reader in front of all files that use its
