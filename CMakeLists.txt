@@ -103,6 +103,7 @@ endif()
 add_executable(Cc4s
   src/main/Cc4s.cxx
   src/main/GC.cxx
+  src/main/StepCheck.cxx
   src/main/Options.cxx
 
   # Set writer and reader in front of all files that use its

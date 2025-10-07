@@ -25,10 +25,11 @@
 #include <atrip/Debug.hpp>
 #include <atrip/Reader.hpp>
 #include <atrip/Sources.hpp>
+#include <tcc/Tcc.hpp>
+#include <StepCheck.hpp>
+
 #include <fstream>
 #include <iomanip>
-#include <tcc/Tcc.hpp>
-
 
 using namespace cc4s;
 ALGORITHM_REGISTRAR_DEFINITION(PerturbativeTriples)
@@ -46,7 +47,13 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
   const size_t omp_granularity = arguments->getValue<int>("ompGranularity", 1);
 
-  const bool delete_tnsr = arguments->getValue<int>("deleteTensors", 1) == 1;
+  bool delete_tnsr = arguments->getValue<int>("deleteTensors", 1) == 1;
+
+  // If PerturbativeTriples is not the last algorithm to run
+  // do not delete the tensors
+  if (!StepCheck::PerturbativeTriplesIsLast) {
+    delete_tnsr = false;
+  }
 
   if (delete_tnsr) {
     OUT() << "Warning: All tensors will be deleted. Ensure this is"

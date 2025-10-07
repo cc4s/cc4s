@@ -15,6 +15,7 @@
 
 #include <Cc4s.hpp>
 #include <GC.hpp>
+#include <StepCheck.hpp>
 #include <algorithms/Algorithm.hpp>
 #include <tcc/Tcc.hpp>
 #include <Parser.hpp>
@@ -172,6 +173,7 @@ void Cc4s::runSteps(const bool dry) {
       // executedSteps->get(i) = step;
       if (!options->no_gc)
         collect_garbage(i, steps, storage);
+      StepCheck::check_all(steps, storage);
       // emit output, overwrite from previous step
       if ( options->outfiles == 2 || ( options->outfiles == 1 && !dry )) {
         std::string stagePrefix(dry ? "dry-" : "");
