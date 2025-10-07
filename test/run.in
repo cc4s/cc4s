@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -e
 
 export CC4S_PATH=@CC4S_PATH@
 export PYTHONPATH=@CC4S_PYTHONPATH@:$PYTHONPATH
