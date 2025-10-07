@@ -87,6 +87,14 @@ namespace cc4s {
 
     template <typename F=Real<>>
     static Ptr<Tensor<F,TensorEngine>> tensor(
+      const std::vector<size_t> &lens, const std::string &name, const std::vector<int> &partition
+    ) {
+      return Tensor<F,TensorEngine>::create(lens, name, partition);
+    }
+
+
+    template <typename F=Real<>>
+    static Ptr<Tensor<F,TensorEngine>> tensor(
       const Ptr<Tensor<F,TensorEngine>> &source, const std::string &name
     ) {
       return Tensor<F,TensorEngine>::create(source->getLens(), name);

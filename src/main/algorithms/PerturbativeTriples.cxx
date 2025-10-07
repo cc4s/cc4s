@@ -46,7 +46,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
   const size_t omp_granularity = arguments->getValue<int>("ompGranularity", 1);
 
-  const bool delete_tnsr = arguments->getValue<int>("deleteTensors", 1) == 1;
+  const bool delete_tnsr = arguments->getValue<int>("deleteTensors", 0) == 1;
 
   if (delete_tnsr) {
     OUT() << "Warning: All tensors will be deleted. Ensure this is"
@@ -282,6 +282,17 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
             : atrip::Atrip::Input<F>::TuplesDistribution::NAIVE;
 
     auto &Tpphh = get_ctf_tensor<F, TE>(amplitudes, "pphh");
+
+    auto _Tpphh = amplitudes->get("pphh")->evaluate();
+    auto part_Tpphh = _Tpphh->getPartition();
+    auto _Vppph = arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals")->get("ppph")->evaluate();
+    auto part_Vppph = _Vppph->getPartition();
+    auto _Vhhhp = arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals")->get("hhhp")->evaluate();
+    auto part_Vhhhp = _Vhhhp->getPartition();
+    auto _Vpphh = arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals")->get("pphh")->evaluate();
+    auto part_Vpphh = _Vpphh->getPartition();
+
+
     size_t nv(_nv), no(_no);
     auto sVabph = atrip::ctfReader<F>(*(__V__(ppph)), {nv, nv, nv, no},
                                       {1, 1, 0, 0}, delete_tnsr);
@@ -331,6 +342,12 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     }
     OUT() << "All tensors loaded; starting main loop." << std::endl;
     out = atrip::Atrip::run<F>(in);
+
+    _Tpphh->switchDistribution(part_Tpphh);
+    _Vppph->switchDistribution(part_Vppph);
+    _Vpphh->switchDistribution(part_Vpphh);
+    _Vhhhp->switchDistribution(part_Vhhhp);
+
   } else {
 
     const auto distribution =

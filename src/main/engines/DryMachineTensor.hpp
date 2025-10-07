@@ -160,6 +160,16 @@ namespace cc4s {
       return tensor.name;
     }
 
+    // this is the distribution of the CTF tensor.
+    std::vector<int> getPartition() {
+      return {};
+    }
+
+    // nothing to do here
+    void switchDistribution(std::vector<int> part) {
+    }
+
+
     // adapted DryTensor
     T tensor;
 
@@ -172,7 +182,8 @@ namespace cc4s {
     // create adapter from shape and name
     static Ptr<DryMachineTensor<F,ETE>> create(
       const std::vector<size_t> &lens,
-      const std::string &name
+      const std::string &name,
+      const std::vector<int> &partition = {}
     ) {
       return New<DryMachineTensor<F,ETE>>(lens, name, ProtectedToken());
     }

@@ -41,18 +41,52 @@ namespace cc4s {
     typedef CTF::Tensor<F> T;
     typedef CtfTensorEngine TensorEngine;
 
+
+    // This is a helper function for the initializer
+    static CTF::Tensor<F> makeTensor(
+      const std::vector<size_t> &lens,
+      const std::string &name,
+      const std::vector<int> &partition
+    ) {
+      int order(lens.size());
+      std::vector<int64_t> lens64(lens.begin(), lens.end());
+      std::vector<int> sym(lens.size(), 0); // was your {0, lens.size()} thing
+
+      if (partition.empty()) {
+        return CTF::Tensor<F>(
+          order,
+          lens64.data(),
+          sym.data(),
+          CTF::get_universe(),
+          name.c_str()
+        );
+      } else {
+        std::string albet{"abcdefghijklmnopqrstuvwxyz"};
+        auto s1 = albet.substr(0, lens.size());
+        auto s2(s1);
+        for (int i = 0; i < partition[0]; ++i) std::next_permutation(s2.begin(), s2.end());
+
+        CTF::Partition part(static_cast<int>(lens.size()), partition.data() + 1);
+        return CTF::Tensor<F>(
+          order,
+          lens64.data(),
+          sym.data(),
+          CTF::get_universe(),
+          s1.c_str(),
+          part[s2.c_str()],
+          CTF::Idx_Partition(),
+          name.c_str()
+        );
+      }
+    }
+
     // constructors
     CtfMachineTensor(
       const std::vector<size_t> &lens,
       const std::string &name,
+      const std::vector<int> &partition,
       const ProtectedToken &
-    ):
-      tensor(
-        static_cast<int>(lens.size()),
-        std::vector<int64_t>(lens.begin(), lens.end()).data(),
-        std::vector<int>(0, lens.size()).data(),
-        CTF::get_universe(), name.c_str()
-      )
+    ): tensor(makeTensor(lens, name, partition))
     {
     }
 
@@ -221,6 +255,51 @@ namespace cc4s {
       return std::string(tensor.get_name());
     }
 
+
+    std::vector<int> getPartition() {
+      std::vector<int> out(tensor.order+1);
+      std::vector<int> perm(tensor.order), base(tensor.order);
+      int j(0);
+      for (int dim = 0; dim < tensor.order; dim++) {
+        auto &m = tensor.edge_map[dim];
+        if (m.np != m.calc_phase() || m.np != m.calc_phys_phase()) return {-1};
+        out[dim+1] = m.np;
+        perm.push_back(m.cdt);
+        (m.np > 1) ? base.push_back(j++) : base.push_back(m.cdt);
+        //OUT()  << "Name: " << tensor.name << " ,Dim " << dim
+        //       << ": np=" << m.np
+        //       << " cdt=" << m.cdt
+        //       << " phase=" << m.calc_phase()
+        //       << " phys_phase=" << m.calc_phys_phase()
+        //       << std::endl;
+      }
+      int p = 0;
+      do {
+        if (base == perm) break;
+        ++p;
+      } while (std::next_permutation(base.begin(), base.end()));
+      /* simple algorithm to decode the permutation id
+       std::vector<int> decode(int rank, int n) {
+         std::vector<int> perm(n);
+         for (int i = 0; i < n; ++i) perm[i] = i;
+         for (int i = 0; i < rank; ++i) std::next_permutation(perm.begin(), perm.end());
+         return perm;
+       }
+      */
+      out[0] = p;
+      return out;
+    }
+
+    void switchDistribution(std::vector<int> partition) {
+      std::string albet{"abcdefghijklmnopqrstuvwxyz"};
+      auto s1 = albet.substr(0, tensor.order);
+      auto s2(s1);
+      for (int i = 0; i < partition[0]; ++i) std::next_permutation(s2.begin(), s2.end());
+      CTF::Partition part(tensor.order, partition.data() + 1);
+      tensor.switch_distribution(s1.c_str(), part[s2.c_str()]);
+    }
+
+
     /**
      * \brief The adapted CTF tensor
      **/
@@ -233,9 +312,10 @@ namespace cc4s {
 
     static Ptr<CtfMachineTensor<F>> create(
       const std::vector<size_t> &lens,
-      const std::string &name
+      const std::string &name,
+      const std::vector<int> &partition = {}
     ) {
-      return NEW(CtfMachineTensor<F>, lens, name, ProtectedToken());
+      return NEW(CtfMachineTensor<F>, lens, name, partition, ProtectedToken());
     }
 
     friend class Tensor<F,CtfTensorEngine>;

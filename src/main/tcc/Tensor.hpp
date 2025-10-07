@@ -290,6 +290,7 @@ namespace cc4s {
     Ptr<TensorNonZeroConditions> nonZeroConditions;
     Real<> unit;
     Ptr<MapNode> metaData;
+    std::vector<int> partition;
 
   protected:
     /**
@@ -351,6 +352,22 @@ namespace cc4s {
     {
       // the machine tensor is not allocated initially
     }
+
+    /*
+     * \brief tensor allocation with provided partition
+     */
+    Tensor(
+      const std::vector<size_t> &lens_,
+      const std::string &name_,
+      const std::vector<int> partition_,
+      const ProtectedToken &
+    ):
+      lens(lens_), assumedShape(true), dimensions(lens_.size()),
+      partition(partition_), version(0), name(name_)
+    {
+      // the machine tensor is not allocated initially
+    }
+
 
     /**
      * \brief Create a tensor from a given machine tensor.
@@ -416,6 +433,16 @@ namespace cc4s {
       );
     }
 
+    // Create tensor with processor partition
+    static Ptr<Tensor<F,TE>> create(
+      const std::vector<size_t> &lens,
+      const std::string &name,
+      const std::vector<int> &partition
+    ) {
+      return New<Tensor<F,TE>>(lens, name, partition, ProtectedToken());
+    }
+
+
     static Ptr<Tensor<F,TE>> create(
       const typename MT::T &unadaptedTensor
     ) {
@@ -449,9 +476,21 @@ namespace cc4s {
 
         // allocate the implementation specific machine tensor upon request
         auto old_bytes = Cc4s::memoryTracker->reset();
-        machineTensor = MT::create(lens, name);
-        // wait until allocation is done on all processes
+        // partition before creating tensor
+        // if empty, ctf decides upon partition
+        auto _partition = partition;
+        machineTensor = MT::create(lens, name, partition);
         Cc4s::world->barrier();
+        partition = machineTensor->getPartition();
+        //sanity check if partition is set correctly
+        if (_partition.size() > 0) {
+          ASSERT_LOCATION(_partition == partition,
+            "Tried to initialize tensor with partition failed",
+            SOURCE_LOCATION
+          );
+        }
+
+        // wait until allocation is done on all processes
         auto new_bytes = Cc4s::memoryTracker->current_bytes_allocated();
         if (Cc4s::dryRun == false) {
           LOG() << "[MemTrack] Allocated: " << new_bytes - old_bytes << std::endl;
@@ -646,6 +685,13 @@ namespace cc4s {
       return metaData;
     }
 
+    std::vector<int> getPartition() const {
+      return partition;
+    }
+
+    void switchDistribution(std::vector<int>&partition) {
+      getMachineTensor()->switchDistribution(partition);
+    }
 
     /**
      * \brief Returns the number of elements contained in this tensor.
