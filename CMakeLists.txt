@@ -131,7 +131,6 @@ add_executable(Cc4s
   src/main/algorithms/BasisSetCorrection.cxx
   src/main/algorithms/CcsdChannels.cxx
   src/main/algorithms/CcsdtNonit.cxx
-  src/main/algorithms/CcsdTTT.cxx
   # Warning:
   # Always put CoupledClusterMethod.cxx before all other
   # files that depend on it to declare statically the methods!
