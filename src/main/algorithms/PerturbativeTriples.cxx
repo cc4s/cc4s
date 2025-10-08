@@ -352,11 +352,12 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
     OUT() << "All tensors loaded; starting main loop." << std::endl;
     out = atrip::Atrip::run<F>(in);
 
-    _Tpphh->switchDistribution(part_Tpphh);
-    _Vppph->switchDistribution(part_Vppph);
-    _Vpphh->switchDistribution(part_Vpphh);
-    _Vhhhp->switchDistribution(part_Vhhhp);
-
+    if (delete_tnsr == false) {
+      _Tpphh->switchDistribution(part_Tpphh);
+      _Vppph->switchDistribution(part_Vppph);
+      _Vpphh->switchDistribution(part_Vpphh);
+      _Vhhhp->switchDistribution(part_Vhhhp);
+    }
   } else {
 
     const auto distribution =
