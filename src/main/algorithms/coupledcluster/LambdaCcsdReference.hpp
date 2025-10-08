@@ -36,7 +36,7 @@ namespace cc4s {
       const Ptr<MapNode> &arguments
     ): CoupledClusterMethod<F,TE>(arguments) {
     }
-    std::string getName() override { return "LambdaCcsdReference"; }
+    std::string getName() override { return "LambdaCcsd"; }
     static CoupledClusterMethodRegistrar<
       F,TE,LambdaCcsdReference<F,TE>
     > registrar_;

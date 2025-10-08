@@ -20,6 +20,7 @@
 #include <MathFunctions.hpp>
 #include <Exception.hpp>
 #include <Cc4s.hpp>
+#include <TypeTraits.hpp>
 
 using namespace cc4s;
 
@@ -72,6 +73,8 @@ Ptr<MapNode> VertexCoulombIntegrals::run(const Ptr<MapNode>& arguments) {
 
   auto NF(conjTG["pp"]->inspect()->lens[0]);
   context["NF"] = NF;
+
+  context["type"] = TypeTraits<F>::getName();
   const char ckeys[] = {'p', 'h'};
   for (char LO : ckeys) {
     for (char RO : ckeys) {

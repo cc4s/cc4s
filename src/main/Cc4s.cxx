@@ -189,6 +189,7 @@ void Cc4s::runSteps(const bool dry) {
   if (dry) {
 
     int last_occ = 0, last_vir = 0, last_NF = 0;
+    std::string last_type = "unknown";
     std::vector<std::string> methods;
     std::vector<std::string> out;
 
@@ -197,7 +198,7 @@ void Cc4s::runSteps(const bool dry) {
         std::string line = "occ: " + std::to_string(last_occ)
                          + ", vir: " + std::to_string(last_vir)
                          + ", NF: "  + std::to_string(last_NF)
-                         + ": ";
+                         + " ( " + last_type + " ): ";
 
         std::vector<std::string> fused;
         for (auto &m : methods) {
@@ -220,17 +221,20 @@ void Cc4s::runSteps(const bool dry) {
 
     for (const auto &ctx : contexts) {
       int occ = last_occ, vir = last_vir, NF = last_NF;
+      std::string type = last_type;
       if (ctx["occ"] && ctx["occ"].IsDefined()) occ = ctx["occ"].as<int>();
       if (ctx["vir"] && ctx["vir"].IsDefined()) vir = ctx["vir"].as<int>();
       if (ctx["NF"]  && ctx["NF"].IsDefined())  NF  = ctx["NF"].as<int>();
+      if (ctx["type"]  && ctx["type"].IsDefined())  type = ctx["type"].as<std::string>();
 
       // if base values changed, append previous batch
-      if (occ != last_occ || vir != last_vir || NF != last_NF) {
+      if (occ != last_occ || vir != last_vir || NF != last_NF || type != last_type) {
         appendFused();
         methods.clear();
         last_occ = occ;
         last_vir = vir;
         last_NF = NF;
+        last_type = type;
       }
 
       if (ctx["method"] && ctx["method"].IsDefined()) {

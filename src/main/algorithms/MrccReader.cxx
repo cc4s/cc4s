@@ -389,6 +389,7 @@ Ptr<MapNode> MrccReader::run(
   context["occ"] = nocc;
   context["vir"] = nFno;
   context["NF"]  = ndfbasis;
+  context["type"] = "Real64";
 
 
 

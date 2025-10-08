@@ -204,6 +204,7 @@ Ptr<MapNode> UegVertexGenerator::run(
 
   if (NF != momMap.size() || !complexAmplitudes || !lclosed)
     OUT() << "WARNING: the Vertex will not be correct! Just for profiling!\n";
+    OUT() << "         Correct vertices only for complex Amplitudes and gapped systems\n";
 
   Real<> fac(4.0*Pi<>()/v);
 

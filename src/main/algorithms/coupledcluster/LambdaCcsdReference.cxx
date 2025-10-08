@@ -24,7 +24,7 @@ using namespace cc4s;
 template <typename F, typename TE>
 CoupledClusterMethodRegistrar<
   F,TE,LambdaCcsdReference<F,TE>
-> LambdaCcsdReference<F,TE>::registrar_("LambdaCcsdReference");
+> LambdaCcsdReference<F,TE>::registrar_("LambdaCcsd");
 
 
 template <typename F, typename TE>
