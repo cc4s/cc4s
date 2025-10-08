@@ -122,7 +122,7 @@ steps:
       integralsSliceSize: 100
       levelShift: 0
       maxIterations: 20
-      method: LambdaCcsdReference
+      method: LambdaCcsd
       mixer:
         maxResidua: 4
         t3Mixing: 0
