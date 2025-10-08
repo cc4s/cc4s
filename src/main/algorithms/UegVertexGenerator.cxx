@@ -267,7 +267,7 @@ Ptr<MapNode> UegVertexGenerator::run(
   std::vector<Natural<>> slicePerRank(np);
   for (int r(0); r < np; r++){
     Natural<> lslice(slices);
-    for (Natural<> i(0); i < Np - slices*np; i++) if (r == i){
+    for (Natural<> i(0); i < Np - slices*np; i++) if (static_cast<size_t>(r) == i){
       lslice++;
     }
     slicePerRank[r] = lslice;

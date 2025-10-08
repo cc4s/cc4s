@@ -60,7 +60,6 @@ MrccReader::get_gamma_ab<DefaultDryTensorEngine, DryMode::DRY>(bool fnoApprox,
                                                                ___tensor_wrapper<DefaultDryTensorEngine> Epsh,
                                                                ___tensor_wrapper<DefaultDryTensorEngine> Mos_vir) {
   if (fnoApprox) {
-    using DryTensor = Tensor<Real<>, DefaultDryTensorEngine>;
     return eval_mp2_approx_dry<DefaultDryTensorEngine>(Gamma_igm,
                                                        Epsp,
                                                        Epsh,
@@ -78,7 +77,6 @@ std::vector<Real<>> MrccReader::get_gamma_ab<DefaultTensorEngine, DryMode::WET>(
                                                                                 ___tensor_wrapper<DefaultTensorEngine> Epsh,
                                                                                 ___tensor_wrapper<DefaultTensorEngine> Mos_vir) {
   if (fnoApprox) {
-    using WetTensor = Tensor<Real<>, DefaultTensorEngine>;
     return eval_mp2_approx<DefaultTensorEngine>(Gamma_igm,
                                                 Epsp,
                                                 Epsh,
@@ -659,7 +657,7 @@ std::vector<Real<>> MrccReader::eval_mp2_approx(Ptr<Tensor<Real<>,TE>> Gamma_igm
 
   std::vector<double> gamma_ab(nvir*nvir, 0.0);
 
-  size_t localOcc = nocc / np + size_t( rank < nocc % np);
+  size_t localOcc = nocc / np + size_t( static_cast<size_t>(rank) < nocc % np);
   size_t b_size(nvir*ndfbasis);
   std::vector<double> Dabii(nvir*nvir), buf_ga(b_size), buf_pp(nvir*nvir);
   for (size_t ii(0UL); ii < localOcc; ii++) {
@@ -671,7 +669,7 @@ std::vector<Real<>> MrccReader::eval_mp2_approx(Ptr<Tensor<Real<>,TE>> Gamma_igm
       }
     }
     double a(1.0), b(0.0);
-    int inc(1), v(nvir), g(ndfbasis);
+    int v(nvir), g(ndfbasis);
     size_t offset = ii * b_size * sizeof(double);
     std::memcpy(buf_ga.data(), G_gai.data + offset, b_size*sizeof(double));
     dgemm_("T", "N", &v, &v, &g, &a, buf_ga.data(), &g, buf_ga.data(), &g, &b, buf_pp.data(), &v);

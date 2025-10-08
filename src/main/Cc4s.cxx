@@ -400,11 +400,6 @@ void Cc4s::printBanner() {
   buildDate << __DATE__ << " " << __TIME__;
   time_t rawtime;
   time (&rawtime);
-  int nthreads;
-  #pragma omp parallel
-  {
-    nthreads = omp_get_num_threads();
-  }
   OUT() << "version: " << CC4S_VERSION <<
     ", date: " << CC4S_DATE << std::endl;
   OUT() << "build date: " << buildDate.str() << std::endl;
@@ -500,7 +495,7 @@ Ptr<MapNode> Cc4s::getHostList() {
     Cc4s::world->setNodes(ranksOfHosts.size());
     int ranksPerNode = ranksOfHosts.begin()->second.size();
     for (const auto& pair : ranksOfHosts) {
-      if (pair.second.size() != ranksPerNode) {
+      if (pair.second.size() != static_cast<size_t>(ranksPerNode)) {
         ranksPerNode = -1;
         break;
       }
