@@ -20,9 +20,9 @@
 #include <Exception.hpp>
 
 
-////////////////////////////////////////////////////////////////////// 
-// Restricted lambda ccsd eqs from PySCF 
-// https://github.com/pyscf/pyscf/blob/master/pyscf/cc/rccsd_lambda.py 
+//////////////////////////////////////////////////////////////////////
+// Restricted lambda ccsd eqs from PySCF
+// https://github.com/pyscf/pyscf/blob/master/pyscf/cc/rccsd_lambda.py
 //////////////////////////////////////////////////////////////////////
 
 namespace cc4s {
@@ -38,7 +38,7 @@ template <typename F, typename TE>
 Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getIntermediates(
   const Ptr<TensorSet<F,TE>> &amplitudes
 ) {
-  
+
   auto coulombIntegrals(
     this->arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
   );
@@ -89,15 +89,15 @@ Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getIntermediates(
   auto Whphh(Tcc<TE>::template tensor<F>("Whphh"));
 
   COMPILE(
-    (*Whhhh)["ijkl"] <<= map<F>(conj<F>, (*Vhhhh)["ikjl"]), 
-    (*Wpppp)["abcd"] <<= map<F>(conj<F>, (*Vpppp)["acbd"]), 
-    (*Whhpp)["ijab"] <<= map<F>(conj<F>, (*Vhphp)["iajb"]), 
-    (*Whppp)["iabc"] <<= map<F>(conj<F>, (*Vhppp)["ibac"]), 
-    (*Whpph)["iabj"] <<= map<F>(conj<F>, (*Vhpph)["ibaj"]), 
-    (*Whphp)["iajb"] <<= map<F>(conj<F>, (*Vhhpp)["ijab"]), 
-    (*Whphh)["iajk"] <<= map<F>(conj<F>, (*Vhhph)["ijak"]) 
+    (*Whhhh)["ijkl"] <<= map<F>(conj<F>, (*Vhhhh)["ikjl"]),
+    (*Wpppp)["abcd"] <<= map<F>(conj<F>, (*Vpppp)["acbd"]),
+    (*Whhpp)["ijab"] <<= map<F>(conj<F>, (*Vhphp)["iajb"]),
+    (*Whppp)["iabc"] <<= map<F>(conj<F>, (*Vhppp)["ibac"]),
+    (*Whpph)["iabj"] <<= map<F>(conj<F>, (*Vhpph)["ibaj"]),
+    (*Whphp)["iajb"] <<= map<F>(conj<F>, (*Vhhpp)["ijab"]),
+    (*Whphh)["iajk"] <<= map<F>(conj<F>, (*Vhhph)["ijak"])
   )->execute();
-   
+
   // effective intermediate
   auto woooo( Tcc<TE>::template tensor<F>("woooo") );
   auto wovvo( Tcc<TE>::template tensor<F>("wovvo") );
@@ -123,19 +123,19 @@ Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getIntermediates(
   auto v4ovvo( Tcc<TE>::template tensor<F>("v4ovvo") );
   auto wOVvo( Tcc<TE>::template tensor<F>("wOVvo") );
   auto ovvv( Tcc<TE>::template tensor<F>("ovvv") );
-  
+
   auto intermediates(
     New<TensorSet<F,TE>>(
       std::map<std::string,Ptr<TensorExpression<F,TE>>>({
-        {"v1",v1}, 
-        {"v2",v2}, 
-        {"w3",w3}, 
-        {"v4",v4}, 
-        {"woooo",woooo}, 
-        {"wovvo",wovvo}, 
-        {"woVVo",woVVo}, 
-        {"woovo",woovo}, 
-        {"wvvvo",wvvvo}, 
+        {"v1",v1},
+        {"v2",v2},
+        {"w3",w3},
+        {"v4",v4},
+        {"woooo",woooo},
+        {"wovvo",wovvo},
+        {"woVVo",woVVo},
+        {"woovo",woovo},
+        {"wvvvo",wvvvo},
         })
     )
   );
@@ -221,7 +221,7 @@ Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getResiduum(
   // get intermediates
   if (!intermediates) {
       intermediates = this->getIntermediates(amplitudes);
-  } 
+  }
 
   auto v1 = intermediates->get("v1");
   auto v2 = intermediates->get("v2");
@@ -245,7 +245,7 @@ Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getResiduum(
       )
     )
   );
-  
+
   auto coulombIntegrals(
     this->arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
   );
@@ -300,15 +300,15 @@ Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getResiduum(
   auto Whphh(Tcc<TE>::template tensor<F>("Whphh"));
 
   COMPILE(
-    (*Whhhh)["ijkl"] <<= map<F>(conj<F>, (*Vhhhh)["ikjl"]), 
-    (*Wpppp)["abcd"] <<= map<F>(conj<F>, (*Vpppp)["acbd"]), 
-    (*Whhpp)["ijab"] <<= map<F>(conj<F>, (*Vhphp)["iajb"]), 
-    (*Whppp)["iabc"] <<= map<F>(conj<F>, (*Vhppp)["ibac"]), 
-    (*Whpph)["iabj"] <<= map<F>(conj<F>, (*Vhpph)["ibaj"]), 
-    (*Whphp)["iajb"] <<= map<F>(conj<F>, (*Vhhpp)["ijab"]), 
-    (*Whphh)["iajk"] <<= map<F>(conj<F>, (*Vhhph)["ijak"]) 
+    (*Whhhh)["ijkl"] <<= map<F>(conj<F>, (*Vhhhh)["ikjl"]),
+    (*Wpppp)["abcd"] <<= map<F>(conj<F>, (*Vpppp)["acbd"]),
+    (*Whhpp)["ijab"] <<= map<F>(conj<F>, (*Vhphp)["iajb"]),
+    (*Whppp)["iabc"] <<= map<F>(conj<F>, (*Vhppp)["ibac"]),
+    (*Whpph)["iabj"] <<= map<F>(conj<F>, (*Vhpph)["ibaj"]),
+    (*Whphp)["iajb"] <<= map<F>(conj<F>, (*Vhhpp)["ijab"]),
+    (*Whphh)["iajk"] <<= map<F>(conj<F>, (*Vhhph)["ijak"])
   )->execute();
-  
+
 
   auto Zhp( Tcc<TE>::template tensor<F>("Zhp") );
   auto Zhhpp( Tcc<TE>::template tensor<F>("Zhhpp") );
@@ -341,10 +341,10 @@ Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getResiduum(
   auto ZhhppThp( Tcc<TE>::template tensor<F>("ZhhppThp") );
   auto Zhhpptheta( Tcc<TE>::template tensor<F>("Zhhpptheta") );
   auto Zhhpptau( Tcc<TE>::template tensor<F>("Zhhpptau") );
-  
-  // lambda ccsd residuum eqs  
-  COMPILE(   
-    
+
+  // lambda ccsd residuum eqs
+  COMPILE(
+
     (*tau)["ijab"] <<= (*Thhpp)["ijab"],
     (*tau)["ijab"] +=  (*Thp)["ia"] * (*Thp)["jb"],
     (*theta)["ijab"] <<= (2.0) * (*Thhpp)["ijab"],
@@ -401,7 +401,7 @@ Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getResiduum(
     (*Rhp)["ia"] += (-1.0) * (*Zhhpp)["ijbc"] * (*wvvvo)["bacj"],
     (*Rhp)["ia"] += (-1.0) * (*Zhhpp)["kjca"] * (*woovo)["ijck"],
     (*Rhp)["ia"] += (2.0) * (*Zhhpp)["ijab"] * (*w3)["bj"],
-    (*Rhp)["ia"] += (-1.0) * (*Zhhpp)["ijba"] * (*w3)["bj"],                                                                                                                                                                                                                                                          
+    (*Rhp)["ia"] += (-1.0) * (*Zhhpp)["ijba"] * (*w3)["bj"],
     (*Rhhpp)["ijab"] += (*Rhhpp)["jiba"]
 
   )->execute();
@@ -416,10 +416,10 @@ Ptr<TensorSet<F,TE>> LambdaCcsd<F,TE>::getResiduum(
     (*Dhp)["ia"] <<= 0.0 * (*Thp)["ia"],
     (*Dhp)["ia"] -= (*Fepsp)["a"],
     (*Dhp)["ia"] += (*Fepsh)["i"],
-    (*Rhp)["ia"] += (*Zhp)["ia"] * (*Dhp)["ia"],                                                                                                                                                                                                                                                          
-    (*Rhhpp)["ijab"] += (*Zhhpp)["ijab"] * (*Dhhpp)["ijab"],  
-    (*Rph)["ai"] <<= (*Rhp)["ia"],                                                                                                                                                                                                                                                          
-    (*Rpphh)["abij"] <<= (*Rhhpp)["ijab"]  
+    (*Rhp)["ia"] += (*Zhp)["ia"] * (*Dhp)["ia"],
+    (*Rhhpp)["ijab"] += (*Zhhpp)["ijab"] * (*Dhhpp)["ijab"],
+    (*Rph)["ai"] <<= (*Rhp)["ia"],
+    (*Rpphh)["abij"] <<= (*Rhhpp)["ijab"]
 
   )->execute();
 

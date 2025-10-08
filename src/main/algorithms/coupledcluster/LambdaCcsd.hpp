@@ -31,15 +31,8 @@ namespace cc4s {
     LambdaCcsd(const Ptr<MapNode> &arguments)
       : CoupledClusterMethod<F,TE>(arguments), intermediates(nullptr)
     {
-    }  
-
-  /*
-  public:
-    LambdaCcsd(
-      const Ptr<MapNode> &arguments
-    ): CoupledClusterMethod<F,TE>(arguments) {
     }
-   */
+
     std::string getName() override { return "LambdaCcsd"; }
     static CoupledClusterMethodRegistrar<
       F,TE,LambdaCcsd<F,TE>

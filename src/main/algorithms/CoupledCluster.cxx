@@ -72,24 +72,77 @@ Ptr<MapNode> CoupledCluster::run() {
   energy = New<MapNode>(SOURCE_LOCATION);
 
   // create a method handler, by default Ccsd
+  // Note: the different CC variants are implemented in different algorithms,
+  //       found in coupledcluster/'algo'.cxx
+  //       If algo is not provided in the input, the mapper will find the
+  //       corresponding implementation file
   auto methodName( arguments->getValue<std::string>("method", "Ccsd") );
-  // hardcoding: map the method to the algorithm
-  // ccsd -> ccsd; ccsdt -> ccsdt; drccd -> drccd
-  auto algoName(methodName);
-  if (!arguments->isGiven("slicedCoulombVertex") && methodName == "Ccsd") algoName = "CcsdReference";
-  if (methodName == "Ldrccd") algoName = "Drccd";
-  if (methodName == "ApxRpa") algoName = "Drccd";
-  if ( methodName == "Dcsd") algoName = "CcsdReference";
-  if ( methodName == "Dcsdt" || methodName == "Ccsdt-1b"
-    || methodName == "Ccsdt-3" || methodName == "3CC" ) algoName = "Ccsdt";
 
-  if ( methodName == "LambdaCcsd") algoName == "LambdaCcsdReference";
+  std::set<std::string> listOfMethods = {
+    // doubles
+    "Ccsd", "Dcsd", "Drccd", "Ldrccd", "ApxRpa",
+    // triples
+    "Ccsdt", "Dcsdt", "Ccsdt-1b", "Ccsdt-3", "3CC",
+    // lambda variants
+    "LambdaCcsd"
+  };
 
-  if (!arguments->isGiven("slicedCoulombVertex") && methodName == "Ccsd") {
-    context["method"] = "Ccsd-ref";
+  std::set<std::string> listOfAlgos = {
+    "CcsdReference", "Ccsd", "Drccd", "Ccsdt", "LambdaCcsd", "LambdaCcsdReference"
+  };
+
+  ASSERT_LOCATION(
+    listOfMethods.find(methodName) != listOfMethods.end(),
+    std::string("Unknown method: '") + methodName + "'",
+    this->arguments->get("method")->sourceLocation
+  );
+
+  // Lambda to map methodName to algoName
+  auto getAlgoName = [&](const std::string& method, bool hasSlicedCoulombVertex) -> std::string {
+    static const std::map<std::string, std::string> methodToAlgo = {
+      {"Ccsd",       "CcsdReference"},
+      {"Dcsd",       "CcsdReference"},
+      {"Ldrccd",     "Drccd"},
+      {"ApxRpa",     "Drccd"},
+      {"Dcsdt",      "Ccsdt"},
+      {"Ccsdt-1b",   "Ccsdt"},
+      {"Ccsdt-3",    "Ccsdt"},
+      {"3CC",        "Ccsdt"},
+      {"LambdaCcsd", "LambdaCcsdReference"},
+    };
+
+    // Special cases for slicedCoulombVertex
+    if (method == "Ccsd" && hasSlicedCoulombVertex) return "Ccsd";
+    if (method == "LambdaCcsd" && hasSlicedCoulombVertex) return "LambdaCcsd";
+
+    // Default mapping
+    auto it = methodToAlgo.find(method);
+    return (it != methodToAlgo.end()) ? it->second : method;
+  };
+
+  // Determine algoName
+  std::string algoName;
+  if (arguments->isGiven("algo")) {
+    algoName = arguments->getValue<std::string>("algo");
   } else {
-    context["method"] = methodName;
+    algoName = getAlgoName(methodName, arguments->isGiven("slicedCoulombVertex"));
   }
+
+  // Validate algo
+  ASSERT_LOCATION(
+      listOfAlgos.find(algoName) != listOfAlgos.end(),
+      std::string("Unknown algo: '") + algoName + ".cxx'",
+      arguments->get("method")->sourceLocation
+  );
+
+  Ptr<CoupledClusterMethod<F,TE>> algo(
+    CoupledClusterMethodFactory<F,TE>::create(algoName, arguments)
+  );
+
+  OUT() << "Method: " << methodName << "\n";
+  OUT() << "Using algorithm in "
+    << algoName << ".cxx\n"; // << method->describeOptions() << endl;
+
 
   // fetch context of this calculation
   context["type"] = TypeTraits<F>::getName();
@@ -104,18 +157,9 @@ Ptr<MapNode> CoupledCluster::run() {
   context["occ"] = coulombIntegrals->get("pphh")->inspect()->lens[2];
   context["vir"] = coulombIntegrals->get("pphh")->inspect()->lens[0];
 
-  Ptr<CoupledClusterMethod<F,TE>> algo(
-    CoupledClusterMethodFactory<F,TE>::create(algoName, arguments)
-  );
-  // We cannot match the provided method with an available algorithm
-  ASSERT_LOCATION(
-    algo, std::string("Unknown method: '") + methodName + "'",
-    arguments->get("method")->sourceLocation
-  );
-
-  OUT() << "Method: " << methodName << "\n";
-  OUT() << "Using algorithm in "
-    << algoName << ".cxx\n"; // << method->describeOptions() << endl;
+  context["method"] = methodName;
+  if (algoName == "CcsdReference") context["method"] = "Ccsd-ref";
+  if (algoName == "LambdaCcsdReference") context["method"] = "LambdaCcsd-ref";
 
 
   Ptr<TensorSet<F,TE>> amplitudes;

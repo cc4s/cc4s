@@ -18,7 +18,7 @@
 
 - name: CoupledCluster
   in:
-    method: CcsdReference
+    method: Ccsd
     slicedEigenEnergies: EigenEnergies
     coulombIntegrals: CoulombIntegrals
     integralsSliceSize: 100

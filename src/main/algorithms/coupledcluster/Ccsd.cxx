@@ -72,14 +72,8 @@ Ptr<TensorSet<F,TE>> Ccsd<F,TE>::getResiduum(
   );
   auto Vpphh(coulombIntegrals->get("pphh"));
   bool ppl(this->arguments->template getValue<bool>("ppl", true));
-  bool distinguishable(
-    this->arguments->template getValue<int>("distinguishable", 0) == 1
-  );
 
-  ASSERT_LOCATION(
-    !distinguishable, "distinguishable not supported for complex amplitudes",
-    this->arguments->sourceLocation
-  );
+
   if (!amplitudes) {
     // no previous amplitudes given
     COMPILE(
@@ -151,17 +145,8 @@ Ptr<TensorSet<F,TE>> Ccsd<F,TE>::getResiduum(
         // Xabij = T2 + 2 * T1*T1
         (*Xabij)["abij"] += (*Tph)["ai"] * (*Tph)["bj"],
 
-        (!distinguishable) ? (
-          (*Lac)["ac"] <<= (*Kac)["ac"],
-          (*Lki)["ki"] <<= (*Kki)["ki"],
-          Tcc<TE>::sequence()
-        ) : (
-          (*Lac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Xabij)["adkl"],
-          (*Lac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Xabij)["adkl"],
-          (*Lki)["ki"] <<= ( 1.0) * (*Vpphh)["cdkl"] * (*Xabij)["cdil"],
-          (*Lki)["ki"]  += (-0.5) * (*Vpphh)["dckl"] * (*Xabij)["cdil"],
-          Tcc<TE>::sequence()
-        ),
+        (*Lac)["ac"] <<= (*Kac)["ac"],
+        (*Lki)["ki"] <<= (*Kki)["ki"],
         (*Lac)["ac"] +=  (2.0) * (*cTGammaGpp)["Gac"] * (*GammaGhp)["Gkd"] * (*Tph)["dk"],
         (*Lac)["ac"] += (-1.0) * (*cTGammaGpp)["Gad"] * (*GammaGhp)["Gkc"] * (*Tph)["dk"],
 
