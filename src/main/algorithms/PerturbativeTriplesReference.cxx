@@ -73,6 +73,9 @@ Ptr<MapNode> PerturbativeTriplesReference::run(const Ptr<MapNode> &arguments) {
   } else {
     context["method"] = "(T)-ref";
   }
+  context["occ"] = Tph->inspect()->lens[1];
+  context["vir"] = Tph->inspect()->lens[0];
+  context["type"] = TypeTraits<F>::getName();
 
   const bool lambda = arguments->getValue<int>("lambda", 0) == 1;
   const bool singles = arguments->getValue<int>("singles", 1) == 1;

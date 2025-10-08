@@ -61,6 +61,9 @@ bool BasisSetCorrection::run(
   auto Tph( amplitudes->get("ph") );
   auto Tpphh( amplitudes->get("pphh") );
   context["method"] = "Basis-set correction";
+  context["occ"] = Tph->inspect()->lens[1];
+  context["vir"] = Tph->inspect()->lens[0];
+  context["type"] = TypeTraits<F>::getName();
 
   auto Dabij(arguments->getPtr<T>("deltaIntegralsPPHH"));
   auto nij(arguments->getPtr<T>("deltaIntegralsHH"));

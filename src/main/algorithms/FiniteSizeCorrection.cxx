@@ -100,6 +100,11 @@ bool FiniteSizeCorrection::calculateTransitionStructureFactor(
   auto ng = singularVectors->evaluate()->lens[0];
   auto nf = singularVectors->evaluate()->lens[1];
 
+  context["occ"] = no;
+  context["vir"] = nv;
+  context["NF"]  = GammaFhp->evaluate()->lens[0];
+  context["type"] = TypeTraits<F>::getName();
+
   //we have to provide the length of these objects for the Real<> version
   auto GammaGph( Tcc<TE>::template tensor<Complex<>>({ng, nv, no}, "Gph"));
   auto GammaGhp( Tcc<TE>::template tensor<Complex<>>({ng, no, nv}, "Ghp"));

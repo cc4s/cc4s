@@ -79,7 +79,7 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
 template <typename F, typename TE>
 Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
 
-  context["method"] = "CcsdtNonit";
+
   auto Rph( Tcc<TE>::template tensor<F>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
   auto Rppphhh ( Tcc<TE>::template tensor<F>("Rppphhh") );
@@ -92,6 +92,14 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
     amplitudes, "Missing amplitudes!",
     arguments->sourceLocation
   );
+  auto _Tph( amplitudes->get("ph") );
+  auto _Tpphh( amplitudes->get("pphh") );
+
+  context["method"] = "CcsdtNonit";
+  context["occ"] = _Tph->inspect()->lens[1];
+  context["vir"] = _Tph->inspect()->lens[0];
+  context["type"] = TypeTraits<F>::getName();
+
 
   auto coulombIntegrals(
     arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
@@ -114,8 +122,6 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
   Ptr<TensorExpression<F,TE>> Zpphh = (lambda) ? lAmplitudes->get("pphh") : nullptr;
   Ptr<TensorExpression<F,TE>> Zph   = (lambda) ? lAmplitudes->get("ph") : nullptr;
 
-
-
   auto eigenEnergies(
     arguments->template getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
   );
@@ -124,19 +130,11 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
     arguments->sourceLocation
   );
 
-
-  //t3-mode: plain, ring, ct-full
-  //t3t3-mode: plain, dressed
-
-  // t3t3mode: "3CC-C2" "3CC-C1" "3CC-D1" "3CC-T2"
-//  auto t3mode( arguments->template getValue<std::string>("t3mode", "dressed"));
   auto t3t3mode( arguments->template getValue<std::string>("t3t3mode", "dressed"));
   bool singles = arguments->template getValue<int>("singles", 1) == 1;
-//  OUT() << "T3-mode: " << t3mode << std::endl;
+
   if (!singles) OUT() << "Warning: Singles turned off!!\n";
   if (! (t3t3mode == "dressed" || t3t3mode == "3CC") ) OUT() << "Warning: t3t3mode: " << t3t3mode << '\n';
-
-  //std::vector<std::string> contributions({"[VT2]","[VT3]" ,"[VT1T2]","[VT2T3]","[VT1T3]","[VT2T1T1]","[VT2T2T1]","[VT2T2T1]", "[VT3T1T1]", "[VT2T1T1T1]";
 
   ASSERT_LOCATION(
     lambda, "We need Lambda amplitudes!",
@@ -145,8 +143,6 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
 
   // TODO: check if given amplitudes contain expected parts
   // get amplitude parts
-  auto _Tph( amplitudes->get("ph") );
-  auto _Tpphh( amplitudes->get("pphh") );
   auto Tph( Tcc<TE>::template tensor<F>("Tph") );
   auto Tpphh( Tcc<TE>::template tensor<F>("Tph") );
   auto Tppphhh( Tcc<TE>::template tensor<F>("Tppphhh") );

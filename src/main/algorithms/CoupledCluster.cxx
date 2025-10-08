@@ -91,6 +91,19 @@ Ptr<MapNode> CoupledCluster::run() {
     context["method"] = methodName;
   }
 
+  // fetch context of this calculation
+  context["type"] = TypeTraits<F>::getName();
+  if (arguments->isGiven("slicedCoulombVertex")) {
+    auto coulombVertex(
+      this->arguments->template getPtr<TensorSet<F,TE>>(
+        "slicedCoulombVertex"
+      )
+    );
+    context["NF"] = coulombVertex->get("ph")->inspect()->lens[0];
+  }
+  context["occ"] = coulombIntegrals->get("pphh")->inspect()->lens[2];
+  context["vir"] = coulombIntegrals->get("pphh")->inspect()->lens[0];
+
   Ptr<CoupledClusterMethod<F,TE>> algo(
     CoupledClusterMethodFactory<F,TE>::create(algoName, arguments)
   );

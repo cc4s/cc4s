@@ -384,13 +384,6 @@ Ptr<MapNode> MrccReader::run(
   result->setPtr("eigenEnergies", energies);
 
 
-  context["occ"] = nocc;
-  context["vir"] = nFno;
-  context["NF"]  = ndfbasis;
-  context["type"] = "Real64";
-
-
-
   return result;
 
 }

@@ -622,9 +622,14 @@ Ptr<MapNode> PerturbativeTriples::run(const Ptr<MapNode> &arguments) {
   Ptr<MapNode> result;
   if (Cc4s::dryRun) {
     using TE = DefaultDryTensorEngine;
+    auto eps(arguments->getPtr<TensorSet<Real<>, TE>>("slicedEigenEnergies"));
+    context["occ"] = eps->get("h")->inspect()->lens[0];
+    context["vir"] = eps->get("p")->inspect()->lens[0];
     if (arguments->getPtr<TensorSet<Real<>, TE>>("amplitudes") != nullptr) {
+      context["type"] = TypeTraits<Real<>>::getName();
       result = atripDryRun<Real<>, TE>(arguments);
     } else {
+      context["type"] = TypeTraits<Complex<>>::getName();
       result = atripDryRun<Complex<>, TE>(arguments);
     }
   } else {

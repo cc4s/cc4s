@@ -76,6 +76,9 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
   );
 
   if (!amplitudes) return nullptr;
+  auto Tph( amplitudes->get("ph") );
+  auto Tpphh( amplitudes->get("pphh") );
+  Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
   auto coulombIntegrals(
     arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
@@ -96,6 +99,13 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
   auto GammaGpp(coulombVertex->get("pp"));
   auto GammaGph(coulombVertex->get("ph"));
 
+  context["method"] = "CcsdChannels";
+  context["occ"] = Tph->inspect()->lens[1];
+  context["vir"] = Tph->inspect()->lens[0];
+  context["type"] = TypeTraits<F>::getName();
+  context["NF"] = GammaGpp->inspect()->lens[0];
+
+
   auto eigenEnergies(
     arguments->template getPtr<TensorSet<Real<>,TE>>("slicedEigenEnergies")
   );
@@ -104,9 +114,6 @@ Ptr<MapNode> CcsdChannels::run(const Ptr<MapNode> &arguments) {
     arguments->sourceLocation
   );
 
-  auto Tph( amplitudes->get("ph") );
-  auto Tpphh( amplitudes->get("pphh") );
-  Tph->inspect()->setName("Tph"); Tpphh->inspect()->setName("Tpphh");
 
   /* Dressing vertex for PPL term */
   auto realDressedGammaGpp(Tcc<TE>::template tensor<F>("realDressedGammaGpp"));

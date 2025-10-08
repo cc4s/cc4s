@@ -37,10 +37,10 @@ Ptr<MapNode> PerturbativeCT::run(
   auto amplitudes( arguments->getPtr<TensorSet<F,TE>>("amplitudes") );
   if (!amplitudes) return nullptr;
 
-  context["method"] = "(cT)-intermediate";
 
   auto Tph ( amplitudes->get("ph") );
   auto Tpphh( amplitudes->get("pphh") );
+
 
   auto coulombIntegrals( arguments->getPtr<TensorSet<F,TE>>("coulombIntegrals") );
 
@@ -63,12 +63,17 @@ Ptr<MapNode> PerturbativeCT::run(
   auto Vppph( Tcc<TE>::template tensor<F>("Vppph") );
   auto dressedGph( Tcc<TE>::template tensor<F>("dressedGph") );
 
+  context["method"] = "(cT)-intermediate";
+  context["occ"] = Tph->inspect()->lens[1];
+  context["vir"] = Tph->inspect()->lens[0];
+  context["type"] = TypeTraits<F>::getName();
 
   if (arguments->isGiven("coulombVertex")) {
+
     auto coulombVertex( arguments->getPtr<TensorSet<F,TE>>("coulombVertex") );
     auto GammaGpp( coulombVertex->get("pp") );
     auto GammaGph( coulombVertex->get("ph") );
-
+    context["NF"] = GammaGpp->inspect()->lens[0];
     if (std::is_same<F,Complex<>>::value) {
       EXECUTE(
         (*dressedGph)["Gck"] <<= (*GammaGpp)["Gcf"] * (*Tph)["fk"],
