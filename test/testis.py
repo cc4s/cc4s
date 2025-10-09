@@ -301,17 +301,12 @@ def call(cmd):
         raise Exception("Environment variable {}{}{} not known,"
                         " please set it and run the test again".format(
                             RED, e, CLEAR))
-
-    with sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE) as p:
+    sys.stderr.write("Standard error from {}:\n\n\n".format(cmd))
+    with sp.Popen(cmd) as p:
         p.wait()
         ret = p.returncode
-        out = p.stdout.read().decode()
-        err = p.stdout.read().decode()
         if p.returncode != 0:
-            raise Exception(out + "\n" + err)
-        else:
-            sys.stdout.write(out)
-            sys.stderr.write(err)
+            sys.exit(p.returncode)
 
 
 def tail(xs, n):
@@ -487,7 +482,8 @@ def main():
                 continue
 
             result = run_in_test(test, script_file=script)
-            if result["returncode"] != 0:
+            failed_p = result["returncode"] != 0
+            if failed_p:
                 print("{}\t[X]{}".format(RED, CLEAR))
                 for f in ["stdout", "stderr"]:
                     out = [
@@ -496,7 +492,7 @@ def main():
                     ]
                     print("\n".join(["\t...."] + tail(out, args.tail)))
                 print("\n\tDirectory to inspect the error:\n"
-                      "\n\tcd {}\n".format(test.outpath))
+                      "\n\tcd {}".format(test.outpath))
             else:
                 test.success_p[phase] = True
                 print("{}\t[ok]{} ({})".format(GREEN, CLEAR, script))
@@ -506,10 +502,13 @@ def main():
                 logging.debug("writing %s", fname)
                 with open(fname, "w+") as f:
                     f.write(result[content])
+                if failed_p:
+                    print("\t{}: {}".format(content, os.path.join(test.outpath, fname)))
 
         os.chdir(cwd)
 
-    print("Test Summary\n"
+    print("\n\n"
+          "Test Summary\n"
           "============\n")
 
     print("\n"
