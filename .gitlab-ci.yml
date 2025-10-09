@@ -8,9 +8,12 @@ build:
     - develop
   script:
     - salloc -N1 -n$NP ./build.sh build Release notest
-  artifacts:
-    paths:
-      - "build/"
+    # TODO: remove when tests are back in
+    - salloc -N1 -n$NP bash -c "cd build; ctest -V"
+  # TODO: uncomment when the artifacts can be uploaded again
+  # artifacts:
+  #   paths:
+  #     - "build/"
 
 dist:
   stage: build
@@ -20,15 +23,16 @@ dist:
   script:
     - ./tools/dist-make.sh
 
-test:
-  stage: test
-  only:
-    - master
-    - develop
-  needs:
-    - job: build
-      artifacts: true
-  script:
-    - ls
-    - ls build
-    - salloc -N1 -n$NP bash -c "cd build; ctest -V"
+# TODO: uncomment when the artifacts can be uploaded again
+# test:
+#   stage: test
+#   only:
+#     - master
+#     - develop
+#   needs:
+#     - job: build
+#       artifacts: true
+#   script:
+#     - ls
+#     - ls build
+#     - salloc -N1 -n$NP bash -c "cd build; ctest -V"
