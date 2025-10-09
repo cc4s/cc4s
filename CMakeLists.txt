@@ -23,9 +23,8 @@ endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE Release)
-else()
-  set(CMAKE_BUILD_TYPE Debug)
 endif()
+message(STATUS "Building ${CMAKE_BUILD_TYPE} profile")
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/yaml-cpp")
   message(STATUS "Using local fallback for yaml-cpp")
@@ -179,6 +178,7 @@ add_executable(Cc4s
 
 set_source_files_properties(
     src/main/algorithms/coupledcluster/LambdaCcsdReference.cxx
+    src/main/algorithms/coupledcluster/LambdaCcsd.cxx
     PROPERTIES
     COMPILE_FLAGS "-O0"
 )
@@ -255,15 +255,8 @@ target_link_libraries(Cc4s
   quadmath
 )
 
-
-message(STATUS "CMAKE_BUILD_TYPE          = ${CMAKE_BUILD_TYPE}")
-message(STATUS "Using CTF at GIT_TAG      = ${CTF_GIT_TAG}")
-message(STATUS "Using yaml-cpp at GIT_TAG = ${YAML_CPP_GIT_TAG}")
-message(STATUS "CMAKE_CXX_COMPILER        = ${CMAKE_CXX_COMPILER}")
-message(STATUS "SCALAPACK_LIB             = ${CC4S_SCALAPACK}")
-message(STATUS "LAPACK_LIBRARIES          = ${LAPACK_LIBRARIES}")
-
-
+get_target_property(CC4S_FLAGS Cc4s COMPILE_OPTIONS)
+get_target_property(CC4S_DEFS Cc4s COMPILE_DEFINITIONS)
 
 # Enable testing
 option(ENABLE_TESTING "Enable building/running tests" ON)
@@ -311,7 +304,9 @@ if(ENABLE_TESTING)
     file(MAKE_DIRECTORY ${TEST_BUILD_DIR})
 
     # copy testis script and global sources
-    file(COPY "${CMAKE_SOURCE_DIR}/test/testis.py" DESTINATION "${CMAKE_BINARY_DIR}/test")
+    #file(COPY "${CMAKE_SOURCE_DIR}/test/testis.py" DESTINATION "${CMAKE_BINARY_DIR}/test")
+    file(CREATE_LINK "${CMAKE_SOURCE_DIR}/test/testis.py"
+      "${CMAKE_BINARY_DIR}/test/testis.py")
     file(COPY "${CMAKE_SOURCE_DIR}/test/sources.json" DESTINATION "${CMAKE_BINARY_DIR}/test")
     file(CREATE_LINK
       "${CMAKE_SOURCE_DIR}/test/testis-store"
@@ -380,3 +375,15 @@ if(ENABLE_TESTING)
     message(STATUS "Run tests with `make test` or `ctest -V` for verbose output")
 
 endif()
+
+message(STATUS "CXX FLAGS                 = ${CC4S_FLAGS}")
+message(STATUS "CXX DEFS                  = ${CC4S_DEFS}")
+message(STATUS "CMAKE_BUILD_TYPE          = ${CMAKE_BUILD_TYPE}")
+message(STATUS "Using CTF at GIT_TAG      = ${CTF_GIT_TAG}")
+message(STATUS "Using yaml-cpp at GIT_TAG = ${YAML_CPP_GIT_TAG}")
+message(STATUS "CMAKE_CXX_COMPILER        = ${CMAKE_CXX_COMPILER}")
+message(STATUS "SCALAPACK_LIB             = ${CC4S_SCALAPACK}")
+message(STATUS "LAPACK_LIBRARIES          = ${LAPACK_LIBRARIES}")
+
+
+
