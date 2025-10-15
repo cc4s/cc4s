@@ -1,0 +1,39 @@
+{
+  "name": "h2o molecule vasp",
+  "resources": [
+    {
+      "out": "Gamma_EigenEnergies.yaml",
+      "uri": "{h2o-vasp}/gam/EigenEnergies.yaml"
+    },
+    {
+      "out": "Gamma_EigenEnergies.elements",
+      "uri": "{h2o-vasp}/gam/EigenEnergies.elements"
+    },
+    {
+      "out": "Gamma_CoulombVertex.yaml",
+      "uri": "{h2o-vasp}/gam/CoulombVertex.yaml"
+    },
+    {
+      "out": "Gamma_CoulombVertex.elements",
+      "uri": "{h2o-vasp}/gam/CoulombVertex.elements"
+    },
+    {
+      "out": "STD_EigenEnergies.yaml",
+      "uri": "{h2o-vasp}/std/EigenEnergies.yaml"
+    },
+    {
+      "out": "STD_EigenEnergies.elements",
+      "uri": "{h2o-vasp}/std/EigenEnergies.elements"
+    },
+    {
+      "out": "STD_CoulombVertex.yaml",
+      "uri": "{h2o-vasp}/std/CoulombVertex.yaml"
+    },
+    {
+      "out": "STD_CoulombVertex.elements",
+      "uri": "{h2o-vasp}/std/CoulombVertex.elements"
+    }
+
+  ],
+  "tags": "essential molecule ccsd ccsd(t)"
+}

@@ -1,0 +1,510 @@
+- name: Read
+  in:
+    fileName: "Gamma_EigenEnergies.yaml"
+  out:
+    destination: GammaEigenEnergies
+
+- name: Read
+  in:
+    fileName: "Gamma_CoulombVertex.yaml"
+  out:
+    destination: GammaCoulombVertex
+
+- name: DefineHolesAndParticles
+  in:
+    eigenEnergies: GammaEigenEnergies
+  out:
+    slicedEigenEnergies: GammaEigenEnergies
+
+- name: SliceOperator
+  in:
+    slicedEigenEnergies: GammaEigenEnergies
+    operator: GammaCoulombVertex
+  out:
+    slicedOperator: GammaCoulombVertex
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: GammaCoulombVertex
+  out:
+    coulombIntegrals: GammaCoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method: Ccsd
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    slicedCoulombVertex: GammaCoulombVertex
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+    amplitudes: GammaAmplitudes
+
+- name: PerturbativeCT
+  in:
+    coulombIntegrals: GammaCoulombIntegrals
+    amplitudes: GammaAmplitudes
+    coulombVertex: GammaCoulombVertex
+  out:
+    cTIntermediate: Gammactintermediate
+
+- name: PerturbativeTriples
+  in:
+    coulombIntegrals: GammaCoulombIntegrals
+    amplitudes: GammaAmplitudes
+    cTIntermediate: Gammactintermediate
+    slicedEigenEnergies: GammaEigenEnergies
+    deleteTensors: 0
+  out:
+    {}
+
+- name: PerturbativeTriplesReference
+  in:
+    coulombIntegrals: GammaCoulombIntegrals
+    cT: 1
+    amplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+  out:
+    {}
+
+- name: PerturbativeTriplesReference
+  in:
+    coulombIntegrals: GammaCoulombIntegrals
+    amplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+  out:
+    {}
+
+- name: CoupledCluster
+  in:
+    method: Dcsd
+    tAmplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+    amplitudes: GammaLambdaAmplitudes
+
+- name: CoupledCluster
+  in:
+    method: Ldrccd
+    tAmplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: ApxRpa
+    tAmplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: Dcsdt
+    tAmplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: "Ccsdt-1b"
+    tAmplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: "Ccsdt-3"
+    tAmplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: "3CC"
+    tAmplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: LambdaCcsd
+    tAmplitudes: GammaAmplitudes
+    algo: LambdaCcsd
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+    amplitudes: GammaLambdaAmplitudes
+
+# LambdaCcsdReference
+- name: CoupledCluster
+  in:
+    method: LambdaCcsd
+    algo: LambdaCcsdReference
+    slicedEigenEnergies: GammaEigenEnergies
+    tAmplitudes: GammaAmplitudes
+    coulombIntegrals: GammaCoulombIntegrals
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaCcsdEnergy
+    amplitudes: GammaLambdaAmplitudes
+ 
+- name: CcsdtNonit
+  in:
+    slicedEigenEnergies: GammaEigenEnergies
+    amplitudes: GammaAmplitudes
+    coulombIntegrals: GammaCoulombIntegrals
+    lambdaAmplitudes: GammaLambdaAmplitudes
+  out:
+    {}
+
+- name: CcsdtNonit
+  in:
+    slicedEigenEnergies: GammaEigenEnergies
+    amplitudes: GammaAmplitudes
+    coulombIntegrals: GammaCoulombIntegrals
+    lambdaAmplitudes: GammaLambdaAmplitudes
+    t3t3mode: "3CC"
+  out:
+    {}
+
+
+################################################################################
+# STD version with complex integrals
+################################################################################
+
+- name: Read
+  in:
+    fileName: "STD_EigenEnergies.yaml"
+  out:
+    destination: STDEigenEnergies
+
+- name: Read
+  in:
+    fileName: "STD_CoulombVertex.yaml"
+  out:
+    destination: STDCoulombVertex
+
+- name: DefineHolesAndParticles
+  in:
+    eigenEnergies: STDEigenEnergies
+  out:
+    slicedEigenEnergies: STDEigenEnergies
+
+- name: SliceOperator
+  in:
+    slicedEigenEnergies: STDEigenEnergies
+    operator: STDCoulombVertex
+  out:
+    slicedOperator: STDCoulombVertex
+
+- name: VertexCoulombIntegrals
+  in:
+    slicedCoulombVertex: STDCoulombVertex
+  out:
+    coulombIntegrals: STDCoulombIntegrals
+
+- name: CoupledCluster
+  in:
+    method: Ccsd
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    slicedCoulombVertex: STDCoulombVertex
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+    amplitudes: STDAmplitudes
+
+- name: PerturbativeCT
+  in:
+    coulombIntegrals: STDCoulombIntegrals
+    amplitudes: STDAmplitudes
+    coulombVertex: STDCoulombVertex
+  out:
+    cTIntermediate: STDctintermediate
+
+- name: PerturbativeTriples
+  in:
+    coulombIntegrals: STDCoulombIntegrals
+    amplitudes: STDAmplitudes
+    cTIntermediate: STDctintermediate
+    slicedEigenEnergies: STDEigenEnergies
+    deleteTensors: 0
+  out:
+    {}
+
+- name: PerturbativeTriplesReference
+  in:
+    coulombIntegrals: STDCoulombIntegrals
+    cT: 1
+    amplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+  out:
+    {}
+
+- name: PerturbativeTriplesReference
+  in:
+    coulombIntegrals: STDCoulombIntegrals
+    amplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+  out:
+    {}
+
+- name: CoupledCluster
+  in:
+    method: Dcsd
+    tAmplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+    amplitudes: STDLambdaAmplitudes
+
+- name: CoupledCluster
+  in:
+    method: Ldrccd
+    tAmplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: ApxRpa
+    tAmplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: Dcsdt
+    tAmplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: "Ccsdt-1b"
+    tAmplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: "Ccsdt-3"
+    tAmplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: "3CC"
+    tAmplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+
+- name: CoupledCluster
+  in:
+    method: LambdaCcsd
+    tAmplitudes: STDAmplitudes
+    algo: LambdaCcsd
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+    amplitudes: STDLambdaAmplitudes
+
+# LambdaCcsdReference
+- name: CoupledCluster
+  in:
+    method: LambdaCcsd
+    algo: LambdaCcsdReference
+    slicedEigenEnergies: STDEigenEnergies
+    tAmplitudes: STDAmplitudes
+    coulombIntegrals: STDCoulombIntegrals
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDCcsdEnergy
+    amplitudes: STDLambdaAmplitudes
+ 
+# - name: CcsdtNonit
+#   in:
+#     slicedEigenEnergies: STDEigenEnergies
+#     amplitudes: STDAmplitudes
+#     coulombIntegrals: STDCoulombIntegrals
+#     lambdaAmplitudes: STDLambdaAmplitudes
+#   out:
+#     {}
+
+# - name: CcsdtNonit
+#   in:
+#     slicedEigenEnergies: STDEigenEnergies
+#     amplitudes: STDAmplitudes
+#     coulombIntegrals: STDCoulombIntegrals
+#     lambdaAmplitudes: STDLambdaAmplitudes
+#     t3t3mode: "3CC"
+#   out:
+#     {}
+
+# Local Variables:
+# mode: yaml
+# End:

@@ -71,6 +71,10 @@
   "cc-pvdz-h2o": {
     "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/cc9a8135fb2fa93d646055978f6578e7542aa0ce/h2o/cc-pvdz",
     "type": "raw"
-  }
+  },
 
+  "h2o-vasp": {
+      "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/27f00b5a62a5ab6d9ae119aa6b595040aa4d57ca/h2o-vasp",
+      "type": "raw"
+  }
 }
