@@ -51,7 +51,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/ctf")
   )
 else()
   message(STATUS "Cloning CTF from the internet")
-  set(CTF_GIT_TAG "01ea778f8883f872fc009dee5872069a3ffebe50")
+  set(CTF_GIT_TAG "b200e566b61588d91f2bff51e401502037556142")
   FetchContent_Declare(
     ctf
     GIT_REPOSITORY https://gitlab.cc4s.org/cc4s/ctf
