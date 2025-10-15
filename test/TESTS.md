@@ -16,13 +16,6 @@
 	- PerturbativeTriples
 	- PerturbativeTriplesReference
 
-# Testis test
-- path: ./test/tests/testis
-- tags:
-	- infrastructure
-	- vasp
-- Run and check command: `./test/run 4 --run --check --rx "Testis test"`
-
 # h2o2 molecule mrcc
 - path: ./test/tests/h2o2
 - tags:
