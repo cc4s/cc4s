@@ -307,7 +307,9 @@ if(ENABLE_TESTING)
     #file(COPY "${CMAKE_SOURCE_DIR}/test/testis.py" DESTINATION "${CMAKE_BINARY_DIR}/test")
     file(CREATE_LINK "${CMAKE_SOURCE_DIR}/test/testis.py"
       "${CMAKE_BINARY_DIR}/test/testis.py")
-    file(COPY "${CMAKE_SOURCE_DIR}/test/sources.json" DESTINATION "${CMAKE_BINARY_DIR}/test")
+    file(CREATE_LINK
+      "${CMAKE_SOURCE_DIR}/test/sources.json"
+      "${CMAKE_BINARY_DIR}/test/sources.json")
     file(CREATE_LINK
       "${CMAKE_SOURCE_DIR}/test/testis-store"
       "${CMAKE_BINARY_DIR}/test/testis-store"
