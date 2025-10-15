@@ -35,6 +35,9 @@ $(BINARY_LINKS):
 	mkdir -p $(@D)
 	ln -rs $(CC4S_PATH) $@
 
+TESTS.md:
+	./testis.py . --readme TESTS.md
+
 ifneq ($(MAKECMDGOALS),data)
 ifneq ($(MAKECMDGOALS),pyyaml)
 ifeq ($(CC4S_RUN),)

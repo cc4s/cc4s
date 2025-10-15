@@ -14,7 +14,16 @@ import functools
 import re
 import zipfile
 import tarfile
+import shutil
+import typing as ty
+import io
+import contextlib
 
+try:
+    import yaml
+except ImportError:
+    raise Exception("Your python can not find the python package"
+                    "pyyaml! Ask your system administrator to install it")
 
 def _get_root_folder():
     """
@@ -209,11 +218,6 @@ def link_resource(r, basedir):
 
 def read_yaml(filepath):
     assert isinstance(filepath, str)
-    try:
-        import yaml
-    except ImportError:
-        raise Exception("Your python can not find the python package"
-                        "pyyaml! Ask your system administrator to install it")
 
     with open(filepath) as f:
         return yaml.load(f, Loader=yaml.Loader) or {}
@@ -387,6 +391,11 @@ def _get_args():
                         help="Sources file to use",
                         type=str,
                         default=DEFAULT_SOURCES_FILE)
+    parser.add_argument("--readme",
+                        help="Create a readme with the informationm of the tests",
+                        default=None,
+                        type=str,
+                        action="store")
     return parser.parse_args()
 
 
@@ -396,6 +405,44 @@ class WithSeconds(logging.Formatter):
         record.relativeCreated = record.relativeCreated // 1000
         return super().format(record)
 
+def create_readme(tests, folders, input_file="cc4s.in"):
+    IGNORED_ALGORITHMS = ["Write", "Read", "DefineHolesAndParticles",
+                          "VertexCoulombIntegrals", "SliceOperator"]
+
+    def algo_descriptor(algo):
+        ain = algo["in"]
+        if algo["name"] == "CoupledCluster":
+            return f"{algo['name']} {ain['method']} {ain.get('algo', '')}"
+        if algo["name"] == "CcsdtNonit":
+            return f"{algo['name']} {ain.get('t3t3mode', '')}"
+        else:
+            return algo["name"]
+
+    with io.StringIO() as captured_output:
+        with contextlib.redirect_stdout(captured_output):
+            for t in tests:
+                print(f"\n# {t.name}")
+                path = t.path
+                for folder in folders:
+                    path = path.replace(os.path.abspath(folder), "")
+                print(f"- path: ./test{path}")
+                print(f"- tags:")
+                for tag in t.tags:
+                    print(f"\t- {tag}")
+                print(f'- Run and check command: `./test/run 4 --run --check --rx "{t.name}"`')
+                input_file_full_path = os.path.join(t.path, input_file)
+                if os.path.exists(input_file_full_path):
+                    with open(input_file_full_path) as f:
+                        cc4s_input = yaml.load(f, Loader=yaml.Loader) or {}
+                        print("- Algorithms tested:")
+                        # take a unique list of the algorithm
+                        # descriptors in sorted fashion
+                        algos = sorted(list(set([algo_descriptor(a)
+                                          for a in cc4s_input
+                                          if a['name'] not in IGNORED_ALGORITHMS])))
+                        for algo in algos:
+                            print(f"\t- {algo}")
+        return captured_output.getvalue()
 
 def main():
     args = _get_args()
@@ -440,6 +487,11 @@ def main():
         rx = re.compile(args.rx)
         tests = [t for t in tests if rx.match(t.name)]
         logging.info("restrict to %s tests due to regex", len(tests))
+
+    if args.readme is not None:
+        with open(args.readme, "w+") as f:
+            f.write(create_readme(tests, args.folders))
+        return
 
     if args.tags:
         tests = filter_tags(tests, args.tags)
