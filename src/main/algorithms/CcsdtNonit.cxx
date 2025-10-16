@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <typeinfo>
+
 #include <algorithms/CcsdtNonit.hpp>
 #include <MathFunctions.hpp>
 #include <Log.hpp>
@@ -78,6 +80,12 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
 
 template <typename F, typename TE>
 Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
+
+  if (typeid(Complex<>) == typeid(F)) {
+    ASSERT_LOCATION(false,
+                    "CcsdtNonit does not work for complex numbers",
+                    arguments->sourceLocation);
+  }
 
   auto coulombIntegrals(
     arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
