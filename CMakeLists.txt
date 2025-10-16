@@ -176,9 +176,10 @@ add_executable(Cc4s
 )
 
 set_source_files_properties(
-    src/main/algorithms/coupledcluster/LambdaCcsd.cxx
-    PROPERTIES
-    COMPILE_FLAGS "-O0"
+  src/main/algorithms/coupledcluster/LambdaCcsd.cxx
+  src/main/algorithms/CcsdtNonit.cxx
+  PROPERTIES
+  COMPILE_FLAGS "-O0"
 )
 
 # Include directories within the source code
