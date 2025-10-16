@@ -140,7 +140,6 @@ add_executable(Cc4s
   src/main/algorithms/coupledcluster/Ccsdt.cxx
   src/main/algorithms/CoupledCluster.cxx
   src/main/algorithms/coupledcluster/Drccd.cxx
-  src/main/algorithms/coupledcluster/LambdaCcsdReference.cxx
   src/main/algorithms/coupledcluster/LambdaCcsd.cxx
 
   src/main/algorithms/DefineHolesAndParticles.cxx
@@ -177,7 +176,6 @@ add_executable(Cc4s
 )
 
 set_source_files_properties(
-    src/main/algorithms/coupledcluster/LambdaCcsdReference.cxx
     src/main/algorithms/coupledcluster/LambdaCcsd.cxx
     PROPERTIES
     COMPILE_FLAGS "-O0"

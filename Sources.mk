@@ -39,7 +39,6 @@ main/algorithms/coupledcluster/Ccsdt.cxx \
 main/algorithms/CcsdtNonit.cxx \
 main/algorithms/CcsdChannels.cxx \
 main/algorithms/MrccReader.cxx \
-main/algorithms/coupledcluster/LambdaCcsdReference.cxx \
 main/algorithms/coupledcluster/LambdaCcsd.cxx \
 
 ifeq ($(ATRIP), no)

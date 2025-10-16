@@ -88,7 +88,7 @@ Ptr<MapNode> CoupledCluster::run() {
   };
 
   std::set<std::string> listOfAlgos = {
-    "CcsdReference", "Ccsd", "Drccd", "Ccsdt", "LambdaCcsd", "LambdaCcsdReference"
+    "CcsdReference", "Ccsd", "Drccd", "Ccsdt", "LambdaCcsd"
   };
 
   ASSERT_LOCATION(
@@ -108,7 +108,7 @@ Ptr<MapNode> CoupledCluster::run() {
       {"Ccsdt-1b",   "Ccsdt"},
       {"Ccsdt-3",    "Ccsdt"},
       {"3CC",        "Ccsdt"},
-      {"LambdaCcsd", "LambdaCcsdReference"},
+      {"LambdaCcsd", "LambdaCcsd"},
     };
 
     // Special cases for slicedCoulombVertex
@@ -159,7 +159,6 @@ Ptr<MapNode> CoupledCluster::run() {
 
   context["method"] = methodName;
   if (algoName == "CcsdReference") context["method"] = "Ccsd-ref";
-  if (algoName == "LambdaCcsdReference") context["method"] = "LambdaCcsd-ref";
 
 
   Ptr<TensorSet<F,TE>> amplitudes;
