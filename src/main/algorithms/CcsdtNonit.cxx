@@ -79,17 +79,23 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
 template <typename F, typename TE>
 Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
 
+  auto coulombIntegrals(
+    arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
+  );
+
+  if (!coulombIntegrals) return nullptr;
+
+  auto Vpphh(coulombIntegrals->get("pphh"));
 
   auto Rph( Tcc<TE>::template tensor<F>("Rph") );
   auto Rpphh( Tcc<TE>::template tensor<F>("Rpphh") );
   auto Rppphhh ( Tcc<TE>::template tensor<F>("Rppphhh") );
 
-  auto amplitudes(
-    arguments->template getPtr<TensorSet<F,TE>>("amplitudes")
-  );
+  Ptr<TensorSet<F,TE>> amplitudes;
+  amplitudes = arguments->getPtr<TensorSet<F,TE>>("amplitudes");
 
   ASSERT_LOCATION(
-    amplitudes, "Missing amplitudes!",
+    amplitudes, "Missing t amplitudes!",
     arguments->sourceLocation
   );
   auto _Tph( amplitudes->get("ph") );
@@ -101,14 +107,6 @@ Ptr<MapNode> CcsdtNonit::run(const Ptr<MapNode> &arguments) {
   context["type"] = TypeTraits<F>::getName();
 
 
-  auto coulombIntegrals(
-    arguments->template getPtr<TensorSet<F,TE>>("coulombIntegrals")
-  );
-  ASSERT_LOCATION(
-    coulombIntegrals, "Missing amplitudes!",
-    arguments->sourceLocation
-  );
-  auto Vpphh(coulombIntegrals->get("pphh"));
 
   const bool lambda = (arguments->isGiven("lambdaAmplitudes")) ? true : false;
 
