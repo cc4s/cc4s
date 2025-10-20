@@ -138,8 +138,9 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
         (*Lac)["ac"] <<= (*Kac)["ac"],
         Tcc<TE>::sequence()
       ) : (
-        (*Lac)["ac"] <<= (-1.0) * (*Vpphh)["cdkl"] * (*Yabij)["adkl"],
-        (*Lac)["ac"]  += ( 0.5) * (*Vpphh)["dckl"] * (*Yabij)["adkl"],
+           // Distinguishable
+        (*Lac)["ac"] <<= (-1.0) * (*Vhhpp)["klcd"] * (*Yabij)["adkl"],
+        (*Lac)["ac"]  += ( 0.5) * (*Vhhpp)["kldc"] * (*Yabij)["adkl"],
         Tcc<TE>::sequence()
       ),
       (*Lac)["ac"] += ( 2.0) * (*Vphpp)["akcd"] * (*Tph)["dk"],
@@ -156,8 +157,9 @@ Ptr<TensorSet<F,TE>> CcsdReference<F,TE>::getResiduum(
         (*Lki)["ki"] <<= (*Kki)["ki"],
         Tcc<TE>::sequence()
       ) : (
-        (*Lki)["ki"] <<=          (*Vpphh)["cdkl"] * (*Yabij)["cdil"],
-        (*Lki)["ki"]  += (-0.5) * (*Vpphh)["dckl"] * (*Yabij)["cdil"],
+           // Distinguishable
+        (*Lki)["ki"] <<=          (*Vhhpp)["klcd"] * (*Yabij)["cdil"],
+        (*Lki)["ki"]  += (-0.5) * (*Vhhpp)["kldc"] * (*Yabij)["cdil"],
         Tcc<TE>::sequence()
       ),
       (*Lki)["ki"] += ( 2.0) * (*Vhhhp)["klic"] * (*Tph)["cl"],
