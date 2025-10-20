@@ -178,6 +178,7 @@ add_executable(Cc4s
 set_source_files_properties(
   src/main/algorithms/coupledcluster/LambdaCcsd.cxx
   src/main/algorithms/CcsdtNonit.cxx
+  src/main/algorithms/coupledcluster/Ccsdt.cxx
   PROPERTIES
   COMPILE_FLAGS "-O0"
 )
