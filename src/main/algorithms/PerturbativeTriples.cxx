@@ -26,7 +26,6 @@
 #include <atrip/Reader.hpp>
 #include <atrip/Sources.hpp>
 #include <tcc/Tcc.hpp>
-#include <StepCheck.hpp>
 
 #include <fstream>
 #include <iomanip>
@@ -49,18 +48,10 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
   bool delete_tnsr = arguments->getValue<int>("deleteTensors", 1) == 1;
 
-  // If PerturbativeTriples is not the last algorithm to run
-  // do not delete the tensors
-  if (!StepCheck::PerturbativeTriplesIsLast) {
-    delete_tnsr = false;
+  if (delete_tnsr) {
+    OUT() << "Deleting preexisting tensors to save memory." << std::endl;
   }
 
-  /* we dont need this warning as cc4s is taking care of that
-  if (delete_tnsr) {
-    OUT() << "Warning: All tensors will be deleted. Ensure this is"
-          << " the final algorithm accessing the tensor data." << std::endl;
-  }
-  */
   /*
     This should be added to the manual for CCSD(T).
 
