@@ -46,11 +46,7 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
 
   const size_t omp_granularity = arguments->getValue<int>("ompGranularity", 1);
 
-  bool delete_tnsr = arguments->getValue<int>("deleteTensors", 1) == 1;
-
-  if (delete_tnsr) {
-    OUT() << "Deleting preexisting tensors to save memory." << std::endl;
-  }
+  const bool delete_tnsr = arguments->getValue<int>("deleteTensors", 1) == 1;
 
   /*
     This should be added to the manual for CCSD(T).
