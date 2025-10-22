@@ -175,39 +175,38 @@ Ptr<MapNode> runAtrip(const Ptr<MapNode> &arguments) {
   epsa.read_all(epsa_v.data());
   (__T__("ph"))->read_all(Tai_v.data());
 
-  {
-    // Register printing function
-    double _No = *(__eps__(h))->lens, _Nv = *(__eps__(p))->lens,
-           doublesFlops = _No * _No * _No * (_No + _Nv) * 2.0 * 6.0 / 1.0e9;
-    if (arguments->isGiven(kwd::CT_INTERMEDIATE))
-      doublesFlops *= 2.0;
-    // this is not working if we have single prec complex!!
-    if (typeid(F) == typeid(Complex<>))
-      doublesFlops *= 4.0;
+  // Register printing function
+  double _No = *(__eps__(h))->lens, _Nv = *(__eps__(p))->lens,
+         doublesFlops = _No * _No * _No * (_No + _Nv) * 2.0 * 6.0 / 1.0e9;
+  if (arguments->isGiven(kwd::CT_INTERMEDIATE))
+    doublesFlops *= 2.0;
+  // this is not working if we have single prec complex!!
+  if (typeid(F) == typeid(Complex<>))
+    doublesFlops *= 4.0;
 
-    double lastElapsedTime = 0;
-    auto const rank = Cc4s::world->getRank();
-    bool firstHeaderPrinted = false;
-    atrip::register_iteration_descriptor(
-        [doublesFlops, &firstHeaderPrinted, rank,
-         &lastElapsedTime](atrip::IterationDescription const &d) {
-          const char *fmt_header = "%-13s%-10s%-13s",
-                     *fmt_nums = "%-13.0f%-10.0f%-13.3f";
-          char out[256];
-          if (!firstHeaderPrinted) {
-            sprintf(out, fmt_header, "Progress(%)", "time(s)", "GFLOP/s");
-            firstHeaderPrinted = true;
-            OUT() << out << std::endl;
-          }
-          sprintf(out, fmt_nums,
-                  double(d.current_iteration) / double(d.total_iterations) *
-                      100,
-                  (d.current_elapsed_time - lastElapsedTime),
-                  d.current_iteration * doublesFlops / d.current_elapsed_time);
-          lastElapsedTime = d.current_elapsed_time;
+  double lastElapsedTime = 0;
+  auto const rank = Cc4s::world->getRank();
+  bool firstHeaderPrinted = false;
+  atrip::register_iteration_descriptor(
+      [doublesFlops, &firstHeaderPrinted, rank,
+       &lastElapsedTime](atrip::IterationDescription const &d) {
+        const char *fmt_header = "%-13s%-10s%-13s",
+                   *fmt_nums = "%-13.0f%-10.0f%-13.3f";
+        char out[256];
+        if (!firstHeaderPrinted) {
+          sprintf(out, fmt_header, "Progress(%)", "time(s)", "GFLOP/s");
+          firstHeaderPrinted = true;
           OUT() << out << std::endl;
-        });
-  }
+        }
+        sprintf(out, fmt_nums,
+                double(d.current_iteration) / double(d.total_iterations) *
+                    100,
+                (d.current_elapsed_time - lastElapsedTime),
+                d.current_iteration * doublesFlops / d.current_elapsed_time);
+        lastElapsedTime = d.current_elapsed_time;
+        OUT() << out << std::endl;
+      });
+
   // atrip's logger which writes into the cc4s logstream
   atrip::getLogger() = [](const std::string &s) {
     Log::getLogStream() << Log::getLogHeaderFunction()(SourceLocation())
