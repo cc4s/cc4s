@@ -374,6 +374,11 @@ if(ENABLE_TESTING)
         ${CMAKE_CURRENT_BINARY_DIR}/test/run
         @ONLY)
 
+      configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/run-in-dir.in
+        ${CMAKE_CURRENT_BINARY_DIR}/test/run-in-dir
+        @ONLY)
+
     message(STATUS "Run tests with `make test` or `ctest -V` for verbose output")
 
 endif()

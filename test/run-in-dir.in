@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -e
+
+export CC4S_PATH=@CC4S_PATH@
+export PYTHONPATH=@CC4S_PYTHONPATH@:$PYTHONPATH
+
+np=${1:?Give the ranks to run Cc4s on}
+folder=$(realpath ${2:?Folder with the test})
+shift 2
+
+export CC4S_RUN="mpirun -np ${np} ${CC4S_PATH}"
+
+cd @TEST_DIR@
+@Python3_EXECUTABLE@ testis.py \
+  "$folder" \
+  --rx ".*" \
+  --run \
+  --check \
+  "$@"
+
+exit $?
