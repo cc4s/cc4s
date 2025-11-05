@@ -14,10 +14,10 @@ notest=${3:-no}
 mkdir -p ${build_dir}
 cd ${build_dir}
 
-if $(which mpiicpc 2>&1 >/dev/null); then
-  CMAKE_CXX_COMPILER=$(which mpiicpc)
+if command -v mpiicpc >/dev/null 2>&1; then
+  CMAKE_CXX_COMPILER=$(command -v mpiicpc)
 else
-  CMAKE_CXX_COMPILER=$(which mpicxx)
+  CMAKE_CXX_COMPILER=$(command -v mpicxx)
 fi
 
 cat <<EOF
