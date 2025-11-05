@@ -2,6 +2,7 @@
 ATRIP_FILES = \
 src/atrip/Atrip.cxx \
 src/atrip/Blas.cxx  \
+src/atrip/Checkpoint.cxx  \
 src/atrip/Complex.cxx \
 src/atrip/DatabaseCommunicator.cxx \
 src/atrip/Equations.cxx \
