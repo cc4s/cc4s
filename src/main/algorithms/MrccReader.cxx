@@ -262,6 +262,12 @@ Ptr<MapNode> MrccReader::run(
         gamma_ab[b + a * nvir] = 0.0;
       }
 
+      std::stringstream oeig;
+      oeig << "density matrix eigenvalues:\n";
+      for (size_t a = nvir; a-- > 0; ) {
+        oeig << a << " " << w[a] << std::endl;
+      }
+      LOG() << oeig.str() << std::endl;
 
       std::vector<Real<>> fock_ab(nvir*nvir), scratch(nvir*nvir), rot_ab(nFno*nvir);
       //construct new fock matrix using the truncated density matrix
