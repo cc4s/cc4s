@@ -6,6 +6,7 @@ main/Writer.cxx \
 main/Reader.cxx \
 main/Setting.cxx \
 main/Log.cxx \
+main/StepCheck.cxx \
 main/Timer.cxx \
 main/TensorIo.cxx \
 main/TensorSet.cxx \

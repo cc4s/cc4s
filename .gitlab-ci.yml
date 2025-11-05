@@ -23,6 +23,15 @@ dist:
   script:
     - ./tools/dist-make.sh
 
+oldmake:
+  stage: build
+  only:
+    - master
+    - develop
+  script:
+    - salloc -N1 -n$NP make extern CONFIG=gcc-oblas-ompi-debug -j$NP
+    - salloc -N1 -n$NP make CONFIG=gcc-oblas-ompi-debug -j$NP
+
 # TODO: uncomment when the artifacts can be uploaded again
 # test:
 #   stage: test
