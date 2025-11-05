@@ -44,7 +44,7 @@ void Cc4s::run() {
 
   printBanner();
   LOG() << "Start dry-Run - employing " << getProcessesCount() << " ranks" << std::endl;
-
+  remove(options->yamlOutFile.c_str());
   runSteps(true);
   LOG() << "Finished dry-Run" << std::endl;
   if (options->dryRanks > 0) {
