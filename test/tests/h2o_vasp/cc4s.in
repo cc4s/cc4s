@@ -43,7 +43,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergyCcsd
     amplitudes: GammaAmplitudes
 
 - name: PerturbativeCT
@@ -60,7 +60,7 @@
     amplitudes: GammaAmplitudes
     cTIntermediate: Gammactintermediate
     slicedEigenEnergies: GammaEigenEnergies
-    deleteTensors: 0
+    deleteTensors: 1
   out:
     {}
 
@@ -95,7 +95,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergyDcsd
     amplitudes: GammaLambdaAmplitudes
 
 - name: CoupledCluster
@@ -112,7 +112,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergyLdrccd
 
 - name: CoupledCluster
   in:
@@ -128,7 +128,23 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergyApxRpa
+
+- name: CoupledCluster
+  in:
+    method: Ccsdt
+    tAmplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
+    coulombIntegrals: GammaCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: GammaEnergyCcsdt
 
 - name: CoupledCluster
   in:
@@ -144,7 +160,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergyDcsdt
 
 - name: CoupledCluster
   in:
@@ -160,7 +176,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergyCcsdt1b
 
 - name: CoupledCluster
   in:
@@ -176,7 +192,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergyCcsdt3
 
 - name: CoupledCluster
   in:
@@ -192,7 +208,8 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergy3CC
+
 
 - name: CoupledCluster
   in:
@@ -209,27 +226,19 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: GammaCcsdEnergy
+    energy: GammaEnergyLambdaCcsd
     amplitudes: GammaLambdaAmplitudes
 
-# LambdaCcsdReference
-- name: CoupledCluster
+- name: PerturbativeTriplesReference
   in:
-    method: LambdaCcsd
-    algo: LambdaCcsdReference
-    slicedEigenEnergies: GammaEigenEnergies
-    tAmplitudes: GammaAmplitudes
     coulombIntegrals: GammaCoulombIntegrals
-    maxIterations: 20
-    energyConvergence: 1.0E-8
-    amplitudesConvergence: 1.0E-8
-    mixer:
-      type: DiisMixer
-      maxResidua: 4
+    lambda: 1
+    lambdaAmplitudes: GammaLambdaAmplitudes
+    amplitudes: GammaAmplitudes
+    slicedEigenEnergies: GammaEigenEnergies
   out:
-    energy: GammaCcsdEnergy
-    amplitudes: GammaLambdaAmplitudes
- 
+    {}
+
 - name: CcsdtNonit
   in:
     slicedEigenEnergies: GammaEigenEnergies
@@ -237,7 +246,7 @@
     coulombIntegrals: GammaCoulombIntegrals
     lambdaAmplitudes: GammaLambdaAmplitudes
   out:
-    {}
+    energy: GammaCcsdtNonitEnergy
 
 - name: CcsdtNonit
   in:
@@ -247,7 +256,7 @@
     lambdaAmplitudes: GammaLambdaAmplitudes
     t3t3mode: "3CC"
   out:
-    {}
+    energy: GammaCcsdtNonitEnergy3CC
 
 
 ################################################################################
@@ -299,7 +308,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergyCcsd
     amplitudes: STDAmplitudes
 
 - name: PerturbativeCT
@@ -316,7 +325,7 @@
     amplitudes: STDAmplitudes
     cTIntermediate: STDctintermediate
     slicedEigenEnergies: STDEigenEnergies
-    deleteTensors: 0
+    deleteTensors: 1
   out:
     {}
 
@@ -351,7 +360,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergyDcsd
     amplitudes: STDLambdaAmplitudes
 
 - name: CoupledCluster
@@ -368,7 +377,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergyLdrccd
 
 - name: CoupledCluster
   in:
@@ -384,7 +393,23 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergyApxRpa
+
+- name: CoupledCluster
+  in:
+    method: Ccsdt
+    tAmplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
+    coulombIntegrals: STDCoulombIntegrals
+    integralsSliceSize: 100
+    maxIterations: 20
+    energyConvergence: 1.0E-8
+    amplitudesConvergence: 1.0E-8
+    mixer:
+      type: DiisMixer
+      maxResidua: 4
+  out:
+    energy: STDEnergyCcsdt
 
 - name: CoupledCluster
   in:
@@ -400,7 +425,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergyDcsdt
 
 - name: CoupledCluster
   in:
@@ -416,7 +441,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergyCcsdt1b
 
 - name: CoupledCluster
   in:
@@ -432,7 +457,7 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergyCcsdt3
 
 - name: CoupledCluster
   in:
@@ -448,7 +473,8 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergy3CC
+
 
 - name: CoupledCluster
   in:
@@ -465,45 +491,19 @@
       type: DiisMixer
       maxResidua: 4
   out:
-    energy: STDCcsdEnergy
+    energy: STDEnergyLambdaCcsd
     amplitudes: STDLambdaAmplitudes
 
-# LambdaCcsdReference
-- name: CoupledCluster
+- name: PerturbativeTriplesReference
   in:
-    method: LambdaCcsd
-    algo: LambdaCcsdReference
-    slicedEigenEnergies: STDEigenEnergies
-    tAmplitudes: STDAmplitudes
     coulombIntegrals: STDCoulombIntegrals
-    maxIterations: 20
-    energyConvergence: 1.0E-8
-    amplitudesConvergence: 1.0E-8
-    mixer:
-      type: DiisMixer
-      maxResidua: 4
+    lambda: 1
+    lambdaAmplitudes: STDLambdaAmplitudes
+    amplitudes: STDAmplitudes
+    slicedEigenEnergies: STDEigenEnergies
   out:
-    energy: STDCcsdEnergy
-    amplitudes: STDLambdaAmplitudes
- 
-# - name: CcsdtNonit
-#   in:
-#     slicedEigenEnergies: STDEigenEnergies
-#     amplitudes: STDAmplitudes
-#     coulombIntegrals: STDCoulombIntegrals
-#     lambdaAmplitudes: STDLambdaAmplitudes
-#   out:
-#     {}
+    {}
 
-# - name: CcsdtNonit
-#   in:
-#     slicedEigenEnergies: STDEigenEnergies
-#     amplitudes: STDAmplitudes
-#     coulombIntegrals: STDCoulombIntegrals
-#     lambdaAmplitudes: STDLambdaAmplitudes
-#     t3t3mode: "3CC"
-#   out:
-#     {}
 
 # Local Variables:
 # mode: yaml
