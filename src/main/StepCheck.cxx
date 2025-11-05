@@ -14,8 +14,8 @@ static void check_perturbative_triples(Ptr<MapNode> &steps,
     const bool step_is_last = steps->getSize() - 1 == j;
     // if step is last, it will delete the tensors always
     in->setValue<int>("deleteTensors", step_is_last ? 1 : 0);
-    return;
   }
+  return;
 }
 
 void StepCheck::check_all(Ptr<MapNode> &steps, Ptr<MapNode> &storage) {
