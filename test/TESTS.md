@@ -241,12 +241,12 @@
 	- CoupledCluster 3CC 
 	- CoupledCluster ApxRpa 
 	- CoupledCluster Ccsd 
+	- CoupledCluster Ccsdt 
 	- CoupledCluster Ccsdt-1b 
 	- CoupledCluster Ccsdt-3 
 	- CoupledCluster Dcsd 
 	- CoupledCluster Dcsdt 
 	- CoupledCluster LambdaCcsd LambdaCcsd
-	- CoupledCluster LambdaCcsd LambdaCcsdReference
 	- CoupledCluster Ldrccd 
 	- PerturbativeCT
 	- PerturbativeTriples

@@ -74,7 +74,8 @@
   },
 
   "h2o-vasp": {
-      "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/27f00b5a62a5ab6d9ae119aa6b595040aa4d57ca/h2o-vasp",
+      "uri": "https://gitlab.cc4s.org/cc4s/test-resources/-/raw/8a901193f4c1e65bd5f796c2eb391e40bad6f6ef/h2o-vasp",
       "type": "raw"
   }
+
 }
