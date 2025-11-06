@@ -18,22 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [gcc6, gcc7, gcc8, gcc9, gcc10, gcc11]
+        compiler: [gcc9, gcc10, gcc11, gcc12, gcc13, gcc14]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2.3.4
+    - uses: actions/checkout@v5
 
     - name: Install Nix
-      uses: cachix/install-nix-action@v13
+      uses: cachix/install-nix-action@v31
       with:
         nix_path: nixpkgs=channel:nixos-unstable
 
     - name: Fetch all sources once
       run: make fetch-dependencies CONFIG=dist
 
-    - name: ${{matrix.compiler}} build extern
-      run: nix-shell etc/env/nix/shell.nix --argstr compiler ${{matrix.compiler}} --run 'make -sj extern'
-    - name: ${{matrix.compiler}} build cc4s
-      run: nix-shell etc/env/nix/shell.nix --argstr compiler ${{matrix.compiler}} --run 'make -s cc4s'
+    - name: ${{matrix.compiler}} build
+      run: ./tools/build-nix.sh ${{matrix.compiler}}

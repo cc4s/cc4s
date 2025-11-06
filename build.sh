@@ -32,6 +32,7 @@ fi
 notest=${3:-no}
 
 mkdir -p "${build_dir}"
+root_dir="$(realpath "$0" | xargs dirname)"
 cd "${build_dir}"
 
 if command -v mpiicpc >/dev/null 2>&1; then
@@ -50,7 +51,7 @@ cat <<EOF
 
 EOF
 
-cmake .. \
+cmake "${root_dir}" \
   -DCMAKE_BUILD_TYPE="${build_type}" \
   -DCMAKE_CXX_COMPILER="${CMAKE_CXX_COMPILER}"
 make -j "$(nproc --all)"
