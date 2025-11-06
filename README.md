@@ -1,9 +1,9 @@
 Coupled Cluster for Solids
 ==========================
 
-`CC4S` provides a cmake build system.
+`Cc4s` provides a cmake build system.
 
-`CC4S` depends on two libraries:
+`Cc4s` depends on two libraries:
 - [yaml-cpp](https://github.com/jbeder/yaml-cpp)
 - [Cyclops Tensor Framework](https://github.com/cyclops-community/ctf)
 
@@ -40,7 +40,7 @@ All the project will be built in the `build` directory, including its dependenci
 You may have several build directories if you intend to compile with different flags,
 compilers or settings.
 
-If you want to make the debug version of `CC4S`, you should pass to cmake the
+If you want to make the debug version of `Cc4s`, you should pass to cmake the
 `-DCMAKE_BUILD_TYPE=Debug` flag, for example
 
 ```sh

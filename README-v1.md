@@ -1,6 +1,11 @@
 Coupled Cluster for Solids
 ==========================
 
+NOTE: Using the makefile is deprecated, please use the `build.sh` script or
+the CMAKE infrastructure as explained in the `README.md`.
+
+The current `Makefile` will be removed in coming versions.
+
 Quick start for icc and Intel MPI library
 -----------------------------------------
 
