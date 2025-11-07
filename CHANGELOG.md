@@ -1,4 +1,4 @@
-# Version 1.1.0 (October 6, 2025)
+# Version 1.1.0 (November 7, 2025)
 
 - Release of the new CCSD(cT) algorithm, see documentation for
   `PerturbativeTriples` in the manual.
